@@ -60,18 +60,18 @@ export function WardMovementNotFound({
         </ContextualBackLink>
         <div>
           <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>{aboutPerson ? "Person not found" : "Movement not found"}</span>
+          <span className={styles.headerCrumb}>{aboutPerson ? "Patient not found" : "Movement not found"}</span>
         </div>
       </header>
       <main id="main-content" className={styles.workspaceMain}>
         {/* shell-11/12: the one not-found pattern; no internal id (WF-, PT-) is ever echoed. */}
         {aboutPerson ? (
           <WardNotFoundBody
-            title="Person not found"
+            title="Patient not found"
             list={{ href: "/ward-flow/search", label: "All patients" }}
             search={reason === "no-such-umrn" ? searchLink : null}
           >
-            {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No person matches this link."}
+            {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No patient matches this link."}
           </WardNotFoundBody>
         ) : (
           <WardNotFoundBody

@@ -258,19 +258,6 @@
   white-space: nowrap;
 }
 
-.previewTag {
-  display: inline-flex;
-  align-items: center;
-  height: 18px;
-  padding: 0 7px;
-  border-radius: var(--wf-r-tag);
-  border: 1px dashed var(--wf-line-3);
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
 .refused {
   display: flex;
   align-items: center;
@@ -343,12 +330,6 @@
   font-weight: 600;
   color: var(--wf-ink-1);
   white-space: nowrap;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 /* Rule rows: words and range, reset, one stepper, effect and readers. */
@@ -555,72 +536,6 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
-}
-
-/* Notifications ----------------------------------------------------------------------------- */
-
-.notifyGrid {
-  display: flex;
-  flex-direction: column;
-}
-
-.notifyRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.5rem 4.5rem;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 42px;
-  padding: 0 var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
-.notifyHead {
-  min-height: 30px;
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.notifyHead > span:not(:first-child) {
-  text-align: center;
-}
-
-.notifyGroup {
-  padding: 10px var(--wf-s-4) 4px;
-  border-top: 1px solid var(--wf-line);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.notifyName {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.notifyCell {
-  display: flex;
-  justify-content: center;
-}
-
-.locked {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 20px;
-  border-radius: var(--wf-r-tag);
-  border: 1px solid var(--wf-line);
-  background: var(--wf-track);
-  color: var(--wf-ink-3);
 }
 
 /* Shortcuts --------------------------------------------------------------------------------- */

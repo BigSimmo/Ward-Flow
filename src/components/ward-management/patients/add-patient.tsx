@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  BusFront,
   ChevronLeft,
   ChevronRight,
   FileText,
   History,
   Lock,
   ShieldCheck,
-  Stethoscope,
   UserPlus,
   UserRound,
   UsersRound,
@@ -17,7 +15,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
-import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -25,6 +22,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   duplicateCandidates,
   GENDERS,
@@ -55,7 +53,6 @@ import {
   Select,
   Sheet,
   StatusGlyph,
-  Textarea,
   TextInput,
   useIsPhone,
   useIsTabletPortrait,
@@ -67,13 +64,12 @@ import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
- * marker, then the Identity card (saved to the record), the Clinical intake card (layout only, not
- * saved), and one foot with Reset and the single primary, Add patient. The right column carries the
- * live duplicate check, what can follow once the person exists, and the latest records.
+ * marker, then the Identity card only (D-77 change 6: address, facility and intake belong to the referral
+ * or the movement, not the person), and one foot with Reset and the single primary, Add patient. The right
+ * column carries the live duplicate check and the latest records. Adding opens the new patient's page.
  *
  * Owner Rule D4: an unconnected control says exactly "Not wired in this prototype." Print and Save
  * draft only ever said that, so they are hidden until they work (overall review, 20 Oct 2026).
@@ -145,9 +141,6 @@ const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
 /** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
 const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
   ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
-  ["Address, suburb", "Address is not saved"],
-  ["Presenting facility, health service", "Not saved in this prototype"],
-  ["Clinical intake", "ATS, legal form, complaint, notes · layout only"],
   ["Duplicate check beside the form", "The phone runs the same check below the form"],
 ];
 const GENDER_NOT_RECORDED = "not-recorded" as const;
@@ -160,37 +153,6 @@ const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
 
 const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
 const RECENT_RECORDS_SHOWN = 7;
-
-type TriageLevel = "1" | "2" | "3" | "4" | "5";
-
-/** Australasian Triage Scale: category and its published time to be seen. Layout only, not saved. */
-const TRIAGE_OPTIONS: readonly { code: TriageLevel; seen: string }[] = [
-  { code: "1", seen: "now" },
-  { code: "2", seen: "10m" },
-  { code: "3", seen: "30m" },
-  { code: "4", seen: "1h" },
-  { code: "5", seen: "2h" },
-];
-
-const TRIAGE_ITEMS: ChoiceItem<TriageLevel>[] = TRIAGE_OPTIONS.map((option) => ({
-  id: option.code,
-  label: (
-    <>
-      <span className={styles.srOnly}>ATS</span> {option.code}
-      <span className={styles.segSub}>{option.seen}</span>
-    </>
-  ),
-}));
-
-type StatutoryLegalStatus = "Voluntary" | "Form 1A" | "Form 3B" | "Form 4A";
-
-/** Form names only (D5): no Act section numbers and no computed limits. Layout only, not saved. */
-const LEGAL_ITEMS: ChoiceItem<StatutoryLegalStatus>[] = [
-  { id: "Voluntary", label: "Voluntary" },
-  { id: "Form 1A", label: "Form 1A" },
-  { id: "Form 3B", label: "Form 3B" },
-  { id: "Form 4A", label: "Form 4A" },
-];
 
 const INDIGENOUS_STATUS_OPTIONS = [
   { value: "not-stated", label: "Not stated" },
@@ -208,53 +170,6 @@ const INDIGENOUS_STATUS_OPTIONS = [
   },
   { value: "both", label: "Both Aboriginal and Torres Strait Islander origin" },
 ] as const;
-
-const HEALTH_SERVICES = [
-  { value: "", label: "Select health service" },
-  { value: "East Metro", label: "East Metropolitan (EMHS)" },
-  { value: "North Metro", label: "North Metropolitan (NMHS)" },
-  { value: "South Metro", label: "South Metropolitan (SMHS)" },
-  { value: "WA Country", label: "WA Country (WACHS)" },
-] as const;
-
-const PRESENTING_FACILITIES = [
-  { value: "", label: "Select presenting facility" },
-  { value: "rph-ed", label: "Royal Perth ED" },
-  { value: "scgh-ed", label: "Sir Charles Gairdner ED" },
-  { value: "fsh-ed", label: "Fiona Stanley ED" },
-  { value: "arm-ed", label: "Armadale ED" },
-  { value: "sjgm-ed", label: "St John of God Midland ED" },
-  { value: "rgh-ed", label: "Rockingham General ED" },
-  { value: "jhc-ed", label: "Joondalup ED" },
-  { value: "peel-ed", label: "Peel ED" },
-] as const;
-
-const PRESENTING_COMPLAINTS = [
-  { value: "assessment", label: "Psychiatric assessment required" },
-  { value: "psychosis", label: "Acute psychosis" },
-  { value: "mood", label: "Severe mood disorder" },
-  { value: "behavioral", label: "Behavioural disturbance" },
-  { value: "safety", label: "Acute safety risk or self-harm" },
-  { value: "other", label: "Other acute presentation" },
-] as const;
-
-const FACILITY_TO_SITE_CODE: Record<string, string> = {
-  "rph-ed": "RPH",
-  "scgh-ed": "SCGH",
-  "fsh-ed": "FSH",
-  "arm-ed": "ARM",
-  "sjgm-ed": "SJGM",
-  "rgh-ed": "RGH",
-  "jhc-ed": "JHC",
-  "peel-ed": "PEEL",
-};
-
-// Only complaints that name a diagnosis block get one. A safety risk, behavioural disturbance, an
-// assessment or "other" is not a diagnosis, so the referral's provisional diagnosis is left unset.
-const COMPLAINT_TO_DIAGNOSIS_BLOCK: Partial<Record<string, TentativeDiagnosisBlock>> = {
-  psychosis: "F20–F29",
-  mood: "F30–F39",
-};
 
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
@@ -275,7 +190,8 @@ export function AddPatientForm() {
   const registrationScope = patientRegistrationScope(access.scope);
   // Smart features idea 9 (19 Oct 2026): an ED desk presents at its own ED unless someone picks another.
   const deskEdId = access.scope.kind === "ed" ? access.scope.edId : undefined;
-  const deskFacility = PRESENTING_FACILITIES.some((entry) => entry.value === deskEdId) ? (deskEdId ?? "") : "";
+  // Read the site from the ED directory so every ED desk, KEMH and PCH included, carries its own ED.
+  const deskEdSiteCode = deskEdId ? (edById(deskEdId)?.siteCode ?? "") : "";
   const registrationUnavailable =
     access.scope.kind === "ward" && !registrationScope
       ? "Open a referral from a single source ward before registering the patient."
@@ -292,18 +208,6 @@ export function AddPatientForm() {
 
   const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_NOT_RECORDED);
   const [indigenousStatus, setIndigenousStatus] = useState<string>("not-stated");
-  const [address, setAddress] = useState<string>("");
-  const [suburb, setSuburb] = useState<string>("");
-  const [healthService, setHealthService] = useState<string>("");
-  // `null` until someone chooses, so the desk's own ED shows once access has loaded.
-  const [chosenFacility, setFacility] = useState<string | null>(null);
-  const facility = chosenFacility ?? deskFacility;
-
-  const [triageUrgency, setTriageUrgency] = useState<TriageLevel>("4");
-  // Unchosen until a person picks one: legal status is never prefilled (owner rule, 19 Oct 2026).
-  const [legalStatus, setLegalStatus] = useState<StatutoryLegalStatus | "">("");
-  const [presentingComplaint, setPresentingComplaint] = useState<string>("assessment");
-  const [clinicalNotes, setClinicalNotes] = useState<string>("");
 
   const [lastRejection, setLastRejection] = useState<string | undefined>(undefined);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -315,7 +219,7 @@ export function AddPatientForm() {
   /*
    * v10 Add a patient, Phone. shell-7 (Josh, 13 Oct 2026): the short identity form and its
    * duplicate check show straight away; the "needs a larger screen" landing is gone. One quiet row
-   * says address and intake are on a larger screen. Desktop never reads any of this.
+   * says gender and Aboriginal status are on a larger screen. Desktop never reads any of this.
    */
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -332,13 +236,8 @@ export function AddPatientForm() {
     form: ReturnType<typeof formSnapshot>;
     generation: number;
     intent: "profile" | "refer";
-    intake: {
-      facility: string;
-      healthService: string;
-      triageUrgency: TriageLevel;
-      legalStatus: StatutoryLegalStatus | "";
-      presentingComplaint: string;
-    };
+    /** The desk's own ED, so a referral started here comes from that ED. */
+    edSiteCode: string;
   } | null>(null);
   const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
   const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
@@ -359,17 +258,7 @@ export function AddPatientForm() {
     draft.dateOfBirth.trim().length > 0 ||
     genderChoice !== GENDER_NOT_RECORDED ||
     indigenousStatus !== "not-stated";
-  const placeChanged =
-    address.trim().length > 0 ||
-    suburb.trim().length > 0 ||
-    healthService.trim().length > 0 ||
-    facility !== deskFacility;
-  const intakeChanged =
-    triageUrgency !== "4" ||
-    legalStatus !== "" ||
-    presentingComplaint !== "assessment" ||
-    clinicalNotes.trim().length > 0;
-  const isDirty = identityChanged || placeChanged || intakeChanged;
+  const isDirty = identityChanged;
 
   useDirtyStateGuard({
     isDirty: isDirty && !isSubmitting,
@@ -381,27 +270,11 @@ export function AddPatientForm() {
     draft,
     genderChoice,
     indigenousStatus,
-    address,
-    suburb,
-    healthService,
-    facility,
-    triageUrgency,
-    legalStatus,
-    presentingComplaint,
-    clinicalNotes,
   });
   const restoreSnapshot = (snap: ReturnType<typeof formSnapshot>) => {
     setDraft(snap.draft);
     setGenderChoice(snap.genderChoice);
     setIndigenousStatus(snap.indigenousStatus);
-    setAddress(snap.address);
-    setSuburb(snap.suburb);
-    setHealthService(snap.healthService);
-    setFacility(snap.facility);
-    setTriageUrgency(snap.triageUrgency);
-    setLegalStatus(snap.legalStatus);
-    setPresentingComplaint(snap.presentingComplaint);
-    setClinicalNotes(snap.clinicalNotes);
   };
 
   const performReset = () => {
@@ -435,14 +308,6 @@ export function AddPatientForm() {
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
     setIndigenousStatus("not-stated");
-    setAddress("");
-    setSuburb("");
-    setHealthService("");
-    setFacility(null);
-    setTriageUrgency("4");
-    setLegalStatus("");
-    setPresentingComplaint("assessment");
-    setClinicalNotes("");
     setAssignedSearch(null);
     finishSubmission();
   }
@@ -516,19 +381,12 @@ export function AddPatientForm() {
       const params = new URLSearchParams();
       params.set("new", "1");
       params.set("patientId", encodeRecordAddress(added.id));
-      const { facility, healthService, triageUrgency, legalStatus, presentingComplaint } = prior.intake;
-      const siteCode = FACILITY_TO_SITE_CODE[facility];
+      const siteCode = prior.edSiteCode;
       if (siteCode) {
         params.set("site", siteCode);
         // The site is an emergency department, so the referral comes from that ED, not a community service.
         params.set("source", "ed");
       }
-      if (healthService.trim()) params.set("service", healthService.trim());
-      params.set("ats", triageUrgency);
-      // Only a status the person chose: an unchosen one leaves the referral's own field to choose.
-      if (legalStatus) params.set("legal", legalStatus);
-      const diagBlock = COMPLAINT_TO_DIAGNOSIS_BLOCK[presentingComplaint];
-      if (diagBlock) params.set("complaint", diagBlock);
       router.push(`${WARD_REFERRAL_INTAKE_HREF}?${params.toString()}`);
       return;
     }
@@ -595,12 +453,11 @@ export function AddPatientForm() {
       familyName: answered.familyName,
       generation: worldGeneration,
       intent: submitIntentRef.current,
-      intake: { facility, healthService, triageUrgency, legalStatus, presentingComplaint },
+      edSiteCode: deskEdSiteCode,
       form: formSnapshot(),
     };
     priorSubmissionRef.current = submission;
     setAcceptedSubmission(null);
-    const suburbTrimmed = suburb.trim();
     const refuse = () => {
       if (priorSubmissionRef.current !== submission) return;
       priorSubmissionRef.current = null;
@@ -627,7 +484,6 @@ export function AddPatientForm() {
         familyName: answered.familyName,
         dateOfBirth: answered.dateOfBirth,
         ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
-        ...(suburbTrimmed.length === 0 ? {} : { suburb: suburbTrimmed }),
       });
       const settle = (outcome: WardCommandOutcome | void) => {
         if (priorSubmissionRef.current !== submission) return;
@@ -692,19 +548,7 @@ export function AddPatientForm() {
       key: "identity",
       on: identityChanged,
       label: "Identity",
-      meta: "Number, names, birth date, gender",
-    },
-    {
-      key: "place",
-      on: placeChanged,
-      label: "Address and facility",
-      meta: "Address, suburb, service",
-    },
-    {
-      key: "intake",
-      on: intakeChanged,
-      label: "Clinical intake",
-      meta: "ATS, legal status, notes",
+      meta: "Number, names, birth date, gender, Aboriginal status",
     },
   ];
 
@@ -878,7 +722,7 @@ export function AddPatientForm() {
               <div className={styles.heroBar}>
                 <p className={styles.heroLine}>
                   <Icon icon={ShieldCheck} size={14} />
-                  Identity is saved to the record. Check for an existing record before adding. Synthetic records only.
+                  Identity is saved to the record. Check for an existing record before adding.
                 </p>
                 <div className={styles.heroChips} data-testid="ward-add-patient-hero-chips">
                   <span className={styles.heroChip}>
@@ -969,7 +813,6 @@ export function AddPatientForm() {
                     {answeredCount} of {REQUIRED_FIELDS.length} required
                   </Badge>
                 }
-                action={<span className={styles.muted}>Saved to the record</span>}
               />
               <CardBody className={styles.grid}>
                 <Field label={<Required>UMRN</Required>} id="ward-add-patient-umrn" error={fieldError("umrn")}>
@@ -982,7 +825,7 @@ export function AddPatientForm() {
                     autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    placeholder="UMRN not recorded"
+                    placeholder="UMRN"
                     className={styles.mono}
                     value={draft.umrn}
                     onChange={(event) => setDraftField("umrn")(event.target.value)}
@@ -1068,134 +911,12 @@ export function AddPatientForm() {
                     ))}
                   </Select>
                 </Field>
-
-                <Field
-                  label="Address"
-                  hint="not saved"
-                  id="ward-add-patient-address"
-                  className={cx(styles.span2, styles.phHide)}
-                >
-                  <TextInput value={address} onChange={(e) => setAddress(e.target.value)} />
-                </Field>
-                <Field
-                  label="Suburb"
-                  hint="optional"
-                  id="ward-add-patient-suburb"
-                  className={cx(styles.span2, styles.phHide)}
-                >
-                  <TextInput
-                    data-testid="ward-add-patient-suburb"
-                    value={suburb}
-                    onChange={(e) => setSuburb(e.target.value)}
-                  />
-                </Field>
-
-                <Field
-                  label="Presenting facility"
-                  hint="not saved"
-                  id="ward-add-patient-facility"
-                  className={cx(styles.span2, styles.phHide)}
-                >
-                  <Select value={facility} onChange={(e) => setFacility(e.target.value)}>
-                    {PRESENTING_FACILITIES.map((fac) => (
-                      <option key={fac.value} value={fac.value}>
-                        {fac.label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                <Field
-                  label="Health service"
-                  hint="not saved"
-                  id="ward-add-patient-service"
-                  className={cx(styles.span2, styles.phHide)}
-                >
-                  <Select value={healthService} onChange={(e) => setHealthService(e.target.value)}>
-                    {HEALTH_SERVICES.map((svc) => (
-                      <option key={svc.value} value={svc.value}>
-                        {svc.label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
               </CardBody>
             </Card>
 
             {/* Tablet portrait: the duplicate check sits under Identity, where it is needed while
                 typing, not under the Add patient footer (device audit 11 Oct 2026). */}
             {isTabletPortrait ? duplicateCheck : null}
-
-            <Card aria-labelledby="apIntakeH" className={styles.phHide}>
-              <CardHead
-                id="apIntakeH"
-                icon={Stethoscope}
-                title="Clinical intake"
-                aside={
-                  <Badge size="sm" tone="neutral">
-                    Not saved
-                  </Badge>
-                }
-                action={<span className={styles.muted}>Shows the layout only</span>}
-              />
-              <CardBody className={styles.intakeGrid}>
-                <p
-                  className={cx(styles.spanAll, styles.intakeHandoffNote)}
-                  data-testid="ward-add-patient-intake-handoff-note"
-                >
-                  Structured selections (presenting facility, health service, ATS category, legal status, presenting
-                  complaint) carry forward into the Referral Drawer when you choose{" "}
-                  <strong>Register &amp; start referral →</strong>. Clinical narrative is captured via the Referral
-                  Drawer&apos;s structured intake checklist (Ruling D-18: no free-text storage on patient registration).
-                </p>
-                <div className={styles.choiceField}>
-                  <div className={styles.choiceLabelRow}>
-                    <span className={styles.choiceLabel}>Triage category</span>
-                    <span className={styles.choiceHint}>ATS</span>
-                  </div>
-                  <Segmented
-                    label="Triage category"
-                    items={TRIAGE_ITEMS}
-                    value={triageUrgency}
-                    onChange={setTriageUrgency}
-                    className={styles.segmented}
-                  />
-                </div>
-                <div className={styles.choiceField}>
-                  <div className={styles.choiceLabelRow}>
-                    <span className={styles.choiceLabel}>Legal status</span>
-                  </div>
-                  <Segmented<StatutoryLegalStatus | "">
-                    label="Legal status"
-                    items={LEGAL_ITEMS}
-                    value={legalStatus}
-                    onChange={setLegalStatus}
-                    className={styles.segmented}
-                  />
-                </div>
-                <Field label="Presenting complaint" id="ward-add-patient-complaint">
-                  <Select value={presentingComplaint} onChange={(e) => setPresentingComplaint(e.target.value)}>
-                    {PRESENTING_COMPLAINTS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                <Field label="Clinical intake notes" id="ward-add-patient-notes">
-                  <Textarea
-                    rows={1}
-                    maxLength={500}
-                    placeholder="Short note for the receiving team"
-                    value={clinicalNotes}
-                    onChange={(e) => setClinicalNotes(e.target.value)}
-                    data-gramm="false"
-                    data-enable-grammarly="false"
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </Field>
-              </CardBody>
-            </Card>
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
@@ -1280,22 +1001,6 @@ export function AddPatientForm() {
           <aside className={styles.side} aria-label="Duplicate checking and records">
             {isTabletPortrait ? null : duplicateCheck}
 
-            {/* Audit 7 NA-03: these two never become available on this screen, so they show in a
-                development build only. */}
-            <UnwiredPreview>
-              <Card className={styles.phHide}>
-                <CardHead title="After adding" level={2} action={<span className={styles.muted}>Once added</span>} />
-                <CardBody className={styles.afterRow}>
-                  <Button size="sm" icon={FileText} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                    Raise referral
-                  </Button>
-                  <Button size="sm" icon={BusFront} disabledReason="Add the patient first" reasonDisplay="tooltip">
-                    Book transport
-                  </Button>
-                </CardBody>
-              </Card>
-            </UnwiredPreview>
-
             <Card className={styles.phHide}>
               <CardHead
                 icon={History}
@@ -1324,8 +1029,8 @@ export function AddPatientForm() {
             {isPhone ? (
               <PhoneListRow
                 className={styles.phCard}
-                name="Address, facility and intake"
-                meta="On a larger screen · intake is not saved"
+                name="Gender and Aboriginal status"
+                meta="On a larger screen · optional"
                 onSelect={() => setPhoneSheet("larger")}
                 value={<Icon icon={ChevronRight} size={16} />}
               />
@@ -1353,7 +1058,7 @@ export function AddPatientForm() {
         >
           <div className={styles.resetBody}>
             <p className={styles.resetLead}>
-              You have entered patient details or clinical notes. Resetting clears every unsaved field in this session.
+              You have entered patient details. Resetting clears every unsaved field in this session.
             </p>
             <h3 className={styles.resetHead}>What gets cleared</h3>
             <ul className={styles.resetList}>

@@ -50,24 +50,8 @@ const HUB = "/ward-flow/statistics";
  * files to update for one change.
  */
 const DESTINATIONS = [
-  {
-    name: "Across all services",
-    linkText: "Across all services",
-    marker: "ward-statistics-overview-screen",
-    navValue: "overview",
-    /** The section chip's label on the phone Summary (v10 phone, 11 Oct 2026). */
-    navLabel: "Overview",
-    /**
-     * How a phone reaches it from the hub. Device audit (11 Oct 2026, `statistics-nav.tsx`'s
-     * `PHONE_SECTIONS`): the phone chips keep Summary, Compare and Weekly, and Overview is the
-     * Summary's "More figures" row.
-     */
-    phoneEntry: { nav: "More figures", link: /^More figures/u },
-    href: "/ward-flow/statistics/overview",
-    /** A figure this screen derives, so an empty shell cannot pass as a rendered page. The v10
-     * phone Summary (11 Oct 2026) shows its own capacity figures in place of the desktop cards. */
-    figure: "ward-statistics-overview-phone-capacity",
-  },
+  // "Across all services" (Overview) left this list on 21 Oct 2026 (D-77, change 9): its address
+  // now redirects to the hub, and the phone "More figures" row opens a sheet on the hub itself.
   {
     // Statistics A (10 Oct 2026): Services opens its own index page, not the hub's chooser.
     name: "Every health service",

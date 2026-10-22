@@ -42,8 +42,10 @@ const props: ComponentProps<typeof WardHomeTab> = {
 };
 describe("ward decision demonstration boundaries", () => {
   it("does not expose fictional clinical actions on the default operational surface", () => {
-    render(<WardDecisionsCockpit unit={unit} />);
-    expect(screen.getByText(/Not wired in this prototype/)).toBeVisible();
+    const { container } = render(<WardDecisionsCockpit unit={unit} />);
+    // D-72: a bare cockpit has nothing it can do, so it renders nothing at all.
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByText(/Not wired in this prototype/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Declare AWOL/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Aaron K\./)).not.toBeInTheDocument();
   });
@@ -54,7 +56,7 @@ describe("ward decision demonstration boundaries", () => {
     expect(screen.queryByRole("button", { name: /Declare AWOL/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Aaron K\./)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
-    expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
+    expect(screen.queryByText("Not wired in this prototype.")).not.toBeInTheDocument();
   });
   it("does not invent a named patient or form deadline when the ward has no supplied alerts", () => {
     const view = render(

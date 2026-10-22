@@ -259,12 +259,12 @@ describe("ward board people panel — what each person's entry states", () => {
     expect(blocked.length).toBeLessThan(occupantsFor(UNIT_ID).length);
 
     const panel = panelIn(renderWardBoard(UNIT_ID).container);
-    const blockerLines = [...panel.querySelectorAll("p")].filter((p) =>
-      (p.textContent ?? "").startsWith("Held up by:"),
-    );
+    // Once per person: in the long-stay tag ("Held up: …") when that tag shows, otherwise as its own
+    // line (UX audit, 21 Oct 2026: the tag no longer says "unrecorded" beside a recorded blocker).
+    const blockerLines = [...panel.querySelectorAll("p")].filter((p) => (p.textContent ?? "").startsWith("Held up"));
     expect(blockerLines).toHaveLength(blocked.length);
     for (const admission of blocked) {
-      expect(panel.textContent).toContain(`Held up by: ${admission.blockReason}.`);
+      expect(blockerLines.some((line) => (line.textContent ?? "").includes(admission.blockReason!))).toBe(true);
     }
 
     // Silence, never "Nothing outstanding" — nobody has looked at what is holding these

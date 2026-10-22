@@ -15,7 +15,6 @@ import { ACCESS_ROLE_LABELS, WARD_ACCESS_ROLES, type WardAccess, type WardAccess
 import type { SharedAccessRequest, SharedChangeResult, SharedRoleChoice } from "./ward-shared-client";
 import { parseStoredAccess } from "./shell/ward-access-store";
 import { SEED_UNITS, placeOptions, sharedDeskLabel } from "./shell/ward-access-labels";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import styles from "./ward-shared-access.module.css";
 
 export function WardRolePicker({
@@ -164,7 +163,7 @@ export function WardAskForAccess({
           </button>
         </form>
       ) : (
-        <p>{showsUnwiredPreviews() ? "Not wired in this prototype. " : null}Ask your access admin directly.</p>
+        <p>Ask your access admin directly.</p>
       )}
       <button type="button" onClick={onRetry}>
         Check again

@@ -1,7 +1,7 @@
 // Audit 1, Josh 20 Oct 2026. The ward answer view shows recorded facts only (CS-02, NB-1), holds the
 // request on screen by its journey id (CS-08, WP-01), and its accept dialog never implies a bed was
 // allocated (WP-09). Synthetic seed data only.
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +14,8 @@ vi.mock("next/navigation", async (importOriginal) => ({
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
+import type { Rejection } from "@/components/ward-management/ward-model-movement-parts";
+import { OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -114,6 +116,112 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts).toHaveLength(1);
     expect(accepts[0]).toMatchObject({ movementId: id });
     expect(accepts[0]).not.toHaveProperty("bedNumber");
+  });
+
+  it("sends the extra-travel bed hold only when the ward chooses it (D-72)", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const dialog = openDialog();
+    expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
+    const hold = within(dialog).getByLabelText("Bed hold once pulled");
+    expect(hold).toHaveValue("standard");
+    fireEvent.change(hold, { target: { value: "extended" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
+
+    // Reopened, the choice starts at the standard hold again.
+    expect(within(openDialog()).getByLabelText("Bed hold once pulled")).toHaveValue("standard");
+  });
+
+  it("offers the bed hold choice beside the desk's one-step Accept in principle", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const id = shownId();
+    const hold = screen.getByRole("combobox", { name: "Bed hold once pulled" });
+    expect(hold).toHaveValue("standard");
+    expect(
+      within(hold)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["240 minutes, standard", "300 minutes, extra travel"]);
+    fireEvent.change(hold, { target: { value: "extended" } });
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(1);
+    expect(accepts[0]).toMatchObject({ movementId: id, extendedHold: true });
+  });
+
+  it("does not carry the extra-travel choice to the next request when the chosen one leaves (CS-08)", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const id = shownId();
+    act(() =>
+      setAdjust((movements) => {
+        const held = movements.find((movement) => movement.id === id)!;
+        return [...movements, { ...held, id: "WF-AUDIT-NEXT", openedAt: held.openedAt + 60_000 }];
+      }),
+    );
+    expect(shownId()).toBe(id);
+    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+      target: { value: "extended" },
+    });
+    act(() =>
+      setAdjust((movements) => {
+        const held = movements.find((movement) => movement.id === id)!;
+        return [
+          ...movements.filter((movement) => movement.id !== id),
+          { ...held, id: "WF-AUDIT-NEXT", openedAt: held.openedAt + 60_000 },
+        ];
+      }),
+    );
+    expect(shownId()).toBe("WF-AUDIT-NEXT");
+    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("standard");
+    fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(1);
+    expect(accepts[0]).toMatchObject({ movementId: "WF-AUDIT-NEXT" });
+    expect(accepts[0]).not.toHaveProperty("extendedHold");
+  });
+
+  it("sends the extra-travel choice again with an override reason (CS-08)", () => {
+    const dispatch = vi.fn<(event: WardFlowEvent) => void>();
+    let refused: Rejection[] = [];
+    function RefusingHarness({ children }: { children: ReactNode }) {
+      const state = useWardFlow();
+      return (
+        <WardFlowOverride value={{ ...state, dispatch, rejections: [...state.rejections, ...refused] }}>
+          {children}
+        </WardFlowOverride>
+      );
+    }
+    const tree = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RefusingHarness>
+          <WardAnswerView unitId="sjgm-adult-open" />
+        </RefusingHarness>
+      </WardFlowProvider>
+    );
+    const view = render(tree());
+    const id = shownId();
+    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+      target: { value: "extended" },
+    });
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    refused = [
+      {
+        id: "WF-AUDIT-REFUSED",
+        at: NOW_ANCHOR,
+        movementId: id,
+        attempted: "ACCEPT_IN_PRINCIPLE",
+        reason: `Accepting ${OVERRIDE_REASON_REQUIRED}.`,
+      },
+    ];
+    act(() => view.rerender(tree()));
+    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("extended");
+    const form = screen.getByTestId(`ward-override-form-${id}`);
+    fireEvent.click(within(form).getAllByRole("radio")[0]!);
+    fireEvent.submit(form);
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(2);
+    expect(accepts[1]).toMatchObject({ movementId: id, extendedHold: true, overrideReason: expect.any(String) });
   });
 
   it("still steps with Previous and Next", () => {

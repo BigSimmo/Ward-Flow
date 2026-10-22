@@ -3,23 +3,9 @@
 import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
 import styles from "./settings.module.css";
-
-/** D4 wording for every control the engine cannot back yet. */
-export const NOT_WIRED = "Not wired in this prototype.";
-
-/** Marks a setting shown for review that nothing reads yet. Screen readers hear the D4 sentence. */
-export function PreviewTag() {
-  return (
-    <span className={styles.previewTag} title={NOT_WIRED}>
-      Preview
-      <SrOnly>. {NOT_WIRED}</SrOnly>
-    </span>
-  );
-}
 
 /** One line under the band per tab: whether its changes wait for Save or apply at once. */
 export function ScopeLine({ kind }: { kind: "save" | "live" }) {
@@ -43,18 +29,12 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
   );
 }
 
-/**
- * A labelled setting: name and short line on the left, its control on the right.
- *
- * Overall review, 20 Oct 2026: a Preview row (nothing reads it yet) shows only in a local
- * development build. Demo and production builds leave it out, so no setting pretends to work.
- */
+/** A labelled setting: name and short line on the left, its control on the right. */
 export function SettingRow({
   setting,
   title,
   sub,
   subTestId,
-  preview = false,
   stacked = false,
   testId,
   children,
@@ -64,22 +44,15 @@ export function SettingRow({
   title: ReactNode;
   sub?: ReactNode;
   subTestId?: string;
-  /** `"quiet"` when the card head already carries the visible tag: screen readers still hear D4. */
-  preview?: boolean | "quiet";
   /** Control sits under the words (chip groups). */
   stacked?: boolean;
   testId?: string;
   children?: ReactNode;
 }) {
-  if (preview && !showsUnwiredPreviews()) return null;
   return (
     <div className={cx(styles.row, stacked && styles.rowStacked)} data-setting={setting} data-testid={testId}>
       <span className={styles.rowText}>
-        <span className={styles.rowTitle}>
-          {title}
-          {preview === true ? <PreviewTag /> : null}
-          {preview === "quiet" ? <SrOnly>. {NOT_WIRED}</SrOnly> : null}
-        </span>
+        <span className={styles.rowTitle}>{title}</span>
         {sub ? (
           <span className={styles.rowSub} data-testid={subTestId}>
             {sub}
@@ -118,8 +91,6 @@ export type RuleRange = {
  * v10: one control per value. The stepper is the only control; the slider that once sat under it
  * is gone, and the range is written out instead. A value at the end of its range stops the
  * stepper there, which is the refusal and its reason in one.
- *
- * A Preview rule follows the same rule as a Preview `SettingRow`: development builds only.
  */
 export function RuleRow({
   setting,
@@ -139,8 +110,6 @@ export function RuleRow({
   onReset,
   effect,
   usedBy,
-  preview = false,
-  previewTag = preview,
   unavailableReason,
 }: {
   setting: string;
@@ -163,13 +132,9 @@ export function RuleRow({
   onReset?: () => void;
   effect?: ReactNode;
   usedBy?: string;
-  preview?: boolean;
-  /** Off when the card head already carries the Preview tag. */
-  previewTag?: boolean;
   unavailableReason?: string;
 }) {
-  if (preview && !showsUnwiredPreviews()) return null;
-  const changed = !preview && value !== saved;
+  const changed = value !== saved;
   return (
     <div
       className={cx(styles.ruleRow, changed && styles.ruleChanged)}
@@ -178,11 +143,7 @@ export function RuleRow({
       data-changed={changed || undefined}
     >
       <span className={styles.rowText}>
-        <span className={styles.rowTitle}>
-          {title}
-          {previewTag ? <PreviewTag /> : null}
-          {preview && !previewTag ? <SrOnly>. {NOT_WIRED}</SrOnly> : null}
-        </span>
+        <span className={styles.rowTitle}>{title}</span>
         <span className={styles.rowSub} data-testid={subTestId}>
           {sub}
         </span>
@@ -227,9 +188,8 @@ export function RuleRow({
         ) : null}
       </span>
       <span className={styles.effectCell}>
-        {/* Site review (12 Oct 2026): plain words, no build notes. A Preview rule's card says it is
-            not wired once, so its row adds nothing here. */}
-        {!preview && effect ? <span className={styles.effectLine}>{effect}</span> : null}
+        {/* Site review (12 Oct 2026): plain words, no build notes. */}
+        {effect ? <span className={styles.effectLine}>{effect}</span> : null}
         {usedBy ? (
           <span className={styles.usedBy} title={shownOn(usedBy)}>
             {shownOn(usedBy)}

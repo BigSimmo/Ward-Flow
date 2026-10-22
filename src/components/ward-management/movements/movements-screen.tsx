@@ -881,9 +881,9 @@ export function MovementsScreen() {
           {/* Phone (v10): the stage chips sit on the canvas under the band, number first. */}
           {isPhone ? stageTrack(flow.phStages, flow.phStage, flow.phStageCount) : null}
 
-          <div className={styles.needsYou} role="group" aria-label="Needs you" data-testid="movements-needs-you">
+          <div className={styles.needsYou} role="group" aria-label="Tier 1 now" data-testid="movements-needs-you">
             <div className={styles.needsYouHead}>
-              <h2 className={styles.needsYouTitle}>Needs you</h2>
+              <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
               {attentionCore.length > 0 ? (
                 <span className={styles.needsYouMeta}>
                   {attentionCore.length} of {tierOneOpen.length} Tier 1
