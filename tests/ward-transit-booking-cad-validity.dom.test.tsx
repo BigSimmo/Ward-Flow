@@ -36,12 +36,16 @@ function openBookingForm() {
     </ToastProvider>,
   );
   fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
-  const shortlist = screen.getByRole("region", { name: "Network ward shortlist" });
-  fireEvent.click(within(within(shortlist).getAllByRole("article")[0]).getByRole("checkbox"));
+  const shortlist = screen.getByRole("region", { name: "Ask wards" });
+  fireEvent.click(
+    within(shortlist)
+      .getAllByRole("checkbox", { checked: false })
+      .find((box) => !box.hasAttribute("disabled"))!,
+  );
   fireEvent.change(screen.getByLabelText("Ward placement reason"), { target: { value: GENDER_PLACEMENT_REASONS[0] } });
   fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
-  fireEvent.click(screen.getByRole("button", { name: "Refer to selected wards" }));
-  fireEvent.click(screen.getByRole("button", { name: "Accept bed" }));
+  fireEvent.click(screen.getByRole("button", { name: "Ask 1 ward" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Accept bed at / }));
   // The step's wording is moving from "Hold" to "Pull" (UX audit item 5); either opens the form.
   fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^(Hold|Pull) the bed$/ }));
   fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));

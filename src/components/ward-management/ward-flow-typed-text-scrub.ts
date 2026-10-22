@@ -2,7 +2,7 @@ import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/ref
 import { isDischargeCriterion } from "./ward-discharge-criteria";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
+import { isValidStoredWardFlowState, typedCriterionNotKept } from "./ward-flow-storage-validation";
 import {
   normaliseTypedText,
   TYPED_TEXT_NOT_KEPT,
@@ -201,13 +201,37 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
         : TYPED_TEXT_NOT_KEPT;
     if (Array.isArray(value))
       return value.map((entry, index) => visit(entry, [...path, "[]"], [...place, entryPlace(entry, index)]));
-    if (value && typeof value === "object")
+    if (value && typeof value === "object") {
+      // An undo step keeps copies of support notification rows, which the anchored reason rule must reach.
+      const rebased = supportUndoPaths(path, value);
       return Object.fromEntries(
-        Object.entries(value).map(([key, entry]) => [key, visit(entry, [...path, key], [...place, key])]),
+        Object.entries(value).map(([key, entry]) => [
+          key,
+          visit(entry, rebased?.[key] ?? [...path, key], [...place, key]),
+        ]),
       );
+    }
     return value;
   };
   return keepHoldableIntakes(visit(state, [], []) as WardFlowState);
+}
+
+/** Where a support notification undo change holds its rows, as paths in the live world. */
+const SUPPORT_UNDO_ROW_PATHS: Readonly<Record<string, string[]>> = {
+  before: ["supportNotifications", "[]"],
+  after: ["supportNotifications", "[]"],
+  rows: ["supportNotifications"],
+};
+const SUPPORT_UNDO_LIST_PATHS: Readonly<Record<string, string[]>> = {
+  before: ["supportNotifications"],
+  after: ["supportNotifications"],
+};
+const UNDO_CHANGE = { anchored: true, segments: ["undoRecords", "[]", "changes", "[]"] };
+
+function supportUndoPaths(path: readonly string[], value: object): Readonly<Record<string, string[]>> | undefined {
+  const change = value as { slice?: unknown; mode?: unknown };
+  if (change.slice !== "supportNotifications" || !matchesRule(path, UNDO_CHANGE)) return undefined;
+  return change.mode === "whole" ? SUPPORT_UNDO_LIST_PATHS : SUPPORT_UNDO_ROW_PATHS;
 }
 
 /** Optional intake times and file contents: a placeholder cannot stand in for these, so they go. */
@@ -298,9 +322,28 @@ export function redactTypedTextForDevice(
   const stored: unknown = JSON.parse(
     JSON.stringify({ ...scrubTypedTextFields(state, worlds, loadedWorld), rejections: [] }),
   );
-  const redacted = replaceValues(stored);
+  const redacted = numberCriterionStandIns(replaceValues(stored) as WardFlowState);
   if (keyLeak || !isValidStoredWardFlowState(redacted)) return null;
   return redacted;
+}
+
+/**
+ * A list can hold up to three typed criteria, and each must stay distinct to be ticked, so the
+ * second and third placeholders are numbered (`typedCriterionNotKept`).
+ */
+function numberCriterionStandIns(state: WardFlowState): WardFlowState {
+  const admissions = state.admissions.map((admission) => {
+    const criteria = admission.dischargeCriteria;
+    if (!criteria) return admission;
+    let typed = 0;
+    const items = criteria.items.map((item) =>
+      "patientSpecific" in item && item.criterion.startsWith(TYPED_TEXT_NOT_KEPT)
+        ? { ...item, criterion: typedCriterionNotKept(++typed) }
+        : item,
+    );
+    return typed === 0 ? admission : { ...admission, dischargeCriteria: { ...criteria, items } };
+  });
+  return { ...state, admissions };
 }
 
 /**

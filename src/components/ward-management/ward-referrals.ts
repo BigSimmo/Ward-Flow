@@ -1354,25 +1354,6 @@ export function travelBandGroupLabel(band: TravelBandGroup["band"]): string {
   return band === "not_recorded" ? NOT_RECORDED_LABEL : TRAVEL_BAND_LABELS[band];
 }
 
-/**
- * The one spelling of the two figures a band group's heading carries.
- *
- * Two present facts about the beds in this band and nothing else. `accepting` is a subset of
- * `units` and is the only ratio these two ever form; neither counts what is missing, and neither
- * shares a denominator with any other figure on any screen.
- */
-export function travelBandGroupCountsSentence(counts: TravelBandGroupCounts): string {
-  return (
-    `${counts.units} ${counts.units === 1 ? "unit" : "units"} in this band · ` +
-    `${counts.accepting} ${counts.accepting === 1 ? "accepts" : "accept"} this referral`
-  );
-}
-
-/** What an empty group says under its heading. An empty group is still rendered, still carries its
- *  heading and still carries both counts — "there is nothing in this band" is an answer a
- *  coordinator came for, and a group that vanishes when it is empty cannot give it. */
-export const TRAVEL_BAND_GROUP_EMPTY_SENTENCE = "No unit in this band.";
-
 // The out-of-area ledger lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals-out-of-area";
 

@@ -1135,9 +1135,20 @@
     grid-template-columns: minmax(0, 1fr) minmax(22rem, 24rem);
   }
 
+  /* The open record runs taller than the window (about 1,850px with its Carer, PSP and MHAS card),
+     and a sticky column that tall only showed its lower cards at the end of a long list. It now
+     pins under the glass top bar and is capped at the window, scrolling inside itself, with the
+     same tokens as the shared data-wf-rail (ward-shell.module.css). */
   .rightRail {
     position: sticky;
-    top: var(--wf-s-3);
+    top: var(--ward-sticky-top, var(--wf-s-3));
+    max-height: var(--ward-rail-height, calc(100dvh - 2 * var(--wf-s-3)));
+    /* Room for the panel's 2px focus ring, which the scroll box would otherwise clip. */
+    margin: calc(-1 * var(--wf-s-1));
+    padding: var(--wf-s-1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
 }
 

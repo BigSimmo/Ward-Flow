@@ -33,7 +33,7 @@ import wardPin from "../ward-pinned-switch.module.css";
  * Every row and action reads the screen's own data and calls the screen's own handlers.
  */
 
-export type CommunityPhoneListId = "waiting" | "inBed" | "back" | "ctos";
+export type CommunityPhoneListId = "sent" | "waiting" | "inBed" | "back" | "ctos";
 
 type CommunityPhoneRow = {
   id: string;

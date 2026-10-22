@@ -8,6 +8,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph } from "@/components/wf";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import { EdBoardChips } from "./ed-board-chips";
+import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
 import styles from "./ed.module.css";
@@ -55,7 +56,7 @@ export function renderEdBoardPhoneRow(
   ctx: EdScreenContext,
   { personSheet, phoneBay }: { personSheet: ReactNode; phoneBay: string },
 ): ReactNode {
-  const { movement, minutesInDepartment, medicalClearance, patientInfo, acceptedUnit, referredTo, nextAction } = row;
+  const { movement, minutesInDepartment, medicalClearance, patientInfo, nextAction } = row;
   const { accessTarget, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
@@ -88,9 +89,10 @@ export function renderEdBoardPhoneRow(
         }
         name={patientInfo.formalName}
         meta={[
-          // No em-dash and no truncated destination; the form lives in the sheet.
+          // No em-dash and no truncated destination; the form lives in the sheet. Change 2 (D-77):
+          // the second line says where the referral stands, the same words as the board.
           phoneBay,
-          acceptedUnit ? `to ${acceptedUnit.name.split(" — ")[0]}` : (referredTo ?? "In department"),
+          edRowReferralStatus(row, ctx).phone,
           ...(isPhone
             ? []
             : [

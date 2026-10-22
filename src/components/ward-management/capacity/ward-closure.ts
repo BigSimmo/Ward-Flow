@@ -74,7 +74,17 @@ export function pointedAtWard(
     .map((movement): WaitingOnClosedWard => ({
       kind: "bed_request",
       id: movement.id,
-      status: movement.acceptedUnitId !== unitId ? "asked" : movement.stage === "pulled" ? "bed_held" : "accepted",
+      status:
+        movement.acceptedUnitId !== unitId
+          ? "asked"
+          : // Q25: held by stage or by a kept admission, as `movementHoldsBedByStage` (inlined, as above):
+            // a patient stepped back to "accepted" still holds the bed, and so do the later stages.
+            movement.admissionId !== undefined ||
+              movement.stage === "pulled" ||
+              movement.stage === "handover_ready" ||
+              movement.stage === "moving"
+            ? "bed_held"
+            : "accepted",
     }));
   const waitingReferrals = referrals
     .filter((referral) =>

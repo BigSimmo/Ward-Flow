@@ -72,6 +72,8 @@ export const RAIL_GROUPS = [
       ["out-of-area", "Out of area"],
       ["alerts", "Alerts"],
       ["on-call", "On-call"],
+      // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
+      ["seclusion", "Seclusion"],
     ],
   },
 ] as const;

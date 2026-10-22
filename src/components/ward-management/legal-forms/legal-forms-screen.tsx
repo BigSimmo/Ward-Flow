@@ -91,6 +91,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
+import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -201,7 +202,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
-  const [phoneTasks, setPhoneTasks] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const isPhone = useIsPhone();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
@@ -257,9 +258,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   };
 
   const gapCount = (gap: RecordGap) => rows.filter((movement) => offersGap(movement, gap)).length;
+  // Desktop: a task opens its own drawer or sheet, so the Record and tell drawer steps aside.
+  const leaveTasks = () => setTasksOpen((open) => open && isPhone);
+
   const startGap = (gap: RecordGap) => {
     const first = rows.find((movement) => offersGap(movement, gap));
     if (!first) return;
+    leaveTasks();
     select(first);
     setTab("now");
     setFocusGap((previous) => ({ gap, nonce: (previous?.nonce ?? 0) + 1 }));
@@ -275,6 +280,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     tellSubjects.filter((subject) => subject.missing.includes(party)).length;
   const tellNext = (party: SupportNotificationParty) => {
     const first = tellSubjects.find((subject) => subject.missing.includes(party));
+    leaveTasks();
     setTell({ party, key: first?.key ?? null });
   };
 
@@ -475,7 +481,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     />
   ) : null;
 
-  // Phone: the record-and-tell tasks sit one tap away; the sheet foot pins the next one to record.
+  // The record-and-tell tasks sit one tap away on both layouts; the phone sheet foot pins the next one to record.
   const phoneTaskCount =
     (["written", "received", "examination"] as const).reduce((sum, gap) => sum + gapCount(gap), 0) +
     SUPPORT_NOTIFICATION_PARTIES.reduce((sum, party) => sum + partyCount(party), 0);
@@ -536,7 +542,14 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           title="Forms in force"
           level={2}
           action={
-            <button type="button" className={styles.textLink} onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}>
+            <button
+              type="button"
+              className={styles.textLink}
+              onClick={() => {
+                leaveTasks();
+                setRequirementsCode(CATALOGUE[0]!.code);
+              }}
+            >
               <BookOpen size={14} aria-hidden="true" /> Requirements
             </button>
           }
@@ -730,7 +743,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               }
             />
             <LegalLimitsNotChecked />
-            <button type="button" className={styles.phoneTasks} onClick={() => setPhoneTasks(true)}>
+            <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
               <ClipboardList size={16} aria-hidden="true" />
               <span className={styles.cellStack}>
                 <span className={styles.name}>Record and tell</span>
@@ -800,7 +813,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               ) : null}
               {view === "history" ? historyList : null}
             </Card>
-            <PhoneSheet open={phoneTasks} onClose={() => setPhoneTasks(false)} title="Record and tell" height="tall">
+            <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell" height="tall">
               {taskStrip}
             </PhoneSheet>
             <PhoneSheet
@@ -902,6 +915,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <ClipboardCopy size={14} aria-hidden="true" />
                       <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
                       <span className={styles.heroCopyCount}>{handover.length}</span>
+                    </button>
+                    <button type="button" className={styles.heroCopy} onClick={() => setTasksOpen(true)}>
+                      <ClipboardList size={14} aria-hidden="true" />
+                      <span>Record and tell</span>
+                      <span className={styles.heroCopyCount}>{phoneTaskCount}</span>
                     </button>
                   </div>
                 }
@@ -1039,6 +1057,15 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   <div className={styles.phoneFocus}>{focusPanel}</div>
                 </Drawer>
               ) : null}
+              <Drawer
+                open={tasksOpen}
+                onClose={() => setTasksOpen(false)}
+                title="Record and tell"
+                description={`${phoneTaskCount} items to record across ${phoneTaskForms} forms`}
+                testId="ward-legal-tasks-sheet"
+              >
+                <div className={styles.taskDrawer}>{taskStrip}</div>
+              </Drawer>
             </div>
           </>
         )}
@@ -1335,65 +1362,6 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
       aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
       onSelect={() => onSelect(movement)}
     />
-  );
-}
-
-/**
- * Phone checklist (v10): one row per person, the code chip first, what is still to record under
- * the name and the recorded count at the end. The whole row opens the form sheet.
- */
-function PhoneChecklist({
-  rows,
-  nameOf,
-  umrnOf,
-  isHighlighted,
-  highlightOn,
-  onSelect,
-}: {
-  rows: Movement[];
-  nameOf: (movement: Movement) => string;
-  umrnOf: (movement: Movement) => string;
-  isHighlighted: (movement: Movement) => boolean;
-  highlightOn: boolean;
-  onSelect: (movement: Movement) => void;
-}) {
-  return (
-    <ul className={styles.phoneList} aria-label="Checklist">
-      {rows.map((movement) => {
-        const facts = recordedFacts(movement);
-        const missing = facts.filter((fact) => fact.at === undefined);
-        const done = facts.length - missing.length;
-        const dimmed = highlightOn && !isHighlighted(movement);
-        return (
-          <PhoneListRow
-            key={movement.id}
-            as="li"
-            className={styles.phoneRow}
-            {...(dimmed ? { "data-dim": "true" } : {})}
-            leading={<span className={styles.code}>{movement.legalForm?.code}</span>}
-            name={nameOf(movement)}
-            meta={
-              facts.length === 0
-                ? "Nothing to record for this form"
-                : missing.length === 0
-                  ? "Everything recorded"
-                  : `To do ${missing.map((fact) => fact.label).join(", ")}`
-            }
-            value={
-              facts.length === 0 ? undefined : (
-                <span className={styles.leftLine}>
-                  <StatusGlyph tone={missing.length === 0 ? "success" : "neutral"} size={9} />
-                  {done}/{facts.length}
-                </span>
-              )
-            }
-            time={facts.length === 0 ? undefined : "recorded"}
-            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${facts.length === 0 ? "nothing to record for this form" : `${done} of ${facts.length} recorded`}`}
-            onSelect={() => onSelect(movement)}
-          />
-        );
-      })}
-    </ul>
   );
 }
 
