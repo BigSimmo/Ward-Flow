@@ -6,7 +6,6 @@ import {
   Bell,
   BellOff,
   ClipboardCheck,
-  Megaphone,
   MessageSquare,
   ShieldCheck,
   Stethoscope,
@@ -454,7 +453,7 @@ export function WardNotificationCenter({
         <NoticeRow
           key={`buzz-${buzzKey}`}
           tone={buzz.urgent ? "danger" : "info"}
-          icon={Megaphone}
+          icon={Bell}
           title={messageText}
           status={buzz.urgent ? "Urgent buzz" : "Buzz"}
           meta={meta}
@@ -478,7 +477,7 @@ export function WardNotificationCenter({
       <NoticeRow
         key={`buzz-group-${buzzKey}`}
         tone={buzz.urgent ? "danger" : "info"}
-        icon={Megaphone}
+        icon={Bell}
         title={messageText}
         status={`${buzz.urgent ? "Urgent buzz" : "Buzz"} ×${group.length}`}
         meta={meta}
@@ -672,7 +671,7 @@ export function WardNotificationCenter({
           ) : (
             <section className={drawer.section} aria-labelledby={`${baseId}-heading-coordinator`}>
               <div className={drawer.sectionHead}>
-                <Megaphone aria-hidden="true" />
+                <Bell aria-hidden="true" />
                 <h3 id={`${baseId}-heading-coordinator`} className={drawer.sectionTitle}>
                   From the coordinator
                 </h3>

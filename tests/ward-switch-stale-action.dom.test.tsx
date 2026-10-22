@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
  */
 let mounts = 0;
 vi.mock("@/components/ward-management/ward/ward-screen-lazy", () => ({
-  WardAnswerView: ({ unitId }: { unitId: string }) => {
+  WardAnswerFromLink: ({ unitId }: { unitId: string }) => {
     const [instance] = useState(() => ++mounts);
     return <p data-testid="answer-view">{`${unitId} view ${instance}`}</p>;
   },
