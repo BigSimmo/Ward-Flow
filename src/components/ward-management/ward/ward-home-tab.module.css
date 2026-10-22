@@ -642,9 +642,79 @@
   font-weight: 600;
 }
 
-.awaitingName {
+/* Josh, 22 Oct 2026: the patient's name opens the full referral. */
+.awaitingNameButton {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   font-size: var(--wf-fs-13);
   font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.awaitingNameButton:focus-visible,
+.fitLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.awaitingNameHint {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+/* The patient's fit and the ward's own state, one plain line each. */
+.fitLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+  color: var(--wf-ink-1);
+}
+
+.fitLine {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+.fitDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  transform: translateY(-1px);
+}
+
+.fitDotOk {
+  background: var(--wf-success);
+}
+
+.fitDotWarn {
+  background: var(--wf-warning);
+}
+
+.fitLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .awaitingMeta {
