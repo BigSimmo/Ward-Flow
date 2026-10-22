@@ -17,9 +17,7 @@ import {
   checkedGates,
   eligibility,
   gateMark,
-  GENDER_DESIGNATION_PRIVACY_SENTENCE,
   wardFacingGateDetail,
-  type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
@@ -39,11 +37,8 @@ import {
   type Movement,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import {
-  GENDER_NO_LONGER_SUITS_REFUSAL,
-  OVERRIDE_REASONS,
-  type OverrideReason,
-} from "@/components/ward-management/ward-change-reasons";
+import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
+import { WARD_GATE_LABELS, wardSafeRejectionReason } from "./ward-rejection-text";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -74,33 +69,11 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 /** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
 const ANSWER_ALERT_LINE = 95;
 
-const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
-  acuity: "Acuity",
-  age: "Age band",
-  allocatable_bed: "Allocatable bed",
-  authorisation: "Authorisation",
-  capacity_freshness: "Capacity freshness",
-  cohort: "Cohort",
-  forensic: "Forensic bed",
-  legal_status: "Legal status",
-  prior_decline: "Prior decline",
-  security: "Security",
-  gender_designation: "Bed designation",
-  sex_mix: "Sex mix",
-  specialling: "Observation staff",
-};
-
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
   PATIENT_ARRIVED: "Confirm Arrival",
 };
-
-function wardSafeRejectionReason(reason: string): string {
-  if (reason.toLowerCase().includes("non-binary")) return GENDER_DESIGNATION_PRIVACY_SENTENCE;
-  if (reason.toLowerCase().includes("no longer suits this patient")) return GENDER_NO_LONGER_SUITS_REFUSAL;
-  return reason;
-}
 
 // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {

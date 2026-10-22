@@ -94,6 +94,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import styles from "./ward.module.css";
+import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -1145,6 +1146,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     count += undismissed.filter((r) => refreshRequestIsOpen(r, unit.allocatable)).length;
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
+    count += wardClearanceAlerts(movements, unit.id).count;
     return count;
   })();
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);

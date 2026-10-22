@@ -2051,9 +2051,10 @@ button.registerRow:hover {
     gap: 2px;
   }
 
+  /* The digits only: the timer's own "waiting" word keeps its quiet face, or it ran into "52m". */
   .queueTimer,
   .queueTimer [role="timer"],
-  .queueTimer [role="timer"] > span {
+  .queueTimer [role="timer"] > span:first-child {
     font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
   }
 

@@ -39,6 +39,8 @@ function ArrivalFixture({ stage, eta }: { stage: Movement["stage"]; eta: number 
     acceptedUnitId: unitId,
     stage,
     arrivalDetails: { mode: "ambulance" as const, estimatedArrivalAt: eta, recordedAt: 0, recordedBy: "ward" as const },
+    // Cleared, so the Notices badge counts only the late arrival this test is about.
+    medicalClearance: { cleared: true, at: 0 },
     referredUnitIds: [],
     declines: [],
     withdrawnReferrals: [],

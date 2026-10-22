@@ -665,6 +665,10 @@ describe("the ground is not merely painted — it has to be visible", () => {
      */
     "shell/ward-rail.module.css",
     "shell/ward-bar.module.css",
+    // ADDED 2026-10-22 (layout sweep, PR #584): first rule is `.panel`, the desktop Notices popover
+    // that floats over the ward page. Without its own surface the page text showed through it.
+    // In the phone sheet `.panel.inSheet` goes transparent again. A popover, not a page root.
+    "ward/ward-notification-center.module.css",
   ]);
 
   /**
