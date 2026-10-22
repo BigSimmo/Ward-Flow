@@ -66,7 +66,7 @@ it("reports the first move's refusal even when a second move was sent before it 
   );
   fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
   const occupied = beds().filter((cell) => !/free|closed|pulled/.test(label(cell)));
-  const free = beds().filter((cell) => /, free$/.test(label(cell)));
+  const free = beds().filter((cell) => /, ready$/.test(label(cell)));
   expect(occupied.length).toBeGreaterThanOrEqual(2);
   expect(free.length).toBeGreaterThanOrEqual(2);
 

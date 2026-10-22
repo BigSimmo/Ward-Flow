@@ -869,32 +869,6 @@
   white-space: nowrap;
 }
 
-.preview {
-  margin: 0 16px;
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-md);
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.previewTag {
-  margin-left: auto;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 8px;
-  border-radius: var(--wf-r-tag);
-  border: 1px dashed var(--wf-line-3);
-  font-size: var(--wf-fs-12);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
 .panelFoot {
   display: flex;
   gap: 8px;
@@ -957,24 +931,6 @@
 .who span {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-}
-
-.roles {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.role {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--wf-r-md);
-  border: 1px dashed var(--wf-line-3);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-13);
 }
 
 .signed {

@@ -1,17 +1,13 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
-
-export const metadata: Metadata = {
-  title: "Statistics across all services — Ward Flow",
-  description: "Synthetic whole-of-prototype statistics section for the Ward Flow prototype.",
-};
+import { STATISTICS_HOME_HREF } from "@/components/ward-management/statistics/statistics-sections";
 
 /**
- * The route that makes the across-all-services statistics section reachable. It has no params and
- * supplies nothing: the screen reads its own name and description from `statistics-sections.ts`,
- * the one module the hub index reads too.
+ * Overview was folded into the Statistics home on 21 October 2026 (D-77, change 9): Summary and
+ * Overview became one Network page, and Overview's figures that Summary lacked (occupancy by
+ * health service, empty to ready, admission stages) now sit on it. The route stays as a bookmark
+ * backstop so an old link opens Network rather than a 404.
  */
-export default function WardStatisticsOverviewPage() {
-  return <StatisticsOverviewScreen />;
+export default function WardStatisticsOverviewRedirect() {
+  redirect(STATISTICS_HOME_HREF);
 }

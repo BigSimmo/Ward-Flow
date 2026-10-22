@@ -258,12 +258,6 @@
   margin-top: var(--wf-s-1);
 }
 
-.afterRow {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-2);
-}
-
 .countPill {
   padding: 0 6px;
   border-radius: var(--wf-r-tag);

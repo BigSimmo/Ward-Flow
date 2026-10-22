@@ -27,6 +27,8 @@ import {
   type BedRelease,
   type BedReleaseWaitingOn,
   type LegalStatus,
+  SUPPORT_SERVICE_TYPES,
+  type SupportServiceType,
 } from "./ward-model";
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
@@ -151,7 +153,9 @@ export type BedReleaseAuditRequest =
   | { action: "REVERT_BED_RELEASE"; waitingOn: BedReleaseWaitingOn | null }
   | { action: "BLOCK_BED_RELEASE"; blocker: BedReleaseBlocker | null }
   | { action: "SET_BED_PREPARATION"; preparing: boolean | null; note: BedPreparationNote | null }
-  | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" };
+  | { action: "CONFIRM_BED_RELEASE" | "CLEAR_BED_RELEASE_BLOCK" | "RELEASE_BED" }
+  /** #398: the service a discharge support notice went to. */
+  | { action: "SEND_RELEASE_SUPPORT_NOTICE"; service: SupportServiceType | null };
 type DischargeDetails =
   | { kind: "care"; operation: CareChange["kind"] | null; recorded: CareChange | null }
   | { kind: "follow-up"; before: FollowUpState | null; requested: FollowUpState | null; after: FollowUpState | null }
@@ -309,6 +313,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
     case "RELEASE_BED":
+    case "SEND_RELEASE_SUPPORT_NOTICE":
     case "RECORD_LEAVING":
     case "RECORD_ADMISSION_CARE":
     case "RECORD_ADMISSION_FOLLOW_UP":
@@ -453,6 +458,8 @@ function bedRequest(event: WardFlowEvent): BedReleaseAuditRequest | null {
     case "CLEAR_BED_RELEASE_BLOCK":
     case "RELEASE_BED":
       return { action: event.type };
+    case "SEND_RELEASE_SUPPORT_NOTICE":
+      return { action: event.type, service: enumValue(SUPPORT_SERVICE_TYPES, event.service) };
     default:
       return null;
   }
@@ -800,7 +807,8 @@ export function captureAuditEvent(
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED": {
+    case "RELEASE_BED":
+    case "SEND_RELEASE_SUPPORT_NOTICE": {
       const requested = bedRequest(event);
       if (!requested) return null;
       const id = subject.kind === "bed-release" ? subject.releaseId : null;

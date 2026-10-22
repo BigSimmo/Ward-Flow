@@ -162,6 +162,7 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "openWarningAt",
   "dispatchedAt",
   "expiresAt",
+  "extendedHoldAt",
   "stoodDownAt",
   // D-34: re-clearance resumes a paused movement at a point in time, never a duration.
   "resumedAt",

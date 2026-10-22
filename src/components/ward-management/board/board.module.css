@@ -2843,9 +2843,8 @@
   line-height: 1.25;
   text-transform: uppercase;
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wraps rather than clipping "Confirmed today and tomorrow" at 1280 (UX audit, 21 Oct 2026). */
+  overflow-wrap: break-word;
 }
 
 .triageValue {
@@ -3554,6 +3553,18 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.bedName {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bedState {
@@ -4403,14 +4414,6 @@
   font-size: var(--t-0);
   font-weight: 600;
   color: var(--ink);
-}
-
-.catchmentFootnote {
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.35;
-  margin: 0.25rem 0 0;
-  font-style: italic;
 }
 
 .personLine,
@@ -5549,6 +5552,24 @@
   .screen .zonesOpen .detail {
     display: none;
   }
+
+  /* The note sits in the dark ward band, so it takes the band's ink. */
+  .screen .phoneBedsNote {
+    display: block;
+    margin: var(--wf-s-2) 0 0;
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .screen .phoneBedsNote a {
+    color: var(--wf-hero-ink);
+    text-decoration: underline;
+  }
+}
+
+/* Only the phone hides the bed grid, so only the phone needs the pointer to Ward home. */
+.phoneBedsNote {
+  display: none;
 }
 
 /* Phone polish (8 Oct 2026). The band reads as one compact block: eyebrow, the ward's name on one
@@ -5647,14 +5668,15 @@
     box-sizing: border-box;
   }
 
+  /* Wraps rather than clips: "Stays and discharges" lost both ends at 390 (visual desk, 21 Oct 2026). */
   .screen .wardScreenNav a,
   .screen .wardScreenNav span {
     min-width: 0;
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: break-word;
+    text-align: center;
+    white-space: normal;
   }
 
   .screen .wardSwitch > summary {
@@ -5695,12 +5717,11 @@
     line-height: var(--wf-lh-16);
   }
 
+  /* Labels and the Going out toggle wrap instead of clipping on a phone (UX audit, 21 Oct 2026). */
   .screen .triageFigures > .triageFigure > .triageLabel {
     flex: 1 1 0;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: break-word;
   }
 
   .screen .triageFigures > .triageFigure > .triageLedNote {
@@ -5721,9 +5742,8 @@
     min-width: 0;
     min-height: var(--spacing-tap, 3rem);
     margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-align: center;
+    overflow-wrap: break-word;
   }
 
   .screen .destinations {

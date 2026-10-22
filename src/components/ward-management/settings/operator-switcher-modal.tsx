@@ -60,7 +60,6 @@ import { HEALTH_SERVICES, type HealthService } from "@/components/ward-managemen
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import {
   currentDeskId,
@@ -79,8 +78,6 @@ import styles from "./workstation-switcher.module.css";
 export interface OperatorSwitcherModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  /** Says a Preview control is not built yet, through the page's own toast. */
-  readonly onPreview?: (name: string) => void;
   /** Optional callback to sync the clinical persona/role when a desk is selected. */
   readonly onSelectRole?: (role: DeskRole) => void;
 }
@@ -120,7 +117,7 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * every hospital with its ED and wards. A click expands a desk in place with its live figures and
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
  */
-export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole }: OperatorSwitcherModalProps) {
+export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: OperatorSwitcherModalProps) {
   const baseId = useId();
   const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
@@ -144,7 +141,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hereOpen, setHereOpen] = useState(false);
-  // Change view opens this drawer without a page toast, so a Preview tile says so here instead.
+  // A desk the signed-in role cannot open says so here.
   const [previewNote, setPreviewNote] = useState<string | null>(null);
 
   const { statewide, sites, teams } = useMemo(
@@ -502,30 +499,6 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview, onSelectRole
               </button>
             </>
           ) : null}
-          {/* Overall review, 20 Oct 2026: these desks have no screen yet, so their tiles show only in
-              a local development build. */}
-          {(accessOn || !showsUnwiredPreviews()
-            ? []
-            : ([
-                ["Bed manager", Users],
-                ["Executive", Eye],
-              ] as const)
-          ).map(([name, glyph]) => (
-            <button
-              key={name}
-              type="button"
-              className={cx(styles.stateTile, styles.preview)}
-              title="No screen for this role yet"
-              // Site review (12 Oct 2026): a working tile that says it is not wired (D-16), not greyed.
-              onClick={() => (onPreview ? onPreview(name) : setPreviewNote(`${name} is not wired in this prototype.`))}
-            >
-              <Icon icon={glyph} size={16} />
-              <span className={styles.who}>
-                <b>{name}</b>
-                <span>Preview</span>
-              </span>
-            </button>
-          ))}
         </div>
       ) : null}
       {accessOn && currentAccess.role === "coordinator" && !searching ? (

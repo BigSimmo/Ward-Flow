@@ -3,7 +3,7 @@
  *
  * Lists what the receiving ward wants settled before a patient arrives, read from the recorded
  * medical clearance, legal form receipt, transport need, contraband search and medication chart.
- * Checks without a recorded value remain explicitly not wired; this view never records a completion.
+ * The search and the chart are recorded with `RECORD_ARRIVAL_CHECK` (D-72); this view only reads.
  * Nothing here blocks the handover: the reducer's own `HANDOVER_READY` rules are unchanged.
  */
 import { transportNeedState } from "@/components/ward-management/ward-derivations";
@@ -11,7 +11,7 @@ import { requiresAuthorisedDestination } from "@/components/ward-management/ward
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
-type AdmissionChecklistState = "done" | "outstanding" | "not_wired";
+type AdmissionChecklistState = "done" | "outstanding";
 
 export type AdmissionChecklistItem = {
   key: "medical_clearance" | "legal_form" | "transport" | "contraband_search" | "medication_chart";
@@ -25,8 +25,6 @@ export type AdmissionChecklistOverrides = {
   contraband_search?: boolean;
   medication_chart?: boolean;
 };
-
-export const NOT_WIRED = "Not wired in this prototype.";
 
 export function admissionChecklist(
   movement: Movement,
@@ -81,14 +79,14 @@ export function admissionChecklist(
     {
       key: "contraband_search",
       label: "Contraband search",
-      state: contrabandDone === undefined ? "not_wired" : contrabandDone ? "done" : "outstanding",
-      detail: contrabandDone === undefined ? NOT_WIRED : contrabandDone ? "Checked in ED" : "Not yet checked",
+      state: contrabandDone === true ? "done" : "outstanding",
+      detail: contrabandDone === true ? "Checked in ED" : "Not recorded",
     },
     {
       key: "medication_chart",
       label: "Medication chart",
-      state: medChartDone === undefined ? "not_wired" : medChartDone ? "done" : "outstanding",
-      detail: medChartDone === undefined ? NOT_WIRED : medChartDone ? "Ready for ward" : "Not yet ready",
+      state: medChartDone === true ? "done" : "outstanding",
+      detail: medChartDone === true ? "Ready for ward" : "Not recorded",
     },
   ];
 }

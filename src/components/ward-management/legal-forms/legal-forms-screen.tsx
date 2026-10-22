@@ -90,6 +90,7 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
+import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 
@@ -146,12 +147,14 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen(props: { initialMovementId?: string } = {}) {
+type WorkspaceProps = { initialMovementId?: string; recordOnOpen?: boolean };
+
+export function LegalFormsScreen(props: WorkspaceProps = {}) {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
   return <LegalFormsWorkspace key={worldGeneration} {...props} />;
 }
 
-function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string }) {
+function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: WorkspaceProps) {
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -188,10 +191,12 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
-  const [recordOpen, setRecordOpen] = useState(false);
+  const [recordOpen, setRecordOpen] = useState(
+    () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
+  );
   const [recordDraft, setRecordDraft] = useState<RecordDraft>({
     form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "",
-    movement: "",
+    movement: recordOnOpen ? (initialMovementId ?? "") : "",
   });
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
@@ -724,6 +729,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                 </>
               }
             />
+            <LegalLimitsNotChecked />
             <button type="button" className={styles.phoneTasks} onClick={() => setPhoneTasks(true)}>
               <ClipboardList size={16} aria-hidden="true" />
               <span className={styles.cellStack}>
@@ -913,6 +919,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                 }
               />
             </div>
+            <LegalLimitsNotChecked />
 
             {breakdownNote}
 
@@ -981,7 +988,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
                           <div className={styles.groupHead}>
                             <span>Time not written</span>
                             <span className={styles.groupCount}>{noDeadline.length}</span>
-                            <span className={styles.groupOrder}>most of the period used first</span>
+                            <span className={styles.groupOrder}>longest open first</span>
                             <span className={styles.srOnly}>Forms with no deadline recorded</span>
                           </div>
                           {noDeadline.length > 0 ? (
@@ -1050,6 +1057,7 @@ function LegalFormsWorkspace({ initialMovementId }: { initialMovementId?: string
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
           now={now}
           recordUnavailable={recordGate.reason}
+          targetMovement={recordOnOpen ? initialMovementId : undefined}
           onSaveForm={({ movementId, formCode, writtenAt }) => {
             if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = openMovements.find((candidate) => candidate.id === movementId);
@@ -1253,7 +1261,9 @@ function FormRow({
       </span>
       <span className={styles.recorded}>
         {facts.length === 0 ? (
-          <span className={styles.sub}>Not tracked</span>
+          <span className={styles.sub} aria-hidden="true">
+            –
+          </span>
         ) : missing.length === 0 ? (
           <>
             <StatusGlyph tone="success" size={9} />
@@ -1269,7 +1279,7 @@ function FormRow({
           </>
         )}
         <span className={styles.srOnly}>
-          {done} of {facts.length} recorded
+          {facts.length === 0 ? "Nothing to record for this form" : `${done} of ${facts.length} recorded`}
         </span>
       </span>
     </DataRow>
@@ -1364,7 +1374,7 @@ function PhoneChecklist({
             name={nameOf(movement)}
             meta={
               facts.length === 0
-                ? "Not tracked"
+                ? "Nothing to record for this form"
                 : missing.length === 0
                   ? "Everything recorded"
                   : `To do ${missing.map((fact) => fact.label).join(", ")}`
@@ -1378,7 +1388,7 @@ function PhoneChecklist({
               )
             }
             time={facts.length === 0 ? undefined : "recorded"}
-            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${done} of ${facts.length} recorded`}
+            aria-label={`${nameOf(movement)}, ${umrnOf(movement)}, ${facts.length === 0 ? "nothing to record for this form" : `${done} of ${facts.length} recorded`}`}
             onSelect={() => onSelect(movement)}
           />
         );
