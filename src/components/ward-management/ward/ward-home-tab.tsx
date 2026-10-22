@@ -1719,7 +1719,7 @@ export function WardHomeTab({
                   <Count n={incoming.length} />
                 </h3>
                 <ul className={styles.phoneAwaitList}>
-                  {incoming.map((movement, index) => (
+                  {incoming.map((movement) => (
                     <li key={movement.id}>
                       <button
                         type="button"
@@ -1731,12 +1731,17 @@ export function WardHomeTab({
                         }}
                       >
                         <span className={styles.phoneAwaitText}>
-                          {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
+                          {/* D-79: a ward sees who is coming before it answers, never where else they were referred. */}
                           <span className={styles.phoneAwaitName}>
-                            Request {index + 1} · {movement.cohort}
+                            {resolvePatientIdentity(movement).displayName} · {movement.cohort}
                           </span>
                           <span className={styles.phoneAwaitMeta}>
-                            {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
+                            {[
+                              resolvePatientIdentity(movement).umrn,
+                              movement.sex,
+                              movement.legalStatus,
+                              edById(movement.originEdId)?.name,
+                            ]
                               .filter(Boolean)
                               .join(" · ")}
                           </span>
