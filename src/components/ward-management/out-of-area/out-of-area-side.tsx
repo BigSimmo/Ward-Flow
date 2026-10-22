@@ -1,6 +1,5 @@
 "use client";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { ArrowRight, Car, ChevronRight, Clock, Map as MapIcon, Plane } from "lucide-react";
 
 import { Card, CardHead, Icon, SrOnly, StatusGlyph, cx } from "@/components/wf";
@@ -174,13 +173,6 @@ export function HomeBedsCard({
         <p className={styles.gapRow}>
           <StatusGlyph tone="closed" size={9} />
           <b className={styles.mono}>{notBanded}</b> records with no travel band
-          <NotWiredButton
-            variant="sec"
-            size="sm"
-            wrapClassName={styles.gapButton}
-            label="List"
-            name="List records with no travel band"
-          />
         </p>
       )}
     </Card>

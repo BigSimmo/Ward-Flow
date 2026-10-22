@@ -1,6 +1,5 @@
-/* Statistics hero tools: page tools, the time range and the unit stepper. On the dark hero band. */
+/* Statistics hero tools: page tools and the unit stepper. On the dark hero band. */
 .tool,
-.rangeItem,
 .stepLink {
   display: inline-flex;
   align-items: center;
@@ -25,7 +24,6 @@
 }
 
 .tool:focus-visible,
-.rangeItem:focus-visible,
 .stepLink:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
@@ -49,74 +47,6 @@
   }
 }
 
-.range {
-  position: relative;
-  display: inline-flex;
-}
-
-/* The choices drop under the pill on the hero's own colour. */
-.rangeList {
-  position: absolute;
-  top: calc(100% + var(--wf-s-1));
-  right: 0;
-  z-index: 6;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 120px;
-  padding: var(--wf-s-1);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-hero-2);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent);
-}
-
-.rangeList[hidden] {
-  display: none;
-}
-
-.rangeItem {
-  justify-content: flex-start;
-  border-color: transparent;
-  background: none;
-  box-shadow: none;
-  color: var(--wf-hero-ink-2);
-}
-
-.rangeOn {
-  background: var(--wf-hero-ink);
-  border-color: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-}
-
-/* Preview: shown for review, not connected. Dashed edge, quieter ink. */
-.preview {
-  border: 1px dashed color-mix(in srgb, var(--wf-hero-ink) 34%, transparent);
-  background: none;
-  box-shadow: none;
-  color: var(--wf-hero-ink-3);
-  cursor: help;
-}
-
-.rangeSaid:empty {
-  display: none;
-}
-
-.rangeSaid {
-  position: absolute;
-  top: calc(100% + var(--wf-s-2));
-  right: 0;
-  z-index: 5;
-  width: max-content;
-  max-width: 320px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
 .stepper {
   display: inline-flex;
   gap: var(--wf-s-1);
@@ -129,8 +59,7 @@
 }
 
 @media (max-width: 48rem) {
-  .tool,
-  .range {
+  .tool {
     display: none;
   }
 
@@ -142,7 +71,6 @@
 
 @media print {
   .tool,
-  .range,
   .stepper {
     display: none;
   }

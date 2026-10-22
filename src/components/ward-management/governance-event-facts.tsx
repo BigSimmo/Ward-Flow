@@ -70,6 +70,9 @@ function RequestedBedFacts({ request, now }: { request: BedReleaseAuditRequest; 
     case "SET_BED_PREPARATION":
       facts.push(["Preparing", display(request.preparing)], ["Preparation note", display(request.note)]);
       break;
+    case "SEND_RELEASE_SUPPORT_NOTICE":
+      facts.push(["Service", display(request.service)]);
+      break;
     case "CONFIRM_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "RELEASE_BED":

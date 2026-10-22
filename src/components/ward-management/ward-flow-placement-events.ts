@@ -11,7 +11,13 @@ import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-manage
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
+import {
+  EXTRA_TRAVEL_HOLD_MINUTES,
+  MOVEMENT_STAGES,
+  STEP_BACK_REASONS,
+  type Movement,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { movementBedReservation } from "./ward-movement-bed-hold";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
@@ -165,7 +171,7 @@ export function reducePlacementEvent(
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
           stage: "pulled",
           waitlistedUnitIds: undefined,
-          pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+          pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
           allocatedBed: movement.allocatedBed ?? held.id,
           stageChanges: [
             ...movement.stageChanges,
@@ -390,7 +396,7 @@ export function reducePlacementEvent(
         ...movement,
         stage: "pulled",
         waitlistedUnitIds: undefined,
-        pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+        pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
         allocatedBed: admission.id,
         // The join `RELEASE_PULL` needs to undo exactly this record, and `PATIENT_ARRIVED` needs to
         // mark exactly this one as having arrived. See `Movement.admissionId`.
@@ -801,4 +807,16 @@ export function reducePlacementEvent(
       return appendNotices(next, notices);
     }
   }
+}
+
+/**
+ * D-72: the configured pull hold, plus `EXTRA_TRAVEL_HOLD_MINUTES` when the acceptance that still
+ * stands at this ward asked for the extra-travel hold. See `Movement.extendedHoldAt`.
+ */
+function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: string): number {
+  const extended =
+    movement.extendedHoldAt !== undefined &&
+    movement.acceptedAt === movement.extendedHoldAt &&
+    movement.acceptedUnitId === unitId;
+  return state.configuration.pullHoldMinutes + (extended ? EXTRA_TRAVEL_HOLD_MINUTES : 0);
 }

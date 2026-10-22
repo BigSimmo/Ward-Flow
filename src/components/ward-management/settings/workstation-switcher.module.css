@@ -235,18 +235,6 @@
   cursor: default;
 }
 
-.preview {
-  border-style: dashed;
-  border-color: var(--wf-line-3);
-  background: transparent;
-  cursor: pointer;
-}
-
-.preview .who > b {
-  color: var(--wf-ink-2);
-  font-weight: 500;
-}
-
 /* Hospitals and desks */
 .list {
   display: flex;
@@ -652,10 +640,6 @@
 }
 
 @media (forced-colors: active) {
-  .preview {
-    border: 1px dashed GrayText;
-  }
-
   .svcDot,
   .dash {
     forced-color-adjust: none;

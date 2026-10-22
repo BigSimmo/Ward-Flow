@@ -9,6 +9,7 @@ import {
   wardEnvironment,
   wardSafeguardsLocked,
 } from "@/components/ward-management/ward-feature-flags";
+import { WARD_FEATURE_FLAG_NOTES } from "@/components/ward-management/ward-feature-flag-notes";
 import { WARD_NAV } from "@/components/ward-management/ward-nav";
 
 const flag = (resolved: ReturnType<typeof resolveWardFeatureFlags>, name: string) =>
@@ -18,12 +19,14 @@ describe("the feature flag registry", () => {
   it("gives every flag an owner, a date, a description, a removal note and a default per environment", () => {
     for (const name of WARD_FEATURE_FLAG_NAMES) {
       const definition = WARD_FEATURE_FLAGS[name];
-      expect(definition.owner, name).not.toBe("");
-      expect(definition.added, name).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(definition.description.length, name).toBeGreaterThan(10);
-      expect(definition.removeWhen.length, name).toBeGreaterThan(10);
+      const note = WARD_FEATURE_FLAG_NOTES[name];
+      expect(note.owner, name).not.toBe("");
+      expect(note.added, name).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(note.description.length, name).toBeGreaterThan(10);
+      expect(note.removeWhen.length, name).toBeGreaterThan(10);
       expect(Object.keys(definition.defaults).sort(), name).toEqual(["demo", "development", "production"]);
     }
+    expect(Object.keys(WARD_FEATURE_FLAG_NOTES).sort()).toEqual([...WARD_FEATURE_FLAG_NAMES].sort());
   });
 
   it("only names registered flags on navigation entries", () => {

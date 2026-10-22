@@ -2,6 +2,9 @@
 
 import { useId } from "react";
 import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
+import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 import {
   SUPPORT_SERVICE_TYPES,
   type SupportServiceType,
@@ -18,16 +21,37 @@ const SERVICE_LABELS: Record<SupportServiceType, string> = {
  * Top 25 item 1: after the ward confirms a discharge, the pharmacy, transport and cleaning notices
  * it can send for the bed.
  *
- * Simplification A5 (Josh, 19 Oct 2026): with no sending connected, the card only confirms the
- * discharge. It no longer lists three notices marked "not wired" that nobody could send.
+ * #398 (D-72, 21 Oct 2026): "Send notice" raises the audited `SEND_RELEASE_SUPPORT_NOTICE`, and a
+ * service reads "Sent" only from `sentServices`, which the screen derives from the recorded
+ * release. Without those props the card only confirms the discharge.
  */
 export function WardDischargeNotices({
-  bedLabel,
-  dueSoonHours,
-  sentServices,
-  onSendService,
-  onClose,
-}: {
+  recorded,
+  ...props
+}: Omit<WardDischargeNoticesCardProps, "sentServices" | "onSendService"> & {
+  /** The confirmed release whose notices this card sends and reads back, and the ward sending. */
+  recorded?: { release: BedRelease; actingUnitId: string; onFailure: (message: string) => void };
+}) {
+  const raise = useWardRaise("ward");
+  if (!recorded) return <WardDischargeNoticesCard {...props} />;
+  const { release, actingUnitId, onFailure } = recorded;
+  return (
+    <WardDischargeNoticesCard
+      {...props}
+      sentServices={new Set((release.supportNoticesSent ?? []).map((notice) => notice.service))}
+      onSendService={(service) => {
+        void Promise.resolve(
+          raise("SEND_RELEASE_SUPPORT_NOTICE", { releaseId: release.id, service, actingUnitId }),
+        ).then((outcome) => {
+          const failure = wardCommandFailure(outcome ?? undefined);
+          if (failure) onFailure(failure);
+        });
+      }}
+    />
+  );
+}
+
+type WardDischargeNoticesCardProps = {
   /** The bed this discharge frees, never the person's name. */
   bedLabel: string;
   /** Set when the stay is due out within the discharge prep window, in hours. */
@@ -37,7 +61,16 @@ export function WardDischargeNotices({
   /** Requests a notice; sentServices changes only after confirmed completion. */
   onSendService?: (service: SupportServiceType) => void;
   onClose: () => void;
-}) {
+};
+
+/** The card itself: it shows what it is given and sends nothing on its own. */
+export function WardDischargeNoticesCard({
+  bedLabel,
+  dueSoonHours,
+  sentServices,
+  onSendService,
+  onClose,
+}: WardDischargeNoticesCardProps) {
   const baseId = useId();
   const wired = onSendService !== undefined || sentServices !== undefined;
 

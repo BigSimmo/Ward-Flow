@@ -94,6 +94,10 @@ export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+import type {
+  ArrivalCheckEvent,
+  ReleaseNoticeEvent,
+} from "@/components/ward-management/ward-flow-release-notice-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -473,6 +477,8 @@ export type WardFlowEvent =
        * bed a current stay or another accepted movement on the unit already holds.
        */
       bedNumber?: number;
+      /** D-72: the extra-travel bed hold, stored as `Movement.extendedHoldAt`. `true` or absent. */
+      extendedHold?: true;
       /** B1: a ward answering names itself; refused when it answers for another ward. The
        *  coordinator acts for any ward and sends none. */
       actingUnitId?: string;
@@ -2557,6 +2563,9 @@ export type WardFlowEvent =
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
     }
+  // #398 and the arrival checklist (D-72): declared beside their reducer cases.
+  | ReleaseNoticeEvent
+  | ArrivalCheckEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

@@ -1,24 +1,28 @@
 "use client";
 
-import { Badge } from "@/components/wf";
+import { Badge, Button } from "@/components/wf";
 import { admissionChecklist } from "@/components/ward-management/ward-admission-checklist";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import {
+  ARRIVAL_CHECKS,
+  type ArrivalCheck,
+  type Movement,
+  type Referral,
+} from "@/components/ward-management/ward-model";
 
 import edStyles from "./ed.module.css";
 import styles from "./ed-admission-checklist.module.css";
 
 /**
  * Admission arrival checklist (Top 25 item 14).
- * Reads recorded facts only. The search and medication checks without recorded values are not
- * wired; this card cannot record a completion. Outside a local development build those checks are
- * left off the card (overall review, 20 Oct 2026: nothing on screen pretends to work).
+ * Reads recorded facts. The contraband search and the medication chart are recorded here with
+ * `RECORD_ARRIVAL_CHECK` (D-72), and show "Done" only once the reducer has accepted the record.
  */
 export function EdAdmissionChecklist({ movement, referrals }: { movement: Movement; referrals: readonly Referral[] }) {
-  const showUnwired = showsUnwiredPreviews();
-  const items = admissionChecklist(movement, referrals).filter((item) => showUnwired || item.state !== "not_wired");
+  const raise = useWardRaise("ed");
+  const items = admissionChecklist(movement, referrals);
   const done = items.filter((item) => item.state === "done").length;
-  const counted = items.filter((item) => item.state !== "not_wired").length;
+  const recordable = movement.closure === undefined;
   return (
     <section
       className={edStyles.expandedCard}
@@ -26,21 +30,35 @@ export function EdAdmissionChecklist({ movement, referrals }: { movement: Moveme
       data-testid="ward-ed-admission-checklist"
     >
       <h3 className={edStyles.expandedHeading}>
-        Arrival checklist, {done} of {counted} recorded
+        Arrival checklist, {done} of {items.length} recorded
       </h3>
       <ul className={styles.list}>
-        {items.map((item) => (
-          <li key={item.key} className={styles.row} data-state={item.state}>
-            <span className={styles.label}>{item.label}</span>
-            <Badge
-              size="sm"
-              tone={item.state === "done" ? "success" : item.state === "outstanding" ? "warning" : "neutral"}
-            >
-              {item.state === "done" ? "Done" : item.state === "outstanding" ? "Outstanding" : "Not wired"}
-            </Badge>
-            <span className={styles.detail}>{item.detail}</span>
-          </li>
-        ))}
+        {items.map((item) => {
+          const check = ARRIVAL_CHECKS.find((key): key is ArrivalCheck => key === item.key);
+          const isDone = item.state === "done";
+          return (
+            <li key={item.key} className={styles.row} data-state={item.state}>
+              <span className={styles.label}>{item.label}</span>
+              <Badge size="sm" tone={isDone ? "success" : "warning"} className={styles.badge}>
+                {isDone ? "Done" : "Outstanding"}
+              </Badge>
+              <span className={styles.detail}>{item.detail}</span>
+              {check !== undefined && recordable ? (
+                <Button
+                  className={styles.action}
+                  variant={isDone ? "ghost" : "sec"}
+                  size="sm"
+                  aria-label={
+                    isDone ? `Take back ${item.label.toLowerCase()}` : `Record ${item.label.toLowerCase()} done`
+                  }
+                  onClick={() => void raise("RECORD_ARRIVAL_CHECK", { movementId: movement.id, check, done: !isDone })}
+                >
+                  {isDone ? "Take back" : "Record done"}
+                </Button>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

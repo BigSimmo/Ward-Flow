@@ -2340,9 +2340,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               key={release.id}
               bedLabel={bed?.bedLabel ?? "this bed"}
               dueSoonHours={dueSoon ? Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60) : null}
-              onClose={() => {
-                setNoticesForRelease(null);
-              }}
+              recorded={{ release, actingUnitId: unitId, onFailure: setToastMessage }}
+              onClose={() => setNoticesForRelease(null)}
             />
           );
         })()}
