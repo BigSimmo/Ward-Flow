@@ -811,6 +811,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
     const selectedRow = await pickQueueRow(queue, "WF-009");
     await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
+    // Home v7 (Josh, 22 Oct 2026): Placement mounts only once a patient is chosen, so wait for its
+    // gate list to render in full before reading the order.
+    await expect(shortlist.locator('[data-testid^="ward-gate-"]')).toHaveCount(11);
     const passFlags = await shortlist
       .locator('[data-testid^="ward-gate-"]')
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-pass")));
