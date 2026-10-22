@@ -79,6 +79,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { HubPlaceRow } from "./hub-place-row";
+import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import {
   KIND_WORD_LONG,
   barWidth,
@@ -258,7 +259,15 @@ export function HubScreen() {
   // Phone "Check first": only a place the current filter shows, so its tap opens a preview.
   const checkFirst = attention.filter((item) => results.some((entry) => entry.id === item.entry.id));
   const selectedRequest =
-    selected === undefined ? undefined : refreshRequests.filter((entry) => entry.unitId === selected.id).at(-1);
+    selected === undefined
+      ? undefined
+      : refreshRequests
+          .filter(
+            (entry) =>
+              entry.unitId === selected.id &&
+              capacityRequestIsOpen(entry, units.find((unit) => unit.id === selected.id)?.allocatable),
+          )
+          .at(-1);
 
   function select(id: string) {
     setSelectedId(id);
