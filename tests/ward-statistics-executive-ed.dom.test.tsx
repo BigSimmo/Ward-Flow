@@ -122,7 +122,9 @@ describe("one ED on the executive desk, counts only", () => {
     expect(text("ward-statistics-ed-band-count-4-to-8-hours")).toBe("not shown");
     expect(text("ward-statistics-ed-band-count-8-to-12-hours")).toBe("none");
 
-    expect(text("ward-stat-ed-declined-no-free-bed")).toBe("fewer than 5 declines name a ward that had no suitable bed.");
+    expect(text("ward-stat-ed-declined-no-free-bed")).toBe(
+      "fewer than 5 declines name a ward that had no suitable bed.",
+    );
   });
 
   it("replaces the wait table, next to cross and the swarm with the note", () => {
