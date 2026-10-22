@@ -50,8 +50,6 @@ const SLICE_PATHS = [
   "ward-flow-transport-events.ts",
   "ward-flow-bed-events.ts",
   "ward-flow-undo-events.ts",
-  // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.
-  "ward-flow-protected-record-events.ts",
 ].map((file) => fileURLToPath(new URL(`../src/components/ward-management/${file}`, import.meta.url)));
 const ACCEPTING_UNIT = "fre-adult-open";
 const OTHER_UNIT = "rph-adult-secure";

@@ -871,7 +871,6 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       "ward-flow-placement-events.ts",
       "ward-flow-transport-events.ts",
       "ward-flow-bed-events.ts",
-      "ward-flow-protected-record-events.ts",
     ].map((name) =>
       ts.createSourceFile(
         `${WARD_DIR}/${name}`,

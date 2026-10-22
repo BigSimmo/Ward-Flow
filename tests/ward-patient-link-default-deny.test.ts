@@ -274,12 +274,6 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "The same engine plumbing as the reducer entry above, not a screen.",
   },
   {
-    file: "ward-flow-protected-record-events.ts",
-    reason:
-      "The reducer's protected record path (RECORD_ADMISSION_CARE and RECORD_PATIENT_DISCHARGE reading the linked patient's legal status from state.patients for the involuntary transport and discharge checks), moved out of ward-flow-reducer.ts unchanged on 22 October 2026. " +
-      "The same engine plumbing as the reducer entry above, not a screen.",
-  },
-  {
     file: "ward-flow-bed-events.ts",
     reason:
       "The reducer's END_COMMUNITY_TREATMENT_ORDER case (checking an event's patientId against state.patients), moved out of ward-flow-reducer.ts unchanged on 16 October 2026. " +
@@ -441,8 +435,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 47 → 48 on 2026-10-19: audit F-19, the coordinator-only duplicate bed request matcher.
     // 48 → 47 on 2026-10-20: that matcher now asks openRequestsByPerson, so it reads no patient link itself.
     // 47 → 48 on 2026-10-21: D-77 group A moved the community team's sent list into its own Sent tab file.
-    // 48 → 49 on 2026-10-22: the reducer's protected record path moved to its own slice file, unchanged.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(49);
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(48);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

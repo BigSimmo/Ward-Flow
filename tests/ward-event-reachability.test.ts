@@ -53,8 +53,6 @@ const DEFINITION_FILES = new Set([
   `${WARD_ROOT}/ward-flow-release-notice-events.ts`,
   // 19 Oct 2026: subjectId moved out of the reducer unchanged, for the line cap.
   `${WARD_ROOT}/ward-flow-subject-id.ts`,
-  // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.
-  `${WARD_ROOT}/ward-flow-protected-record-events.ts`,
   `${WARD_ROOT}/ward-flow-events.ts`,
   // Holds a classification list of every event name (which carry typed text vs. not), not dispatches.
   `${WARD_ROOT}/ward-flow-persistence-classification.ts`,
