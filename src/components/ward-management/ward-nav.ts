@@ -189,6 +189,7 @@ export type WardNavId =
   | "out-of-area"
   | "statistics"
   | "on-call"
+  | "seclusion"
   | "hub"
   | "legal-forms"
   | "bed-meeting";
@@ -341,6 +342,11 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * cheap to read rather than unwelcome.
    */
   { id: "on-call", href: "/ward-flow/on-call", label: "On-call", group: "board" },
+  /*
+   * D-72 (21 Oct 2026): seclusion, restraint and incidents, an operational view only. Listed so a
+   * ward or coordinator finds it in the ordinary way; nothing else links here yet.
+   */
+  { id: "seclusion", href: "/ward-flow/seclusion", label: "Seclusion", group: "board" },
   /*
    * The Alerts screen, 2026-09-12. LISTED rather than intentionally unlisted: it is addressed to a
    * role across every movement and referral, so a coordinator who cannot reach it has no way to

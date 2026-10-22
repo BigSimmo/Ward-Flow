@@ -30,17 +30,13 @@ function after(fixture: (typeof TYPED_TEXT_FIXTURES)[number]): WardFlowState {
   return wardFlowReducer(before, event);
 }
 
-/** Restore cannot hold these with a placeholder in place: its fence checks their shape or refuses the record. */
+/** Restore cannot hold these with a placeholder in place: its fence checks their shape. */
 const STOPS_SAVING = new Set([
-  "ADD_PATIENT", // a typed date of birth must be a date
-  "BOOK_PLANNED_ADMISSION", // typed initials must be one to three letters
-  "RECORD_REPATRIATION", // a stored repatriation is refused outright
-  "RECORD_SUPPORT_NOTIFICATION", // stored support notifications are refused outright
-  "SET_DISCHARGE_CRITERIA", // a typed criterion is refused on restore (D-65)
+  "ADD_PATIENT", // a typed date of birth must be a date (Josh, 21 Oct 2026: keep stopping)
 ]);
 
-/** Records the restore fence refuses outright, so no scenario file can carry them. */
-const REFUSED_IN_ANY_FILE = new Set(["RECORD_REPATRIATION", "RECORD_SUPPORT_NOTIFICATION"]);
+/** Records whose typed fields the restore fence accepts only as the placeholder (D-72). */
+const PLACEHOLDER_ONLY = new Set(["RECORD_REPATRIATION", "RECORD_SUPPORT_NOTIFICATION"]);
 
 describe("device copy of a session holding typed text", () => {
   it("has a marker fixture for every typed-text event type, so a new one cannot skip this guard", () => {
@@ -51,10 +47,9 @@ describe("device copy of a session holding typed text", () => {
   describe.each(TYPED_TEXT_FIXTURES.map((fixture) => [fixture.label, fixture] as const))("%s", (_label, fixture) => {
     it("the typed fields alone remove every marker, as for a world loaded from a file", () => {
       const next = after(fixture);
-      if (REFUSED_IN_ANY_FILE.has(fixture.type)) {
-        // A scenario file is read through the same restore fence, so it can never hold this record.
+      if (PLACEHOLDER_ONLY.has(fixture.type)) {
+        // The typed words themselves never pass the restore fence, from a save or a scenario file.
         expect(isValidStoredWardFlowState(JSON.parse(stored({ ...next, rejections: [] })))).toBe(false);
-        return;
       }
       const scrubbed = stored(scrubTypedTextFields(next, worlds, true));
       for (const marker of fixture.markers) expect(scrubbed).not.toContain(marker);
