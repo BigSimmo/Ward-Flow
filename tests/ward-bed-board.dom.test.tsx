@@ -74,7 +74,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     const occupied = firstBed((label) => !/free|closed|pulled/.test(label));
     const from = bedNo(occupied);
     const fromLabel = cellText(from);
-    const free = firstBed((label) => /, free$/.test(label));
+    const free = firstBed((label) => /, ready$/.test(label));
     const to = bedNo(free);
 
     // Nothing picked: pressing an occupied bed opens its panel, which offers the move.
@@ -95,12 +95,12 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     // The person now sits in the free bed, and the bed they left is free.
     const occupantName = fromLabel.replace(/^Bed \d+, /, "");
     expect(cellText(to)).toContain(occupantName);
-    expect(cellText(from)).toMatch(/, free$/);
+    expect(cellText(from)).toMatch(/, ready$/);
 
     const toast = screen.getByTestId("toast");
     fireEvent.click(within(toast).getByRole("button", { name: /^Undo/ }));
     expect(cellText(from)).toBe(fromLabel);
-    expect(cellText(to)).toMatch(/, free$/);
+    expect(cellText(to)).toMatch(/, ready$/);
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/^Undone/);
   });
 
@@ -145,19 +145,19 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     expect(chip, "the received referral is waiting on the board").not.toBeNull();
     fireEvent.click(chip!);
     expect(chip).toHaveAttribute("aria-pressed", "true");
-    const free = firstBed((label) => /, free, fits$/.test(label));
+    const free = firstBed((label) => /, ready, fits$/.test(label));
     const to = bedNo(free);
     fireEvent.click(free);
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
-    expect(cellText(to)).toMatch(/held for/);
+    expect(cellText(to)).toMatch(/pulled for/);
     // The referral has left the waiting list.
     expect(document.querySelector("[data-testid^='ward-board-pick-']")).toBeNull();
 
     act(() => {
       fireEvent.click(within(screen.getByTestId("toast")).getByRole("button", { name: /^Undo/ }));
     });
-    expect(cellText(to)).toMatch(/, free$/);
+    expect(cellText(to)).toMatch(/, ready$/);
     expect(document.querySelector("[data-testid^='ward-board-pick-']")).not.toBeNull();
   });
 });

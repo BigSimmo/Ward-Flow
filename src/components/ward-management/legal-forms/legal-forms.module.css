@@ -73,12 +73,6 @@
   line-height: var(--wf-lh-12);
 }
 
-.footnote {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
 .footSpacer {
   flex: 1 1 auto;
 }
@@ -283,51 +277,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.panelHeadTitle {
-  margin: 0;
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-}
-
-/* Warning windows as one threshold bar. */
-.threshold {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.thresholdBar {
-  display: flex;
-  gap: 2px;
-  height: 6px;
-}
-
-.thresholdBar > span {
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-}
-
-.thresholdBar > [data-tone="danger"] {
-  background: var(--wf-danger);
-}
-
-.thresholdBar > [data-tone="warning"] {
-  background: var(--wf-warning);
-}
-
-.thresholdBar > [data-tone="rest"] {
-  flex: 1 1 auto;
-}
-
 /* ---------- Task strip ---------- */
 
 .strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.formTimesCard {
   min-width: 0;
 }
 
@@ -493,29 +448,17 @@ button.taskLabel[aria-pressed="true"] {
   font: 700 var(--wf-fs-14) / 1 var(--wf-mono);
 }
 
-/* ---------- Work area: the table beside the one side panel ---------- */
+/* ---------- Work area: the table at full width (D-77 change 5); a chosen form opens in a drawer ---------- */
 
 .work {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 400px);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-3);
   align-items: start;
   min-width: 0;
 }
 
 .listCard {
-  min-width: 0;
-}
-
-.aside {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  position: sticky;
-  top: var(--wf-s-3);
-  max-height: var(--ward-rail-height, calc(100dvh - 6rem));
-  overflow-y: auto;
-  overscroll-behavior: contain;
   min-width: 0;
 }
 
@@ -575,6 +518,16 @@ button.taskLabel[aria-pressed="true"] {
 .row {
   position: relative;
   min-height: 56px;
+}
+
+/* D-77 change 5: long names, form titles and destinations wrap rather than being cut. */
+.row .name,
+.row .formTitle,
+.row .truncate {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* v10 dim: a row a highlight does not match recedes by colour only (DataRow dim). Children
@@ -781,61 +734,6 @@ button.taskLabel[aria-pressed="true"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.legendValue {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.windows {
-  display: flex;
-  gap: var(--wf-s-2);
-}
-
-.windowChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-tag);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.windowChip strong {
-  color: var(--wf-ink-1);
-  font-family: var(--wf-mono);
-}
-
-.panelHint {
-  margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
 }
 
 .focusHead {
@@ -1144,10 +1042,6 @@ button.taskLabel[aria-pressed="true"] {
 /* ---------- Narrower desktop ---------- */
 
 @media (max-width: 80rem) {
-  .work {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-  }
-
   .taskRow {
     grid-template-columns: minmax(0, 1fr) auto 100px;
     gap: var(--wf-s-2);
@@ -1157,18 +1051,6 @@ button.taskLabel[aria-pressed="true"] {
 @media (max-width: 64rem) {
   .strip {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .work {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* Stacked below the list, the aside joins the page scroll: no second, contained scroller. */
-  .aside {
-    position: static;
-    max-height: none;
-    overflow: visible;
-    overscroll-behavior: auto;
   }
 
   .nextCard {
@@ -1185,8 +1067,7 @@ button.taskLabel[aria-pressed="true"] {
 
   .rowButton,
   .rowLink,
-  .heroAside,
-  .aside {
+  .heroAside {
     display: none !important;
   }
 }
@@ -1322,10 +1203,6 @@ button.taskLabel[aria-pressed="true"] {
     font-size: 12px;
   }
 
-  .aside [data-testid="ward-legal-selected"] {
-    scroll-margin-top: var(--wf-s-4);
-  }
-
   .focusFoot {
     flex-wrap: wrap;
   }
@@ -1453,13 +1330,11 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 @media (max-width: 48rem) {
-  /* F-05 (phone review, Oct 2026): the route line wraps to a second line rather than losing the
+  /* F-05 (phone review, Oct 2026), D-77 change 5: form names and routes wrap rather than losing the
      destination ward ("Rockingham ED to RGH Adult Se…"). */
-  .phoneMetaLine + .phoneMetaLine {
-    display: -webkit-box;
+  .phoneMetaLine {
     white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
   }
 
   /* v10 phone: the group head names its order at the right ("least time left"). */

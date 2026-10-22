@@ -17,6 +17,6 @@ describe("Bed board names that look alike (Audit 1, Josh 20 Oct, CS-16)", () => 
   });
 
   it("names a held bed by surname and initial", () => {
-    expect(cellWord({ status: "ready", heldFor: "Delia Kestrel" } as BedItem)).toBe("Held, Kestrel, D");
+    expect(cellWord({ status: "ready", heldFor: "Delia Kestrel" } as BedItem)).toBe("Pulled, Kestrel, D");
   });
 });

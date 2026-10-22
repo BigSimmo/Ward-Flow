@@ -1119,6 +1119,9 @@ describe("direct CMHT referral pathway from ED screen", () => {
     expect(teamSelect.options.length).toBeGreaterThan(1);
     const chosenTeam = teamSelect.options[1].value;
     fireEvent.change(teamSelect, { target: { value: chosenTeam } });
+    // D-74: what the referral is for is required too.
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByTestId("ward-ed-cmht-purpose-follow_up-WF-001"));
     expect(confirmBtn).not.toHaveAttribute("aria-disabled", "true");
 
     // Confirm the referral

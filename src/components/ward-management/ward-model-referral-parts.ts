@@ -229,6 +229,19 @@ export const REFERRAL_PURPOSES = ["bed", "psychiatric_review", "medical_assessme
 export type ReferralPurpose = (typeof REFERRAL_PURPOSES)[number];
 
 /**
+ * D-74 (Josh, 21 Oct 2026, Q9): what a community team arm is FOR, the owner's list now written.
+ * Every form that sends a referral to a community team asks for one of these. An arm saved before
+ * D-74 has none and reads as follow-up (`communityPurposeOf`). Neither value moves a bed: an
+ * "assess for admission" arm asks the team to assess, and any bed request is still its own referral.
+ */
+export const COMMUNITY_REFERRAL_PURPOSES = ["follow_up", "assess_for_admission"] as const;
+export type CommunityReferralPurpose = (typeof COMMUNITY_REFERRAL_PURPOSES)[number];
+
+export function isCommunityReferralPurpose(value: unknown): value is CommunityReferralPurpose {
+  return typeof value === "string" && (COMMUNITY_REFERRAL_PURPOSES as readonly string[]).includes(value);
+}
+
+/**
  * ONE DESTINATION THIS REFERRAL WAS SENT TO, AND WHAT THAT DESTINATION ANSWERED.
  *
  * Owner ruling FD-21, 2026-08-30: a referrer chooses several destinations in ONE act — not repeat

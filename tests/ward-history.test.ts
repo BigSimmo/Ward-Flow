@@ -36,10 +36,11 @@ describe("Ward Flow Read-Only Plain History", () => {
       // REQUEST_REFERRAL_INFORMATION and MARK_REFERRAL_INFORMATION_MET.
       // Smart features idea 7 (19 Oct 2026) adds CLOSE_WARD_TO_ADMISSIONS and REOPEN_WARD_TO_ADMISSIONS.
       // Smart features idea 5 (19 Oct 2026) adds RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION.
-      // Fix plan item 4 (21 Oct 2026) adds ASSIGN_REFERRAL and LOG_REFERRAL_CONTACT.
+      // Fix plan item 4 (21 Oct 2026) adds ASSIGN_REFERRAL and LOG_REFERRAL_CONTACT, and FD-10
+      // (21 Oct 2026) adds RECORD_WARD_DIAGNOSIS.
       // D-72 (21 Oct 2026) adds SEND_RELEASE_SUPPORT_NOTICE (#398) and RECORD_ARRIVAL_CHECK.
       // Observation levels (fix plan item 10) add RECORD_OBSERVATION_LEVEL.
-      expect(allEventTypes.length).toBe(145);
+      expect(allEventTypes.length).toBe(146);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

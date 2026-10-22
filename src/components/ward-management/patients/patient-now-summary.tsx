@@ -4,6 +4,20 @@
 // facts and the stage strip. Split out of `patient-now-screen.tsx`, which renders it with the values
 // it has already derived.
 import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
+import { TIER_QUALIFIER } from "../ward-priority";
+import type { Security } from "../ward-model-vocabulary";
+
+/*
+ * UX audit (21 Oct 2026): the hero used to say "Tier 1 · open", which read as an open tier. The tier
+ * uses the tier key's words ("T1 most urgent") and the bed type is its own chip.
+ */
+function tierChipText(tier: 1 | 2 | 3 | undefined): string {
+  return tier === undefined ? "Tier not recorded" : `T${tier} ${TIER_QUALIFIER[tier]}`;
+}
+
+function bedTypeChipText(security: Security | undefined): string {
+  return security === undefined ? "Bed type not recorded" : `${security} bed`;
+}
 import Link from "next/link";
 import { BedDouble, Check, Clock, Copy, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
@@ -154,11 +168,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         }
         phoneEyebrow={
           phoneMovement ? (
-            // A3-20: the phone hero keeps the desktop's tier, bed type and specialling. F-05 (phone
+            // A3-20: the phone hero keeps the desktop's tier, bed type and observation. F-05 (phone
             // review, Oct 2026): the observation level is its own chip, and the line may wrap to a
             // second line rather than cut it off.
             <span className={styles.phMoveEyebrow}>
-              {`Movement · Tier ${urgencyTier ?? "not recorded"} · ${(liveMovement?.security ?? "not recorded").toLowerCase()}`}
+              {`Movement · ${tierChipText(urgencyTier)} · ${bedTypeChipText(liveMovement?.security)}`}
               {liveMovement && isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.phObsChip}>{observationSummary(liveMovement.observation)}</span>
               ) : null}
@@ -324,13 +338,15 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             <span className={styles.v6HeroFacts}>
               <span className={styles.v6HeroFact}>
                 <StatusGlyph tone={tierTone} size={9} />
-                Tier {urgencyTier ?? "not recorded"} · {(liveMovement.security ?? "not recorded").toLowerCase()}
+                {tierChipText(urgencyTier)}
               </span>
+              <span className={styles.v6HeroFact}>{bedTypeChipText(liveMovement.security)}</span>
               {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
                 <span className={styles.v6HeroFact}>
                   <StatusGlyph tone="danger" size={9} />
-                  {/* The wait itself is the "since opened" chip beside it, so this names the tier's limit. */}
-                  Overdue · {tierOverdueAfterMinutes(urgencyTier) / 60}h limit
+                  {/* The wait itself is the "since opened" chip beside it, so this names the tier's
+                      wait target. "Target", not "limit", so it never reads as an Act limit. */}
+                  Over T{urgencyTier} target ({tierOverdueAfterMinutes(urgencyTier) / 60}h)
                 </span>
               ) : null}
               {isConstantObservation(liveMovement.observation) ? (

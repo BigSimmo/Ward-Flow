@@ -67,6 +67,11 @@ export function WardDowntimePackLine() {
       if (opening) markDowntimePackHandled(opening);
       return;
     }
+    // A pack taken offline is replaced as soon as the connection returns.
+    if (pack.offline) {
+      take();
+      return;
+    }
     if (!downtimePackDue(pack.generatedAt, now)) return;
     // A shift change pack nobody has printed or put aside keeps asking: the hourly retake after it
     // carries the shift change on, so the line shows the fresher pack instead of going quiet. A

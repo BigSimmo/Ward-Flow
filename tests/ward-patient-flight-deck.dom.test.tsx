@@ -70,7 +70,7 @@ describe("unified Patient Now clinical flight deck", () => {
   it("refers, accepts, pulls, books, dispatches and arrives through shared reducer state", () => {
     setup();
     referAndAccept();
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
     expect(screen.getByTestId("live-bed-count")).toHaveTextContent("0");
     fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));
@@ -112,7 +112,7 @@ describe("unified Patient Now clinical flight deck", () => {
   it("requires a step-back reason and preserves the reserved bed when correcting only the stage", () => {
     setup();
     referAndAccept();
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     fireEvent.click(screen.getByText("Step back with recorded reason"));
     expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Earlier journey stage"), { target: { value: "accepted_awaiting_bed" } });
@@ -124,7 +124,7 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
     expect(screen.getByTestId("live-bed-count")).toHaveTextContent("0");
   });
-  it("holds the bed with one named button, toasts Bed held, and Undo releases the hold (B5)", () => {
+  it("pulls the bed with one named button, toasts Bed pulled, and Undo releases the pull (B5)", () => {
     render(
       <ToastProvider>
         <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -138,9 +138,9 @@ describe("unified Patient Now clinical flight deck", () => {
     // Once a ward has accepted, the sheet names it and no longer lists wards to refer to.
     expect(screen.queryByRole("region", { name: "Network ward shortlist" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Refer to selected wards" })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
-    expect(screen.getAllByText("Bed held").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Bed pulled").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
     expect(screen.getByTestId("live-bed-count")).toHaveTextContent("1");
@@ -148,7 +148,7 @@ describe("unified Patient Now clinical flight deck", () => {
   it("releases the pull only after an explicit reason and restores capacity", () => {
     setup();
     referAndAccept();
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hold the bed" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     fireEvent.click(screen.getByText("Release bed pull"));
     expect(screen.getByRole("button", { name: "Release pull" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Release reason"), { target: { value: RELEASE_PULL_REASONS[0] } });

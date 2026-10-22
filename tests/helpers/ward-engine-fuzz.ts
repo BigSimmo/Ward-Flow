@@ -1007,6 +1007,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     (state, random) => {
       const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_WARD_DIAGNOSIS",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        block: chance(random, 0.5) ? "F20–F29" : "F30–F39",
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
       const roll = random();
       return {
         type: "SET_DISCHARGE_BARRIER",

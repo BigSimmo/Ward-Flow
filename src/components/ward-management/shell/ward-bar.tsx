@@ -65,6 +65,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -1453,6 +1454,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           />
         ) : null}
       </Sheet>
+
+      {/* Help (fix plan item 12): its sheet loads only when the rail, the phone menu or Settings opens it. */}
+      <WardHelpHost />
     </header>
   );
 }

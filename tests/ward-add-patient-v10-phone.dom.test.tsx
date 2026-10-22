@@ -58,7 +58,7 @@ describe("Add a patient v10", () => {
       expect(screen.queryByTestId("ward-add-patient-phone-landing")).not.toBeInTheDocument();
       expect(screen.queryByText("Add a patient needs a larger screen")).not.toBeInTheDocument();
       expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
-      expect(screen.getByText("Address, facility and intake")).toBeInTheDocument();
+      expect(screen.getByText("Gender and Aboriginal status")).toBeInTheDocument();
       expect(screen.getByTestId("ward-add-patient-form").closest("main")).toHaveAttribute("data-phone-form", "true");
       expect(screen.getByTestId("ward-add-patient-submit")).toBeInTheDocument();
     } finally {

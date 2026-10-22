@@ -69,7 +69,7 @@ export function WardTelemetryRibbon({
           value={
             <span data-testid="ward-hero-ready">
               {capacity.available}
-              <SrOnly>, {pendingPreparation} being made ready</SrOnly>
+              {pendingPreparation > 0 ? <SrOnly>, {pendingPreparation} being made ready</SrOnly> : null}
             </span>
           }
           label="Ready now"
@@ -107,7 +107,7 @@ export function WardTelemetryRibbon({
     };
     return (
       <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
-        <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+        {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
         <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
           <HeroStat
             inline
@@ -159,7 +159,7 @@ export function WardTelemetryRibbon({
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
-      <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+      {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
       <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
         <HeroStat
           value={<span data-testid="ward-hero-ready">{capacity.available}</span>}

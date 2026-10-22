@@ -1006,6 +1006,11 @@ export function WardBoard({
               <Link href={unitHref(unit.id)}>Ward home</Link>
               <span aria-current="page">Stays and discharges</span>
             </nav>
+            {/* UX audit 21 Oct 2026: the phone trim hides the bed grid, which left a "Bed board" with no
+                beds on it. Point to the ward home tiles, which do fit a phone. */}
+            <p className={styles.phoneBedsNote} data-testid="ward-board-phone-beds-note">
+              On a phone, every bed is on <Link href={unitHref(unit.id)}>Ward home</Link>.
+            </p>
           </div>
           <div className={styles.wardToolsRight}>
             <button

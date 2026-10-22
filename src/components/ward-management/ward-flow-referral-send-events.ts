@@ -36,6 +36,8 @@ import {
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
+import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
 
 /**
  * Raising, sending, correcting and withdrawing a referral: `reduceClinicalEvent`'s cases for these
@@ -396,6 +398,9 @@ export function reduceReferralSendEvent(
       if (!communityTeamOptions().includes(event.team)) {
         return reject(state, event, `team "${event.team}" is not a valid community mental health team`);
       }
+      if (event.purpose !== undefined && !isCommunityReferralPurpose(event.purpose)) {
+        return reject(state, event, "REFER_TO_COMMUNITY_TEAM purpose must be chosen from COMMUNITY_REFERRAL_PURPOSES");
+      }
       // Refused once collected, as `WITHDRAW_REFERRAL` does: use `STOP_TRANSPORT`.
       if (movement.transport?.collectedAt !== undefined) {
         return reject(
@@ -435,6 +440,12 @@ export function reduceReferralSendEvent(
           addressing.withdrawnAt === undefined,
       );
 
+      // D-74: a reused arm keeps the purpose it was sent with unless this referral names one.
+      const reusedArmPurpose =
+        existingQueuedArm?.destination.kind === "community_team" ? existingQueuedArm.destination.purpose : undefined;
+      const purpose = communityPurposeOf({ purpose: event.purpose ?? reusedArmPurpose });
+      const purposeWords = purpose === "assess_for_admission" ? "assessment for admission" : "community follow-up";
+
       const sequence = existingQueuedArm
         ? withoutPulledBed.frontDoorReferralSequence
         : withoutPulledBed.frontDoorReferralSequence + 1;
@@ -460,7 +471,11 @@ export function reduceReferralSendEvent(
             ...(movement.atsCategory === undefined ? {} : { atsCategory: movement.atsCategory }),
             destinations: [
               {
-                destination: { kind: "community_team", teamName: event.team },
+                destination: {
+                  kind: "community_team",
+                  teamName: event.team,
+                  ...(event.purpose === undefined ? {} : { purpose: event.purpose }),
+                },
                 state: "queued",
                 referredAt: event.now,
               },
@@ -481,8 +496,8 @@ export function reduceReferralSendEvent(
         { role: "community", placeId: communityTeamSlug(event.team) },
         { movementId: movement.id, referralId },
         existingQueuedArm
-          ? `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: reusing the existing queued referral rather than raising a second one to the same team.`
-          : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up.`,
+          ? `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}: reusing the existing queued referral rather than raising a second one to the same team.`
+          : `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}.`,
       );
 
       // F5: live ward requests are withdrawn (recorded with `ed_outcome_recorded`, since the
@@ -511,6 +526,7 @@ export function reduceReferralSendEvent(
           ...withdrawnLiveRequests.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
         ],
         edOutcome: "for_community_follow_up",
+        communityPurpose: purpose,
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }
@@ -525,10 +541,25 @@ export function reduceReferralSendEvent(
 
       const withMovement = replaceMovement(withoutPulledBed, movement.id, updated);
       // Finding 3: no `newReferral` at all when reusing an existing queued arm — the linked
-      // referral's own array is left exactly as it was, never a second arm appended beside it.
+      // referral's own array keeps its arms, never a second arm appended beside it. D-74: a purpose
+      // chosen now is written onto the reused arm, so the arm the team answers, the notice and the
+      // closed record all say the same thing.
+      const reusedArmToUpdate =
+        existingQueuedArm && linkedReferral && event.purpose !== undefined && event.purpose !== reusedArmPurpose
+          ? existingQueuedArm
+          : undefined;
       const withReferral: WardFlowState =
         newReferral === undefined
-          ? withMovement
+          ? reusedArmToUpdate && linkedReferral
+            ? replaceReferral(withMovement, linkedReferral.id, {
+                ...linkedReferral,
+                destinations: linkedReferral.destinations.map((arm) =>
+                  arm === reusedArmToUpdate && arm.destination.kind === "community_team"
+                    ? { ...arm, destination: { ...arm.destination, purpose } }
+                    : arm,
+                ),
+              })
+            : withMovement
           : {
               ...withMovement,
               referrals: [...withMovement.referrals, newReferral],

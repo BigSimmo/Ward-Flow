@@ -27,6 +27,7 @@ describe("readFeedMessage", () => {
       ok: true,
       message: {
         event: "admitted",
+        controlId: "MSG0001",
         umrn: "UM100001",
         familyName: "HALLOWAY",
         givenName: "TALIA",
