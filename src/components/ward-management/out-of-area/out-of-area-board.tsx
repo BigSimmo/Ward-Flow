@@ -1012,8 +1012,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <b title={info.displayName}>{info.displayName}</b>
                                 <span className={styles.legalUmrn}>
                                   {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
-                                      so the gap shows before a return trip is planned. */}
-                                  <span>{legalOf(entry) ?? "Legal not recorded"} · </span>
+                                      so the gap shows before a return trip is planned. The no-break space
+                                      keeps the dot with the legal text when the line wraps. */}
+                                  <span>
+                                    {legalOf(entry) ?? "Legal not recorded"}
+                                    {" ·"}{" "}
+                                  </span>
                                   {href ? (
                                     <Link
                                       href={href}
