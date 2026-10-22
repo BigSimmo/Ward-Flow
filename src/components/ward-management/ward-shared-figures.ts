@@ -75,7 +75,7 @@ const NOT_WAITING_WORDS: Record<NotWaitingReason, string> = {
   in_transit: "in transit",
   ward_transfer: "moving between wards",
   for_discharge: "for discharge",
-  for_follow_up: "for community follow-up",
+  for_follow_up: "for community follow-up or assessment",
   withdrawn: "withdrawn",
 };
 

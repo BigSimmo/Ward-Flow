@@ -67,7 +67,7 @@ function renderWard(
   return {
     record,
     occupied: beds.find((bed) => !/free|closed|pulled/.test(bed.getAttribute("aria-label") ?? ""))!,
-    free: beds.find((bed) => /, free$/.test(bed.getAttribute("aria-label") ?? ""))!,
+    free: beds.find((bed) => /, ready$/.test(bed.getAttribute("aria-label") ?? ""))!,
   };
 }
 

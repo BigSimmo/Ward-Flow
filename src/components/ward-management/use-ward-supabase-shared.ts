@@ -10,13 +10,8 @@ import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
-import {
-  SupabaseWardAuth,
-  WardAuthError,
-  consumeRecoveryFragment,
-  WARD_AUTH_STORAGE_KEY,
-  type WardBrowserAuthAdapter,
-} from "./ward-supabase-auth";
+import { WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
+import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
 
 /**
  * At sign-out: revoke this account's phone alerts for this device, so the next person at a shared
@@ -99,8 +94,9 @@ const workingAs = {
 onWardSessionEnd(() => {
   workingAsInMemory = null;
 });
-const defaultCreateAuth = (): WardBrowserAuthAdapter =>
-  new SupabaseWardAuth({
+// The Supabase adapter loads only when shared mode boots, so the demo's first load does not carry it.
+const defaultCreateAuth = async (): Promise<WardBrowserAuthAdapter> =>
+  new (await import("./ward-supabase-auth")).SupabaseWardAuth({
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
     publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
     storage: window.sessionStorage,
@@ -108,7 +104,10 @@ const defaultCreateAuth = (): WardBrowserAuthAdapter =>
     // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
     onSessionEnded: endWardFlowBrowserSession,
   });
-export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBrowserAuthAdapter = defaultCreateAuth) {
+export function useWardSupabaseShared(
+  enabled: boolean,
+  createAuth: () => WardBrowserAuthAdapter | Promise<WardBrowserAuthAdapter> = defaultCreateAuth,
+) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
@@ -261,7 +260,12 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
           ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
         if (base.username || base.password || (base.protocol !== "https:" && !loopback))
           throw new Error("Missing shared configuration");
-        auth = createAuthRef.current();
+        const created = await createAuthRef.current();
+        if (closed) {
+          created.dispose();
+          return;
+        }
+        auth = created;
         actions.current = {
           signUp: (email, password) =>
             run(async () => {

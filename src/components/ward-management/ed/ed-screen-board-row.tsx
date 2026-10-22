@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { communityTeamOptionsForSuburb } from "@/components/ward-management/referrals/referral-destination-options";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
@@ -230,7 +231,9 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
       // same row.
       "Withdrawn"
     : movement.edOutcome === "for_community_follow_up"
-      ? "For community follow-up"
+      ? communityPurposeOf({ purpose: movement.communityPurpose }) === "assess_for_admission"
+        ? "For community assessment for admission"
+        : "For community follow-up"
       : movement.edOutcome === "for_discharge"
         ? "For discharge"
         : acceptedUnit

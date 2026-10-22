@@ -161,7 +161,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         isLiveBedflow && liveMovement ? (
           <PatientWhyCard
             title="Why they're here"
-            chip={`Opened ${clock(liveMovement.openedAt)}`}
+            chip={`Opened ${formatInstantWithDay(liveMovement.openedAt, now)}`}
             history={resolved.liveReferral?.history}
             fallback={record.reason}
             movement={liveMovement}
@@ -282,7 +282,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               title="Destination"
               sub={
                 acceptingUnit
-                  ? `${acceptingUnit.name} accepted · bed hold and placement`
+                  ? `${acceptingUnit.name} accepted · pull the bed and placement`
                   : liveMovement.referredUnitIds.length > 0
                     ? `${liveMovement.referredUnitIds.length} wards asked · shortlist`
                     : "Shortlist eligible wards · none asked"

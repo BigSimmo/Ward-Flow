@@ -9,14 +9,20 @@ export const metadata: Metadata = {
     "Synthetic prototype: every open movement that carries a legal form, ordered by time remaining, honest about which form types this model can never put a deadline against.",
 };
 
-/** `?movement=` (a synthetic movement id, never a name) opens that patient, as a Governance gap does. */
+/**
+ * `?movement=` (a synthetic movement id, never a name) opens that patient, as a Governance gap does.
+ * `&record=1` also opens Record a form for that movement, as the patient record's link does.
+ */
 export default async function WardLegalFormsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ movement?: string | string[] }>;
+  searchParams?: Promise<{ movement?: string | string[]; record?: string | string[] }>;
 }) {
-  const { movement } = (await searchParams) ?? {};
+  const { movement, record } = (await searchParams) ?? {};
   return (
-    <LegalFormsScreen initialMovementId={typeof movement === "string" ? recordIdFromAddress(movement) : undefined} />
+    <LegalFormsScreen
+      initialMovementId={typeof movement === "string" ? recordIdFromAddress(movement) : undefined}
+      recordOnOpen={record === "1"}
+    />
   );
 }
