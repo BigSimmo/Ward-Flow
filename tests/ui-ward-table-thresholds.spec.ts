@@ -1,4 +1,5 @@
 import { expect, test } from "playwright/test";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * 🔴 **EVERY WARD TABLE'S SCROLL THRESHOLD, MEASURED AGAINST THE TABLE THAT IS ACTUALLY THERE.**
@@ -574,7 +575,8 @@ const TYPE_FLOOR_ROUTES = [
     route: "/ward-flow/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  { route: "/ward-flow", expect: ["command-tier", "banner", "badge"] },
+  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind Everyone waiting.
+  { route: "/ward-flow", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
   { route: "/ward-flow/movements", expect: ["banner", "badge"] },
   { route: "/ward-flow/capacity", expect: ["banner", "badge"] },
 ] as const;
@@ -586,10 +588,12 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
     const misses: string[] = [];
     let measured = 0;
 
-    for (const { route, expect: expected } of TYPE_FLOOR_ROUTES) {
+    for (const entry of TYPE_FLOOR_ROUTES) {
+      const { route, expect: expected } = entry;
       await page.goto(route, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
+      if ("everyoneWaiting" in entry) await showEveryoneWaitingOn(page);
 
       const found = await page.evaluate(() =>
         [...document.querySelectorAll("[data-ward-type-floor]")].map((element) => ({

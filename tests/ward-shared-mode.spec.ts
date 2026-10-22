@@ -332,7 +332,9 @@ test("different records at once: two desks change different records from the sam
 test("a desk that loses its network says it is not connected, then catches up without a reload when it returns", async () => {
   for (const desk of [one, two]) {
     await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
-    await revealRow(desk.page);
+    // Home v7 (Josh, 22 Oct 2026): Placement opens only once a patient is chosen, so each desk
+    // chooses the movement before the network drops.
+    await selectMovement(desk.page);
   }
   await plantSentinel(one.page);
 

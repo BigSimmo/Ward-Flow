@@ -586,6 +586,8 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       await page.goto(`/ward-flow${route}`, { waitUntil: "networkidle" });
       const bar = page.getByTestId("ward-bar");
       await expect(bar).toHaveAttribute("data-band", /ink|light/);
+      // Home v7 (Josh, 22 Oct 2026): Home opens on My list; its queue tools sit behind Everyone waiting.
+      if (label === "Home") await showEveryoneWaitingOn(page);
       const strip = page.locator(`[class*="${classPrefix}"]`);
       await expect(strip).toBeVisible();
       for (const offset of [0, 12, 80, 500]) {
