@@ -478,7 +478,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 />
                 <HeroStat
                   value={sharedSuburbs.suburbs}
-                  label="Suburbs with two names"
+                  label="Two names"
                   pressed={sharedSuburbOnly}
                   onToggle={() => setSharedSuburbOnly((value) => !value)}
                 />

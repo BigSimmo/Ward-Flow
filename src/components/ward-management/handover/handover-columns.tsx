@@ -97,7 +97,10 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     cell: (row, ctx) => (
       <span className={styles.two}>
         <b className={styles.mono}>{durMinutes(ctx.now - row.openedAt)}</b>
-        <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
+        <span
+          className={`${styles.sub} ${styles.mono} ${styles.trunc}`}
+          title={formatInstantWithDay(row.openedAt, ctx.now)}
+        >
           {formatInstantWithDay(row.openedAt, ctx.now)}
         </span>
       </span>
@@ -111,10 +114,10 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     cell: (row) => (
       <span className={styles.two}>
         {/* DA-17: hospital codes carry their full name (`ward-abbreviations.tsx`). */}
-        <span className={styles.trunc}>
+        <span className={styles.trunc} title={row.edShort}>
           <SpelledCodes text={row.edShort} />
         </span>
-        <span className={`${styles.sub} ${styles.trunc}`}>
+        <span className={`${styles.sub} ${styles.trunc}`} title={destinationText(row)}>
           <SpelledCodes text={destinationText(row)} />
         </span>
       </span>

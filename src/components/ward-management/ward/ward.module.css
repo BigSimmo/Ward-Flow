@@ -520,7 +520,8 @@
 
 .declineOption {
   display: flex;
-  min-height: var(--ward-tap);
+  /* 44px (v9 rows): stacked radio rows at the 48px floor left wide gaps on the answer card. */
+  min-height: var(--wf-touch, 2.75rem);
   align-items: center;
   gap: var(--ward-space-8);
   overflow-wrap: anywhere;

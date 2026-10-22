@@ -195,6 +195,10 @@
     font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
     white-space: normal;
   }
+  /* No leading dot: the tail wraps as a whole beside the badge, and inside it only between items. */
+  .phoneTail > span {
+    white-space: nowrap;
+  }
   .footerNote,
   .authorityPill {
     position: absolute;
