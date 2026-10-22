@@ -169,9 +169,9 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
   },
   {
     id: "tour-find-wait",
-    why: "The role tour (22 Oct 2026): how long it waits for a step's control to draw before showing the card in the middle, and how often the spotlight re-measures; never shown, not limits.",
-    file: /^help\/ward-tour\.tsx$/,
-    name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS)$/,
+    why: "The role tour (22 Oct 2026): how long it waits for a step's control to draw before showing the card in the middle, how often the spotlight re-measures, and how long auto-start waits for the desk's access to settle; never shown, not limits.",
+    file: /^help\/ward-tour(?:-auto-start)?\.tsx$/,
+    name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS|TOUR_SETTLE_MS)$/,
   },
 ];
 

@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { OverlayPortal, useIsPhone } from "@/components/wf";
+import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
 import { markTourSeen, readTourStep, saveTourStep, useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
@@ -21,9 +21,9 @@ import styles from "./ward-tour.module.css";
 type Box = { top: number; left: number; width: number; height: number };
 
 /** How long a step waits for its control to appear (a page still loading) before it shows without one. */
+const FIND_TIMEOUT_MS = 2000;
 /** How often the spotlight re-measures, so a notice that shifts the page cannot leave it behind. */
 const REMEASURE_MS = 400;
-const FIND_TIMEOUT_MS = 2000;
 const GAP = 12;
 const EDGE = 8;
 /** A control taller than this share of the window is shown from its top, at this share. */
@@ -136,7 +136,14 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const { facts, home } = useTourFacts(role);
   const steps = useMemo(() => tourSteps(role, device, facts), [role, device, facts]);
   const canDo = useMemo(() => tourCanDo(role), [role]);
-  const [index, setIndex] = useState(() => Math.min(readTourStep(role), Math.max(0, steps.length - 1)));
+  // The place is held by the step's id, so crossing the phone width (a different set of steps)
+  // keeps the same step, or the nearest one when that device has no such step.
+  const [place, setPlace] = useState(() => {
+    const at = Math.min(readTourStep(role), Math.max(0, steps.length - 1));
+    return { id: steps[at]?.id, at };
+  });
+  const found = steps.findIndex((candidate) => candidate.id === place.id);
+  const index = found >= 0 ? found : Math.min(place.at, Math.max(0, steps.length - 1));
   // The box belongs to the step's control it measured, so a new step starts with no spotlight.
   const [spot, setSpot] = useState<{ target: TourTarget; box: Box | null } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -144,15 +151,16 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
-  const step: TourStep | undefined = steps[Math.min(index, steps.length - 1)];
+  const step: TourStep | undefined = steps[index];
   const last = index >= steps.length - 1;
 
-  // The tour walks the desk's home screen, so it goes there first when opened from another page.
-  const wentHome = useRef(false);
+  // The tour walks the desk's home screen, so it goes there first when opened from another page,
+  // and again if the desk's access settles to another role while it is open.
+  const wentHome = useRef<string | null>(null);
   useEffect(() => {
-    if (wentHome.current) return;
-    wentHome.current = true;
-    if (home && pathname !== home) router.push(home);
+    if (!home || wentHome.current === home) return;
+    wentHome.current = home;
+    if (pathname !== home) router.push(home);
   }, [home, pathname, router]);
 
   // Find the step's control (waiting a moment for a page still drawing), bring it into view and
@@ -204,10 +212,6 @@ export function WardTour({ onClose }: { onClose: () => void }) {
       !sideBySide && rect.top > box.top && stop < box.height ? `${Math.max(24, stop)}px` : `${box.height}px`;
   }, [box, device, index, step]);
 
-  useEffect(() => {
-    nextRef.current?.focus({ preventScroll: true });
-  }, []);
-
   const finish = useCallback(() => {
     markTourSeen(role);
     saveTourStep(role, 0);
@@ -220,20 +224,20 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     onClose();
   }, [index, last, onClose, role]);
 
-  // Escape closes the tour wherever focus is, which on a phone is often not inside the card.
-  useEffect(() => {
-    const onEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      close();
-    };
-    document.addEventListener("keydown", onEscape);
-    return () => document.removeEventListener("keydown", onEscape);
-  }, [close]);
+  // The shared modal contract: the page behind is inert and held still, Tab stays in the card,
+  // Escape closes the tour wherever focus is (on a phone often not inside the card), and focus goes
+  // back to Help or whatever opened it. Capture, so a screen's own Escape shortcut never acts too.
+  const { rootRef } = useModalFocus({
+    open: true,
+    onClose: close,
+    panelRef: cardRef,
+    initialFocusRef: nextRef,
+    keyPhase: "capture",
+  });
 
   function go(next: number) {
     const clamped = Math.min(Math.max(0, next), steps.length - 1);
-    setIndex(clamped);
+    setPlace({ id: steps[clamped]?.id, at: clamped });
     saveTourStep(role, clamped);
   }
 
@@ -244,21 +248,6 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     } else if (event.key === "ArrowLeft" && index > 0) {
       event.preventDefault();
       go(index - 1);
-    } else if (event.key === "Tab" && cardRef.current) {
-      // Keep Tab inside the card while the tour is open.
-      const controls = Array.from(
-        cardRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"]'),
-      );
-      const first = controls[0];
-      const end = controls.at(-1);
-      if (!first || !end) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        end.focus();
-      } else if (!event.shiftKey && document.activeElement === end) {
-        event.preventDefault();
-        first.focus();
-      }
     }
   }
 
@@ -278,7 +267,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   return (
     <OverlayPortal layer="modal" name="ward-tour">
-      <div className={styles.layer} data-testid="ward-tour" data-device={device}>
+      <div ref={rootRef} className={styles.layer} data-testid="ward-tour" data-device={device}>
         {box ? (
           <div
             ref={spotRef}

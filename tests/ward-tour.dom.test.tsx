@@ -22,6 +22,12 @@ const tourFacts = {
 };
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({ useTourFacts: () => tourFacts }));
 
+const phone = { on: false };
+vi.mock("@/components/wf", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/wf")>()),
+  useIsPhone: () => phone.on,
+}));
+
 import { WardTour, findTourTarget } from "@/components/ward-management/help/ward-tour";
 import { WardTourAutoStart } from "@/components/ward-management/help/ward-tour-auto-start";
 import {
@@ -44,6 +50,7 @@ beforeEach(() => {
   route.pathname = "/ward-flow";
   tourFacts.home = "/ward-flow";
   tourFacts.deskHome = "/ward-flow";
+  phone.on = false;
   push.mockReset();
   resetTourSeenForTests();
 });
@@ -116,6 +123,42 @@ describe("tour player", () => {
     expect(screen.queryByTestId("ward-tour-spot")).toBeNull();
   });
 
+  it("keeps the same step when the window crosses the phone width", () => {
+    const { rerender } = render(<WardTour onClose={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("ward-tour-skip"));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(card().dataset.step).toBe("help");
+    phone.on = true;
+    rerender(<WardTour onClose={vi.fn()} />);
+    const phoneSteps = tourSteps("coordinator", "phone", tourFacts.facts);
+    expect(card().dataset.step).toBe("help");
+    expect(card().textContent).toContain(
+      `Step ${phoneSteps.findIndex((candidate) => candidate.id === "help") + 1} of ${phoneSteps.length}`,
+    );
+  });
+
+  it("goes to the desk's home again when the desk's access settles to another role while open", () => {
+    const { rerender } = render(<WardTour onClose={vi.fn()} />);
+    expect(push).not.toHaveBeenCalled();
+    tourFacts.home = "/ward-flow/statistics";
+    rerender(<WardTour onClose={vi.fn()} />);
+    expect(push).toHaveBeenCalledWith("/ward-flow/statistics");
+  });
+
+  it("holds the page behind still and inert, and gives focus back to what opened it", async () => {
+    const opener = document.createElement("button");
+    opener.textContent = "Help";
+    opener.dataset.testControl = "";
+    document.body.append(opener);
+    opener.focus();
+    const { unmount } = render(<WardTour onClose={vi.fn()} />);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("ward-tour-next")));
+    expect(opener.closest("[inert]")).not.toBeNull();
+    unmount();
+    expect(opener.closest("[inert]")).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it("finds a control by its words and climbs to the parent asked for", () => {
     const wrap = document.createElement("div");
     wrap.dataset.testControl = "";
@@ -142,6 +185,27 @@ describe("tour auto-start", () => {
     await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
     rerender(<WardTourAutoStart onStart={onStart} />);
     expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for the desk's access to settle before it starts", async () => {
+    vi.useFakeTimers();
+    try {
+      const onStart = vi.fn();
+      const { rerender } = render(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(200));
+      // The stored desk applies: another role, whose home this page is not.
+      tourFacts.home = "/ward-flow/statistics";
+      tourFacts.deskHome = "/ward-flow/statistics";
+      rerender(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+      expect(onStart).not.toHaveBeenCalled();
+      route.pathname = "/ward-flow/statistics";
+      rerender(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+      expect(onStart).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("starts on the page the app opens for the desk when the tour's own home differs", async () => {
