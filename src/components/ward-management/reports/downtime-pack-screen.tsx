@@ -46,6 +46,7 @@ import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
+const OFFLINE_LABEL = "taken offline";
 /** F-08 (phone review, Oct 2026): printed at the top of the pack, so paper is never mistaken for records. */
 const PRINT_NOTICE = "Prototype data, invented records. Not real patients and not for clinical use.";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
@@ -252,9 +253,14 @@ export function DowntimePackScreen() {
     );
   }
 
-  const ageMinutes = Math.max(0, now - pack.generatedAt);
+  // Owner, 22 Oct 2026: a pack taken offline reads "taken offline" with the last sync time, and its
+  // age runs from that sync, so it is never presented as freshly generated.
+  const syncedAt = pack.offline ? pack.offline.lastSyncAt : pack.generatedAt;
+  const ageMinutes = syncedAt === null ? Infinity : Math.max(0, now - syncedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
-  const frozenAt = formatInstantWithDay(pack.generatedAt, now);
+  const frozenAt = pack.offline
+    ? `${OFFLINE_LABEL} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatInstantWithDay(syncedAt, now)}`
+    : formatInstantWithDay(pack.generatedAt, now);
   const groups = serviceGroups(pack.wards);
 
   const totals = packTotals(pack);
@@ -334,13 +340,19 @@ export function DowntimePackScreen() {
   const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
     <span data-testid="ward-downtime-generated">
-      Taken {at(pack.generatedAt)} · next pack {nextPackAt}
+      {pack.offline
+        ? `Taken offline · last sync ${at(syncedAt)} · next pack when the connection returns`
+        : `Taken ${at(pack.generatedAt)} · next pack ${nextPackAt}`}
     </span>
   );
   const staleLine = stale ? (
     <span className={styles.staleLine} data-testid="ward-downtime-stale">
       <StatusGlyph tone="warning" size={9} />
-      Stale · taken {durMinutes(ageMinutes)} ago
+      {!pack.offline
+        ? `Stale · taken ${durMinutes(ageMinutes)} ago`
+        : syncedAt === null
+          ? "Stale · no sync recorded"
+          : `Stale · synced ${durMinutes(ageMinutes)} ago`}
     </span>
   ) : null;
 
@@ -623,8 +635,8 @@ export function DowntimePackScreen() {
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
               eyebrow="Downtime pack · synthetic data"
-              title={`Frozen at ${frozenAt}`}
-              sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${nextPackAt}`}
+              title={pack.offline ? `Frozen, ${frozenAt}` : `Frozen at ${frozenAt}`}
+              sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${pack.offline ? "when online" : nextPackAt}`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
               // keeps the frozen time and the actions.
               actions={
@@ -814,7 +826,8 @@ export function DowntimePackScreen() {
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">
               <span className={styles.frozenDot} aria-hidden="true" />
-              Frozen <b>{frozenAt}</b>
+              Frozen{pack.offline ? ", " : " "}
+              <b>{frozenAt}</b>
             </span>
           }
           aside={

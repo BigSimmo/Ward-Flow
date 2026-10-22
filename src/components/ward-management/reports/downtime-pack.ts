@@ -76,6 +76,12 @@ export type DowntimePack = {
    * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.
    */
   leftEd: number;
+  /**
+   * Set when the pack was taken while the browser was offline (owner, 22 Oct 2026): the records
+   * may be stale, so the pack is labelled "taken offline" with the last sync time instead of reading
+   * as fresh. `lastSyncAt` is null when this tab has not been online since it opened.
+   */
+  offline?: { lastSyncAt: Instant | null };
 };
 
 export type DowntimePackInput = {
@@ -209,11 +215,23 @@ export function rememberDowntimePack(
 ): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
   if (owner?.active === false || owner?.ready === false) return;
+  // A pack taken online is kept: an offline one never replaces it (owner, 22 Oct 2026).
+  const held = lastDowntimePack(owner, worldGeneration ?? undefined);
+  if (pack.offline && held !== null && held.offline === undefined) return;
   if (lastPack !== pack) handledPack = null;
   lastPack = pack;
   packGeneration = worldGeneration;
   packOwner = owner;
   notify();
+}
+
+/** When this tab last saw the browser online, in world time. Memory only (D-18). */
+let lastSyncAt: Instant | null = null;
+export function noteDowntimeSync(now: Instant): void {
+  lastSyncAt = now;
+}
+export function lastDowntimeSyncAt(): Instant | null {
+  return lastSyncAt;
 }
 
 /** True when the remembered pack was taken in another world generation (a reset or scenario switch). */
