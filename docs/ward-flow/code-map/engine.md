@@ -225,7 +225,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
-  first. Also declares `ReferralDraft` (the intake form's shape) and re-exports `WardFlowRole`/
+  first. Also re-exports `ReferralDraft` (the intake form's shape, from `ward-referral-draft.ts` since 22 Oct 2026) and `WardFlowRole`/
   `WARD_FLOW_ROLE_LABELS` from `ward-flow-roles.ts`. Heavily commented — most of the file is
   provenance for individual fields and role decisions, not code.
 - **`ward-model.ts`** (3,040 lines) — every domain entity type and closed vocabulary: `Movement`,
