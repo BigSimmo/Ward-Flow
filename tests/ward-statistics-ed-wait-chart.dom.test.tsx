@@ -214,13 +214,14 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
     expect(screen.getByTestId("ward-stat-ed-declined-not-suitable").textContent).toContain("2");
   });
 
-  it('never uses the retired wording "no bed free", only the correct "no free bed"', () => {
+  // D-78: a no_suitable_bed decline can mean a free but unsuitable bed, so it reads "no suitable bed".
+  it('never uses the retired wording "no bed free", only "no suitable bed"', () => {
     renderEd([noFreeBedDecline, notSuitableClosedDecline]);
 
     const panel = screen.getByTestId("ward-statistics-ed-declines");
     const text = (panel.textContent ?? "").toLowerCase();
     expect(text).not.toContain("no bed free");
-    expect(text).toContain("no free bed");
+    expect(text).toContain("no suitable bed");
   });
 });
 

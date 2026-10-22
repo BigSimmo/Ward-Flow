@@ -382,7 +382,7 @@ export function StatisticsEdScreen({
                     <div className={styles.tiles} aria-hidden="true">
                       <div className={styles.tile}>
                         <span className={styles.tileLabel}>
-                          <StatusGlyph tone="closed" size={9} /> Declined, no bed
+                          <StatusGlyph tone="closed" size={9} /> Declined, no suitable bed
                         </span>
                         <span className={styles.tileValue}>{noFreeBedShown}</span>
                       </div>
@@ -396,12 +396,12 @@ export function StatisticsEdScreen({
                     <SrOnly>
                       <p data-testid="ward-stat-ed-declined-no-free-bed">
                         {noFreeBedShown} {noFreeBedShown === 1 ? "decline names" : "declines name"} a ward that had no
-                        free bed.
+                        suitable bed.
                       </p>
                       {declinesReadout.ok ? (
                         <p data-testid="ward-stat-ed-declined-not-suitable">
                           {notSuitableShown} {notSuitableShown === 1 ? "decline gave" : "declines gave"} a reason other
-                          than having no free bed.
+                          than having no suitable bed.
                         </p>
                       ) : null}
                     </SrOnly>

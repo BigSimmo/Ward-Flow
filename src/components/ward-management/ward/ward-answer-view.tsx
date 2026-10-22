@@ -114,9 +114,9 @@ export interface WardAnswerViewProps {
   unitId: string;
 }
 
-/** A decline reason in the one list's wording (D-78), the same label the coordinator reads. */
+/** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
 function declineReasonLabel(reason: DeclineReason): string {
-  return DECLINE_REASON_LABELS[reason];
+  return DECLINE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
