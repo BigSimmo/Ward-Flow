@@ -495,7 +495,8 @@ jobs:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.release-cache.outputs.cache-hit }}
       - name: Collect release system packages on main
         id: release-apt-collect
-        if: ${{ !cancelled() && steps.browsers.outcome == 'success' && steps.release-apt-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        # A timed-out install still keeps the packages it finished downloading, so collect after any attempt.
+        if: ${{ !cancelled() && steps.browsers.outcome != 'skipped' && steps.release-apt-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs collect "$HOME/.cache/ward-release-apt"
       - name: Save release system packages on main
         if: ${{ !cancelled() && steps.release-apt-collect.outputs.count > 0 && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
