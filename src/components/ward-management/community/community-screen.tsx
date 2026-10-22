@@ -840,6 +840,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // Site review 12 Oct 2026: admissions matched to no team are a fact about the data, not about this
   // team, and they showed twice (main column and rail). The count stays in About this data only.
 
+  // Sent is left out of both lists on purpose: it is a record of what the team asked for, not work
+  // waiting on the team, so the page still opens on the first list that needs the team.
   const tabCounts: [ActiveTabType, number][] = [
     ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
     ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
