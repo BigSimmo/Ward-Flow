@@ -1333,7 +1333,7 @@ export function MovementWorkspaceCockpit({
             {/* 4. ORPHANED TRANSPORT JOB */}
             {orphanedJob ? (
               <section className={styles.actionSection} data-testid="ward-patient-orphaned-transport">
-                <h3 className={styles.actionSectionTitle}>Transport booked with no bed held</h3>
+                <h3 className={styles.actionSectionTitle}>Transport booked with no bed pulled</h3>
                 <p className={styles.actionSay}>
                   {orphanedJob.kind === "pull_released"
                     ? `The bed this job was booked against has been given back to the ward. ${orphanedJob.provider} is still recorded as collecting this patient, and nothing has told them otherwise. A replacement cannot be booked until this job is cancelled.`
@@ -1715,7 +1715,7 @@ export function MovementWorkspaceCockpit({
                   </p>
                   {movement.stage === "pulled" || movement.admissionId !== undefined ? (
                     <p className={styles.actionSay} data-testid="ward-console-withdraw-releases-bed">
-                      A bed is held for this patient. Withdrawing also releases that bed in the same step, and the
+                      A bed is pulled for this patient. Withdrawing also releases that bed in the same step, and the
                       referring emergency department is told.
                     </p>
                   ) : null}
@@ -1800,7 +1800,7 @@ export function MovementWorkspaceCockpit({
                   </p>
                   {movement.admissionId !== undefined ? (
                     <p className={styles.actionSay} data-testid="ward-console-step-back-still-holding">
-                      This movement is still holding a ward bed. Correcting the stage leaves that bed held — use{" "}
+                      This movement is still holding a ward bed. Correcting the stage leaves that bed pulled — use{" "}
                       <strong>Release the pulled bed</strong> if the ward should have it back.
                     </p>
                   ) : null}

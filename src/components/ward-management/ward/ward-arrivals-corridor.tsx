@@ -528,7 +528,7 @@ export function WardArrivalsCorridor({
         onClose={() => setReleaseHeldId(null)}
         size="sm"
         title="Release held bed?"
-        description={`The bed held for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
+        description={`The bed pulled for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
         secondary={[{ label: "Cancel", onAction: () => setReleaseHeldId(null) }]}
         primary={{
           label: "Release held bed",

@@ -571,7 +571,7 @@ export function WardBedDossierDrawer({
                 value={isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
                 tone={isPreparing ? "neutral" : "success"}
               />
-              <FactTile label="Held for" value="No one" />
+              <FactTile label="Pulled for" value="No one" />
               {bedItem.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
             </div>
             <div className={styles.drawerBody}>
@@ -1130,7 +1130,7 @@ function PhoneBedSheet({
                   value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
                   tone={bedItem?.preparing ? "neutral" : "success"}
                 />
-                <FactTile label="Held for" value={bedItem?.heldFor ?? "No one"} />
+                <FactTile label="Pulled for" value={bedItem?.heldFor ?? "No one"} />
               </div>
               <h3 className={styles.phoneSec}>Placement</h3>
               <dl className={styles.phoneKv}>

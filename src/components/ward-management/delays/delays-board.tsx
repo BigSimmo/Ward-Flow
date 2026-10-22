@@ -668,7 +668,7 @@ export function DelaysBoard({
               <span className={styles.gTitle} title={group.title}>
                 {isPhone && group.cause === "bed_pull_expired" ? (
                   <>
-                    <span aria-hidden="true">Bed held past time</span>
+                    <span aria-hidden="true">Pull expired</span>
                     <span className="sr-only">{group.title}</span>
                   </>
                 ) : (

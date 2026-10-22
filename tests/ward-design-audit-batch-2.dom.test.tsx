@@ -55,7 +55,7 @@ describe("Pull a bed feedback (DA-11)", () => {
     const movementId = pull.dataset.testid!.replace("ward-pull-", "");
     pull.focus();
     fireEvent.click(pull);
-    expect(screen.getByText("Bed pulled. It is held for this arrival.")).toBeInTheDocument();
+    expect(screen.getByText("Bed pulled for this arrival.")).toBeInTheDocument();
     expect(screen.queryByTestId(`ward-pull-${movementId}`)).not.toBeInTheDocument();
     expect(document.activeElement).toBe(document.getElementById(`ward-arrival-${movementId}`));
   });

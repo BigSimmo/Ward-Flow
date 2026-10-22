@@ -499,7 +499,7 @@ export function situationState(row: HandoverRow, now: Instant): string {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now
       ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
-      : `Bed held at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+      : `Bed pulled at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.stage === "placement_requested" || row.stage === "destination_review") return destinationText(row);
   if (row.stage === "accepted_awaiting_bed") return `Accepted by ${to}, awaiting a bed`;
