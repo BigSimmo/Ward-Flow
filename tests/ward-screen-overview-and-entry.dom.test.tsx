@@ -228,7 +228,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     // Top Action Bar & Live Capacity Glance Strip
     expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Stays and discharges" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
 
     // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.

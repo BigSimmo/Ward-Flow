@@ -84,6 +84,9 @@ type BedMeetingEd = {
   morePeople: number;
 };
 
+/** The coordinator cause as a shared screen says it: "you" means nobody in a meeting room. */
+const SHARED_COORDINATOR_CAUSE_TITLE = "Waiting on the bed coordinator";
+
 type BedMeetingDelayRow = { cause: DelayCause; title: string; count: number; longestWaitMinutes: number };
 
 type BedMeetingDelayPerson = { id: string; name: string; cause: string; waitMinutes: number };
@@ -217,8 +220,11 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     morePeople: Math.max(0, edPeople.length - BED_MEETING_ROW_LIMIT),
   };
 
-  // Delays — the Delays screen's own causes, worst first.
-  const delayed = delayGroups(scopedMovements.filter(isOpen), units, now, thresholds);
+  // Delays — the Delays screen's own causes, worst first. The sheet and TV are read by a room, so
+  // "Waiting on you" names whose desk it is instead (UX audit, 21 Oct 2026).
+  const delayed = delayGroups(scopedMovements.filter(isOpen), units, now, thresholds).map((group) =>
+    group.cause === "awaiting_coordinator" ? { ...group, title: SHARED_COORDINATOR_CAUSE_TITLE } : group,
+  );
   const delayPeople = delayed
     .flatMap((group) =>
       group.movements.map((movement) => ({
