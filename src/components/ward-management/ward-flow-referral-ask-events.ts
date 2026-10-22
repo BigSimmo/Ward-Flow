@@ -1,8 +1,8 @@
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import type { AuditDecision } from "./ward-audit";
-import type { WardFlowEvent } from "./ward-flow-events";
+import type { Instant } from "./ward-clock";
 import type { findReferral, findUnit, reject, replaceReferral, WardFlowState } from "./ward-flow-reducer";
-import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { ReferralAddressing, ReferralDestination } from "./ward-model";
 import { isAwaitingAnswer, referralWithdrawn } from "./ward-referrals";
 import { referralClosedForFollowUp } from "./referrals/referral-owner-and-calls-model";
@@ -19,7 +19,14 @@ import { referralClosedForFollowUp } from "./referrals/referral-owner-and-calls-
  *
  * The reducer passes its helpers in, since this file may not import the reducer at run time.
  */
-export type ReferralAskEvent = Extract<WardFlowEvent, { type: "ASK_MORE_WARDS" }>;
+export type ReferralAskEvent = {
+  type: "ASK_MORE_WARDS";
+  role: WardFlowRole;
+  now: Instant;
+  referralId: string;
+  /** The wards to ask, named by the coordinator. Never ranked or suggested (D-71). */
+  unitIds: string[];
+};
 
 export type ReferralAskHelpers = {
   findReferral: typeof findReferral;

@@ -819,8 +819,6 @@ export type WardFlowEvent =
       contact: ReferralContactTarget;
       outcome: ReferralContactOutcome;
     }
-  /** Fix plan item 16 (D-76): more named wards on an open community referral, capped, never ranked (D-71). */
-  | { type: "ASK_MORE_WARDS"; role: WardFlowRole; now: Instant; referralId: string; unitIds: string[] }
   | {
       /**
        * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets
@@ -2547,8 +2545,7 @@ export type WardFlowEvent =
        * Advisory checklist (9 Oct 2026): records that a carer, personal support person or the
        * Mental Health Advocacy Service was told about an involuntary patient's admission, transfer
        * or discharge, or that it does not apply. A record of what a person says happened; nothing
-       * here decides whether a notice is legally required or when. See
-       * `ward-support-notifications.ts`.
+       * here decides whether a notice is legally required or when. See `ward-support-notifications.ts`.
        *
        * 🔴 `who` and `reason` are typed text, so this event is on the typed-text persistence list.
        */
@@ -2569,10 +2566,11 @@ export type WardFlowEvent =
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
     }
-  // #398 and the arrival checklist (D-72): declared beside their reducer cases.
+  // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
   | RecordWardDiagnosisEvent
+  | import("./ward-flow-referral-ask-events").ReferralAskEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within
