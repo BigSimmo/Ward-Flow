@@ -4350,3 +4350,10 @@
   flex-wrap: wrap;
   gap: var(--wf-s-2);
 }
+
+/* Phone: the hero foot line wraps, so the bed list link and the roster note are never cut off. */
+@media (max-width: 48rem) {
+  .heroMeta {
+    white-space: normal;
+  }
+}

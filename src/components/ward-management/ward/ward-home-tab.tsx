@@ -1731,7 +1731,7 @@ export function WardHomeTab({
                   <StatusGlyph tone="success" size={12} />
                   Awaiting your answer: all clear
                   <span className={styles.phoneClearText}>
-                    · Answered {recentAnswers.length}
+                    <span className={styles.phoneClearSep}>· </span>Answered {recentAnswers.length}
                     {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
                   </span>
                 </p>

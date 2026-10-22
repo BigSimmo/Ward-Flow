@@ -50,6 +50,19 @@
   overflow-x: auto;
 }
 
+/* Desktop and tablet: the tabs keep their whole width and the four actions drop to their own line
+ * when both do not fit. At 1440 with the rail open the actions covered Caseload and CTOs. */
+@media (min-width: 48.0625rem) {
+  :has(> * > .trackScroll) {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  :has(> .trackScroll) {
+    flex-shrink: 0;
+  }
+}
+
 .track {
   display: inline-flex;
   gap: 2px;
