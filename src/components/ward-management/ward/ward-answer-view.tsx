@@ -734,8 +734,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               </div>
             ) : activeMovement ? (
               (() => {
-                // Owner, 26 Sept 2026: no WF journey number. A ward answering a referral sees no
-                // identity before it accepts (this view never joins one), so it reads "this patient".
+                // Owner, 26 Sept 2026: no WF journey number. Josh, 22 Oct 2026: the ward does see the
+                // patient's name and UMRN before it answers, never where else they were referred.
                 const blocked = referralAnswerBlocked(activeMovement, unit);
                 const notice = restrictionNotice(activeMovement, unit);
                 const eligibilityIssue = eligibilityWarning(activeMovement, unit, now);
@@ -806,8 +806,13 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               <UserRound size={18} aria-hidden="true" />
                             </span>
                             <span className={styles.phoneFoldText}>
-                              <span className={styles.phoneFoldTitle}>This patient</span>
-                              <span className={styles.phonePatientLine}>Name and UMRN shared on acceptance</span>
+                              {/* Josh, 22 Oct 2026: a ward sees who is coming before it answers. */}
+                              <span className={styles.phoneFoldTitle}>
+                                {resolvePatientIdentity(activeMovement).displayName}
+                              </span>
+                              <span className={styles.phonePatientLine}>
+                                {resolvePatientIdentity(activeMovement).umrn}
+                              </span>
                             </span>
                           </div>
                         ) : null}
@@ -829,7 +834,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         ) : (
                           <div className={styles.patientDossierBanner}>
                             <div>
-                              <div className={styles.patientNameLine}>Incoming patient</div>
+                              <div className={styles.patientNameLine}>
+                                {resolvePatientIdentity(activeMovement).displayName} &middot;{" "}
+                                {resolvePatientIdentity(activeMovement).umrn}
+                              </div>
                               <div className={styles.patientMetaLine}>
                                 Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
                                 {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
@@ -1612,9 +1620,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   type="text"
                   className={styles.formInput}
                   id="ward-answer-allocating-movement"
-                  // No identity before acceptance (owner, 26 Sept 2026), so the tier and referral time tell
-                  // two waiting requests from the same cohort apart (D-39).
-                  value={`Incoming patient (${acceptModalMovement.cohort}), Tier ${acceptModalMovement.urgency}${acceptModalMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(acceptModalMovement.referredAt, now)}`}`}
+                  // Josh, 22 Oct 2026: the ward sees the name before it accepts. The tier and referral
+                  // time still tell two waiting requests apart (D-39).
+                  value={`${resolvePatientIdentity(acceptModalMovement).displayName} (${acceptModalMovement.cohort}), Tier ${acceptModalMovement.urgency}${acceptModalMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(acceptModalMovement.referredAt, now)}`}`}
                   readOnly
                 />
               </div>
