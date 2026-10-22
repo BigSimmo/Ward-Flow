@@ -81,7 +81,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   // match a ruling, not a prohibition.
   {
     cause: "bed_pull_expired",
-    title: "Reserved time has passed, bed still held",
+    title: "Pull expired, bed still pulled",
     note: "Release the bed or set a new reserved time",
   },
   { cause: "awaiting_bed_ready", title: "Awaiting the bed itself", note: "each has a named bed" },

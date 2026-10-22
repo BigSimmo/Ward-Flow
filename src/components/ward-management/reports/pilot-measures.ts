@@ -223,7 +223,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     },
     {
       id: "hold",
-      label: "Ward accepting to bed held",
+      label: "Ward accepting to bed pulled",
       summary: stepSummary(
         movements,
         week,
@@ -233,7 +233,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     },
     {
       id: "leave",
-      label: "Bed held to leaving the ED",
+      label: "Bed pulled to leaving the ED",
       summary: stepSummary(movements, week, (m) => firstReached(m, "pulled"), leftEd),
     },
     {

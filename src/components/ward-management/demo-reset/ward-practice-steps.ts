@@ -26,7 +26,7 @@ export const PRACTICE_STEPS: readonly PracticeStep[] = [
     how: "As the bed coordinator, refer the request to two wards from its shortlist.",
   },
   { id: "accept", title: "A ward accepts", how: "Switch to one of those wards' desks and accept the request." },
-  { id: "hold", title: "Hold the bed", how: "Hold a bed for the person, so the ward keeps it for them." },
+  { id: "hold", title: "Pull the bed", how: "Pull a bed for the person, so the ward keeps it for them." },
   { id: "transport", title: "Book transport", how: "Book transport from the person's movement record." },
   { id: "arrive", title: "Record the arrival", how: "Mark the person arrived on the ward." },
 ];

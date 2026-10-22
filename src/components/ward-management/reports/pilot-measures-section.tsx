@@ -134,7 +134,7 @@ export function PilotMeasuresSection({
       key="held"
       isPhone={isPhone}
       icon={Clock}
-      title="Request to bed held"
+      title="Request to bed pulled"
       meta="Measure 1"
       testId="ward-pilot-held"
       figures={[{ ...held.typical, testId: "ward-pilot-held-typical" }, held.slow]}

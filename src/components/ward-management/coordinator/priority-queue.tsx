@@ -428,14 +428,14 @@ export function PriorityQueue({
                       ) : (
                         <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
                           <StatusGlyph tone="info" size={9} />
-                          In transit, bed held {holdLabel} · {arrivalMode}
+                          In transit, bed pulled for {holdLabel} · {arrivalMode}
                         </span>
                       )
                     ) : movement.stage === "pulled" ? (
                       <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
                         <StatusGlyph tone="warning" size={9} />
                         {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
-                        Bed held {holdLabel}
+                        Bed pulled for {holdLabel}
                       </span>
                     ) : null}
                   </span>

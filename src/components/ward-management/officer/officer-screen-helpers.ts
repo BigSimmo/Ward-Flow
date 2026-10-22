@@ -170,7 +170,7 @@ export function arrivedBlockedReason(movement: Movement, unit: Unit | undefined,
     return `${who ?? "This patient"} has already closed (${movement.closure.reason}). A patient cannot be marked arrived for a movement that has ended.`;
   }
   if (movement.transport?.diversion) {
-    return `${who ?? "This patient"} was diverted; release the held bed rather than recording delivery.`;
+    return `${who ?? "This patient"} was diverted; release the pulled bed rather than recording delivery.`;
   }
   // A4-16: Delivered ends the transport leg once; the receiving ward then confirms arrival.
   if (movement.transport?.arrivedAt !== undefined) {

@@ -86,7 +86,7 @@ describe("deriveMovementHorizonLanes reads the live movements it is given", () =
           movement.pullExpiresAt <= NOW
         ) {
           expect(event.type).toBe("delay");
-          expect(event.title).toBe("Reserved time has passed, bed still held");
+          expect(event.title).toBe("Pull expired, bed still pulled");
         } else {
           expect(event.type).toBe("admit");
           expect(event.title).toBe(stageCopy[movement.stage].label);

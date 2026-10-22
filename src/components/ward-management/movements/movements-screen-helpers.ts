@@ -84,7 +84,7 @@ export const CAUSES: CauseDefinition[] = [
   {
     key: "bed_pull_expired",
     rank: 5,
-    title: "Reserved time has passed, bed still held",
+    title: "Pull expired, bed still pulled",
     note: "Release the bed or set a new reserved time",
   },
   {

@@ -223,7 +223,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             title={releaseUnavailable ? releaseReason : undefined}
             onClick={releaseUnavailable ? ignoreUnavailableActivation : undefined}
           >
-            Release held bed and reopen search
+            Release pulled bed and reopen search
           </button>
           {releaseUnavailable ? (
             <span id={`workflow-release-reason-${movement.id}`} className="sr-only">

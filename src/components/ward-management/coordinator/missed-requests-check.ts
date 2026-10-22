@@ -40,7 +40,7 @@ export const MISSED_REQUEST_LABELS: Record<MissedRequestKind, string> = {
   no_ward_asked: "No ward asked yet",
   no_bed_request: "Accepted by an ED, no bed request raised",
   two_requests: "Same person, two open requests",
-  bed_held_twice: "One bed held for two people",
+  bed_held_twice: "One bed pulled for two people",
 };
 
 /** Stages where a bed request is still looking for, or holding, a bed. */
