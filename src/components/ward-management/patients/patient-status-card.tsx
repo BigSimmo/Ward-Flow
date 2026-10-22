@@ -240,8 +240,8 @@ function transportCell(
             kind: "button",
             // UX audit 21 Oct 2026: B3 opens the step that is needed first, so the button names that
             // step. "Log booking" here opened the ward picker.
-            label: waitingFor === "an accepted bed" ? "Choose wards" : "Pull the bed",
-            ariaLabel: `${waitingFor === "an accepted bed" ? "Choose wards" : "Pull the bed"}. Transport is booked after ${waitingFor}`,
+            label: waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed",
+            ariaLabel: `${waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed"}. Transport is booked after ${waitingFor}`,
             icon: Truck,
             secondary: true,
             onClick: () => {
