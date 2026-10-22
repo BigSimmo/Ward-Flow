@@ -12,7 +12,6 @@
 import { classifyLegalStatus } from "@/components/ward-management/ward-legal-status";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 export const DISCHARGE_CRITERIA = [
   "Mental state unchanged since the psychiatrist's last review",
@@ -122,31 +121,6 @@ export function isDischargeCriteriaRecord(value: unknown): value is DischargeCri
     seen.add(criterion);
     return metAt === null || (typeof metAt === "number" && Number.isFinite(metAt));
   });
-}
-
-/**
- * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
- * the second, because each criterion on a list must be distinct to be ticked (21 Oct 2026, the
- * typed-text device copy, D-72).
- */
-export function typedCriterionNotKept(n: number): string {
-  return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
-}
-
-const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
-  Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
-);
-
-/**
- * A record browser storage may hold since 21 Oct 2026 (D-72): fixed-list criteria, and patient
- * specific criteria only as the device copy's stand-ins. The typed words themselves are still
- * refused on restore (D-18, D-65).
- */
-export function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
-  return (
-    isDischargeCriteriaRecord(value) &&
-    value.items.every((item) => !isPatientSpecificItem(item) || CRITERION_STAND_INS.has(item.criterion))
-  );
 }
 
 /** Where the criteria stand now. A patient no longer recorded as voluntary pauses them. */

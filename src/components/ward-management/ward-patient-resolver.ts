@@ -100,16 +100,15 @@ function getOrBuildIndex(
   return index;
 }
 
-const UNKNOWN_PATIENT_INITIALS = "UP";
-
 /** A person known by initials only (a planned admission booked that way): no record, no UMRN. */
 function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
+  const label = plannedInitialsLabel(initials);
   return {
-    displayName: plannedInitialsLabel(initials),
-    formalName: plannedInitialsLabel(initials),
+    displayName: label,
+    formalName: label,
     umrn: UMRN_NOT_RECORDED,
-    // Initials the device copy did not keep read as an unknown person's in short slots.
-    initials: initials === TYPED_TEXT_NOT_KEPT ? UNKNOWN_PATIENT_INITIALS : initials,
+    // Initials the device copy did not keep read as an unknown person's ("UP") in short slots.
+    initials: initials === TYPED_TEXT_NOT_KEPT ? "UP" : initials,
   };
 }
 
@@ -148,7 +147,7 @@ const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
   displayName: NAME_NOT_RECORDED,
   formalName: NAME_NOT_RECORDED,
   umrn: UMRN_NOT_RECORDED,
-  initials: UNKNOWN_PATIENT_INITIALS,
+  initials: "UP",
 });
 
 /**

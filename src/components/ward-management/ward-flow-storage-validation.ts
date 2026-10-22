@@ -36,7 +36,12 @@ import {
   BED_MEETING_ACTION_OWNERS,
   type BedMeetingActionKind,
 } from "./bed-meeting/bed-meeting-actions";
-import { isDeviceCopyDischargeCriteriaRecord } from "./ward-discharge-criteria";
+import {
+  isDischargeCriteriaRecord,
+  isPatientSpecificItem,
+  PATIENT_SPECIFIC_CRITERIA_MAX,
+  type DischargeCriteriaRecord,
+} from "./ward-discharge-criteria";
 import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 import { REPATRIATION_MODES } from "./ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
@@ -53,6 +58,31 @@ import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
+
+/**
+ * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
+ * the second, because each criterion on a list must be distinct to be ticked (21 Oct 2026, the
+ * typed-text device copy, D-72).
+ */
+export function typedCriterionNotKept(n: number): string {
+  return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
+}
+
+const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
+  Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
+);
+
+/**
+ * A record browser storage may hold since 21 Oct 2026 (D-72): fixed-list criteria, and patient
+ * specific criteria only as the device copy's stand-ins. The typed words themselves are still
+ * refused on restore (D-18, D-65).
+ */
+export function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
+  return (
+    isDischargeCriteriaRecord(value) &&
+    value.items.every((item) => !isPatientSpecificItem(item) || CRITERION_STAND_INS.has(item.criterion))
+  );
+}
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -713,31 +743,24 @@ const repatriation = z
     agreedBy: z.optional(role),
   })
   .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
-const supportNotification = z.discriminatedUnion("outcome", [
-  z.strictObject({
-    id,
-    occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
-    subjectId: id,
-    party: z.enum(SUPPORT_NOTIFICATION_PARTIES),
-    outcome: z.literal(SUPPORT_NOTIFICATION_OUTCOMES[0]),
-    who: notKept,
-    contactedAt: finite,
-    at: finite,
-    by: role,
-  }),
-  z.strictObject({
-    id,
-    occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
-    subjectId: id,
-    party: z.enum(SUPPORT_NOTIFICATION_PARTIES),
-    outcome: z.literal(SUPPORT_NOTIFICATION_OUTCOMES[1]),
-    reason: notKept,
-    at: finite,
-    by: role,
-  }),
-]);
+const supportNotification = z.strictObject({
+  id,
+  occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
+  subjectId: id,
+  party: z.enum(SUPPORT_NOTIFICATION_PARTIES),
+  outcome: z.enum(SUPPORT_NOTIFICATION_OUTCOMES),
+  // Told carries who and when; not applicable carries the reason (`typedRecordsResolve`).
+  who: z.optional(notKept),
+  contactedAt: z.optional(finite),
+  reason: z.optional(notKept),
+  at: finite,
+  by: role,
+});
 
-/** Each kept repatriation and notification names a real record, and a contact is not in the future. */
+/**
+ * Each kept repatriation and notification names a real record, a told record carries who and when
+ * (no later than the record) and no reason, and a not applicable one carries only the reason.
+ */
 function typedRecordsResolve(
   state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
     supportNotifications?: WardFlowState["supportNotifications"];
@@ -750,7 +773,9 @@ function typedRecordsResolve(
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
-        (row.contactedAt === undefined || row.contactedAt <= row.at),
+        (row.outcome === "told"
+          ? row.who !== undefined && row.contactedAt! <= row.at && row.reason === undefined
+          : row.reason !== undefined && row.who === undefined && row.contactedAt === undefined),
     )
   );
 }

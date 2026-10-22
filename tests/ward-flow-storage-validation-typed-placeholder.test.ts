@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
-import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import {
+  isValidStoredWardFlowState,
+  typedCriterionNotKept,
+} from "@/components/ward-management/ward-flow-storage-validation";
 import { TYPED_TEXT_NOT_KEPT, typedTextOf } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { redactTypedTextForDevice } from "@/components/ward-management/ward-flow-typed-text-scrub";
-import { typedCriterionNotKept } from "@/components/ward-management/ward-discharge-criteria";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
 
@@ -54,6 +56,12 @@ describe("restore fence with typed text not kept", () => {
     expect(isValidStoredWardFlowState({ ...copy, supportNotifications: [{ ...row, subjectId: "MV-MISSING" }] })).toBe(
       false,
     );
+    const { contactedAt: _contactedAt, ...noTime } = row;
+    void _contactedAt;
+    expect(isValidStoredWardFlowState({ ...copy, supportNotifications: [noTime] })).toBe(false);
+    expect(
+      isValidStoredWardFlowState({ ...copy, supportNotifications: [{ ...row, reason: TYPED_TEXT_NOT_KEPT }] }),
+    ).toBe(false);
   });
 
   it("holds a not applicable record with the placeholder, and refuses a typed reason or a repeated id", () => {
@@ -65,6 +73,9 @@ describe("restore fence with typed text not kept", () => {
       isValidStoredWardFlowState({ ...copy, supportNotifications: [{ ...row, reason: "Synthetic reason" }] }),
     ).toBe(false);
     expect(isValidStoredWardFlowState({ ...copy, supportNotifications: [row, row] })).toBe(false);
+    expect(isValidStoredWardFlowState({ ...copy, supportNotifications: [{ ...row, who: TYPED_TEXT_NOT_KEPT }] })).toBe(
+      false,
+    );
   });
 
   it("holds planned admission initials as letters or the placeholder only", () => {

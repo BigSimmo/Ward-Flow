@@ -1,8 +1,8 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
-import { isDischargeCriterion, typedCriterionNotKept } from "./ward-discharge-criteria";
+import { isDischargeCriterion } from "./ward-discharge-criteria";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
+import { isValidStoredWardFlowState, typedCriterionNotKept } from "./ward-flow-storage-validation";
 import {
   normaliseTypedText,
   TYPED_TEXT_NOT_KEPT,

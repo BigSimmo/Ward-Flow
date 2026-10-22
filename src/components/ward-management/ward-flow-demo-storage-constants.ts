@@ -28,5 +28,5 @@ export const TYPED_TEXT_NOT_KEPT = "Typed text not kept on this device";
 
 /** How a booking's initials read on screen, where the device copy may hold the placeholder instead. */
 export function plannedInitialsLabel(initials: string): string {
-  return initials === TYPED_TEXT_NOT_KEPT ? "Initials not kept on this device" : `Initials ${initials}`;
+  return `Initials ${initials === TYPED_TEXT_NOT_KEPT ? "not kept on this device" : initials}`;
 }
