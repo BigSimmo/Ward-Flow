@@ -17,6 +17,7 @@ import type {
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   SupportNotificationOccasion,
   SupportNotificationOutcome,
@@ -98,6 +99,7 @@ import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
 } from "@/components/ward-management/ward-flow-release-notice-events";
+import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
@@ -1054,6 +1056,8 @@ export type WardFlowEvent =
       movementId: string;
       team: string;
       reason?: string;
+      /** D-74: follow-up or assess for admission. The ED form always sends it; absent reads as follow-up. */
+      purpose?: CommunityReferralPurpose;
     }
   | {
       /**
@@ -2566,6 +2570,7 @@ export type WardFlowEvent =
   // #398 and the arrival checklist (D-72): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  | RecordWardDiagnosisEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

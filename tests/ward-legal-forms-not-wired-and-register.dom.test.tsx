@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -132,8 +132,11 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
 
   it("renders the real register titles for 1A, 3B, 3D, 4A and 4C in the authority catalogue", () => {
     renderScreen();
-    // Forms (9 Oct 2026): the catalogue lives in the Requirements sheet.
-    fireEvent.click(screen.getByRole("button", { name: "Requirements" }));
+    // Forms (9 Oct 2026): the catalogue lives in the Requirements sheet. D-77 change 5: desktop opens it
+    // from the chosen patient's form, since the strip with the Requirements link is phone-only.
+    const row = document.querySelector("[data-record-key]") as HTMLElement;
+    fireEvent.click(within(row).getAllByRole("button")[0]!);
+    fireEvent.click(within(screen.getByTestId("ward-legal-selected")).getByRole("button", { name: /^Form \w+$/ }));
     for (const code of ["1A", "3B", "3D", "4A", "4C"]) {
       const title = formTitleForCode(code);
       expect(title, `form-register.ts no longer lists ${code}`).not.toBeNull();

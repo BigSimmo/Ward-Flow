@@ -25,6 +25,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
+import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 
 export function WardBoardDetailPanel({
   admissions,
@@ -386,6 +387,13 @@ export function WardBoardDetailPanel({
                       )}
                       <p className={`${styles.personLine} ${styles.awayAtEdNote}`}>This trip does not free the bed.</p>
                     </div>
+                    <WardDiagnosisControl
+                      key={selectedOccupant.key}
+                      occupant={selectedOccupant}
+                      unitId={unit.id}
+                      raise={raise}
+                      dispatchAndReport={dispatchAndReport}
+                    />
                     <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                       <button
                         type="button"

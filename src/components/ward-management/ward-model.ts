@@ -57,6 +57,7 @@ import type {
 } from "@/components/ward-management/ward-model-movement-parts";
 import type {
   CommunityDeclineReason,
+  CommunityReferralPurpose,
   HomeRegion,
   ReferralAddressingState,
   ReferralCorrection,
@@ -779,6 +780,12 @@ export type Movement = {
   closure?: MovementClosure;
   /** Recorded outcome from the emergency department (Item 19, owner answers 2026-09-17). */
   edOutcome?: "for_discharge" | "for_community_follow_up";
+  /**
+   * D-74: what the community referral that closed this record is for, written only by
+   * `REFER_TO_COMMUNITY_TEAM`. Absent on records closed before D-74; read it through
+   * `communityPurposeOf`, which treats absent as follow-up.
+   */
+  communityPurpose?: CommunityReferralPurpose;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
@@ -1355,6 +1362,12 @@ export type ReferralDestination =
        * region-derived membership through the back door. Never read it here.
        */
       teamName: string;
+      /**
+       * D-74: follow-up or assess for admission, chosen by the referrer. Optional only because arms
+       * saved before D-74 lack it; read it through `communityPurposeOf`, which treats absent as
+       * follow-up. Every form that creates an arm asks for it.
+       */
+      purpose?: CommunityReferralPurpose;
     };
 
 export type ReferralAddressing = {

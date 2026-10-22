@@ -23,6 +23,8 @@ import { patientAgeYears, type Patient } from "@/components/ward-management/ward
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
+import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { type DocumentationDraft } from "./referral-flow-panels";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
 
@@ -469,6 +471,26 @@ export function contactFieldErrors(contact: ReferralContact): Partial<Record<key
   return errors;
 }
 
+/** D-74: a community team arm only once the referrer has said what it is for. */
+export function communityDestinations(team: string, purpose: CommunityReferralPurpose | "") {
+  return purpose ? [{ kind: "community_team" as const, teamName: team, purpose }] : [];
+}
+
+/** The one chosen community team or department, named; a team says what it is for once chosen (D-74). */
+export function singleRecipientLabel(
+  community: boolean,
+  recipient: string,
+  purpose: CommunityReferralPurpose | "",
+): string {
+  if (!community) return edById(recipient)?.name ?? recipient;
+  return purpose ? `${recipient} (${communityReferralPurposeLabel(purpose)})` : recipient;
+}
+
+/** Why nothing can be sent yet: a chosen community team still needs its purpose (D-74). */
+export function missingDestinationError(communityTeamChosen: boolean): string {
+  return communityTeamChosen ? "Choose what the community referral is for." : "Select at least one referral location.";
+}
+
 /** "To Moodjar and 1 more", or the single name. */
 export function recipientSummary(labels: string[]): string {
   if (!labels.length) return "No location chosen yet";
@@ -487,6 +509,8 @@ export type KeptDraft = {
   ageBand: Cohort | "";
   selectedUnitIds: string[];
   selectedRecipient: string;
+  /** D-74: what a community referral is for. Omitted until chosen. */
+  communityPurpose?: CommunityReferralPurpose;
   documentation: DocumentationDraft;
   contact: ReferralContact;
   catchmentSuburb: string;

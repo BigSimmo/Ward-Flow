@@ -555,6 +555,14 @@ export type Admission = {
    */
   tentativeDiagnosis: TentativeDiagnosisBlock | null;
   /**
+   * FD-10 (owner, 29 Aug 2026): the WARD's own tentative diagnosis block, beside
+   * `tentativeDiagnosis` and never in place of it. Two assessments by two clinicians at two
+   * moments, so both stay visible, each with its own role and time. Written only by
+   * `RECORD_WARD_DIAGNOSIS`. Absent means the ward has recorded none, an ordinary state and not a
+   * prompt. Chosen from `TENTATIVE_DIAGNOSIS_BLOCKS`, never typed.
+   */
+  wardDiagnosis?: { block: TentativeDiagnosisBlock; recordedAt: Instant; recordedBy: WardFlowRole };
+  /**
    * WHICH KIND OF BED THIS ADMISSION ACTUALLY TOOK — item 11, owner answer 11 (17 September 2026):
    * *"voluntary patients take open beds first, and secure patients take locked beds first."*
    * `PULL_PATIENT` is the only runtime writer, and it records exactly the kind it took: an Open
@@ -738,6 +746,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   gender: true,
   homeRegion: true,
   tentativeDiagnosis: true,
+  wardDiagnosis: true,
   bedKind: true,
   bedNumber: true,
   dischargeBarrier: true,

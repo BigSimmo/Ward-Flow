@@ -75,7 +75,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
-import { PersonScreen } from "@/components/ward-management/patients/person-screen";
+import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -1321,7 +1321,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   },
   {
     route: `${ROUTE_PREFIX}/people/[patientId]`,
-    render: () => createElement(PersonScreen, { patientId: wardPatients[0].id }),
+    render: () => createElement(PatientNowScreen, { patientId: wardPatients[0].id }),
   },
   // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },

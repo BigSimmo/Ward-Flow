@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { SHEET_INERT_SKIP_ATTRIBUTE } from "./sheet-focus";
 
 export type OverlayLayer = "overlay" | "popover" | "modal" | "toast";
 
@@ -24,6 +25,9 @@ function OverlayHost({ layer }: { layer: OverlayLayer }) {
   return (
     <div
       data-overlay-host={layer}
+      // A toast raised from inside a sheet (Undo after "Pull the bed") must stay clickable, so the
+      // sheet's background inerting skips the toast layer (visual desk, 22 Oct 2026).
+      {...(layer === "toast" ? { [SHEET_INERT_SKIP_ATTRIBUTE]: "" } : {})}
       style={{ position: "fixed", inset: 0, zIndex: Z_INDEX[layer], pointerEvents: "none" }}
     />
   );
@@ -95,6 +99,7 @@ function ensureFallbackHost(layer: OverlayLayer) {
     for (const fallbackLayer of LAYERS) {
       const host = document.createElement("div");
       host.dataset.overlayHost = fallbackLayer;
+      if (fallbackLayer === "toast") host.setAttribute(SHEET_INERT_SKIP_ATTRIBUTE, "");
       Object.assign(host.style, {
         position: "fixed",
         inset: "0",

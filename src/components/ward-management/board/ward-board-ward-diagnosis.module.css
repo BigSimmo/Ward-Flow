@@ -1,0 +1,16 @@
+/* The block names are long, so the list is held to the panel's width rather than its longest option. */
+.form {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  margin-top: 8px;
+}
+
+.select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
