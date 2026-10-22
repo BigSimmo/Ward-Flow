@@ -33,6 +33,12 @@ export function wardSafeRejectionReason(reason: string): string {
   if (lower.includes("non-binary")) return GENDER_DESIGNATION_PRIVACY_SENTENCE;
   if (lower.includes("no longer suits this patient")) return GENDER_NO_LONGER_SUITS_REFUSAL;
   const match = ENGINE_REFUSAL.exec(reason);
+  if (match?.[2] === "gender_designation") {
+    // The gate's own detail names the designation ("female only"), so it never reaches the ward,
+    // as in `wardFacingGateDetail`. The reducer's closing instruction, if any, still shows.
+    const next = /(?:^|\. )(This (?:placement|is not) .+)$/su.exec(match[3])?.[1];
+    return next ? `${GENDER_DESIGNATION_PRIVACY_SENTENCE} ${next}` : GENDER_DESIGNATION_PRIVACY_SENTENCE;
+  }
   const text = match
     ? `${match[1]} fails the ${(WARD_GATE_LABELS[match[2] as EligibilityGate] ?? match[2].replace(/_/g, " ")).toLowerCase()} check. ${match[3]}`
     : reason;

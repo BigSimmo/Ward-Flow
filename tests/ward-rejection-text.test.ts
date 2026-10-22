@@ -29,6 +29,19 @@ describe("wardSafeRejectionReason", () => {
     );
   });
 
+  // CodeRabbit review on #584: the bed designation gate's detail ("female only") reached the ward.
+  it("never shows the bed designation gate's own detail", () => {
+    const text = wardSafeRejectionReason(
+      "Ward A is not eligible for movement WF-009 — failed gate gender_designation: female only. " +
+        `This placement ${OVERRIDE_REASON_REQUIRED}.`,
+    );
+    expect(text).toBe(`${GENDER_DESIGNATION_PRIVACY_SENTENCE} This placement ${OVERRIDE_REASON_REQUIRED}.`);
+    expect(text).not.toMatch(/female|gender_designation/iu);
+    expect(
+      wardSafeRejectionReason("Ward A cannot accept referral R-1 — failed gate gender_designation: male only"),
+    ).toBe(GENDER_DESIGNATION_PRIVACY_SENTENCE);
+  });
+
   it("keeps the gender and sex wording off the ward screens", () => {
     expect(wardSafeRejectionReason("Placement refused: Non-binary placement record missing")).toBe(
       GENDER_DESIGNATION_PRIVACY_SENTENCE,
