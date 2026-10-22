@@ -2,6 +2,7 @@ import { expect, test, type Page } from "playwright/test";
 
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { movementPath } from "./helpers/ward-record-url";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 const routes = [
   ["ED overview", "/ed"],
@@ -251,6 +252,7 @@ test.describe("@mockup Ward responsive containment", () => {
 test("@mockup approved overdue queue treatment fits phone, tablet and desktop", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+  await showEveryoneWaitingOn(page);
   const overdueRows = page.locator('[data-testid^="ward-queue-row-"][data-overdue="true"]:visible');
   await expect(overdueRows.first()).toBeVisible();
 

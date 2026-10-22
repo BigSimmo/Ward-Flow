@@ -1,17 +1,14 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import {
-  buildActionInbox,
-  candidateReason,
-  eligibleCandidatesAmong,
-  isOpen,
-} from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, eligibleCandidatesAmong, isOpen } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
@@ -52,6 +49,8 @@ async function gotoCoordinator(page: Page) {
   // Wait until the pill is in the header and the bar is gone before the first interaction.
   await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
   await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+  // Home v7 (Josh, 22 Oct 2026): Home opens on My list; these journeys read the priority queue.
+  await showEveryoneWaitingOn(page);
 }
 
 /**
@@ -63,8 +62,11 @@ async function openShortlistSections(shortlist: Locator) {
   // L3 (site review, 12 Oct 2026): once a ward has accepted, the card leads with the next step and
   // keeps the bed list behind "Find another bed".
   const findAnother = shortlist.getByTestId("ward-shortlist-find-another-bed");
-  if ((await findAnother.count()) > 0) await findAnother.click();
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
+  // Home v7 (Josh, 22 Oct 2026): Placement mounts only once a patient is chosen, so wait for the
+  // card to render one of the two before deciding which it shows.
+  await expect(findAnother.or(toggle).first()).toBeVisible();
+  if ((await findAnother.count()) > 0) await findAnother.click();
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   const checks = shortlist.locator('details[aria-label="Eligibility checks"]');
@@ -110,42 +112,6 @@ function requireMovement(movementId: string | undefined | null): Movement {
 }
 
 /**
- * Pins the diagram's routed set to the SELECTED MOVEMENT'S OWN shortlist identity — not merely
- * its size. `eligibleCandidatesAmong` is computed independently here, against the same real fixture
- * the app renders against, so a hard-coded routed set of the wrong units (or the brief's own
- * tautological `toHaveCount(await routed.count())`, which compares a value to itself and passes
- * at any count including zero) both fail this. Called for two different movements with two
- * different shortlists in the main diagram test (review Important 3 — a single-movement proof
- * only rules out a hard-coded set that happens to match that one movement).
- *
- * Also asserts route connectors are counted and distinguished from demand connectors via
- * `data-connector-kind` (review Important 4) — deleting every route connector while leaving the
- * demand connectors alone must turn this red, proven manually against the pre-fix component
- * before this assertion was accepted (see the task report).
- */
-async function assertRoutedMatchesShortlist(diagram: Locator, movementId: string) {
-  const movement = requireMovement(movementId);
-  const shortlist = eligibleCandidatesAmong(movement, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP);
-  const expectedUnitIds = shortlist.map((candidate) => candidate.unit.id).sort();
-
-  const routed = diagram.locator('[data-routed="true"]');
-  const routedCount = await routed.count();
-  expect(routedCount, `${movementId}: routed count`).toBeGreaterThan(0);
-  expect(routedCount, `${movementId}: routed count vs PARALLEL_REFERRAL_CAP`).toBeLessThanOrEqual(
-    PARALLEL_REFERRAL_CAP,
-  );
-  const routedUnitIds = (await routed.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid"))))
-    .map((testId) => String(testId).replace("ward-diagram-unit-", ""))
-    .sort();
-  expect(routedUnitIds, `${movementId}: routed unit identity`).toEqual(expectedUnitIds);
-
-  // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-  // (Was: route connector count equals the routed count.)
-
-  return { movement, shortlist };
-}
-
-/**
  * `.screen` sets `overflow: hidden`, so `document.documentElement` can never report an
  * overflow regardless of what breaks inside it — measuring the document was a test that could
  * not fail (Task 3 review Important 1). The region grid is the element whose track widths
@@ -171,14 +137,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
-    // ⚠️ EXACT, NOT SUBSTRING — the third-edition visual upgrade (883ecfdfb4) gave the diagram's
-    // own scroll container a second, more specific landmark, `aria-label="Statewide flow diagram"`
-    // (`flow-diagram.tsx`'s `ward-diagram-scroll`), nested inside this outer section. A substring
-    // match now resolves both and throws a strict-mode violation; `exact: true` keeps this
-    // assertion scoped to the outer "Statewide flow" section it always meant to prove exists,
-    // without weakening it — the inner diagram landmark is a real, deliberate addition, not a
-    // duplicate to collapse away.
-    await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeVisible();
+    // Home v7 (Josh, 22 Oct 2026): State bedflow moved to the foot of Capacity; Beds that fit
+    // takes its place on Home.
+    await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("home-beds-gap")).toBeVisible();
     // ⚠️ **THE SHORTLIST NO LONGER MOUNTS UNCONDITIONALLY.** `coordinator-screen.tsx` now wraps
     // the whole `<aside aria-label="Placement">` in `{hasPanelSubject ? ... : null}` —
     // with nothing selected, "Statewide flow"'s own header shows "Select a patient or referral to
@@ -187,13 +149,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
-    // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero from
-    // its Exceptions count, so the toggle is clicked first. Scrolled into view before the
-    // visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
-    await page
-      .getByTestId("ward-coordinator-body")
-      .getByRole("button", { name: /Alerts/, expanded: false })
-      .click();
+    // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero. Home
+    // v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them. Scrolled into
+    // view before the visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
+    await page.getByTestId("ward-home-registers").click();
     const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
     await registers.scrollIntoViewIfNeeded();
     await expect(registers).toBeVisible();
@@ -218,22 +177,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    // Before selection, the diagram header reports the fixture's ward count.
-    // 2026-10-07 (v6 Home): the State bedflow card head reads "22 wards", as the v6 Home mockup
-    // draws it; the count itself is still the fixture's own `allUnits().length`.
-    await expect(
-      page
-        .getByRole("region", { name: "State Bedflow", exact: true })
-        .getByText(`${allUnits().length} wards`, { exact: true }),
-    ).toBeVisible();
-
-    // Home direction A (Josh, 10 Oct 2026): at rest on desktop, Placement previews the top of the
-    // queue, labelled as first in the list (not a recommendation), with no row pressed.
+    // Home v7 (Josh, 22 Oct 2026): nothing is pre-selected. Placement stays empty, with a prompt
+    // to choose a patient, until a row is chosen.
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
     const firstRow = rows.first();
     const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
-    await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
-    await expect(shortlist.getByTestId("ward-placement-top-of-queue")).toBeVisible();
+    await expect(shortlist).toHaveCount(0);
+    await expect(page.getByTestId("home-placement-prompt")).toBeVisible();
     await expect(firstRow).toHaveAttribute("aria-pressed", "false");
     await firstRow.click();
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");
@@ -269,12 +219,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    // Opens on the Exceptions tab by default. At this width the registers start closed and open
-    // from the hero's Exceptions count (owner, 8 Oct 2026).
-    await page
-      .getByTestId("ward-coordinator-body")
-      .getByRole("button", { name: /Alerts/, expanded: false })
-      .click();
+    // Opens on the Exceptions tab by default. At this width the registers start closed (owner,
+    // 8 Oct 2026).
+    // Home v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them.
+    await page.getByTestId("ward-home-registers").click();
     const drawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await drawer.scrollIntoViewIfNeeded();
     await expect(drawer).toBeVisible();
@@ -356,11 +304,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
     // is reachable without a long scroll.
-    await page
-      .getByTestId("ward-coordinator-body")
-      .getByRole("button", { name: /Alerts/ })
-      .first()
-      .click();
+    // Home v7 (Josh, 22 Oct 2026): the Registers link opens them, as a sheet on a phone.
+    await page.getByTestId("ward-home-registers").click();
     await expect(page.getByTestId("ward-home-exceptions-sheet")).toBeVisible();
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
@@ -507,247 +452,6 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(queue.locator('[data-testid^="ward-queue-row-"]')).toHaveCount(before);
   });
 
-  test("draws the selected movement's routes from its department to its shortlisted units", async ({ page }) => {
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-
-    // Every one of the fixture units (22 since 26 Sept) renders as its own node regardless of selection — a unit
-    // whose service-group lookup silently fails must not just vanish from the count (review
-    // Minor 6; `flow-diagram.tsx` renders an explicit "Unresolved health service" anomaly card
-    // for exactly that case rather than dropping the unit).
-    //
-    // 23, not the 22 this assertion carried from PR #2289: Phase 7 Task 1 (`5401a7121`) added the
-    // youth unit at Bentley on the product owner's own instruction, and this count is deliberately
-    // exact rather than a floor, so it goes red when the fixture grows. It did — caught by Task 7,
-    // whose dispatch had wrongly asserted the branch was green because only the Vitest ward suite
-    // had been re-run. `tests/ui-ward-roles.spec.ts` repeats the same figure in prose.
-    //
-    // 22 since 26 Sept 2026: the confirmed ward facts removed Kununurra's ward (the site stays with
-    // no ward), so allUnits() on the seed returns 22 units, counted from the seed, not assumed.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]')).toHaveCount(22);
-
-    // No movement is selected yet. Home direction A (Josh, 10 Oct 2026): the bedflow then routes
-    // the top-of-queue preview, the same patient Placement shows at rest.
-    const topId = (
-      await page
-        .getByRole("region", { name: "Priority queue" })
-        .locator('[data-testid^="ward-queue-row-"]')
-        .first()
-        .getAttribute("data-testid")
-    )?.replace("ward-queue-row-", "");
-    await assertRoutedMatchesShortlist(diagram, String(topId));
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: ten demand connectors, department to hub, and zero route connectors by `data-connector-kind`.)
-
-    // Excludes WF-009 by id. WF-009 leads tier 1 on the current fixture (28 waiting + 15
-    // declines + 10 blocker = 53, the highest tier-1 operational score) and so renders at row 1,
-    // and the contrast this test needs below only holds if the two clicked movements are
-    // genuinely different. Without the exclusion, "row 1" and "WF-009" could silently become the
-    // same movement and the second assertion would pass by tautology rather than by proof.
-    const firstRow = page
-      .getByRole("region", { name: "Priority queue" })
-      .locator('[data-testid^="ward-queue-row-"]:not([data-testid="ward-queue-row-WF-009"])')
-      .first();
-    const movementId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
-    expect(movementId, "the first queue row must carry a real movement id").toBeTruthy();
-    expect(movementId, "the exclusion above must keep this genuinely different from WF-009").not.toBe("WF-009");
-    await firstRow.click();
-
-    await assertRoutedMatchesShortlist(diagram, String(movementId));
-
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: exactly one `data-origin` node, `ward-diagram-ed-<the movement's originEdId>`.)
-
-    // Review Important 3: the identity assertion above must hold for more than the one movement
-    // selected above. WF-009 has an entirely different shortlist (proven separately, in the
-    // ineligible-routes test below, to also be an entirely different eligibility outcome) — a
-    // hard-coded routed set that coincidentally matched the first movement's shortlist would
-    // fail here instead of passing by coincidence.
-    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-009");
-    await assertRoutedMatchesShortlist(diagram, "WF-009");
-  });
-
-  test("marks an ineligible shortlisted unit as not currently placeable, not as a routed destination", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-
-    const movement = requireMovement("WF-009");
-    const shortlist = eligibleCandidatesAmong(movement, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP);
-    // This test's whole premise is a shortlist with ZERO eligible candidates — WF-009 has been
-    // declined by five units, and its three cohort-matching candidates (since `eligibleCandidatesAmong`
-    // sorts eligible-first but never filters) are all ineligible: two already declined it, one fails
-    // the security gate. If the fixture ever changes so this stops being true, the assertions
-    // below must fail loudly here rather than vacuously pass on an empty or partially-eligible
-    // set.
-    expect(shortlist.length).toBeGreaterThan(0);
-    expect(shortlist.every((candidate) => !candidate.verdict.eligible)).toBe(true);
-
-    const selectedRow = await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-009");
-    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
-
-    // Every routed node is marked not-eligible on the node itself...
-    const routed = diagram.locator('[data-routed="true"]');
-    await expect(routed).toHaveCount(shortlist.length);
-    const eligibleFlags = await routed.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-eligible")));
-    for (const flag of eligibleFlags) {
-      expect(flag).toBe("false");
-    }
-
-    // ...and states its own specific reason as real text (never colour alone — must survive
-    // forced-colors — and never a generic "not eligible", proving `candidateReason(verdict)`
-    // actually reaches the DOM for each unit, not just a shared placeholder).
-    for (const candidate of shortlist) {
-      const node = diagram.locator(`[data-testid="ward-diagram-unit-${candidate.unit.id}"]`);
-      await expect(node).toContainText(candidateReason(candidate.verdict));
-    }
-
-    // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
-    // (Was: one route connector per shortlisted unit, each marked `data-eligible="false"`.)
-
-    // The hub states the true eligible count — zero — never the shortlist size framed as routes.
-    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
-    await expect(diagram).toContainText(`No eligible destination; ${shortlist.length} candidates, all excluded`);
-  });
-
-  test("distinguishes an accepted destination from an outstanding referral, and shows every parallel referral", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-    const queue = page.getByRole("region", { name: "Priority queue" });
-
-    // WF-017 has an outstanding referral to BTY Adult Secure and no acceptance yet —
-    // `destinationUnit`'s single conflated field (`acceptedUnitId ?? referredUnitIds[0]`) used
-    // to badge this "Current recorded destination", which reads as an acceptance that has not
-    // happened (review Important 2).
-    await pickQueueRow(queue, "WF-017");
-    const bty = diagram.locator('[data-testid="ward-diagram-unit-bty-adult-secure"]');
-    await expect(bty).toHaveAttribute("data-referred", "true");
-    await expect(bty).not.toHaveAttribute("data-accepted", "true");
-    await expect(bty).toContainText("Outstanding referral");
-    await expect(bty).not.toContainText("Accepted destination");
-
-    // WF-013 carries two parallel referrals — both must be visible, not only
-    // `referredUnitIds[0]`.
-    await pickQueueRow(queue, "WF-013");
-    await expect(diagram.locator('[data-testid="ward-diagram-unit-bty-older-adult"]')).toHaveAttribute(
-      "data-referred",
-      "true",
-    );
-    await expect(diagram.locator('[data-testid="ward-diagram-unit-gry-older-adult"]')).toHaveAttribute(
-      "data-referred",
-      "true",
-    );
-
-    // WF-003 has an actual acceptance — a different fact, with a different badge.
-    await pickQueueRow(queue, "WF-003");
-    const accepted = diagram.locator('[data-testid="ward-diagram-unit-rph-adult-secure"]');
-    await expect(accepted).toHaveAttribute("data-accepted", "true");
-    await expect(accepted).toContainText("Accepted destination");
-    await expect(accepted).not.toContainText("Outstanding referral");
-  });
-
-  /**
-   * Whole-branch review Important 3: routes were drawn only to the three candidates, so for 18 of
-   * the 41 open movements the unit the patient is actually going to had no connector at all while
-   * three arrows pointed at wards they are not going to — and the hub read "WF-004 — 3 eligible
-   * destinations" for a movement whose bed is already held elsewhere.
-   *
-   * WF-004 is the case the review named: its accepted unit was NOT among its candidates, so before
-   * the fix its destination connector count was zero. Both halves are asserted — the connector
-   * exists and is its own kind, and the hub leads with the recorded fact rather than a candidate
-   * count.
-   *
-   * 🔴 **2026-09-17: WF-004 NO LONGER FITS ITS OWN ASSUMPTION AND THE MOVEMENT WAS SWAPPED, NOT THE
-   * PROPERTY.** The 17 September sample-data and capacity changes made `bty-adult-secure` (WF-004's
-   * accepted unit) eligible again, so the guard below caught it rather than silently testing
-   * nothing. WF-005 (`fre-adult-open`, genuinely excluded from its own candidate list) proves the
-   * identical property; WF-004's own history stays in the comment above because that is still the
-   * incident this test exists to guard against.
-   */
-  test("draws the recorded destination as its own connector and says so at the hub", async ({ page }) => {
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await gotoCoordinator(page);
-
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-    const queue = page.getByRole("region", { name: "Priority queue" });
-
-    const wf005 = requireMovement("WF-005");
-    const acceptedUnitId = wf005.acceptedUnitId;
-    expect(acceptedUnitId, "fixture assumption: WF-005 has an accepted destination").toBeTruthy();
-    const candidateIds = eligibleCandidatesAmong(wf005, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP).map(
-      (candidate) => candidate.unit.id,
-    );
-    expect(
-      candidateIds,
-      "fixture assumption: WF-005's accepted unit is not one of its candidates, so only the destination connector can reach it",
-    ).not.toContain(acceptedUnitId);
-
-    await pickQueueRow(queue, "WF-005");
-
-    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
-    // (Was: one destination connector with `data-recorded="accepted"`.) Exactly one unit is marked
-    // accepted, and it is WF-005's own accepted unit, though it is not one of its candidates.
-    const acceptedNodes = diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]');
-    await expect(acceptedNodes).toHaveCount(1);
-    await expect(acceptedNodes).toHaveAttribute("data-testid", `ward-diagram-unit-${acceptedUnitId}`);
-
-    // The hub leads with the recorded destination, and never claims the movement is looking for
-    // three of them.
-    // Home's bedflow drops the repeated name and sentence-cases the hub line (device audit, 11 Oct 2026).
-    await expect(diagram).toContainText("Accepted destination:");
-    await expect(diagram).not.toContainText("WF-005 — 3 eligible destinations");
-
-    // An outstanding referral is a different recorded fact and gets its own connector too —
-    // WF-013 carries two, so a single-referral implementation (`referredUnitIds[0]`) fails here.
-    const wf013 = requireMovement("WF-013");
-    expect(wf013.referredUnitIds.length, "fixture assumption: WF-013 carries two parallel referrals").toBe(2);
-    await pickQueueRow(queue, "WF-013");
-    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
-    // (Was: two destination connectors marked `data-recorded="referred"`.) Both referred units are
-    // marked referred, and nothing is marked accepted.
-    const referredNodes = diagram.locator('[data-testid^="ward-diagram-unit-"][data-referred="true"]');
-    await expect(referredNodes).toHaveCount(2);
-    const referredIds = (
-      await referredNodes.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid")))
-    )
-      .map((testId) => String(testId).replace("ward-diagram-unit-", ""))
-      .sort();
-    expect(referredIds).toEqual([...wf013.referredUnitIds].sort());
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]')).toHaveCount(0);
-
-    // A movement with no recorded destination draws none — the connector reports a fact, never a
-    // suggestion dressed as one.
-    const wf009 = requireMovement("WF-009");
-    expect(wf009.acceptedUnitId).toBeUndefined();
-    expect(wf009.referredUnitIds).toHaveLength(0);
-    await pickQueueRow(queue, "WF-009");
-    // The v6 State bedflow draws no connectors (removal approved by Josh, 7 Oct 2026); this recorded fact is now checked on the unit nodes.
-    // (Was: zero destination connectors.) No unit is marked accepted or referred.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-accepted="true"]')).toHaveCount(0);
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"][data-referred="true"]')).toHaveCount(0);
-  });
-
   /**
    * Whole-branch review Important 5: `eligibility()` passes a Secure ward for an Open movement with
    * the affirmative detail "Secure ward meets an open requirement", marked "Met" — so the screen
@@ -762,10 +466,6 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     // WF-001 is an OPEN-status movement whose top candidate is a locked ward that passes every
     // gate — the exact pairing the review found.
@@ -785,15 +485,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await pickQueueRow(queue, "WF-001");
     await openShortlistSections(shortlist);
 
-    // The locked candidates say so on their own rows; the open one does not. Both the shortlist
-    // row and the diagram node now read `restrictionNotice`'s own wording (flow-diagram fix:
-    // the diagram used to read the older, superseded `MORE_RESTRICTIVE_NOTE` text and diverge
-    // from the shortlist here — it no longer does, so both assertions use the same string).
+    // The locked candidates say so on their own rows; the open one does not. Home v7 (Josh, 22 Oct
+    // 2026): State bedflow left Home, so the shortlist row is the one place this is read.
     for (const candidate of locked) {
       await expect(shortlist.locator(`[data-testid="ward-shortlist-candidate-${candidate.unit.id}"]`)).toContainText(
-        "More restrictive than this movement requires",
-      );
-      await expect(diagram.locator(`[data-testid="ward-diagram-unit-${candidate.unit.id}"]`)).toContainText(
         "More restrictive than this movement requires",
       );
     }
@@ -840,16 +535,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    * `rph-adult-secure` and `rgh-adult-secure` stay wholly locked and still exercise the
    * `voluntary_on_locked` notice this test pins.
    */
-  test("gives a voluntary patient on a locked ward its own, more prominent notice on the diagram", async ({ page }) => {
+  test("gives a voluntary patient on a locked ward its own, more prominent notice in Placement", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
-    // waits on its first ward node instead. Every assertion below reads the same node ids.
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     const wf301 = requireMovement("WF-301");
     expect(wf301.legalStatus, "fixture assumption: WF-301 is a Voluntary movement").toBe("Voluntary");
@@ -867,16 +558,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       await expect(shortlistRow).toContainText(
         "Voluntary patient on a locked ward — review legal status before admission",
       );
-
-      // The case that renders nothing today: the diagram node must carry the same
-      // `restrictionNotice` wording as the shortlist, not silence.
-      const diagramNode = diagram.locator(`[data-testid="ward-diagram-unit-${candidate.unit.id}"]`);
-      await expect(diagramNode).toContainText(
-        "Voluntary patient on a locked ward — review legal status before admission",
-      );
-      // And it must be the sharper, danger-toned variant, not the plain over-restrictive one —
-      // the two levels are visually distinguished by `data-level`, not merely by wording.
-      await expect(diagramNode.locator('[data-level="voluntary_on_locked"]')).toHaveCount(1);
+      // Home v7 (Josh, 22 Oct 2026): State bedflow left Home, so its node's copy of this notice is
+      // no longer on this screen; the shortlist row carries it.
     }
   });
 
@@ -1188,16 +871,16 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(shortlist).toContainText("No eligible destination found yet.");
 
     // WF-017: carries a recorded outstanding referral (a fact, never a computed suggestion), so
-    // "Suggested destination" must not appear here either. That referral — BTY Adult Secure,
-    // selectable via the diagram's shared selection state — passes every gate, so presenting it
-    // as fact carries no hidden risk of recommending a failing unit.
+    // "Suggested destination" must not appear here either. That referral — BTY Adult Secure —
+    // passes every gate, so presenting it as fact carries no hidden risk of recommending a failing
+    // unit.
     const referredRow = await pickQueueRow(queue, "WF-017");
     await expect(referredRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
 
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await diagram.locator('[data-testid="ward-diagram-unit-bty-adult-secure"]').click();
+    // Home v7 (Josh, 22 Oct 2026): State bedflow left Home, so the ward is chosen in Placement.
+    await shortlist.locator('[data-testid="ward-shortlist-candidate-bty-adult-secure"]').click();
     const btyGates = shortlist.locator('[data-testid^="ward-gate-"]');
     await expect(btyGates).toHaveCount(11);
     await expect(shortlist.locator('[data-testid^="ward-gate-"][data-pass="false"]')).toHaveCount(0);
@@ -1415,10 +1098,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
     // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
     // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    await page
-      .getByTestId("ward-coordinator-body")
-      .getByRole("button", { name: /Alerts/, expanded: false })
-      .click();
+    // Home v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them.
+    await page.getByTestId("ward-home-registers").click();
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
     await refusedTab.click();

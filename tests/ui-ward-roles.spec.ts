@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
@@ -8,6 +9,7 @@ import { edById, unitById } from "@/components/ward-management/ward-sites";
  * first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
   const showAll = queue.getByTestId("ward-queue-show-all");
   if (
@@ -1429,6 +1431,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
+    await showEveryoneWaitingOn(page);
     await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
       0,
     );
@@ -1534,38 +1537,33 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    // --- Step 6: the reviewer's Proof 3. Select any open movement (the diagram renders every
-    // one of the 23 units' own capacity regardless of which movement is selected, so which
-    // movement is picked here does not matter to this proof), then select Dabakarn's
-    // own node in the statewide flow diagram. ---
-    // ⚠️ EXACT, NOT SUBSTRING — see `ui-ward-coordinator.spec.ts`'s own comment on the same
-    // ambiguity: the diagram's scroll container carries a second, more specific
-    // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
-    // visual upgrade (883ecfdfb4).
-    // 2026-10-07 re-point (v6 Home): Home's State bedflow card is a grouped ward list with no SVG
-    // arrows, so "the diagram has rendered" now waits on its first ward node instead of the old
-    // `svg path[marker-end]`. The nodes keep the old diagram's `ward-diagram-unit-<id>` ids.
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-
-    await page
-      .getByRole("region", { name: "Priority queue" })
-      .locator('[data-testid^="ward-queue-row-"]')
-      .first()
-      .click();
-
-    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
-    // The diagram's own unit node reads the unit's live capacity directly (Critical 1 also named
+    // --- Step 6: the reviewer's Proof 3. Home v7 (Josh, 22 Oct 2026): State bedflow sits at the
+    // foot of Capacity, so the coordinator opens Capacity from the menu and reads Dabakarn's own
+    // node there. The node reads the unit's live capacity directly (Critical 1 also named
     // `flow-diagram.tsx`'s `serviceGroups`/`unplacedUnits`, which used to be grouped from the
-    // frozen `allUnits()` rather than the live `units` this diagram now receives as a prop).
+    // frozen `allUnits()` rather than the live `units` this card receives as a prop). ---
+    await page
+      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("link", { name: /^Capacity\b/u })
+      .click();
+    await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
+    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
     await expect(rphNode).toContainText("Ready 0");
-    await rphNode.click();
 
-    // --- Step 7: the shortlist's own explainable gate row for this exact unit — the reviewer's
-    // literal proof text: "Allocatable bed / Met / 1 allocatable" while the ward had just said
-    // zero. It must now read the opposite: Not met, 0 allocatable. `ward-eligibility.ts` is a
-    // protected surface — this is not a change to what the gate judges, only to which unit's
-    // live data it is judging. ---
+    // Back on Home, a patient whose Placement explains Dabakarn: WF-003, already accepted there,
+    // so its eligibility checks are Dabakarn's own.
+    await page
+      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("link", { name: /^My list\b/u })
+      .click();
+    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");
+    const placement = page.getByRole("complementary", { name: "Placement", exact: true });
+    // L3 (12 Oct 2026): an accepted patient's card keeps the bed list behind "Find another bed".
+    await placement.getByTestId("ward-shortlist-find-another-bed").click();
+    await expect(placement.getByText("Eligibility checks · Dabakarn")).toBeVisible();
+
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toContainText("Dabakarn");
     const allocatableGate = shortlist.getByTestId("ward-gate-allocatable_bed");

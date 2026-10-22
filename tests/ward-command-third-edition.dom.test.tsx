@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 // never sees tests/setup/jsdom.setup.ts's global jest-dom matcher augmentation.
 import "@testing-library/jest-dom/vitest";
 
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -65,18 +66,19 @@ function renderCoordinator() {
 }
 
 describe("Command third-edition restyle — panel order and heading pins", () => {
-  it("renders pressure, queue and flow, then mounts the shortlist after selection", () => {
+  it("renders pressure, queue and Beds that fit, then mounts the shortlist after selection", () => {
     renderCoordinator();
     // Direction A (owner, 10 Oct 2026): the hero answers how many wait for how many beds, then the
-    // ED strip (heading for screen readers), the queue, State bedflow, and Placement showing the
-    // top of the queue at rest.
+    // ED strip (heading for screen readers) and the queue. Home v7 (Josh, 22 Oct 2026): State
+    // bedflow moved to Capacity, Beds that fit takes its place, and Placement previews nobody.
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
     expect(atRest[0]).toMatch(/^\d+ waiting in ED, \d+ beds? ready$/u);
     // Overall review, 20 Oct 2026: the queue also lists people already in transit, so the hero names
     // them beside the title, and its figures add up to the queue's Patients count.
     expect(screen.getByTestId("ward-home-hero-not-waiting")).toHaveTextContent(/^\d+ more in transit$/u);
-    expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "State bedflow", "Placement"]);
-    expect(screen.getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+    expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "Beds that fit", "Placement"]);
+    expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
@@ -90,27 +92,24 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       atRest[0],
       "ED pressure",
       "Priority queue",
-      "State bedflow",
+      "Beds that fit",
       "Placement",
     ]);
   });
 
-  it("reads queue, State Bedflow, then the shortlist on the far right once a patient is selected", () => {
-    // Owner, 8 Oct 2026. Proven by real DOM order, asserted both ways so a reversed pair cannot pass.
+  it("reads the queue, then the shortlist on the far right once a patient is selected", () => {
+    // Owner, 8 Oct 2026. Proven by real DOM order. Home v7 (Josh, 22 Oct 2026): State bedflow is
+    // no longer on Home; it sits at the foot of Capacity.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
     const queue = within(body).getByTestId("ward-queue-row-WF-001");
-    const statewideFlow = within(body).getByLabelText("State Bedflow");
     const shortlist = within(body).getByLabelText("Placement");
 
+    expect(within(body).queryByLabelText("State Bedflow")).not.toBeInTheDocument();
     expect(
-      queue.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "State Bedflow must follow the priority queue",
-    ).toBeTruthy();
-    expect(
-      statewideFlow.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the shortlist panel must follow State Bedflow",
+      queue.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "the shortlist panel must follow the priority queue",
     ).toBeTruthy();
   });
 
@@ -152,15 +151,12 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
   });
 
-  it("keeps the diagram unit, candidate target, eligibility checks and override label aligned", () => {
+  it("keeps the candidate target, eligibility checks and override label aligned", () => {
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
 
-    const scghDiagramNode = screen.getByTestId("ward-diagram-unit-scgh-adult-open");
-    fireEvent.click(scghDiagramNode);
-
+    // Home v7 (Josh, 22 Oct 2026): State bedflow left Home, so the ward is chosen in Placement.
     const scghCandidate = screen.getByTestId("ward-shortlist-candidate-scgh-adult-open");
-    expect(scghCandidate).toHaveAttribute("data-showing", "true");
     expect(scghCandidate).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(scghCandidate);
@@ -203,7 +199,12 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
 
   it("draws every live inpatient unit on State Bedflow (Wave 4 item 32 / R2-16)", async () => {
     const { allUnits } = await import("@/components/ward-management/ward-sites");
-    renderCoordinator();
+    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <CapacityScreen />
+      </WardFlowProvider>,
+    );
     const unitNodes = screen.getAllByTestId(/^ward-diagram-unit-/);
     expect(unitNodes.length).toBe(allUnits().length);
   });

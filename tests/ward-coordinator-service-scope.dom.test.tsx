@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 // which already import it directly for the same reason.
 import "@testing-library/jest-dom/vitest";
 
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -183,9 +184,10 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
 
   it("the flow diagram's foot sentence is exact, and the diagram itself keeps every unit (whole-network)", () => {
     setServiceScope(SERVICE);
+    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
+        <CapacityScreen />
       </WardFlowProvider>,
     );
 
