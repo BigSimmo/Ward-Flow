@@ -6,8 +6,8 @@ import { Button, StatusGlyph } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { candidateReason, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import {
-  PARALLEL_REFERRAL_CAP,
   type Referral,
   type ReferralAddressing,
   type ReferralDestination,
@@ -57,14 +57,16 @@ export function useAskMoreWards({
     (addressing): addressing is WardArm => addressing.destination.kind === "psychiatric_ward",
   );
   const template = wardArms[0]?.destination;
+  // The cap is the network's own setting, so outside a provider (some screen tests) there is no card.
+  const cap = configuration?.parallelReferralCap ?? 0;
   // The engine's own preconditions, so the card never offers what ASK_MORE_WARDS would refuse.
   const applies =
+    configuration !== undefined &&
     referral.source === "community" &&
     template !== undefined &&
     wardArms.every((addressing) => addressing.destination.unitId !== undefined) &&
     referralClosedForFollowUp(referral) === undefined &&
     !referralWithdrawn(referral);
-  const cap = configuration?.parallelReferralCap ?? PARALLEL_REFERRAL_CAP;
   const waiting = wardArms.filter((addressing) => isAwaitingAnswer(addressing)).length;
   const slots = Math.max(0, cap - waiting);
 
@@ -129,7 +131,7 @@ export function useAskMoreWards({
     ask() {
       if (chosen.length === 0 || chosen.length > slots) return;
       setAttemptedAt(rejections.length);
-      dispatch({ type: "ASK_MORE_WARDS", role: "coordinator", now, referralId: referral.id, unitIds: chosen });
+      wardRaise(dispatch, "coordinator", now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen });
       close();
     },
   };
