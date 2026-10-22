@@ -393,16 +393,18 @@ describe("static guard scope selection", () => {
     );
     expect(files.join(" ").length).toBeGreaterThan(32_767);
     const batches = lintBatches(files);
-    expect(batches.map((batch) => batch.length)).toEqual([200, 200, 50]);
+    expect(batches.length).toBeGreaterThan(1);
+    for (const batch of batches) expect(batch.length).toBeLessThanOrEqual(200);
+    expect(lintBatches(files.map((_, index) => `s/${index}.ts`)).map((batch) => batch.length)).toEqual([200, 200, 50]);
     expect(batches.flat()).toEqual(files);
-    for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(32_767);
+    for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(6_000);
     expect(lintBatches(["src/a.ts"])).toEqual([["src/a.ts"]]);
     const longPaths = Array.from({ length: 200 }, (_, index) => `src/${"nested/".repeat(22)}${index}.ts`);
     expect(longPaths.join(" ").length).toBeGreaterThan(32_767);
     const longBatches = lintBatches(longPaths);
     expect(longBatches.length).toBeGreaterThan(1);
     expect(longBatches.flat()).toEqual(longPaths);
-    for (const batch of longBatches) expect(batch.join(" ").length).toBeLessThan(24_000);
+    for (const batch of longBatches) expect(batch.join(" ").length).toBeLessThan(6_000);
   });
 
   it("normalizes backslash paths before filtering", () => {

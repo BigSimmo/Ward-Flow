@@ -1271,8 +1271,11 @@ const STATIC_GUARD_LOCK_WAIT_MS = 30_000;
 
 /** Files per eslint invocation; matches the prettier step's batch size. */
 const LINT_BATCH_SIZE = 200;
-/** Path characters per eslint invocation, well under Windows' 32,767 limit once the wrapper and flags are added. */
-const LINT_BATCH_MAX_CHARS = 24_000;
+/**
+ * Path characters per eslint invocation. On Windows npm runs the script through cmd.exe, whose
+ * limit is 8,191 characters for the whole command, so this leaves room for the wrapper and flags.
+ */
+const LINT_BATCH_MAX_CHARS = 6_000;
 
 /** Exported for tests: split lintable files into batches bounded by count and by command length. */
 export function lintBatches(files, maxFiles = LINT_BATCH_SIZE, maxChars = LINT_BATCH_MAX_CHARS) {
