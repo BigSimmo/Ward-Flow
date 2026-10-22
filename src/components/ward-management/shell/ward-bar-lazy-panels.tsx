@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 
+import { withLoadRetry } from "../load-retry";
 import { preloadWhenIdle } from "../preload-when-idle";
 import { isReferralSheetPath } from "./ward-bar-model";
 
@@ -18,8 +19,13 @@ import { isReferralSheetPath } from "./ward-bar-model";
 const loadReferralDrawer = () => import("@/components/ward-management/referrals/ward-referral-drawer");
 const loadTasksDrawer = () => import("@/components/ward-management/ward-tasks-drawer");
 
-export const WardReferralDrawer = dynamic(() => loadReferralDrawer().then((m) => m.WardReferralDrawer));
-export const WardTasksDrawer = dynamic(() => loadTasksDrawer().then((m) => m.WardTasksDrawer));
+// Offline (22 Oct 2026): a failed fetch shows Try again and Close instead of crashing the page.
+export const WardReferralDrawer = dynamic(
+  withLoadRetry(() => loadReferralDrawer().then((m) => m.WardReferralDrawer), "Referrals did not load"),
+);
+export const WardTasksDrawer = dynamic(
+  withLoadRetry(() => loadTasksDrawer().then((m) => m.WardTasksDrawer), "Tasks and alerts did not load"),
+);
 
 // DA-13: on the new-referral route the form opens as soon as the page can respond, so its code
 // is fetched while the page is still starting instead of after it, when the drawer asks for it.
