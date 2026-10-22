@@ -1204,7 +1204,7 @@ export function WardHomeTab({
         </span>
         <span>
           <StatusGlyph tone="success" size={9} />
-          Free
+          Ready
         </span>
       </span>
       {/* Audit 11 Oct 2026: the four bed counts sit once, in Ward figures, right now, just below. */}
@@ -1698,7 +1698,8 @@ export function WardHomeTab({
 
   return (
     <div className={styles.homeWrap}>
-      <span className="sr-only">{pendingPreparation} being made ready</span>
+      {/* Visual desk, 22 Oct 2026: an absence is silence, never "0 being made ready". */}
+      {pendingPreparation > 0 ? <span className="sr-only">{pendingPreparation} being made ready</span> : null}
 
       {phoneSheets && !bedArea && !walkingOnPhone ? (
         <section className={styles.phoneSection} aria-labelledby="ward-phone-needs">

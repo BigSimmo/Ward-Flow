@@ -981,7 +981,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
                       {notice ? (
                         <span
-                          className={styles.badge}
+                          className={`${styles.badge} ${styles.noticeBadge}`}
                           data-testid={`ward-restriction-notice-${activeMovement.id}`}
                           data-level={notice.level}
                           data-tone="warn"
@@ -992,7 +992,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
                       {eligibilityIssue ? (
                         <span
-                          className={styles.badge}
+                          className={`${styles.badge} ${styles.noticeBadge}`}
                           data-testid={`ward-eligibility-warning-${activeMovement.id}`}
                           data-level={eligibilityIssue.level}
                           data-tone="danger"
@@ -1139,7 +1139,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                     Choose a reason to confirm the decline.
                                   </p>
                                 ) : null}
-                                {DECLINE_REASONS.map((reason) => (
+                                {DECLINE_REASONS.map((reason, index) => (
                                   <label key={reason} className={styles.phoneRadioRow}>
                                     <input
                                       type="radio"
@@ -1147,6 +1147,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                       value={reason}
                                       checked={declineReason === reason}
                                       onChange={() => setDeclineReason(reason)}
+                                      // Visual desk, 22 Oct 2026: the sheet opens on the reasons, not on ×.
+                                      data-sheet-autofocus={
+                                        (declineReason ? declineReason === reason : index === 0) ? "true" : undefined
+                                      }
                                     />
                                     <span>{declineReasonLabel(reason)}</span>
                                   </label>
