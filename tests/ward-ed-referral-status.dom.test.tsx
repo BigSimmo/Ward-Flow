@@ -184,7 +184,8 @@ describe("the ED board shows where each referral stands", () => {
       expect.stringMatching(/Transport, not yet/),
     ]);
     expect(within(sheet).getAllByText("Bed held").length).toBeGreaterThan(0);
-    expect(within(sheet).queryByText("Bed pulled")).toBeNull();
+    expect(sheet.textContent ?? "").not.toMatch(/Bed pulled/);
+    expect(sheet).toHaveTextContent("Bed held — ready to mark the handover to transport.");
     expect(within(sheet).queryByText("Destination", { selector: "dt" })).toBeNull();
   });
 });
