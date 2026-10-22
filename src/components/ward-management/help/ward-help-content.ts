@@ -1,15 +1,13 @@
 /**
  * IN-APP HELP CONTENT (fix plan item 12, 21 Oct 2026): what each screen is for and its main
- * actions, a glossary of the words and codes the screens use, and the steps of each desk's
- * first-run tour.
+ * actions, and a glossary of the words and codes the screens use. Each desk's tour has its own
+ * steps (`ward-tour-steps.ts`).
  *
- * Help is keyed by rail entry id (`ward-rail-entries.ts`), so the tour follows each desk's own menu
- * (`ROLE_MENUS`) and cannot describe a page the menu does not have. The words describe the current
+ * Help is keyed by rail entry id (`ward-rail-entries.ts`). The words describe the current
  * screens. Nothing here is clinical advice: every screen is a synthetic prototype, and the help says
  * so once, at the top of the sheet.
  */
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { BED_FINDER_MENU_ID, ROLE_MENUS } from "@/components/ward-management/shell/ward-rail-entries";
+import { BED_FINDER_MENU_ID } from "@/components/ward-management/shell/ward-rail-entries";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 export type ScreenHelp = {
@@ -207,29 +205,4 @@ export function filterGlossary(query: string, terms: readonly GlossaryTerm[] = G
       entry.term.toLocaleLowerCase("en-AU").includes(needle) ||
       entry.meaning.toLocaleLowerCase("en-AU").includes(needle),
   );
-}
-
-export type TourStep = { title: string; body: string };
-
-/**
- * One desk's first-run tour: a welcome, then one step per item on that desk's own menu, then where
- * help lives. Menu items with no help entry are skipped rather than described from guesswork.
- */
-export function tourFor(role: WardChromeRole): readonly TourStep[] {
-  const label = CHROME_ROLE_LABELS[role];
-  const menuSteps = ROLE_MENUS[role].flatMap(([id, menuLabel]): TourStep[] => {
-    const help = SCREEN_HELP[id];
-    return help ? [{ title: menuLabel, body: `${help.purpose} ${help.actions[0] ?? ""}`.trim() }] : [];
-  });
-  return [
-    {
-      title: `Welcome, ${label}`,
-      body: "Ward Flow tracks mental health beds and the patients moving to them. This is a synthetic prototype: every patient is invented, and it is not for clinical use.",
-    },
-    ...menuSteps,
-    {
-      title: "Help is always here",
-      body: "Open Help from the menu for what each screen is for and a glossary. Replay this tour from Help or Settings.",
-    },
-  ];
 }

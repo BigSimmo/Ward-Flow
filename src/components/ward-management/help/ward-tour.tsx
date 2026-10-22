@@ -1,0 +1,369 @@
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+
+import { useIsPhone } from "@/components/wf";
+import { OverlayPortal } from "@/components/wf/overlay-root";
+
+import { markTourSeen, readTourStep, saveTourStep, useTourRole } from "./ward-help-store";
+import { useTourFacts } from "./ward-tour-facts";
+import {
+  TOUR_ROLE_LABELS,
+  tourCanDo,
+  tourGreeting,
+  tourSteps,
+  type TourDevice,
+  type TourStep,
+  type TourTarget,
+} from "./ward-tour-steps";
+import styles from "./ward-tour.module.css";
+
+type Box = { top: number; left: number; width: number; height: number };
+
+/** How long a step waits for its control to appear (a page still loading) before it shows without one. */
+const FIND_TIMEOUT_MS = 2000;
+const GAP = 12;
+const EDGE = 8;
+/** A control taller than this share of the window is shown from its top, at this share. */
+const TALL_SHARE = 0.45;
+/** Room left above a control scrolled to the top, for the header that sits over the page. */
+const HEADER_ROOM = 72;
+
+function tall(rect: DOMRect): boolean {
+  return rect.height > window.innerHeight * TALL_SHARE;
+}
+
+/** Brings the control into view: centred, or a tall one to just under the header. */
+function bringIntoView(element: HTMLElement): void {
+  const behavior: ScrollBehavior = "instant";
+  if (!tall(element.getBoundingClientRect())) {
+    element.scrollIntoView({ block: "center", inline: "nearest", behavior });
+    return;
+  }
+  const margin = element.style.scrollMarginTop;
+  element.style.scrollMarginTop = `${HEADER_ROOM}px`;
+  element.scrollIntoView({ block: "start", inline: "nearest", behavior });
+  element.style.scrollMarginTop = margin;
+}
+
+function shown(element: Element): boolean {
+  return element.getClientRects().length > 0;
+}
+
+/** The step's control on screen now, or null. See `TourTarget`. */
+export function findTourTarget(target: TourTarget): HTMLElement | null {
+  const match = Array.from(document.querySelectorAll<HTMLElement>(target.sel)).find(
+    (element) => shown(element) && (!target.text || (element.textContent ?? "").includes(target.text)),
+  );
+  let element: HTMLElement | null = match ?? null;
+  for (let level = 0; element && level < (target.up ?? 0); level++) element = element.parentElement;
+  return element;
+}
+
+/** The spotlight's box: the control with a little room, kept inside the window. */
+function spotBox(element: HTMLElement): Box {
+  const rect = element.getBoundingClientRect();
+  const pad = rect.width < 120 || rect.height < 40 ? 6 : 4;
+  const top = Math.max(EDGE / 2, rect.top - pad);
+  const left = Math.max(EDGE / 2, rect.left - pad);
+  // A tall control is lit from its top only, leaving room under it for the card.
+  const tallest = tall(rect) ? window.innerHeight * TALL_SHARE : Infinity;
+  const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom + pad, top + tallest);
+  const right = Math.min(window.innerWidth - EDGE / 2, rect.right + pad);
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+/**
+ * Where the card goes. On a desktop it sits beside the control (right, left, below, then above),
+ * kept inside the window. On a phone it spans the width, docked to whichever end has more room.
+ * With no control it sits in the middle.
+ */
+function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void {
+  const style = card.style;
+  style.left = style.top = style.right = style.bottom = style.maxHeight = "";
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (!box) {
+    card.dataset.place = "centre";
+    return;
+  }
+  if (device === "phone") {
+    const above = box.top;
+    const below = vh - (box.top + box.height);
+    const room = Math.max(above, below) - GAP - EDGE;
+    card.dataset.place = above > below ? "top" : "bottom";
+    if (above > below) style.top = `${EDGE}px`;
+    else style.bottom = `${EDGE}px`;
+    // Never cover the control when there is room for a readable card, else take just over half.
+    style.maxHeight = `${room >= 200 ? room : Math.round(vh * 0.56)}px`;
+    return;
+  }
+  card.dataset.place = "beside";
+  const cw = card.offsetWidth;
+  const ch = card.offsetHeight;
+  const clampTop = (top: number) => Math.min(Math.max(EDGE, top), Math.max(EDGE, vh - ch - EDGE));
+  const clampLeft = (left: number) => Math.min(Math.max(EDGE, left), Math.max(EDGE, vw - cw - EDGE));
+  const bottom = box.top + box.height;
+  const right = box.left + box.width;
+  // Right, left, below, above, each kept in the window; the first that leaves the control clear
+  // wins, else whichever covers least of it.
+  const candidates = [
+    { left: clampLeft(right + GAP), top: clampTop(box.top) },
+    { left: clampLeft(box.left - GAP - cw), top: clampTop(box.top) },
+    { left: clampLeft(box.left), top: clampTop(bottom + GAP) },
+    { left: clampLeft(box.left), top: clampTop(box.top - GAP - ch) },
+  ];
+  const covered = ({ left, top }: { left: number; top: number }) =>
+    Math.max(0, Math.min(left + cw, right) - Math.max(left, box.left)) *
+    Math.max(0, Math.min(top + ch, bottom) - Math.max(top, box.top));
+  const best = candidates.reduce((chosen, candidate) => (covered(candidate) < covered(chosen) ? candidate : chosen));
+  style.left = `${best.left}px`;
+  style.top = `${best.top}px`;
+}
+
+/**
+ * THE ROLE-TAILORED TOUR PLAYER. A spotlight on each step's control with the card beside it, Back
+ * and Next, Skip tour (straight to what the desk can do), and Close, which keeps the step so the
+ * tour picks up there from Help. It runs on the desk's home screen and goes there first.
+ */
+export function WardTour({ onClose }: { onClose: () => void }) {
+  const role = useTourRole();
+  const device: TourDevice = useIsPhone() ? "phone" : "desk";
+  const { facts, home } = useTourFacts(role);
+  const steps = useMemo(() => tourSteps(role, device, facts), [role, device, facts]);
+  const canDo = useMemo(() => tourCanDo(role), [role]);
+  const [index, setIndex] = useState(() => Math.min(readTourStep(role), Math.max(0, steps.length - 1)));
+  // The box belongs to the step's control it measured, so a new step starts with no spotlight.
+  const [spot, setSpot] = useState<{ target: TourTarget; box: Box | null } | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname() ?? "";
+  const router = useRouter();
+  const step: TourStep | undefined = steps[Math.min(index, steps.length - 1)];
+  const last = index >= steps.length - 1;
+
+  // The tour walks the desk's home screen, so it goes there first when opened from another page.
+  const wentHome = useRef(false);
+  useEffect(() => {
+    if (wentHome.current) return;
+    wentHome.current = true;
+    if (home && pathname !== home) router.push(home);
+  }, [home, pathname, router]);
+
+  // Find the step's control (waiting a moment for a page still drawing), bring it into view and
+  // follow it while the window scrolls or resizes.
+  const target = step?.target;
+  const box = spot && spot.target === target ? spot.box : null;
+  useEffect(() => {
+    if (!target) return;
+    let element: HTMLElement | null = null;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() =>
+        setSpot({ target, box: element && element.isConnected ? spotBox(element) : null }),
+      );
+    };
+    const started = Date.now();
+    const poll = window.setInterval(() => {
+      element = findTourTarget(target);
+      if (!element && Date.now() - started < FIND_TIMEOUT_MS) return;
+      window.clearInterval(poll);
+      if (!element) return;
+      bringIntoView(element);
+      measure();
+    }, 100);
+    window.addEventListener("scroll", measure, true);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.clearInterval(poll);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+    };
+  }, [target, pathname]);
+
+  useLayoutEffect(() => {
+    if (cardRef.current) placeCard(cardRef.current, box, device);
+  }, [box, device, index, step]);
+
+  useEffect(() => {
+    nextRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const finish = useCallback(() => {
+    markTourSeen(role);
+    saveTourStep(role, 0);
+    onClose();
+  }, [onClose, role]);
+
+  const close = useCallback(() => {
+    markTourSeen(role);
+    saveTourStep(role, last ? 0 : index);
+    onClose();
+  }, [index, last, onClose, role]);
+
+  function go(next: number) {
+    const clamped = Math.min(Math.max(0, next), steps.length - 1);
+    setIndex(clamped);
+    saveTourStep(role, clamped);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+    } else if (event.key === "ArrowRight" && !last) {
+      event.preventDefault();
+      go(index + 1);
+    } else if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      go(index - 1);
+    } else if (event.key === "Tab" && cardRef.current) {
+      // Keep Tab inside the card while the tour is open.
+      const controls = Array.from(
+        cardRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"]'),
+      );
+      const first = controls[0];
+      const end = controls.at(-1);
+      if (!first || !end) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        end.focus();
+      } else if (!event.shiftKey && document.activeElement === end) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  if (!step) return null;
+  const left = steps.length - index - 1;
+  const perStep = device === "phone" ? 12 : 15;
+  const meta = `Step ${index + 1} of ${steps.length}${
+    left ? `, about ${Math.max(1, Math.round((left * perStep) / 60))} min left` : ", last step"
+  }`;
+  const who = [
+    tourGreeting(role),
+    tourGreeting(role) === TOUR_ROLE_LABELS[role] ? "" : TOUR_ROLE_LABELS[role],
+    facts.placeName,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <OverlayPortal layer="modal" name="ward-tour">
+      <div className={styles.layer} data-testid="ward-tour" data-device={device}>
+        {box ? (
+          <div
+            className={styles.spot}
+            style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+            data-testid="ward-tour-spot"
+            aria-hidden="true"
+          />
+        ) : (
+          <div className={styles.dim} aria-hidden="true" />
+        )}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape, arrow keys and Tab bubbling up from the focused button inside */}
+        <div
+          ref={cardRef}
+          className={styles.card}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ward-tour-title"
+          aria-describedby="ward-tour-body"
+          onKeyDown={onKeyDown}
+          data-testid="ward-tour-card"
+          data-step={step.id}
+        >
+          <div className={styles.head}>
+            <p className={styles.who}>{who}</p>
+            <button
+              type="button"
+              className={styles.close}
+              onClick={close}
+              aria-label="Close the tour. Pick it up again from Help."
+              data-testid="ward-tour-close"
+            >
+              Close
+            </button>
+          </div>
+          <p className={styles.chapter}>{step.chapter}</p>
+          <h2 id="ward-tour-title" className={styles.title} aria-live="polite">
+            {step.title}
+          </h2>
+          <p id="ward-tour-body" className={styles.body}>
+            {step.body}
+          </p>
+          {step.tryIt ? (
+            <p className={styles.try}>
+              <b>Try it.</b> {step.tryIt}
+            </p>
+          ) : null}
+          {step.canDo ? (
+            // A long ask list scrolls inside its own box, so Done and Back stay on screen.
+            <div
+              className={styles.canDo}
+              role="region"
+              aria-label={step.title}
+              tabIndex={0}
+              data-testid="ward-tour-can-do"
+            >
+              <section aria-labelledby="ward-tour-can">
+                <h3 id="ward-tour-can" className={styles.canTitle}>
+                  {canDo.canTitle}
+                </h3>
+                <ul className={`${styles.list} ${styles.canList}`}>
+                  {canDo.can.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
+              {canDo.ask.length ? (
+                <section aria-labelledby="ward-tour-ask">
+                  <h3 id="ward-tour-ask" className={styles.askTitle}>
+                    Ask someone else
+                  </h3>
+                  <ul className={styles.list}>
+                    {canDo.ask.map((item) => (
+                      <li key={item.label}>
+                        {item.label} <span className={styles.by}>({item.by})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
+          ) : null}
+          <div className={styles.bar} aria-hidden="true">
+            <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+          </div>
+          <p className={styles.meta}>{meta}</p>
+          <div className={styles.buttons}>
+            <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
+              Back
+            </button>
+            <button
+              type="button"
+              className={styles.skip}
+              onClick={() => go(last ? 0 : steps.length - 1)}
+              data-testid="ward-tour-skip"
+            >
+              {last ? "Replay" : "Skip tour"}
+            </button>
+            <button
+              ref={nextRef}
+              type="button"
+              className={styles.primary}
+              onClick={last ? finish : () => go(index + 1)}
+              data-testid={last ? "ward-tour-done" : "ward-tour-next"}
+            >
+              {last ? "Done" : "Next"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </OverlayPortal>
+  );
+}
