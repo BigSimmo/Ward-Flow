@@ -44,6 +44,8 @@ import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-mana
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
   referralSheetRequestFromHref,
   referralSheetRequestFromSearch,
@@ -57,13 +59,18 @@ import {
   wardTasksAreActionableForRole,
 } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
-const WardToolsSheet = dynamic(() =>
-  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet),
-);
+// Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
+// crashing the page (offline Tools crash, 22 Oct 2026).
+const loadToolsSheet = () =>
+  import("@/components/ward-management/tools/ward-tools-sheet").then((m) => m.WardToolsSheet);
+// No `loading` option: a local Suspense boundary holds the first reveal on a timer, which a paused
+// test clock never fires (ui-ward-roles.spec.ts demo clock journey).
+const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
+preloadWhenIdle(loadToolsSheet);
 // The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
 const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
-import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
+import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
@@ -657,19 +664,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [setOpenPanel],
   );
 
-  // A sheet footer's Board time pill (D-77): close the sheet, then open the Demo menu after its focus restore.
-  const demoMenuAfterCloseRef = useRef(false);
-  const openDemoMenuFromSheet = (id: WardBarPopoverId, from: HTMLElement) => {
-    if (isPhone) return requestDemoMenu(from);
-    demoMenuAfterCloseRef.current = true;
-    closePopover(id, false);
-  };
-  useEffect(() => {
-    if (openPanel !== null || !demoMenuAfterCloseRef.current) return;
-    demoMenuAfterCloseRef.current = false;
-    const frame = window.requestAnimationFrame(() => requestDemoMenu());
-    return () => window.cancelAnimationFrame(frame);
-  }, [openPanel]);
+  // A sheet footer's Board time pill (D-77) closes its sheet before the Demo menu opens.
+  const openDemoMenuFromSheet = useDemoMenuFromSheet(openPanel, (id) => closePopover(id, false), isPhone);
 
   const openPopover = useCallback(
     (id: WardBarPopoverId) => {

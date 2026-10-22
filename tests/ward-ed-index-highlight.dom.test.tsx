@@ -84,10 +84,11 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     expect(within(card).getAllByText(/^\d+$/u, { selector: "b" })[0].textContent).toBe(points[6]);
   });
 
-  it("opens a preview of who is waiting, with Enter pinned, and steps to the next ED", () => {
+  it("opens a preview of who is waiting, with Enter pinned, and steps to the next ED", async () => {
     renderIndex();
     fireEvent.click(screen.getByTestId("ed-index-preview-arm-ed"));
-    const body = screen.getByTestId("ed-index-preview-body");
+    // The preview body loads lazily (phone script budget), so wait for it to draw.
+    const body = await screen.findByTestId("ed-index-preview-body");
     expect(within(body).getByText("Waiting, longest first")).toBeInTheDocument();
     expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/ward-flow/ed/arm-ed");
     fireEvent.click(screen.getByRole("button", { name: "Next ED" }));

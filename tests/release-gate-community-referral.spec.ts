@@ -36,8 +36,9 @@ import {
  *   "No bed is pulled, no patient is moved and no transport is arranged", asserted below.
  * - No coordinator "ask wards" act for a referral. The referrer names the wards in the slide-out;
  *   `REFER_TO_UNITS` works on movements only. The coordinator reviews the named ward here.
- * - The team's desk cannot list referrals it sent to a ward. It sees only referrals addressed to
- *   it (FD-23), and states that referrals it raised "cannot be attributed".
+ * - The team's own "Referrals we have made" list (fix plan item 17) is covered by unit and DOM
+ *   tests (`tests/ward-community-sent-referrals.test.ts`, `tests/ward-community-hub.dom.test.tsx`),
+ *   not by this journey yet.
  *
  * Runs on the release-gate projects (desktop Chrome 1440px, phone WebKit 390x844) with an axe WCAG
  * 2.1 AA check at each key step. One typed URL, then only the app's own links, drawers and desks,
@@ -248,13 +249,9 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expectAccessible(page, testInfo, "referral board with the team's referral queued");
   await boardEntry.click();
   await expectAccessible(page, testInfo, "referral board, the team's referral open");
-  // Desktop shows the match panel's accepting label; the phone lists the ward as a "Fits" candidate.
-  if (isPhoneLayout(page)) {
-    await expect(page.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`)).toHaveAttribute("data-kind", "yes");
-  } else {
-    await expect(page.getByTestId("ward-referral-match-panel")).toBeVisible();
-    await expect(page.getByTestId(`ward-referral-match-accepts-${UNIT_ID}`)).toBeVisible();
-  }
+  // Both layouts list the ward as a "Fits" candidate in the one decision list (D-77).
+  await expect(page.getByTestId("ward-referral-match-panel")).toBeVisible();
+  await expect(page.getByTestId(`ward-referral-match-phone-cand-${UNIT_ID}`)).toHaveAttribute("data-kind", "yes");
   const closeDetail = page.getByRole("button", { name: "Close referral detail (Esc)" });
   if (await closeDetail.isVisible()) await closeDetail.click();
   await expectNoReloadSince(page, "the coordinator reviewing the referral");

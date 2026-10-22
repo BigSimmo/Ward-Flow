@@ -124,8 +124,10 @@ const TEAM_CLAIMS = [
     clause: "never home region",
   },
   {
-    protects: "that referrals raised BY a team cannot be attributed",
-    clause: "cannot be attributed",
+    // Fix plan item 17 (D-74): a team's sent referrals are now listed; older ones that record no
+    // sending team are counted and never guessed onto a team.
+    protects: "that a referral with no recorded sending team is never put on a team's list",
+    clause: "not record which team sent",
   },
 ];
 

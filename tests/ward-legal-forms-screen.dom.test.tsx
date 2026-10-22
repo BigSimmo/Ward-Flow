@@ -259,6 +259,17 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.getByTestId("ward-legal-form-sheet")).toContainElement(screen.getByTestId("ward-legal-selected"));
   });
 
+  it("keeps the record-and-tell tasks one button away on desktop, and steps aside for a task", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: /^Record and tell/ }));
+    const drawer = screen.getByTestId("ward-legal-tasks-sheet");
+    for (const heading of ["Forms in force", "Record on the form", "Tell people"]) {
+      expect(within(drawer).getByRole("heading", { name: heading })).toBeInTheDocument();
+    }
+    fireEvent.click(within(drawer).getByRole("button", { name: /Requirements/ }));
+    expect(screen.queryByTestId("ward-legal-tasks-sheet")).toBeNull();
+  });
+
   it("never folds Time not written: every row shows with no Show all (audit A3-6)", () => {
     renderScreen();
     const region = screen.getByRole("region", { name: "Legal forms list" });

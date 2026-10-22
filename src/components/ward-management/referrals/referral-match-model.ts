@@ -1,8 +1,7 @@
 import { type EligibilityGate } from "@/components/ward-management/ward-eligibility";
-import { createBrowserStore } from "@/lib/client-store-factory";
 
 /**
- * The match view's gate labels, band-group media query, unavailable-control reasons and decision
+ * The match view's gate labels, unavailable-control reasons and decision
  * events, moved unchanged from `referral-match.tsx` so its sections can share them.
  */
 
@@ -21,41 +20,6 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   sex_mix: "Sex mix",
   specialling: "Specialling capacity",
 };
-
-/**
- * Phase 8, Task 4. The width at which the band groups start open, matching
- * `referrals.module.css`'s own `--ri-two-col-breakpoint` / `@media (max-width: 40rem)` swap so the
- * screen has ONE breakpoint rather than a second one written here that could drift from it.
- *
- * Owner decision, 2026-08-29: shut by default at phone width, open at desktop width. The binding
- * condition on that decision is why it is safe, and it is a condition on the markup below rather
- * than on this constant: every heading and BOTH of its counts render whether the group is open or
- * shut, including for an empty group, so "there is nothing available within an hour" is answerable
- * without opening anything. Collapsing folds; it does not hide. It was approved INSTEAD of a
- * metro/rural toggle, which was declined precisely because that would have hidden beds.
- */
-const BAND_GROUPS_OPEN_MEDIA_QUERY = "(min-width: 40rem)";
-
-/**
- * Whether the band groups start open, tracked live so a rotation or a resize is honoured rather
- * than frozen at mount. On the server there is no `matchMedia` at all and the answer is `false` —
- * the phone default — so nothing width-dependent is guessed where no width is known. The `typeof`
- * guards are for a browser-like environment that lacks the API rather than for jsdom, which this
- * repository's `tests/setup/jsdom.setup.ts` always supplies with a stub (defaulting to "no match",
- * so groups mount shut unless a test installs the matching stub itself). A shut group is the
- * conservative answer in any case: every heading and both counts are inside the `<summary>`, which
- * is the part a closed disclosure still paints.
- */
-export const useBandGroupsOpenByDefault = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(BAND_GROUPS_OPEN_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(BAND_GROUPS_OPEN_MEDIA_QUERY).matches : false),
-  false,
-);
 
 /**
  * The event types this view's own controls raise, and the one spelling of each in the rejection

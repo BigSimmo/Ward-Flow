@@ -240,8 +240,8 @@ function transportCell(
             kind: "button",
             // UX audit 21 Oct 2026: B3 opens the step that is needed first, so the button names that
             // step. "Log booking" here opened the ward picker.
-            label: waitingFor === "an accepted bed" ? "Choose wards" : "Pull the bed",
-            ariaLabel: `${waitingFor === "an accepted bed" ? "Choose wards" : "Pull the bed"}. Transport is booked after ${waitingFor}`,
+            label: waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed",
+            ariaLabel: `${waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed"}. Transport is booked after ${waitingFor}`,
             icon: Truck,
             secondary: true,
             onClick: () => {
@@ -309,9 +309,9 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       owner: "Bed coordinator",
       tone: pending === 0 ? "danger" : "warning",
       value: noneAsked ? "No ward asked" : pending === 0 ? "None found" : `${pending} awaiting answer`,
-      sub: noneAsked ? "Refer to fitting wards" : `${declined} declined`,
+      sub: noneAsked ? "Ask wards that fit" : `${declined} declined`,
       time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
-      action: { kind: "button", label: noneAsked ? "Choose wards" : "Open shortlist", onClick: ctx.onOpenPlacement },
+      action: { kind: "button", label: noneAsked ? "Ask wards" : "Ask more wards", onClick: ctx.onOpenPlacement },
     };
     return withMeter({
       tone: "danger",

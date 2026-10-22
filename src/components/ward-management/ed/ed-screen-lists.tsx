@@ -3,7 +3,6 @@
 // "Lists": the department's tabbed lists, Review, Medical Clearance, Expects, Forms and Referred.
 // Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { KeyboardEvent } from "react";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -17,6 +16,7 @@ import { EdInboxReferrals } from "./ed-screen-inbox";
 import { movementMedicalClearance, outstandingItem } from "./ed-screen-model";
 import { EdReferredPanel } from "./ed-screen-referred";
 import type { DepartmentTabKey } from "./use-ed-screen-state";
+import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
 export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
@@ -294,7 +294,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.lstWhy}>
                         {reviewed ? "Reviewed by psychiatry. " : "Not seen by psychiatry yet. "}
-                        {stageCopy[m.stage].label}
+                        {edStageLabel(m.stage)}
                       </span>
                     </span>
                     <span className={styles.lstEnd}>

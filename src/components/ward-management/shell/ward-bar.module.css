@@ -3056,6 +3056,22 @@
     color: var(--wf-hero-ink);
   }
 
+  /* Before hydration the band comes from the `:has()` arm alone, and it lands when the streamed hero
+     does. Everything on the bar must switch in the same frame: with the background faded in, the
+     title showed light on the pale bar for up to a second on a phone's first load, and Menu and the
+     service line, which fade their own colour, stayed dark on the band (22 Oct 2026). */
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+        :not([data-band]):not([data-scrolled])
+    ),
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+        :not([data-band]):not([data-scrolled])
+    )
+    :is(.phoneOnly, .scopeBadgeBtn) {
+    transition: none;
+  }
+
   /* The service line also carries the band on its own attribute. CI WebKit restyled the bar when
      its data-band changed but left the service line's inherited ink dark on the band, so the
      release gate failed its contrast check; a change on the button itself always restyles it. */

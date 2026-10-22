@@ -286,6 +286,11 @@
   min-width: 0;
 }
 
+/* The desktop Record and tell drawer stacks the three task cards in its single column. */
+.taskDrawer .strip {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .stripBody {
   display: flex;
   flex-direction: column;
@@ -993,9 +998,25 @@ button.taskLabel[aria-pressed="true"] {
 
 .sheetFoot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   width: 100%;
+}
+
+/* Footer buttons keep their whole labels. A disabled Save's reason takes the rest of the row and
+   wraps its words, dropping under Clear when the sheet is narrow. */
+.sheetFoot button {
+  flex-shrink: 0;
+}
+
+.sheetFoot > span:has(> button) {
+  flex: 1 1 14rem;
+  justify-content: flex-end;
+}
+
+.sheetFoot > span:has(> button) > span {
+  white-space: normal;
 }
 
 .recordForm,
