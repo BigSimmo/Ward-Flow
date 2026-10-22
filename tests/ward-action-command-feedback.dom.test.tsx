@@ -177,10 +177,13 @@ describe("Referral decision feedback", () => {
     route.pathname = "/mockups/ward-flow/referrals";
     mount(control, <ReferralBoard />);
     fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
-    const list = screen.getByTestId("ward-referral-match-list");
-    const button = list.querySelector<HTMLButtonElement>('button[data-testid^="ward-referral-match-accept-"]');
-    if (!button) throw new Error("The synthetic referral has no accepting ward");
-    fireEvent.click(button);
+    // D-77: pick a fitting ward in the one decision list, then Accept.
+    const fit = document.querySelector<HTMLButtonElement>(
+      'button[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]',
+    );
+    if (!fit) throw new Error("The synthetic referral has no accepting ward");
+    fireEvent.click(fit);
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-accept"));
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   }
 

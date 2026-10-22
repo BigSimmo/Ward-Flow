@@ -143,8 +143,14 @@ describe("ED decline drafts across the ward, desktop ED and phone ED branches", 
     fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason-emergency_department"), {
       target: { value: edReason },
     });
-    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), { target: { value: wardReason } });
-    expect(screen.getByTestId("ward-referral-match-decline-reason")).toHaveValue(wardReason);
+    // D-77: the ward's own reasons open behind Decline as radio rows; Back returns to the list.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${wardReason}`));
+    expect(screen.getByTestId(`ward-referral-match-phone-decline-${wardReason}`)).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
     view.rerender(match(edReferral, mode === "phone" ? <span>Phone details</span> : undefined));
     if (mode === "phone") {

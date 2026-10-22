@@ -25,7 +25,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
   if (movement.closure !== undefined) return null;
   switch (movement.stage) {
     case "placement_requested":
-      return { label: "Refer to wards", owner: COORDINATOR_OWNER, kind: "refer" };
+      return { label: "Ask wards", owner: COORDINATOR_OWNER, kind: "refer" };
     case "destination_review": {
       if (movement.escalation !== undefined) {
         return { label: "Escalated", owner: movement.escalation.contact, kind: "wait" };
@@ -37,7 +37,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       }
       return movement.declines.length > 0
         ? { label: "Escalate", owner: COORDINATOR_OWNER, kind: "escalate" }
-        : { label: "Refer to wards", owner: COORDINATOR_OWNER, kind: "refer" };
+        : { label: "Ask wards", owner: COORDINATOR_OWNER, kind: "refer" };
     }
     case "accepted_awaiting_bed":
       return movement.acceptedUnitId === undefined
@@ -72,6 +72,8 @@ export function isCoordinatorStep(step: MovementNextStep | null): step is Moveme
 
 /** Where a coordinator step is recorded: escalation lives on the coordinator screen, the rest on the Patient page. */
 export function nextStepTarget(step: MovementNextStep, movementId: string): { href: string; where: string } {
+  // D-77: Ask wards opens the Patient page with its Ask wards list already open.
+  if (step.kind === "refer") return { href: `${movementHref(movementId)}?taskAction=refer`, where: "the Patient page" };
   return step.kind === "escalate"
     ? { href: "/ward-flow", where: "the coordinator screen" }
     : { href: movementHref(movementId), where: "the Patient page" };
