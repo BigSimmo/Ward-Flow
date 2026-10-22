@@ -172,4 +172,26 @@ describe("Q25: screens that read a held bed count a stepped-back patient's bed a
     });
     expect(items.map((item) => item.kind)).toContain("bed_held_twice");
   });
+
+  it("one numbered bed held for two people counts a holder already moving", () => {
+    const held = movement(stepped, "WF-011");
+    const items = missedRequestCheck({
+      movements: [
+        { ...held, stage: "moving", heldBedNumber: 4 },
+        {
+          ...held,
+          id: "WF-Q25" as Movement["id"],
+          stage: "pulled",
+          admissionId: undefined,
+          patientId: undefined,
+          referralId: undefined,
+          heldBedNumber: 4,
+        },
+      ],
+      referrals: [],
+      patients: stepped.patients,
+      now: NOW_ANCHOR + 2,
+    });
+    expect(items.map((item) => item.kind)).toContain("bed_held_twice");
+  });
 });

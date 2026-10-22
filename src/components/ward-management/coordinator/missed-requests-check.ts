@@ -190,7 +190,9 @@ export function missedRequestCheck(input: {
   }
 
   const byBed = new Map<string, Movement[]>();
-  for (const movement of open) {
+  // A moving patient is no longer an open request but still holds its bed, so it is checked here.
+  for (const movement of movements) {
+    if (movement.closure !== undefined || (!isOpen(movement) && movement.stage !== "moving")) continue;
     if (movement.acceptedUnitId === undefined || movement.heldBedNumber === undefined) continue;
     // Q25: a bed is held by stage or by a kept admission (`movementHoldsBedByStage`), so a patient
     // stepped back to "accepted", or already moving, still holds the numbered bed.

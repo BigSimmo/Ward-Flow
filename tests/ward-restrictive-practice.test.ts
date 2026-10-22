@@ -201,10 +201,49 @@ describe("what a scoped desk is sent", () => {
     const statewide = scopeWardFlowState(both, STATEWIDE_COORDINATOR, { now: NOW, places }).state;
     expect(episodesOn(statewide, otherStay.unitId).map((episode) => episode.admissionId)).toEqual([otherStay.id]);
 
-    // Review (22 Oct): statewide roles without the Seclusion view get no episodes, only the ward facts.
+    // Review (22 Oct): statewide roles without the Seclusion view get no episodes.
     for (const role of ["admin", "executive"] as const) {
       const away = scopeWardFlowState(both, { role, scope: { kind: "statewide" } }, { now: NOW, places }).state;
       expect(both.units.flatMap((unit) => episodesOn(away, unit.id))).toEqual([]);
+    }
+  });
+
+  it("sends another ward's room status and incidents only to desks that hold that ward", () => {
+    const { state, unitId, otherUnitId } = setup();
+    const recorded = apply(
+      apply(state, {
+        type: "RECORD_WARD_INCIDENT",
+        role: "ward",
+        unitId,
+        actingUnitId: unitId,
+        category: "fall",
+        at: NOW - 10,
+      }),
+      { type: "SET_SECLUSION_ROOM_STATUS", role: "ward", unitId, actingUnitId: unitId, status: "out_of_service" },
+    );
+    const places = wardPlaceLookup(recorded.units);
+    const recordOn = (world: WardFlowState) => world.units.find((unit) => unit.id === unitId)?.restrictivePractice;
+    expect(recordOn(recorded)?.incidents).toHaveLength(1);
+
+    const own = scopeWardFlowState(
+      recorded,
+      { role: "ward", scope: { kind: "ward", unitIds: [unitId] } },
+      {
+        now: NOW,
+        places,
+      },
+    ).state;
+    expect(recordOn(own)).toMatchObject({
+      incidents: [{ category: "fall" }],
+      seclusionRoom: { status: "out_of_service" },
+    });
+
+    for (const desk of [
+      { role: "ward", scope: { kind: "ward", unitIds: [otherUnitId] } },
+      { role: "admin", scope: { kind: "statewide" } },
+    ] as WardAccess[]) {
+      const away = scopeWardFlowState(recorded, desk, { now: NOW, places }).state;
+      expect(recordOn(away)).toEqual({ incidents: [], episodes: [] });
     }
   });
 
