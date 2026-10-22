@@ -49,4 +49,10 @@ describe("arrivals cards show only a recorded observation level (A1-5)", () => {
       "Constant within sight (1:1)",
     );
   });
+
+  it("shows a recorded Intermittent level with its interval", () => {
+    expect(renderCard({ observation: observationAt("intermittent"), highAcuity: false })).toHaveTextContent(
+      "Intermittent, every 15 minutes",
+    );
+  });
 });

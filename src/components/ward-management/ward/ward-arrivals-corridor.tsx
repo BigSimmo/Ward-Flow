@@ -41,7 +41,7 @@ import {
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
-import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 export { pullBlockedReason };
 
@@ -231,8 +231,8 @@ export function WardArrivalsCorridor({
                       </span>
                     ) : null}
                     {/* Audit A1-5: only an observation level somebody recorded, never one read from
-                        the bed's security. */}
-                    {isConstantObservation(movement.observation) ? (
+                        the bed's security. General is the ordinary level, so it carries no tag. */}
+                    {movement.observation.level !== "general" ? (
                       <span className={styles.statusTag} data-type="acuity">
                         {observationSummary(movement.observation)}
                       </span>
