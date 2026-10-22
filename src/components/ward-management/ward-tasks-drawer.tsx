@@ -48,7 +48,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import type { WardConfiguration } from "./ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { decisionTargetReading } from "./ward-decision-targets";
-import { alertGroupOf } from "./alerts/alerts-model";
+import { alertActionFor, alertGroupOf, resolveAlertSubject } from "./alerts/alerts-model";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "./ward-due-sort";
 import { inboxItemIsActNow } from "./ward-inbox-reducer";
 import {
@@ -450,6 +450,8 @@ export function WardTasksDrawer({
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
   const alertsQueue = words === ALERTS_WORDS;
+  // Change 7: the desktop Alerts drawer gives each row one action. Phone has its own Alerts screen.
+  const oneAction = alertsQueue && !isPhone;
   const filteredItems = items.filter((item) => {
     const group = alertsQueue ? alertGroupOf(item) : item.tone === "danger" ? "act" : "wait";
     if (taskFilter === "critical" && group !== "act") return false;
@@ -636,6 +638,38 @@ export function WardTasksDrawer({
     );
   }
 
+  /**
+   * Change 7 (D-77, 21 Oct 2026): on the bed coordinator's desktop the Alerts drawer is a short
+   * preview. Each row offers the one action that clears it, the same one the Alerts screen's row
+   * offers (`alertActionFor`), beside Open. Acknowledge, Take, Snooze, calls and Escalate stay on
+   * the Alerts screen. A bed release needs its reason, so Release bed opens that alert there.
+   */
+  function renderOneAction(item: InboxItem, movement: Movement | undefined) {
+    const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    const subject = resolveAlertSubject(
+      movement,
+      item.movementId,
+      records ?? {},
+      records?.units ?? [],
+      item.plannedAdmission ? { planned: item.plannedAdmission, personLabel: item.personLabel } : undefined,
+      admission,
+      item.personId,
+    );
+    const action = alertActionFor(item, subject);
+    return (
+      <Link
+        href={
+          action.kind === "release" ? `${WARD_ALERTS_HREF}?alert=${encodeURIComponent(item.id)}&release=1` : action.href
+        }
+        onClick={onClose}
+        data-testid={`ward-task-action-${item.id}`}
+        className={`${styles.btn} ${styles.btnPrimary}`}
+      >
+        {action.label}
+      </Link>
+    );
+  }
+
   function renderRow(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
@@ -803,7 +837,9 @@ export function WardTasksDrawer({
             ) : null}
 
             <div className={styles.rowActions}>
-              {isFact ? (
+              {oneAction ? (
+                renderOneAction(item, movement)
+              ) : isFact ? (
                 <button
                   type="button"
                   className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
@@ -843,7 +879,7 @@ export function WardTasksDrawer({
               )}
               <button
                 type="button"
-                className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
+                className={`${styles.btn} ${!oneAction && isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
                 aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
                 onClick={() => {
                   openItem(item);
@@ -852,7 +888,8 @@ export function WardTasksDrawer({
                 <ArrowUpRight aria-hidden="true" />
                 Open
               </button>
-              {role === "coordinator" &&
+              {!oneAction &&
+              role === "coordinator" &&
               currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
                 <button
                   type="button"
@@ -866,7 +903,7 @@ export function WardTasksDrawer({
                   Take
                 </button>
               ) : null}
-              {role === "coordinator" && !done ? (
+              {!oneAction && role === "coordinator" && !done ? (
                 <InboxSnoozeControl
                   subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
                   actNow={inboxItemIsActNow(item.id)}
@@ -876,7 +913,7 @@ export function WardTasksDrawer({
                   }}
                 />
               ) : null}
-              {renderMovementActions(item, movement)}
+              {oneAction ? null : renderMovementActions(item, movement)}
             </div>
           </>
         )}
@@ -1008,38 +1045,42 @@ export function WardTasksDrawer({
                 </>
               )}
             </span>
-            <label className={styles.selectWrap}>
-              <Filter aria-hidden="true" />
-              <select
-                aria-label={`Filter ${words.plural.slice(0, -1)} state`}
-                value={ackFilter}
-                onChange={(event) => setAckFilter(event.target.value as AckFilter)}
-              >
-                {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" />
-            </label>
-            <label className={styles.selectWrap}>
-              <select
-                aria-label={`Sort ${words.plural}`}
-                data-testid="ward-tasks-sort"
-                value={sortMode}
-                onChange={(event) => {
-                  setSortMode(event.target.value as DueSortMode);
-                }}
-              >
-                {DUE_SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" />
-            </label>
+            {oneAction ? null : (
+              <>
+                <label className={styles.selectWrap}>
+                  <Filter aria-hidden="true" />
+                  <select
+                    aria-label={`Filter ${words.plural.slice(0, -1)} state`}
+                    value={ackFilter}
+                    onChange={(event) => setAckFilter(event.target.value as AckFilter)}
+                  >
+                    {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown aria-hidden="true" />
+                </label>
+                <label className={styles.selectWrap}>
+                  <select
+                    aria-label={`Sort ${words.plural}`}
+                    data-testid="ward-tasks-sort"
+                    value={sortMode}
+                    onChange={(event) => {
+                      setSortMode(event.target.value as DueSortMode);
+                    }}
+                  >
+                    {DUE_SORT_OPTIONS.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown aria-hidden="true" />
+                </label>
+              </>
+            )}
           </div>
         </div>
 
@@ -1197,57 +1238,71 @@ export function WardTasksDrawer({
           ) : null}
         </div>
 
-        <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
-          {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
+        {oneAction ? null : (
+          <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
+            {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
               broadcast and history. */}
-          {words === ALERTS_WORDS ? (
+            {words === ALERTS_WORDS ? (
+              <Link
+                href={WARD_ALERTS_HREF}
+                onClick={onClose}
+                data-testid="ward-tasks-open-alerts"
+                className={buttonClass({ variant: "pri", size: "sm" })}
+              >
+                Open the Alerts screen
+              </Link>
+            ) : null}
+            <Link
+              href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
+              onClick={onClose}
+              data-testid="ward-tasks-jump-delays"
+              className={styles.quickJump}
+            >
+              Waiting list →
+            </Link>
+            <span aria-hidden="true" className={styles.quickJumpSep}>
+              ·
+            </span>
+            {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
+              <>
+                <Link
+                  href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
+                  onClick={onClose}
+                  data-testid="ward-tasks-jump-alerts"
+                  className={styles.quickJump}
+                >
+                  Alerts &amp; watches →
+                </Link>
+                <span aria-hidden="true" className={styles.quickJumpSep}>
+                  ·
+                </span>
+              </>
+            )}
+            <Link
+              href={WARD_HOME_HREF}
+              onClick={onClose}
+              data-testid="ward-tasks-jump-coordinator"
+              className={styles.quickJump}
+            >
+              Home →
+            </Link>
+          </nav>
+        )}
+
+        <div className={styles.drawerFoot}>
+          {/* Change 7: the one way on from the preview is the Alerts screen itself. */}
+          {oneAction ? (
             <Link
               href={WARD_ALERTS_HREF}
               onClick={onClose}
               data-testid="ward-tasks-open-alerts"
               className={buttonClass({ variant: "pri", size: "sm" })}
             >
-              Open the Alerts screen
+              Open Alerts
             </Link>
-          ) : null}
-          <Link
-            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
-            onClick={onClose}
-            data-testid="ward-tasks-jump-delays"
-            className={styles.quickJump}
-          >
-            Waiting list →
-          </Link>
-          <span aria-hidden="true" className={styles.quickJumpSep}>
-            ·
-          </span>
-          {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
-            <>
-              <Link
-                href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
-                onClick={onClose}
-                data-testid="ward-tasks-jump-alerts"
-                className={styles.quickJump}
-              >
-                Alerts &amp; watches →
-              </Link>
-              <span aria-hidden="true" className={styles.quickJumpSep}>
-                ·
-              </span>
-            </>
+          ) : (
+            <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
-          <Link
-            href={WARD_HOME_HREF}
-            onClick={onClose}
-            data-testid="ward-tasks-jump-coordinator"
-            className={styles.quickJump}
-          >
-            Home →
-          </Link>
-        </nav>
-
-        <div className={styles.drawerFoot}>
-          <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
               <UserCheck aria-hidden="true" />

@@ -13,6 +13,7 @@ import { DISCHARGE_BARRIERS } from "@/components/ward-management/ward-admissions
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { buildScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -48,7 +49,7 @@ const draft = {
   security: "Open",
   sex: "Female",
   gender: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   urgency: 2,

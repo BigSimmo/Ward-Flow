@@ -93,6 +93,43 @@ describe("the drawer with one Alerts queue", () => {
     // The old text link to the same screen goes, so the quick look offers one way there.
     expect(within(drawer).queryByTestId("ward-tasks-jump-alerts")).toBeNull();
   });
+
+  it("gives each alert one action beside Open, and one way on to the Alerts screen (change 7, D-77)", () => {
+    const onClose = vi.fn();
+    render(
+      <WardTasksDrawer
+        items={items}
+        acknowledgements={{}}
+        completions={{}}
+        role="coordinator"
+        now={NOW_ANCHOR}
+        dispatch={vi.fn()}
+        onClose={onClose}
+        onSelectMovement={vi.fn()}
+        records={{ movements: seed.movements, patients: seed.patients, referrals: seed.referrals, units: seed.units }}
+      />,
+    );
+    const drawer = screen.getByRole("complementary", { name: "Alerts" });
+    // The per-row selects, the extra row buttons and the footer text links go.
+    expect(within(drawer).queryByRole("combobox")).toBeNull();
+    for (const gone of [/^Acknowledge$/u, /^Take$/u, /^Escalate$/u, /Snooze/u]) {
+      expect(within(drawer).queryByRole("button", { name: gone })).toBeNull();
+    }
+    expect(within(drawer).queryByTestId("ward-tasks-quick-jumps")).toBeNull();
+    expect(within(drawer).queryByText("Seen is not resolved")).toBeNull();
+    expect(within(drawer).getByTestId("ward-tasks-open-alerts")).toHaveTextContent("Open Alerts");
+
+    const transport = items.find((item) => /transport/iu.test(item.title));
+    if (!transport) throw new Error("fixture drifted: the seeded inbox has no transport alert");
+    const action = within(drawer).getByTestId(`ward-task-action-${transport.id}`);
+    expect(action).toHaveTextContent("Chase transport");
+    expect(action).toHaveAttribute("href", "/ward-flow/movements");
+    fireEvent.click(action);
+    expect(onClose).toHaveBeenCalled();
+    const row = action.closest("li")!;
+    expect(within(row).getAllByRole("link")).toHaveLength(1);
+    expect(within(row).getByRole("button", { name: "Open patient" })).toBeInTheDocument();
+  });
 });
 
 describe("the phone dock with one Alerts queue", () => {

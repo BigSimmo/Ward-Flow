@@ -6,6 +6,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { BedMap } from "@/components/ward-management/capacity/bed-map";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
 const valid = (state: WardFlowState) =>
   isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...state, rejections: [] })));
@@ -25,7 +26,7 @@ function journey() {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

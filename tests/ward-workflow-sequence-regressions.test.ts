@@ -8,6 +8,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { legalStatusMismatchWarning } from "@/components/ward-management/ward-eligibility";
 import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const now = NOW_ANCHOR;
 function apply(state: WardFlowState, event: WardFlowEvent) {
@@ -41,7 +42,7 @@ describe("intervening actions and physical provenance", () => {
       cohort: "Adult" as const,
       security: "Open" as const,
       legalStatus: "Voluntary" as const,
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       transport: undefined,
       stage: "accepted_awaiting_bed" as const,
@@ -203,7 +204,7 @@ function acceptedDirectReferral(involuntaryBedNeeded = false) {
       sex: "Female",
       gender: "Female",
       security: "Open",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

@@ -65,6 +65,7 @@ import {
   type WalkRoundMark,
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -501,8 +502,8 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Discharge confirmed"
                   : "Expected out today"
-                : bed.isSpecialling
-                  ? "1:1 specialling"
+                : bed.isSpecialling && bed.observation
+                  ? observationSummary(bed.observation)
                   : bed.criteriaLedChip && bed.status === "occupied"
                     ? bed.criteriaLedChip.label
                     : free
@@ -625,6 +626,7 @@ export function WardHomeTab({
       row.bed.dischargeDateMoves,
       row.bed.awayAtEdHours != null,
       row.bed.isSpecialling,
+      row.bed.observation?.level,
       row.bed.preparing,
     ].join("|"),
     glyph: row.glyph,

@@ -11,6 +11,7 @@ import {
   dischargeDateAccuracy,
   statewideReleaseCount,
 } from "../src/components/ward-management/ward-discharge-dates";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Every admission below is CONSTRUCTED, never found by searching a shared fixture.
@@ -28,7 +29,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
   return {
     id: "ADM-1",
     unitId: "rph-adult-open",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: "REF-1",
     movementId: null,

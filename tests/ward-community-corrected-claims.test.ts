@@ -62,6 +62,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const SCREEN_PATH = "src/components/ward-management/community/community-screen.tsx";
 const DERIVATIONS_PATH = "src/components/ward-management/community/community-derivations.ts";
 const NAV_TEST_PATH = "tests/ward-nav.test.ts";
@@ -629,7 +630,7 @@ function blankAdmission(id: string): Admission {
     // Ruling 1 made this a required field on `Admission` after this branch forked. `false` is the
     // seed's own default and the inert choice: it consumes none of the ward's one-to-one staffing,
     // so it cannot perturb any assertion in this file. Nothing here asserts on specialling.
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     state: "occupied",
     pulledAt: 0,

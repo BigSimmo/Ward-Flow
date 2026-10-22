@@ -238,7 +238,7 @@ export function standingFigures(
          */
         {
           key: "one-to-one",
-          label: "One-to-one free",
+          label: "Observation staff free",
           value: `${oneToOne} of ${unit.speciallingCapacity}`,
           sub: "staffed establishment",
         },

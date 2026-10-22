@@ -319,6 +319,11 @@
   flex: 1 1 auto;
 }
 
+/* The observation level editor: its rows line up with the full-width selects above them. */
+.editorFlush {
+  padding-inline: 0;
+}
+
 .done {
   display: flex;
   align-items: center;

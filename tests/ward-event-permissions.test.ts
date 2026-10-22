@@ -316,6 +316,8 @@ describe("who may raise which event", () => {
     RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
     RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+    // Fix plan item 10 (21 Oct 2026): ED records the level at intake, the ward and coordinator after.
+    RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
     CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
     RELEASE_BED: ["ward", "coordinator"],
     // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.

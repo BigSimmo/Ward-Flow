@@ -39,12 +39,13 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function admission(overrides: Partial<Admission>): Admission {
   return {
     id: "AD-TEST-01",
     unitId: "unit-under-test",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

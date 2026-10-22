@@ -16,6 +16,7 @@ import type { Movement, Referral, Unit, WardReferralDestination } from "../src/c
 import { allUnits } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION, isConstantObservation } from "../src/components/ward-management/ward-observation";
 
 /**
  * The acuity gate, built to the owner's ruling of 2026-09-10: **high-acuity nursing is marked by
@@ -64,7 +65,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -252,8 +253,10 @@ describe("the shipped data exercises both branches", () => {
   });
 
   it("does not make high acuity a synonym for specialling in the seed", () => {
-    const acuityOnly = wardMovements.filter((one) => one.highAcuity && !one.specialling).length;
-    const speciallingOnly = wardMovements.filter((one) => !one.highAcuity && one.specialling).length;
+    const acuityOnly = wardMovements.filter((one) => one.highAcuity && !isConstantObservation(one.observation)).length;
+    const speciallingOnly = wardMovements.filter(
+      (one) => !one.highAcuity && isConstantObservation(one.observation),
+    ).length;
     // If either field were derived from the other, one of these two is zero.
     expect(acuityOnly).toBeGreaterThan(0);
     expect(speciallingOnly).toBeGreaterThan(0);
@@ -292,7 +295,7 @@ describe("high-acuity staffing capacity — the pull", () => {
       // Isolated from the specialling gate deliberately: this file tests acuity capacity alone, and
       // `fre-older-adult` staffs only 1 specialling place too, so an inherited `specialling: true`
       // from the seeded source movement would collide with a different capacity check entirely.
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       stage: "accepted_awaiting_bed",
       acceptedUnitId: UNIT_ID,
       referredUnitIds: [],

@@ -76,7 +76,7 @@ describe("Ward answer current facts", () => {
       "Sex",
       // Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, as its own fact.
       "Gender",
-      "Specialling",
+      "Observation level",
       "High-acuity nursing",
       "Legal status",
       "From",

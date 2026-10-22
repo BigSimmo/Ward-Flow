@@ -16,6 +16,7 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
  * UX audit (21 Oct 2026): the patient record had no way to record a legal form. This opens Legal
@@ -69,7 +70,8 @@ export function PatientWhyCard({
       <div className={styles.rows}>
         {movement ? (
           <Row label="Needs">
-            {movement.security} {movement.cohort.toLowerCase()} bed{movement.specialling ? ", 1:1 specialling" : ""}
+            {movement.security} {movement.cohort.toLowerCase()} bed
+            {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
           </Row>
         ) : null}
         {/* Interpreter language and Aboriginal status stay in Details, apart from each other and

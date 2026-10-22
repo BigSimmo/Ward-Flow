@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { LEGAL_FORM_RECEIPT_CORRECTION_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Audit 2026-09-25: RECORD_LEGAL_FORM_EXPIRY and CORRECT_LEGAL_FORM_RECEIPT are audited as
@@ -24,7 +25,7 @@ function raise1A() {
       cohort: "Adult",
       security: "Open",
       sex: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Detained awaiting examination",
       urgency: 2,

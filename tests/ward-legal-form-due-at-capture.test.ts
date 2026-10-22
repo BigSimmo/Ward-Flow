@@ -5,6 +5,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { ReferralDraft } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { legalFormGroupOf, legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * A COORDINATOR CAN NOW PUT A DEADLINE ON A TRANSPORT OR TRANSFER ORDER, AND BEFORE THIS FILE
@@ -45,7 +46,7 @@ function draft(overrides: Partial<ReferralDraft> = {}): ReferralDraft {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     urgency: 2,

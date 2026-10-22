@@ -15,6 +15,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * 🔴 **TWO PANELS ON ONE SCREEN EACH SAY "OF THE N PATIENTS ON THIS WARD", AND NOTHING IN THE TYPE
@@ -36,7 +37,7 @@ const BASE_UNIT = allUnits().find((candidate) => candidate.id === "rph-adult-sec
 if (!BASE_UNIT) throw new Error("ward-sites.ts no longer defines rph-adult-secure");
 
 const ADMISSION_BASE = {
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   referralId: null,
   sex: "Female",

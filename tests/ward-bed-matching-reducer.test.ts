@@ -24,6 +24,7 @@ import { referralState } from "../src/components/ward-management/ward-referrals"
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * The bed-matching scenarios of `ward-bed-matching-scenarios.test.ts`, driven through the REDUCER,
@@ -103,7 +104,7 @@ function awaitingBed(person: Person): Movement {
       person.gender === "Non-binary"
         ? [{ at: NOW - 60, by: "coordinator", unitIds: [MX_F_ID], reason: PLACEMENT_REASON, wardChecked: true }]
         : undefined,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -314,7 +315,7 @@ function fullWardWith(occupant: Person, sexMix: Unit["sexMix"] = { Female: 1, Ma
   const admission: Admission = {
     id: OCCUPANT_ADMISSION,
     unitId: FULL_ID,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: "WF-BM-ADMITTED",

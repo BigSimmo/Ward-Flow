@@ -21,6 +21,7 @@ import type {
 import type { Gender, Patient, PatientId } from "@/components/ward-management/ward-patients";
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
 
 /*
  * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
@@ -732,7 +733,14 @@ function occupiedAdmission(
   return {
     id: `AD-DN-${spec.id.slice(3)}-${String(index + 1).padStart(2, "0")}`,
     unitId: spec.id,
-    specialling: index < spec.specialling - 1,
+    // Fix plan item 10: the staffed beds alternate the two one-to-one levels (one staff each), and a
+    // few others are on Intermittent, so the board shows each level without changing any staff count.
+    observation:
+      index < spec.specialling - 1
+        ? observationAt(index % 2 === 0 ? "within_sight" : "arms_length")
+        : index % 4 === 1
+          ? observationAt("intermittent")
+          : GENERAL_OBSERVATION,
     highAcuity: index < spec.highAcuity - 1,
     referralId: null,
     movementId: null,
@@ -835,7 +843,7 @@ function edMovement(
     sex: person.sex,
     ...(person.gender ? { gender: person.gender } : {}),
     homeRegion: homeRegionFor(siteCode),
-    specialling: index % 7 === 0,
+    observation: index % 7 === 0 ? observationAt("within_sight") : GENERAL_OBSERVATION,
     highAcuity: index % 4 === 0,
     legalStatus,
     ...(legalForm ? { legalForm } : {}),
@@ -1075,7 +1083,7 @@ function pulledAdmission(
   return {
     id,
     unitId,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId,
@@ -1124,7 +1132,7 @@ function inTransitTransfer(build: NetworkBuilder): void {
     sex: "Male",
     gender: "Male",
     homeRegion: "Perth Metropolitan",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: true,
     legalStatus: "Involuntary inpatient",
     legalForm: { code: "4A", kind: "transport" },

@@ -11,6 +11,7 @@ import {
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fsh-adult-secure";
@@ -316,7 +317,7 @@ describe("numbered bed designation integrity", () => {
       transportNeed: { needed: false, at: NOW },
       closure: undefined,
       highAcuity: false,
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       overrides: [],
       gender: "Male" as const,
       sex: "Male" as const,
@@ -401,7 +402,7 @@ describe("numbered bed designation integrity", () => {
         sex: "Male",
         gender: "Male",
         legalStatus: "Voluntary",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         urgency: 2,
         legalFormCode: null,

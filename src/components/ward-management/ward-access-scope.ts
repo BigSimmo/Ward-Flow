@@ -41,6 +41,7 @@ import {
   type WardAccess,
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
 /** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
@@ -226,7 +227,7 @@ function collectionMovement(movement: Movement): Movement {
     cohort: movement.cohort,
     security: movement.security,
     sex: movement.sex,
-    specialling: movement.specialling,
+    observation: movement.observation,
     highAcuity: movement.highAcuity,
     legalStatus: movement.legalStatus,
     stage: movement.stage,
@@ -271,7 +272,7 @@ function countsOnlyMovement(movement: Movement): Movement {
       "sex",
       "homeRegion",
       "gender",
-      "specialling",
+      "observation",
       "highAcuity",
       "legalStatus",
       "stage",
@@ -424,7 +425,7 @@ function countsOnlyAdmission(admission: Admission): Admission {
       "patientId",
       "referralId",
       "movementId",
-      "specialling",
+      "observation",
       "highAcuity",
       "sex",
       "gender",
@@ -545,7 +546,7 @@ function datesOnlyAdmission(admission: Admission): Admission {
     dischargeConfirmedAt: admission.dischargeConfirmedAt,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

@@ -19,6 +19,7 @@ import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-r
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * 🔴 **THE SECTION THE DRAWING CALLS "CLINICALLY READY, NOT YET GONE", AND THE NUMBER THAT COULD
@@ -48,7 +49,7 @@ function renderWard(admissions: Admission[] = [], unit: Unit = BASE_UNIT!) {
 }
 
 const ADMISSION_BASE = {
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   referralId: null,
   sex: "Female",

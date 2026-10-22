@@ -3,6 +3,7 @@ import { wardTvSheet } from "@/components/ward-management/bed-meeting/tv-derivat
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 it("asks for a fresh answer after same-minute waitlisting, withdrawal and re-referral, retaining history", () => {
   let state = wardFlowReducer(seedWardFlowState(), {
@@ -15,7 +16,7 @@ it("asks for a fresh answer after same-minute waitlisting, withdrawal and re-ref
       security: "Secure",
       sex: "Male",
       gender: "Male",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

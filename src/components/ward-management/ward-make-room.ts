@@ -26,6 +26,7 @@ import { boundedBedAvailability } from "@/components/ward-management/ward-ready-
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { stepDownSubject } from "@/components/ward-management/ward-step-down";
+import { observationStaff } from "@/components/ward-management/ward-observation";
 
 /**
  * MAKE ROOM CHAINS (`make-room-chains`, mockup stage, Josh 17 Oct 2026). A waiting referral whose
@@ -202,7 +203,7 @@ export function deriveMakeRoomChains(input: {
       return unitId ? { ...admission, unitId } : admission;
     });
 
-  // Specialling and high acuity places that waiting referrals in plans already offered will take.
+  // Observation staff and high acuity places that waiting referrals in plans already offered will take.
   const plannedPlaces = new Map<string, { specialling: number; highAcuity: number }>();
 
   /**
@@ -215,7 +216,12 @@ export function deriveMakeRoomChains(input: {
     if (takesSecureBed(subject, unit, admission !== undefined) && lockedBedsFree(unit) < 1) return false;
     const stays = plannedStays().filter((stay) => stay.id !== leaving?.id);
     const promised = plannedPlaces.get(unit.id) ?? { specialling: 0, highAcuity: 0 };
-    if (subject.specialling && remainingSpeciallingCapacity(unit, stays) - promised.specialling < 1) return false;
+    const observationStaffNeeded = observationStaff(subject.observation.level);
+    if (
+      observationStaffNeeded > 0 &&
+      remainingSpeciallingCapacity(unit, stays) - promised.specialling < observationStaffNeeded
+    )
+      return false;
     if (subject.highAcuity && remainingHighAcuityCapacity(unit, stays) - promised.highAcuity < 1) return false;
     return true;
   }
@@ -324,7 +330,7 @@ export function deriveMakeRoomChains(input: {
       arrive(targetUnit, mixSexOf(movement.gender, movement.sex), takesSecureBed(movement, current(targetUnit), false));
       const places = plannedPlaces.get(targetUnit.id) ?? { specialling: 0, highAcuity: 0 };
       plannedPlaces.set(targetUnit.id, {
-        specialling: places.specialling + (movement.specialling ? 1 : 0),
+        specialling: places.specialling + observationStaff(movement.observation.level),
         highAcuity: places.highAcuity + (movement.highAcuity ? 1 : 0),
       });
       chains.push({ movement, targetUnit, stepDowns, checks });

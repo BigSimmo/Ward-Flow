@@ -7,6 +7,7 @@ import { unitCapacity } from "../src/components/ward-management/ward-derivations
 import { bedMapWards } from "../src/components/ward-management/capacity/bed-map";
 import { wardFlowReducer, seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit, BedRelease } from "../src/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 describe("Agent 2 Stress Test Suite", () => {
   it("Scenario 1: unit.beds = 0", () => {
@@ -161,7 +162,7 @@ describe("Agent 2 Stress Test Suite", () => {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       urgency: 2,
       legalStatus: "Voluntary",
@@ -250,7 +251,7 @@ describe("Agent 2 Stress Test Suite", () => {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       urgency: 2,
       legalStatus: "Voluntary",
@@ -380,7 +381,7 @@ describe("Agent 2 Stress Test Suite", () => {
       security: "Open",
       sex: "Male",
       gender: "Non-binary",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       urgency: 2,
       legalStatus: "Voluntary",

@@ -4,6 +4,7 @@ import { eligibility, referralEligibility } from "../src/components/ward-managem
 import type { Movement, Referral, Unit, WardReferralDestination } from "../src/components/ward-management/ward-model";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Fix 2 (26 September 2026): the movement path's `sex_mix` gate asks how many beds are FREE, the
@@ -47,7 +48,7 @@ const female: Movement = {
   security: "Open",
   sex: "Female",
   gender: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],
