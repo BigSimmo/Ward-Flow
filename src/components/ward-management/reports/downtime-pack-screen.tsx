@@ -341,7 +341,7 @@ export function DowntimePackScreen() {
   const takenLine = (
     <span data-testid="ward-downtime-generated">
       {pack.offline
-        ? `Taken offline · last sync ${at(syncedAt)} · next pack when the connection returns`
+        ? `Taken offline · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
         : `Taken ${at(pack.generatedAt)} · next pack ${nextPackAt}`}
     </span>
   );

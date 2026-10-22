@@ -231,7 +231,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(frozen).toMatch(/Offline · last sync not recorded/u);
     expect(frozen).not.toMatch(/11:00/u);
     expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(
-      /^Taken offline · last sync Not recorded · next pack when the connection returns$/u,
+      /^Taken offline · last sync not recorded · next pack when the connection returns$/u,
     );
     expect(screen.getByTestId("ward-downtime-stale").textContent).toMatch(/Stale · no sync recorded/u);
     act(() => {
