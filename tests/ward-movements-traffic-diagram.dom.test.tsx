@@ -17,7 +17,7 @@ const mockCorridors: CorridorCount[] = [
 ];
 
 const mockRefusedCorridors: RefusedCorridorCount[] = [
-  { originEdId: "ED-FSH", unitId: unitB.id, count: 1, reasons: ["no_bed"] },
+  { originEdId: "ED-FSH", unitId: unitB.id, count: 1, reasons: ["no_suitable_bed"] },
 ];
 
 function relativeLuminance(r: number, g: number, b: number): number {

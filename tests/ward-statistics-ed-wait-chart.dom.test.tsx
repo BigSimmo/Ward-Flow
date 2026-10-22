@@ -186,7 +186,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
   const noFreeBedDecline = movement({
     id: "WF-declined-no-bed",
     originEdId: DEPARTMENT.id,
-    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_bed" }],
+    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
   });
   // Closed (arrived, admitted) but its declines must still be counted — a decline is a historical
   // fact that outlives the movement it was made against, per `declinesByReason`'s own contract.
@@ -196,7 +196,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
     stage: "arrived",
     closure: { at: NOW_ANCHOR - 5, outcome: "arrived", reason: "Admitted" },
     declines: [
-      { unitId: "unit-b", at: NOW_ANCHOR - 20, reason: "sex_mix" },
+      { unitId: "unit-b", at: NOW_ANCHOR - 20, reason: "sex_designation_unavailable" },
       { unitId: "unit-c", at: NOW_ANCHOR - 15, reason: "acuity_mix" },
     ],
   });
@@ -204,7 +204,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
   const distractorDecline = movement({
     id: "WF-declined-distractor",
     originEdId: OTHER_DEPARTMENT.id,
-    declines: [{ unitId: "unit-d", at: NOW_ANCHOR - 5, reason: "no_bed" }],
+    declines: [{ unitId: "unit-d", at: NOW_ANCHOR - 5, reason: "no_suitable_bed" }],
   });
 
   it("keeps the two counts separate and attributes only this department's movements", () => {
@@ -214,13 +214,14 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
     expect(screen.getByTestId("ward-stat-ed-declined-not-suitable").textContent).toContain("2");
   });
 
-  it('never uses the retired wording "no bed free", only the correct "no free bed"', () => {
+  // D-78: a no_suitable_bed decline can mean a free but unsuitable bed, so it reads "no suitable bed".
+  it('never uses the retired wording "no bed free", only "no suitable bed"', () => {
     renderEd([noFreeBedDecline, notSuitableClosedDecline]);
 
     const panel = screen.getByTestId("ward-statistics-ed-declines");
     const text = (panel.textContent ?? "").toLowerCase();
     expect(text).not.toContain("no bed free");
-    expect(text).toContain("no free bed");
+    expect(text).toContain("no suitable bed");
   });
 });
 

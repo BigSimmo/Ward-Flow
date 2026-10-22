@@ -84,7 +84,7 @@ describe("ward patient page — declines, changes, and escalation", () => {
     // its reason (never the raw snake_case code).
     expect(
       within(declines).getByText(
-        (_, node) => node?.textContent === `${unitById("rph-adult-secure")?.name} · No bed available`,
+        (_, node) => node?.textContent === `${unitById("rph-adult-secure")?.name} · No suitable bed`,
       ),
     ).toBeInTheDocument();
     expect(
@@ -110,7 +110,7 @@ describe("ward patient page — declines, changes, and escalation", () => {
 
     // No raw snake_case reason code anywhere in this section's rendered text.
     const rawCodes = [
-      "no_bed",
+      "no_suitable_bed",
       "acuity_mix",
       "bed_pulled_for_earlier_referral",
       "specialling_unavailable",

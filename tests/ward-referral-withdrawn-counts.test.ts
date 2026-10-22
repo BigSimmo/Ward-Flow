@@ -148,7 +148,7 @@ describe("A3-8 / A3-9: Referral Withdrawal vs Multi-Ward Decline", () => {
       now: NOW_ANCHOR + 2,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
 

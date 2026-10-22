@@ -15,6 +15,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import {
   MOVEMENT_STAGES,
   stepBackReasonLabels,
@@ -73,15 +74,8 @@ export function stageChangeReasonLabel(reason: string): string | undefined {
   return undefined;
 }
 
-export const declineReasonLabels: Record<DeclineReason, string> = {
-  no_bed: "No bed available",
-  sex_mix: "Sex mix",
-  specialling_unavailable: "Specialling unavailable",
-  acuity_mix: "Acuity mix",
-  capability_mismatch: "Capability mismatch",
-  bed_pulled_for_earlier_referral: "Bed pulled for earlier referral",
-  out_of_catchment: "Out of catchment",
-};
+/** D-78: the one decline label table, shared with the referral screens. */
+export const declineReasonLabels: Record<DeclineReason, string> = DECLINE_REASON_LABELS;
 
 /**
  * The "label (code) · …" line for a legal form, shared by the readiness card and the legal

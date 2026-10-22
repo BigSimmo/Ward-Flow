@@ -309,7 +309,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST,
   },
   {
-    id: "statistics-screen/declines/movement-declines-use-their-own-reason-list",
+    id: "statistics-screen/declines/movement-declines-use-the-one-reason-list",
     retiredPageProse: {
       date: "2026-09-13",
       reason:
@@ -317,19 +317,18 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     },
     renderedIn: STATISTICS_SCREEN,
     rendered: "drawn from a different list of reasons",
-    claim: "A movement decline's reason comes from `DECLINE_REASONS`, a different list from the referral's.",
+    // D-78 (Josh, 21 Oct 2026): the two decline lists merged, so this now pins the one list.
+    claim: "A movement decline's reason comes from `DECLINE_REASONS`, the one decline list.",
     sourceFile: WARD_MODEL,
     evidence: "export type DeclineReason = (typeof DECLINE_REASONS)[number];",
     falsifiedBy: {
-      change:
-        "Movement declines start drawing on the referral vocabulary instead of their own, so the two stop being " +
-        "different lists.",
+      change: "Movement declines start drawing on the community team's list instead of the one decline list.",
       find: "export type DeclineReason = (typeof DECLINE_REASONS)[number];",
-      replaceWith: "export type DeclineReason = ReferralDeclineReason;",
+      replaceWith: "export type DeclineReason = CommunityDeclineReason;",
     },
   },
   {
-    id: "statistics-screen/declines/referral-declines-use-the-referral-reason-list",
+    id: "statistics-screen/declines/referral-declines-use-the-same-reason-list",
     retiredPageProse: {
       date: "2026-09-13",
       reason:
@@ -337,13 +336,14 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     },
     renderedIn: STATISTICS_SCREEN,
     rendered: "A referral decline sits on",
-    claim: "A referral decline's reason comes from `REFERRAL_DECLINE_REASONS`, a separate list.",
+    // D-78 (Josh, 21 Oct 2026): a referral decline now reads from the same list as a movement's.
+    claim: "A referral decline's reason comes from the same list as a movement decline's.",
     sourceFile: WARD_MODEL,
-    evidence: "export type ReferralDeclineReason = (typeof REFERRAL_DECLINE_REASONS)[number];",
+    evidence: "export type ReferralDeclineReason = DeclineReason;",
     falsifiedBy: {
-      change: "Referral declines stop having a vocabulary of their own and reuse the movement one.",
-      find: "export type ReferralDeclineReason = (typeof REFERRAL_DECLINE_REASONS)[number];",
-      replaceWith: "export type ReferralDeclineReason = DeclineReason;",
+      change: "Referral declines get a vocabulary of their own again, separate from the movement one.",
+      find: "export type ReferralDeclineReason = DeclineReason;",
+      replaceWith: "export type ReferralDeclineReason = (typeof REFERRAL_DECLINE_REASONS)[number];",
     },
   },
   {
@@ -453,20 +453,20 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     evidence:
       // Re-read 17 Sept 2026: still true. The filter moved into a named const when the last-decline blocker
       // fix landed; the decline still removes the unit, appends to declines and stays at destination_review.
+      // Re-read 22 Oct 2026 (D-78): still true; the reason is now read through the retired-value map first.
       "const remainingReferredUnitIds = movement.referredUnitIds.filter((unitId) => unitId !== event.unitId); " +
       "const updated: Movement = { ...movement, referredUnitIds: remainingReferredUnitIds, " +
-      "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }], " +
+      "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }], " +
       'stage: "destination_review",',
     falsifiedBy: {
       change:
         "A decline starts closing the movement instead of leaving it at the stage referrals are made from, so a " +
         "coordinator cannot put it to fresh wards.",
       find:
-        "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }], stage: " +
+        "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }], stage: " +
         '"destination_review",',
       replaceWith:
-        "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }], stage: " +
-        '"closed",',
+        "declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }], stage: " + '"closed",',
     },
   },
   {
@@ -570,8 +570,8 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
       change:
         "A member is added to the movement-decline vocabulary, so the rendered row set no longer matches the list " +
         "it is generated from.",
-      find: '"out_of_catchment", ] as const;',
-      replaceWith: '"out_of_catchment", "transport_unavailable", ] as const;',
+      find: '"another_reason", ] as const;',
+      replaceWith: '"another_reason", "transport_unavailable", ] as const;',
     },
   },
   {
@@ -589,7 +589,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: DECLINE_GAINS_FREE_TEXT,
   },
   {
-    id: "statistics-screen/declines-by-reason/the-referral-side-list-is-a-different-list",
+    id: "statistics-screen/declines-by-reason/the-referral-side-name-is-the-same-list",
     retiredPageProse: {
       date: "2026-09-13",
       reason:
@@ -597,24 +597,17 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     },
     renderedIn: STATISTICS_SCREEN,
     rendered: "not referrals refused at the front door",
+    // D-78 (Josh, 21 Oct 2026): rewritten, not dropped. The claim that the two lists differ went
+    // false on purpose when they merged; what stays checked is that the old name is the one list.
     claim:
-      "`REFERRAL_DECLINE_REASONS` is a separate vocabulary with different members, about a destination refusing " +
-      "a referral rather than a ward refusing a movement.",
+      "`REFERRAL_DECLINE_REASONS` is no longer a separate vocabulary: it is the one decline list under its " +
+      "older name.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_DECLINE_REASONS_LIST,
     falsifiedBy: {
-      change:
-        "A member migrates from the movement vocabulary into the referral one, so the two lists stop having " +
-        "different members.",
-      // ⚠️ RE-ANCHORED, NOT RE-POINTED TO DODGE A FAILURE. This named the LAST member of the
-      // referral list, and the owner added a seventh (`"another_reason"`) on 2026-09-02, so the
-      // anchor matched nothing and the guard reported the claim as no longer falsifiable. That is
-      // the guard WORKING — it fired before anything shipped. The claim itself, that the two
-      // decline vocabularies have different members, is still TRUE with an empty intersection: a
-      // moved string, not an invalidated claim, which is why the pin moves rather than the claim
-      // being rewritten or dropped.
-      find: '"another_reason", ] as const;',
-      replaceWith: '"another_reason", "out_of_catchment", ] as const;',
+      change: "A separate referral-side list returns, so a referral and a movement decline stop sharing reasons.",
+      find: "export const REFERRAL_DECLINE_REASONS = DECLINE_REASONS;",
+      replaceWith: 'export const REFERRAL_DECLINE_REASONS = [ "no_suitable_bed", "another_reason", ] as const;',
     },
   },
   {
@@ -623,20 +616,20 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
       reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
     },
 
-    id: "statistics-screen/declines-by-reason/the-existing-label-map-belongs-to-the-other-list",
+    id: "statistics-screen/declines-by-reason/one-label-map-serves-every-decline",
     renderedIn: STATISTICS_SCREEN,
     rendered: "`DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by",
+    // D-78 (Josh, 21 Oct 2026): the falsifying edit this claim recorded is what the merge did.
     claim:
-      "`DECLINE_REASON_LABELS` is keyed by `ReferralDeclineReason`, so it is not a label table for the " +
-      "movement-decline vocabulary and cannot be reused as one.",
+      "`DECLINE_REASON_LABELS` is keyed by `DeclineReason`, so one label table serves movement and referral " +
+      "declines alike.",
     sourceFile: WARD_REFERRALS,
-    evidence: "export const DECLINE_REASON_LABELS: Record<ReferralDeclineReason, string> = {",
+    evidence: "export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {",
     falsifiedBy: {
       change:
-        "The label map is re-keyed to cover both vocabularies, so it becomes reusable as a label table for movement " +
-        "declines after all.",
-      find: "export const DECLINE_REASON_LABELS: Record<ReferralDeclineReason, string> = {",
-      replaceWith: "export const DECLINE_REASON_LABELS: Record<ReferralDeclineReason | DeclineReason, string> = {",
+        "The label map stops covering the ward-only reasons, so movement declines need a table of their own again.",
+      find: "export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {",
+      replaceWith: 'export const DECLINE_REASON_LABELS: Record<Exclude<DeclineReason, "acuity_mix">, string> = {',
     },
   },
 

@@ -8,8 +8,9 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { isOpen } from "../src/components/ward-management/ward-derivations";
 
 describe("Phase 3 model additions", () => {
+  // D-78: out of catchment reads as "Belongs to another service" in the one decline list.
   it("records out-of-catchment as a decline reason", () => {
-    expect(DECLINE_REASONS).toContain("out_of_catchment");
+    expect(DECLINE_REASONS).toContain("belongs_to_another_service");
     expect(new Set(DECLINE_REASONS).size).toBe(DECLINE_REASONS.length);
   });
 

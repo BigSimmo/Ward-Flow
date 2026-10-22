@@ -59,16 +59,16 @@ describe("edReferralStatus", () => {
 
   it("counts each declining ward once while the coordinator reviews", () => {
     const declines = [
-      { unitId: "a", at: 1, reason: "no_bed" },
-      { unitId: "a", at: 2, reason: "no_bed" },
-      { unitId: "b", at: 3, reason: "no_bed" },
+      { unitId: "a", at: 1, reason: "no_suitable_bed" },
+      { unitId: "a", at: 2, reason: "no_suitable_bed" },
+      { unitId: "b", at: 3, reason: "no_suitable_bed" },
     ] as Movement["declines"];
     const status = edReferralStatus(movement("destination_review", { declines }), options);
     expect([status.title, status.line, status.tone]).toEqual(["Declined by 2 wards", "Coordinator reviewing", "warn"]);
   });
 
   it("keeps a referral wards are still answering as being placed, not with the coordinator", () => {
-    const declines = [{ unitId: "a", at: 1, reason: "no_bed" }] as Movement["declines"];
+    const declines = [{ unitId: "a", at: 1, reason: "no_suitable_bed" }] as Movement["declines"];
     const status = edReferralStatus(movement("destination_review", { declines, referredUnitIds: ["b"] }), options);
     expect([status.title, status.line, status.tone]).toEqual(["Referral sent", "Coordinator finding a ward", "quiet"]);
   });

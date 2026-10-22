@@ -602,7 +602,7 @@ describe("lastRecordedActivity", () => {
     { name: "formedAt", patch: { formedAt: NOW - 10 }, what: "the legal form was raised" },
     {
       name: "declines",
-      patch: { declines: [{ unitId: "arm-adult-open", at: NOW - 10, reason: "no_bed" }] },
+      patch: { declines: [{ unitId: "arm-adult-open", at: NOW - 10, reason: "no_suitable_bed" }] },
       what: "a ward declined",
     },
     {

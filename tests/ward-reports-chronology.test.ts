@@ -47,7 +47,7 @@ function withHistory(state: WardFlowState): WardFlowState {
         ? {
             ...movement,
             overrides: [{ at: NOW_ANCHOR - 30, by: "coordinator", reason: OVERRIDE_REASONS[1], unitIds: [unitId] }],
-            declines: [{ unitId, at: NOW_ANCHOR - 90, reason: "no_bed" as const }],
+            declines: [{ unitId, at: NOW_ANCHOR - 90, reason: "no_suitable_bed" as const }],
           }
         : movement,
     ),
@@ -79,7 +79,7 @@ describe("PIR chronology: one person's records", () => {
     const override = chronology.rows.find((row) => row.action === "Placement override");
     expect(override).toMatchObject({ reason: OVERRIDE_REASONS[1], who: "Flow coordinator", source: "Record" });
     const decline = chronology.rows.find((row) => row.action === "Ward declined");
-    expect(decline?.reason).toBe(reasonLabel("no_bed"));
+    expect(decline?.reason).toBe(reasonLabel("no_suitable_bed"));
     // Sorted by occurrence: the decline (90 minutes ago) comes before the override (30 minutes ago).
     expect(actions.indexOf("Ward declined")).toBeLessThan(actions.indexOf("Placement override"));
     const times = chronology.rows.map((row) => row.occurredAt ?? row.recordedAt ?? Infinity);

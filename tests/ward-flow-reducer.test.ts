@@ -1278,13 +1278,13 @@ describe("decline", () => {
       now: NOW,
       movementId: "WF-010",
       unitId: "sjgm-adult-open",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     const target = movement(next, "WF-010");
     expect(target.declines).toContainEqual({
       unitId: "sjgm-adult-open",
       at: NOW,
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
       note: undefined,
     });
     expect(target.referredUnitIds).not.toContain("sjgm-adult-open");

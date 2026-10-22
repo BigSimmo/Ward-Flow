@@ -7,6 +7,7 @@ import type { WardFlowContextValue } from "@/components/ward-management/ward-flo
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementMedicalClearance } from "./ed-screen-model";
 
@@ -33,21 +34,9 @@ export type TimelineEvent = {
   waitMinutes?: number;
 };
 
+// D-78: the one decline list's own wording, so the ED reads what the ward and coordinator chose.
 const TIMELINE_DECLINE_REASON_LABELS: Record<string, string> = {
-  no_bed: "No suitable bed available",
-  no_suitable_bed: "No suitable bed available",
-  sex_mix: "Gender mix constraint",
-  sex_designation_unavailable: "Designated bed unavailable for recorded gender",
-  specialling_unavailable: "1:1 specialling unavailable",
-  acuity_mix: "Ward acuity mix at capacity",
-  capability_mismatch: "Clinical capability mismatch",
-  bed_pulled_for_earlier_referral: "Bed reallocated for earlier referral",
-  out_of_catchment: "Out of catchment area",
-  belongs_to_another_service: "Belongs to another health service",
-  referred_elsewhere: "Referred elsewhere",
-  another_reason: "Alternative clinical reason",
-  age_band_not_provided_here: "Age cohort not admitted by unit",
-  secure_bed_unavailable: "Secure / locked bed unavailable",
+  ...DECLINE_REASON_LABELS,
   outside_catchment: "Outside catchment area",
   needs_inpatient_care: "Requires inpatient admission",
   declined_or_unreachable: "Patient declined or unreachable",

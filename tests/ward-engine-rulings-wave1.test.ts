@@ -55,11 +55,11 @@ describe("ward-legal-clock computes no legal time (owner rulings 2026-09-25)", (
 
 describe("waitlist and gender decline rules", () => {
   it("exports the decline reasons that waitlist instead of ending the referral", () => {
-    expect([...WAITLIST_INSTEAD_OF_DECLINE_REASONS]).toEqual(["no_bed", "bed_pulled_for_earlier_referral"]);
-    expect(GENDER_MISMATCH_DECLINE_REASON).toBe("sex_mix");
+    expect([...WAITLIST_INSTEAD_OF_DECLINE_REASONS]).toEqual(["no_suitable_bed", "bed_pulled_for_earlier_referral"]);
+    expect(GENDER_MISMATCH_DECLINE_REASON).toBe("sex_designation_unavailable");
   });
 
-  it("DECLINE with no_bed waitlists the ward and does not remove the referral", () => {
+  it("DECLINE with no_suitable_bed waitlists the ward and does not remove the referral", () => {
     const seeded = seedWardFlowState();
     const unit = seeded.units.find((candidate) => candidate.sexDesignation === "Undesignated") ?? seeded.units[0]!;
     const source = seeded.movements.find((movement) => !movement.closure);
@@ -86,7 +86,7 @@ describe("waitlist and gender decline rules", () => {
       now: NOW,
       movementId,
       unitId: unit.id,
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     expect(after.rejections).toEqual([]);
     const updated = after.movements.find((candidate) => candidate.id === movementId)!;
@@ -123,7 +123,7 @@ describe("waitlist and gender decline rules", () => {
       now: NOW,
       movementId,
       unitId: unit.id,
-      reason: "sex_mix",
+      reason: "sex_designation_unavailable",
     });
     expect(after.rejections).toHaveLength(1);
     expect(after.rejections[0]!.reason).toMatch(/Gender mismatch does not decline/i);

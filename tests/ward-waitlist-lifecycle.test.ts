@@ -44,7 +44,7 @@ it("asks for a fresh answer after same-minute waitlisting, withdrawal and re-ref
       now: NOW_ANCHOR,
       movementId,
       unitId,
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     expect(state.rejections).toEqual([]);
   };

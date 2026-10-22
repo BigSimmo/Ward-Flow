@@ -184,7 +184,8 @@ test.describe("@mockup Ward screen", () => {
     await expect(beds).toContainText("Ready");
     await expect(beds).toContainText("Occupied");
 
-    // A decline requires a reason from the fixed list, and out-of-catchment is offered.
+    // A decline requires a reason from the fixed list, and "Belongs to another service" is offered
+    // (the old out of catchment, D-78).
     // Unconditional: bty-adult-secure holds a live referral at seed (WF-017, verified against
     // the real fixture — see the task report), so this must not hide behind an `if (count())`
     // that can silently never run.
@@ -196,7 +197,7 @@ test.describe("@mockup Ward screen", () => {
       .getByRole("button", { name: /Decline/ })
       .click();
     const reasons = page.getByRole("group", { name: /Decline reason/ });
-    await expect(reasons).toContainText(/out of catchment/i);
+    await expect(reasons).toContainText(/Belongs to another service/i);
   });
 
   /**
