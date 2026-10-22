@@ -1,12 +1,27 @@
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { RecordedFactEventHelpers } from "@/components/ward-management/ward-flow-record-events";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
-import { isObservation, sameObservation } from "@/components/ward-management/ward-observation";
+import { isObservation, sameObservation, type Observation } from "@/components/ward-management/ward-observation";
 
-type ObservationLevelEvent = Extract<WardFlowEvent, { type: "RECORD_OBSERVATION_LEVEL" }>;
+/**
+ * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after intake.
+ * Targets the open movement, or the admission once a bed is held; the movement and its live
+ * admission change together and append `{ at, from, to }` to `observationChanges`. Refused for an
+ * invalid level or interval, or no change. Raising an occupied bed's level beyond the ward's staff
+ * is not refused here: the capacity refusal stays at `PULL_PATIENT`. Declared here beside its case so
+ * `ward-flow-events.ts` stays under its line cap. Part of `WardFlowEvent`.
+ */
+export type ObservationLevelEvent = {
+  type: "RECORD_OBSERVATION_LEVEL";
+  role: WardFlowRole;
+  now: Instant;
+  target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
+  observation: Observation;
+};
 
 type ObservationLevelHelpers = Pick<
   RecordedFactEventHelpers,
@@ -14,7 +29,7 @@ type ObservationLevelHelpers = Pick<
 >;
 
 /**
- * `RECORD_OBSERVATION_LEVEL` (fix plan item 10). See the event's own comment in `ward-flow-events.ts`.
+ * `RECORD_OBSERVATION_LEVEL` (fix plan item 10). See `ObservationLevelEvent` above.
  *
  * The movement and its live admission change together: a level recorded against an open movement
  * also moves the bed it already holds, and a level recorded against an admission also moves the

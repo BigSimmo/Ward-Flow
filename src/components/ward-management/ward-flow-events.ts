@@ -94,6 +94,7 @@ export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Observation } from "@/components/ward-management/ward-observation";
+import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -1825,21 +1826,6 @@ export type WardFlowEvent =
       blocker: BedReleaseBlocker;
     }
   | {
-      /**
-       * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after
-       * intake. Targets the open movement, or the admission once a bed is held; the movement and its
-       * live admission change together and append `{ at, from, to }` to `observationChanges`. Refused
-       * for an invalid level or interval, or no change. Raising an occupied bed's level beyond the
-       * ward's staff is not refused here: the capacity refusal stays at `PULL_PATIENT`.
-       */
-      type: "RECORD_OBSERVATION_LEVEL";
-      role: WardFlowRole;
-      now: Instant;
-      target:
-        { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
-      observation: Observation;
-    }
-  | {
       /** The other half: the stay's discharge is no longer held up. Refused when none is recorded. */
       type: "CLEAR_STAY_DISCHARGE_BLOCKER";
       role: WardFlowRole;
@@ -2580,6 +2566,7 @@ export type WardFlowEvent =
   // #398 and the arrival checklist (D-72): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  | ObservationLevelEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within
