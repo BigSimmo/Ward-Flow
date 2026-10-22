@@ -180,6 +180,8 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
   await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
+  // The sheet moves focus to this heading a frame later. A fill that starts first loses its text when it lands.
+  await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeFocused();
   await sheet.getByLabel("Your name", { exact: true }).fill("Synthetic Referrer");
   await sheet.getByLabel("Email address", { exact: true }).fill("referrer@example.org");
   await sheet.getByLabel("Phone number", { exact: true }).fill("0412345678");

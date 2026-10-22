@@ -121,11 +121,11 @@ describe("the rail shows the desk's own menu (B1)", () => {
     expect(screen.getByTestId("ward-rail-role-menu")).toHaveAccessibleName("Nurse in charge menu");
   });
 
-  it("gives the bed coordinator Needs you, Beds, Movements, Referrals and Handover (B1)", () => {
+  it("gives the bed coordinator Needs you, Capacity, Movements, Referrals and Handover (B1)", () => {
     const { main, more } = roleMenu(railEntries(), "coordinator");
     expect(main.map((item) => [item.id, item.label])).toEqual([
       ["command", "Needs you"],
-      ["capacity", "Beds"],
+      ["capacity", "Capacity"],
       ["movements", "Movements"],
       ["referrals", "Referrals"],
       ["handover", "Handover"],
@@ -135,12 +135,12 @@ describe("the rail shows the desk's own menu (B1)", () => {
     render(wrap(<WardRail />));
     expect(railMenu()).toEqual([
       "Needs you",
-      expect.stringMatching(/^Beds, /u),
+      expect.stringMatching(/^Capacity, /u),
       expect.stringMatching(/^Movements, /u),
       expect.stringMatching(/^Referrals, /u),
     ]);
     expect(screen.getByRole("link", { name: "Needs you" })).toHaveAttribute("href", "/ward-flow");
-    expect(screen.getByRole("link", { name: /^Beds, /u })).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(screen.getByRole("link", { name: /^Capacity, /u })).toHaveAttribute("href", "/ward-flow/capacity");
     expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
     fireEvent.click(screen.getByTestId("ward-rail-more"));
     const sheet = screen.getByRole("dialog", { name: "More pages" });
