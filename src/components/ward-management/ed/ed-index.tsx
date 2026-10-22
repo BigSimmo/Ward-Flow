@@ -4,10 +4,10 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import { ChevronLeft, ChevronRight, Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
+import { Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
 
 import {
   Button,
@@ -599,28 +599,7 @@ export function EdIndex() {
           onClose={() => setPreviewId(null)}
           title={previewRow ? previewRow.short : "ED preview"}
           description={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
-          headerActions={
-            isPhone || ordered.length < 2 ? undefined : (
-              <span className={styles.previewSteps}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  icon={ChevronLeft}
-                  aria-label="Previous ED"
-                  onClick={() => stepPreview(-1)}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  icon={ChevronRight}
-                  aria-label="Next ED"
-                  onClick={() => stepPreview(1)}
-                />
-              </span>
-            )
-          }
+          headerActions={isPhone || ordered.length < 2 ? undefined : <EdPreviewSteps onStep={stepPreview} />}
           footer={previewRow ? <EdPreviewFoot row={previewRow} /> : null}
           testId="ed-index-preview"
         >
@@ -1163,25 +1142,38 @@ function PhoneEdList({
  */
 type PreviewModule = typeof import("./ed-preview");
 let loadedPreview: PreviewModule | undefined;
-const loadPreview = () => import("./ed-preview").then((m) => (loadedPreview = m));
+// One fetch shared by every part of the preview. A failed fetch is forgotten so Try again fetches anew,
+// and a load from any part draws all of them.
+let pendingPreview: Promise<PreviewModule> | undefined;
+const previewListeners = new Set<() => void>();
+const loadPreview = () =>
+  (pendingPreview ??= import("./ed-preview").then(
+    (m) => {
+      loadedPreview = m;
+      previewListeners.forEach((listener) => listener());
+      return m;
+    },
+    (error: unknown) => {
+      pendingPreview = undefined;
+      throw error;
+    },
+  ));
 preloadWhenIdle(loadPreview);
+const subscribePreview = (listener: () => void) => {
+  previewListeners.add(listener);
+  return () => void previewListeners.delete(listener);
+};
 
 function usePreviewModule() {
-  const [loaded, setLoaded] = useState(() => loadedPreview);
+  const loaded = useSyncExternalStore(
+    subscribePreview,
+    () => loadedPreview,
+    () => undefined,
+  );
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (loaded || failed) return;
-    let live = true;
-    void loadPreview()
-      .then((m) => {
-        if (live) setLoaded(() => m);
-      })
-      .catch(() => {
-        if (live) setFailed(true);
-      });
-    return () => {
-      live = false;
-    };
+    // Every part is drawn from `loaded` first, so a stale failure after a later load is never shown.
+    if (!loaded && !failed) loadPreview().catch(() => setFailed(true));
   }, [loaded, failed]);
   return { loaded, failed, retry: () => setFailed(false) };
 }
@@ -1203,6 +1195,11 @@ function EdPreview(props: ComponentProps<PreviewModule["EdPreview"]>) {
   const Body = loaded?.EdPreview;
   if (Body) return <Body {...props} />;
   return failed ? <PreviewLoadFailed retry={retry} /> : null;
+}
+
+function EdPreviewSteps(props: ComponentProps<PreviewModule["EdPreviewSteps"]>) {
+  const Steps = usePreviewModule().loaded?.EdPreviewSteps;
+  return Steps ? <Steps {...props} /> : null;
 }
 
 function EdPreviewFoot(props: ComponentProps<PreviewModule["EdPreviewFoot"]>) {

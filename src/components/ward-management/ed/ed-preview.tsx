@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
-import { LogIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogIn } from "lucide-react";
 
-import { FactGrid, Icon, RowSpark, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
+import { Button, FactGrid, Icon, RowSpark, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { edHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
@@ -198,5 +198,22 @@ export function EdPreviewFoot({ row }: { row: EdRow }) {
         Enter {row.short}
       </Link>
     </div>
+  );
+}
+
+/** The ED preview header's step buttons, to the previous or next ED in the current order. */
+export function EdPreviewSteps({ onStep }: { onStep: (by: -1 | 1) => void }) {
+  return (
+    <span className={styles.previewSteps}>
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        icon={ChevronLeft}
+        aria-label="Previous ED"
+        onClick={() => onStep(-1)}
+      />
+      <Button variant="ghost" size="sm" iconOnly icon={ChevronRight} aria-label="Next ED" onClick={() => onStep(1)} />
+    </span>
   );
 }
