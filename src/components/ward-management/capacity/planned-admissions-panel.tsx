@@ -59,10 +59,7 @@ import {
   type PlannedAdmissionDraft,
 } from "./planned-admissions-draft";
 import styles from "./planned-admissions.module.css";
-import {
-  plannedInitialsLabel,
-  TYPED_TEXT_NOT_KEPT,
-} from "@/components/ward-management/ward-flow-demo-storage-constants";
+import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
 
