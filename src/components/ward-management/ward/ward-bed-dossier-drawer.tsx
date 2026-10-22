@@ -368,7 +368,7 @@ export function WardBedDossierDrawer({
       timeline.push({
         at: change.at,
         tone: "neutral",
-        label: `Observation changed to ${observationRatio(change.to.level) ?? observationLevelName(change.to.level)}`,
+        label: `Observation changed to ${observationWithReview(change.to, now)}`,
       });
     if (criteriaRecord && criteriaRecord.items.length > 0) {
       timeline.push({ at: criteriaRecord.setAt, tone: "neutral", label: "Discharge criteria set or reviewed" });
