@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-22 - added D-72 to D-78 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes and one decline list); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-23 - added D-72 to D-79 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list and the ward referral detail view); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -905,3 +905,14 @@ is inferred.
   4. **Limits kept.** A ward refusing a movement is still not offered Sex designation unavailable (T10), and an ED decline gets none of the ward-only reasons.
 - **Boundary:** Synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
 - **Why:** two lists with different words for the same reason made decline records hard to compare across the network. Keeping the ward-only reasons and converting old values keeps what earlier records meant.
+
+## D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)
+
+- **Date:** 23 October 2026 (`2026-10-23`), 1:52 AM AWST (17:52 UTC on 22 October). **Decided by:** Josh, on the decision card in the Ward referral detail view thread, choosing "Approve and build" over "Approve, but no identity yet". This followed his messages in that thread at 7:04 PM AWST on 22 October: "they need to see all the details and documents attached", "There should be a way to click on the patient and the full referral details are visible" and "the wards should not see where the patient is referred. But they need to see all the other information." The mock-up was made from the running app at `main` a9c7763, as D-75 requires, and the D-74 approval rule is met.
+- **Decision:**
+  1. **Full referral before answering.** A ward reviewing a referral sees the whole submitted referral, including the patient's name and UMRN, before it accepts or declines. Tapping the patient's name on the incoming card opens it, and attached documents open in an in-app viewer.
+  2. **Never other destinations.** The ward never sees which other wards or teams the patient was referred to (FD-23, D-17).
+  3. **Fit lines split.** The card shows the patient's checks on one line and the ward's own state, such as a stale bed count or no free bed, on another, so a ward problem no longer reads as the patient failing.
+- **What it replaces:** Josh's 26 September 2026 rule that a ward sees no identity before it accepts, and the part of D-68 item 3 that kept the name and UMRN off the accept card until acceptance. D-39 and D-74 item 5 stand: no `WF-...` journey number or referral number shows on the card.
+- **Boundary:** Synthetic data only, with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Built in PR #588. This authorises no deployment, provider configuration change or spending.
+- **Why:** A ward cannot make a safe decision on a referral it cannot read. The engine already held about half the fields, and community teams already saw them.
