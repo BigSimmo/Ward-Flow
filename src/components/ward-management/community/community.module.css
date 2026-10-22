@@ -3200,7 +3200,8 @@ button.searchBox:hover {
   width: 19%;
 }
 
-.sentFootnote {
+.sentFootnote,
+.sentEmpty {
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
 }

@@ -70,7 +70,7 @@ export function CommunityScreenSentTab({ view }: { view: CommunityScreenView }) 
           </div>
         </div>
         {sentReferrals.sent.length === 0 ? (
-          <p className={styles.emptyNote} data-testid="ward-community-referrals-empty">
+          <p className={`${styles.emptyNote} ${styles.sentEmpty}`} data-testid="ward-community-referrals-empty">
             No referral on record names {team.name} as the team that sent it.
           </p>
         ) : (
