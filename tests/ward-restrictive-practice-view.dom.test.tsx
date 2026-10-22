@@ -73,6 +73,12 @@ describe("seclusion, restraint and incidents view", () => {
     // Desk check (22 Oct): the opener and the save button no longer share the label "Record end".
     fireEvent.click(within(episode).getByRole("button", { name: "Record end" }));
     expect(within(episode).getByRole("button", { name: "Save end time" })).toHaveAttribute("aria-disabled", "true");
+    // Desk check (22 Oct): an end a few minutes ahead of the clock is later than now, not before the start.
+    const endTime = within(episode).getByTestId("seclusion-episode-end-time");
+    fireEvent.change(endTime, { target: { value: clock(-8) } });
+    expect(within(episode).getByText("The time cannot be later than now")).toBeInTheDocument();
+    fireEvent.change(endTime, { target: { value: clock(25) } });
+    expect(within(episode).getByText("The end time cannot be before the start time")).toBeInTheDocument();
     fireEvent.change(within(episode).getByTestId("seclusion-episode-end-time"), { target: { value: clock(5) } });
     fireEvent.click(within(episode).getByTestId("seclusion-episode-end"));
     expect(screen.queryByTestId("seclusion-episode")).not.toBeInTheDocument();

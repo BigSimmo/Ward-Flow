@@ -17,7 +17,7 @@ import {
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { wardPlaceLookup } from "../ward-access-places";
-import { formatInstantWithDay, type Instant } from "../ward-clock";
+import { formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-roles";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
@@ -252,8 +252,18 @@ function useTypedTime(now: Instant, after?: Instant) {
       ? "Type the time first."
       : at === undefined
         ? "Type the time as HH:MM."
-        : typedTimeRefusal(at, now, after);
+        : aheadOfNowBeforeStart(at, now, after)
+          ? "The time cannot be later than now"
+          : typedTimeRefusal(at, now, after);
   return { text, setText, at, refusal };
+}
+
+/**
+ * A typed end time a few minutes ahead of the clock reads as yesterday, so it lands before the start.
+ * Say it is later than now when today's reading is the nearer one.
+ */
+function aheadOfNowBeforeStart(at: Instant, now: Instant, after?: Instant): boolean {
+  return after !== undefined && at < after && at + MINUTES_PER_DAY - now < now - at;
 }
 
 function TimeField({ label, time, testId }: { label: string; time: ReturnType<typeof useTypedTime>; testId: string }) {
