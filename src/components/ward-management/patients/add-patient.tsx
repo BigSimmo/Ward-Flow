@@ -23,6 +23,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   duplicateCandidates,
   GENDERS,
@@ -172,29 +173,6 @@ const INDIGENOUS_STATUS_OPTIONS = [
   { value: "both", label: "Both Aboriginal and Torres Strait Islander origin" },
 ] as const;
 
-const PRESENTING_FACILITIES = [
-  { value: "", label: "Select presenting facility" },
-  { value: "rph-ed", label: "Royal Perth ED" },
-  { value: "scgh-ed", label: "Sir Charles Gairdner ED" },
-  { value: "fsh-ed", label: "Fiona Stanley ED" },
-  { value: "arm-ed", label: "Armadale ED" },
-  { value: "sjgm-ed", label: "St John of God Midland ED" },
-  { value: "rgh-ed", label: "Rockingham General ED" },
-  { value: "jhc-ed", label: "Joondalup ED" },
-  { value: "peel-ed", label: "Peel ED" },
-] as const;
-
-const FACILITY_TO_SITE_CODE: Record<string, string> = {
-  "rph-ed": "RPH",
-  "scgh-ed": "SCGH",
-  "fsh-ed": "FSH",
-  "arm-ed": "ARM",
-  "sjgm-ed": "SJGM",
-  "rgh-ed": "RGH",
-  "jhc-ed": "JHC",
-  "peel-ed": "PEEL",
-};
-
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
 const MATCH_LABEL: Record<MatchKind, string> = {
@@ -214,7 +192,8 @@ export function AddPatientForm() {
   const registrationScope = patientRegistrationScope(access.scope);
   // Smart features idea 9 (19 Oct 2026): an ED desk presents at its own ED unless someone picks another.
   const deskEdId = access.scope.kind === "ed" ? access.scope.edId : undefined;
-  const deskFacility = PRESENTING_FACILITIES.some((entry) => entry.value === deskEdId) ? (deskEdId ?? "") : "";
+  // Read the site from the ED directory so every ED desk, KEMH and PCH included, carries its own ED.
+  const deskEdSiteCode = deskEdId ? (edById(deskEdId)?.siteCode ?? "") : "";
   const registrationUnavailable =
     access.scope.kind === "ward" && !registrationScope
       ? "Open a referral from a single source ward before registering the patient."
@@ -260,7 +239,7 @@ export function AddPatientForm() {
     generation: number;
     intent: "profile" | "refer";
     /** The desk's own ED, so a referral started here comes from that ED. */
-    facility: string;
+    edSiteCode: string;
   } | null>(null);
   const [acceptedSubmission, setAcceptedSubmission] = useState<typeof priorSubmissionRef.current>(null);
   const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
@@ -404,7 +383,7 @@ export function AddPatientForm() {
       const params = new URLSearchParams();
       params.set("new", "1");
       params.set("patientId", encodeRecordAddress(added.id));
-      const siteCode = FACILITY_TO_SITE_CODE[prior.facility];
+      const siteCode = prior.edSiteCode;
       if (siteCode) {
         params.set("site", siteCode);
         // The site is an emergency department, so the referral comes from that ED, not a community service.
@@ -476,7 +455,7 @@ export function AddPatientForm() {
       familyName: answered.familyName,
       generation: worldGeneration,
       intent: submitIntentRef.current,
-      facility: deskFacility,
+      edSiteCode: deskEdSiteCode,
       form: formSnapshot(),
     };
     priorSubmissionRef.current = submission;

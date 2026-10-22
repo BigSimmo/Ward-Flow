@@ -82,8 +82,13 @@ describe("a referral starts from the desk's own place", () => {
 
 describe("adding a patient at an ED desk", () => {
   // D-77 change 6: Add a patient asks identity only, so the desk's own ED travels with the referral it starts.
-  it("starts the referral from the desk's own ED", async () => {
-    atDesk({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } });
+  // KEMH and PCH were missing from the old presenting-facility list, so their desks lost the ED.
+  it.each([
+    ["rph-ed", "RPH"],
+    ["kemh-ed", "KEMH"],
+    ["pch-ed", "PCH"],
+  ])("starts the referral from the desk's own ED (%s)", async (edId, siteCode) => {
+    atDesk({ role: "ed", scope: { kind: "ed", edId } });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AddPatientForm />
@@ -97,7 +102,7 @@ describe("adding a patient at an ED desk", () => {
     fireEvent.click(screen.getByRole("button", { name: /Register & start referral/ }));
     await waitFor(() => expect(router.push).toHaveBeenCalled());
     const params = new URLSearchParams(String(router.push.mock.calls.at(-1)?.[0]).split("?")[1]);
-    expect(params.get("site")).toBe("RPH");
+    expect(params.get("site")).toBe(siteCode);
     expect(params.get("source")).toBe("ed");
   });
 });
