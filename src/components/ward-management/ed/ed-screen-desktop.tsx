@@ -4,7 +4,6 @@
 // button and every edit in the person sheet. Split out of `ed-screen.tsx` unchanged (fix list 2.5
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -18,6 +17,7 @@ import { buttonClass, StatusGlyph } from "@/components/wf";
 import { EdActionsMenu } from "./ed-board-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
+import { edRowReferralStatus } from "./ed-referral-status";
 import { edWaitTone } from "./ed-screen-model";
 import type { EdRowFacts } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
@@ -42,7 +42,6 @@ export function renderEdBoardTableRow(
     formExpiryWarningText,
     patientInfo,
     acceptedUnit,
-    destinationLabel,
     bedSearch,
     nextAction,
   } = row;
@@ -129,16 +128,25 @@ export function renderEdBoardTableRow(
       {examinationRevokedWhileBedHeld(movement) ? <StatusGlyph tone="warning" size={8} /> : null}
     </span>
   );
-  const destinationCell = destinationName ? (
-    <span className={styles.a2Value} title={`${acceptedUnit?.name}, accepted`}>
-      <Check size={14} aria-hidden="true" className={styles.a2Tick} />
-      <span className={styles.a2Truncate}>{destinationName}</span>
-      <span className="sr-only">, accepted</span>
-    </span>
-  ) : (
+  // Change 2 (D-77): the Referral column says where the referral stands, the ward on line one and
+  // one plain line under it. The bed hold's time left moved here from the chip under the name.
+  const referral = edRowReferralStatus(row, ctx);
+  const destinationCell = (
     <>
-      <span className={`${styles.a2Value} ${styles.a2Quiet}`}>
-        <span className={styles.a2Truncate}>{destinationLabel}</span>
+      <span
+        className={styles.a2Referral}
+        title={destinationName ? `${acceptedUnit?.name}, accepted` : undefined}
+        data-testid={`ward-ed-referral-${movement.id}`}
+      >
+        <span className={referral.line ? styles.a2ReferralTitle : styles.a2Quiet}>{referral.title}</span>
+        {referral.line ? (
+          <span className={styles.a2ReferralLine} data-tone={referral.tone}>
+            {referral.hold && referral.hold.state !== "held" ? (
+              <StatusGlyph tone={referral.hold.state === "lapsed" ? "danger" : "warning"} size={8} />
+            ) : null}{" "}
+            {referral.line}
+          </span>
+        ) : null}
       </span>
       <span className={styles.a2Facts}>{referredFact}</span>
     </>

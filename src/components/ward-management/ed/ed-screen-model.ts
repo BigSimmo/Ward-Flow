@@ -599,10 +599,10 @@ export function outstandingItem(movement: Movement): OutstandingItem {
       return {
         kind: "handover",
         label: "Handover",
-        detail: "Bed pulled — no transport needed (patient walking or private transport).",
+        detail: "Bed held — no transport needed (patient walking or private transport).",
       };
     }
-    return { kind: "handover", label: "Handover", detail: "Bed pulled — ready to mark the handover to transport." };
+    return { kind: "handover", label: "Handover", detail: "Bed held — ready to mark the handover to transport." };
   }
   if (movement.stage === "handover_ready" || movement.stage === "moving") {
     const leg = transportLeg(movement.transport);
