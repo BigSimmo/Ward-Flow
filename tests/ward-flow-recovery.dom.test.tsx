@@ -83,6 +83,7 @@ describe("conservative demo recovery", () => {
         source: "ward",
         confirmedAt: current.now,
         revision: (unit.allocatable.revision ?? 0) + 1,
+        confirmations: (unit.allocatable.confirmations ?? 0) + 1,
       });
       expect(accepted.empty).toEqual(unit.empty);
       expect(accepted.allocatableLocked).toBe(unit.allocatableLocked);
