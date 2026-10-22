@@ -8,6 +8,7 @@ import {
   Inbox,
   LayoutGrid,
   LayoutDashboard,
+  List,
   ListFilter,
   PhoneOff,
   LogOut,
@@ -15,7 +16,6 @@ import {
   Route,
   ScanSearch,
   Scale,
-  Search,
   ShieldCheck,
   Siren,
   TriangleAlert,
@@ -77,11 +77,12 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
    * read. Siren is already imported for another item's use and needs no new dependency. */
   alerts: Siren,
   escalation: TriangleAlert,
-  search: Search,
-  // The master search hub. `ScanSearch` rather than a second `Search`, which `search` directly
-  // above already uses: this rail is icon-only at its narrow width, and two destinations sharing a
-  // glyph are two destinations a reader cannot tell apart. The magnifier-over-a-frame reads as
-  // searching ACROSS a set, which is what this destination does and `search` does not.
+  // Patients is a census list, not a search (UX audit, 21 Oct 2026), so a list rather than the
+  // magnifier the bar's own Search uses.
+  search: List,
+  // The master search hub. `ScanSearch`: this rail is icon-only at its narrow width, and two
+  // destinations sharing a glyph are two destinations a reader cannot tell apart. The
+  // magnifier-over-a-frame reads as searching ACROSS a set, which is what this destination does.
   /*
    * 🔴 **`PhoneOff`, AND THE CROSSED-OUT HANDSET IS THE POINT, NOT A PLACEHOLDER.**
    * This destination holds no number and nothing diallable, by design. A plain `Phone` would promise

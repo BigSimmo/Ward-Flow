@@ -53,6 +53,18 @@ describe("successful save identity after storage failure", () => {
       "Restored the last successful save from 10:42 yesterday on the board clock. Later changes may not have been saved.",
     );
   });
+
+  it("says a save from an earlier calendar day was not restored, rather than calling it unsafe (A2-15)", () => {
+    const savedDay = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T23:50:00Z") / 60_000;
+    expect(tryWriteDemoState(seedWardFlowState(), savedDay, NOW_ANCHOR, savedAt)).toBe(true);
+    const nextDay = new Date("2026-10-17T00:00:00Z");
+    const read = tryReadDemoState(nextDay, savedAt + 20);
+    expect(read.saved).toBeUndefined();
+    expect(read.recoveryNotice).toBe(
+      "The saved demonstration was from an earlier day, so a fresh synthetic demonstration has started for today.",
+    );
+  });
 });
 
 it("shows the retained successful save label alongside the storage warning after actual provider restoration", async () => {

@@ -2615,6 +2615,7 @@ export function reduceClinicalEvent(
             byRole: event.role,
             message: event.message,
             urgent: event.urgent,
+            confirmations: unit.allocatable.confirmations ?? 0,
           },
           state.worldGeneration,
         ),
@@ -2740,11 +2741,13 @@ const REFERRAL_ANSWER_EVENT_HELPERS = {
   referralAcceptanceRefusal,
   referralReferrer,
   reject,
+  releasePulledBedAndAdmission,
   replaceMovement,
   replaceReferral,
   unitName,
   wardActingMovementRefusal,
   wardActingUnitRefusal,
+  withoutReferralBedHold,
 };
 export type ReferralAnswerEventHelpers = typeof REFERRAL_ANSWER_EVENT_HELPERS;
 
