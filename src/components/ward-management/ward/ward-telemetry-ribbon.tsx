@@ -149,7 +149,8 @@ export function WardTelemetryRibbon({
           />
         ) : null}
         <span className={styles.srOnly}>
-          {staffedSpecialling} on 1:1 specialling. {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}{" "}
+          {staffedSpecialling} staff on constant observation.{" "}
+          {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}{" "}
           {confirmedByWard ? "since confirmed" : "since last figure"}.
         </span>
       </div>
@@ -167,7 +168,7 @@ export function WardTelemetryRibbon({
         />
       </div>
       <HeroStat value={capacity.occupied} label="Occupied" />
-      <HeroStat value={staffedSpecialling} label="1:1 specialling" />
+      <HeroStat value={staffedSpecialling} label="Constant obs staff" />
       <HeroStat
         value={capacity.available + freeingByShiftEnd}
         label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}

@@ -3,6 +3,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import { selectDischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function fixture() {
   const state = seedWardFlowState();
@@ -84,7 +85,7 @@ describe("patient-linked discharge transition", () => {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

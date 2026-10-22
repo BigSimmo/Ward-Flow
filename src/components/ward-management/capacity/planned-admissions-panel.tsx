@@ -59,6 +59,7 @@ import {
   type PlannedAdmissionDraft,
 } from "./planned-admissions-draft";
 import styles from "./planned-admissions.module.css";
+import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
 
@@ -171,7 +172,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function whoText(planned: PlannedAdmission): string {
     if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
-    return `Initials ${planned.initials ?? "not recorded"}`;
+    return planned.initials === null ? "Initials not recorded" : plannedInitialsLabel(planned.initials);
   }
 
   const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;

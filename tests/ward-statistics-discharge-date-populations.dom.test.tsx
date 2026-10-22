@@ -17,6 +17,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * 🔴 **THE DISCHARGE-DATES SENTENCE PRESENTS TWO POPULATIONS AS ONE, AND THE DERIVATION SAID SO IN
@@ -62,7 +63,7 @@ function anAdmission(overrides: Partial<Admission>): Admission {
   return {
     id: "ADM-x",
     unitId: UNIT!.id,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     sex: "Female",

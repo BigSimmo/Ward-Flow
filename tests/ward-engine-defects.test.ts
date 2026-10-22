@@ -15,6 +15,7 @@ import {
 import type { Movement, Referral, Unit } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Three engine defects confirmed by the 2026-09-14 review of the 62-issue catalogue
@@ -82,7 +83,7 @@ function stagedForPull(source: Movement, id: Movement["id"], highAcuity: boolean
     patientId: `PT-${id}`,
     referralId: undefined,
     highAcuity,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: ACUITY_UNIT,
     referredUnitIds: [],

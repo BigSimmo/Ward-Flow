@@ -12,6 +12,7 @@ import {
   playSyntheticUrgentChime,
   triggerUrgentBuzzAlert,
 } from "@/components/ward-management/shell/ward-sound-store";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const BASE_MOVEMENT: Movement = {
   id: "WF-001",
@@ -22,7 +23,7 @@ const BASE_MOVEMENT: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],

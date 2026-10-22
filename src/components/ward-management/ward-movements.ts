@@ -18,6 +18,7 @@ import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
+import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
 
 /**
  * The transport-form name seeded onto `TransportJob.formRequired` below. This is a single fact
@@ -86,7 +87,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Referred for psychiatric examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -118,7 +119,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -148,7 +149,7 @@ const seededMovements: Movement[] = [
     security: "Secure",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -186,7 +187,7 @@ const seededMovements: Movement[] = [
     security: "Secure",
     sex: "Male",
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -225,7 +226,7 @@ const seededMovements: Movement[] = [
     // network's one Female-only ward, so `gender_designation` has a real Adult/Open/Female
     // pairing to accept.
     gender: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Detained awaiting examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -265,7 +266,7 @@ const seededMovements: Movement[] = [
     // T10 (item 8): a second named example — targets `fsh-adult-secure`, the network's one
     // Male-only ward, so `gender_designation` has a real Adult/Secure/Male pairing to accept.
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -319,7 +320,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -369,7 +370,7 @@ const seededMovements: Movement[] = [
     // FSH present as a locked-ward alternative to prove the voluntary-on-locked warning renders on
     // every such row, not just the first. Recorded consistent with `sex: "Male"` above.
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -420,7 +421,7 @@ const seededMovements: Movement[] = [
     // behaviour change from T10, not a defect in the tests that rely on this fixture
     // (`ward-shortlist.dom.test.tsx`'s RA1 suite). Recorded consistent with `sex: "Male"` above.
     gender: "Male",
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -504,7 +505,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Detained awaiting examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -541,7 +542,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -584,7 +585,7 @@ const seededMovements: Movement[] = [
     // gender is read independently rather than defaulted from sex, the same discipline
     // `tests/ward-gender-gate.test.ts`'s PT-T02 fixture already holds `Patient.gender` to.
     gender: "Non-binary",
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Referred for psychiatric examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -630,7 +631,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -680,7 +681,7 @@ const seededMovements: Movement[] = [
     security: "Secure",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -723,7 +724,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -764,7 +765,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Referred for psychiatric examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -798,7 +799,7 @@ const seededMovements: Movement[] = [
     // discipline (T10, item 8): never copied from `sex` in bulk, only on the named rows this
     // change actually touches.
     gender: "Male",
-    specialling: true,
+    observation: observationAt("within_sight"),
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -846,7 +847,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -911,7 +912,7 @@ const seededMovements: Movement[] = [
     // 2026-09-17 sample-data pass: WF-019 carried `sex: "Male"` and no `gender`. Recorded
     // consistent with `sex` above, same discipline as WF-017's own edit just above in this file.
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -939,7 +940,7 @@ const seededMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1303,8 +1304,8 @@ function routineMovements(count: number, startIndex: number): Movement[] {
       // records a gender, except WF-329 (placement_requested), kept unrecorded on purpose as the seeded
       // "gender not recorded" case (it needs a coordinator's review before any allocation).
       gender: index === 329 ? undefined : sex,
-      specialling: index % 11 === 0,
-      // A DIFFERENT divisor from `specialling` directly above, deliberately. Sharing one would make
+      observation: index % 11 === 0 ? observationAt("within_sight") : GENERAL_OBSERVATION,
+      // A DIFFERENT divisor from `observation` directly above, deliberately. Sharing one would make
       // every high-acuity movement a specialling movement too, and every screen, gate and statistic
       // that reads the pair would agree by construction — a correlation nobody authored, invisible
       // in the render, and exactly the shape that lets a defect in one field hide behind the other.
@@ -1426,7 +1427,7 @@ const journeyCoverageMovements: Movement[] = [
     // allocation, which a movement already past referral cannot get without being withdrawn. The
     // seeded unrecorded case is WF-329.
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1465,7 +1466,7 @@ const journeyCoverageMovements: Movement[] = [
     // R7 (25 Sept 2026): was deliberately left unrecorded ("a few"). Under R7 an unrecorded gender needs a
     // coordinator's review before any allocation, which a movement already past referral cannot get
     // without being withdrawn, so this seed now records it. The seeded unrecorded case is WF-329.
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Referred for psychiatric examination",
     legalForm: { code: "1A", kind: "examination" },
@@ -1505,7 +1506,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -1540,7 +1541,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Involuntary inpatient",
     legalForm: {
@@ -1590,7 +1591,7 @@ const journeyCoverageMovements: Movement[] = [
     // that one, same discipline as WF-012's own comment (gender read independently, never
     // defaulted from sex).
     gender: "Non-binary",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1653,7 +1654,7 @@ const journeyCoverageMovements: Movement[] = [
     // R7 (25 Sept 2026): was deliberately left unrecorded ("a few"). Under R7 an unrecorded gender needs a
     // coordinator's review before any allocation, which a movement already past referral cannot get
     // without being withdrawn, so this seed now records it. The seeded unrecorded case is WF-329.
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1680,7 +1681,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Secure",
     sex: "Male",
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1709,7 +1710,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1745,7 +1746,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Open",
     sex: "Male",
     gender: "Male",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -1779,7 +1780,7 @@ const journeyCoverageMovements: Movement[] = [
     security: "Open",
     sex: "Female",
     gender: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

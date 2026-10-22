@@ -21,6 +21,7 @@ import {
 } from "../src/components/ward-management/ward-diagnosis";
 import { BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 /**
  * Every admission in this file is CONSTRUCTED, never found.
@@ -39,7 +40,9 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
   return {
     id: "ADM-1",
     unitId: "rph-adult-open",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
+    // Optional and absent until the first recorded change; carried here so a test can drop it deliberately.
+    observationChanges: [],
     highAcuity: false,
     referralId: "REF-1",
     movementId: null,
@@ -507,7 +510,8 @@ describe("admissionsForUnit", () => {
  * field is then let through by being named in `AUTHORISED_PERSON_FACTS` — one line, one owner, one
  * date. A future `diagnosisDetail`, `provisionalDiagnosis` or `notes` still fails.
  *
- * **AND WIDENED A FOURTH TIME ON 2026-09-01, TO NINETEEN — `specialling`.** Owner ruling 1 of the
+ * **AND WIDENED A FOURTH TIME ON 2026-09-01, TO NINETEEN — `specialling`** (since 21 Oct 2026 the
+ * recorded `observation` level and its `observationChanges`, fix plan item 10). Owner ruling 1 of the
  * fourteen: one-to-one nursing is recorded as THE WARD'S STAFFING OF THE BED, not as a fact about
  * the patient, and that distinction is the ruling rather than a gloss on it. So this field sits in
  * the `dischargeConfirmedAt` category — the ward's own act — and not in `tentativeDiagnosis`'s,
@@ -531,9 +535,11 @@ describe("Admission privacy — structural", () => {
     "id",
     "unitId",
     // WIDENED ON PURPOSE, 2026-09-01 — owner ruling 1 of fourteen, and the FOURTH widening this
-    // list has taken. A fact about the WARD'S ACT, not about the person: the ward has committed a
-    // nurse to this bed one-to-one. See this describe block's own doc comment.
-    "specialling",
+    // list has taken. A fact about the WARD'S ACT, not about the person: how the ward is staffing
+    // this bed. Was the boolean `specialling`; fix plan item 10 (Josh, 21 Oct 2026) replaced it with
+    // the recorded observation level and its change history. See this describe block's own doc comment.
+    "observation",
+    "observationChanges",
     // WIDENED ON PURPOSE, 2026-09-10 — the FIFTH widening of this list. A fact about the WARD'S
     // ACT, in exactly the category `specialling` above sits in: the ward has committed one of its
     // high-acuity places to this bed. It records no reason, no level, no risk and no assessment,
@@ -626,8 +632,9 @@ describe("Admission privacy — structural", () => {
       bedNumber: 4,
       id: "ADM-CANON",
       unitId: "rph-adult-open",
-      // TRUE, not false — this fixture's whole job is to carry EVERY field at a real value.
-      specialling: true,
+      // A constant level, not General — this fixture's whole job is to carry EVERY field at a real value.
+      observation: observationAt("within_sight"),
+      observationChanges: [{ at: 8 * 60, from: GENERAL_OBSERVATION, to: observationAt("within_sight") }],
       highAcuity: false,
       referralId: "REF-CANON",
       movementId: "WF-CANON",

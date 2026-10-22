@@ -11,6 +11,7 @@ import {
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { allUnits, wardSites } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function createMovementStub(overrides: Partial<Movement> & { id: `WF-${string}`; originEdId: string }): Movement {
   return {
@@ -21,7 +22,7 @@ function createMovementStub(overrides: Partial<Movement> & { id: `WF-${string}`;
     legalStatus: "Voluntary",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     flaggedUrgent: false,
     urgency: 1,

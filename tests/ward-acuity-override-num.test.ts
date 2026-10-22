@@ -8,6 +8,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 /**
  * ITEM 10, OWNER ANSWERS 17 SEPTEMBER 2026: *"High-acuity override needs a reason and a 'nurse
@@ -48,7 +49,7 @@ function stagedForPull(source: Movement, id: Movement["id"], overrides: Partial<
     // `ward-acuity-gate.test.ts`'s own `stagedForPull` states: `fre-older-adult` staffs only 1
     // specialling place too, and an inherited `specialling: true` from the seeded source movement
     // would collide with a different capacity check than the one each test below means to drive.
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
     referredUnitIds: [],
@@ -87,8 +88,8 @@ function bench(): WardFlowState {
     movements: [
       stagedForPull(sources[0], "WF-ACN-FIRST", { highAcuity: true }),
       stagedForPull(sources[1], "WF-ACN-SECOND", { highAcuity: true }),
-      stagedForPull(sources[2], "WF-ACN-SPEC-FIRST", { specialling: true }),
-      stagedForPull(sources[3], "WF-ACN-SPEC-SECOND", { specialling: true }),
+      stagedForPull(sources[2], "WF-ACN-SPEC-FIRST", { observation: observationAt("within_sight") }),
+      stagedForPull(sources[3], "WF-ACN-SPEC-SECOND", { observation: observationAt("within_sight") }),
     ],
     admissions: seeded.admissions.filter((admission) => admission.unitId !== UNIT_ID),
     bedReleases: seeded.bedReleases.filter((release) => release.unitId !== UNIT_ID),

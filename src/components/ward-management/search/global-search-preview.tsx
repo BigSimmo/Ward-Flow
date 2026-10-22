@@ -29,6 +29,7 @@ import type { Census, CensusRow } from "./patient-census";
 import { censusRowsByPatient, nextStepLine, whereNowLine } from "./search-answers";
 import styles from "./global-search-preview.module.css";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
  * THE RIGHT-HAND PREVIEW OF THE HEADER SEARCH PALETTE (Josh, 8 Oct 2026, option B).
@@ -200,7 +201,11 @@ function MovementPreview({
     .map((decline) => units.find((unit) => unit.id === decline.unitId)?.name)
     .filter((name): name is string => Boolean(name));
   const wait = isOpen(movement) ? waited(movement, now) : null;
-  const needs = [movement.cohort, movement.security, movement.specialling ? "specialling" : null]
+  const needs = [
+    movement.cohort,
+    movement.security,
+    isConstantObservation(movement.observation) ? observationSummary(movement.observation) : null,
+  ]
     .filter(Boolean)
     .join(" · ");
   // The movement's own referral first; the same patient's referral is only a fallback when that link is missing.

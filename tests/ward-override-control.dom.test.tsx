@@ -128,7 +128,7 @@ describe("ward screen's override reason control", () => {
     // show, but no reason can buy a way past it: the control must NOT appear.
     const alert = within(acceptedRow).getByRole("alert");
     expect(alert).toHaveTextContent(/Pull a bed not recorded/i);
-    expect(alert).toHaveTextContent(/no one-to-one specialling capacity left/i);
+    expect(alert).toHaveTextContent(/not enough observation staff left/i);
     expect(screen.queryByTestId("ward-override-form-WF-319")).not.toBeInTheDocument();
   });
 

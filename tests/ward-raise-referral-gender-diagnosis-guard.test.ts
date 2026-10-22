@@ -8,6 +8,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Opus review round 2, 17 September 2026 (P2): `RAISE_REFERRAL` wrote `event.draft.gender` and
@@ -26,7 +27,7 @@ function draft(overrides: Partial<ReferralDraft> = {}): ReferralDraft {
     cohort: "Older adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     urgency: 2,

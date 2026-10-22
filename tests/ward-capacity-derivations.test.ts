@@ -26,6 +26,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import type { BedRelease, Cohort, Movement, Security } from "@/components/ward-management/ward-model";
+import { isConstantObservation, observationAt } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -478,7 +479,10 @@ describe("specialling headroom on the network rows", () => {
     expect(subject, "no ward can staff a specialling bed — this guard would prove nothing").toBeDefined();
 
     const occupied = wardAdmissions.find(
-      (admission) => admission.unitId === subject!.unit.id && bedIsOccupied(admission) && !admission.specialling,
+      (admission) =>
+        admission.unitId === subject!.unit.id &&
+        bedIsOccupied(admission) &&
+        !isConstantObservation(admission.observation),
     );
     expect(occupied, "the subject ward has no occupied non-specialling bed to convert").toBeDefined();
 
@@ -489,7 +493,7 @@ describe("specialling headroom on the network rows", () => {
      * reading a neighbouring ward's headroom would be reading a number about somebody else.
      */
     const mutated: Admission[] = wardAdmissions.map((admission) =>
-      admission.id === occupied!.id ? { ...admission, specialling: true } : admission,
+      admission.id === occupied!.id ? { ...admission, observation: observationAt("within_sight") } : admission,
     );
     const after = networkWardRows(units, NOW, [], mutated);
 

@@ -1,7 +1,6 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
@@ -37,7 +36,7 @@ function renderSheet(isPhone = false) {
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
-    for (const group of ["Do now", "Look up", "Print and share", "More pages", "Demo"]) {
+    for (const group of ["Do now", "Look up", "Print and share", "More pages"]) {
       expect(screen.getByRole("region", { name: group })).toBeTruthy();
     }
     for (const gone of [
@@ -54,8 +53,24 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("link", { name: /Settings/u })).toBeNull();
   });
 
-  it("starts a referral from Do now", () => {
-    const { onNewReferral } = renderSheet();
+  it("keeps working tools only on a desktop, as change 8 mocked (D-77)", () => {
+    renderSheet();
+    // Each has its own place already, and the demo controls open from the Synthetic pill.
+    expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
+    expect(screen.queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    for (const gone of [/New referral/u, /Handover sheet/u, /Bed meeting TV/u, /Out of area/u]) {
+      expect(screen.queryByRole("button", { name: gone })).toBeNull();
+      expect(screen.queryByRole("link", { name: gone })).toBeNull();
+    }
+    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Legal forms/u })).toBeTruthy();
+  });
+
+  it("starts a referral from Do now on a phone, which has no Synthetic pill and keeps its Tools", () => {
+    const { onNewReferral } = renderSheet(true);
+    expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Handover sheet/u })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Out of area/u })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /New referral/u }));
     expect(onNewReferral).toHaveBeenCalledTimes(1);
     expect(onNewReferral).toHaveBeenCalledWith();
@@ -125,29 +140,12 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
   });
 
-  it("links Bed meeting TV on desktop while its flag is on, and hides it while the flag is off", () => {
-    const { unmount } = render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
-      </WardFlowProvider>,
-    );
-    expect(screen.getByRole("link", { name: /Bed meeting TV/u }).getAttribute("href")).toBe("/ward-flow/bed-meeting");
-    unmount();
-    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
-    try {
-      renderSheet();
-      expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
-    } finally {
-      act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
-    }
-  });
-
   it("opens a requested tool once, then tells the parent so a later open starts closed", async () => {
     const onRequestHandled = vi.fn();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardToolsSheet
-          isPhone={false}
+          isPhone
           roleLabel="Bed coordinator"
           onNavigate={vi.fn()}
           onNewReferral={vi.fn()}
@@ -160,8 +158,8 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     await vi.waitFor(() => expect(onRequestHandled).toHaveBeenCalledTimes(1));
   });
 
-  it("keeps the demo controls together behind one Demo row", () => {
-    renderSheet();
+  it("keeps the phone's demo controls together behind one Demo row", () => {
+    renderSheet(true);
     fireEvent.click(screen.getByTestId("ward-tools-toggle-demo"));
     const panel = screen.getByTestId("ward-tools-demo-panel");
     expect(within(panel).getByRole("radiogroup", { name: "Demo scenario" })).toBeTruthy();

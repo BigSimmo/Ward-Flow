@@ -36,6 +36,7 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const DEPARTMENTS = allEmergencyDepartments();
 const DEPARTMENT = DEPARTMENTS[0];
@@ -57,7 +58,7 @@ function movement(overrides: Partial<Movement> & Pick<Movement, "id" | "originEd
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

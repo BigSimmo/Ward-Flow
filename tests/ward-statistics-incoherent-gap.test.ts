@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Admission } from "../src/components/ward-management/ward-admissions";
 import { wardStatistics } from "../src/components/ward-management/ward-statistics";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /*
  * WHY THIS FILE EXISTS. `emptyBedMinutes` measured `arrivedAt - pulledAt` and clamped the result with
@@ -38,7 +39,7 @@ function anAdmission(overrides: Partial<Admission>): Admission {
     // of them, along with a phantom `cohort` field the model does not have. The cast is gone: this
     // helper is now typed so that widening `Admission` fails to compile here, which is what the
     // sibling helper in ward-community-corrected-claims.test.ts already promises and this one did not.
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     homeRegion: null,
     tentativeDiagnosis: null,

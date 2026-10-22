@@ -13,6 +13,7 @@ import { wardMovements } from "../src/components/ward-management/ward-movements"
 import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { observationAt } from "../src/components/ward-management/ward-observation";
 
 /**
  * Review 18 Oct 2026, item 2: the movement path (`eligibility`) and the referral path
@@ -151,7 +152,11 @@ describe("acuity and specialling are information, never a check that was met", (
   const unstaffed: Unit = { ...unit, highAcuityCapacity: 0, speciallingCapacity: 0 };
 
   it("marks both gates as information on the movement path and leaves them out of the count", () => {
-    const verdict = eligibility({ ...asMovement(PEOPLE[1]!), specialling: true }, unstaffed, NOW);
+    const verdict = eligibility(
+      { ...asMovement(PEOPLE[1]!), observation: observationAt("within_sight") },
+      unstaffed,
+      NOW,
+    );
     for (const name of ["acuity", "specialling"] as const) {
       const gate = gateNamed(verdict.gates, name);
       expect(gateMark(gate), name).toBe("info");
@@ -170,7 +175,11 @@ describe("acuity and specialling are information, never a check that was met", (
   });
 
   it("still never stops a placement on its own", () => {
-    const verdict = eligibility({ ...asMovement(PEOPLE[1]!), specialling: true }, unstaffed, NOW);
+    const verdict = eligibility(
+      { ...asMovement(PEOPLE[1]!), observation: observationAt("within_sight") },
+      unstaffed,
+      NOW,
+    );
     expect(gateNamed(verdict.gates, "acuity").pass).toBe(true);
     expect(gateNamed(verdict.gates, "specialling").pass).toBe(true);
   });

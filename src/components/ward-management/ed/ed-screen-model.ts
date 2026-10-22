@@ -40,6 +40,7 @@ import {
   type ReferralClocks,
 } from "@/components/ward-management/ward-referrals";
 import type { Patient } from "../ward-patients";
+import { INTERMITTENT_INTERVAL_MINUTES, type ObservationLevel } from "@/components/ward-management/ward-observation";
 
 export const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
@@ -319,7 +320,13 @@ export type ReferralDraftState = {
    * the form opens — this question never blocks "Raise referral".
    */
   tentativeDiagnosis: TentativeDiagnosisBlock | "none";
-  specialling: boolean | undefined;
+  /** Fix plan item 10: unanswered until a person chooses a level; never defaulted. */
+  observation: ObservationLevel | undefined;
+  /** Intermittent only: minutes between checks, from `INTERMITTENT_INTERVAL_MINUTES`. */
+  observationIntervalMinutes: number;
+  /** The typed next review time, `HH:MM`, read today or tomorrow. Blank records none. */
+  observationReviewTime: string;
+  observationReviewDay: "today" | "tomorrow";
   highAcuity: boolean | undefined;
   legalStatus: LegalStatus | undefined;
   urgency: 1 | 2 | 3 | undefined;
@@ -365,7 +372,8 @@ export type ReferralDraftState = {
  * anyone who is not female. `legalStatus` is a fact about a person's liberty, not a UI
  * convenience with a sensible default. `urgency` gets the same ruling on judgement rather than
  * habit: a tier nobody chose is a clinical claim exactly like the other four, so it starts
- * unanswered too. ⚠️ `specialling` USED TO BE the one field this did not touch — owner ruling 1
+ * unanswered too. Since fix plan item 10 (21 Oct 2026) the question below is the observation level,
+ * which starts unanswered for the same reason. ⚠️ `specialling` USED TO BE the one field this did not touch — owner ruling 1
  * falsified the reasoning below. `draft.specialling` reaches `ward-flow-reducer.ts:607`, which
  * writes it onto the MOVEMENT; the reducer then refuses a pull at `:966` only
  * `if (movement.specialling && remaining… <= 0)`. So a `false` nobody chose does not merely record
@@ -392,8 +400,11 @@ export const DEFAULT_DRAFT: ReferralDraftState = {
   gender: undefined,
   // T15 (item 12): starts at "None", a real answer — never blocks the form.
   tentativeDiagnosis: NO_DIAGNOSIS_VALUE,
-  specialling: undefined,
-  // Unanswered for the SAME reason `specialling` above is, and the reasoning transfers exactly:
+  observation: undefined,
+  observationIntervalMinutes: INTERMITTENT_INTERVAL_MINUTES[0],
+  observationReviewTime: "",
+  observationReviewDay: "today",
+  // Unanswered for the SAME reason `observation` above is, and the reasoning transfers exactly:
   // `false` here does not record "no high-acuity nursing needed", it SKIPS the acuity gate and the
   // pull refusal altogether, so a patient the referrer would have marked can be sent to a ward
   // that staffs no high-acuity places with nothing objecting. An unticked box stopped being an

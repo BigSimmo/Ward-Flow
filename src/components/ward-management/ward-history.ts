@@ -58,6 +58,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   },
   RECORD_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker recorded" },
   CLEAR_STAY_DISCHARGE_BLOCKER: { category: "patient", plainWording: "Discharge blocker cleared" },
+  RECORD_OBSERVATION_LEVEL: { category: "patient", plainWording: "Observation level changed" },
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
@@ -357,7 +358,10 @@ export function selectPatientHistory(
       eventFieldString(event, "referralId") === recordId ||
       eventFieldString(event, "plannedAdmissionId") === recordId ||
       // Bed meeting actions name their bed request or stay as `subject.id`.
-      ("subject" in event && event.subject.id === recordId);
+      ("subject" in event && event.subject.id === recordId) ||
+      // An observation level change names its movement or stay inside `target`.
+      (event.type === "RECORD_OBSERVATION_LEVEL" &&
+        (event.target.kind === "movement" ? event.target.movementId : event.target.admissionId) === recordId);
 
     if (matchesPatient) {
       matchingEntries.push(buildHistoryEntry(event, now));

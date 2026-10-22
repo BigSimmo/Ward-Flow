@@ -7,6 +7,11 @@ import {
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import {
+  observationStaff,
+  type Observation,
+  type ObservationChange,
+} from "@/components/ward-management/ward-observation";
 import type { DischargeCriteriaRecord } from "@/components/ward-management/ward-discharge-criteria";
 import type {
   Cohort,
@@ -349,46 +354,33 @@ export type Admission = {
    *  begins a new one, which is what keeps each ward's own occupancy honest. */
   unitId: string;
   /**
-   * WHETHER THIS BED IS BEING HELD FOR SOMEBODY WHO NEEDS ONE-TO-ONE OBSERVATION.
+   * THE OBSERVATION LEVEL THIS BED IS BEING STAFFED AT (fix plan item 10, Josh, 21 Oct 2026),
+   * replacing the yes/no `specialling` flag.
    *
-   * ⚠️ **A FACT ABOUT THE WARD'S STAFFING OF THE BED — NOT A CLINICAL FACT ABOUT THE PERSON.**
-   * That distinction IS the owner's ruling (2026-09-01, ruling 1 of fourteen), and it is the whole
-   * reason this field is permitted onto a record that otherwise widens only by owner, by name and
-   * by date. It says the ward has committed a nurse to this bed. It says nothing about why, nothing
-   * about risk, nothing about any assessment anybody made, and it must never be read, rendered or
-   * counted as though it did. `Unit.speciallingCapacity` is the ward's own figure for how many such
-   * commitments it can staff, and this field is what that figure counts.
+   * ⚠️ **A FACT ABOUT THE WARD'S STAFFING OF THE BED, NOT A CLINICAL FINDING ABOUT THE PERSON.**
+   * The same narrow claim the old flag made under the owner's ruling of 2026-09-01: it says how the
+   * ward has committed its staff to this bed, nothing about why, nothing about risk, and nothing
+   * scores, suggests or places from it (D-71). Josh chose the levels and their staff counts on
+   * 21 Oct 2026; the names come from `OBSERVATION_LEVEL_NAMES` in the clinical values file.
    *
-   * **Why the record had to widen at all.** `Unit.speciallingCapacity` is authored per unit and
-   * changed by no reducer path, so the only question anything could ask was whether a ward had ANY
-   * capacity — never whether it had any LEFT. A ward that can watch one person one-to-one accepted
-   * an unlimited number, and no screen showed a wrong figure because there was no figure: the ward
-   * would find out when the second patient arrived. This field is what makes the remaining count
-   * derivable — see `remainingSpeciallingCapacity` beside `bedIsOccupied`.
-   *
-   * **A boolean, and deliberately not a level, a ratio or a reason.** "One-to-one, or not" is the
-   * whole of what the capacity figure counts. An observation level, a `2:1`, or a reason for the
-   * observation would each be a clinical judgement this prototype has no authority to record and
-   * nobody to attribute it to — the bar `tentativeDiagnosis` had to clear with an owner ruling of
-   * its own, and this field is deliberately not attempting to clear it.
-   *
-   * `false` is the ordinary state and means the ward is not staffing this bed one-to-one. It is
-   * never inferred from anything — not from legal status, not from security, not from a movement's
-   * urgency. `PULL_PATIENT` copies it from `Movement.specialling`, which a person ticks at intake,
-   * and that is the only runtime writer.
+   * `remainingSpeciallingCapacity` counts each occupied bed's `observationStaff(level)` against
+   * `Unit.speciallingCapacity`. `PULL_PATIENT` copies the level from `Movement.observation`, and
+   * `RECORD_OBSERVATION_LEVEL` is the only writer afterwards, appending to `observationChanges`.
    */
-  specialling: boolean;
+  observation: Observation;
+  /** Every change after the pull, oldest first. Absent until the first `RECORD_OBSERVATION_LEVEL`. */
+  observationChanges?: ObservationChange[];
   /**
    * Whether this bed is being held as a HIGH-ACUITY place.
    *
-   * The same narrow claim `specialling` above makes, about a different ward resource: it says the
+   * The same narrow claim `observation` above makes, about a different ward resource: it says the
    * ward has committed a high-acuity place to this bed. **It says nothing about why, nothing about
    * risk, nothing about any assessment anybody made**, and must never be read, rendered or counted
    * as though it did.
    *
    * `PULL_PATIENT` copies it from `Movement.highAcuity`, which is carried in turn from the
    * referral, where **the referring clinician marked it** (owner ruling, 2026-09-10). That is the
-   * only runtime writer. It is never inferred from `specialling` — a ward can staff a one-to-one
+   * only runtime writer. It is never inferred from `observation` — a ward can staff a one-to-one
    * nurse without that bed being one of its high-acuity places, and the two figures are authored
    * separately on the unit for exactly that reason.
    */
@@ -736,7 +728,8 @@ export type Admission = {
 const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   id: true,
   unitId: true,
-  specialling: true,
+  observation: true,
+  observationChanges: true,
   highAcuity: true,
   referralId: true,
   patientId: true,
@@ -790,12 +783,14 @@ export function bedIsOccupied(admission: Admission): boolean {
 }
 
 /**
- * HOW MANY MORE ONE-TO-ONE OBSERVATIONS THIS WARD CAN STILL STAFF.
+ * HOW MANY MORE STAFF THIS WARD CAN STILL COMMIT TO CONSTANT OBSERVATION.
  *
- * The ward's authored figure (`Unit.speciallingCapacity`) less the beds it is already staffing that
- * way — every admission of this unit that is consuming a bed and carries `specialling`. Owner
- * ruling, 2026-09-01: one-to-one nursing is recorded as the ward's staffing of the bed, so this is
- * arithmetic over beds, not a count of people with some clinical property.
+ * The ward's authored figure (`Unit.speciallingCapacity`) less the staff it is already committing:
+ * the sum of `observationStaff(level)` over every admission of this unit that is consuming a bed.
+ * Fix plan item 10 (Josh, 21 Oct 2026): a one-to-one level counts one staff, two staff constant
+ * counts two, General and Intermittent none. Owner ruling, 2026-09-01: observation is recorded as
+ * the ward's staffing of the bed, so this is arithmetic over beds, not a count of people with some
+ * clinical property.
  *
  * ⚠️ **DERIVED, AND IT MUST NEVER BECOME A COUNTER THE REDUCER DECREMENTS.** A ward's typed-in
  * number that events push up and down is a figure nothing derives and nothing can check — exactly
@@ -804,7 +799,7 @@ export function bedIsOccupied(admission: Admission): boolean {
  * than pulled, because no event ever ran for them. Reading the beds cannot drift from the beds.
  *
  * ⚠️ **IT COUNTS OCCUPIED ADMISSIONS, NOT OPEN MOVEMENTS, AND THAT IS THE LOAD-BEARING CHOICE.**
- * The obvious alternative — count movements with `specialling: true` that are still open — inverts
+ * The obvious alternative — count movements on a constant level that are still open — inverts
  * at the worst possible moment: a movement's `closure` is set at `PATIENT_ARRIVED`, so the count
  * would drop to zero at the exact instant the person walks onto the ward and starts consuming the
  * slot. `bedIsOccupied` is the right question because the bed is gone from the pull onward,
@@ -813,7 +808,7 @@ export function bedIsOccupied(admission: Admission): boolean {
  * **Both ends of the lifecycle give the slot back for free, and neither needs a line of its own.**
  * `RELEASE_PULL` deletes the admission and `RECORD_LEAVING` moves it to `departed`; `bedIsOccupied`
  * stops counting it either way. Free is not the same as proven, so both restores are asserted
- * rather than assumed — see `tests/ward-specialling-capacity.test.ts`.
+ * rather than assumed — see `tests/ward-specialling-capacity.test.ts` and `tests/ward-observation-levels.test.ts`.
  *
  * A non-finite or negative authored figure reads as zero, and the result is floored at zero: no
  * answer rather than a guess, the same conservative direction `headlineAvailable` and
@@ -823,10 +818,24 @@ export function bedIsOccupied(admission: Admission): boolean {
 export function remainingSpeciallingCapacity(unit: Unit, admissions: readonly Admission[]): number {
   const authored = unit.speciallingCapacity;
   const staffable = Number.isFinite(authored) ? Math.max(0, Math.floor(authored)) : 0;
-  const staffed = admissions.filter(
-    (admission) => admission.unitId === unit.id && bedIsOccupied(admission) && admission.specialling,
-  ).length;
+  const staffed = admissions
+    .filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission))
+    .reduce((total, admission) => total + observationStaff(admission.observation.level), 0);
   return Math.max(0, staffable - staffed);
+}
+
+/**
+ * True when this observation level needs more staff than the ward has left: a one-to-one level needs
+ * one and two staff constant needs two (fix plan item 10). General and Intermittent never fall short.
+ * The one question `PULL_PATIENT`, the restore pull and the transfer all ask.
+ */
+export function lacksObservationStaff(
+  observation: Pick<Observation, "level">,
+  unit: Unit,
+  admissions: readonly Admission[],
+): boolean {
+  const needed = observationStaff(observation.level);
+  return needed > 0 && remainingSpeciallingCapacity(unit, admissions) < needed;
 }
 
 /**

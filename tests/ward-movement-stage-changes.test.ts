@@ -38,6 +38,7 @@ import {
   type StageChange,
 } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function movementIn(state: WardFlowState, id: string): Movement {
   const found = state.movements.find((candidate) => candidate.id === id);
@@ -417,7 +418,7 @@ function raiseNewReferral(state: WardFlowState, now: Instant) {
       cohort: "Adult",
       security: "Open",
       sex: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

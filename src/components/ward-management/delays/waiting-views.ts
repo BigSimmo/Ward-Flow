@@ -4,7 +4,8 @@
  * own order (longest wait with recorded legal times pinned, or by blocker) still applies.
  *
  * The definitions are Josh's, approved 19 Oct 2026:
- * - Needs me now: the coordinator's own decision is due, a form's recorded due time is close, or a
+ * - Due soon or on you (was "Needs me now"; renamed 21 Oct 2026 so it does not read as the same count
+ *   as the "Waiting on you" group): the coordinator's own decision is due, a form's recorded due time is close, or a
  *   person flagged the journey urgent.
  * - Form due: a recorded due time within the due-soon window (3 h by default) or already passed.
  * - For handover: anything to act on now, plus anything due before the next handover.
@@ -34,7 +35,7 @@ export function windowText(minutes: number): string {
 }
 
 export function waitingViewLabel(view: WaitingViewId, thresholds: DueSoonThresholds): string {
-  if (view === "needs-me") return "Needs me now";
+  if (view === "needs-me") return "Due soon or on you";
   if (view === "form") return `Form due within ${windowText(thresholds.soonMinutes)}`;
   return "For handover";
 }

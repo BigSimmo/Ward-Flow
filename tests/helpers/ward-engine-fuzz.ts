@@ -99,6 +99,7 @@ import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooz
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
+import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
 import {
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
@@ -273,7 +274,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
         security: pick(random, ["Open", "Secure"]),
         sex: pick(random, ["Female", "Male"]),
         gender: pick(random, REFERRAL_GENDERS),
-        specialling: chance(random, 0.2),
+        observation: observationAt(pick(random, OBSERVATION_LEVELS) ?? "general"),
         highAcuity: chance(random, 0.2),
         legalStatus: pick(random, LEGAL_STATUSES),
         urgency: int(random, 1, 3),
@@ -958,6 +959,17 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         admissionId: id(stay),
         actingUnitId: stay?.unitId ?? MISSING_ID,
         expectedDischargeAt: currentNow + int(random, 60, 10_000),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_OBSERVATION_LEVEL",
+        target: { kind: "admission", admissionId: id(stay), actingUnitId: stay?.unitId ?? MISSING_ID },
+        observation: observationAt(pick(random, OBSERVATION_LEVELS) ?? "general"),
       };
     },
   ],

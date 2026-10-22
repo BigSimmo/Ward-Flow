@@ -19,6 +19,7 @@ import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Executive Statistics on one ward (role access plan, Josh's yes 15 Oct 2026): below the headline,
@@ -38,7 +39,7 @@ const THREE = ["ADM-exec-a", "ADM-exec-b", "ADM-exec-c"].map(
       state: "occupied",
       sex: "Female",
       homeRegion: "Perth Metropolitan",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       referralId: null,
       tentativeDiagnosis: null,

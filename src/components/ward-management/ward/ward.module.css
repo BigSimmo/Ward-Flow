@@ -4324,3 +4324,28 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+/* Start placement for an accepted referral: one question per row, label above its control. */
+.placementForm {
+  display: grid;
+  gap: var(--wf-s-2);
+  max-width: 420px;
+  margin-top: var(--wf-s-2);
+}
+
+.placementForm label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--wf-fs-13);
+}
+
+.placementForm select {
+  min-height: 44px;
+  width: 100%;
+}
+
+.placementActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}

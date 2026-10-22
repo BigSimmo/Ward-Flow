@@ -11,6 +11,7 @@ import {
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import type { CareChange } from "@/components/ward-management/ward-care-journey";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * ⚠️ **TWO FILES, AND THE SECOND ONE IS WHY THIS GUARD WAS WORTHLESS FOR MONTHS.** It scanned
@@ -138,7 +139,7 @@ describe("re-anchoring moves every instant and nothing else", () => {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

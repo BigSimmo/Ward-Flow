@@ -5,6 +5,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { ReferralDraft } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { LEGAL_FORM_RECEIPT_CORRECTION_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): `RECORD_LEGAL_FORM_RECEIVED`
@@ -25,7 +26,7 @@ function draft(overrides: Partial<ReferralDraft> = {}): ReferralDraft {
     security: "Open",
     sex: "Female",
     gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Detained awaiting examination",
     urgency: 2,

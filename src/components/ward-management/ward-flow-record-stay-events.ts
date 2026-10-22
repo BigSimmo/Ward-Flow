@@ -502,7 +502,7 @@ export function reduceRecordedStayEvent(
           sex: admission.sex,
           gender: admission.gender,
           tentativeDiagnosis: admission.tentativeDiagnosis ?? undefined,
-          specialling: admission.specialling,
+          observation: admission.observation,
           highAcuity: admission.highAcuity,
           legalStatus: event.transportLegalStatus === "involuntary" ? "Involuntary inpatient" : "Voluntary",
           statusChanges: [],

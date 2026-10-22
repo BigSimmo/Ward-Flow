@@ -65,7 +65,7 @@ describe("ED raise form marks what is still unanswered", () => {
     const list = screen.getByTestId("ward-ed-referral-missing");
     expect(list).toHaveAttribute("role", "alert");
     expect(list).toHaveTextContent(
-      "Still to answer: Security, Sex, Gender, Legal status, Urgency, One-to-one nursing, High-acuity nursing.",
+      "Still to answer: Security, Sex, Gender, Legal status, Urgency, Observation level, High-acuity nursing.",
     );
     expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-invalid");
     for (const testId of [
@@ -74,11 +74,12 @@ describe("ED raise form marks what is still unanswered", () => {
       "ward-ed-referral-gender",
       "ward-ed-referral-legal-status",
       "ward-ed-referral-urgency",
+      "ward-ed-referral-observation",
     ]) {
       expect(screen.getByTestId(testId), testId).toHaveAttribute("aria-invalid", "true");
     }
     // A radio pair cannot carry aria-invalid; its group is described as not answered instead.
-    for (const name of ["One-to-one nursing", "High-acuity nursing"]) {
+    for (const name of ["High-acuity nursing"]) {
       expect(screen.getByRole("group", { name }), name).toHaveAccessibleDescription("Not answered");
     }
     expect(screen.getAllByText("Not answered")).toHaveLength(7);

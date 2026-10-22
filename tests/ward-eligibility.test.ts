@@ -9,6 +9,7 @@ import type { LegalStatus, Movement, Referral, Unit } from "../src/components/wa
 import { NOW_ANCHOR, unitById } from "../src/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 const NOW = 10 * 60 + 42;
 
 function unit(overrides: Partial<Unit> = {}): Unit {
@@ -46,7 +47,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -157,7 +158,11 @@ describe("clinical and operational gates", () => {
   });
 
   it("gives a soft advisory pass when the ward cannot staff the required specialling", () => {
-    const verdict = eligibility(movement({ specialling: true }), unit({ speciallingCapacity: 0 }), NOW);
+    const verdict = eligibility(
+      movement({ observation: observationAt("within_sight") }),
+      unit({ speciallingCapacity: 0 }),
+      NOW,
+    );
     const gate = verdict.gates.find((g) => g.gate === "specialling");
     expect(gate?.pass).toBe(true);
     expect(gate?.detail).toContain("additional shift staffing required upon admission");
