@@ -34,7 +34,9 @@ export function WardPrototypeFooter({
         </span>
         {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
             kept for screen readers. Hidden above phone. */}
-        <span className={styles.phoneTail}>· invented records · not for clinical use</span>
+        <span className={styles.phoneTail}>
+          <span>Invented records ·</span> <span>not for clinical use</span>
+        </span>
         <span className={styles.footerNote} data-ward-type-floor="banner">
           {note}
         </span>

@@ -1097,7 +1097,8 @@
   }
 
   .declineOption {
-    min-height: var(--ward-tap, 48px);
+    /* 44px (v9 rows), as in ward.module.css: stacked radio rows at 48px left wide gaps. */
+    min-height: var(--wf-touch, 2.75rem);
   }
 
   .bedCell {
