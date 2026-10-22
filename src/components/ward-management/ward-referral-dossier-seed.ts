@@ -274,7 +274,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done", detail: "Minor abrasions to knuckles" },
-        { label: "Bloods", status: "done", detail: "CK 610 after restraint, repeat in 12 hours" },
+        { label: "Bloods", status: "done", detail: "CK 610 after restraint, repeat CK requested" },
         { label: "ECG", status: "done", detail: "Sinus rhythm, QTc 438 ms after droperidol" },
         { label: "Drug screen", status: "done", detail: "Negative" },
         { label: "Breath alcohol", status: "done", detail: "0.000" },

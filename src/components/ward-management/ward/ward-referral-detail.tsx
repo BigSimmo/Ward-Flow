@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 
 import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
@@ -87,7 +87,7 @@ function dobWords(dateOfBirth: string | undefined): string | undefined {
 function timeAfter(movement: Movement, minutes: number | undefined, now: Instant): string | undefined {
   if (minutes === undefined) return undefined;
   const at = movement.openedAt + minutes;
-  return at <= now ? formatInstant(at) : undefined;
+  return at <= now ? formatInstantWithDay(at, now) : undefined;
 }
 
 function DocumentViewer({ document, onBack }: { document: DossierDocument; onBack: () => void }) {
@@ -152,14 +152,14 @@ export function WardReferralDetail({
 
   const legalRows: DossierRow[] = [
     {
-      label: "MHA 2014",
+      label: "Legal status",
       detail: movement.legalForm
         ? `${movement.legalStatus}. ${legalFormNameLabelFirst(movement.legalForm)}.`
         : `${movement.legalStatus}. No forms in force.`,
     },
     ...(movement.legalFormReceivedAt === undefined
       ? []
-      : [{ label: "Form received", detail: formatInstant(movement.legalFormReceivedAt) }]),
+      : [{ label: "Form received", detail: formatInstantWithDay(movement.legalFormReceivedAt, now) }]),
     ...(intake && intake.legalStatus !== movement.legalStatus
       ? [{ label: "On the referral", detail: intake.legalStatus }]
       : []),
@@ -171,7 +171,7 @@ export function WardReferralDetail({
   if (movement.medicalClearance)
     clearanceRows.push({
       label: "Status",
-      detail: `${movement.medicalClearance.cleared ? "Cleared" : "Not cleared"} at ${formatInstant(movement.medicalClearance.at)}`,
+      detail: `${movement.medicalClearance.cleared ? "Cleared" : "Not cleared"} at ${formatInstantWithDay(movement.medicalClearance.at, now)}`,
     });
   else if (intake)
     clearanceRows.push({
@@ -392,7 +392,7 @@ export function WardReferralDetail({
                 <span className={styles.docMain}>
                   <strong>{form.formName}</strong>
                   <span>
-                    {form.fileName} · added {formatInstant(form.uploadedAt)}
+                    {form.fileName} · added {formatInstantWithDay(form.uploadedAt, now)}
                   </span>
                 </span>
               </li>
@@ -413,7 +413,7 @@ export function WardReferralDetail({
         <ul className={styles.timeline}>
           {timeline.map((entry) => (
             <li key={`${entry.at}-${entry.text}`}>
-              <span>{formatInstant(entry.at)}</span>
+              <span>{formatInstantWithDay(entry.at, now)}</span>
               <span>{entry.text}</span>
             </li>
           ))}
