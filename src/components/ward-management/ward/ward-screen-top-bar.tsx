@@ -338,7 +338,6 @@ export function WardScreenTopBar({
                   ariaLabel="Notices"
                   headerHidden
                   placement="right"
-                  testId="ward-notifications-drawer"
                   returnFocusRef={notificationTriggerRef}
                   contentClassName={noticesSheet.noticesSheet}
                   bodyClassName={noticesSheet.noticesSheetBody}
