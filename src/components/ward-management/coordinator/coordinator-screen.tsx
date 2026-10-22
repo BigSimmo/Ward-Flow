@@ -72,16 +72,14 @@ import {
   useOptionalToast,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { BedsGapCard } from "./beds-gap-card";
-import { ChosenAlertCard } from "./chosen-alert-card";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
+import { BedsGapCard, ChosenAlertCard, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import { HomeWardSheet } from "./home-ward-sheet-lazy";
-import { MyListCard } from "./my-list-card";
 import { PlacementPrompt } from "./placement-prompt";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
