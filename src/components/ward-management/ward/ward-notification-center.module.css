@@ -7,6 +7,7 @@
   flex-direction: column;
   gap: var(--ward-space-16);
   color: var(--ink);
+  background: var(--surface);
   border: 1px solid var(--border-line);
   border-radius: var(--radius-md, 0.5rem);
   box-shadow: var(--lift);
@@ -538,6 +539,7 @@
    share the width rather than running off the edge. */
 .panel.inSheet {
   padding: 0;
+  background: transparent;
   border: 0;
   box-shadow: none;
   animation: none;
