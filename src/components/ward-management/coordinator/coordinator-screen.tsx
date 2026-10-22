@@ -283,6 +283,8 @@ export function CoordinatorScreen() {
   const layout = useHomeLayout();
   const isPhone = layout === "phone";
   const isTabletPortrait = layout === "tablet-portrait";
+  // Where Placement is a sheet over the page, the chosen alert travels inside it.
+  const sheetPlacement = isPhone || isTabletPortrait;
   // Phone sheets (direction A): Since you looked, the registers, or one ward. The patient sheet is
   // Placement itself, opened by picking a queue row.
   const [phoneSheet, setPhoneSheet] = useState<
@@ -408,7 +410,7 @@ export function CoordinatorScreen() {
   }
 
   // Placement as a sheet (phone, tablet portrait): Esc closes it, like the scrim.
-  const sheetPlacementOpen = hasPanelSubject && (isPhone || isTabletPortrait);
+  const sheetPlacementOpen = hasPanelSubject && sheetPlacement;
   useEffect(() => {
     if (!sheetPlacementOpen) return;
     function onKey(event: KeyboardEvent) {
@@ -782,8 +784,8 @@ export function CoordinatorScreen() {
               Beds are never narrowed by service. Every ward in the network is considered.
             </p>
           ) : null}
-          {/* On a phone the alert's reason leads the Placement sheet, as it does on desktop. */}
-          {isPhone && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
+          {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
+          {sheetPlacement && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
           {selectedReferral ? (
             <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
           ) : (
@@ -1114,7 +1116,7 @@ export function CoordinatorScreen() {
               )}
             </div>
             <div className={list.rightCol}>
-              {chosenAlert && !isPhone ? (
+              {chosenAlert && !sheetPlacement ? (
                 <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
               ) : null}
               {isPhone || chosenAlert ? null : (
@@ -1128,12 +1130,12 @@ export function CoordinatorScreen() {
               )}
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
-              {!isPhone && !hasPanelSubject && !chosenAlert ? <PlacementPrompt /> : null}
+              {!sheetPlacement && !hasPanelSubject && !chosenAlert ? <PlacementPrompt /> : null}
             </div>
           </div>
 
-          {isPhone && chosenAlert && !chosenAlert.movement ? (
-            // On a phone an alert with no patient journey opens in its own sheet.
+          {sheetPlacement && chosenAlert && !chosenAlert.movement ? (
+            // On a phone or tablet portrait an alert with no patient journey opens in its own sheet.
             <Sheet
               open
               onClose={() => setSelectedAlertId(undefined)}
