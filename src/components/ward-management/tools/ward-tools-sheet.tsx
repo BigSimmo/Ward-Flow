@@ -42,10 +42,15 @@ import { WardFormTimes } from "./ward-form-times";
 import { NetworkFigures } from "./ward-network-figures";
 import styles from "./ward-tools-sheet.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
-const WardCatchmentResolver = dynamic(() => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver), {
-  ssr: false,
-});
+const WardCatchmentResolver = dynamic(
+  withLoadRetry(
+    () => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver),
+    "Catchment lookup did not load",
+  ),
+  { ssr: false },
+);
 
 const root = "/ward-flow";
 
