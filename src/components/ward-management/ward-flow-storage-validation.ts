@@ -77,7 +77,7 @@ const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
  * specific criteria only as the device copy's stand-ins. The typed words themselves are still
  * refused on restore (D-18, D-65).
  */
-export function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
+function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
   return (
     isDischargeCriteriaRecord(value) &&
     value.items.every((item) => !isPatientSpecificItem(item) || CRITERION_STAND_INS.has(item.criterion))
