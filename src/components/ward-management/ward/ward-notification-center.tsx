@@ -1,23 +1,47 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import {
+  Bell,
+  BellOff,
+  ClipboardCheck,
+  Megaphone,
+  MessageSquare,
+  ShieldCheck,
+  Stethoscope,
+  Truck,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
+import { StatusGlyph, type WfTone } from "@/components/wf";
 import { type CapacityFigure, type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  minuteOfDay,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   NAME_NOT_RECORDED,
+  UMRN_NOT_RECORDED,
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
   type ResolvedPatientInfo,
 } from "@/components/ward-management/ward-patient-resolver";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
+// Notices option A (Josh, 22 Oct 2026): the ward's Notices use the shared Alerts drawer's own rows,
+// header, filter and footer, so a ward and a coordinator read one pattern.
+import drawer from "../ward-tasks-drawer.module.css";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -48,19 +72,7 @@ export interface WardNotificationCenterProps {
   inSheet?: boolean;
 }
 
-type TabKey = "all" | "buzzes" | "urgent" | "notices";
-
-interface TabDefinition {
-  id: TabKey;
-  label: string;
-}
-
-const TABS: TabDefinition[] = [
-  { id: "all", label: "All" },
-  { id: "urgent", label: "Urgent" },
-  { id: "buzzes", label: "Buzzes" },
-  { id: "notices", label: "Notices" },
-];
+type FilterKey = "all" | "act" | "check" | "coordinator";
 
 type BuzzEntry = {
   buzz: NonNullable<WardNotificationCenterProps["refreshRequests"]>[number];
@@ -87,12 +99,12 @@ export function groupRepeatedBuzzes(entries: readonly BuzzEntry[]): BuzzEntry[][
    patient — linked or not — came back "Unknown Patient". Inside the provider it now uses the
    provider's identity projection, exactly as the ward screen does; it never reads the full referral
    array (the ward-only referral boundary). A bare render (component tests) falls back as before. */
-function getPatientDisplayName(
+function getPatientIdentity(
   movement: Movement,
   movements: Movement[],
   resolveIdentity: ((subject: Movement) => ResolvedPatientInfo) | undefined,
   patients?: readonly Patient[],
-): string {
+): { name: string; umrn?: string } {
   // Some explicitly supplied notification DTOs carry a display name; validate that boundary without an unchecked cast.
   const customName =
     "patientName" in movement && typeof movement.patientName === "string"
@@ -100,16 +112,107 @@ function getPatientDisplayName(
       : "displayName" in movement && typeof movement.displayName === "string"
         ? movement.displayName
         : undefined;
-  if (customName) return customName;
+  if (customName) return { name: customName };
   try {
     const resolved = resolveIdentity
       ? resolveIdentity(movement)
       : resolveSubjectPatient(movement, { movements, patients });
-    return resolved.displayName;
+    return { name: resolved.displayName, umrn: resolved.umrn === UMRN_NOT_RECORDED ? undefined : resolved.umrn };
   } catch {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    return NAME_NOT_RECORDED;
+    return { name: NAME_NOT_RECORDED };
   }
+}
+
+type RowProps = {
+  tone: WfTone;
+  icon: LucideIcon;
+  title: string;
+  /** Status word beside the glyph: "Act now", "Check", "Buzz". */
+  status: string;
+  meta?: ReactNode;
+  value?: string;
+  state?: string;
+  detail?: ReactNode;
+  actions?: ReactNode;
+  done?: boolean;
+  testId?: string;
+};
+
+/** One row in the shared Alerts drawer pattern: icon, title, status line, when, one line of detail, the action. */
+function NoticeRow({
+  tone,
+  icon: RowIcon,
+  title,
+  status,
+  meta,
+  value,
+  state,
+  detail,
+  actions,
+  done,
+  testId,
+}: RowProps) {
+  const stateTone = tone === "danger" ? "danger" : tone === "warning" ? "warning" : undefined;
+  return (
+    <li
+      className={drawer.row}
+      data-tone={tone}
+      data-expanded="true"
+      data-done={done ? "true" : "false"}
+      data-testid={testId}
+    >
+      <div className={drawer.rowHead}>
+        <span className={drawer.rowIcon} aria-hidden="true">
+          <RowIcon aria-hidden="true" />
+        </span>
+        <div className={drawer.rowText}>
+          <span className={`${drawer.rowTitle} ${styles.rowTitleWraps}`}>{title}</span>
+          <p className={`${drawer.rowMeta} ${styles.rowMetaWraps}`}>
+            <StatusGlyph tone={tone} size={9} />
+            <span>{status}</span>
+            {meta}
+          </p>
+        </div>
+        {value || state ? (
+          <div className={drawer.rowWhen}>
+            {value ? (
+              <span className={drawer.rowValue}>
+                {stateTone ? <StatusGlyph tone={tone} size={9} /> : null}
+                {value}
+              </span>
+            ) : null}
+            {state ? (
+              <span className={drawer.rowState} data-tone={stateTone}>
+                {state}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {detail ? (
+        <div className={drawer.rowDetail}>
+          <p className={drawer.detailLine}>{detail}</p>
+        </div>
+      ) : null}
+      {actions ? <div className={drawer.rowActions}>{actions}</div> : null}
+    </li>
+  );
+}
+
+function PatientMeta({ name, umrn }: { name: string; umrn?: string }) {
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      <strong>{name}</strong>
+      {umrn ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className={drawer.mono}>{umrn}</span>
+        </>
+      ) : null}
+    </>
+  );
 }
 
 export function WardNotificationCenter({
@@ -144,28 +247,14 @@ export function WardNotificationCenter({
         : { patients: effectivePatients, movements },
     [resolveIdentity, effectivePatients, movements],
   );
+  const identityOf = (m: Movement) => getPatientIdentity(m, movements, resolveIdentity, effectivePatients);
   const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
   const rollupMin = morningRollupDeadlineMinutes % 60;
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   const [soundEnabled, setSoundEnabled] = useAudioBuzzPreference();
   const baseId = useId();
-  const tabRefs = useRef<Map<number, HTMLButtonElement | null>>(new Map());
-
-  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const current = TABS.findIndex((item) => item.id === activeTab);
-    let next: number | null = null;
-    if (event.key === "ArrowRight") next = (current + 1) % TABS.length;
-    else if (event.key === "ArrowLeft") next = (current - 1 + TABS.length) % TABS.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = TABS.length - 1;
-    if (next === null) return;
-    event.preventDefault();
-    tabRefs.current.get(next)?.focus();
-    const nextTab = TABS.at(next);
-    if (nextTab) setActiveTab(nextTab.id);
-  };
 
   // 1. Coordinator Buzzes matching unitId, still open: the ward's capacity confirmation answers one
   // on every desk (DEC-L5-04). Keys come from the whole list so a dismissal keeps its key.
@@ -183,11 +272,6 @@ export function WardNotificationCenter({
     }
   }, [hasUrgentBuzz]);
 
-  const toggleSound = () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-  };
-
   const handleAcknowledgeBuzz = (buzzKey: string, isUrgent?: boolean) => {
     if (isUrgent) {
       triggerUrgentBuzzAlert();
@@ -198,10 +282,16 @@ export function WardNotificationCenter({
     if (group.some(({ buzz }) => buzz.urgent === true)) triggerUrgentBuzzAlert();
     for (const { buzzKey } of group) onDismissBuzz?.(buzzKey);
   };
-  const buzzGroups = groupRepeatedBuzzes(matchingBuzzes);
+  // Urgent buzzes first, then newest first.
+  const buzzGroups = groupRepeatedBuzzes(matchingBuzzes).sort(
+    (left, right) =>
+      Number(right[0]?.buzz.urgent === true) - Number(left[0]?.buzz.urgent === true) ||
+      (right[0]?.buzz.at ?? 0) - (left[0]?.buzz.at ?? 0),
+  );
 
-  // 2. Urgent Tasks
+  // 2. Ward work: the morning numbers, late arrivals and clearance gaps.
   const isCensusOverdue = Boolean(morningRollupDeadlinePassed && !morningRollupConfirmed);
+  const censusLateMinutes = Math.max(0, minuteOfDay(now) - morningRollupDeadlineMinutes);
 
   const overdueArrivals = movements.filter((m) => {
     if (m.acceptedUnitId !== unitId) return false;
@@ -210,32 +300,266 @@ export function WardNotificationCenter({
     return now > eta + LATE_ARRIVAL_GRACE_MINUTES;
   });
 
-  // Audit 1, CS-14 (20 Oct 2026): list incoming journeys with no clearance recorded on their own card.
-  // Before, only a recorded "not cleared" was listed and the panel could say "No urgent tasks" while no
-  // clearance had been recorded at all. A ward screen reads the transfer's own record only: referral
-  // data reaches ward code through the ward-scoped projection (FD-23), which carries no clearance, so
-  // the card says "on the transfer". The card counts once in Urgent and the Alert badge, so a shown card
-  // never sits under a zero (Notices thread, 22 Oct 2026).
-  const {
-    missing: missingClearances,
-    unrecorded: unrecordedClearances,
-    count: clearanceCount,
-  } = wardClearanceAlerts(movements, unitId);
+  // Audit 1, CS-14 (20 Oct 2026): list incoming journeys with no clearance recorded on their own row.
+  // A ward screen reads the transfer's own record only: referral data reaches ward code through the
+  // ward-scoped projection (FD-23), which carries no clearance, so the row says "on the transfer".
+  // Each row counts once in the badge (ward-clearance-alerts.ts), so a shown row never sits under a zero.
+  const { missing: missingClearances, unrecorded: unrecordedClearances } = wardClearanceAlerts(movements, unitId);
+
+  // Option A: a clearance row opens the request this ward is answering, or the transfer once accepted.
+  const transferAction = (m: Movement) => {
+    const accepted = m.acceptedUnitId === unitId;
+    return (
+      <Link
+        className={`${drawer.btn} ${drawer.btnPrimary}`}
+        href={accepted ? movementHref(m.id) : `/ward-flow/ward/${encodeURIComponent(unitId)}/answer`}
+        onClick={() => onClose?.()}
+      >
+        {accepted ? "Open transfer" : "Open request"}
+      </Link>
+    );
+  };
 
   // 3. Direct Ward Notices
   const wardNotices = notices.filter((n) => noticeIsForWardChrome(n, "ward", unitId, now));
 
-  // Counts for Telemetry Strip & Tab Badges
+  // Counts for the heading, the filter and the badge. "Check" holds clearance not recorded: a gap to
+  // check, not an alarm, but still counted so every row shown is in the total.
   const buzzCount = matchingBuzzes.length;
-  const overdueArrivalsCount = overdueArrivals.length;
-  const censusCount = isCensusOverdue ? 1 : 0;
-  const urgentTasksCount = censusCount + overdueArrivalsCount + clearanceCount;
   const unreadNoticesCount = wardNotices.filter((n) => n.readAt === undefined).length;
-  const totalUnreadAlerts = buzzCount + urgentTasksCount + unreadNoticesCount;
+  const actCount = (isCensusOverdue ? 1 : 0) + overdueArrivals.length + missingClearances.length;
+  const checkCount = unrecordedClearances.length;
+  const coordinatorCount = buzzCount + unreadNoticesCount;
+  const totalUnreadAlerts = actCount + checkCount + coordinatorCount;
 
-  const showBuzzes = activeTab === "all" || activeTab === "buzzes";
-  const showUrgent = activeTab === "all" || activeTab === "urgent";
-  const showNotices = activeTab === "all" || activeTab === "notices";
+  const filters: { id: FilterKey; label: string; count: number }[] = [
+    { id: "all", label: "All", count: totalUnreadAlerts },
+    { id: "act", label: "Act now", count: actCount },
+    { id: "check", label: "Check", count: checkCount },
+    { id: "coordinator", label: "Coordinator", count: coordinatorCount },
+  ];
+  const showAct = filter === "all" || filter === "act";
+  const showCheck = filter === "all" || filter === "check";
+  const showCoordinator = filter === "all" || filter === "coordinator";
+  const attentionShown = (showAct ? actCount : 0) + (showCheck ? checkCount : 0);
+
+  const attentionRows = (
+    <>
+      {showAct && isCensusOverdue ? (
+        <NoticeRow
+          tone="danger"
+          icon={ClipboardCheck}
+          title="Morning numbers not confirmed"
+          status="Act now"
+          meta={
+            <>
+              <span aria-hidden="true">·</span>
+              <span>Due {rollupTimeLabel}</span>
+            </>
+          }
+          value={censusLateMinutes > 0 ? splitDuration(censusLateMinutes) : undefined}
+          state="Overdue"
+          detail="Confirm today's discharges and the beds you can offer."
+          testId="ward-census-overdue"
+          actions={
+            <button
+              type="button"
+              className={`${drawer.btn} ${drawer.btnPrimary}`}
+              onClick={() => onConfirmMorningRollup?.()}
+            >
+              Confirm numbers
+            </button>
+          }
+        />
+      ) : null}
+      {showAct
+        ? overdueArrivals.map((m) => {
+            const who = identityOf(m);
+            const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
+            return (
+              <NoticeRow
+                key={`overdue-${m.id}`}
+                tone="danger"
+                icon={Truck}
+                title="Arrival overdue"
+                status="Act now"
+                meta={<PatientMeta {...who} />}
+                value={`ETA ${eta}`}
+                state="Overdue"
+                detail={`Expected ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
+                actions={transferAction(m)}
+              />
+            );
+          })
+        : null}
+      {showAct
+        ? missingClearances.map((m) => (
+            <NoticeRow
+              key={`clearance-${m.id}`}
+              tone="danger"
+              icon={Stethoscope}
+              title="Medical clearance not given"
+              status="Act now"
+              meta={<PatientMeta {...identityOf(m)} />}
+              state="Blocks transfer"
+              detail="The transfer cannot go ahead until it is signed off."
+              actions={transferAction(m)}
+            />
+          ))
+        : null}
+      {showCheck
+        ? unrecordedClearances.map((m) => (
+            <NoticeRow
+              key={`clearance-unrecorded-${m.id}`}
+              tone="warning"
+              icon={Stethoscope}
+              title="Medical clearance not recorded"
+              status="Check"
+              meta={<PatientMeta {...identityOf(m)} />}
+              state="Before arrival"
+              detail={
+                m.acceptedUnitId === unitId
+                  ? "Not recorded on the transfer. Check with the sending team before arrival."
+                  : "Not recorded on the transfer. Check with the sending team before you accept."
+              }
+              testId="ward-clearance-not-recorded"
+              actions={transferAction(m)}
+            />
+          ))
+        : null}
+    </>
+  );
+
+  const buzzRows = buzzGroups.map((group, groupIndex) => {
+    const [latest] = group;
+    if (!latest) return null;
+    const { buzz, buzzKey } = latest;
+    const roleLabel =
+      buzz.byRole === "coordinator" ? "State Bed Flow Coordinator" : buzz.byRole || "State Bed Flow Coordinator";
+    const messageText = buzz.message || "Capacity refresh requested";
+    const meta = (
+      <>
+        <span aria-hidden="true">·</span>
+        <span>{roleLabel}</span>
+      </>
+    );
+    if (group.length === 1) {
+      return (
+        <NoticeRow
+          key={`buzz-${buzzKey}`}
+          tone={buzz.urgent ? "danger" : "info"}
+          icon={Megaphone}
+          title={messageText}
+          status={buzz.urgent ? "Urgent buzz" : "Buzz"}
+          meta={meta}
+          value={formatInstantWithDay(buzz.at, now)}
+          actions={
+            <button
+              type="button"
+              className={`${drawer.btn} ${drawer.btnPrimary}`}
+              onClick={() => handleAcknowledgeBuzz(buzzKey, buzz.urgent)}
+            >
+              Acknowledge
+            </button>
+          }
+        />
+      );
+    }
+    const open = openGroups.has(buzzKey);
+    // The key can hold message text with spaces, which would split aria-controls; use the place.
+    const eachId = `${baseId}-each-${groupIndex}`;
+    return (
+      <NoticeRow
+        key={`buzz-group-${buzzKey}`}
+        tone={buzz.urgent ? "danger" : "info"}
+        icon={Megaphone}
+        title={messageText}
+        status={`${buzz.urgent ? "Urgent buzz" : "Buzz"} ×${group.length}`}
+        meta={meta}
+        value={`Latest ${formatInstantWithDay(buzz.at, now)}`}
+        testId="ward-buzz-group"
+        detail={
+          open ? (
+            <span id={eachId} className={styles.repeatList}>
+              {group.map((entry) => (
+                <span key={entry.buzzKey} className={styles.repeatItem}>
+                  <time>{formatInstantWithDay(entry.buzz.at, now)}</time>
+                  <button
+                    type="button"
+                    className={drawer.btn}
+                    onClick={() => handleAcknowledgeBuzz(entry.buzzKey, entry.buzz.urgent)}
+                  >
+                    Acknowledge
+                  </button>
+                </span>
+              ))}
+            </span>
+          ) : undefined
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              className={`${drawer.btn} ${drawer.btnPrimary}`}
+              onClick={() => acknowledgeGroup(group)}
+            >
+              Acknowledge all {group.length}
+            </button>
+            <button
+              type="button"
+              className={drawer.btn}
+              aria-expanded={open}
+              aria-controls={open ? eachId : undefined}
+              onClick={() =>
+                setOpenGroups((previous) => {
+                  const next = new Set(previous);
+                  if (next.has(buzzKey)) next.delete(buzzKey);
+                  else next.add(buzzKey);
+                  return next;
+                })
+              }
+            >
+              {open ? "Hide each" : "Show each"}
+            </button>
+          </>
+        }
+      />
+    );
+  });
+
+  const noticeRows = wardNotices.map((notice) => {
+    const isRead = notice.readAt !== undefined;
+    return (
+      <NoticeRow
+        key={notice.id}
+        tone={isRead ? "success" : "info"}
+        icon={MessageSquare}
+        title={withUmrnInPlaceOfMovementIds(notice.sentence, noticeUmrnLookup)}
+        status={isRead ? "Read" : "Notice"}
+        value={formatInstantWithDay(notice.raisedAt, now)}
+        done={isRead}
+        actions={
+          isRead ? undefined : (
+            <button
+              type="button"
+              className={`${drawer.btn} ${drawer.btnPrimary}`}
+              onClick={() => onAcknowledgeNotice?.(notice.id)}
+            >
+              Acknowledge
+            </button>
+          )
+        }
+      />
+    );
+  });
+
+  const nothingFromCoordinator = matchingBuzzes.length === 0 && wardNotices.length === 0;
+  const quiet = (text: string) => (
+    <p className={styles.quietLine}>
+      <StatusGlyph tone="success" size={9} />
+      {text}
+    </p>
+  );
 
   return (
     // Only the short summary below is a live region, so a change to the counts or filter is heard
@@ -245,7 +569,7 @@ export function WardNotificationCenter({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the focused control inside
     <section
       className={`${styles.panel} ${hasUrgentBuzz ? styles.urgentBuzzPulse : ""} ${inSheet ? styles.inSheet : ""}`}
-      aria-label={`Ward notification and buzzer centre for ${unitName}`}
+      aria-label={`Notices for ${unitName}`}
       data-testid="ward-notification-center"
       data-urgent-buzz={hasUrgentBuzz ? "true" : "false"}
       onKeyDown={(event) => {
@@ -257,334 +581,121 @@ export function WardNotificationCenter({
       }}
     >
       <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-notification-live-summary">
-        {`${totalUnreadAlerts} unread notification${totalUnreadAlerts === 1 ? "" : "s"}, ${activeTab} filter active, sample records`}
+        {`${totalUnreadAlerts} unread notification${totalUnreadAlerts === 1 ? "" : "s"}, ${filter} filter active, sample records`}
       </span>
-      {/* a) Telemetry & Action Strip */}
-      <div className={styles.telemetryStrip}>
-        <div className={styles.titleArea}>
-          {inSheet ? null : <h2 className={styles.heading}>Notification and buzzer centre</h2>}
-          <span
-            className={totalUnreadAlerts > 0 ? styles.alertBadge : styles.alertBadgeMuted}
-            aria-label={`${totalUnreadAlerts} unread alert${totalUnreadAlerts === 1 ? "" : "s"}`}
-          >
-            {totalUnreadAlerts} {totalUnreadAlerts === 1 ? "Alert" : "Alerts"}
+      {inSheet ? null : (
+        <div className={drawer.header}>
+          <span className={drawer.headerIcon} aria-hidden="true">
+            <Bell aria-hidden="true" />
           </span>
-
-          <button
-            type="button"
-            data-testid="ward-buzz-audio-toggle"
-            className={styles.soundToggle}
-            aria-label={soundEnabled ? "Mute urgent buzzer audio" : "Enable urgent buzzer audio"}
-            onClick={toggleSound}
-          >
-            {soundEnabled ? "🔔 Audio On" : "🔕 Audio Muted"}
-          </button>
-
-          {onClose && !inSheet && (
+          <div className={drawer.headerText}>
+            <h2 className={drawer.heading}>Notices</h2>
+            <p className={drawer.headerNote}>{unitName} · this ward only</p>
+          </div>
+          <span className={drawer.headingCount} data-testid="ward-notification-count">
+            <span className={drawer.mono}>{totalUnreadAlerts}</span> open
+            <span className="sr-only"> sample records</span>
+          </span>
+          {onClose ? (
             <button
               type="button"
-              className={styles.closeButton}
+              className={drawer.closeButton}
               onClick={onClose}
-              aria-label="Close notification center"
+              aria-label="Close notices"
+              title="Close notices"
               data-testid="ward-notification-close-btn"
             >
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3l10 10M13 3L3 13" />
-              </svg>
+              <X aria-hidden="true" />
             </button>
-          )}
+          ) : null}
         </div>
+      )}
 
-        {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
-        <div role="tablist" aria-label="Notification filters" className={styles.tabList} onKeyDown={handleTabKeyDown}>
-          {TABS.map((tab, index) => {
-            const isSelected = activeTab === tab.id;
-            let count = 0;
-            if (tab.id === "all") count = totalUnreadAlerts;
-            else if (tab.id === "buzzes") count = buzzCount;
-            else if (tab.id === "urgent") count = urgentTasksCount;
-            else if (tab.id === "notices") count = unreadNoticesCount;
-
-            return (
+      {/* The shared drawer hides its filter on a phone (under 48rem), and so does this one. */}
+      <div className={drawer.controls}>
+        <div className={drawer.filterBar}>
+          <div className={drawer.segmented} role="group" aria-label="Filter notices">
+            {filters.map((item) => (
               <button
-                key={tab.id}
-                ref={(node) => {
-                  tabRefs.current.set(index, node);
-                }}
+                key={item.id}
                 type="button"
-                role="tab"
-                id={`${baseId}-tab-${tab.id}`}
-                aria-controls={`${baseId}-panel-${tab.id}`}
-                aria-selected={isSelected}
-                tabIndex={isSelected ? 0 : -1}
-                className={styles.tabButton}
-                onClick={() => setActiveTab(tab.id)}
+                className={drawer.segment}
+                aria-pressed={filter === item.id}
+                onClick={() => setFilter(item.id)}
               >
-                <span>{tab.label}</span>
-                <span className={styles.tabCount}>
-                  {count}
+                {item.label}{" "}
+                <span className={drawer.count}>
+                  {item.count}
                   <span className="sr-only"> sample records</span>
                 </span>
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Tab panel container */}
-      <div
-        role="tabpanel"
-        id={`${baseId}-panel-${activeTab}`}
-        aria-labelledby={`${baseId}-tab-${activeTab}`}
-        tabIndex={0}
-        className={styles.tabPanel}
-      >
-        {/* c) Urgent Tasks Section */}
-        {showUrgent && (
-          <section className={styles.section} aria-labelledby={`${baseId}-heading-urgent`}>
-            <h3 id={`${baseId}-heading-urgent`} className={styles.sectionTitle}>
-              Urgent
-              <span className={styles.sectionCount}>
-                ({urgentTasksCount}
-                <span className="sr-only"> sample records</span>)
-              </span>
-            </h3>
-
-            {/* Morning Census Overdue banner */}
-            {isCensusOverdue && (
-              <div className={styles.censusBanner} role="alert">
-                <span className={styles.censusText}>
-                  {rollupTimeLabel} Morning Census Overdue — Confirm discharges and allocatable beds
+      <div className={`${drawer.drawerBody} ${styles.body}`}>
+        {showAct || showCheck ? (
+          attentionShown > 0 ? (
+            <section className={drawer.section} aria-labelledby={`${baseId}-heading-attention`}>
+              <div className={drawer.sectionHead}>
+                <ShieldCheck aria-hidden="true" />
+                <h3 id={`${baseId}-heading-attention`} className={drawer.sectionTitle}>
+                  Needs attention
+                </h3>
+                <span className={drawer.count}>
+                  {attentionShown}
+                  <span className="sr-only"> sample records</span>
                 </span>
-                <button type="button" className={styles.confirmButton} onClick={() => onConfirmMorningRollup?.()}>
-                  Confirm Now
-                </button>
+                <span className={drawer.sectionNote}>Leaves when done</span>
               </div>
-            )}
+              <ul className={drawer.list}>{attentionRows}</ul>
+            </section>
+          ) : filter !== "all" ? (
+            quiet(`Nothing to ${filter === "check" ? "check" : "act on"} on ${unitName}.`)
+          ) : null
+        ) : null}
 
-            {/* Overdue Inbound Arrivals */}
-            {overdueArrivals.map((m) => {
-              const patientName = getPatientDisplayName(m, movements, resolveIdentity, effectivePatients);
-              const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
-              const alertText = `Overdue Inbound Arrival: ${patientName} (ETA was ${eta}, >60m overdue)`;
-
-              return (
-                <div key={`overdue-${m.id}`} className={`${styles.card} ${styles.cardUrgent}`}>
-                  <div className={styles.cardBody}>
-                    <div className={styles.cardHeader}>
-                      <span className={styles.urgentFlag}>Overdue Arrival</span>
-                      <time className={styles.cardTime}>ETA {eta}</time>
-                    </div>
-                    <p className={styles.cardMessage}>{alertText}</p>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Missing Pre-Admission Medical Clearance */}
-            {missingClearances.map((m) => {
-              const patientName = getPatientDisplayName(m, movements, resolveIdentity, effectivePatients);
-
-              return (
-                <div key={`clearance-${m.id}`} className={`${styles.card} ${styles.cardDanger}`}>
-                  <div className={styles.cardBody}>
-                    <div className={styles.cardHeader}>
-                      <span className={styles.urgentFlag}>Medical Clearance</span>
-                    </div>
-                    <p className={styles.cardMessage}>
-                      Pending Medical Clearance: Transfer cannot proceed until signed off
-                    </p>
-                    {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                    <p className={styles.cardDetail}>{patientName}</p>
-                  </div>
-                </div>
-              );
-            })}
-
-            {unrecordedClearances.length > 0 && (
-              <div className={styles.card} data-testid="ward-clearance-not-recorded">
-                <div className={styles.cardBody}>
-                  <div className={styles.cardHeader}>
-                    <span className={styles.cardFlag}>Medical clearance not recorded</span>
-                  </div>
-                  <p className={styles.cardMessage}>
-                    No medical clearance is recorded on the transfer for {unrecordedClearances.length} incoming{" "}
-                    {unrecordedClearances.length === 1 ? "patient" : "patients"}.
-                  </p>
-                  <ul className={styles.nameList}>
-                    {unrecordedClearances.map((m) => (
-                      <li key={`clearance-unrecorded-${m.id}`}>
-                        {getPatientDisplayName(m, movements, resolveIdentity, effectivePatients)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        {showCoordinator ? (
+          nothingFromCoordinator ? (
+            quiet(
+              attentionShown === 0 && filter === "all"
+                ? `Nothing needs attention on ${unitName}.`
+                : "No buzzes or notices from the coordinator.",
+            )
+          ) : (
+            <section className={drawer.section} aria-labelledby={`${baseId}-heading-coordinator`}>
+              <div className={drawer.sectionHead}>
+                <Megaphone aria-hidden="true" />
+                <h3 id={`${baseId}-heading-coordinator`} className={drawer.sectionTitle}>
+                  From the coordinator
+                </h3>
+                <span className={drawer.count}>
+                  {coordinatorCount}
+                  <span className="sr-only"> sample records</span>
+                </span>
               </div>
-            )}
+              <ul className={drawer.list}>
+                {buzzRows}
+                {noticeRows}
+              </ul>
+            </section>
+          )
+        ) : null}
+      </div>
 
-            {!isCensusOverdue &&
-              overdueArrivals.length === 0 &&
-              missingClearances.length === 0 &&
-              unrecordedClearances.length === 0 && <p className={styles.emptyState}>No urgent tasks recorded.</p>}
-          </section>
-        )}
-
-        {/* b) Coordinator Buzzes Feed */}
-        {showBuzzes && (
-          <section className={styles.section} aria-labelledby={`${baseId}-heading-buzzes`}>
-            <h3 id={`${baseId}-heading-buzzes`} className={styles.sectionTitle}>
-              Buzzes
-              <span className={styles.sectionCount}>
-                ({matchingBuzzes.length}
-                <span className="sr-only"> sample records</span>)
-              </span>
-            </h3>
-
-            {matchingBuzzes.length === 0 ? (
-              <p className={styles.emptyState}>No coordinator buzzes for {unitName}.</p>
-            ) : (
-              <div className={styles.feed}>
-                {buzzGroups.map((group, groupIndex) => {
-                  const [latest] = group;
-                  if (!latest) return null;
-                  const { buzz, buzzKey } = latest;
-                  const roleLabel =
-                    buzz.byRole === "coordinator"
-                      ? "State Bed Flow Coordinator"
-                      : buzz.byRole || "State Bed Flow Coordinator";
-                  const messageText = buzz.message || "Capacity refresh requested";
-
-                  if (group.length === 1) {
-                    return (
-                      <div key={`buzz-${buzzKey}`} className={`${styles.card} ${buzz.urgent ? styles.cardUrgent : ""}`}>
-                        <div className={styles.cardBody}>
-                          <div className={styles.cardHeader}>
-                            <time className={styles.cardTime}>{formatInstantWithDay(buzz.at, now)}</time>
-                            <span className={styles.cardRole}>{roleLabel}</span>
-                            {buzz.urgent && <span className={styles.urgentFlag}>Urgent</span>}
-                          </div>
-                          <p className={styles.cardMessage}>{messageText}</p>
-                        </div>
-
-                        <button
-                          type="button"
-                          className={styles.actionButton}
-                          onClick={() => handleAcknowledgeBuzz(buzzKey, buzz.urgent)}
-                        >
-                          Acknowledge Buzz
-                        </button>
-                      </div>
-                    );
-                  }
-                  const open = openGroups.has(buzzKey);
-                  // The key can hold message text with spaces, which would split aria-controls; use the place.
-                  const eachId = `${baseId}-each-${groupIndex}`;
-                  return (
-                    <div
-                      key={`buzz-group-${buzzKey}`}
-                      className={`${styles.card} ${styles.buzzGroup} ${buzz.urgent ? styles.cardUrgent : ""}`}
-                      data-testid="ward-buzz-group"
-                    >
-                      <div className={styles.cardBody}>
-                        <div className={styles.cardHeader}>
-                          <span className={styles.repeatCount}>×{group.length}</span>
-                          <time className={styles.cardTime}>Latest {formatInstantWithDay(buzz.at, now)}</time>
-                          <span className={styles.cardRole}>{roleLabel}</span>
-                          {buzz.urgent && <span className={styles.urgentFlag}>Urgent</span>}
-                        </div>
-                        <p className={styles.cardMessage}>{messageText}</p>
-                        {open ? (
-                          <ul id={eachId} className={styles.repeatList}>
-                            {group.map((entry) => (
-                              <li key={entry.buzzKey}>
-                                <time>{formatInstantWithDay(entry.buzz.at, now)}</time>
-                                <button
-                                  type="button"
-                                  className={styles.textButton}
-                                  onClick={() => handleAcknowledgeBuzz(entry.buzzKey, entry.buzz.urgent)}
-                                >
-                                  Acknowledge
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
-                      <div className={styles.groupActions}>
-                        <button
-                          type="button"
-                          className={styles.textButton}
-                          aria-expanded={open}
-                          aria-controls={open ? eachId : undefined}
-                          onClick={() =>
-                            setOpenGroups((previous) => {
-                              const next = new Set(previous);
-                              if (next.has(buzzKey)) next.delete(buzzKey);
-                              else next.add(buzzKey);
-                              return next;
-                            })
-                          }
-                        >
-                          {open ? "Hide each" : "Show each"}
-                        </button>
-                        <button type="button" className={styles.actionButton} onClick={() => acknowledgeGroup(group)}>
-                          Acknowledge all {group.length}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* d) Direct Ward Notices */}
-        {showNotices && (
-          <section className={styles.section} aria-labelledby={`${baseId}-heading-notices`}>
-            <h3 id={`${baseId}-heading-notices`} className={styles.sectionTitle}>
-              Notices
-              <span className={styles.sectionCount}>
-                ({wardNotices.length}
-                <span className="sr-only"> sample records</span>)
-              </span>
-            </h3>
-
-            {wardNotices.length === 0 ? (
-              <p className={styles.emptyState}>No notices for {unitName}.</p>
-            ) : (
-              <div className={styles.feed}>
-                {wardNotices.map((notice) => {
-                  const isRead = notice.readAt !== undefined;
-
-                  return (
-                    <div key={notice.id} className={`${styles.card} ${isRead ? styles.cardSuccess : ""}`}>
-                      <div className={styles.cardBody}>
-                        <div className={styles.cardHeader}>
-                          <time className={styles.cardTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                          {isRead && <span className={styles.readBadge}>Read</span>}
-                        </div>
-                        <p className={styles.cardMessage}>
-                          {withUmrnInPlaceOfMovementIds(notice.sentence, noticeUmrnLookup)}
-                        </p>
-                      </div>
-
-                      {!isRead && (
-                        <button
-                          type="button"
-                          className={styles.actionButton}
-                          onClick={() => onAcknowledgeNotice?.(notice.id)}
-                        >
-                          Acknowledge Notice
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
+      <div className={`${drawer.drawerFoot} ${styles.foot}`}>
+        <span className={styles.footNote}>Urgent buzzes from the coordinator play a sound.</span>
+        <button
+          type="button"
+          data-testid="ward-buzz-audio-toggle"
+          className={drawer.btn}
+          aria-pressed={soundEnabled}
+          onClick={() => setSoundEnabled(!soundEnabled)}
+        >
+          {soundEnabled ? <Bell aria-hidden="true" /> : <BellOff aria-hidden="true" />}
+          {soundEnabled ? "Buzz sound on" : "Buzz sound off"}
+        </button>
       </div>
     </section>
   );

@@ -95,6 +95,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
+import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -1147,6 +1148,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
     count += wardClearanceAlerts(movements, unit.id).count;
+    // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
+    count += notices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
     return count;
   })();
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
