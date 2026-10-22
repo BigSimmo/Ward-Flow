@@ -939,6 +939,7 @@ const SCREEN_GROUPS: readonly { label: string; screens: readonly WardScreenId[] 
   { label: "Capacity, Wards and ward boards", screens: ["capacity", "wards", "ward", "board"] },
   { label: "Movements and Waiting", screens: ["movements", "delays"] },
   { label: "Discharges and the bed meeting", screens: ["discharges", "bed-meeting"] },
+  { label: "Seclusion and restraint", screens: ["seclusion"] },
   { label: "Handover and Search", screens: ["handover", "search"] },
   { label: "Statistics", screens: ["statistics"] },
   { label: "Governance: overrides, refused actions and record access", screens: ["governance"] },

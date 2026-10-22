@@ -116,6 +116,7 @@ describe("what the desk can do", () => {
     ]);
     const bedManager = tourCanDo("bed_manager").can;
     expect(bedManager).toContain("Capacity, Wards and ward boards, your site");
+    expect(bedManager).toContain("Seclusion and restraint, your site");
     expect(bedManager).toContain("On-call, all services");
     expect(bedManager.some((line) => line.startsWith("Governance"))).toBe(false);
   });
