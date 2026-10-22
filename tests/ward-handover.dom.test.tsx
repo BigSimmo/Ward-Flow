@@ -227,10 +227,12 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("Handover signed off as flow coordinator");
   });
 
-  it("marks Handing to as Preview because the engine records role and time only", () => {
+  it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {
     renderHandover();
     const signOff = screen.getByTestId("ward-handover-sign-off");
-    expect(signOff).toHaveTextContent("Not wired in this prototype.");
+    expect(signOff).toHaveTextContent("Handed over by");
+    expect(signOff).not.toHaveTextContent("Handing to");
+    expect(signOff).not.toHaveTextContent("Not wired in this prototype.");
   });
 
   it("highlights rows and never hides them", async () => {

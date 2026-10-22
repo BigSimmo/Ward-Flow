@@ -182,15 +182,12 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     expect(within(drawer).queryByRole("group", { name: "Patient in focus" })).not.toBeInTheDocument();
   });
 
-  it("says a Preview tile is not wired, since Change view has no page toast", () => {
+  it("offers no Preview desk tiles, since those desks are not built (D-72)", () => {
     renderSwitcher(undefined, WARD_ROUTE);
 
     fireEvent.click(screen.getByRole("button", { name: /change view/i }));
     const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
-    const tile = within(drawer).getByRole("button", { name: /Bed manager/ });
-    // Site review (12 Oct 2026): a working tile (D-16), never greyed, and no colon in the sentence.
-    expect(tile).not.toHaveAttribute("aria-disabled");
-    fireEvent.click(tile);
-    expect(within(drawer).getByRole("status")).toHaveTextContent("Bed manager is not wired in this prototype.");
+    expect(within(drawer).queryByRole("button", { name: /Bed manager|Executive/ })).toBeNull();
+    expect(within(drawer).queryByText(/not wired/iu)).toBeNull();
   });
 });

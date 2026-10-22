@@ -14,10 +14,10 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
-import { WardDischargeNotices } from "@/components/ward-management/ward/ward-discharge-notices";
+import { WardDischargeNoticesCard } from "@/components/ward-management/ward/ward-discharge-notices";
 import type { SupportServiceType } from "@/components/ward-management/ward-support-notifications";
 
-/** Top 25 item 1: confirming a discharge offers the support notices once sending is connected. */
+/** Top 25 item 1 and #398: confirming a discharge offers the recorded support notices. */
 afterEach(() => {
   cleanup();
   window.history.replaceState(null, "", "/");
@@ -38,12 +38,17 @@ function confirmFirstRelease() {
 }
 
 describe("discharge support notices", () => {
-  it("confirms the discharge without offering notices nobody can send", () => {
+  it("sends a notice through the recorded event and shows Sent only once it is recorded", () => {
     confirmFirstRelease();
     const card = screen.getByTestId("ward-discharge-notices");
-    expect(card).toHaveTextContent("Discharge confirmed");
-    expect(within(card).queryByRole("button", { name: "Send notice" })).toBeNull();
+    expect(card).toHaveTextContent("Discharge support notices");
     expect(within(card).queryByText(/not wired/iu)).toBeNull();
+    expect(within(card).queryByText("Sent")).toBeNull();
+    const [pharmacy] = within(card).getAllByRole("button", { name: "Send notice" });
+    fireEvent.click(pharmacy!);
+    expect(within(card).getAllByText("Sent")).toHaveLength(1);
+    expect(within(card).getByRole("button", { name: "Notice sent" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(card).getAllByRole("button", { name: "Send notice" })).toHaveLength(2);
     fireEvent.click(within(card).getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("ward-discharge-notices")).toBeNull();
   });
@@ -52,7 +57,7 @@ describe("discharge support notices", () => {
     const onSendService = vi.fn();
     const onClose = vi.fn();
     const { rerender } = render(
-      <WardDischargeNotices bedLabel="Bed 1" dueSoonHours={null} onSendService={onSendService} onClose={onClose} />,
+      <WardDischargeNoticesCard bedLabel="Bed 1" dueSoonHours={null} onSendService={onSendService} onClose={onClose} />,
     );
     const card = screen.getByTestId("ward-discharge-notices");
     fireEvent.click(within(card).getAllByRole("button", { name: "Send notice" })[0]!);
@@ -61,7 +66,7 @@ describe("discharge support notices", () => {
     expect(within(card).queryByRole("button", { name: "Notice sent" })).toBeNull();
 
     rerender(
-      <WardDischargeNotices
+      <WardDischargeNoticesCard
         bedLabel="Bed 1"
         dueSoonHours={null}
         sentServices={new Set<SupportServiceType>(["pharmacy"])}
