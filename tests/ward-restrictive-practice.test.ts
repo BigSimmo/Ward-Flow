@@ -200,6 +200,12 @@ describe("what a scoped desk is sent", () => {
 
     const statewide = scopeWardFlowState(both, STATEWIDE_COORDINATOR, { now: NOW, places }).state;
     expect(episodesOn(statewide, otherStay.unitId).map((episode) => episode.admissionId)).toEqual([otherStay.id]);
+
+    // Review (22 Oct): statewide roles without the Seclusion view get no episodes, only the ward facts.
+    for (const role of ["admin", "executive"] as const) {
+      const away = scopeWardFlowState(both, { role, scope: { kind: "statewide" } }, { now: NOW, places }).state;
+      expect(both.units.flatMap((unit) => episodesOn(away, unit.id))).toEqual([]);
+    }
   });
 
   it("still sends the ward an open episode whose patient has left, so the ward can record its end", () => {
