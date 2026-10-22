@@ -5,6 +5,7 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 function renderMovements() {
   return render(
@@ -82,67 +83,57 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("starts Command with the shortlist closed, opens it only on selection, and Close clears view state only", () => {
     renderCoordinator();
+    showEveryoneWaiting();
     const queue = screen.getByRole("region", { name: "Priority queue" });
     const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
-    // Direction A (owner, 10 Oct 2026): at rest Placement shows the top of the queue, labelled so,
-    // with no Close and no queue row pressed. Nothing is selected until a coordinator picks a row.
-    const atRest = screen.getByLabelText("Placement");
-    // Audit 1, Josh 20 Oct (WP-06): labelled as the first in the list, never as a recommendation.
-    expect(within(atRest).getByTestId("ward-placement-top-of-queue")).toHaveTextContent(
-      "First in list, not a recommendation",
-    );
-    expect(within(atRest).queryByRole("button", { name: "Close shortlist and clear selection" })).toBeNull();
+    // Home v7 (Josh, 22 Oct 2026): nobody is pre-selected. At rest Placement is a prompt with
+    // nothing to act on, and no queue row is pressed until a coordinator picks one.
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(row);
     expect(row).toHaveAttribute("aria-pressed", "true");
-    const shortlist = screen.getByLabelText("Placement");
-    expect(within(shortlist).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+    expect(screen.queryByTestId("home-placement-prompt")).toBeNull();
+    const shortlist = screen.getByRole("complementary", { name: "Placement" });
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
 
-    expect(within(screen.getByLabelText("Placement")).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
-  it("selects the top-of-queue patient when a ward is picked for them at rest", () => {
-    // A ward choice belongs to the movement it was made for: picking one for the previewed patient
-    // selects that patient, so the choice cannot drift onto whoever next reaches the top.
+  it("offers nothing to act on before a patient is chosen, on either list", () => {
+    // Home v7 replaced the WP-06 preview (Audit 1, Josh 20 Oct): with no preview there is no
+    // first tap to intercept, so neither list offers a Placement action at rest.
     renderCoordinator();
-    const queue = screen.getByRole("region", { name: "Priority queue" });
-    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
-    const topId = top.getAttribute("data-testid")!.replace("ward-queue-row-", "");
-    expect(top).toHaveAttribute("aria-pressed", "false");
-
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
-    const bedflow = screen.getByRole("region", { name: "State Bedflow" });
-    fireEvent.click(within(bedflow).getAllByRole("button", { name: /^Offer / })[0]!);
+    expect(screen.getByRole("radio", { name: /^My list/u })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
+    expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
 
-    expect(top).toHaveAttribute("aria-pressed", "true");
-    // Audit 1, Josh 20 Oct (WP-06): the first tap on the preview only chooses; nothing is offered.
+    showEveryoneWaiting();
+    expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
+    expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
-    const placement = screen.getByLabelText("Placement");
-    expect(placement).toHaveAttribute("data-subject-movement", topId);
-    expect(within(placement).queryByTestId("ward-placement-top-of-queue")).toBeNull();
   });
 
-  // Audit 1, Josh 20 Oct (WP-06): a tap in the preview chooses the patient and does nothing else.
-  it("selects the top-of-queue patient on the first tap in the preview, without acting", () => {
+  it("clears the chosen patient when the coordinator switches lists", () => {
+    // Home v7: Placement never shows someone the list on screen does not highlight.
     renderCoordinator();
+    showEveryoneWaiting();
     const queue = screen.getByRole("region", { name: "Priority queue" });
-    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
-    const placement = screen.getByLabelText("Placement");
-    expect(within(placement).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+    fireEvent.click(within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!);
+    expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
 
-    const before = screen.getByTestId("ward-refinement-domain-state").textContent;
-    fireEvent.click(within(placement).getAllByRole("button")[0]!);
-
-    expect(top).toHaveAttribute("aria-pressed", "true");
-    expect(within(screen.getByLabelText("Placement")).queryByTestId("ward-placement-top-of-queue")).toBeNull();
-    expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
+    expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
   });
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
@@ -163,6 +154,7 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
     renderCoordinator();
+    showEveryoneWaiting();
     const referralsTab = screen.getByRole("radio", { name: /Referrals/u });
     const patientsTab = screen.getByRole("radio", { name: /Patients/u });
 

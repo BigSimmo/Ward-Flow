@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
-import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { HomeBedflow } from "@/components/ward-management/coordinator/home-bedflow";
 import {
   INFORMATIONAL_GATES,
   isOpen,
@@ -10,9 +10,8 @@ import {
   shortlistCandidates,
 } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
-import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * Owner, 8 Oct 2026: with a patient selected, State bedflow lists every ward that patient fits at
@@ -23,6 +22,40 @@ const NOW = NOW_ANCHOR;
 // Audit S-21: WF-030's only no-bed wards are locked, which now read Review for a voluntary patient,
 // so a voluntary patient with an open no-bed ward keeps both colours exercised.
 const MOVEMENT_ID = "WF-018";
+
+/**
+ * Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of Capacity, unchanged, where no
+ * patient is chosen. The card still takes a patient, so this suite renders it with one directly.
+ */
+function BedflowFor({ movementId }: { movementId: string }) {
+  const { movements, units, bedReleases, leaveBeds, admissions, configuration } = useWardFlow();
+  return (
+    <HomeBedflow
+      movement={movements.find((movement) => movement.id === movementId)}
+      units={units}
+      movements={movements}
+      bedReleases={bedReleases}
+      leaveBeds={leaveBeds}
+      admissions={admissions}
+      now={NOW}
+      selectedUnitId={undefined}
+      onSelectUnit={() => undefined}
+      onOffer={() => undefined}
+      parallelReferralCap={configuration.parallelReferralCap}
+      dischargesHeldUp={0}
+      service={null}
+    />
+  );
+}
+
+function renderBedflow(movementId: string) {
+  render(
+    <WardFlowProvider initialNow={NOW}>
+      <BedflowFor movementId={movementId} />
+    </WardFlowProvider>,
+  );
+  return screen.getByRole("region", { name: "State Bedflow" });
+}
 
 function expectedFits(movementId: string) {
   const state = seedWardFlowState();
@@ -55,17 +88,7 @@ describe("State bedflow's fitting wards for the selected patient", () => {
     expect(bed.size).toBeGreaterThan(0);
     expect(noBed.size).toBeGreaterThan(0);
 
-    render(
-      <WardFlowProvider initialNow={NOW}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
-    showWholeHomeQueue();
-    fireEvent.click(screen.getByTestId(`ward-queue-row-${MOVEMENT_ID}`));
-
-    const bedflow = screen.getByRole("region", { name: "State Bedflow" });
+    const bedflow = renderBedflow(MOVEMENT_ID);
     // Direction A (owner, 10 Oct 2026): one summary line in place of the list of ward names; the
     // rows themselves carry the highlight. v10 FitHighlight: "7 fit 0 no bed 5 review", each with
     // its glyph, the same groups Placement lists.
@@ -102,16 +125,7 @@ describe("State bedflow's fitting wards for the selected patient", () => {
     expect(movement).toBeDefined();
     const { bed, noBed } = expectedFits(movement.id);
 
-    render(
-      <WardFlowProvider initialNow={NOW}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
-    showWholeHomeQueue();
-    fireEvent.click(screen.getByTestId(`ward-queue-row-${movement.id}`));
-    const bedflow = screen.getByRole("region", { name: "State Bedflow" });
+    const bedflow = renderBedflow(movement.id);
 
     // Only the health services holding a fitting ward open.
     expect(within(bedflow).queryAllByRole("button", { expanded: true }).length).toBeGreaterThan(0);

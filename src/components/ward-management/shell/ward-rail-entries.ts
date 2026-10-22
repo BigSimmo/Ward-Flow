@@ -84,8 +84,9 @@ export const RAIL_GROUPS = [
  * the Tools bed finder rather than a page. A label here is what the role calls that page; an id the
  * desk cannot open is simply left out (the access filter runs first).
  *
- * The coordinator's menu reads as the B1 table does (overall review, 20 Oct 2026): "Needs you" opens
- * Home, the way the ward desk's "Coming and going" opens Movements. Only
+ * The coordinator's menu reads as the B1 table does (overall review, 20 Oct 2026): "My list" opens
+ * Home (Home v7, Josh 22 Oct 2026, was "Needs you"), named after Home's first tab, the way the ward
+ * desk's "Coming and going" opens Movements. Only
  * the menu words change; the pages keep their names until B5 and B3 rename them. Waiting moves to
  * More with every other page. B1's officer
  * "Run sheet" has no screen yet (Movements' Run sheet button is not wired, and Movements is not part
@@ -97,7 +98,7 @@ export type RoleMenuItem = readonly [id: string, label: string];
 
 export const ROLE_MENUS: Record<WardChromeRole, readonly RoleMenuItem[]> = {
   coordinator: [
-    ["command", "Needs you"],
+    ["command", "My list"],
     // Josh, 21 Oct 2026 (UX audit): the rail uses the page's own name, Capacity, now that D-74
     // keeps the current screens and the B5 rename to Beds will not happen.
     ["capacity", "Capacity"],

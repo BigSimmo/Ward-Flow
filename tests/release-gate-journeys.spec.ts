@@ -19,6 +19,7 @@ import {
   wardFigure,
 } from "./helpers/ward-release-gate";
 import { escapeForRegExp } from "./helpers/ward-place-names";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * The release gate: four core bed-flow journeys that must pass before a change ships.
@@ -114,6 +115,7 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await expectAccessible(page, testInfo, "coordinator Home");
   // The phone queue shows the first twenty; a new tier 3 movement can sit below them.
+  await showEveryoneWaitingOn(page);
   const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);
   const showAll = page.getByRole("region", { name: "Priority queue" }).getByRole("button", { name: /^Show all/u });
   if (!(await queueRow.isVisible()) && (await showAll.isVisible())) await showAll.click();

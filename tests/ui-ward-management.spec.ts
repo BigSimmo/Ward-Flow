@@ -305,7 +305,8 @@ test.describe("@mockup Ward Flow command view", () => {
     await page.setViewportSize({ width: 320, height: 820 });
     await gotoWardFlow(page);
 
-    await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
+    // Home v7: Home opens on My list; the priority queue is behind Everyone waiting.
+    await expect(page.getByTestId("home-my-list")).toBeVisible();
     await expectNoPageOverflow(page);
     await expectNoRegionGridOverflow(page);
   });
@@ -465,12 +466,12 @@ test.describe("@mockup Ward Flow command view", () => {
     await page.emulateMedia({ colorScheme: "dark" });
     await gotoWardFlow(page);
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
+    await expect(page.getByTestId("home-my-list")).toBeVisible();
     await expect(page.getByTestId("ward-coordinator-governance")).toBeVisible();
 
     await page.emulateMedia({ forcedColors: "active" });
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
+    await expect(page.getByTestId("home-my-list")).toBeVisible();
     await expect(page.getByTestId("ward-coordinator-governance")).toBeVisible();
 
     await page.emulateMedia({ colorScheme: "light", forcedColors: "none", media: "print" });
