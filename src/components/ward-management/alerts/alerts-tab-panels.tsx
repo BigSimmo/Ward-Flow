@@ -2,7 +2,7 @@
 
 // The Alerts screen's Broadcast, Notices and History tab panels. Moved out of `alerts-screen.tsx`
 // to keep it under the line cap; the screen keeps the state and the acts they call.
-import { Clock, Radio, Smartphone, X } from "lucide-react";
+import { Clock, Radio, X } from "lucide-react";
 
 import { Badge, Button, EmptyState, StatusGlyph, TabPanel, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -10,7 +10,6 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 import {
   broadcastKind,
@@ -142,16 +141,6 @@ export function AlertsBroadcastPanel({
               >
                 Extend
               </Button>
-              <UnwiredPreview>
-                <Button
-                  size="sm"
-                  icon={Smartphone}
-                  disabledReason="Not wired in this prototype."
-                  reasonDisplay="tooltip"
-                >
-                  Push to phones
-                </Button>
-              </UnwiredPreview>
             </div>
           </div>
           <div className={styles.directiveRing}>

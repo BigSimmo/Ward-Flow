@@ -2,22 +2,18 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Clock, Network, Activity, Filter, X } from "lucide-react";
+import { Clock, Activity, Filter, X } from "lucide-react";
 
 import {
   BarList,
   CardBody,
-  Donut,
   FilterChip,
   HeroStat,
-  Legend,
   OccupancyRing,
   PhoneListRow,
   ScrollRow,
-  Segmented,
   StatusGlyph,
   cx,
-  tableClasses,
   useIsPhone,
 } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
@@ -33,11 +29,8 @@ import { statisticsSectionById } from "@/components/ward-management/statistics/s
 import { serviceStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import type { Admission } from "@/components/ward-management/ward-admissions";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import type { BedRelease, HealthService, Unit } from "@/components/ward-management/ward-model";
-import { siteByCode } from "@/components/ward-management/ward-sites";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import type { HealthService } from "@/components/ward-management/ward-model";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -56,25 +49,23 @@ import {
 } from "./statistics-phone-parts";
 import { ServiceDot } from "./statistics-services-index";
 import { withheldBar } from "./statistics-small-numbers";
+import {
+  AdmissionStagesCard,
+  EmptyToReadyCard,
+  ServiceOccupancyCard,
+  admissionStageTallies,
+  networkCapacity,
+  networkServiceRows,
+  networkUnitRows,
+} from "./statistics-network-cards";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
-
-/** The five services the network reports, in the order the overview has always shown them. */
-const OVERVIEW_SERVICES = [
-  { id: "NMHS", name: "North Metro", service: "North Metro" },
-  { id: "SMHS", name: "South Metro", service: "South Metro" },
-  { id: "EMHS", name: "East Metro", service: "East Metro" },
-  { id: "WACHS", name: "Country (WACHS)", service: "WACHS" },
-  { id: "PRIV", name: "Private", service: "Private" },
-] as const;
 
 /** "no_specialling" reads "No specialling". */
 const sentenceCase = (text: string) => {
   const spaced = text.replace(/_/g, " ");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 };
-
-const wardsWord = (n: number) => (n === 1 ? "ward" : "wards");
 
 /**
  * ACROSS ALL SERVICES — the whole-of-prototype and Western Australia section.
@@ -126,7 +117,6 @@ export function StatisticsOverviewScreen() {
   const now = live.now;
   const service = useServiceScope();
   const [serviceFilter, setServiceFilter] = useState<string | null>(null);
-  const [stagesView, setStagesView] = useState<"chart" | "data">("chart");
   const isPhone = useIsPhone();
 
   const stageTallies = useMemo(() => admissionStageTallies(admissions), [admissions]);
@@ -159,12 +149,7 @@ export function StatisticsOverviewScreen() {
   );
 
   const unitRows = useMemo(
-    () =>
-      units.map((unit) => {
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-        const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
-        return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
-      }),
+    () => networkUnitRows(units, admissions, bedReleases, leaveBeds),
     [units, admissions, bedReleases, leaveBeds],
   );
   const wardsOverLine = useMemo(
@@ -180,34 +165,7 @@ export function StatisticsOverviewScreen() {
     [admissions],
   );
 
-  const services = useMemo(
-    () =>
-      OVERVIEW_SERVICES.map((entry) => {
-        const rows = unitRows.filter((row) => row.service === entry.service);
-        const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
-        const beds = sum((row) => row.unit.beds);
-        const occupied = sum((row) => row.states.occupied);
-        const inUse = sum((row) => row.states.occupied + row.states.pulled);
-        const ready = sum((row) => row.states.ready);
-        const closed = sum((row) => row.states.closed);
-        const sites = Array.from(
-          new Set(rows.map((row) => shortSite(siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode))),
-        );
-        return {
-          ...entry,
-          beds,
-          occupied,
-          ready,
-          pulled: sum((row) => row.states.pulled),
-          closed,
-          headroom: ready + closed,
-          over: rows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
-          share: beds > 0 ? inUse / beds : 0,
-          hospitals: sites.length > 0 ? sites.join(", ") : "Regional units",
-        };
-      }),
-    [unitRows],
-  );
+  const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
 
   return (
     <StatisticsPage
@@ -309,66 +267,12 @@ export function StatisticsOverviewScreen() {
             </p>
           )}
 
-          <StatCard
-            id="services"
+          <ServiceOccupancyCard
             className={detail.anchor}
-            icon={Network}
-            title="Occupancy by health service"
-            aside={
-              <span className={styles.muted}>
-                {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to highlight its wards
-              </span>
-            }
-          >
-            <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
-              {services.map((entry) => {
-                const pressed = serviceFilter === entry.service;
-                return (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    className={styles.serviceTile}
-                    aria-pressed={pressed}
-                    onClick={() => setServiceFilter(pressed ? null : entry.service)}
-                  >
-                    <span className={styles.serviceTop}>
-                      <Donut value={entry.share} label={`${entry.name} occupancy`} />
-                      <span className={styles.serviceText}>
-                        <span className={styles.serviceName}>{entry.name}</span>
-                        <span className={styles.serviceBeds}>
-                          {entry.occupied}/{entry.beds} beds
-                        </span>
-                        <span className={styles.serviceOver}>
-                          {entry.over === 0
-                            ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
-                            : `${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-                        </span>
-                      </span>
-                    </span>
-                    <span className={styles.serviceFigures}>
-                      <span>
-                        <b>{entry.ready}</b>
-                        {BED_STATE_LABELS.ready}
-                      </span>
-                      <span>
-                        <b>{entry.pulled}</b>
-                        {BED_STATE_LABELS.pulled}
-                      </span>
-                      <span>
-                        <b>{entry.closed}</b>
-                        {BED_STATE_LABELS.closed}
-                      </span>
-                      <span>
-                        <b>{entry.headroom}</b>
-                        Headroom
-                      </span>
-                    </span>
-                    <span className={styles.serviceSites}>{entry.hospitals}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </StatCard>
+            services={services}
+            serviceFilter={serviceFilter}
+            onServiceFilter={setServiceFilter}
+          />
 
           <FlushRow layout="lead2">
             {/* The ward table is the long column: it scrolls inside at the height the cards beside it set. */}
@@ -383,127 +287,14 @@ export function StatisticsOverviewScreen() {
             </Follow>
 
             <FlushStack>
-              <StatCard
-                id="empty-to-ready"
-                icon={Filter}
-                title="Empty to ready"
-                aside={<span className={styles.muted}>Feed vs ward</span>}
-                data-testid="ward-statistics-overview-capacity-disclosure"
-              >
-                <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
-                  <BarList
-                    label="Empty to ready, across the network"
-                    track
-                    labelWidth="9.5rem"
-                    max={Math.max(1, capacity.empty, capacity.allocatable, openNow)}
-                    rows={[
-                      {
-                        id: "empty",
-                        label: "Physically empty",
-                        value: capacity.empty,
-                        display: <span data-testid="ward-statistics-overview-capacity-empty">{capacity.empty}</span>,
-                      },
-                      {
-                        id: "allocatable",
-                        label: "Allocatable",
-                        value: capacity.allocatable,
-                        display: (
-                          <span data-testid="ward-statistics-overview-capacity-allocatable">
-                            {capacity.allocatable}
-                          </span>
-                        ),
-                      },
-                      { id: "open", label: "Open for placement", value: openNow },
-                    ]}
-                  />
-                  <Legend
-                    className={styles.legendEnd}
-                    items={[
-                      {
-                        id: "ready",
-                        fill: "ready",
-                        label: (
-                          <>
-                            <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready
-                          </>
-                        ),
-                      },
-                      { id: "closed", fill: "closed", label: `${closedTotal} closed` },
-                      { id: "pending", fill: "data-1", label: `${preparingCount} pending` },
-                    ]}
-                  />
-                </CardBody>
-              </StatCard>
+              <EmptyToReadyCard
+                capacity={capacity}
+                openNow={openNow}
+                closedTotal={closedTotal}
+                preparingCount={preparingCount}
+              />
 
-              <StatCard
-                id="admission-stages"
-                icon={Activity}
-                title="Admission stages"
-                action={
-                  <Segmented
-                    size="sm"
-                    label="Admission stages view"
-                    value={stagesView}
-                    onChange={setStagesView}
-                    items={[
-                      { id: "chart", label: "Chart" },
-                      { id: "data", label: "Data" },
-                    ]}
-                  />
-                }
-                data-testid="statistics-overview-stages-chart"
-              >
-                {stagesView === "chart" ? (
-                  <CardBody>
-                    <BarList
-                      label="Admissions by stage"
-                      axis
-                      max={axisMax(
-                        stageTallies.map((stage, index) => withheldBar(stage.count, stagesShown[index]!).value),
-                      )}
-                      labelWidth="10.5rem"
-                      rows={stageTallies.map((stage, index) => ({
-                        id: stage.position,
-                        label: stage.label,
-                        ...withheldBar(stage.count, stagesShown[index]!),
-                      }))}
-                    />
-                  </CardBody>
-                ) : (
-                  <div className={styles.tableWrap}>
-                    <table
-                      className={`${tableClasses.table} ${styles.table}`}
-                      data-testid="ward-statistics-overview-stage-table"
-                    >
-                      <caption className={styles.srOnly}>Admissions by stage, synthetic</caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Stage</th>
-                          <th scope="col" className={styles.num}>
-                            Admissions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stageTallies.map((tally, index) => (
-                          <tr key={tally.position}>
-                            <th scope="row">{tally.label}</th>
-                            <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
-                              {stagesShown[index]}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <th scope="row">All stages</th>
-                          <td className={styles.num}>{small(admissions.length)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                )}
-              </StatCard>
+              <AdmissionStagesCard admissions={admissions} />
 
               {/*
                * ⚠️ **A SENTENCE WAS DELETED FROM THIS PARAGRAPH ON 2026-09-01 AND MAY NOT COME BACK.** It told the
@@ -792,67 +583,4 @@ function OverviewPhone({
       </PhoneSheetRow>
     </PhoneBody>
   );
-}
-
-/** "Sir Charles Gairdner Hospital" reads "Sir Charles Gairdner" in a service's hospital list. */
-function shortSite(name: string): string {
-  return name.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/, "");
-}
-
-const ADMISSION_STAGE_LABELS: Record<AdmissionStagePosition, string> = {
-  "no-bed-yet": "Admitted, no bed given yet",
-  "bed-given-not-arrived": "Bed given, not yet arrived",
-  "in-the-bed": "In the bed",
-  ended: "Admission has ended",
-};
-
-/**
- * One row per admission stage, always all four — the same "every member of a closed vocabulary gets
- * a row, including nought" discipline `declinesByReason` (`statistics-derivations.ts`) already
- * documents, applied here to a network-wide count of admissions in each. Routed through
- * `admissionStagePosition` rather than a second read of `Admission.state`, so a stage renamed or
- * added there fails `tsc` on THIS file rather than quietly leaving a row uncounted here.
- *
- * `ADMISSION_STAGE_LABELS` is typed `Record<AdmissionStagePosition, string>` rather than a hand-
- * written list of the four members: TypeScript requires every key of the union to be present, so a
- * fifth stage added to that type fails this file to compile rather than silently missing a row.
- */
-function admissionStageTallies(
-  admissions: Admission[],
-): { position: AdmissionStagePosition; label: string; count: number }[] {
-  const counts: Record<AdmissionStagePosition, number> = {
-    "no-bed-yet": 0,
-    "bed-given-not-arrived": 0,
-    "in-the-bed": 0,
-    ended: 0,
-  };
-  for (const admission of admissions) {
-    counts[admissionStagePosition(admission)] += 1;
-  }
-  return (Object.keys(ADMISSION_STAGE_LABELS) as AdmissionStagePosition[]).map((position) => ({
-    position,
-    label: ADMISSION_STAGE_LABELS[position],
-    count: counts[position],
-  }));
-}
-
-/**
- * Ready, physically empty and confirmed-allocatable, summed across every unit in the network — the
- * whole-of-prototype capacity picture `unitCapacity` (`ward-derivations.ts`) makes possible per
- * unit. "Ready" here is exactly the owner's ruling of 2026-09-04: `min(allocatable, empty)`, never a
- * different number wearing the same word (see `statistics-screen.tsx`'s own note on that ruling).
- */
-function networkCapacity(
-  units: Unit[],
-  bedReleases: BedRelease[],
-): { ready: number; empty: number; allocatable: number } {
-  let ready = 0;
-  let empty = 0;
-  let allocatable = 0;
-  for (const unit of units) {
-    ready += unitCapacity(unit, bedReleases).available;
-    empty += unit.empty.value;
-    allocatable += unit.allocatable.value;
-  }
-  return { ready, empty, allocatable };
 }

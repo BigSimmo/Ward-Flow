@@ -1149,7 +1149,7 @@ function WardProfileBody({
             href={`/ward-flow/board/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
-            Bed board
+            Stays and discharges
           </Link>
         )}
         {inSheet ? null : (
@@ -1291,7 +1291,7 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
-      secondary={{ label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
+      secondary={{ label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
       primary={{ label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }}
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
