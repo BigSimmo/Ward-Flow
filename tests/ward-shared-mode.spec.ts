@@ -47,6 +47,14 @@ async function openDesk(browser: Browser, account: { email: string; password: st
     const response = await route.fetch({ url: route.request().url().replace(supabaseOrigin, authOrigin) });
     await route.fulfill({ response });
   });
+  // A signed-in desk's tour starts on its own once, over the home screen. These journeys are about
+  // the shared workspace, so every desk's tour is marked seen before the page loads.
+  await context.addInitScript(() => {
+    window.localStorage.setItem(
+      "ward_flow_choice_tour_seen",
+      "coordinator,ward,ed,community,officer,bed_manager,executive,admin",
+    );
+  });
   const page = await context.newPage();
   // A desk whose poll the clash test must hold back runs on Playwright's clock: it keeps real time
   // until paused, and while paused the 3 s poll timer cannot fire.

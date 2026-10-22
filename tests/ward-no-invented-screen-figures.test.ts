@@ -167,6 +167,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^ward-shared-client\.ts$/,
     name: /^FULL_READ_EVERY_MS$/,
   },
+  {
+    id: "tour-find-wait",
+    why: "The role tour (22 Oct 2026): how long it waits for a step's control to draw before showing the card in the middle; never shown, not a limit.",
+    file: /^help\/ward-tour\.tsx$/,
+    name: /^FIND_TIMEOUT_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
