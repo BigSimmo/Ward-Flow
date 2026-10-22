@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -128,9 +127,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                             >
                               {row.transferMovement.referredUnitIds.includes(ward.unit.id) ? "Referred" : "Refer"}
                             </Button>
-                          ) : (
-                            <NotWiredButton size="sm" variant="sec" label="Pull" name={`Pull to ${ward.unit.name}`} />
-                          )}
+                          ) : null}
                         </li>
                       ))}
                     </ul>

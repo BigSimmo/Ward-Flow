@@ -26,8 +26,7 @@ import {
   recordName,
   recordedMoment,
 } from "./discharge-board-model";
-import { notWired, RecordedDischargeMilestones } from "./discharge-board-parts";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
+import { RecordedDischargeMilestones } from "./discharge-board-parts";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
 /* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
@@ -234,15 +233,6 @@ export function DischargeRecordDetail({
               </span>
               <span className={pageStyles.secondary}>Recorded discharge blocker</span>
             </div>
-            <UnwiredPreview>
-              <div className={pageStyles.actionDeck}>
-                {notWired("Page transport", `mitigate-note-${activeRecord.admissionId}`)}
-                {notWired("Alternate escort", `mitigate-note-${activeRecord.admissionId}`, "ghost")}
-                <span id={`mitigate-note-${activeRecord.admissionId}`} className="sr-only">
-                  Not wired in this prototype.
-                </span>
-              </div>
-            </UnwiredPreview>
           </div>
         ) : (
           <div className={pageStyles.barrierBox}>
@@ -270,15 +260,6 @@ export function DischargeRecordDetail({
             {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ?? "Not recorded"}
           </dd>
         </dl>
-        <UnwiredPreview>
-          <div className={pageStyles.actionDeck}>
-            {notWired("Page dispatch desk", `transport-note-${activeRecord.admissionId}`)}
-            {notWired("Reassign provider", `transport-note-${activeRecord.admissionId}`, "ghost")}
-            <span id={`transport-note-${activeRecord.admissionId}`} className="sr-only">
-              Not wired in this prototype.
-            </span>
-          </div>
-        </UnwiredPreview>
       </div>
 
       <div
@@ -685,14 +666,6 @@ export function DischargeReleaseDetail({
               </span>
               <span className={pageStyles.secondary}>Recorded discharge blocker</span>
             </div>
-            <UnwiredPreview>
-              <div className={pageStyles.actionDeck}>
-                {notWired("Expedite", `mitigate-rel-note-${detailRelease.id}`)}
-                <span id={`mitigate-rel-note-${detailRelease.id}`} className="sr-only">
-                  Not wired in this prototype.
-                </span>
-              </div>
-            </UnwiredPreview>
           </div>
         ) : (
           <div className={pageStyles.barrierBox}>
@@ -724,14 +697,6 @@ export function DischargeReleaseDetail({
           <dt>Unit</dt>
           <dd>{unitLabel(selectedUnit, detailRelease.unitId)}</dd>
         </dl>
-        <UnwiredPreview>
-          <div className={pageStyles.actionDeck}>
-            {notWired("Dispatch transport", `transport-rel-note-${detailRelease.id}`)}
-            <span id={`transport-rel-note-${detailRelease.id}`} className="sr-only">
-              Not wired in this prototype.
-            </span>
-          </div>
-        </UnwiredPreview>
       </div>
 
       <div {...releasePanelProps("dossier")} className={releasePaneClass("dossier")}>
