@@ -133,7 +133,7 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Female" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), { target: { value: "Voluntary" } });
     fireEvent.change(screen.getByTestId("ward-ed-referral-urgency"), { target: { value: "3" } });
-    fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 

@@ -18,6 +18,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * 🔴 **A COUNT OF ONE IS THE ONLY VALUE THAT CAN BREAK A SENTENCE, AND NO FIXTURE PRODUCED IT.**
@@ -70,7 +71,7 @@ const NOW = NOW_ANCHOR;
 // out-of-vocabulary region — is a compiler error rather than a value that reaches the render.
 const BASE: Omit<Admission, "id" | "pulledAt" | "arrivedAt"> = {
   unitId: UNIT!.id,
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   referralId: null,
   movementId: null,

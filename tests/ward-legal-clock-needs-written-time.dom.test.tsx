@@ -62,6 +62,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const FORM_1A_NOT_FORMED_ID = "WF-001";
 const FORM_1A_FORMED_ID = "WF-005";
 const FORM_3D_NOT_FORMED_ID = "WF-TEST-3D-NOT-FORMED";
@@ -95,7 +96,7 @@ const form3DNotFormed: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Detained awaiting examination",
   legalForm: { code: "3D" },

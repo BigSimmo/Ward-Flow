@@ -137,7 +137,7 @@ describe("PULL_PATIENT refuses to restore a held bed when the ward has no one-to
   it("refuses the second pull with no override reason", () => {
     const state = fullWardAndSteppedBack();
     expect(added(state, wardFlowReducer(state, repull as never))).toEqual([
-      "Wardong (Ward 4.3) has no one-to-one specialling capacity left; this patient needs specialling and the ward cannot staff another",
+      "Wardong (Ward 4.3) has not enough observation staff left; this patient needs Constant within sight (1:1) and the ward cannot staff it",
     ]);
   });
 

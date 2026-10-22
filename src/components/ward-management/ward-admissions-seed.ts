@@ -12,6 +12,7 @@ import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward
 import type { HomeRegion, MovementId, ReferralGender, Sex } from "@/components/ward-management/ward-model";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
 import { generateSeedPatient, type GeneratedSeedPatientCohort } from "@/components/ward-management/ward-patients-seed";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 /**
  * The synthetic people occupying beds across the network.
@@ -284,7 +285,7 @@ function unitOccupants(
       return {
         id: `AD-${suffix}`,
         unitId,
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         referralId: extras?.referralId ?? null,
         movementId: extras?.movementId ?? null,
@@ -321,7 +322,7 @@ function unitOccupants(
     return {
       id: `AD-${suffix}`,
       unitId,
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       referralId: extras?.referralId ?? null,
       movementId: extras?.movementId ?? null,
@@ -412,7 +413,7 @@ function departed(departure: Departure): Admission {
   return {
     id: departure.id,
     unitId: departure.unitId,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: departure.referralId ?? null,
     movementId: departure.movementId ?? null,
@@ -460,7 +461,7 @@ function waiting(
   return {
     id,
     unitId,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

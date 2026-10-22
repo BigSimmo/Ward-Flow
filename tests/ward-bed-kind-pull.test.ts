@@ -23,6 +23,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
 import type { Admission } from "../src/components/ward-management/ward-admissions";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const UNIT_ID = "bty-adult-secure";
 const PULL_NOW = 11 * 60 + 5;
@@ -53,7 +54,7 @@ function stagedForPull(source: Movement, id: Movement["id"], overrides: Partial<
     ...source,
     id,
     highAcuity: false,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
     referredUnitIds: [],
@@ -381,7 +382,7 @@ describe("every release path restores the bed kind PULL_PATIENT took", () => {
         security: "Secure",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

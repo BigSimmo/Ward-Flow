@@ -94,6 +94,7 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { Observation, ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   ArrivalCheckEvent,
@@ -125,14 +126,12 @@ export type ReferralDraft = {
    * absent leaves `Movement.tentativeDiagnosis` unset rather than forcing a guess.
    */
   tentativeDiagnosis?: TentativeDiagnosisBlock;
-  specialling: boolean;
+  observation: Observation; // Recorded at intake (fix plan item 10). See `Movement.observation`.
   /**
    * Whether high-acuity nursing is requested. **The referring clinician marks it — owner ruling,
    * 2026-09-10**, chosen over the system working it out, which would have been the first thing
-   * Ward Flow ever did that assessed a patient.
-   *
-   * A plain `boolean` with `false` as the ordinary state, exactly like `specialling` above. It is
-   * never inferred from `urgency`, `security` or `legalStatus` on this same draft.
+   * Ward Flow ever did that assessed a patient. `false` is the ordinary state, and it is never
+   * inferred from `urgency`, `security` or `legalStatus` on this same draft.
    */
   highAcuity: boolean;
   legalStatus: LegalStatus;
@@ -2570,6 +2569,7 @@ export type WardFlowEvent =
   // #398 and the arrival checklist (D-72): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  | ObservationLevelEvent
   | RecordWardDiagnosisEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,

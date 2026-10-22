@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { ListChecks } from "lucide-react";
+import { ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 
 import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -43,6 +43,12 @@ export function MissedRequestsPanel() {
   const listId = useId();
   // Folded by default, so the check is one line above the board until the coordinator opens it.
   const [open, setOpen] = useState(false);
+  // UX audit (21 Oct 2026): "Checked, all accounted for" waits until the list has been opened once,
+  // so nobody confirms a list they have not looked at. It is kept per day, so a folded list left
+  // past midnight asks again for the new day's list; a list open on screen counts as seen.
+  const [seenDay, setSeenDay] = useState<string | undefined>(undefined);
+  const today = dailyCheckId(now);
+  const seen = open || seenDay === today;
   const items = useMemo(
     () => missedRequestCheck({ movements, referrals, patients, now }),
     [movements, referrals, patients, now],
@@ -65,6 +71,7 @@ export function MissedRequestsPanel() {
     <Card aria-labelledby="ward-missed-check-title" data-testid="ward-missed-check">
       <CardHead
         id="ward-missed-check-title"
+        className={styles.head}
         icon={ListChecks}
         title="Daily check"
         meta={
@@ -83,10 +90,12 @@ export function MissedRequestsPanel() {
               aria-controls={listId}
               onClick={() => {
                 setOpen((current) => !current);
+                setSeenDay(today);
               }}
+              iconEnd={open ? ChevronUp : ChevronDown}
               data-testid="ward-missed-check-toggle"
             >
-              {open ? "Hide" : "Show"}
+              {open ? "Hide list" : "Show list"}
             </Button>
           ) : undefined
         }
@@ -127,6 +136,9 @@ export function MissedRequestsPanel() {
             <Button
               variant="sec"
               size="sm"
+              // Design review (22 Oct 2026, Josh approved): the reason is written beside the tick, as a
+              // hover tooltip never shows on a touch screen.
+              disabledReason={items.length > 0 && !seen ? "Open the list to confirm it" : undefined}
               onClick={() => {
                 raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) });
               }}

@@ -23,6 +23,7 @@ import {
 import { communityTeamSlug } from "../src/components/ward-management/community/community-derivations";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function edReferralToCommunity(state: WardFlowState, teamName = "Armadale Adult Mental Health") {
   return wardFlowReducer(state, {
@@ -487,7 +488,7 @@ describe("REFER_TO_COMMUNITY_TEAM — P1-4 (Ward Lead audit, 2026-09-17): tells 
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

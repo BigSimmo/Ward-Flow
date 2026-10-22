@@ -208,6 +208,9 @@ describe("ED and Delays on a phone (C1)", () => {
 
     fireEvent.click(screen.getByTestId("delays-filter-fold"));
     const sheet = screen.getByRole("dialog", { name: "Filter the list" });
+    // Design review (22 Oct 2026): the views sit together under a Views label in the sheet.
+    const views = within(sheet).getByRole("group", { name: "Views" });
+    expect(within(views).getAllByRole("button")).toHaveLength(4);
     fireEvent.click(within(sheet).getByRole("button", { name: /^Locked bed/ }));
     expect(
       within(sheet)

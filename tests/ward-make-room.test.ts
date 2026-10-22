@@ -13,6 +13,7 @@ import type { BedRelease, Movement } from "../src/components/ward-management/war
 import { boundedBedAvailability } from "../src/components/ward-management/ward-ready-beds";
 import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 import { stayLegalStatus } from "../src/components/ward-management/ward-stay-legal";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 function chainsFor(
   admissions = seedWardFlowState().admissions,
@@ -275,7 +276,7 @@ describe("make room plans", () => {
     const { preview, chains } = previewChains();
     const first = chains[0]!.stepDowns[0]!;
     const admissions = preview.admissions.map((admission) =>
-      admission.id === first.admission.id ? { ...admission, specialling: true } : admission,
+      admission.id === first.admission.id ? { ...admission, observation: observationAt("within_sight") } : admission,
     );
     const units = preview.units.map((unit) => ({ ...unit, speciallingCapacity: 0 }));
     const after = chainsFor(admissions, units);
@@ -317,7 +318,7 @@ describe("make room plans", () => {
     const { preview, chains } = previewChains();
     const chain = chains[0]!;
     const movements = seedWardFlowState().movements.map((movement) =>
-      movement.id === chain.movement.id ? { ...movement, specialling: true } : movement,
+      movement.id === chain.movement.id ? { ...movement, observation: observationAt("within_sight") } : movement,
     );
     const units = preview.units.map((unit) =>
       unit.id === chain.targetUnit.id ? { ...unit, speciallingCapacity: 0 } : unit,
@@ -337,14 +338,16 @@ describe("make room plans", () => {
     const second = { ...original, id: "WF-second-referral" as Movement["id"], openedAt: original.openedAt + 1 };
     const movements = [
       ...state.movements.map((movement) =>
-        movement.id === original.id ? { ...movement, specialling: true } : movement,
+        movement.id === original.id ? { ...movement, observation: observationAt("within_sight") } : movement,
       ),
-      { ...second, specialling: true },
+      { ...second, observation: observationAt("within_sight") },
     ];
     const units = preview.units.map((unit) => (unit.id === target.id ? { ...unit, speciallingCapacity: 1 } : unit));
     // Every stay on the target may step down, and none of them holds a specialling place.
     const admissions = preview.admissions.map((admission) =>
-      admission.unitId === target.id ? { ...admission, specialling: false, stepDownCandidate: true } : admission,
+      admission.unitId === target.id
+        ? { ...admission, observation: GENERAL_OBSERVATION, stepDownCandidate: true }
+        : admission,
     );
     const planned = (wards: typeof units) =>
       chainsFor(admissions, wards, { movements }).some(

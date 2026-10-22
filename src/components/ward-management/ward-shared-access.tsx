@@ -1,6 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
@@ -17,9 +27,11 @@ import styles from "./ward-shared-access.module.css";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
+import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
+// The Demo menu (change 8) loads only when the Synthetic pill opens it.
 const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
   ssr: false,
   loading: () => null,
@@ -59,7 +71,15 @@ export type WardSharedConnection = SharedView & {
  * Where the header asks the data mode to sit (v10: the Prototype pill beside the service pill).
  * Without a header slot (a test, a page with no shell) the full Data mode bar shows above the app.
  */
-const DataModeSlotContext = createContext<((slot: HTMLElement | null) => void) | null>(null);
+const DataModeSlotContext = createContext<((slot: DataModeSlot | null) => void) | null>(null);
+
+/** The Demo menu the pill opens (change 8, D-77). The header passes in its loader, as the menu's demo
+ * panel reaches back to the provider this file sits under, so importing it here would be a cycle. The
+ * pill keeps the loaded menu in state rather than a lazy component, so opening it never waits on a
+ * Suspense reveal timer (a paused test clock would hold that forever). */
+export type WardDemoMenuComponent = ComponentType<{ onClose: (refocus?: boolean) => void }>;
+export type WardDemoMenuLoader = () => Promise<WardDemoMenuComponent>;
+type DataModeSlot = { element: HTMLElement; menu?: WardDemoMenuLoader };
 
 /** What the data mode says, for the phone menu (the phone's lean bar has no room for the pill). */
 export type WardDataMode = {
@@ -76,9 +96,13 @@ export function useWardDataMode(): WardDataMode | null {
 }
 
 /** The header's place for the Prototype pill. Renders nothing outside `WardSharedAccess`. */
-export function WardDataModeSlot({ className }: { className?: string }) {
+export function WardDataModeSlot({ className, menu }: { className?: string; menu?: WardDemoMenuLoader }) {
   const setSlot = useContext(DataModeSlotContext);
-  return setSlot ? <span ref={setSlot} className={className} data-wf-data-mode-slot="" /> : null;
+  const place = useCallback(
+    (element: HTMLElement | null) => setSlot?.(element ? { element, menu } : null),
+    [setSlot, menu],
+  );
+  return setSlot ? <span ref={place} className={className} data-wf-data-mode-slot="" /> : null;
 }
 
 /**
@@ -292,7 +316,7 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [slot, setSlot] = useState<DataModeSlot | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   // Audit 1 (CS-13, Josh 20 Oct): Live chips read Stale while the shared board cannot refresh or
   // its last good refresh is more than two refreshes old. The one publisher; nothing in local mode.
@@ -405,7 +429,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               <DataModeSlotContext.Provider value={setSlot}>
                 <DataModeContext.Provider value={dataMode}>
                   {/* The Prototype pill lives only in the header slot; the standalone data-mode bar was removed. */}
-                  {slot ? createPortal(<DataModePill detail={detail} onHospitalRecords={openLiveInfo} />, slot) : null}
+                  {slot ? createPortal(<DataModePill detail={detail} loadMenu={slot.menu} />, slot.element) : null}
                   {showLiveInfo && (
                     <section className={styles.notice} aria-label="Hospital records unavailable">
                       <h1>Hospital records are not connected</h1>
@@ -442,57 +466,51 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   );
 }
 
-/** v10 header pill: "Synthetic prototype" (Audit 1 SS-4), opening a small panel that says what the data is. */
-function DataModePill({ detail, onHospitalRecords }: { detail: string; onHospitalRecords: () => void }) {
+/**
+ * v10 header pill: "Synthetic prototype" (Audit 1 SS-4). Change 8 (D-77, 21 Oct 2026): it opens the
+ * Demo menu, the scenario, clock and reset controls that left Tools. The pill's label still says
+ * what the data is. The Board time pill opens the same menu (`requestDemoMenu`).
+ */
+function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDemoMenuLoader }) {
   const [open, setOpen] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: PointerEvent) => {
-      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const [Menu, setMenu] = useState<WardDemoMenuComponent | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const show = useCallback(
+    (from?: HTMLElement) => {
+      returnFocus.current = from ?? button.current;
+      setOpen(true);
+      void loadMenu?.().then((menu) => setMenu(() => menu));
+    },
+    [loadMenu],
+  );
+  // The menu closes itself on Escape (refocusing the opener) and on a press outside (not refocusing).
+  const close = useCallback((refocus = true) => {
+    setOpen(false);
+    if (refocus) returnFocus.current?.focus();
+  }, []);
+  useEffect(() => subscribeDemoMenu(show), [show]);
   return (
-    <div ref={wrap} className={styles.pillWrap} data-data-mode="prototype">
+    <div className={styles.pillWrap} data-data-mode="prototype">
       <button
         type="button"
         className={styles.pill}
+        ref={button}
         aria-expanded={open}
-        aria-label={`Data mode: Synthetic prototype. ${detail}`}
+        aria-haspopup="dialog"
+        aria-label={`Data mode: Synthetic prototype. ${detail}. Opens the demo menu`}
         onClick={() => {
-          setOpen((value) => !value);
+          if (open) close();
+          else show();
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
         <span>
-          <span className={styles.pillLong}>Synthetic </span>
-          <span className={styles.pillTail}>prototype</span>
+          Synthetic
+          <span className={styles.pillTail}> prototype</span>
         </span>
       </button>
-      {open && (
-        <section className={styles.pop} aria-label="Ward Flow data mode">
-          <strong>Data mode: Synthetic prototype</strong>
-          <span className={styles.detail}>{detail}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onHospitalRecords();
-            }}
-          >
-            Hospital records (unavailable)
-          </button>
-        </section>
-      )}
+      {open && Menu ? <Menu onClose={close} /> : null}
     </div>
   );
 }

@@ -21,6 +21,7 @@ import type {
 } from "../src/components/ward-management/ward-model";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Bed-matching scenarios for the owner's ruling of 25 September 2026 (Josh): beds are allocated
@@ -114,7 +115,7 @@ function movement(person: Person, genderPlacements?: GenderPlacement[]): Movemen
     sex: person.sex,
     gender: person.gender,
     genderPlacements,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

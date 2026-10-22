@@ -13,6 +13,7 @@ import { waitFactors } from "../src/components/ward-management/ward-priority";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const NOW = NOW_ANCHOR;
 
 function movement(state: WardFlowState, id: string) {
@@ -234,7 +235,7 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
         security: "Open",
         sex: "Male",
         gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         legalFormCode: null,
@@ -694,7 +695,7 @@ describe("the transport legs restate what is holding a movement up", () => {
         security: "Open",
         sex: "Male",
         gender: "Male", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         legalFormCode: null,

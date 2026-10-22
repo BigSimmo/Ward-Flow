@@ -12,6 +12,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * T10 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 8, owner answer
@@ -69,7 +70,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -128,7 +129,7 @@ function stagedForPull(source: Movement, id: Movement["id"], overrides: Partial<
     ...source,
     id,
     highAcuity: false,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
     referredUnitIds: [],

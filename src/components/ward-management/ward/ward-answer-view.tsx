@@ -68,6 +68,7 @@ import {
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
 const ANSWER_ALERT_LINE = 95;
@@ -85,7 +86,7 @@ const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
   security: "Security",
   gender_designation: "Bed designation",
   sex_mix: "Sex mix",
-  specialling: "Specialling",
+  specialling: "Observation staff",
 };
 
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -575,7 +576,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     );
   }
 
-  const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
+  // Fix plan item 10: incoming patients on a constant observation level, accepted here.
+  const activeSpeciallingCount = movements.filter(
+    (m) => isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
+  ).length;
 
   return (
     <div className={styles.answerScreen} data-testid="ward-unit-screen">
@@ -794,8 +798,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           : clearance.cleared
                             ? `Medically cleared at ${formatInstantWithDay(clearance.at, now)}`
                             : "Recorded as not cleared"}
-                        . Specialling: {activeMovement.specialling ? "Requested" : "Not requested"}. This ward&rsquo;s
-                        gates: {checkedGateCount - failedGateCount} of {checkedGateCount} checks met
+                        . Observation level: {observationSummary(activeMovement.observation)}. This ward&rsquo;s gates:{" "}
+                        {checkedGateCount - failedGateCount} of {checkedGateCount} checks met
                         {infoGateCount > 0 ? `; ${infoGateCount} for information only` : ""}.
                       </div>
                     </div>
@@ -840,8 +844,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               <ShieldCheck size={14} aria-hidden="true" />
                               {activeMovement.legalStatus}
                             </span>
-                            {activeMovement.specialling ? (
-                              <span className={styles.phonePatientChip}>1:1 specialling</span>
+                            {isConstantObservation(activeMovement.observation) ? (
+                              <span className={styles.phonePatientChip}>
+                                {observationSummary(activeMovement.observation)}
+                              </span>
                             ) : null}
                             {activeMovement.highAcuity ? (
                               <span className={styles.phonePatientChip}>High acuity</span>
@@ -860,9 +866,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                               <span className={styles.badge} data-tone="danger">
                                 {activeMovement.legalStatus}
                               </span>
-                              {activeMovement.specialling ? (
+                              {isConstantObservation(activeMovement.observation) ? (
                                 <span className={styles.badge} data-tone="warn">
-                                  1:1 Specialling
+                                  {observationSummary(activeMovement.observation)}
                                 </span>
                               ) : null}
                               {activeMovement.highAcuity ? (
@@ -906,8 +912,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                             </div>
                           )}
                           <div>
-                            <dt>Specialling</dt>
-                            <dd>{activeMovement.specialling ? "Requested" : "Not requested"}</dd>
+                            <dt>Observation level</dt>
+                            <dd>{observationSummary(activeMovement.observation)}</dd>
                           </div>
                           <div>
                             <dt>High-acuity nursing</dt>
@@ -1546,7 +1552,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     <span className={styles.milieuValue}>nurse ratio, sex mix</span>
                   </div>
                   <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>1:1 specialling</span>
+                    <span className={styles.milieuLabel}>Constant observation</span>
                     <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
                   </div>
                   <div className={styles.milieuRow}>

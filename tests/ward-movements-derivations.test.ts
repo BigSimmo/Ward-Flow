@@ -32,6 +32,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const NOW = NOW_ANCHOR;
 
 /** A safe, independent copy of a real fixture movement — never a mutation of the shared
@@ -585,7 +586,7 @@ describe("how long a movement has waited", () => {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],

@@ -53,7 +53,7 @@ export function stepDownSubject(
     cohort: fromUnit.cohort,
     security: "Open",
     highAcuity: admission.highAcuity,
-    specialling: admission.specialling,
+    observation: admission.observation,
   };
 }
 

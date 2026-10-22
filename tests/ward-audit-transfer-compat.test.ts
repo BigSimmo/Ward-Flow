@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { emptyCareJourney } from "@/components/ward-management/ward-care-journey";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 it("allows a recorded ward-source referral to reserve a destination and depart its source on arrival", () => {
   let s = seedWardFlowState();
   const a = s.admissions.find((a) => a.state === "occupied" && a.patientId && a.unitId === "rph-adult-secure")!;
@@ -24,7 +25,7 @@ it("allows a recorded ward-source referral to reserve a destination and depart i
     cohort: "Adult",
     security: "Open",
     legalStatus: "Voluntary",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     transport: undefined,
     stage: "accepted_awaiting_bed",

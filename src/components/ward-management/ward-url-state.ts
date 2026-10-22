@@ -33,7 +33,7 @@ function ensureLocationHistoryPatched() {
 }
 
 /** For `useSyncExternalStore`: calls `listener` on Back, Forward and every push or replace. */
-export function subscribeToLocation(listener: () => void) {
+function subscribeToLocation(listener: () => void) {
   ensureLocationHistoryPatched();
   window.addEventListener("popstate", listener);
   window.addEventListener(LOCATION_CHANGE_EVENT, listener);
