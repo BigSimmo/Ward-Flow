@@ -34,6 +34,7 @@ import {
   isForcePushRange,
   isRequiredCiWorkflow,
   isTypecheckExcludedPath,
+  lintBatches,
   lintableFiles,
   needsRepoWideLint,
   needsTypecheck,
@@ -383,6 +384,19 @@ describe("static guard scope selection", () => {
       "eslint-rules/require-button-wiring.mjs",
     ]);
     expect(lintableFiles(["public/demo/x.js"])).toEqual([]);
+  });
+
+  it("splits a very long changed-file list into command-line-sized lint batches", () => {
+    const files = Array.from(
+      { length: 450 },
+      (_, index) => `src/${String(index).padStart(3, "0")}-${"x".repeat(96)}.ts`,
+    );
+    expect(files.join(" ").length).toBeGreaterThan(32_767);
+    const batches = lintBatches(files);
+    expect(batches.map((batch) => batch.length)).toEqual([200, 200, 50]);
+    expect(batches.flat()).toEqual(files);
+    for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(32_767);
+    expect(lintBatches(["src/a.ts"])).toEqual([["src/a.ts"]]);
   });
 
   it("normalizes backslash paths before filtering", () => {
