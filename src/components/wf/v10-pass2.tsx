@@ -142,7 +142,7 @@ export function rowDim(dim: boolean): { "data-dim"?: "true" } {
 
 /* ── TimeRail ─────────────────────────────────────────────────────────────────────────────── */
 
-export type TimeRailMark = {
+type TimeRailMark = {
   id: string;
   /** When it falls, in the caller's minute clock (an `Instant`). */
   at: number;
