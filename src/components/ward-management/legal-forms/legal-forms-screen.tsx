@@ -28,7 +28,6 @@ import {
   type StackSegment,
   type WfFill,
   useIsPhone,
-  useIsTabletPortrait,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -64,7 +63,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { formProgression } from "./legal-form-progression";
-import { FocusPanel, SummaryPanel, type FocusTab } from "./legal-forms-panel";
+import { FocusPanel, type FocusTab } from "./legal-forms-panel";
 import {
   ExtendSheet,
   RecordFormSheet,
@@ -91,7 +90,6 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
-import { WardFormTimes } from "../tools/ward-form-times";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -100,8 +98,9 @@ import wardPin from "../ward-pinned-switch.module.css";
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
  * patient on a Mental Health Act form. The hero answers and carries the highlight chips; three cards under it
  * count what is still to record on the form and who is still to be told; the table lists everyone on a form in
- * two groups that are never ordered against each other; the side panel is Board now (v10: the clock rail with
- * its Passed bay, no ring) until a patient is chosen, then that patient's form. Desktop has no drawer. Review,
+ * two groups that are never ordered against each other. Desktop shows the hero and the list at full width (D-77
+ * change 5): the record-and-tell strip sits behind the phone's sheet only, and a chosen patient's form opens in
+ * a drawer over the list. Form times live in Tools. Review,
  * rates, audit, registers and reports live on Governance. Owner rules kept: no invented deadlines or section
  * numbers (D5), an unconnected action says "Not wired in this prototype." (D4), and a highlight never hides a row.
  */
@@ -204,7 +203,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
-  const isTabletPortrait = useIsTabletPortrait();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
   const openMovements = movements.filter(isOpen);
@@ -517,13 +515,18 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
     : undefined;
 
-  const formTimesCard = (
-    <Card aria-label="Check a form time" className={styles.formTimesCard}>
-      <CardHead title="Check a form time" level={2} aside={<span className={styles.meta}>Also in Tools</span>} />
-      <CardBody>
-        <WardFormTimes />
-      </CardBody>
-    </Card>
+  // Read aloud on both layouts: desktop no longer shows the strip that used to carry it (D-77 change 5).
+  const breakdownNote = (
+    <div className={styles.srOnly} data-testid="legal-form-breakdown">
+      {breakdown.map((form) => {
+        const openWord = form.openCount === 1 ? "open movement" : "open movements";
+        const breachClause =
+          form.breachedCount > 0
+            ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
+            : "";
+        return <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>;
+      })}
+    </div>
   );
 
   const taskStrip = (
@@ -574,16 +577,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             ) : null}
             <span className={styles.stripTotal}>{rows.length} total</span>
           </div>
-          <div className={styles.srOnly} data-testid="legal-form-breakdown">
-            {breakdown.map((form) => {
-              const openWord = form.openCount === 1 ? "open movement" : "open movements";
-              const breachClause =
-                form.breachedCount > 0
-                  ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
-                  : "";
-              return <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>;
-            })}
-          </div>
+          {breakdownNote}
         </CardBody>
       </Card>
 
@@ -808,7 +802,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             </Card>
             <PhoneSheet open={phoneTasks} onClose={() => setPhoneTasks(false)} title="Record and tell" height="tall">
               {taskStrip}
-              {formTimesCard}
             </PhoneSheet>
             <PhoneSheet
               open={selected !== null}
@@ -928,7 +921,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             </div>
             <LegalLimitsNotChecked />
 
-            {taskStrip}
+            {breakdownNote}
 
             <div className={styles.work}>
               <Card className={styles.listCard} aria-label="Everyone on a form">
@@ -1033,30 +1026,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 {view === "history" ? historyList : null}
               </Card>
 
-              <div className={styles.aside} data-wf-rail>
-                {selected && !isTabletPortrait ? (
-                  focusPanel
-                ) : (
-                  <SummaryPanel
-                    rows={rows}
-                    now={now}
-                    soonHours={reminders.soonHours}
-                    urgentHours={reminders.urgentHours}
-                    onSelect={select}
-                  />
-                )}
-                {formTimesCard}
-              </div>
-              {isTabletPortrait && selected ? (
-                // Tablet portrait (v10): the form opens as a drawer over the list.
+              {selected ? (
+                // D-77 change 5: the list keeps the full width and the form opens as a drawer over it.
                 <Drawer
                   open
                   onClose={() => setSelectedId(null)}
                   title={nameOf(selected)}
-                  description={selected.legalForm ? formTitle(selected.legalForm.code) : undefined}
+                  description={`${umrnOf(selected)}${selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}`}
                   testId="ward-legal-form-sheet"
                 >
-                  {focusPanel}
+                  {/* As on the phone sheet, the drawer's own header names the person, so the panel drops its head. */}
+                  <div className={styles.phoneFocus}>{focusPanel}</div>
                 </Drawer>
               ) : null}
             </div>
