@@ -7,6 +7,9 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { isObservation, sameObservation, type Observation } from "@/components/ward-management/ward-observation";
 
+/** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
+export type { Observation };
+
 /**
  * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after intake.
  * Targets the open movement, or the admission once a bed is held; the movement and its live

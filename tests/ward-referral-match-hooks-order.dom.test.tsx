@@ -23,11 +23,11 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
  * previous render." is never raised here.
  *
  * What happens instead is silent: React takes the MOUNT path again, so this view's local state —
- * the decline-reason draft a coordinator has already chosen, the rejection banner, the
- * prior-rejection ref, and the resize subscription behind `useBandGroupsOpenByDefault` — is
- * discarded and rebuilt, with the old subscription's cleanup never run. That is what the two
- * assertions below pin, because it is what a person would actually see and what actually leaks.
- * They fail while the hooks sit below the return and pass once they sit above it.
+ * the decline-reason draft a coordinator has already chosen, the rejection banner and the
+ * prior-rejection ref — is discarded and rebuilt. That is what the assertion below pins, because
+ * it is what a person would actually see. It fails while the hooks sit below the return and passes
+ * once they sit above it. (The band-group resize subscription this also counted went with the
+ * travel-band list, D-77.)
  */
 function MatchHarness({ referral, units }: { referral: Referral; units: Unit[] }) {
   const { now, dispatch, rejections } = useWardFlow();
@@ -70,33 +70,6 @@ const COMMUNITY_ONLY_REFERRAL: Referral = {
  *  reordering or renaming the reasons cannot quietly turn this into a test of the default. */
 const CHOSEN_DECLINE_REASON = REFERRAL_DECLINE_REASONS[REFERRAL_DECLINE_REASONS.length - 1];
 
-/**
- * Counts subscriptions to the band-group media query. `jsdom.setup.ts` installs a stub that hands
- * back a fresh object per call, so the counters live out here rather than on any one of them.
- */
-function installCountingMatchMedia() {
-  const counts = { added: 0, removed: 0 };
-  Object.defineProperty(window, "matchMedia", {
-    writable: true,
-    configurable: true,
-    value: (query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addEventListener: () => {
-        counts.added += 1;
-      },
-      removeEventListener: () => {
-        counts.removed += 1;
-      },
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => false,
-    }),
-  });
-  return counts;
-}
-
 function tree(referral: Referral) {
   return (
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -106,16 +79,16 @@ function tree(referral: Referral) {
 }
 
 describe("ReferralMatchView — every hook is called above the not-a-bed-question early return", () => {
-  it("keeps its local state and its one subscription when a render takes the early-return branch", () => {
-    const mediaCounts = installCountingMatchMedia();
+  it("keeps its local state when a render takes the early-return branch", () => {
     expect(CHOSEN_DECLINE_REASON).not.toBe(REFERRAL_DECLINE_REASONS[0]);
 
     const { rerender } = render(tree(WARD_REFERRAL));
 
-    const select = screen.getByTestId("ward-referral-match-decline-reason");
-    fireEvent.change(select, { target: { value: CHOSEN_DECLINE_REASON } });
-    expect(screen.getByTestId("ward-referral-match-decline-reason")).toHaveValue(CHOSEN_DECLINE_REASON);
-    expect(mediaCounts.added).toBe(1);
+    // D-77: Decline opens the reasons as radio rows on every width.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    const chosen = () => screen.getByTestId(`ward-referral-match-phone-decline-${CHOSEN_DECLINE_REASON}`);
+    fireEvent.click(chosen());
+    expect(chosen()).toHaveAttribute("aria-checked", "true");
 
     // The same component, at the same position in the tree, now rendering a referral with no ward
     // destination. Non-vacuity: it really did take the early-return branch.
@@ -129,10 +102,6 @@ describe("ReferralMatchView — every hook is called above the not-a-bed-questio
 
     // The coordinator's chosen decline reason is still chosen. With the hooks below the return,
     // React re-mounts them here and this reads back as the list's first reason instead.
-    expect(screen.getByTestId("ward-referral-match-decline-reason")).toHaveValue(CHOSEN_DECLINE_REASON);
-
-    // And the resize listener was subscribed once, not abandoned and replaced. A second `added`
-    // with no matching `removed` is a listener nothing will ever detach.
-    expect(mediaCounts).toEqual({ added: 1, removed: 0 });
+    expect(chosen()).toHaveAttribute("aria-checked", "true");
   });
 });

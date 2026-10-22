@@ -303,6 +303,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair completes.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
   COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
+  // D-72: the ward for itself (reducer checks the acting unit), its site's bed manager, or the coordinator.
+  RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "bed_manager", "coordinator"],
+  RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "bed_manager", "coordinator"],
+  RECORD_WARD_INCIDENT: ["ward", "bed_manager", "coordinator"],
+  SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*

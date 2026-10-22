@@ -161,23 +161,23 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   //    not the ward the person is on.
   const movementId = await followOpenMovement(page, plan.getByTestId("ward-out-of-area-recorded"));
   await expectAccessible(page, testInfo, "transfer movement page");
-  // The Destination row opens the shortlist on both layouts (the phone pins Choose wards in its bar).
+  // The Destination row opens the shortlist on both layouts (the phone pins Ask wards in its bar).
   await page.getByTestId("ward-patient-destination-row").click();
   const placement = page.getByRole("dialog", { name: "Destination and placement" });
   await expect(placement).toBeVisible();
-  // The shortlist opens on its Eligible view; a ward that can be referred has an enabled checkbox.
+  // The Ask wards list: a ward that can be asked has an enabled checkbox named by the ward.
   const names = await placement
     .getByRole("checkbox", { disabled: false })
-    .evaluateAll((boxes) => boxes.map((box) => box.closest("label")?.textContent?.trim() ?? ""));
+    .evaluateAll((boxes) => boxes.map((box) => box.getAttribute("aria-label") ?? ""));
   const receivingName = names.find((name) => name !== sendingName);
   expect(receivingName, "the transfer must have an eligible ward other than the sending ward").toBeTruthy();
   const receivingUnitId = allUnits().find((unit) => unit.name === receivingName)?.id;
   expect(receivingUnitId, `${receivingName} must resolve to a unit`).toBeTruthy();
   await placement.getByRole("checkbox", { name: receivingName!, exact: true }).check();
   await expectAccessible(page, testInfo, "destination and placement with a ward chosen");
-  await placement.getByRole("button", { name: /^Refer to selected wards/u }).click();
+  await placement.getByRole("button", { name: /^Ask 1 ward/u }).click();
   await expect(
-    placement.locator("article").filter({ hasText: receivingName! }).getByText("Referred", { exact: true }),
+    placement.getByTestId(`ward-ask-ward-${receivingUnitId}`).getByText("Asked", { exact: true }),
   ).toBeVisible();
   await expectNoReloadSince(page, "referring the transfer");
   await page.keyboard.press("Escape");

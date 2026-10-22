@@ -2,21 +2,12 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  GanttChart,
-  LayoutGrid,
-  List,
-  LogIn,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
+
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
+import { Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
 
 import {
   Button,
@@ -24,7 +15,6 @@ import {
   CheckingFoot,
   Drawer,
   EmptyState,
-  FactGrid,
   GroupHead,
   Hero,
   HeroStat,
@@ -43,7 +33,6 @@ import {
   useIsPhone,
   useIsTabletPortrait,
   BarList,
-  RowSpark,
   RowTrend,
 } from "@/components/wf";
 import {
@@ -53,29 +42,32 @@ import {
   ED_STAGE_LABELS,
   edHomeSummaries,
   edWaitingSeries,
-  type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDeviceChoice } from "@/components/ward-management/shell/use-device-choice";
-import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
+import type { HealthService, MovementStage } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import {
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-  ED_TREND_SPAN_MINUTES,
-  ED_TREND_STEP_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
-import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
+import {
+  CLOCK_TONE,
+  personDim,
+  rowHighlighted,
+  trendSpanHours,
+  waitLine,
+  type EdPerson,
+  type EdRow,
+  type Highlight,
+  type WaitClock,
+} from "./ed-index-parts";
 import styles from "./ed-index.module.css";
-
-const trendSpanHours = ED_TREND_SPAN_MINUTES / 60;
-const trendStepHours = ED_TREND_STEP_MINUTES / 60;
 
 /**
  * All emergency departments (8 Oct 2026, the "A Cards" mockup plus its wait lanes). One hero band
@@ -94,60 +86,12 @@ const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
 const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes";
-type WaitClock = "past" | "severe" | "in";
-
-type EdPerson = {
-  movement: Movement;
-  name: string;
-  /** UMRN, or "UMRN not recorded" (D-39: never the movement id). */
-  umrn: string;
-  href: string;
-  wait: number;
-  clock: WaitClock;
-  stage: string;
-  destination?: string;
-};
-
-type EdRow = {
-  summary: EdSummary;
-  short: string;
-  people: EdPerson[];
-  pastTarget: number;
-  /** Everyone at or over the 8h line, past-target people included. */
-  severe: number;
-  noBed: number;
-  held: number;
-  leaving: number;
-  forms: number;
-  /** Waiting at each 2 hour point over the last 12 hours, the last point now (`edWaitingSeries`). */
-  trend: number[];
-};
 
 const STAGE_LABEL = ED_STAGE_LABELS;
 const HELD = ED_HELD_STAGES;
 const LEAVING = ED_LEAVING_STAGES;
 
-const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
-
-/**
- * Hero highlight chips (v10, five at most). Pressing one keeps the people it names solid in every
- * view and dims the rest by colour. It never hides an ED.
- */
-type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
-const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
-  past: (person) => person.clock === "past",
-  severe: (person) => person.clock !== "in",
-  "no-bed": (person) => edHasNoBedYet(person.movement),
-  held: (person) => HELD.includes(person.movement.stage),
-  form: (person) => Boolean(person.movement.legalForm),
-};
-function personDim(person: EdPerson, highlight: Highlight | null): boolean {
-  return highlight !== null && !HIGHLIGHT_MATCH[highlight](person);
-}
-function rowHighlighted(row: EdRow, highlight: Highlight | null): boolean {
-  return highlight === null || row.people.some(HIGHLIGHT_MATCH[highlight]);
-}
 
 /** Lane scale: logarithmic from zero to seven days, so an hour and a week both stay readable. */
 const LANE_TICKS: readonly [number, string][] = [
@@ -175,11 +119,6 @@ function laneClusters<T extends { wait: number }>(people: readonly T[]): T[][] {
     else clusters.push([person]);
   }
   return clusters;
-}
-
-/** "24h", "8h": the two wait lines as a person says them, never "1d" or "8h 00m". */
-function waitLine(minutes: number): string {
-  return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
 function serviceShortName(service: HealthService): string {
@@ -660,48 +599,8 @@ export function EdIndex() {
           onClose={() => setPreviewId(null)}
           title={previewRow ? previewRow.short : "ED preview"}
           description={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
-          headerActions={
-            isPhone || ordered.length < 2 ? undefined : (
-              <span className={styles.previewSteps}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  icon={ChevronLeft}
-                  aria-label="Previous ED"
-                  onClick={() => stepPreview(-1)}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  icon={ChevronRight}
-                  aria-label="Next ED"
-                  onClick={() => stepPreview(1)}
-                />
-              </span>
-            )
-          }
-          footer={
-            previewRow ? (
-              <div className={styles.previewFoot}>
-                <Link
-                  className={buttonClass({ variant: "sec" })}
-                  href={raiseReferralHref({ source: "ed_medical", originEdId: previewRow.summary.ed.id })}
-                >
-                  Raise referral
-                </Link>
-                <Link
-                  className={buttonClass({ variant: "pri" })}
-                  href={edHref(previewRow.summary.ed.id)}
-                  data-testid="ed-index-preview-enter"
-                >
-                  <Icon icon={LogIn} size={16} />
-                  Enter {previewRow.short}
-                </Link>
-              </div>
-            ) : null
-          }
+          headerActions={isPhone || ordered.length < 2 ? undefined : <EdPreviewSteps onStep={stepPreview} />}
+          footer={previewRow ? <EdPreviewFoot row={previewRow} /> : null}
           testId="ed-index-preview"
         >
           {previewRow ? <EdPreview row={previewRow} highlight={highlight} accessTarget={accessTarget} /> : null}
@@ -1097,75 +996,11 @@ function EdLanes({
           secondary={{ label: "Open patient", onAction: () => router.push(picked.person.href) }}
           data-testid="ed-index-lane-sheet"
         >
-          <FactGrid
-            className={styles.previewFacts}
-            facts={[
-              {
-                id: "wait",
-                label: "In ED",
-                value: (
-                  <span className={styles.longest}>
-                    {picked.person.clock !== "in" ? (
-                      <StatusGlyph tone={CLOCK_TONE[picked.person.clock]} size={9} />
-                    ) : null}
-                    <b className={styles.num}>{splitDuration(picked.person.wait)}</b>
-                  </span>
-                ),
-              },
-              { id: "stage", label: "Stage", value: picked.person.stage },
-              {
-                id: "form",
-                label: "Form",
-                // Audit 1 (CS-14, Josh 20 Oct): "None" only for a voluntary person.
-                value: picked.person.movement.legalForm
-                  ? legalStatusShort(picked.person.movement)
-                  : picked.person.movement.legalStatus === "Voluntary"
-                    ? "None"
-                    : "Not recorded",
-              },
-              {
-                id: "tier",
-                label: "Tier",
-                value: <span className={styles.tierChip}>T{picked.person.movement.urgency}</span>,
-              },
-            ]}
-          />
-          <dl className={styles.laneFacts}>
-            <div>
-              <dt>Cohort</dt>
-              <dd>
-                {picked.person.movement.cohort} · {picked.person.movement.sex}
-              </dd>
-            </div>
-            <div>
-              <dt>Destination</dt>
-              <dd>{picked.person.destination ?? "Not yet found"}</dd>
-            </div>
-          </dl>
+          <EdLaneFacts person={picked.person} />
         </PhoneSheet>
       ) : picked ? (
         <div className={styles.picked} aria-live="polite">
-          <span className={styles.tier} title={`Tier ${picked.person.movement.urgency}`}>
-            {picked.person.movement.urgency}
-          </span>
-          <b className={styles.pickedName}>{picked.person.name}</b>
-          <span className={styles.meta}>
-            {picked.row.short} · {picked.person.stage}
-            {picked.person.movement.legalForm ? ` · Form ${picked.person.movement.legalForm.code}` : ""}
-            {picked.person.destination ? ` · ${picked.person.destination}` : ""}
-          </span>
-          <span className={styles.longest}>
-            {picked.person.clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[picked.person.clock]} size={9} /> : null}
-            <b className={styles.num}>{splitDuration(picked.person.wait)}</b>
-          </span>
-          <span className={styles.pickedActions}>
-            <Link className={buttonClass({ variant: "sec", size: "sm" })} href={picked.person.href}>
-              Open patient
-            </Link>
-            <Link className={buttonClass({ variant: "pri", size: "sm" })} href={edHref(picked.row.summary.ed.id)}>
-              Open {picked.row.short}
-            </Link>
-          </span>
+          <EdLanePicked person={picked.person} row={picked.row} />
         </div>
       ) : null}
       <div className={styles.lanesFoot}>
@@ -1299,80 +1134,90 @@ function PhoneEdList({
   );
 }
 
-/** The ED preview's body: facts, the 12 hour trend and who is waiting, longest first. */
-function EdPreview({
-  row,
-  highlight,
-  accessTarget,
-}: {
-  row: EdRow;
-  highlight: Highlight | null;
-  accessTarget: number;
-}) {
-  const isPhone = useIsPhone();
-  return (
-    <div className={styles.preview} data-testid="ed-index-preview-body">
-      <FactGrid
-        className={styles.previewFacts}
-        facts={[
-          { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
-          {
-            id: "past",
-            label: `Past ${waitLine(accessTarget)}`,
-            value: <b className={styles.num}>{row.pastTarget}</b>,
-          },
-          { id: "no-bed", label: "No bed yet", value: <b className={styles.num}>{row.noBed}</b> },
-          { id: "form", label: "Under a form", value: <b className={styles.num}>{row.forms}</b> },
-        ]}
-      />
-      <section className={styles.previewSection} aria-labelledby="ed-preview-trend">
-        <h3 id="ed-preview-trend" className={styles.eyebrow}>
-          {`Last ${trendSpanHours} hours`}
-        </h3>
-        <div className={styles.previewTrend}>
-          <RowSpark values={row.trend} name={row.short} big testId="ed-row-spark" />
-          <span className={styles.meta}>{`${row.trend.join(" · ")} now · every ${trendStepHours}h`}</span>
-        </div>
-      </section>
-      <section className={styles.previewSection} aria-labelledby="ed-preview-people">
-        <h3 id="ed-preview-people" className={styles.eyebrow}>
-          Waiting, longest first
-        </h3>
-        {row.people.length === 0 ? (
-          <p className={styles.previewEmpty}>
-            <StatusGlyph tone="success" size={9} /> No one waiting at {row.short}
-          </p>
-        ) : (
-          <ul className={styles.previewList} data-phone={isPhone ? "true" : undefined}>
-            {row.people.map((person) => (
-              <li
-                key={person.movement.id}
-                className={styles.previewPerson}
-                data-act-now={person.clock === "past" ? "true" : undefined}
-                data-dim={personDim(person, highlight) ? "true" : undefined}
-              >
-                <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
-                <span className={styles.previewText}>
-                  <Link href={person.href} className={styles.previewName}>
-                    {person.name}
-                  </Link>
-                  <span className={styles.meta}>
-                    {isPhone ? (
-                      <>
-                        <span className={styles.previewUmrn}>{person.umrn}</span> ·{" "}
-                      </>
-                    ) : null}
-                    {person.stage}
-                    {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
-                    {person.destination ? ` · ${person.destination}` : ""}
-                  </span>
-                </span>
-                <b className={styles.num}>{splitDuration(person.wait)}</b>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+/*
+ * Phone script budget (22 October 2026): the preview body, the phone lane facts and the desktop
+ * picked strip draw only once an ED or a person is chosen, so their code loads after the first
+ * paint and is fetched when the browser is idle. Not `next/dynamic`, which holds a freshly loaded
+ * panel back for a frame or more; a loaded body draws straight away.
+ */
+type PreviewModule = typeof import("./ed-preview");
+let loadedPreview: PreviewModule | undefined;
+// One fetch shared by every part of the preview. A failed fetch is forgotten so Try again fetches anew,
+// and a load from any part draws all of them.
+let pendingPreview: Promise<PreviewModule> | undefined;
+const previewListeners = new Set<() => void>();
+const loadPreview = () =>
+  (pendingPreview ??= import("./ed-preview").then(
+    (m) => {
+      loadedPreview = m;
+      previewListeners.forEach((listener) => listener());
+      return m;
+    },
+    (error: unknown) => {
+      pendingPreview = undefined;
+      throw error;
+    },
+  ));
+preloadWhenIdle(loadPreview);
+const subscribePreview = (listener: () => void) => {
+  previewListeners.add(listener);
+  return () => void previewListeners.delete(listener);
+};
+
+function usePreviewModule() {
+  const loaded = useSyncExternalStore(
+    subscribePreview,
+    () => loadedPreview,
+    () => undefined,
   );
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    // Every part is drawn from `loaded` first, so a stale failure after a later load is never shown.
+    if (!loaded && !failed) loadPreview().catch(() => setFailed(true));
+  }, [loaded, failed]);
+  return { loaded, failed, retry: () => setFailed(false) };
+}
+
+// A failed fetch (patchy Wi-Fi, or a new deploy) must not leave the preview blank without a word.
+function PreviewLoadFailed({ retry }: { retry: () => void }) {
+  return (
+    <p role="status" data-testid="ward-ed-preview-load-failed">
+      The ED details did not load.{" "}
+      <Button variant="sec" onClick={retry}>
+        Try again
+      </Button>
+    </p>
+  );
+}
+
+function EdPreview(props: ComponentProps<PreviewModule["EdPreview"]>) {
+  const { loaded, failed, retry } = usePreviewModule();
+  const Body = loaded?.EdPreview;
+  if (Body) return <Body {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
+}
+
+function EdPreviewSteps(props: ComponentProps<PreviewModule["EdPreviewSteps"]>) {
+  const Steps = usePreviewModule().loaded?.EdPreviewSteps;
+  return Steps ? <Steps {...props} /> : null;
+}
+
+function EdPreviewFoot(props: ComponentProps<PreviewModule["EdPreviewFoot"]>) {
+  // On a failed load the preview body above says so and offers Try again.
+  const Foot = usePreviewModule().loaded?.EdPreviewFoot;
+  return Foot ? <Foot {...props} /> : null;
+}
+
+function EdLanePicked(props: ComponentProps<PreviewModule["EdLanePicked"]>) {
+  const { loaded, failed, retry } = usePreviewModule();
+  const Picked = loaded?.EdLanePicked;
+  if (Picked) return <Picked {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
+}
+
+function EdLaneFacts(props: ComponentProps<PreviewModule["EdLaneFacts"]>) {
+  const { loaded, failed, retry } = usePreviewModule();
+  const Facts = loaded?.EdLaneFacts;
+  if (Facts) return <Facts {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
 }

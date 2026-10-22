@@ -1,6 +1,7 @@
 /*
  * The community team screen's third desktop list: expected back, discharged into the catchment,
- * left another way, and referrals this team has made.
+ * and left another way. The referrals this team made are on the Sent tab
+ * (`community-screen-sent-tab.tsx`, D-77 group A).
  *
  * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor:
  * the markup, text, class names and behaviour are unchanged. Comments moved with the code, so
@@ -390,34 +391,6 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                   : `${lists.otherDepartures.length} other ${
                       lists.otherDepartures.length === 1 ? "admission" : "admissions"
                     } referred to this team ${lists.otherDepartures.length === 1 ? "has" : "have"} ended, recorded as: ${otherDepartureDestinations(lists.otherDepartures)}. None of those records says the person came back into the community, so none is on the list above.`}
-            </p>
-          </div>
-        </section>
-
-        {/* ── List 3, moved to the end — the one that cannot be built ──────────────────── */}
-        <section
-          className={styles.cardPanel}
-          aria-label="Referrals we have made"
-          data-testid="ward-community-referrals"
-        >
-          <div className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>
-              <span>Referrals we have made</span>
-            </h3>
-          </div>
-          <div className={styles.panelBody} role="region" aria-label="Referrals we have made details" tabIndex={0}>
-            {/*
-             * Point 3. Rendered as a section with a statement and no list, deliberately. Leaving the
-             * section out would let a reader assume the hub had shown everything it knows; filtering
-             * community-sourced referrals by the patient's home region would produce a list that
-             * looked exactly right and was not this team's.
-             *
-             * No count in this panel's header, deliberately: a nought would read as "no referrals
-             * raised", and nothing on this page can measure that.
-             */}
-            <p className={styles.absenceNotice} data-testid="ward-community-referrals-unattributable">
-              <strong>Referrals raised by this team cannot be attributed.</strong> The source records only
-              &ldquo;community&rdquo;, without a team name, so no list is shown.
             </p>
           </div>
         </section>

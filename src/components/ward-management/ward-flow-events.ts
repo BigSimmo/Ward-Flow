@@ -94,8 +94,8 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { Observation } from "@/components/ward-management/ward-observation";
-import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { Observation, ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -126,8 +126,7 @@ export type ReferralDraft = {
    * absent leaves `Movement.tentativeDiagnosis` unset rather than forcing a guess.
    */
   tentativeDiagnosis?: TentativeDiagnosisBlock;
-  /** The observation level the ED recorded at intake (fix plan item 10). See `Movement.observation`. */
-  observation: Observation;
+  observation: Observation; // Recorded at intake (fix plan item 10). See `Movement.observation`.
   /**
    * Whether high-acuity nursing is requested. **The referring clinician marks it — owner ruling,
    * 2026-09-10**, chosen over the system working it out, which would have been the first thing
@@ -872,6 +871,8 @@ export type WardFlowEvent =
       action: BedMeetingActionKind;
       actingUnitId?: string;
     }
+  // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
+  | RestrictivePracticeWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;

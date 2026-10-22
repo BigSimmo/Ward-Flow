@@ -5,12 +5,7 @@ import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
 } from "@/components/ward-management/ward-flow-persistence-classification";
 
-/**
- * Josh's wording (21 Oct 2026, fix plan item 2): what a typed field holds in the copy of the session
- * kept on this device, and so what it shows after a refresh. The typed value itself stays in memory
- * for the session and is never written (D-18).
- */
-export const TYPED_TEXT_NOT_KEPT = "Typed text not kept on this device";
+export { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 /** Every typed value this session has dispatched, in memory only. Never saved, logged or sent. */
 export type TypedTextLedger = readonly string[];

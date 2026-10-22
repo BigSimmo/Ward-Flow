@@ -187,6 +187,7 @@ import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
 import { reducePlacementEvent } from "./ward-flow-placement-events";
@@ -2290,6 +2291,11 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_WARD_INCIDENT":
+    case "SET_SECLUSION_ROOM_STATUS":
+      return reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
     case "SEND_RELEASE_SUPPORT_NOTICE":
       return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
     case "RECORD_ARRIVAL_CHECK":
