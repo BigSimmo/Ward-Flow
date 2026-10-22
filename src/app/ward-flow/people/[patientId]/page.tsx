@@ -3,16 +3,17 @@ import { redirect } from "next/navigation";
 
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
-import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import type { PatientId } from "@/components/ward-management/ward-patients";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { decodeRecordAddress, querySuffix } from "@/components/ward-management/shell/ward-record-address";
 
-/** Person and movement IDs share Patient Now; the governed dossier remains available by query. */
+/**
+ * Person and movement IDs share Patient Now. The older governed dossier (`?view=governed`) was
+ * retired on 21 Oct 2026 (Josh), so there is one patient record; an old `?view=` is ignored.
+ */
 export const metadata: Metadata = {
   // D-1 (owner, 2026-09-10): "But call this page Patient." The screen name is now "Patient";
-  // `person-screen.tsx` sets the same string client-side, because this route is also reached by
+  // Patient Now sets the same string client-side, because this route is also reached by
   // client-side navigation that this static export cannot see. The route segment, the file and the
   // `PatientId` type stay named for the person — D-1 does not authorise renaming those.
   title: "Patient — Ward Flow",
@@ -46,10 +47,6 @@ export default async function WardPersonPage({
   if (UMRN_IN_ADDRESS.test(id)) return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
   if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
-  }
-  const governed = query?.view === "governed" || query?.view === "legacy";
-  if (governed) {
-    return <PersonScreen patientId={id as PatientId} />;
   }
   return (
     <PatientNowScreen

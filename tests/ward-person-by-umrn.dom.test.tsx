@@ -11,9 +11,6 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/components/ward-management/patients/patient-now-screen", () => ({
   PatientNowScreen: ({ patientId }: { patientId?: string }) => <p data-testid="patient-now">{patientId}</p>,
 }));
-vi.mock("@/components/ward-management/patients/person-screen", () => ({
-  PersonScreen: ({ patientId }: { patientId: string }) => <p data-testid="person-screen">{patientId}</p>,
-}));
 
 import { PersonByUmrn } from "@/components/ward-management/patients/person-by-umrn";
 import { takeHandedOffPatientSearchText } from "@/components/ward-management/search/patient-query-handoff";
@@ -24,7 +21,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 function renderUmrn(umrn: string) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <PersonByUmrn umrn={umrn} governed={false} />
+      <PersonByUmrn umrn={umrn} />
     </WardFlowProvider>,
   );
 }
