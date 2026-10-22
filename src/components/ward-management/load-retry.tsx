@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 
-import { StateLine } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
+
+import styles from "./load-retry.module.css";
 
 /**
  * Offline Tools crash (22 October 2026): when the code of a `next/dynamic` panel could not be
@@ -10,7 +12,7 @@ import { StateLine } from "@/components/wf";
  * boundary, so opening Tools offline replaced the whole page with "Something went wrong".
  *
  * Wrap the panel's loader in this. If the fetch fails, the panel resolves to a stand-in that shows
- * one error line with Try again. It fetches again on Try again and when the browser comes back
+ * one error line with a 44px Try again. It fetches again on Try again and when the browser comes back
  * online, and draws the real panel once the code arrives, including on every later open.
  */
 export function withLoadRetry<P extends object>(
@@ -47,13 +49,16 @@ export function withLoadRetry<P extends object>(
     }, [retry]);
     if (Panel) return <Panel {...props} />;
     return (
-      <StateLine
-        kind="error"
-        title={title}
-        reason="Check the connection, then try again."
-        action={{ label: "Try again", onAction: retry }}
-        data-testid="ward-load-retry"
-      />
+      <div className={styles.retry} role="alert" data-testid="ward-load-retry">
+        <p className={styles.message}>
+          <StatusGlyph tone="danger" className={styles.glyph} />
+          <span className={styles.title}>{title}.</span>{" "}
+          <span className={styles.reason}>Check the connection, then try again.</span>
+        </p>
+        <Button variant="sec" size="lg" className={styles.action} onClick={retry}>
+          Try again
+        </Button>
+      </div>
     );
   }
 

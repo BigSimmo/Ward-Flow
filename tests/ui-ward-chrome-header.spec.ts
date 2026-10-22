@@ -719,6 +719,8 @@ test("@mockup Tools opened offline shows Try again, then opens once back online"
   const retry = tools.getByTestId("ward-load-retry");
   await expect(retry).toContainText("Tools did not load");
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
+  const tryAgain = await retry.getByRole("button", { name: "Try again" }).boundingBox();
+  expect(tryAgain?.height, "Try again is under the 44px tap floor").toBeGreaterThanOrEqual(44);
   await expect(page.getByTestId("ward-bar")).toBeVisible();
 
   // Try again while still offline keeps the line; coming back online fetches the code by itself.
