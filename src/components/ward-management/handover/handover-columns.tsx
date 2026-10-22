@@ -75,7 +75,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 172,
+    width: 180,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -92,7 +92,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 140,
+    width: 110,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
@@ -193,7 +193,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     // and Patient, Status and From and to give way (names truncate first).
     id: "next",
     header: "Next step",
-    width: 300,
+    width: 270,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (
