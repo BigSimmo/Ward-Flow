@@ -43,7 +43,7 @@ const STAGE_BLURBS: Record<MovementStage, string> = {
   placement_requested: "A destination has been asked for; nothing has responded yet.",
   destination_review: "At least one unit is weighing up whether it can take this patient.",
   accepted_awaiting_bed: "A unit has agreed in principle, but no bed has been pulled yet.",
-  pulled: "A bed is being held for this patient, and the hold has a time limit.",
+  pulled: "A bed is pulled for this patient, and the pull has a time limit.",
   handover_ready: "Bed and paperwork are ready; only the physical move is outstanding.",
   moving: "A vehicle has collected the patient and the move is under way.",
   arrived: "The patient has arrived — this leg of the journey is complete.",
@@ -521,7 +521,7 @@ export type MovementHorizonLane = {
 /** Same display title `delayGroups`' `bed_pull_expired` cause already uses
  *  (`delays/delays-derivations.ts`) for exactly this fact — a held bed whose reserved time has
  *  passed. Reused rather than re-worded, so this chart cannot describe the same fact differently. */
-const BED_PULL_EXPIRED_TITLE = "Reserved time has passed, bed still held";
+const BED_PULL_EXPIRED_TITLE = "Pull expired, bed still pulled";
 
 function horizonEventType(movement: Movement, now: Instant): MovementHorizonEventType {
   if (movement.stage === "moving") return "transit";

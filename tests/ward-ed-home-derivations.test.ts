@@ -167,7 +167,7 @@ describe("edHomeSummaries", () => {
       ED_ACCESS_TARGET_MINUTES,
     ).find((s) => s.ed.id === edA.id);
     const withDeclinesAndNoReferral = edHomeSummaries(
-      [movement({ ...base, referredUnitIds: [], declines: [{ unitId: "u1", at: 0, reason: "no_bed" }] })],
+      [movement({ ...base, referredUnitIds: [], declines: [{ unitId: "u1", at: 0, reason: "no_suitable_bed" }] })],
       NOW,
       ED_ACCESS_TARGET_MINUTES,
     ).find((s) => s.ed.id === edA.id);

@@ -981,7 +981,9 @@
   padding: 8px;
 }
 
-@media (max-width: 75rem) {
+/* Beside the side rail, the table needs about 900px for its six columns, so the sign-off card
+ * moves under it below 1440px instead of squeezing every column to an ellipsis. */
+@media (max-width: 90rem) {
   .split {
     grid-template-columns: minmax(0, 1fr);
   }

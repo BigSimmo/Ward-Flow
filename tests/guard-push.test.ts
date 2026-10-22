@@ -34,6 +34,7 @@ import {
   isForcePushRange,
   isRequiredCiWorkflow,
   isTypecheckExcludedPath,
+  lintBatches,
   lintableFiles,
   needsRepoWideLint,
   needsTypecheck,
@@ -383,6 +384,27 @@ describe("static guard scope selection", () => {
       "eslint-rules/require-button-wiring.mjs",
     ]);
     expect(lintableFiles(["public/demo/x.js"])).toEqual([]);
+  });
+
+  it("splits a very long changed-file list into command-line-sized lint batches", () => {
+    const files = Array.from(
+      { length: 450 },
+      (_, index) => `src/${String(index).padStart(3, "0")}-${"x".repeat(96)}.ts`,
+    );
+    expect(files.join(" ").length).toBeGreaterThan(32_767);
+    const batches = lintBatches(files);
+    expect(batches.length).toBeGreaterThan(1);
+    for (const batch of batches) expect(batch.length).toBeLessThanOrEqual(200);
+    expect(lintBatches(files.map((_, index) => `s/${index}.ts`)).map((batch) => batch.length)).toEqual([200, 200, 50]);
+    expect(batches.flat()).toEqual(files);
+    for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(6_000);
+    expect(lintBatches(["src/a.ts"])).toEqual([["src/a.ts"]]);
+    const longPaths = Array.from({ length: 200 }, (_, index) => `src/${"nested/".repeat(22)}${index}.ts`);
+    expect(longPaths.join(" ").length).toBeGreaterThan(32_767);
+    const longBatches = lintBatches(longPaths);
+    expect(longBatches.length).toBeGreaterThan(1);
+    expect(longBatches.flat()).toEqual(longPaths);
+    for (const batch of longBatches) expect(batch.join(" ").length).toBeLessThan(6_000);
   });
 
   it("normalizes backslash paths before filtering", () => {

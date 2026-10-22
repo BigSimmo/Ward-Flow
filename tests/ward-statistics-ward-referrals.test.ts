@@ -48,7 +48,7 @@ import type { Decline, Movement } from "@/components/ward-management/ward-model"
  * how a wrong value ships looking tested. **And this happened hours after I built the third
  * vocabulary and wrote a guard against anybody merging two of them.**
  */
-const A_DECLINE: Decline = { unitId: "placeholder", at: 0, reason: "no_bed" };
+const A_DECLINE: Decline = { unitId: "placeholder", at: 0, reason: "no_suitable_bed" };
 
 const SEED = seedWardFlowState();
 const TEMPLATE = SEED.movements[0];

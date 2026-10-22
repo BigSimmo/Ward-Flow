@@ -721,7 +721,11 @@ describe("referrals where every ward asked so far has refused", () => {
       referrals: [],
       bedReleases: [],
       movements: [
-        movement({ id: "WF-A", referredUnitIds: [], declines: [{ unitId: "unit-1", at: 0, reason: "no_bed" }] }),
+        movement({
+          id: "WF-A",
+          referredUnitIds: [],
+          declines: [{ unitId: "unit-1", at: 0, reason: "no_suitable_bed" }],
+        }),
         movement({ id: "WF-B", referredUnitIds: ["unit-2"], declines: [] }),
       ],
     });
@@ -806,7 +810,7 @@ describe("referrals where every ward asked so far has refused", () => {
         movement({
           id: "WF-C",
           referredUnitIds: [],
-          declines: [{ unitId: "unit-1", at: 0, reason: "no_bed" }],
+          declines: [{ unitId: "unit-1", at: 0, reason: "no_suitable_bed" }],
           escalation: { at: 0, triedUnitIds: ["unit-1"], contact: "State bed coordination" },
         }),
       ],

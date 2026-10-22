@@ -69,14 +69,14 @@ describe("Overview on the executive desk, counts only", () => {
     renderScreen(<StatisticsOverviewScreen />);
 
     // Seed: one no-bed decline, from two of the movements, two escalated.
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("fewer than 5");
-    expect(text("ward-statistics-overview-decline-sex_mix")).toBe("none");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("fewer than 5");
+    expect(text("ward-statistics-overview-decline-sex_designation_unavailable")).toBe("none");
     expect(text("ward-statistics-overview-declines-total")).toBe("6");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("fewer than 5");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("fewer than 5");
     // A worded bar reads its words to a screen reader, not the number.
     const chart = within(screen.getByTestId("ward-statistics-overview-declines-table"));
-    expect(chart.getByText("No bed: fewer than 5")).toBeInTheDocument();
+    expect(chart.getByText("No suitable bed: fewer than 5")).toBeInTheDocument();
 
     // Bed figures stay exact: one bed pending preparation, 45 physically empty.
     expect(text("ward-statistics-overview-preparing-value")).toBe("1");
@@ -93,7 +93,7 @@ describe("Overview on the executive desk, counts only", () => {
   it("shows the coordinator the exact counts", () => {
     asDesk("coordinator", true);
     renderScreen(<StatisticsOverviewScreen />);
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("1");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("1");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
   });
@@ -101,7 +101,7 @@ describe("Overview on the executive desk, counts only", () => {
   it("shows the executive the exact counts while the flag is off", () => {
     asDesk("executive", false);
     renderScreen(<StatisticsOverviewScreen />);
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("1");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("1");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
     expect(screen.queryByText("fewer than 5")).toBeNull();

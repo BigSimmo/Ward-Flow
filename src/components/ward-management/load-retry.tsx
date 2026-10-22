@@ -13,7 +13,8 @@ import styles from "./load-retry.module.css";
  *
  * Wrap the panel's loader in this. If the fetch fails, the panel resolves to a stand-in that shows
  * one error line with a 44px Try again, which fetches again and draws the real panel once the code
- * arrives, including on every later open. Kept small: it sits in the code every page loads.
+ * arrives, including on every later open. A panel given `onClose` also gets a Close button. Kept
+ * small: it sits in the code every page loads.
  */
 export function withLoadRetry<P extends object>(
   load: () => Promise<ComponentType<P>>,
@@ -25,6 +26,8 @@ export function withLoadRetry<P extends object>(
   function LoadRetry(props: P) {
     const [Panel, setPanel] = useState(() => loaded);
     if (Panel) return <Panel {...props} />;
+    // A drawer that draws its own header (Referrals, Tasks) has no other close control on a phone.
+    const { onClose } = props as { onClose?: () => void };
     return (
       <div className={styles.retry} role="alert" data-testid="ward-load-retry">
         <p>
@@ -43,6 +46,11 @@ export function withLoadRetry<P extends object>(
         >
           Try again
         </Button>
+        {onClose ? (
+          <Button variant="sec" size="lg" onClick={onClose}>
+            Close
+          </Button>
+        ) : null}
       </div>
     );
   }

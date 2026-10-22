@@ -267,6 +267,11 @@ describe("front-door contract — fixed lists", () => {
       "secure_bed_unavailable",
       "belongs_to_another_service",
       "referred_elsewhere",
+      // D-78 (Josh, 21 Oct 2026): the ward-only reasons joined when the two decline lists merged.
+      "specialling_unavailable",
+      "acuity_mix",
+      "capability_mismatch",
+      "bed_pulled_for_earlier_referral",
       "another_reason",
     ]);
   });
@@ -773,6 +778,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
       secure_bed_unavailable: "the network",
       belongs_to_another_service: "the request",
       referred_elsewhere: "the request",
+      // D-78: the ward-only reasons are each about the ward's own staffing, mix, skills or beds.
+      specialling_unavailable: "this department",
+      acuity_mix: "this department",
+      capability_mismatch: "this department",
+      bed_pulled_for_earlier_referral: "this department",
       // ⚠️ "this department", and the guard is right to have made me say so. A catch-all is the
       // easiest place in this list to smuggle a judgement about the person: "another reason" could
       // mean "this ward has a reason of its own" or it could mean "there is something about this

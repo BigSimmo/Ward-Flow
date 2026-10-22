@@ -19,7 +19,7 @@ export const PATIENT_MODES: Record<
   { label: string; pill: string; tone: WfTone; placing: boolean; quiet: boolean }
 > = {
   find: { label: "Finding a bed", pill: "In placement", tone: "info", placing: true, quiet: false },
-  held: { label: "Bed held", pill: "In placement", tone: "info", placing: true, quiet: false },
+  held: { label: "Bed pulled", pill: "In placement", tone: "info", placing: true, quiet: false },
   transit: { label: "In transit", pill: "In placement", tone: "info", placing: true, quiet: false },
   ward: { label: "On ward", pill: "On ward", tone: "success", placing: false, quiet: false },
   leave: { label: "On leave", pill: "On leave", tone: "neutral", placing: false, quiet: false },

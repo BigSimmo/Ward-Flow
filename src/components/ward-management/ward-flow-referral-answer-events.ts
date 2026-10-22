@@ -15,6 +15,7 @@ import {
   GENDER_MISMATCH_DECLINE_REASON,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
 } from "@/components/ward-management/ward-legal-clock";
+import { LEGACY_DECLINE_REASONS } from "@/components/ward-management/ward-decline-legacy";
 import {
   COHORTS,
   COMMUNITY_DECLINE_REASONS,
@@ -33,6 +34,7 @@ import {
   genderReviewNeeded,
   type ClinicalReassessmentEntry,
   type CommunityDeclineReason,
+  type DeclineReason,
   type Movement,
   type Notice,
   type Referral,
@@ -232,6 +234,8 @@ export function reduceReferralAnswerEvent(
     }
 
     case "DECLINE": {
+      // D-78: a retired ward value ("no_bed") still reads, as the merged reason it maps to.
+      const reason: DeclineReason = LEGACY_DECLINE_REASONS[event.reason] ?? event.reason;
       const actingRefusal = wardActingMovementRefusal(event);
       if (actingRefusal) return reject(state, event, actingRefusal);
       const movement = findMovement(state, event.movementId);
@@ -249,14 +253,14 @@ export function reduceReferralAnswerEvent(
       if (!movement.referredUnitIds.includes(event.unitId)) {
         return reject(state, event, `${event.unitId} does not hold a live referral for movement ${movement.id}`);
       }
-      if (event.reason === GENDER_MISMATCH_DECLINE_REASON || (event.reason as string) === "sex_mix") {
+      if (reason === GENDER_MISMATCH_DECLINE_REASON) {
         return reject(
           state,
           event,
           `Gender mismatch does not decline a referral; it only filters which bed can be offered`,
         );
       }
-      if ((WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(event.reason)) {
+      if ((WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(reason)) {
         const waitlistedUnitIds = [...(movement.waitlistedUnitIds ?? [])];
         if (!waitlistedUnitIds.includes(event.unitId)) {
           if (waitlistedUnitIds.length >= state.configuration.parallelReferralCap) {
@@ -271,7 +275,7 @@ export function reduceReferralAnswerEvent(
         const updated: Movement = {
           ...movement,
           waitlistedUnitIds,
-          declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+          declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }],
           referralAnswerHistory: [
             ...(movement.referralAnswerHistory ?? []),
             { unitId: event.unitId, at: event.now, answer: "waitlisted" },
@@ -289,16 +293,14 @@ export function reduceReferralAnswerEvent(
           ),
         ]);
       }
-      if (!DECLINE_REASONS.includes(event.reason)) {
+      if (!DECLINE_REASONS.includes(event.reason) && !Object.hasOwn(LEGACY_DECLINE_REASONS, event.reason)) {
         /**
          * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
          * no `tsc` involved.
          *
-         * `DECLINE_REASONS`, not `REFERRAL_DECLINE_REASONS`: `DECLINE` refuses a movement,
-         * `DECLINE_REFERRAL` a referral, and swapping the lists would look like a working check.
-         * `tests/ward-reason-checks-use-their-own-list.test.ts` guards the pairing. The timeline
-         * reads `declineReasonLabels[...]` with no fallback, so an off-list value would print
-         * "undefined".
+         * `DECLINE_REASONS` is the one list for both decline events since D-78; this check is the
+         * movement side of it. The timeline reads `declineReasonLabels[...]` with no fallback, so an
+         * off-list value would print "undefined".
          */
         return reject(state, event, `DECLINE reason must be chosen from DECLINE_REASONS`);
       }
@@ -306,7 +308,7 @@ export function reduceReferralAnswerEvent(
       const updated: Movement = {
         ...movement,
         referredUnitIds: remainingReferredUnitIds,
-        declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+        declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }],
         stage: "destination_review",
         referralAnswerHistory: [
           ...(movement.referralAnswerHistory ?? []),
@@ -317,7 +319,7 @@ export function reduceReferralAnswerEvent(
         // exactly one entry.
         stageChanges: [
           ...movement.stageChanges,
-          { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason: event.reason },
+          { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason },
         ],
         // "Awaiting destination response" is only true while a live request stands; declining the
         // last one switches to `wardRequestWithdrawn`, as `WITHDRAW_WARD_REQUEST` does.
@@ -336,7 +338,7 @@ export function reduceReferralAnswerEvent(
           "referral_declined",
           { role: "ed", placeId: movement.originEdId },
           { movementId: movement.id, unitId: event.unitId },
-          `${unitName(state, event.unitId)} declined ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
+          `${unitName(state, event.unitId)} declined ${movement.id} (${reason.replace(/_/g, " ")}).`,
         ),
       ]);
     }

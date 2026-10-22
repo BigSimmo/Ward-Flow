@@ -796,7 +796,7 @@
   .tabBtn,
   .actionUnfoldToggle,
   .referralField select,
-  .referralField input,
+  .referralField input[type="text"],
   .capacityInput,
   .tableActionGroup button,
   .tableActionGroup select {
@@ -2433,6 +2433,15 @@
   color: var(--ink);
   font-size: var(--t-1);
   font-weight: 400;
+}
+
+/* A radio or checkbox sits beside its own words, never above them. */
+.referralCheckbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--spacing-tap);
+  white-space: nowrap;
 }
 
 .capacityInput {

@@ -474,7 +474,7 @@ describe("COMPLETE_INBOX_ITEM refuses a fact", () => {
  */
 describe("destinations_declined respects acceptance (item 20)", () => {
   function decline(unitId: string, at: number): Decline {
-    return { unitId, at, reason: "no_bed" };
+    return { unitId, at, reason: "no_suitable_bed" };
   }
 
   it("raises no row for a movement that has since been accepted, even with the cap of declines on record", () => {

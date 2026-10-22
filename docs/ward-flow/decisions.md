@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-22 - added D-72 to D-77 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps and the bigger UX changes); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-22 - added D-72 to D-78 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes and one decline list); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -894,3 +894,14 @@ is inferred.
 - **Process:** one pull request per group, each from current `main`, with a visual check. Nothing merges without Josh.
 - **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending.
 - **Why:** Josh reviewed the ten mock-ups, made from the current app, and approved them with the recommended answers to their open questions.
+
+## D-78. One decline list for wards and coordinators (22 October 2026)
+
+- **Date:** 22 October 2026 (`2026-10-22`). **Decided by:** Josh, on two decision cards. At 12:04 AM AWST on 22 October (16:04 UTC on 21 October) he chose to merge the ward and coordinator decline lists. At 4:39 PM AWST on 22 October, in the Decline reasons merge thread, he chose "Keep it as a ward-only reason" for Capability mismatch.
+- **Decision:**
+  1. **One list.** A ward declining a movement and a coordinator declining a referral pick from one decline list, in the coordinator's wording.
+  2. **Ward-only reasons stay.** Four clinically distinct reasons are kept for ward declines only: Specialling unavailable, Acuity mix, Bed pulled for earlier referral and Capability mismatch. Capability mismatch is kept because neither Age band not provided here nor Secure bed unavailable fully covers it, for example a ward with no ECT or eating disorder capability.
+  3. **Retired ward values map across.** No bed becomes No suitable bed, Sex mix becomes Sex designation unavailable and Out of catchment becomes Belongs to another service. Old saves are converted when they load, so no recorded decline is lost.
+  4. **Limits kept.** A ward refusing a movement is still not offered Sex designation unavailable (T10), and an ED decline gets none of the ward-only reasons.
+- **Boundary:** Synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
+- **Why:** two lists with different words for the same reason made decline records hard to compare across the network. Keeping the ward-only reasons and converting old values keeps what earlier records meant.

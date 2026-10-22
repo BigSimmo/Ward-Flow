@@ -83,7 +83,7 @@ function buildAcceptedFixture(): WardFlowState {
     now: t(20),
     movementId: MOVEMENT_ID,
     unitId: UNIT_DECLINED,
-    reason: "no_bed",
+    reason: "no_suitable_bed",
   });
   assertStepAccepted(s1, s2, "DECLINE");
 

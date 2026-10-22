@@ -22,7 +22,7 @@ import type {
   CommunityDeclineReason,
   Movement,
   Referral,
-  ReferralDeclineReason,
+  DeclineReason,
   ReferralDestination,
   ReferralDestinationKind,
   ReferralPurpose,
@@ -1083,13 +1083,18 @@ export function networkHasCohort(referral: Referral, units: Unit[]): boolean {
  * actually reads — not merely the enum keys — for a digit, and pins this map's key set to
  * `REFERRAL_DECLINE_REASONS` exactly.
  */
-export const DECLINE_REASON_LABELS: Record<ReferralDeclineReason, string> = {
+export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
   no_suitable_bed: "No suitable bed",
   age_band_not_provided_here: "Age band not provided here",
   sex_designation_unavailable: "Sex designation unavailable",
   secure_bed_unavailable: "Secure bed unavailable",
   belongs_to_another_service: "Belongs to another service",
   referred_elsewhere: "Referred elsewhere",
+  // D-78: the ward-only reasons, in the wording the ward screens already used.
+  specialling_unavailable: "Specialling unavailable",
+  acuity_mix: "Acuity mix",
+  capability_mismatch: "Capability mismatch",
+  bed_pulled_for_earlier_referral: "Bed pulled for earlier referral",
   /*
    * ⚠️ PLACEHOLDER WORDING. THE OWNER HAS NOT CHOSEN THIS SENTENCE.
    *

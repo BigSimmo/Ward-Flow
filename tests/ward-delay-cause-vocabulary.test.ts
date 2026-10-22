@@ -47,9 +47,11 @@ const RETIRED_BY_TITLE: readonly {
   readonly ruling: string;
 }[] = [
   {
-    canonical: "held",
-    retired: ["pull", "expired"],
-    ruling: "2026-09-22: reserved time has passed, bed still held — not 'Bed pull expired' / 'the pull lapsed'",
+    canonical: "pull",
+    retired: ["hold", "held"],
+    ruling:
+      "Task 7 (Oct 2026): a bed kept for an incoming patient is pulled, so 'Pull expired, bed still pulled' " +
+      "replaces the 2026-09-22 'reserved time has passed, bed still held'",
   },
 ];
 
@@ -116,8 +118,8 @@ describe("a delay cause's note agrees with its own title about what the event is
     const planted = contradictions([
       {
         cause: "planted_contradiction",
-        title: "Reserved time has passed, bed still held",
-        note: "the pull lapsed before the bed was used",
+        title: "Pull expired, bed still pulled",
+        note: "the hold lapsed before the bed was used",
       },
     ]);
     expect(planted, "the detector no longer finds a note contradicting its own title").toHaveLength(1);
@@ -132,8 +134,8 @@ describe("a delay cause's note agrees with its own title about what the event is
         { cause: "honest_detention", title: "Legal authority running out", note: "the patient is held under section" },
         { cause: "honest_verb", title: "Awaiting a ward's answer", note: "the record holds the moment it ran out" },
         {
-          cause: "held_note_agrees",
-          title: "Reserved time has passed, bed still held",
+          cause: "pull_note_agrees",
+          title: "Pull expired, bed still pulled",
           note: "Release the bed or set a new reserved time",
         },
       ]),

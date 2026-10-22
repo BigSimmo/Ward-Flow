@@ -119,7 +119,7 @@ describe("Option A: Cross-Ward Authority Safeguards", () => {
         movementId: "WF-002",
         unitId: "fsh-older-adult",
         actingUnitId: "arm-adult-open",
-        reason: "out_of_catchment",
+        reason: "belongs_to_another_service",
       });
 
       expect(next.rejections).toHaveLength(state.rejections.length + 1);
@@ -137,7 +137,7 @@ describe("Option A: Cross-Ward Authority Safeguards", () => {
         movementId: "WF-002",
         unitId: "fsh-older-adult",
         actingUnitId: "fsh-older-adult",
-        reason: "out_of_catchment",
+        reason: "belongs_to_another_service",
       });
 
       expect(next.rejections).toHaveLength(state.rejections.length);

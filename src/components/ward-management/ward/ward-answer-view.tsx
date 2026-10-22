@@ -29,11 +29,12 @@ import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-mana
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import {
-  DECLINE_REASONS,
   EXTRA_TRAVEL_HOLD_MINUTES,
+  MOVEMENT_DECLINE_REASONS,
   type DeclineReason,
   type Movement,
   type Unit,
@@ -113,10 +114,9 @@ export interface WardAnswerViewProps {
   unitId: string;
 }
 
-/** A decline reason as a sentence-case label ("no_bed" reads "No bed"). */
+/** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
 function declineReasonLabel(reason: DeclineReason): string {
-  const words = reason.replace(/_/g, " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return DECLINE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
@@ -1187,7 +1187,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                     Choose a reason to confirm the decline.
                                   </p>
                                 ) : null}
-                                {DECLINE_REASONS.map((reason, index) => (
+                                {MOVEMENT_DECLINE_REASONS.map((reason, index) => (
                                   <label key={reason} className={styles.phoneRadioRow}>
                                     <input
                                       type="radio"
@@ -1350,7 +1350,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                         >
                           <fieldset className={styles.declineFieldset} disabled={declinePending}>
                             <legend className={styles.declineLegend}>Decline reason for this patient</legend>
-                            {DECLINE_REASONS.map((reason) => (
+                            {MOVEMENT_DECLINE_REASONS.map((reason) => (
                               <label key={reason} className={styles.declineOption}>
                                 <input
                                   type="radio"
@@ -1359,7 +1359,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                                   checked={declineReason === reason}
                                   onChange={() => setDeclineReason(reason)}
                                 />
-                                {reason.replace(/_/g, " ")}
+                                {declineReasonLabel(reason)}
                               </label>
                             ))}
                           </fieldset>
@@ -1585,7 +1585,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                           {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
                           <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
                           <span>{answer.outcome}</span>
-                          <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
+                          <span>{answer.reason ? declineReasonLabel(answer.reason) : "Accepted by this ward"}</span>
                           {answer.at === undefined ? (
                             <span>Time not recorded</span>
                           ) : (

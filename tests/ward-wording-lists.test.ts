@@ -48,7 +48,8 @@ const NOW = NOW_ANCHOR;
 
 describe("ward wording lists (item 55, owner answers 2026-09-17)", () => {
   describe("#3 — a ward declines a referral (ward-referrals.ts:917-956, ward-model.ts:1411-1419)", () => {
-    it("holds exactly the seven decline reasons, in this order, ending in the confirmed catch-all", () => {
+    // D-78 (Josh, 21 Oct 2026): the one decline list keeps the four ward-only reasons before the catch-all.
+    it("holds exactly the eleven decline reasons, in this order, ending in the confirmed catch-all", () => {
       expect(REFERRAL_DECLINE_REASONS).toEqual([
         "no_suitable_bed",
         "age_band_not_provided_here",
@@ -56,6 +57,10 @@ describe("ward wording lists (item 55, owner answers 2026-09-17)", () => {
         "secure_bed_unavailable",
         "belongs_to_another_service",
         "referred_elsewhere",
+        "specialling_unavailable",
+        "acuity_mix",
+        "capability_mismatch",
+        "bed_pulled_for_earlier_referral",
         "another_reason",
       ]);
     });
@@ -68,6 +73,10 @@ describe("ward wording lists (item 55, owner answers 2026-09-17)", () => {
         "Secure bed unavailable",
         "Belongs to another service",
         "Referred elsewhere",
+        "Specialling unavailable",
+        "Acuity mix",
+        "Capability mismatch",
+        "Bed pulled for earlier referral",
         "Another reason — needs follow-up",
       ]);
     });

@@ -174,7 +174,7 @@ describe("the Delays screen", () => {
       text,
       "the Delays screen renders no lapsed-bed-pull group at all, so the vocabulary pin below has " +
         "nothing to stand over. Re-seed the fixture or retire this pair — do not leave it passing.",
-    ).toContain("Reserved time has passed, bed still held");
+    ).toContain("Pull expired, bed still pulled");
 
     expect(text, "a lapsed bed reservation is called a hold; the ward vocabulary rule is pull").not.toContain(
       "Bed hold expired",

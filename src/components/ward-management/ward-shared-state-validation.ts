@@ -3,6 +3,7 @@ import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
 import { REPATRIATION_MODES, WARD_FLOW_ROLE_LABELS } from "./ward-flow-events";
 import { TRANSPORT_LEGAL_STATUSES, TRANSPORT_PROVIDERS } from "./ward-model";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -23,6 +24,8 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   // Every reader of a stored workspace (the server and the browser) comes through here first, so the
   // old rows are read as levels in place, on the freshly parsed copy, and nothing is written back.
   upgradeLegacyObservationRowsInPlace(state);
+  // D-78: the same in-place read for decline reasons saved before the one decline list.
+  state.movements = upgradeLegacyDeclineReasons(state).movements;
   const admissionIds = new Set<string>();
   for (const admission of state.admissions) {
     if (!admission || typeof admission !== "object" || typeof admission.id !== "string") return false;

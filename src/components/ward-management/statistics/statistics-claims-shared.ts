@@ -361,18 +361,16 @@ export const HELD_IS_DERIVED_FROM_TWO_AGGREGATES =
  * been wrong, and a test written from the same brief would have agreed with it.
  */
 export const DECLINE_REASONS_LIST =
-  'export const DECLINE_REASONS = [ "no_bed", "sex_mix", "specialling_unavailable", "acuity_mix", ' +
-  '"capability_mismatch", "bed_pulled_for_earlier_referral", "out_of_catchment", ] as const;';
+  'export const DECLINE_REASONS = [ "no_suitable_bed", "age_band_not_provided_here", ' +
+  '"sex_designation_unavailable", "secure_bed_unavailable", "belongs_to_another_service", ' +
+  '"referred_elsewhere", "specialling_unavailable", "acuity_mix", "capability_mismatch", ' +
+  '"bed_pulled_for_earlier_referral", "another_reason", ] as const;';
 
 /**
- * The referral-side vocabulary, cited whole for the same reason and for one more: the claim is that
- * it is a DIFFERENT list from the one above, and difference is only witnessed by pinning both. A
- * member migrating from one list to the other would break exactly one of these two citations.
+ * D-78 (Josh, 21 Oct 2026): the referral-side name is now the SAME list as the one above, kept so
+ * importers are unchanged. Pinned so a second, separate referral list cannot return in silence.
  */
-export const REFERRAL_DECLINE_REASONS_LIST =
-  'export const REFERRAL_DECLINE_REASONS = [ "no_suitable_bed", "age_band_not_provided_here", ' +
-  '"sex_designation_unavailable", "secure_bed_unavailable", "belongs_to_another_service", ' +
-  '"referred_elsewhere", "another_reason", ] as const;';
+export const REFERRAL_DECLINE_REASONS_LIST = "export const REFERRAL_DECLINE_REASONS = DECLINE_REASONS;";
 
 /**
  * The two derived properties of a team page, cited as ONE substring so the CONTRAST between them is

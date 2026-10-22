@@ -37,4 +37,18 @@ describe("withLoadRetry", () => {
     expect(await screen.findByText("Tools loaded")).toBeInTheDocument();
     expect(load).toHaveBeenCalledTimes(3);
   });
+
+  it("adds Close when the panel takes onClose, for drawers that draw their own header", async () => {
+    const onClose = vi.fn();
+    const Lazy = dynamic(
+      withLoadRetry<{ onClose: () => void }>(
+        () => Promise.reject(new Error("ChunkLoadError")),
+        "Referrals did not load",
+      ),
+    );
+    render(<Lazy onClose={onClose} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Referrals did not load");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
 });

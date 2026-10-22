@@ -11,7 +11,8 @@ import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
-import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
@@ -65,7 +66,7 @@ import {
   type WalkRoundMark,
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
-import { observationSummary } from "@/components/ward-management/ward-observation";
+import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -77,6 +78,11 @@ export function canSubmitOverride(
   numConsulted: boolean,
 ): boolean {
   return Boolean(overrideReason && (!isAcuityRefusal || numConsulted));
+}
+
+/** A recorded decline reason in the one list's wording (D-78); an unknown value shows as written. */
+function declineReasonText(reason: string): string {
+  return (DECLINE_REASON_LABELS as Record<string, string>)[reason] ?? reason.replace(/_/g, " ");
 }
 
 export function canSubmitDecline(declineReason: DeclineReason | "" | undefined): declineReason is DeclineReason {
@@ -526,7 +532,9 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Confirmed out"
                   : "Due out"
-                : note;
+                : bed.isSpecialling && bed.observation
+                  ? `Constant ${observationRatio(bed.observation.level)}`
+                  : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
@@ -1128,45 +1136,53 @@ export function WardHomeTab({
         ) : (
           <ul className={styles.todoList}>
             {rows.map((row) => (
-              <li key={row.key} className={styles.todoRow}>
-                <StatusGlyph tone={row.tone} size={9} />
-                {row.tick ? (
-                  <label className={styles.todoMain}>
-                    <input
-                      type="checkbox"
-                      className={styles.todoTick}
-                      checked={localChecks[row.tick] !== null}
-                      onChange={() => {
-                        if (row.tick) toggleLocalCheck(row.tick);
-                      }}
-                      aria-label={row.title}
-                    />
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail}>{row.detail}</span>
-                  </label>
-                ) : (
-                  <span className={styles.todoMain}>
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail} title={row.detail}>
-                      {row.detail}
+              <li key={row.key} className={styles.todoItem}>
+                <div className={styles.todoRow}>
+                  <StatusGlyph tone={row.tone} size={9} />
+                  {row.tick ? (
+                    <label className={styles.todoMain}>
+                      <input
+                        type="checkbox"
+                        className={styles.todoTick}
+                        checked={localChecks[row.tick] !== null}
+                        onChange={() => {
+                          if (row.tick) toggleLocalCheck(row.tick);
+                        }}
+                        aria-label={row.title}
+                      />
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail}>{row.detail}</span>
+                    </label>
+                  ) : (
+                    <span className={styles.todoMain}>
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail} title={row.detail}>
+                        {row.detail}
+                      </span>
                     </span>
-                  </span>
-                )}
-                {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
-                {row.action ? (
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                    onClick={row.action.run}
-                  >
-                    {row.action.label}
-                    <SrOnly> {row.title}</SrOnly>
-                  </button>
-                ) : null}
+                  )}
+                  {row.meta ? (
+                    <span
+                      className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}
+                    >
+                      {row.meta}
+                    </span>
+                  ) : null}
+                  {row.action ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={row.action.run}
+                    >
+                      {row.action.label}
+                      <SrOnly> {row.title}</SrOnly>
+                    </button>
+                  ) : null}
+                </div>
                 {row.secondaryAction ? (
                   <button
                     type="button"
-                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
                     onClick={row.secondaryAction.run}
                   >
                     {row.secondaryAction.label}
@@ -1405,7 +1421,7 @@ export function WardHomeTab({
                           >
                             <fieldset className={styles.declineFieldset}>
                               <legend>Decline reason for this patient</legend>
-                              {DECLINE_REASONS.map((reason) => (
+                              {MOVEMENT_DECLINE_REASONS.map((reason) => (
                                 <label key={reason}>
                                   <input
                                     type="radio"
@@ -1416,7 +1432,7 @@ export function WardHomeTab({
                                       setDeclineReason(reason);
                                     }}
                                   />{" "}
-                                  {reason.replace(/_/g, " ")}
+                                  {DECLINE_REASON_LABELS[reason]}
                                 </label>
                               ))}
                             </fieldset>
@@ -1470,7 +1486,7 @@ export function WardHomeTab({
                             declined referral was never this ward's patient, so it stays anonymous. */}
                         <span className={styles.flowDetail}>
                           {answer.reason
-                            ? answer.reason.replace(/_/g, " ")
+                            ? declineReasonText(answer.reason)
                             : `UMRN ${resolvePatientIdentity({ movementId: answer.movementId }).umrn}`}
                         </span>
                       </span>
@@ -2107,7 +2123,7 @@ export function WardHomeTab({
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
                   <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
                   <span>{answer.outcome}</span>
-                  <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
+                  <span>{answer.reason ? declineReasonText(answer.reason) : "Accepted by this ward"}</span>
                   {answer.at === undefined ? (
                     <span>Time not recorded</span>
                   ) : (

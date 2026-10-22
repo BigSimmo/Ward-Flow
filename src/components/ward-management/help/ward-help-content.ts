@@ -168,7 +168,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Referred", meaning: "A destination has been asked for, and nothing has answered yet." },
   { term: "Review", meaning: "At least one unit is weighing up whether it can take the patient." },
   { term: "Accepted", meaning: "A unit has agreed in principle, but no bed has been pulled yet." },
-  { term: "Pulled", meaning: "A bed is held for this patient, and the hold has a time limit." },
+  { term: "Pulled", meaning: "A bed is pulled for this patient, and the pull has a time limit." },
   { term: "Handover ready", meaning: "The bed and paperwork are ready. Only the physical move is left." },
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
   { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },

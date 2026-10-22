@@ -213,7 +213,7 @@ function WardPanel({
       warn: stale,
     },
     { label: "Being made ready", value: String(ward.pendingPreparation) },
-    { label: "Held for incoming", value: String(ward.held) },
+    { label: "Pulled for incoming", value: String(ward.held) },
     { label: "Due out today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
     { label: "Stays over 7 days", value: String(ward.longStays) },

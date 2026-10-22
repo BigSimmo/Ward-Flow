@@ -847,7 +847,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setLastActionRejection(refused);
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
+      toast?.push({ tone: "success", title: "Bed pulled for this arrival." });
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {

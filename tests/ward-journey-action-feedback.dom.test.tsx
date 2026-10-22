@@ -149,7 +149,7 @@ describe("command-specific action feedback", () => {
     renderCommand(<WardAnswerView unitId="fsh-older-adult" />, dispatch);
     fireEvent.click(screen.getByTestId("ward-decline-toggle-WF-002"));
     const form = screen.getByTestId("ward-decline-form-WF-002");
-    const reason = within(form).getByRole("radio", { name: "capability mismatch" });
+    const reason = within(form).getByRole("radio", { name: "Capability mismatch" });
     fireEvent.click(reason);
     fireEvent.submit(form);
     expect(screen.getByTestId("ward-decline-form-WF-002")).toBeInTheDocument();

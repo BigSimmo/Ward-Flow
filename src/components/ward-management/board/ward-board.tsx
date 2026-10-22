@@ -5,7 +5,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { useModalFocus } from "@/components/wf";
+import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -230,6 +230,7 @@ export function WardBoard({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const isPhone = useIsPhone();
   const [dateEdit, setDateEdit] = useState<{
     admissionId: string;
     time: string;
@@ -406,6 +407,9 @@ export function WardBoard({
   const onZoneKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== "Escape") return;
+      // The phone sheet is portalled out of the zones but its events still bubble here through
+      // React. It runs its own Escape (which spares an open select), so leave those to it.
+      if (!event.currentTarget.contains(event.target as Node)) return;
       event.stopPropagation();
       closeDetail();
     },
@@ -970,6 +974,83 @@ export function WardBoard({
       ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at ${handoverAt}.`
       : `Nothing needs you before the handover at ${handoverAt}.`;
 
+  const chooseFilter = (filter: BoardFilter) => {
+    setBedFilter(filter);
+    if (selectedTile !== null && !tileMatchesFilter(selectedTile, filter)) {
+      focusBackTo.current = null;
+      setSelectedKey(null);
+    }
+  };
+
+  const gridColumn = (
+    <WardBoardGridColumn
+      isPhone={isPhone}
+      bedFilter={bedFilter}
+      bedOrder={bedOrder}
+      chooseFilter={chooseFilter}
+      closeDetail={closeDetail}
+      filterCounts={filterCounts}
+      filteredTiles={filteredTiles}
+      cardNameByKey={cardNameByKey}
+      occupantByKey={occupantByKey}
+      occupants={occupants}
+      orderedTiles={orderedTiles}
+      selectedKey={selectedKey}
+      setBedOrder={setBedOrder}
+      setSelectedKey={setSelectedKey}
+      tileIndexMap={tileIndexMap}
+      tileMatchesFilter={tileMatchesFilter}
+      tiles={tiles}
+      unit={unit}
+    />
+  );
+
+  /** The phone sheet's title: the card's own line, or what kind of bed it is. */
+  const phoneSheetTitle =
+    selectedTile === null
+      ? ""
+      : (cardNameByKey.get(selectedTile.key) ??
+        (selectedTile.kind === "empty"
+          ? "An empty bed"
+          : selectedTile.kind === "closed"
+            ? "A closed bed"
+            : selectedTile.kind === "occupied" || selectedTile.kind === "waiting"
+              ? "Who is in this bed"
+              : "A bed out of service"));
+
+  const detailPanel = (
+    <WardBoardDetailPanel
+      admissions={admissions}
+      blockedTileCount={blockedTileCount}
+      closeDetail={closeDetail}
+      closedTileCount={closedTileCount}
+      constraint={constraint}
+      dateEdit={dateEdit}
+      dayZero={dayZero}
+      dialogTriggerRef={dialogTriggerRef}
+      dispatchAndReport={dispatchAndReport}
+      emptyTileCount={emptyTileCount}
+      leavingDestination={leavingDestination}
+      movements={movements}
+      nameFor={nameFor}
+      now={now}
+      patients={patients}
+      raise={raise}
+      recordDepartureAndReport={recordDepartureAndReport}
+      recordWardDeparture={recordWardDeparture}
+      requireConfirmation={requireConfirmation}
+      resolvePatientIdentity={resolvePatientIdentity}
+      selectedOccupant={selectedOccupant}
+      selectedTile={selectedTile}
+      setBlockerDialogItem={setBlockerDialogItem}
+      setDateEdit={setDateEdit}
+      setLeavingDestination={setLeavingDestination}
+      setPendingConfirm={setPendingConfirm}
+      setSelectedBlocker={setSelectedBlocker}
+      unit={unit}
+    />
+  );
+
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
@@ -1006,11 +1087,6 @@ export function WardBoard({
               <Link href={unitHref(unit.id)}>Ward home</Link>
               <span aria-current="page">Stays and discharges</span>
             </nav>
-            {/* UX audit 21 Oct 2026: the phone trim hides the bed grid, which left a "Bed board" with no
-                beds on it. Point to the ward home tiles, which do fit a phone. */}
-            <p className={styles.phoneBedsNote} data-testid="ward-board-phone-beds-note">
-              On a phone, every bed is on <Link href={unitHref(unit.id)}>Ward home</Link>.
-            </p>
           </div>
           <div className={styles.wardToolsRight}>
             <button
@@ -1047,7 +1123,22 @@ export function WardBoard({
             </button>
             <details className={styles.wardSwitch}>
               <summary>
-                Change ward <span>{liveUnits.length} wards</span>
+                <svg
+                  className={styles.wardSwitchIcon}
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 8h14l-3-3M20 16H6l3 3" />
+                </svg>
+                <span className={styles.wardSwitchLabel}>Change ward</span>{" "}
+                <span className={styles.wardSwitchCount}>{liveUnits.length} wards</span>
               </summary>
               <div className={styles.wardSwitchBody}>
                 <p className={styles.wardSwitchHeading}>Choose a ward</p>
@@ -1088,6 +1179,13 @@ export function WardBoard({
          * marked in WORDS ("shown in Going out") as well as by weight, because a mark carried by
          * weight alone is a mark a greyscale sheet loses.
          */}
+        {/* Change 10 (D-77): on a phone every bed comes first, above the day figures. */}
+        {isPhone && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from a focused tile
+          <div className={styles.phoneBeds} onKeyDown={onZoneKeyDown}>
+            {gridColumn}
+          </div>
+        )}
         <section className={styles.triage} aria-labelledby="ward-board-triage-heading" data-testid="ward-board-triage">
           <h2 id="ward-board-triage-heading" className={styles.triageHeading}>
             Today on this ward
@@ -1177,27 +1275,7 @@ export function WardBoard({
             targets={targets}
           />
 
-          <WardBoardGridColumn
-            bedFilter={bedFilter}
-            bedOrder={bedOrder}
-            closeDetail={closeDetail}
-            filterCounts={filterCounts}
-            filteredTiles={filteredTiles}
-            focusBackTo={focusBackTo}
-            cardNameByKey={cardNameByKey}
-            occupantByKey={occupantByKey}
-            occupants={occupants}
-            orderedTiles={orderedTiles}
-            selectedKey={selectedKey}
-            selectedTile={selectedTile}
-            setBedFilter={setBedFilter}
-            setBedOrder={setBedOrder}
-            setSelectedKey={setSelectedKey}
-            tileIndexMap={tileIndexMap}
-            tileMatchesFilter={tileMatchesFilter}
-            tiles={tiles}
-            unit={unit}
-          />
+          {!isPhone && gridColumn}
 
           {/*
            * THE SLIDE-OUT. Present only while something is selected, so it costs no width otherwise,
@@ -1219,36 +1297,21 @@ export function WardBoard({
            * grid reflows under the reader's hands at the moment they click, and until they click
            * there is nothing telling them the beds are clickable at all.
            */}
-          <WardBoardDetailPanel
-            admissions={admissions}
-            blockedTileCount={blockedTileCount}
-            closeDetail={closeDetail}
-            closedTileCount={closedTileCount}
-            constraint={constraint}
-            dateEdit={dateEdit}
-            dayZero={dayZero}
-            dialogTriggerRef={dialogTriggerRef}
-            dispatchAndReport={dispatchAndReport}
-            emptyTileCount={emptyTileCount}
-            leavingDestination={leavingDestination}
-            movements={movements}
-            nameFor={nameFor}
-            now={now}
-            patients={patients}
-            raise={raise}
-            recordDepartureAndReport={recordDepartureAndReport}
-            recordWardDeparture={recordWardDeparture}
-            requireConfirmation={requireConfirmation}
-            resolvePatientIdentity={resolvePatientIdentity}
-            selectedOccupant={selectedOccupant}
-            selectedTile={selectedTile}
-            setBlockerDialogItem={setBlockerDialogItem}
-            setDateEdit={setDateEdit}
-            setLeavingDestination={setLeavingDestination}
-            setPendingConfirm={setPendingConfirm}
-            setSelectedBlocker={setSelectedBlocker}
-            unit={unit}
-          />
+          {isPhone ? (
+            // Change 10 (D-77): on a phone the bed's record opens in a sheet over the grid.
+            <PhoneSheet
+              open={selectedTile !== null}
+              onClose={closeDetail}
+              title={phoneSheetTitle}
+              closeLabel="Close bed record"
+              height="tall"
+              data-testid="ward-board-detail-sheet"
+            >
+              <div className={styles.detailSheetBody}>{detailPanel}</div>
+            </PhoneSheet>
+          ) : (
+            detailPanel
+          )}
           <WardBoardWorkBand
             blockerCloseBtnRef={blockerCloseBtnRef}
             blockerDialogItem={blockerDialogItem}

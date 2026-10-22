@@ -735,6 +735,32 @@ test("@mockup Tools opened offline shows Try again, then opens on Try again once
   await expect(retry).toHaveCount(0);
 });
 
+// The Tasks and Referrals drawers draw their own header, so their stand-in also carries Close.
+test("@mockup the Tasks and Referrals drawers opened offline show Try again and Close", async ({ page, context }) => {
+  await page.addInitScript(() => {
+    window.requestIdleCallback = () => 0;
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await gotoWardChrome(page);
+  await context.setOffline(true);
+
+  await page.getByTestId("ward-bar").getByRole("button", { name: "New referral" }).click();
+  const referral = page.getByTestId("ward-bar-referral-sheet");
+  await expect(referral.getByTestId("ward-load-retry")).toContainText("Referrals did not load");
+  await referral.getByRole("button", { name: "Close" }).click();
+  await expect(referral).toHaveCount(0);
+
+  await page.getByTestId("ward-bar-tasks-trigger").click();
+  const tasks = page.getByTestId("ward-bar-tasks-sheet");
+  await expect(tasks.getByTestId("ward-load-retry")).toContainText("Tasks and alerts did not load");
+  await expect(page.getByText("Something went wrong")).toHaveCount(0);
+
+  await context.setOffline(false);
+  await tasks.getByRole("button", { name: "Try again" }).click();
+  await expect(tasks.getByRole("button", { name: /^Close (tasks|alerts) panel$/u })).toBeVisible();
+  await expect(tasks.getByTestId("ward-load-retry")).toHaveCount(0);
+});
+
 test("@mockup drawer workspace keeps All figures focus and every alert reachable on a short phone", async ({
   page,
 }) => {

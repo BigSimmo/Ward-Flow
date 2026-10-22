@@ -525,7 +525,7 @@ Details groups, never beside the Now history (placement rule in `person-screen.t
 
 **9 October 2026 gate board:** the Patient page follows the chosen "Gate board" mockup.
 `patient-mode.ts` derives the mode from the resolver order (open movement by stage, then occupied
-bed, otherwise not active): Finding a bed, Bed held, In transit, On ward, Not active. On leave,
+bed, otherwise not active): Finding a bed, Bed pulled, In transit, On ward, Not active. On leave,
 absent without leave and CTO are not derived: the record has no field for them yet, and adding one
 needs the owner's OK. `patient-status-card.tsx` (and CSS module) builds the status card: verdict, a
 gates-clear meter in placement modes, and three cells that each name an owner and carry at most one

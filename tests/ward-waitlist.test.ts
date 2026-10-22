@@ -35,7 +35,7 @@ describe("waitlistStands", () => {
     const movement: Movement = {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
-      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_suitable_bed" }],
     };
     expect(waitlistStands(movement, UNIT)).toBe(true);
   });
@@ -44,7 +44,7 @@ describe("waitlistStands", () => {
     const movement: Movement = {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
-      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_suitable_bed" }],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
     };
     expect(waitlistStands(movement, UNIT)).toBe(false);
@@ -55,7 +55,7 @@ describe("waitlistStands", () => {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
       declines: [
-        { unitId: UNIT, at: 1_000, reason: "no_bed" },
+        { unitId: UNIT, at: 1_000, reason: "no_suitable_bed" },
         { unitId: UNIT, at: 3_000, reason: "bed_pulled_for_earlier_referral" },
       ],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
@@ -68,8 +68,8 @@ describe("waitlistStands", () => {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
       declines: [
-        { unitId: UNIT, at: 1_000, reason: "no_bed" },
-        { unitId: UNIT, at: 2_000, reason: "out_of_catchment" },
+        { unitId: UNIT, at: 1_000, reason: "no_suitable_bed" },
+        { unitId: UNIT, at: 2_000, reason: "belongs_to_another_service" },
       ],
       referralAnswerHistory: [
         { unitId: UNIT, at: 1_000, answer: "waitlisted" },
@@ -84,8 +84,8 @@ describe("waitlistStands", () => {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
       declines: [
-        { unitId: UNIT, at: 1_000, reason: "no_bed" },
-        { unitId: UNIT, at: 2_000, reason: "out_of_catchment" },
+        { unitId: UNIT, at: 1_000, reason: "no_suitable_bed" },
+        { unitId: UNIT, at: 2_000, reason: "belongs_to_another_service" },
       ],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
       referralAnswerHistory: [
@@ -102,7 +102,7 @@ describe("waitlistStands", () => {
       ...bareMovement(),
       referredUnitIds: [UNIT],
       waitlistedUnitIds: [UNIT],
-      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_suitable_bed" }],
       withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
       referralAnswerHistory: [
         { unitId: UNIT, at: 1_000, answer: "waitlisted" },
@@ -116,7 +116,7 @@ describe("waitlistStands", () => {
     const movement: Movement = {
       ...bareMovement(),
       waitlistedUnitIds: [UNIT],
-      declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+      declines: [{ unitId: UNIT, at: 1_000, reason: "no_suitable_bed" }],
       withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "referrer_withdrew" }],
       referralAnswerHistory: [{ unitId: UNIT, at: 1_000, answer: "waitlisted" }],
     };
@@ -128,7 +128,7 @@ describe("waitlistStands", () => {
       const movement: Movement = {
         ...bareMovement(),
         waitlistedUnitIds: [UNIT],
-        declines: [{ unitId: UNIT, at: 1_000, reason: "no_bed" }],
+        declines: [{ unitId: UNIT, at: 1_000, reason: "no_suitable_bed" }],
         withdrawnReferrals: [{ unitId: UNIT, at: 1_000, reason: "coordinator_withdrew" }],
       };
       expect(waitlistStands(movement, UNIT)).toBe(false);
@@ -140,8 +140,8 @@ describe("waitlistStands", () => {
         referredUnitIds: [UNIT],
         waitlistedUnitIds: [UNIT],
         declines: [
-          { unitId: UNIT, at: 1_000, reason: "no_bed" },
-          { unitId: UNIT, at: 2_000, reason: "no_bed" },
+          { unitId: UNIT, at: 1_000, reason: "no_suitable_bed" },
+          { unitId: UNIT, at: 2_000, reason: "no_suitable_bed" },
         ],
         withdrawnReferrals: [{ unitId: UNIT, at: 2_000, reason: "coordinator_withdrew" }],
       };
@@ -180,7 +180,7 @@ describe("waitlistStands", () => {
       now: NOW_ANCHOR,
       movementId,
       unitId: unit.id,
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     const waitlisted = state.movements.find((movement) => movement.id === movementId)!;
     expect(waitlistStands(waitlisted, unit.id)).toBe(true);

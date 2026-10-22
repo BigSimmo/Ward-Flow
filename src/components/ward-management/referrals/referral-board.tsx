@@ -937,7 +937,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                               title={`Open ${targetWard?.name ?? "ward"} bed board`}
                               data-testid="ward-referral-hold-bed"
                             >
-                              Hold the bed
+                              Pull the bed
                             </Link>
                           )}
                           {selectedReferral.patientId && !isPhone ? (

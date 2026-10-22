@@ -458,7 +458,10 @@ describe("the ward and ED TV views", () => {
     const stale = {
       ...movement,
       waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), unit.id],
-      declines: [...movement.declines, { unitId: unit.id, at: NOW_ANCHOR - 120_000, reason: "no_bed" as const }],
+      declines: [
+        ...movement.declines,
+        { unitId: unit.id, at: NOW_ANCHOR - 120_000, reason: "no_suitable_bed" as const },
+      ],
       withdrawnReferrals: [
         ...movement.withdrawnReferrals,
         { unitId: unit.id, at: NOW_ANCHOR - 60_000, reason: "coordinator_withdrew" as const },

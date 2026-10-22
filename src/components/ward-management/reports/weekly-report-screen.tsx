@@ -442,7 +442,7 @@ export function WeeklyReportScreen() {
                     <dd>
                       {report.occupancy.now.inUse} of {report.occupancy.now.beds}
                     </dd>
-                    <dd className={styles.figureNote}>{report.occupancy.now.pulled} held for arrival</dd>
+                    <dd className={styles.figureNote}>{report.occupancy.now.pulled} pulled for arrival</dd>
                   </div>
                 </dl>
               </StatCard>

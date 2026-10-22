@@ -155,7 +155,7 @@ export function PersonPanel({
 
         {cause === "bed_pull_expired" ? (
           <p className={styles.reminder} data-testid={`delays-reserved-time-${movement.id}`}>
-            Reserved time has passed, bed still held. Release the bed or set a new reserved time.
+            Pull expired, bed still pulled. Release the bed or set a new reserved time.
           </p>
         ) : null}
         {silenceReminder !== undefined ? (

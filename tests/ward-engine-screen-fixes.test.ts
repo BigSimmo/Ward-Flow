@@ -365,7 +365,7 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
         ...state.movements[0],
         declines: [
           { at: NOW - 100, unitId: "U1", reason: "acuity_mix" },
-          { at: NOW - 50, unitId: "U2", reason: "no_bed" },
+          { at: NOW - 50, unitId: "U2", reason: "no_suitable_bed" },
         ],
       };
 

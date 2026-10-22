@@ -449,7 +449,7 @@ const seededMovements: Movement[] = [
     owner: "Flow coordinator",
     referredUnitIds: [],
     declines: [
-      { unitId: "rph-adult-secure", at: NOW_ANCHOR - 90, reason: "no_bed" },
+      { unitId: "rph-adult-secure", at: NOW_ANCHOR - 90, reason: "no_suitable_bed" },
       {
         unitId: "gry-adult-secure",
         at: NOW_ANCHOR - 60,

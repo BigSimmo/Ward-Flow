@@ -133,13 +133,13 @@ describe("refusedCorridorCounts", () => {
     const movement = buildMovement("WF-TEST-01", {
       originEdId: "ED-A",
       declines: [
-        { unitId: "WARD-1", at: 90, reason: "no_bed" },
+        { unitId: "WARD-1", at: 90, reason: "no_suitable_bed" },
         { unitId: "WARD-1", at: 110, reason: "acuity_mix" },
       ],
     });
 
     expect(refusedCorridorCounts([movement], 100)).toEqual([
-      { originEdId: "ED-A", unitId: "WARD-1", count: 1, reasons: ["no_bed"] },
+      { originEdId: "ED-A", unitId: "WARD-1", count: 1, reasons: ["no_suitable_bed"] },
     ]);
   });
 });

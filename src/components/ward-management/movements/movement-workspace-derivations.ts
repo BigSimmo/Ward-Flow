@@ -15,6 +15,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import {
   MOVEMENT_STAGES,
   stepBackReasonLabels,
@@ -73,15 +74,8 @@ export function stageChangeReasonLabel(reason: string): string | undefined {
   return undefined;
 }
 
-export const declineReasonLabels: Record<DeclineReason, string> = {
-  no_bed: "No bed available",
-  sex_mix: "Sex mix",
-  specialling_unavailable: "Specialling unavailable",
-  acuity_mix: "Acuity mix",
-  capability_mismatch: "Capability mismatch",
-  bed_pulled_for_earlier_referral: "Bed pulled for earlier referral",
-  out_of_catchment: "Out of catchment",
-};
+/** D-78: the one decline label table, shared with the referral screens. */
+export const declineReasonLabels: Record<DeclineReason, string> = DECLINE_REASON_LABELS;
 
 /**
  * The "label (code) · …" line for a legal form, shared by the readiness card and the legal
@@ -302,7 +296,7 @@ function orphanedTransportAttention(movement: Movement): Attention | undefined {
   return {
     key: "orphaned-transport",
     who: `Transport booked with ${orphan.provider}`,
-    chip: orphan.kind === "pull_released" ? "No bed held" : "Record behind",
+    chip: orphan.kind === "pull_released" ? "No bed pulled" : "Record behind",
     // `stalled`, not `urgent`: a stage correction never released a bed, so this one needs a
     // person to check rather than to act. `WardChipLevel` has no "attention" member — the ladder is
     // urgent / stalled / routine / accepted / enroute / cancelled.
@@ -478,7 +472,7 @@ export function attentionItems({
       who: "Transport",
       chip: "Unanswered",
       level: "routine",
-      say: "Nobody has recorded whether this patient needs transport. That is not the same as deciding they do not — a bed is held and no journey is planned.",
+      say: "Nobody has recorded whether this patient needs transport. That is not the same as deciding they do not — a bed is pulled and no journey is planned.",
     });
   }
 
@@ -523,8 +517,8 @@ export function attentionItems({
       chip: "Not booked",
       level: "urgent",
       say: answered
-        ? `${destination ? `${destination.name} has` : "The ward has"} a bed held for this patient and transport is recorded as needed, but no job has been raised. The sending team books it — nobody else can — and the bed is being held while nothing moves. ${CONFIRM_WITH_THE_WARD}`
-        : `${destination ? `${destination.name} has` : "The ward has"} a bed held for this patient and no transport job exists. Nobody has recorded whether transport is needed either, so that answer is owed first — and if it is, the sending team books it. The bed is being held while nothing moves. ${CONFIRM_WITH_THE_WARD}`,
+        ? `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and transport is recorded as needed, but no job has been raised. The sending team books it — nobody else can — and the bed stays pulled while nothing moves. ${CONFIRM_WITH_THE_WARD}`
+        : `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and no transport job exists. Nobody has recorded whether transport is needed either, so that answer is owed first — and if it is, the sending team books it. The bed stays pulled while nothing moves. ${CONFIRM_WITH_THE_WARD}`,
     });
   }
 

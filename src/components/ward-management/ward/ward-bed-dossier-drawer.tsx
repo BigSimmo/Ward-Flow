@@ -46,10 +46,9 @@ import {
 import {
   observationLevelName,
   observationRatio,
-  observationSummary,
   type Observation,
 } from "@/components/ward-management/ward-observation";
-import { WardObservationControl } from "./ward-observation-control";
+import { WardObservationControl, observationWithReview } from "./ward-observation-control";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -265,7 +264,7 @@ export function WardBedDossierDrawer({
       : null;
 
   const observation = bedItem?.observation
-    ? observationSummary(bedItem.observation)
+    ? observationWithReview(bedItem.observation, now)
     : bedItem?.highAcuity
       ? "High acuity"
       : "Not recorded";
@@ -364,6 +363,12 @@ export function WardBedDossierDrawer({
         at: admission.dischargeConfirmedAt,
         tone: "success",
         label: `Discharge confirmed${admission.dischargeConfirmedBy ? ` by ${admission.dischargeConfirmedBy}` : ""}`,
+      });
+    for (const change of admission.observationChanges ?? [])
+      timeline.push({
+        at: change.at,
+        tone: "neutral",
+        label: `Observation changed to ${observationWithReview(change.to, now)}`,
       });
     if (criteriaRecord && criteriaRecord.items.length > 0) {
       timeline.push({ at: criteriaRecord.setAt, tone: "neutral", label: "Discharge criteria set or reviewed" });
@@ -571,7 +576,7 @@ export function WardBedDossierDrawer({
                 value={isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
                 tone={isPreparing ? "neutral" : "success"}
               />
-              <FactTile label="Held for" value="No one" />
+              <FactTile label="Pulled for" value="No one" />
               {bedItem.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
             </div>
             <div className={styles.drawerBody}>
@@ -679,6 +684,7 @@ export function WardBedDossierDrawer({
                       <WardObservationControl
                         observation={bedItem.observation}
                         now={now}
+                        showCurrent={false}
                         onSave={onSetObservation ? (next) => onSetObservation(bedItem.admissionId!, next) : undefined}
                       />
                     ) : null}
@@ -1130,7 +1136,7 @@ function PhoneBedSheet({
                   value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
                   tone={bedItem?.preparing ? "neutral" : "success"}
                 />
-                <FactTile label="Held for" value={bedItem?.heldFor ?? "No one"} />
+                <FactTile label="Pulled for" value={bedItem?.heldFor ?? "No one"} />
               </div>
               <h3 className={styles.phoneSec}>Placement</h3>
               <dl className={styles.phoneKv}>
@@ -1157,6 +1163,7 @@ function PhoneBedSheet({
                 <WardObservationControl
                   observation={bedItem.observation}
                   now={now}
+                  showCurrent={false}
                   onSave={onSetObservation ? (next) => onSetObservation(admissionId, next) : undefined}
                 />
               ) : null}
