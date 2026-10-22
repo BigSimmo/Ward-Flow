@@ -7,17 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  GanttChart,
-  LayoutGrid,
-  List,
-  LogIn,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
 
 import {
   Button,
@@ -63,7 +53,7 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
-import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
@@ -631,26 +621,7 @@ export function EdIndex() {
               </span>
             )
           }
-          footer={
-            previewRow ? (
-              <div className={styles.previewFoot}>
-                <Link
-                  className={buttonClass({ variant: "sec" })}
-                  href={raiseReferralHref({ source: "ed_medical", originEdId: previewRow.summary.ed.id })}
-                >
-                  Raise referral
-                </Link>
-                <Link
-                  className={buttonClass({ variant: "pri" })}
-                  href={edHref(previewRow.summary.ed.id)}
-                  data-testid="ed-index-preview-enter"
-                >
-                  <Icon icon={LogIn} size={16} />
-                  Enter {previewRow.short}
-                </Link>
-              </div>
-            ) : null
-          }
+          footer={previewRow ? <EdPreviewFoot row={previewRow} /> : null}
           testId="ed-index-preview"
         >
           {previewRow ? <EdPreview row={previewRow} highlight={highlight} accessTarget={accessTarget} /> : null}
@@ -1050,27 +1021,7 @@ function EdLanes({
         </PhoneSheet>
       ) : picked ? (
         <div className={styles.picked} aria-live="polite">
-          <span className={styles.tier} title={`Tier ${picked.person.movement.urgency}`}>
-            {picked.person.movement.urgency}
-          </span>
-          <b className={styles.pickedName}>{picked.person.name}</b>
-          <span className={styles.meta}>
-            {picked.row.short} · {picked.person.stage}
-            {picked.person.movement.legalForm ? ` · Form ${picked.person.movement.legalForm.code}` : ""}
-            {picked.person.destination ? ` · ${picked.person.destination}` : ""}
-          </span>
-          <span className={styles.longest}>
-            {picked.person.clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[picked.person.clock]} size={9} /> : null}
-            <b className={styles.num}>{splitDuration(picked.person.wait)}</b>
-          </span>
-          <span className={styles.pickedActions}>
-            <Link className={buttonClass({ variant: "sec", size: "sm" })} href={picked.person.href}>
-              Open patient
-            </Link>
-            <Link className={buttonClass({ variant: "pri", size: "sm" })} href={edHref(picked.row.summary.ed.id)}>
-              Open {picked.row.short}
-            </Link>
-          </span>
+          <EdLanePicked person={picked.person} row={picked.row} />
         </div>
       ) : null}
       <div className={styles.lanesFoot}>
@@ -1205,38 +1156,71 @@ function PhoneEdList({
 }
 
 /*
- * Phone script budget (22 October 2026): the preview body draws only once an ED is previewed, so it
- * loads after the first paint and is fetched when the browser is idle. Not `next/dynamic`, which
- * holds a freshly loaded panel back for a frame or more; a loaded body draws straight away.
+ * Phone script budget (22 October 2026): the preview body, the phone lane facts and the desktop
+ * picked strip draw only once an ED or a person is chosen, so their code loads after the first
+ * paint and is fetched when the browser is idle. Not `next/dynamic`, which holds a freshly loaded
+ * panel back for a frame or more; a loaded body draws straight away.
  */
 type PreviewModule = typeof import("./ed-preview");
 let loadedPreview: PreviewModule | undefined;
 const loadPreview = () => import("./ed-preview").then((m) => (loadedPreview = m));
 preloadWhenIdle(loadPreview);
 
-function usePreviewModule(): PreviewModule | undefined {
+function usePreviewModule() {
   const [loaded, setLoaded] = useState(() => loadedPreview);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (loaded) return;
+    if (loaded || failed) return;
     let live = true;
     void loadPreview()
       .then((m) => {
         if (live) setLoaded(() => m);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (live) setFailed(true);
+      });
     return () => {
       live = false;
     };
-  }, [loaded]);
-  return loaded;
+  }, [loaded, failed]);
+  return { loaded, failed, retry: () => setFailed(false) };
+}
+
+// A failed fetch (patchy Wi-Fi, or a new deploy) must not leave the preview blank without a word.
+function PreviewLoadFailed({ retry }: { retry: () => void }) {
+  return (
+    <p role="status" data-testid="ward-ed-preview-load-failed">
+      The ED details did not load.{" "}
+      <Button variant="sec" onClick={retry}>
+        Try again
+      </Button>
+    </p>
+  );
 }
 
 function EdPreview(props: ComponentProps<PreviewModule["EdPreview"]>) {
-  const Body = usePreviewModule()?.EdPreview;
-  return Body ? <Body {...props} /> : null;
+  const { loaded, failed, retry } = usePreviewModule();
+  const Body = loaded?.EdPreview;
+  if (Body) return <Body {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
+}
+
+function EdPreviewFoot(props: ComponentProps<PreviewModule["EdPreviewFoot"]>) {
+  // On a failed load the preview body above says so and offers Try again.
+  const Foot = usePreviewModule().loaded?.EdPreviewFoot;
+  return Foot ? <Foot {...props} /> : null;
+}
+
+function EdLanePicked(props: ComponentProps<PreviewModule["EdLanePicked"]>) {
+  const { loaded, failed, retry } = usePreviewModule();
+  const Picked = loaded?.EdLanePicked;
+  if (Picked) return <Picked {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
 }
 
 function EdLaneFacts(props: ComponentProps<PreviewModule["EdLaneFacts"]>) {
-  const Facts = usePreviewModule()?.EdLaneFacts;
-  return Facts ? <Facts {...props} /> : null;
+  const { loaded, failed, retry } = usePreviewModule();
+  const Facts = loaded?.EdLaneFacts;
+  if (Facts) return <Facts {...props} />;
+  return failed ? <PreviewLoadFailed retry={retry} /> : null;
 }

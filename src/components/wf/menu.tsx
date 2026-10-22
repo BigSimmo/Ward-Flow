@@ -82,7 +82,7 @@ function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, pa
           style.top = "auto";
           style.bottom = "calc(100% + 6px)";
         }
-        const room = Math.max(above, below, 120);
+        const room = Math.max(above, below);
         if (box.height > room) {
           style.maxHeight = `${room}px`;
           style.overflowY = "auto";

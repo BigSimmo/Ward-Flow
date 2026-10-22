@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 
-import { FactGrid, RowSpark, StatusGlyph, useIsPhone } from "@/components/wf";
+import { LogIn } from "lucide-react";
+
+import { FactGrid, Icon, RowSpark, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { edHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 import {
   CLOCK_TONE,
@@ -144,5 +147,56 @@ export function EdLaneFacts({ person }: { person: EdPerson }) {
         </div>
       </dl>
     </>
+  );
+}
+
+/** The desktop wait lanes' picked person: tier, name, where they are, their wait and where to go next. */
+export function EdLanePicked({ person, row }: { person: EdPerson; row: EdRow }) {
+  return (
+    <>
+      <span className={styles.tier} title={`Tier ${person.movement.urgency}`}>
+        {person.movement.urgency}
+      </span>
+      <b className={styles.pickedName}>{person.name}</b>
+      <span className={styles.meta}>
+        {row.short} · {person.stage}
+        {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
+        {person.destination ? ` · ${person.destination}` : ""}
+      </span>
+      <span className={styles.longest}>
+        {person.clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} /> : null}
+        <b className={styles.num}>{splitDuration(person.wait)}</b>
+      </span>
+      <span className={styles.pickedActions}>
+        <Link className={buttonClass({ variant: "sec", size: "sm" })} href={person.href}>
+          Open patient
+        </Link>
+        <Link className={buttonClass({ variant: "pri", size: "sm" })} href={edHref(row.summary.ed.id)}>
+          Open {row.short}
+        </Link>
+      </span>
+    </>
+  );
+}
+
+/** The ED preview's footer: raise a referral from this ED, or enter it. */
+export function EdPreviewFoot({ row }: { row: EdRow }) {
+  return (
+    <div className={styles.previewFoot}>
+      <Link
+        className={buttonClass({ variant: "sec" })}
+        href={raiseReferralHref({ source: "ed_medical", originEdId: row.summary.ed.id })}
+      >
+        Raise referral
+      </Link>
+      <Link
+        className={buttonClass({ variant: "pri" })}
+        href={edHref(row.summary.ed.id)}
+        data-testid="ed-index-preview-enter"
+      >
+        <Icon icon={LogIn} size={16} />
+        Enter {row.short}
+      </Link>
+    </div>
   );
 }
