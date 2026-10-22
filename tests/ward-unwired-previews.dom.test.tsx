@@ -25,7 +25,6 @@ import { HandoverSignOffPanel } from "@/components/ward-management/handover/hand
 import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { StatisticsRange } from "@/components/ward-management/statistics/statistics-hero-tools";
 import { showsUnwiredPreviews, UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -97,16 +96,12 @@ const BUILDS = [
 describe.each(BUILDS)("a %s build", (build, shown) => {
   beforeEach(() => asBuild(build));
 
-  it(`${shown ? "shows" : "hides"} On-call's copy-only Call button and its not-wired footnote`, () => {
+  it(`${shown ? "shows" : "hides"} On-call's not-wired footnote`, () => {
     render(
       <WardFlowClockContext.Provider value={NOW_ANCHOR}>
         <OnCallScreen />
       </WardFlowClockContext.Provider>,
     );
-    const panel = within(screen.getByTestId("ward-on-call-role-panel"));
-    expect(panel.queryAllByRole("button", { name: /^Call 08 0000/u }).length > 0).toBe(shown);
-    // The number can still be copied.
-    expect(panel.getAllByRole("button", { name: /^Copy .*number$/u }).length).toBeGreaterThan(0);
     expect(screen.getByTestId("ward-on-call-governance").textContent?.includes("Calling and email are not wired")).toBe(
       shown,
     );
@@ -138,56 +133,7 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     expect(contacts.queryAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u }).length > 0).toBe(shown);
   });
 
-  it(`${shown ? "shows" : "hides"} the alert reply board's Chase button`, () => {
-    const units = allUnits().slice(0, 3);
-    const alert: BroadcastAlert = {
-      id: "BC-TEST-1",
-      kind: "bed_call",
-      title: "Bed call test",
-      message: "Need one acute bed",
-      severity: "warning",
-      category: "capacity_gridlock",
-      targetScope: "all",
-      targetScopeLabel: "All units",
-      dispatchedAt: NOW_ANCHOR - 10,
-      expiresAt: NOW_ANCHOR + 50,
-      durationMinutes: 60,
-      status: "active",
-      dispatchedByRole: "coordinator",
-      dispatchedByName: "State Flow Coordinator",
-      acknowledgedUnits: [],
-      replies: [{ unitId: units[0]!.id, answer: "can_take", at: NOW_ANCHOR - 5, role: "ward" }],
-    };
-    render(<ReplyBoardList alert={alert} units={units} now={NOW_ANCHOR} />);
-    expect(screen.getByRole("region", { name: "Replies" })).toHaveTextContent("1 of 3 answered");
-    expect(screen.queryByRole("button", { name: /Chase/u }) !== null).toBe(shown);
-  });
-
-  it(`${shown ? "shows" : "hides"} the handover sign-off's Handing to preview`, () => {
-    render(
-      <HandoverSignOffPanel
-        title="Sign off this shift"
-        subtitle="Flow coordinator"
-        checks={[{ id: "one", done: true, text: "Every move has a next step" }]}
-        signedAt={null}
-        now={NOW_ANCHOR}
-        canSignOff
-        onSignOff={vi.fn()}
-        onUndoSignOff={vi.fn()}
-      />,
-    );
-    const panel = screen.getByTestId("ward-handover-sign-off");
-    expect(panel).toHaveTextContent("Handed over by");
-    expect(within(panel).queryByText(/^Handing to/u) !== null).toBe(shown);
-    expect(panel.textContent?.includes("Not wired in this prototype.")).toBe(shown);
-  });
-
-  it(`${shown ? "shows" : "hides"} the statistics history range (only Now is real)`, () => {
-    render(<StatisticsRange />);
-    expect(screen.queryByTestId("ward-statistics-range") !== null).toBe(shown);
-  });
-
-  it(`${shown ? "shows" : "hides"} the ED arrival checklist's not-wired checks`, () => {
+  it("records the ED arrival checklist's search and chart in every build, never Not wired", () => {
     const base = seedWardFlowState().movements[0]!;
     const movement: Movement = {
       ...base,
@@ -195,29 +141,17 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
       contrabandSearchDone: undefined,
       medicationChartDone: undefined,
     };
-    render(<EdAdmissionChecklist movement={movement} referrals={[]} />);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdAdmissionChecklist movement={movement} referrals={[]} />
+      </WardFlowProvider>,
+    );
     const card = screen.getByTestId("ward-ed-admission-checklist");
     expect(card).toHaveTextContent("Medical clearance");
-    expect(within(card).queryByText("Contraband search") !== null).toBe(shown);
-    expect(within(card).queryByText("Medication chart") !== null).toBe(shown);
-    expect(within(card).queryAllByText("Not wired").length > 0).toBe(shown);
-    expect(within(card).getByRole("heading")).toHaveTextContent(/Arrival checklist, \d of 3 recorded/u);
-  });
-
-  it(`${shown ? "says" : "does not say"} "Not wired" where the server takes no access requests`, () => {
-    render(<WardAskForAccess canRequest={false} api={null} onRetry={vi.fn()} onSignOut={vi.fn()} />);
-    expect(screen.getByText(/Ask your access admin directly\.$/u)).toBeInTheDocument();
-    expect(screen.queryByText(/Not wired in this prototype/u) !== null).toBe(shown);
-  });
-
-  it(`${shown ? "shows" : "hides"} the decisions cockpit's not-wired lines and illustrative fallback`, () => {
-    const unit = { id: "rph-adult-secure", name: "Ward 2K (Adult Acute)", beds: 24 } as unknown as Unit;
-    const { unmount } = render(<WardDecisionsCockpit unit={unit} demonstration rollupOverdue />);
-    expect(screen.getByTestId("ward-morning-rollup-overdue-banner")).toBeInTheDocument();
-    expect(screen.queryAllByText("Not wired in this prototype.").length > 0).toBe(shown);
-    unmount();
-    render(<WardDecisionsCockpit unit={unit} />);
-    expect(screen.queryByText(/This illustrative cockpit does not record/u) !== null).toBe(shown);
+    expect(within(card).getByText("Contraband search")).toBeTruthy();
+    expect(within(card).getByText("Medication chart")).toBeTruthy();
+    expect(within(card).queryAllByText(/not wired/iu)).toHaveLength(0);
+    expect(within(card).getByRole("heading")).toHaveTextContent(/Arrival checklist, \d of 5 recorded/u);
   });
 
   it(`${shown ? "shows" : "hides"} the patient record's Family and carers preview`, () => {
@@ -254,8 +188,87 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     expect(dossier).toHaveTextContent("It does not assign a clinician or confirm an appointment.");
     expect(dossier.textContent?.includes("Clinician assignment: Not wired in this prototype.")).toBe(shown);
   });
+});
 
-  it(`${shown ? "shows" : "hides"} the discharge transport paging buttons`, () => {
+/**
+ * D-72 (build or delete each unfinished control, defaulting to delete): these controls and notes
+ * were deleted, so they are absent from every build, a local development build included.
+ */
+describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
+  beforeEach(() => asBuild(build));
+
+  it("On-call has no copy-only Call button, and the number can still be copied", () => {
+    render(
+      <WardFlowClockContext.Provider value={NOW_ANCHOR}>
+        <OnCallScreen />
+      </WardFlowClockContext.Provider>,
+    );
+    const panel = within(screen.getByTestId("ward-on-call-role-panel"));
+    expect(panel.queryAllByRole("button", { name: /^Call 08 0000/u })).toHaveLength(0);
+    expect(panel.getAllByRole("button", { name: /^Copy .*number$/u }).length).toBeGreaterThan(0);
+  });
+
+  it("the alert reply board has no Chase button", () => {
+    const units = allUnits().slice(0, 3);
+    const alert: BroadcastAlert = {
+      id: "BC-TEST-1",
+      kind: "bed_call",
+      title: "Bed call test",
+      message: "Need one acute bed",
+      severity: "warning",
+      category: "capacity_gridlock",
+      targetScope: "all",
+      targetScopeLabel: "All units",
+      dispatchedAt: NOW_ANCHOR - 10,
+      expiresAt: NOW_ANCHOR + 50,
+      durationMinutes: 60,
+      status: "active",
+      dispatchedByRole: "coordinator",
+      dispatchedByName: "State Flow Coordinator",
+      acknowledgedUnits: [],
+      replies: [{ unitId: units[0]!.id, answer: "can_take", at: NOW_ANCHOR - 5, role: "ward" }],
+    };
+    render(<ReplyBoardList alert={alert} units={units} now={NOW_ANCHOR} />);
+    expect(screen.getByRole("region", { name: "Replies" })).toHaveTextContent("1 of 3 answered");
+    expect(screen.queryByRole("button", { name: /Chase/u })).toBeNull();
+  });
+
+  it("the handover sign-off has no Handing to preview", () => {
+    render(
+      <HandoverSignOffPanel
+        title="Sign off this shift"
+        subtitle="Flow coordinator"
+        checks={[{ id: "one", done: true, text: "Every move has a next step" }]}
+        signedAt={null}
+        now={NOW_ANCHOR}
+        canSignOff
+        onSignOff={vi.fn()}
+        onUndoSignOff={vi.fn()}
+      />,
+    );
+    const panel = screen.getByTestId("ward-handover-sign-off");
+    expect(panel).toHaveTextContent("Handed over by");
+    expect(within(panel).queryByText(/^Handing to/u)).toBeNull();
+    expect(panel).not.toHaveTextContent("Not wired in this prototype.");
+  });
+
+  it('never says "Not wired" where the server takes no access requests', () => {
+    render(<WardAskForAccess canRequest={false} api={null} onRetry={vi.fn()} onSignOut={vi.fn()} />);
+    expect(screen.getByText(/Ask your access admin directly\.$/u)).toBeInTheDocument();
+    expect(screen.queryByText(/Not wired in this prototype/u)).toBeNull();
+  });
+
+  it("the decisions cockpit has no not-wired lines and no illustrative fallback", () => {
+    const unit = { id: "rph-adult-secure", name: "Ward 2K (Adult Acute)", beds: 24 } as unknown as Unit;
+    const { unmount } = render(<WardDecisionsCockpit unit={unit} demonstration rollupOverdue />);
+    expect(screen.getByTestId("ward-morning-rollup-overdue-banner")).toBeInTheDocument();
+    expect(screen.queryAllByText("Not wired in this prototype.")).toHaveLength(0);
+    unmount();
+    const { container } = render(<WardDecisionsCockpit unit={unit} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("the discharge inspection has no transport paging buttons", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DischargeBoard />
@@ -265,10 +278,10 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     fireEvent.click(within(worklist).getAllByRole("button")[0]!);
     expect(screen.getByRole("tablist", { name: "Discharge inspection sections" })).toBeInTheDocument();
     const paging = screen.queryAllByText(/^(Page transport|Page dispatch desk|Dispatch transport|Expedite)$/u);
-    expect(paging.length > 0).toBe(shown);
+    expect(paging).toHaveLength(0);
   });
 
-  it(`${shown ? "says" : "does not say"} owner notification is not wired when extending a legal form`, () => {
+  it("extending a legal form says plainly that Ward Flow does not notify the owner", () => {
     const target = seedWardFlowStateAt(0).movements.find((m) => !m.closure && m.legalForm?.dueAt !== undefined)!;
     render(
       <WardFlowProvider initialNow={1242}>
@@ -276,7 +289,7 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
       </WardFlowProvider>,
     );
     const sheet = screen.getByTestId("ward-legal-extend");
-    expect(sheet).toHaveTextContent(`Tell ${target.owner} separately.`);
-    expect(sheet.textContent?.includes("not wired in this prototype")).toBe(shown);
+    expect(sheet).toHaveTextContent(`Ward Flow does not notify the owner. Tell ${target.owner} separately.`);
+    expect(sheet).not.toHaveTextContent(/not wired in this prototype/iu);
   });
 });

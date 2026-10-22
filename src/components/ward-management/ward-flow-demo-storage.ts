@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
+import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
+import type { FixtureWorlds } from "./ward-flow-typed-text-scrub";
 import {
   RESTORED_NOTICE_PREFIX,
   STORAGE_UNAVAILABLE,
@@ -81,6 +83,39 @@ export function readDemoStateLater(dayZero: Date, mountedAtAbsolute: number, raw
     ({ tryReadDemoState }) => tryReadDemoState(dayZero, mountedAtAbsolute, rawOverride),
     () => ({ recoveryNotice: STORAGE_UNAVAILABLE }),
   );
+}
+
+let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
+
+/**
+ * The device copy of a session holding typed text (`ward-flow-typed-text-scrub.ts`) loads on demand,
+ * like the saved-session read: it carries the restore fence and the typed-text reader
+ * (`ward-flow-typed-text-ledger.ts`), which the first screen does not need.
+ */
+export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
+  return import("./ward-flow-typed-text-scrub").then((module) => (typedTextScrub = module));
+}
+
+type TypedTextHeld = {
+  typedTextSeen: boolean;
+  typedTextEvents?: readonly WardFlowEvent[];
+  typedTextFromFile?: boolean;
+};
+
+/**
+ * What may be written to this device: the world itself while it holds no typed text, otherwise its
+ * copy with every typed value replaced (D-18, Josh 21 Oct 2026). `null` means nothing may be written
+ * (`locked`, or no safe copy could be made), and `undefined` that the copy's code has not loaded yet.
+ */
+export function deviceCopyOf(
+  state: WardFlowState,
+  held: TypedTextHeld,
+  locked: boolean,
+  fixtureWorlds: FixtureWorlds,
+): WardFlowState | null | undefined {
+  if (!held.typedTextSeen) return state;
+  if (locked) return null;
+  return typedTextScrub?.deviceCopyFromEvents(state, held.typedTextEvents ?? [], fixtureWorlds, held.typedTextFromFile);
 }
 
 const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";

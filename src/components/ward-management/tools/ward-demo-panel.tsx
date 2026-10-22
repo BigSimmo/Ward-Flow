@@ -128,7 +128,7 @@ export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
     const result = await loadScenarioFile(text);
     setMessage(
       result.ok
-        ? "Scenario loaded. It is kept in this tab only, so load the file again after a refresh."
+        ? "Scenario loaded. A refresh keeps it, except its typed text, unless device saving is paused."
         : result.reason,
     );
   }

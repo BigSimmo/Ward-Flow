@@ -11,8 +11,9 @@ vi.mock("next/link", () => ({
 
 describe("one shared statistics navigation", () => {
   it.each([
-    ["", "Summary"],
-    ["/overview", "Overview"],
+    ["", "Network"],
+    // D-77 (change 9): the old Overview address redirects to Network, so Network is current there too.
+    ["/overview", "Network"],
     ["/compare", "Compare"],
     ["/services", "Services"],
     ["/service/North%20Metro", "Services"],
@@ -30,8 +31,7 @@ describe("one shared statistics navigation", () => {
     const links = nav.getAllByRole("link");
     // v6 hero track (7 Oct 2026): short labels, the four unit kinds carrying their counts.
     expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
-      "Summary",
-      "Overview",
+      "Network",
       "Compare",
       "Services",
       "Wards",
@@ -47,18 +47,17 @@ describe("one shared statistics navigation", () => {
   });
 
   it.each([
-    ["", undefined, "Summary"],
+    ["", undefined, "Network"],
     ["/teams", undefined, "Teams"],
     ["/weekly", undefined, "Weekly"],
     ["/service/North%20Metro", "North Metro", "Services"],
-  ])("shows the same eight phone chips on %s (phone review F-12)", (suffix, slug, label) => {
+  ])("shows the same seven phone chips on %s (phone review F-12)", (suffix, slug, label) => {
     routing.pathname = `/ward-flow/statistics${suffix}`;
     render(<StatisticsNav variant="chips" activeSlug={slug} withSamples={false} />);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     const links = nav.getAllByRole("link");
     expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
-      "Summary",
-      "Overview",
+      "Network",
       "Compare",
       "Services",
       "Wards",
@@ -76,8 +75,8 @@ describe("one shared statistics navigation", () => {
   it("uses the same destinations from the compact mobile selector", () => {
     routing.pathname = "/ward-flow/statistics";
     render(<StatisticsNav />);
-    fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "overview" } });
-    expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/overview");
+    fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "compare" } });
+    expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/compare");
     fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "service" } });
     expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/services");
   });

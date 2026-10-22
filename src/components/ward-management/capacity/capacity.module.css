@@ -39,6 +39,16 @@
   flex: none;
 }
 
+/* The hero title and its eyebrow wrap rather than clip ("26 beds ready of …", "AS AT 10…") at
+   1280 and 390 (local visual desk, 21 Oct 2026). Element selectors, since the Hero's own classes
+   are module-scoped; the eyebrow is the span directly before the title line. */
+.capacityHero h1,
+.capacityHero span:has(+ div > h1) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .heroStatGroup {
   display: flex;
   flex-wrap: wrap;

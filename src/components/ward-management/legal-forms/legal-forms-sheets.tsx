@@ -28,7 +28,6 @@ import {
   type TellSubject,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 const MS_PER_MINUTE = 60_000;
@@ -392,7 +391,7 @@ type ExtendSheetProps = {
   now: Instant;
   onClose: () => void;
   extendUnavailable?: string;
-  onExtendForm?: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
+  onExtendForm: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
 };
 
 export function ExtendSheet(props: ExtendSheetProps) {
@@ -418,7 +417,6 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
-    (!onExtendForm ? "Not wired in this prototype." : undefined) ??
     (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
@@ -462,7 +460,7 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
                 }
               };
               try {
-                const result = onExtendForm?.(target, parsedDueAt) ?? false;
+                const result = onExtendForm(target, parsedDueAt);
                 if (typeof result === "boolean") finish(result);
                 else void result.then(finish, () => finish(false));
               } catch {
@@ -529,12 +527,7 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
               autoComplete="off"
             />
           </Field>
-          <p className={styles.note}>
-            {showsUnwiredPreviews()
-              ? "Owner notification is not wired in this prototype."
-              : "Ward Flow does not notify the owner."}{" "}
-            Tell {target.owner} separately.
-          </p>
+          <p className={styles.note}>Ward Flow does not notify the owner. Tell {target.owner} separately.</p>
         </div>
       ) : null}
     </Sheet>

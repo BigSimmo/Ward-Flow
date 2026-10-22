@@ -298,5 +298,4 @@ export function supportNotificationInboxItems(
   return items;
 }
 
-export const SUPPORT_SERVICE_TYPES = ["pharmacy", "transport", "cleaning"] as const;
-export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
+export { SUPPORT_SERVICE_TYPES, type SupportServiceType } from "./ward-model";

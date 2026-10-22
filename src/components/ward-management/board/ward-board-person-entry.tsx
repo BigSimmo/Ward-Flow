@@ -8,6 +8,23 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import styles from "./board.module.css";
 import { expectedPhrase, movesPhrase, type Occupant } from "./ward-board-model";
 
+/** True when the long-stay tag already names the recorded blocker, so the plan does not repeat it. */
+function blockerInBarrierTag(occupant: Occupant): boolean {
+  return (
+    occupant.days !== null &&
+    occupant.days >= CLINICAL_VALUES.longStayPrompt.value &&
+    !occupant.dischargeBarrier &&
+    occupant.blockReason !== null
+  );
+}
+
+/** The long-stay tag. A recorded blocker answers it, so it never says "unrecorded" beside one (UX audit, 21 Oct 2026). */
+function barrierText(occupant: Occupant): string {
+  if (occupant.dischargeBarrier) return `Discharge barrier: ${occupant.dischargeBarrier}`;
+  if (occupant.blockReason !== null) return `Held up: ${occupant.blockReason}`;
+  return "Discharge barrier unrecorded (Stay ≥ 7d)";
+}
+
 /**
  * One person's discharge plan, rendered identically wherever it appears.
  *
@@ -66,12 +83,12 @@ export function PersonEntry({
         {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
           <p className={styles.personFlagLine}>
             <span
-              className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
+              className={
+                occupant.dischargeBarrier || occupant.blockReason ? styles.barrierTag : styles.barrierTagWarning
+              }
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier
-                ? `Discharge barrier: ${occupant.dischargeBarrier}`
-                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {barrierText(occupant)}
             </span>
           </p>
         )}
@@ -101,7 +118,9 @@ export function PersonEntry({
               : "Not confirmed — the ward's plan, not yet its decision."}
           </p>
         )}
-        {occupant.blockReason !== null && <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>}
+        {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (
+          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
+        )}
       </>
     );
   }
@@ -149,12 +168,6 @@ export function PersonEntry({
           {resolvedPatient?.umrn && <span className={styles.detailChip}>UMRN {resolvedPatient.umrn}</span>}
         </div>
 
-        {/* Retain exact personWho text for test contract compatibility */}
-        <p className={`${styles.personWho} ${styles.flushMargin}`}>
-          {occupant.sex} · Gender: {occupant.gender ?? "Not recorded"},{" "}
-          {occupant.homeRegion === null ? "home region not recorded" : `from ${occupant.homeRegion}`}
-        </p>
-
         {occupant.stepDownCandidate && (
           <div className={styles.personFlagBlock}>
             <span className={styles.stepDownTag} data-testid={`${idPrefix}-${occupant.key}-stepdown`}>
@@ -165,12 +178,12 @@ export function PersonEntry({
         {occupant.days !== null && occupant.days >= CLINICAL_VALUES.longStayPrompt.value && (
           <div className={styles.personFlagBlock}>
             <span
-              className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
+              className={
+                occupant.dischargeBarrier || occupant.blockReason ? styles.barrierTag : styles.barrierTagWarning
+              }
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier
-                ? `Discharge barrier: ${occupant.dischargeBarrier}`
-                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {barrierText(occupant)}
             </span>
           </div>
         )}
@@ -197,9 +210,6 @@ export function PersonEntry({
             <span className={styles.catchmentValue}>{patient?.legalStatus ?? "Not recorded"}</span>
           </div>
         </div>
-        <p className={styles.catchmentFootnote}>
-          This block resolves through the referral that filled the bed, and that chain is optional by design.
-        </p>
       </div>
 
       {/* 3. Clinical & Transport Card */}
@@ -242,7 +252,9 @@ export function PersonEntry({
             {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
           </div>
         )}
-        {occupant.blockReason !== null && <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>}
+        {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (
+          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
+        )}
       </div>
     </>
   );

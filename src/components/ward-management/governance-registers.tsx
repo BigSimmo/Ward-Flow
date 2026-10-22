@@ -1,10 +1,9 @@
 "use client";
 
-import { ClipboardList, Download, FileText, Fingerprint, History, ShieldCheck, X } from "lucide-react";
+import { ClipboardList, FileText, Fingerprint, History, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -728,7 +727,6 @@ function GovernanceSession({
               <History size={14} aria-hidden="true" />
               PIR chronology
             </Link>
-            <NotWiredButton variant="onHero" size="sm" icon={Download} label="Export" name="Export governance" />
           </span>
         }
       />
@@ -1171,9 +1169,6 @@ function GovernanceSession({
               <CardBody>
                 <p className={thirdEdition.quiet}>{report.text}</p>
               </CardBody>
-              <CardFoot>
-                <NotWiredButton variant="sec" size="sm" label="Open" name={`Open ${report.title}`} />
-              </CardFoot>
             </Card>
           ))}
         </div>
