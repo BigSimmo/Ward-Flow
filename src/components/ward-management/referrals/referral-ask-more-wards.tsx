@@ -77,21 +77,24 @@ export function useAskMoreWards({
     unit: unitsByWardId.get(addressing.destination.unitId ?? ""),
   }));
 
-  const q = query.trim().toLowerCase();
   const others =
     applies && template
       ? units
           .filter((unit) => !askedIds.has(unit.id))
-          .filter((unit) => !q || unit.name.toLowerCase().includes(q))
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((unit) => ({
-            unit,
-            verdict: referralEligibility(referral, { ...template, unitId: unit.id }, unit, now),
-          }))
+          .map((unit) => {
+            const verdict = referralEligibility(referral, { ...template, unitId: unit.id }, unit, now);
+            // The engine refuses a ward closed to admissions, so it is never offered as a fit.
+            const fit = verdict.eligible && !unit.isClosed;
+            return { unit, fit, reason: unit.isClosed ? "Closed to admissions" : candidateReason(verdict) };
+          })
       : [];
-  const fits = others.filter((row) => row.verdict.eligible);
-  const review = others.filter((row) => !row.verdict.eligible);
-  const chosen = picked.filter((id) => fits.some((row) => row.unit.id === id));
+  // Ticks come from every fitting ward, so a ward the search hides still counts and is still asked.
+  const chosen = picked.filter((id) => others.some((row) => row.fit && row.unit.id === id));
+  const q = query.trim().toLowerCase();
+  const shown = others.filter((row) => !q || row.unit.name.toLowerCase().includes(q));
+  const fits = shown.filter((row) => row.fit);
+  const review = shown.filter((row) => !row.fit);
 
   const rejection =
     attemptedAt === null
@@ -246,7 +249,7 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
               </p>
               {ask.showReview || ask.query.trim() ? (
                 <div className={ph.cands} role="group" aria-label="Needs review">
-                  {ask.review.map(({ unit, verdict }) => (
+                  {ask.review.map(({ unit, reason }) => (
                     <label key={unit.id} className={`${ph.cand} ${styles.row}`} data-kind="review">
                       <input
                         type="checkbox"
@@ -259,7 +262,7 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
                       <span className={ph.who}>
                         <span className={`${ph.nm} ${styles.wrap}`}>{unit.name}</span>
                         <span className={`${ph.sub} ${styles.wrap}`} id={`${baseId}-sub-${unit.id}`}>
-                          {[siteByCode(unit.siteCode)?.name, candidateReason(verdict)].filter(Boolean).join(" · ")}
+                          {[siteByCode(unit.siteCode)?.name, reason].filter(Boolean).join(" · ")}
                         </span>
                       </span>
                       <span className={ph.lab}>

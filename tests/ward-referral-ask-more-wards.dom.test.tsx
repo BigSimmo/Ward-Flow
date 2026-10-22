@@ -129,6 +129,19 @@ describe("Ask more wards on a community referral (fix plan item 16, D-76)", () =
     expect(screen.getByTestId("ward-referral-match-decline-open")).toBeInTheDocument();
   });
 
+  it("keeps ticks a search hides, so the slots left still cap the wards asked", () => {
+    renderPane();
+    const card = screen.getByTestId("ward-referral-ask-more-wards");
+    fireEvent.click(within(card).getByRole("button", { name: "Ask more wards" }));
+    const boxes = fitBoxes(card);
+    fireEvent.click(boxes[0]);
+    fireEvent.click(boxes[1]);
+    const third = boxes[2].getAttribute("aria-label") ?? "";
+    fireEvent.change(within(card).getByRole("searchbox", { name: "Find a ward" }), { target: { value: third } });
+    expect(within(card).getByRole("checkbox", { name: third })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ask 2 wards" })).toBeInTheDocument();
+  });
+
   it("Cancel closes the list, clears the ticks and brings Decline back", () => {
     renderPane();
     const card = screen.getByTestId("ward-referral-ask-more-wards");

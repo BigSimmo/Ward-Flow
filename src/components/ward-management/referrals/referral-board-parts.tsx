@@ -79,7 +79,9 @@ export function wardArm(referral: Referral) {
 /** What the referral still asks for, in a few words ("Ward bed and ED review"). */
 export function askingForShort(referral: Referral): string {
   const open = openArms(referral);
-  return open.length > 0 ? open.map((arm) => KIND_SHORT[arm.destination.kind]).join(" and ") : "Nothing open";
+  // Several wards asked at once are still one need, so each kind is named once.
+  const kinds = [...new Set(open.map((arm) => KIND_SHORT[arm.destination.kind]))];
+  return kinds.length > 0 ? kinds.join(" and ") : "Nothing open";
 }
 
 /** The bed needs the referrer ticked, as words. Only what the record holds. */
