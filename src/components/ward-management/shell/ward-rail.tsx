@@ -29,6 +29,7 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -183,23 +184,6 @@ function getTabletLandscapeSnapshot() {
 function sentenceStart(text: string): string {
   return text.length === 0 ? text : text.charAt(0).toUpperCase() + text.slice(1);
 }
-
-type DeskPersona = { readonly id: string; readonly name: string; readonly initials: string; readonly role: string };
-
-/**
- * B6 (Josh, 19 Oct 2026): one switcher. The person on the rail follows the desk ("Go to a desk"
- * sets both the person and the place), so there is no separate persona list to fall out of step
- * with the menu. Demo personas, synthetic. A desk with no drawn persona shows its role alone.
- */
-const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
-  coordinator: { id: "chen", name: "Dr S. Chen", initials: "SC", role: "Bed coordinator" },
-  ed: { id: "gallagher", name: "Sr M. Gallagher", initials: "MG", role: "Triage liaison nurse" },
-  ward: { id: "vance", name: "K. Vance RN", initials: "KV", role: "Nurse in charge" },
-  officer: { id: "okafor", name: "A. Okafor", initials: "AO", role: "Transport officer" },
-  community: { id: "hart", name: "L. Hart", initials: "LH", role: "Community team clinician" },
-  bed_manager: { id: "bed_manager", name: CHROME_ROLE_LABELS.bed_manager, initials: "BM", role: "Demo desk" },
-  executive: { id: "executive", name: CHROME_ROLE_LABELS.executive, initials: "EX", role: "Demo desk" },
-};
 
 // UX audit (21 Oct 2026): the same four themes as Settings, Display (settings-15 made Glare a fourth).
 const APPEARANCE_CHOICES = [

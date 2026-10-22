@@ -10,9 +10,7 @@
   gap: 0.5rem;
 }
 
-.viewButton,
-.primary,
-.secondary {
+.viewButton {
   min-height: var(--spacing-tap, 3rem);
   padding: 0 1rem;
   border: 1px solid var(--wf-line);
@@ -24,21 +22,13 @@
   cursor: pointer;
 }
 
-.viewButton[aria-pressed="true"],
-.primary {
+.viewButton[aria-pressed="true"] {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
   color: var(--wf-on-accent);
 }
 
-.secondary:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
 .viewButton:focus-visible,
-.primary:focus-visible,
-.secondary:focus-visible,
 .search:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
@@ -108,19 +98,6 @@
 .term dd {
   margin: 0.125rem 0 0;
   color: var(--wf-ink-2);
-}
-
-.stepCount {
-  margin: 0 0 0.5rem;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.tourActions {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
 }
 
 .newMark {

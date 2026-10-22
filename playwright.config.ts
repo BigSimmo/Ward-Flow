@@ -65,6 +65,23 @@ export default defineConfig({
     : "list",
   use: {
     baseURL,
+    // A signed-in desk's tour starts on its own once, over its home screen (#576). The journeys
+    // are about the screens underneath, so every desk's tour starts out seen. Contexts a spec opens
+    // itself with browser.newContext() do not get this and mark it seen themselves.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: new URL(baseURL).origin,
+          localStorage: [
+            {
+              name: "ward_flow_choice_tour_seen",
+              value: "coordinator,ward,ed,community,officer,bed_manager,executive,admin",
+            },
+          ],
+        },
+      ],
+    },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     // Dual-mode motion validation strategy (#75JA0P):
