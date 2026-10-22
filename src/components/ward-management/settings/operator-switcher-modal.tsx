@@ -61,8 +61,8 @@ import { movementUmrn } from "@/components/ward-management/ward-patient-resolver
 import { edById } from "@/components/ward-management/ward-sites";
 import { edHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 
+import { currentDeskId } from "./current-desk";
 import {
-  currentDeskId,
   deskActions,
   deskMatches,
   deskRoleLabel,

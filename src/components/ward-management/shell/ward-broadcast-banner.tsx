@@ -13,7 +13,7 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { bannerEntriesForDesk, type BannerEntry } from "@/components/ward-management/alerts/global-alert-view";
 import { useActNowNotificationPreference } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
+import { currentDeskId } from "@/components/ward-management/settings/current-desk";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import type { Instant } from "@/components/ward-management/ward-clock";

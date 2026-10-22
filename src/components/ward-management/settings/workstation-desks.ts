@@ -13,14 +13,13 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 
-export const COORDINATOR_DESK_ID = "coordinator";
-export const OFFICER_DESK_ID = "officer";
+import { COORDINATOR_DESK_ID, OFFICER_DESK_ID } from "./current-desk";
 const COORDINATOR_HREF = "/ward-flow";
 const OFFICER_HREF = "/ward-flow/transport/officer";
 
@@ -166,24 +165,6 @@ export function deskRoleLabel(role: DeskRole | WardFlowRole): string {
   return Object.hasOwn(CHROME_ROLE_LABELS, role)
     ? CHROME_ROLE_LABELS[role as WardChromeRole]
     : WARD_FLOW_ROLE_LABELS[role];
-}
-
-/**
- * Which desk the current route is. Ward, ED, team and officer routes name their own desk; every
- * other route is the coordinator's (`wardChromeRole`), except the community index, which is a list
- * of teams rather than one team's desk.
- */
-export function currentDeskId(pathname: string): string | null {
-  const segment = (pattern: RegExp) => {
-    const match = pattern.exec(pathname);
-    return match ? decodeURIComponent(match[1]) : null;
-  };
-  const role = wardChromeRole(pathname);
-  if (role === "ed") return segment(/\/ed\/([^/?#]+)/);
-  if (role === "ward") return segment(/\/(?:ward|board)\/([^/?#]+)/);
-  if (role === "community") return segment(/\/community\/([^/?#]+)/);
-  if (role === "officer") return OFFICER_DESK_ID;
-  return COORDINATOR_DESK_ID;
 }
 
 /**

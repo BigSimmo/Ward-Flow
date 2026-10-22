@@ -8,10 +8,12 @@ import { isOfficerJob } from "../src/components/ward-management/officer/officer-
 import {
   COORDINATOR_DESK_ID,
   currentDeskId,
+  OFFICER_DESK_ID,
+} from "../src/components/ward-management/settings/current-desk";
+import {
   deskActions,
   deskRoleLabel,
   deskMatches,
-  OFFICER_DESK_ID,
   workstationDesks,
 } from "../src/components/ward-management/settings/workstation-desks";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";

@@ -625,9 +625,12 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
   every hospital with its ED and wards and the community teams. A click expands a desk in place
   with its figures and what its role can do; Open desk navigates to that role's home. Styles in
   `workstation-switcher.module.css`. Exports `OperatorSwitcherModal`.
-- **`src/components/ward-management/settings/workstation-desks.ts`** (225 lines) — the desks the
-  drawer lists, built from `hubEntries` and `edHomeSummaries` (never a fixed list), the current
-  desk from the route, and each role's actions from `EVENT_ROLE`. Test:
+- **`src/components/ward-management/settings/workstation-desks.ts`** (216 lines) — the desks the
+  drawer lists, built from `hubEntries` and `edHomeSummaries` (never a fixed list), and each
+  role's actions from `EVENT_ROLE`. Test: `ward-workstation-desks.test.ts`.
+- **`src/components/ward-management/settings/current-desk.ts`** (27 lines) — the current desk from
+  the route (`currentDeskId`) and the coordinator and officer desk ids, apart from the drawer's
+  lists so the shell's broadcast banner and rail stay small on every page. Test:
   `ward-workstation-desks.test.ts`.
 - **`src/components/ward-management/settings/settings-screen.tsx`** (1898 lines) — the settings
   console. Single exported component `SettingsScreen` (178); local constants
