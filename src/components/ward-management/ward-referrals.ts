@@ -1409,26 +1409,3 @@ export function isBedHoldExpired(
   }
   return now - pulledAt >= thresholdMinutes;
 }
-
-export function bedHoldExpiryAlert(
-  movement: Movement,
-  now: Instant,
-  thresholdMinutes: number = BED_HOLD_EXPIRY_MINUTES,
-): { expired: boolean; minutesHeld: number; message?: string } {
-  const pulledAt = (movement as { pulledAt?: Instant }).pulledAt ?? movement.acceptedAt;
-  const minutesHeld =
-    pulledAt !== undefined && pulledAt !== null && Number.isFinite(pulledAt) ? Math.max(0, now - pulledAt) : 0;
-
-  if (isBedHoldExpired(movement, now, thresholdMinutes)) {
-    return {
-      expired: true,
-      minutesHeld,
-      message: `Bed hold exceeds ${thresholdMinutes} minutes without confirmed dispatch — clinical review required.`,
-    };
-  }
-
-  return {
-    expired: false,
-    minutesHeld,
-  };
-}

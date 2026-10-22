@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { type Movement, type Notice } from "@/components/ward-management/ward-model";
+import { type CapacityFigure, type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
-import { buzzKeys } from "./ward-buzz-keys";
+import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
 import styles from "./ward-notification-center.module.css";
 
 export interface WardNotificationCenterProps {
@@ -32,7 +32,10 @@ export interface WardNotificationCenterProps {
     byRole: string;
     message?: string;
     urgent?: boolean;
+    confirmations?: number;
   }[];
+  /** The ward's capacity figure: its own confirmation answers a capacity request (DEC-L5-04). */
+  allocatable?: Pick<CapacityFigure, "source" | "confirmedAt" | "confirmations">;
   morningRollupConfirmed?: boolean;
   morningRollupDeadlinePassed?: boolean;
   morningRollupDeadlineMinutes?: number;
@@ -116,6 +119,7 @@ export function WardNotificationCenter({
   patients,
   notices,
   refreshRequests = [],
+  allocatable,
   morningRollupConfirmed = false,
   morningRollupDeadlinePassed = false,
   morningRollupDeadlineMinutes = 570,
@@ -162,11 +166,12 @@ export function WardNotificationCenter({
     if (nextTab) setActiveTab(nextTab.id);
   };
 
-  // 1. Coordinator Buzzes matching unitId
+  // 1. Coordinator Buzzes matching unitId, still open: the ward's capacity confirmation answers one
+  // on every desk (DEC-L5-04). Keys come from the whole list so a dismissal keeps its key.
   const keys = buzzKeys(refreshRequests);
   const matchingBuzzes = refreshRequests
     .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
-    .filter(({ buzz }) => buzz.unitId === unitId);
+    .filter(({ buzz }) => buzz.unitId === unitId && refreshRequestIsOpen(buzz, allocatable));
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 
