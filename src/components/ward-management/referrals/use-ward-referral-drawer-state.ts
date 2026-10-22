@@ -94,6 +94,9 @@ import {
   CONTACT_FIELD_COUNT,
   contactFieldErrors,
   recipientSummary,
+  communityDestinations,
+  singleRecipientLabel,
+  missingDestinationError,
   type KeptDraft,
   type CommunityNeeds,
   type EdNeeds,
@@ -256,6 +259,7 @@ export function useWardReferralDrawerState({
     kept?.selectedUnitIds ?? [...(initialUnitIds ?? [])],
   );
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
+  const [communityPurpose, setCommunityPurpose] = useState(kept?.communityPurpose ?? ("" as const));
   const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -412,6 +416,7 @@ export function useWardReferralDrawerState({
     ageBand,
     selectedUnitIds,
     selectedRecipient,
+    ...(communityPurpose ? { communityPurpose } : {}),
     documentation,
     contact,
     catchmentSuburb,
@@ -617,6 +622,7 @@ export function useWardReferralDrawerState({
     setIsSearchOpen(false);
     setSelectedUnitIds([]);
     setSelectedRecipient("");
+    setCommunityPurpose("");
     setDocumentation(EMPTY_DOCUMENTATION);
     setCatchmentSuburb(p.suburb);
     const teams = catchmentRoutingDestinations(lookupCatchment(p.suburb));
@@ -750,7 +756,7 @@ export function useWardReferralDrawerState({
       : !selectedRecipient
         ? []
         : destType === "community"
-          ? [{ kind: "community_team", teamName: selectedRecipient }]
+          ? communityDestinations(selectedRecipient, communityPurpose)
           : [{ kind: "emergency_department", edId: selectedRecipient, purpose: "psychiatric_review" }];
   const recipientLabels =
     destType === "ward"
@@ -763,7 +769,7 @@ export function useWardReferralDrawerState({
           .filter((unit): unit is WardCapacityRecord => !!unit)
           .map((unit) => `${unit.hospital} · ${unit.name}`)
       : selectedRecipient
-        ? [destType === "community" ? selectedRecipient : (edById(selectedRecipient)?.name ?? selectedRecipient)]
+        ? [singleRecipientLabel(destType === "community", selectedRecipient, communityPurpose)]
         : [];
 
   // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
@@ -903,7 +909,7 @@ export function useWardReferralDrawerState({
       referralError() ??
       storyError() ??
       documentationError(documentation) ??
-      (selectedDestinations.length ? null : "Select at least one referral location.");
+      (selectedDestinations.length ? null : missingDestinationError(destType === "community" && !!selectedRecipient));
     setFlowError(error);
     if (error) {
       const failed = sectionFor(error);
@@ -1132,6 +1138,7 @@ export function useWardReferralDrawerState({
     setDestType(kind);
     setSelectedUnitIds([]);
     setSelectedRecipient("");
+    setCommunityPurpose("");
     setConfirmationOpen(false);
     setFlowError(null);
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
@@ -1286,6 +1293,8 @@ export function useWardReferralDrawerState({
     setSelectedUnitIds,
     selectedRecipient,
     setSelectedRecipient,
+    communityPurpose,
+    setCommunityPurpose,
     ageBand,
     setAgeBand,
     previewOpen,

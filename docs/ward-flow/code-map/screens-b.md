@@ -98,7 +98,7 @@ with a build contract"). **Dispatches:** `ACKNOWLEDGE_INBOX_ITEM`, `DISPATCH_BRO
 **Route:** `/board/[unitId]`. **Mockup:** `bed-board-third-edition.html`. **Dispatches:**
 `BLOCK_BED_RELEASE`, `END_LEAVE_BED`, `PATIENT_ARRIVED`, `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`,
 `RECORD_LEAVE_BED`, `RECORD_LEAVING`, `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT`, `RELEASE_BED`,
-`SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
+`RECORD_WARD_DIAGNOSIS`, `SET_DISCHARGE_BARRIER`, `SET_STEP_DOWN_CANDIDATE`. **Reads:** `unitCapacity`
 (`ward-derivations.ts`) plus this folder's own tile/occupant builders. **Tests:** the two-dozen
 `ward-board-*`, `ward-daily-sheet*`, `ward-advanced-features.dom.test.tsx`,
 `ward-builder-2-features.dom.test.tsx`, `ward-dialog-accessibility.dom.test.tsx`,
@@ -113,6 +113,9 @@ repo-wide guards.
   `PersonEntry` component (623); the screen itself, `export function WardBoard({ unitId })`, starts
   at 878 and runs to end of file — dialogs, focus traps, keyboard handling and the tile grid are all
   inline in that one function rather than split into sub-components.
+- **`board/ward-board-ward-diagnosis.tsx`** — `WardDiagnosisControl` (FD-10, 21 Oct 2026): the
+  ward's own tentative diagnosis block, chosen from the fixed list in the detail panel and shown
+  beside the referrer's, which is never changed. Dispatches `RECORD_WARD_DIAGNOSIS`.
 - **`src/components/ward-management/board/board.module.css`** (4847 lines) — styles for both
   `ward-board.tsx` and `ward-daily-sheet.tsx`.
 - **`src/components/ward-management/board/ward-bed-board.tsx`** (removed) — former 2-line re-export shim (`WardBedBoard`); deleted during the October 2026 cleanup pass. The live route (`board/[unitId]/page.tsx`) imports `WardBoard` directly from `src/components/ward-management/board/ward-board.tsx`.
@@ -643,13 +646,21 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
 **Not a route.** Everything here renders inside the Tools sheet (`ward-tools-sheet.tsx`), opened as a
 drawer from the global top bar (`shell/ward-bar.tsx`) on every ward screen rather than mounted by any
 one `page.tsx`. Form times also shows as a card on Legal forms. **Mockup:** none in `SCREEN-MAP.md`;
-these are chrome, not a drawn screen. **Dispatches:** demo events only, from `ward-demo-panel.tsx`.
+these are chrome, not a drawn screen. **Dispatches:** demo events from `ward-demo-panel.tsx`, and
+`PATIENT_ARRIVED` and `RECORD_LEAVING` from `ward-feed-inbox.tsx`, only when a person confirms a message.
 **Reads:** `ward-catchment.ts` (resolver), the On-call directory (contacts), `standingFigures` and the
 bed derivations (All figures, Find a bed, bed summary) and `ward-flow-provider.tsx` (the
 demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-sheet.dom.test.tsx`,
 `ward-tools-sheet-helpers.test.ts`, `ward-network-figures.dom.test.tsx`, `ward-form-time-input.test.ts`,
 `ward-bar-figures-telemetry.dom.test.tsx`.
 
+- **`tools/ward-feed-inbox.tsx`** (+ `.module.css`, `ward-feed-inbox-store.ts`) — the synthetic
+  hospital feed inbox (fix plan item 5, 21 Oct 2026), a Tools row under Demo. Receive brings in the
+  next message from `integration/hospital-feed-sim.ts`; a person confirms an arrival or a departure
+  (raising the normal event as this desk) or rejects it. Unreadable, non-synthetic and repeated
+  messages are refused; a name or date of birth that differs from the record confirms nothing. The
+  inbox is memory only and empties at sign-out or a new demo world. Tests:
+  `ward-hospital-feed-inbox.dom.test.tsx`.
 - **`src/components/ward-management/tools/ward-catchment-resolver.module.css`** (525 lines) —
   styles for the resolver.
 - **`src/components/ward-management/tools/ward-catchment-resolver.tsx`** (1027 lines) — WA

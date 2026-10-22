@@ -16,6 +16,8 @@ import { formatUmrn } from "@/components/ward-management/ward-patients";
 import {
   COMMUNITY_DECLINE_REASON_LABELS,
   DECLINE_REASON_LABELS,
+  communityPurposeOf,
+  communityReferralPurposeLabel,
   referralDestinationLabels,
 } from "@/components/ward-management/ward-referrals";
 import styles from "./referrals.module.css";
@@ -226,7 +228,11 @@ export function renderNotABedPanel({
     <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
       {/* v10: an eyebrow naming the ask, one plain card for where it went, then the decision. */}
       <p className={styles.v10AskEyebrow}>
-        {edAddressing ? "ED review" : communityAddressing ? "Community follow-up" : "Not a bed request"}
+        {edAddressing
+          ? "ED review"
+          : communityAddressing?.destination.kind === "community_team"
+            ? communityReferralPurposeLabel(communityPurposeOf(communityAddressing.destination))
+            : "Not a bed request"}
       </p>
       <div className={styles.v10AskCard}>
         <b className={styles.v10AskWhere}>{referralDestinationLabels(referral).join(" · ")}</b>

@@ -1,0 +1,6 @@
+/* The phone summary has no card grid, so "This session" sits below it with the page's own gutter. */
+.phoneSlot {
+  min-width: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  background: var(--wf-canvas);
+}

@@ -200,6 +200,7 @@ monotonic id counters (never array length).
 6. Screens read through the provider and the pure derivation modules.
 
 Other browser storage: `shell/ward-service-store.ts` (chosen health service, sessionStorage),
+`shell/ward-my-wards-store.ts` (pinned ward ids, localStorage, cleared at sign-out),
 hub "recents" (localStorage via `createBrowserStore`).
 
 ### 2.5 Roles
