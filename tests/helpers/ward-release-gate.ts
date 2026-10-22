@@ -385,9 +385,11 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
     const state = figure === "occupied" ? "occupied" : "available";
     return Number((await grid.locator(`[data-state="${state}"] strong`).first().innerText()).trim());
   }
+  // Desktop's header carries the same figures as chips ("14 Occupied"), so a grid that has not
+  // painted yet after a tab switch still reads the right number here.
   const region = wardScreen.getByRole("region", { name: "This ward", exact: true });
   if (figure === "occupied") {
-    const match = /(\d+) occupied/u.exec(await region.innerText());
+    const match = /(\d+)\s*occupied/iu.exec(await region.innerText());
     expect(match, "the phone ward header must state how many beds are occupied").not.toBeNull();
     return Number(match![1]);
   }

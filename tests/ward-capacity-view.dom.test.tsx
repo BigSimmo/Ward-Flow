@@ -363,7 +363,9 @@ describe("ward capacity headline (Task 7)", () => {
     expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
   });
 
-  it("treats a confirmation in the same minute as the request as not yet answering it", () => {
+  // DEC-L5-04 (21 Oct 2026): the confirmation stamps the request answered, so events order it, not
+  // minutes. Before, a same-minute tie stayed outstanding because timestamps could not order it.
+  it("treats a confirmation in the same minute, after the request, as answering it", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
@@ -373,8 +375,7 @@ describe("ward capacity headline (Task 7)", () => {
     showWardTable();
     fireEvent.click(screen.getByTestId("ward-capacity-refresh-rph-adult-secure"));
     fireEvent.click(screen.getByTestId("test-confirm-capacity"));
-    // Same-minute timestamps cannot be ordered, so the request stays outstanding and no duplicate is offered.
-    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeDisabled();
+    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
   });
 
   /*

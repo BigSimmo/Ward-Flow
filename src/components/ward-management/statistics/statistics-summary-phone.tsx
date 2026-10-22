@@ -17,13 +17,14 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
 import { PhoneDotKey } from "./statistics-phone-parts";
-import { STATISTICS_OVERVIEW_HREF, STATISTICS_SERVICES_HREF } from "./statistics-sections";
+import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
@@ -39,6 +40,16 @@ export type PhoneWard = {
 };
 
 export type PhoneEd = { id: string; name: string; site: string; waiting: number; longest: number | null };
+
+type PhoneTally = { id: string; label: string; count: number };
+
+/** The desktop page's blocked discharges, declines and pull to arrival, for the More figures sheet. */
+export type PhoneMoreFigures = {
+  blocked: { total: number; admissions: number; tallies: readonly PhoneTally[] };
+  /** `statement` when the declines cannot be read, in the desktop card's own words. */
+  declines: { total: number; tallies: readonly PhoneTally[] } | { statement: string };
+  arrivals: { measured: number; average: number | null; shortest: number | null; longest: number | null };
+};
 
 type Sheet = { title: string; description?: string; body: ReactNode } | null;
 
@@ -63,6 +74,58 @@ function InUse({ percent, where }: { percent: number; where: string }) {
   );
 }
 
+const countText = (count: number | string) => (count === 0 ? "none" : count);
+
+function TallyList({ label, tallies }: { label: string; tallies: readonly PhoneTally[] }) {
+  // Executive: the parts add up to the total above them, so they hide together, as on the desktop.
+  const shown = useStatisticsCounts().parts(tallies.map((tally) => tally.count));
+  return (
+    <ul className={styles.list} aria-label={label}>
+      {tallies.map((tally, index) => (
+        <PhoneListRow key={tally.id} as="li" name={tally.label} value={countText(shown[index] ?? tally.count)} />
+      ))}
+    </ul>
+  );
+}
+
+/** The More figures sheet: blocked discharges, declines by reason and pull to arrival. */
+function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
+  const { blocked, declines, arrivals } = figures;
+  const { small } = useStatisticsCounts();
+  const duration = (minutes: number | null) => (minutes === null ? "Not recorded" : durMinutes(minutes));
+  return (
+    <>
+      <GroupHead
+        title="Blocked discharges"
+        variant="letter"
+        aside={`${small(blocked.total)} of ${small(blocked.admissions)} not departed`}
+      />
+      <TallyList label="Blocked discharges by blocker" tallies={blocked.tallies} />
+      {"statement" in declines ? (
+        <>
+          <GroupHead title="Declines by reason" variant="letter" />
+          <p className={styles.note}>{declines.statement}</p>
+        </>
+      ) : (
+        <>
+          <GroupHead
+            title="Declines by reason"
+            variant="letter"
+            aside={`${small(declines.total)} ${small(declines.total) === 1 ? "decline" : "declines"}`}
+          />
+          <TallyList label="Declines by reason" tallies={declines.tallies} />
+        </>
+      )}
+      <GroupHead title="Pull to arrival" variant="letter" aside={`${small(arrivals.measured)} admissions`} />
+      <ul className={styles.list} aria-label="Pull to arrival">
+        <PhoneListRow as="li" name="Average" value={duration(arrivals.average)} />
+        <PhoneListRow as="li" name="Shortest" value={duration(arrivals.shortest)} />
+        <PhoneListRow as="li" name="Longest" value={duration(arrivals.longest)} />
+      </ul>
+    </>
+  );
+}
+
 /**
  * Statistics Summary on a phone (v10 phone design, 390 wide): a compact hero with three figures,
  * the section chooser, the hospitals or wards as a priority list, then the pressure, ED and
@@ -79,6 +142,7 @@ export function StatisticsSummaryPhone({
   wards,
   eds,
   referrals,
+  moreFigures,
   wardCount,
   paused,
   onTogglePause,
@@ -93,6 +157,7 @@ export function StatisticsSummaryPhone({
   wards: readonly PhoneWard[];
   eds: readonly PhoneEd[];
   referrals: { raised: number; accepted: number; declined: number; open: number };
+  moreFigures: PhoneMoreFigures;
   wardCount: number;
   paused: boolean;
   onTogglePause: () => void;
@@ -150,7 +215,7 @@ export function StatisticsSummaryPhone({
             { id: "ed", value: waitingInEd, label: "Waiting in ED" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
-          eyebrow="Statistics · Whole network"
+          eyebrow="Statistics · Network now"
           chip={
             <LiveChip
               state={paused ? "paused" : "live"}
@@ -251,8 +316,31 @@ export function StatisticsSummaryPhone({
         </section>
 
         <nav className={styles.navRows} aria-label="More figures">
-          {/* Audit stats-18: the one fullest-first ward list lives on Overview; this row opens it. */}
-          <Link className={styles.navRow} href={STATISTICS_OVERVIEW_HREF} data-testid="ward-statistics-pressure-link">
+          {/* Audit stats-18 sent this row to Overview's fullest-first ward list. Overview folded into
+              this page (D-77, change 9), so the row opens that list here: every ward at or over the
+              line, fullest first. */}
+          <button
+            type="button"
+            className={styles.navRow}
+            data-testid="ward-statistics-pressure-link"
+            onClick={() =>
+              setSheet({
+                title: "Where the pressure is",
+                description: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}% of beds in use, fullest first.`,
+                body:
+                  overCount === 0 ? (
+                    <p className={styles.note}>{`No ward is at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`}</p>
+                  ) : (
+                    <ul className={styles.list}>
+                      {[...wards]
+                        .filter((ward) => overLine(ward.percent))
+                        .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name))
+                        .map(wardRow)}
+                    </ul>
+                  ),
+              })
+            }
+          >
             <IconTile icon={Activity} />
             <span className={styles.navText}>
               <b>Where the pressure is</b>
@@ -262,7 +350,7 @@ export function StatisticsSummaryPhone({
               </span>
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
-          </Link>
+          </button>
           <button
             type="button"
             className={styles.navRow}
@@ -303,14 +391,21 @@ export function StatisticsSummaryPhone({
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </button>
-          <Link className={styles.navRow} href={STATISTICS_OVERVIEW_HREF}>
+          {/* This row opened Overview. Overview folded into this page (D-77, change 9), so it opens the
+              three figures it names, the same counts the desktop page shows (Josh, 21 Oct 2026). */}
+          <button
+            type="button"
+            className={styles.navRow}
+            data-testid="ward-statistics-more-figures"
+            onClick={() => setSheet({ title: "More figures", body: <MoreFigures figures={moreFigures} /> })}
+          >
             <IconTile icon={Layers} />
             <span className={styles.navText}>
               <b>More figures</b>
               <span>Blocked discharges, declines, pull to arrival</span>
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
-          </Link>
+          </button>
           {/* Each health service's figures, also the Services chip above (phone review F-12). */}
           <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
             <IconTile icon={Building2} />

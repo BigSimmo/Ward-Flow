@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
+import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -105,6 +106,32 @@ describe("Overview on the executive desk, counts only", () => {
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
     expect(screen.queryByText("fewer than 5")).toBeNull();
     expect(screen.queryByText("not shown")).toBeNull();
+  });
+});
+
+describe("the phone More figures sheet on the executive desk, counts only (D-77 change 9)", () => {
+  function openMoreFigures() {
+    fireEvent.click(screen.getByTestId("ward-statistics-more-figures"));
+    return within(screen.getByRole("dialog"));
+  }
+
+  it("words a small decline the way the desktop does", () => {
+    asPhone();
+    asDesk("executive", true);
+    renderScreen(<StatisticsScreen />);
+    const declines = within(openMoreFigures().getByRole("list", { name: "Declines by reason" }));
+    // Seed: one no-bed decline.
+    expect(declines.getAllByText("fewer than 5").length).toBeGreaterThan(0);
+    for (const item of declines.getAllByRole("listitem")) expect(item.textContent).not.toMatch(/\D[1-4]$/u);
+  });
+
+  it("shows the coordinator the exact counts", () => {
+    asPhone();
+    asDesk("coordinator", true);
+    renderScreen(<StatisticsScreen />);
+    const sheet = openMoreFigures();
+    expect(sheet.queryByText("fewer than 5")).toBeNull();
+    expect(sheet.queryByText("not shown")).toBeNull();
   });
 });
 

@@ -32,6 +32,9 @@ function isValidDemoPayload(value: unknown): value is WardFlowDemoPayload {
   return isValidStoredWardFlowState(value.state);
 }
 
+const SAVE_FROM_EARLIER_DAY =
+  "The saved demonstration was from an earlier day, so a fresh synthetic demonstration has started for today.";
+
 const SAVE_REJECTED =
   "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
 
@@ -57,6 +60,14 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
       return { recoveryNotice: SAVE_REJECTED };
     }
     const parsed = upgradeDemoPayload(stored);
+    // A2-15 (21 Oct 2026): a save from an earlier calendar day (a reload after midnight) is not
+    // damaged, so it says why it was not restored rather than the generic refusal.
+    if (
+      isValidDemoPayload(parsed) &&
+      parsed.version === WARD_FLOW_DEMO_STORAGE_VERSION &&
+      parsed.dayZero < dayZero.getTime()
+    )
+      return { recoveryNotice: SAVE_FROM_EARLIER_DAY };
     if (
       !isValidDemoPayload(parsed) ||
       parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
