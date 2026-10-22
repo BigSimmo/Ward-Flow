@@ -467,13 +467,25 @@ jobs:
           path: ${{ runner.temp }}/ward-browser-build
       - name: Resolve release browser version
         id: release-version
-        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Restore release browsers
         id: release-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ms-playwright
           key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
+      # WebKit's system packages come from the runner's apt mirror, which has run past the install
+      # budget. Cached packages are copied where apt-get looks first; a stale one is just downloaded.
+      - name: Restore release system packages
+        id: release-apt-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
+          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-
+      - name: Seed release system packages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
       - name: Install Chromium and WebKit
         id: browsers
         timeout-minutes: 10
@@ -481,6 +493,16 @@ jobs:
         run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
         env:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.release-cache.outputs.cache-hit }}
+      - name: Collect release system packages on main
+        id: release-apt-collect
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' && steps.release-apt-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs collect "$HOME/.cache/ward-release-apt"
+      - name: Save release system packages on main
+        if: ${{ !cancelled() && steps.release-apt-collect.outputs.count > 0 && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
       - name: Run the release-gate journeys
         id: gate
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}

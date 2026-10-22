@@ -56,7 +56,8 @@ The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-depen
 `verify-plan.mjs` (which jobs a change needs), `main-reuse.mjs` (reuse a pull request's proven
 result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
-`install-chromium.mjs`, and `bot-author-policy.mjs` for the bot author workflow. CI also runs
+`install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
+`bot-author-policy.mjs` for the bot author workflow. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`.
