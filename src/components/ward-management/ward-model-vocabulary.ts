@@ -441,4 +441,6 @@ export type CapacityFigure = {
   confirmedAt: Instant;
   staleAfterMinutes: number;
   revision?: number;
+  /** DEC-L5-04: how many times the ward has confirmed it; only `CONFIRM_CAPACITY` moves it on. */
+  confirmations?: number;
 };

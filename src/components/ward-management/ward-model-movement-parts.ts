@@ -537,6 +537,8 @@ export type CapacityRefreshRequest = {
   byRole: string;
   message?: string;
   urgent?: boolean;
+  /** DEC-L5-04: the ward's confirmation count when the request was made; absent on legacy saves. */
+  confirmations?: number;
 };
 
 /** Human-recorded turnaround preference only; reserves no bed and books no transport. */
