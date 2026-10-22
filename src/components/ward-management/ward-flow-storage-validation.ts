@@ -1,4 +1,9 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import {
+  RESTRICTIVE_PRACTICE_IDS,
+  SECLUSION_ROOM_STATUS_IDS,
+  WARD_INCIDENT_CATEGORY_IDS,
+} from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
@@ -26,6 +31,8 @@ import {
   ABSENCE_STEPS,
   REFERRAL_DECLINE_REASONS,
   SUPPORT_SERVICE_TYPES,
+  TRANSPORT_LEGAL_STATUSES,
+  TRANSPORT_PROVIDERS,
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
@@ -35,7 +42,20 @@ import {
   BED_MEETING_ACTION_OWNERS,
   type BedMeetingActionKind,
 } from "./bed-meeting/bed-meeting-actions";
-import { isFixedOnlyDischargeCriteriaRecord } from "./ward-discharge-criteria";
+import {
+  isDischargeCriteriaRecord,
+  isPatientSpecificItem,
+  PATIENT_SPECIFIC_CRITERIA_MAX,
+  type DischargeCriteriaRecord,
+} from "./ward-discharge-criteria";
+import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
+import { REPATRIATION_MODES } from "./ward-flow-events";
+import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import {
+  SUPPORT_NOTIFICATION_OCCASIONS,
+  SUPPORT_NOTIFICATION_OUTCOMES,
+  SUPPORT_NOTIFICATION_PARTIES,
+} from "./ward-support-notifications";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
@@ -48,6 +68,31 @@ import { isObservation, type Observation } from "./ward-observation";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
+
+/**
+ * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
+ * the second, because each criterion on a list must be distinct to be ticked (21 Oct 2026, the
+ * typed-text device copy, D-72).
+ */
+export function typedCriterionNotKept(n: number): string {
+  return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
+}
+
+const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
+  Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
+);
+
+/**
+ * A record browser storage may hold since 21 Oct 2026 (D-72): fixed-list criteria, and patient
+ * specific criteria only as the device copy's stand-ins. The typed words themselves are still
+ * refused on restore (D-18, D-65).
+ */
+function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
+  return (
+    isDischargeCriteriaRecord(value) &&
+    value.items.every((item) => !isPatientSpecificItem(item) || CRITERION_STAND_INS.has(item.criterion))
+  );
+}
 
 // The stored-state fence runs in three passes, each only on what the previous one accepted:
 //  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
@@ -263,6 +308,38 @@ const unit = z
         until: z.optional(finite),
       }),
     ),
+    // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
+    restrictivePractice: z.optional(
+      z.looseObject({
+        episodes: z.array(
+          z.looseObject({
+            id: text,
+            practice: z.enum(RESTRICTIVE_PRACTICE_IDS),
+            admissionId: id,
+            startedAt: finite,
+            endedAt: z.optional(finite),
+            recordedAt: finite,
+            recordedBy: text,
+          }),
+        ),
+        incidents: z.array(
+          z.looseObject({
+            id: text,
+            category: z.enum(WARD_INCIDENT_CATEGORY_IDS),
+            at: finite,
+            recordedAt: finite,
+            recordedBy: text,
+          }),
+        ),
+        seclusionRoom: z.optional(
+          z.looseObject({
+            status: z.enum(SECLUSION_ROOM_STATUS_IDS),
+            at: finite,
+            by: text,
+          }),
+        ),
+      }),
+    ),
   })
   // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the older feed
   // empty count and does not rewrite the separately recorded locked count. Each count is bounded
@@ -411,9 +488,9 @@ const admission = z.looseObject({
       recordedBy: text,
     }),
   ),
-  // Browser storage holds fixed-list criteria with finite times only. Typed patient specific criteria
-  // are refused on restore, the second fence behind the typed-text lock (D-60, D-65).
-  dischargeCriteria: z.optional(z.nullable(z.custom(isFixedOnlyDischargeCriteriaRecord))),
+  // Browser storage holds fixed-list criteria with finite times. A typed patient specific criterion
+  // is held only as the device copy's stand-in, never its words (D-60, D-65, D-72).
+  dischargeCriteria: z.optional(z.nullable(z.custom(isDeviceCopyDischargeCriteriaRecord))),
   careJourney: z.optional(z.custom(validCareJourney)),
   followUp: z.nullable(
     z.looseObject({ state: z.enum(["arranged", "not_arranged"]), recordedAt: finite, recordedBy: text }),
@@ -631,7 +708,10 @@ const plannedAdmission = z
     cancelReason: z.nullable(z.custom(isPlannedAdmissionCancelReason)),
     convertedAt: nullableFinite,
     patientId: nullableText,
-    initials: z.nullable(text.check(z.regex(PLANNED_ADMISSION_INITIALS_PATTERN))),
+    // Typed initials are held only as the device copy's placeholder (D-72), never the letters.
+    initials: z.nullable(
+      z.union([z.literal(TYPED_TEXT_NOT_KEPT), text.check(z.regex(PLANNED_ADMISSION_INITIALS_PATTERN))]),
+    ),
     admissionId: nullableText,
   })
   .check(
@@ -706,6 +786,67 @@ const undoRecord = z.discriminatedUnion("kind", [
 
 const notice = z.looseObject({ id, raisedAt: finite, to: record, about: record, kind: text, sentence: text });
 
+// Since 21 Oct 2026 (D-72) the device copy of a session that holds typed text keeps repatriations and
+// carer, PSP and MHAS notifications, with every typed value as the placeholder. These closed shapes
+// mirror `isValidSharedWardFlowState`, but a typed field must hold the placeholder: the typed words
+// themselves are still refused (D-18).
+const notKept = z.literal(TYPED_TEXT_NOT_KEPT);
+const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]);
+const repatriation = z
+  .strictObject({
+    admissionId: id,
+    at: finite,
+    estimatedAt: finite,
+    by: role,
+    // The reducer only records a site it knows, so anything else would be typed text.
+    homeHospital: text.check(z.refine((code) => siteByCode(code) !== undefined)),
+    cadNumber: notKept,
+    receivingWardAgreed: bool,
+    mode: z.enum(REPATRIATION_MODES),
+    provider: z.enum(TRANSPORT_PROVIDERS),
+    transportLegalStatus: z.enum(TRANSPORT_LEGAL_STATUSES),
+    // A plan agreed after it was first logged also carries both of these.
+    agreedAt: z.optional(finite),
+    agreedBy: z.optional(role),
+  })
+  .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
+const supportNotification = z.strictObject({
+  id,
+  occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
+  subjectId: id,
+  party: z.enum(SUPPORT_NOTIFICATION_PARTIES),
+  outcome: z.enum(SUPPORT_NOTIFICATION_OUTCOMES),
+  // Told carries who and when; not applicable carries the reason (`typedRecordsResolve`).
+  who: z.optional(notKept),
+  contactedAt: z.optional(finite),
+  reason: z.optional(notKept),
+  at: finite,
+  by: role,
+});
+
+/**
+ * Each kept repatriation and notification names a real record, a told record carries who and when
+ * (no later than the record) and no reason, and a not applicable one carries only the reason.
+ */
+function typedRecordsResolve(
+  state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
+    supportNotifications?: WardFlowState["supportNotifications"];
+  },
+): boolean {
+  const admissionIds = new Set(state.admissions.map((admission) => admission.id));
+  const movementIds = new Set(state.movements.map((movement) => movement.id));
+  return (
+    state.repatriations.every((row) => admissionIds.has(row.admissionId)) &&
+    (state.supportNotifications ?? []).every(
+      (row) =>
+        (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
+        (row.outcome === "told"
+          ? row.who !== undefined && row.contactedAt! <= row.at && row.reason === undefined
+          : row.reason !== undefined && row.who === undefined && row.contactedAt === undefined),
+    )
+  );
+}
+
 const storedState = z.looseObject({
   auditEvents: z.array(auditEvent).check(z.refine(distinctIds)),
   auditReviews: z.array(auditReview).check(z.refine(distinctIds)),
@@ -721,10 +862,11 @@ const storedState = z.looseObject({
   patients: z.array(patient).check(z.refine(distinctIds)),
   admissions: z.array(admission).check(z.refine(distinctIds)),
   notices: z.array(notice).check(z.refine(distinctIds)),
-  // Repatriation contains a typed CAD number and can never belong to a persistable session.
-  repatriations: empty,
-  // Carer/PSP/MHAS notification records hold typed names and reasons (D-18): absent or empty only.
-  supportNotifications: z.optional(empty),
+  // One record per admission, as the reducer keeps it.
+  repatriations: z
+    .array(repatriation)
+    .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
+  supportNotifications: z.optional(z.array(supportNotification).check(z.refine((rows) => distinctIds(rows)))),
   handoverSignOffs: z.array(stamped),
   clinicalContacts: z.array(
     z.extend(stamped, { teamId: text.check(z.refine((teamId) => communityTeamById(teamId) !== null)) }),
@@ -1032,7 +1174,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
   if (!object(value) || !nested(value)) return false;
   const parsed = storedState.safeParse(value);
-  return parsed.success && consistent(parsed.data, value);
+  return parsed.success && consistent(parsed.data, value) && typedRecordsResolve(value as unknown as WardFlowState);
 }
 
 /**

@@ -16,6 +16,37 @@ const Z_INDEX: Record<OverlayLayer, string> = {
 
 let mountedRoots = 0;
 
+/*
+ * A portalled overlay renders under <body>, outside the screen that opened it, so it cannot inherit
+ * custom properties declared on that screen's ancestors. An app area that declares its tokens on a
+ * class (Ward Flow's `wardShellTokens`) mounts <OverlayScope> with that class, and every
+ * OverlayPortal carries it on its wrapper while the area is mounted. Without it a screen
+ * stylesheet's `var(--line)` inside a sheet or dialog resolves to nothing, and fields lose their
+ * borders and text its colour.
+ */
+let scopeClassName: string | undefined;
+const scopeListeners = new Set<() => void>();
+
+function subscribeScope(onStoreChange: () => void) {
+  scopeListeners.add(onStoreChange);
+  return () => {
+    scopeListeners.delete(onStoreChange);
+  };
+}
+
+function setScopeClassName(next: string | undefined) {
+  scopeClassName = next;
+  for (const listener of scopeListeners) listener();
+}
+
+export function OverlayScope({ className }: { className: string }) {
+  useEffect(() => {
+    setScopeClassName(className);
+    return () => setScopeClassName(undefined);
+  }, [className]);
+  return null;
+}
+
 /** One body observer shared by every OverlayPortal — avoids N×Subtree churn. */
 const hostListeners = new Set<() => void>();
 let sharedHostObserver: MutationObserver | null = null;
@@ -139,11 +170,16 @@ function getServerOverlayHost() {
   return null;
 }
 
+function getServerScope() {
+  return undefined;
+}
+
 export type OverlayPortalProps =
   | { layer: "modal"; name: string; children: ReactNode }
   | { layer: Exclude<OverlayLayer, "modal">; name?: string; children: ReactNode };
 
 export function OverlayPortal({ layer, name, children }: OverlayPortalProps) {
+  const scope = useSyncExternalStore(subscribeScope, () => scopeClassName, getServerScope);
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (typeof document === "undefined") return () => undefined;
@@ -161,6 +197,7 @@ export function OverlayPortal({ layer, name, children }: OverlayPortalProps) {
   if (!host) return null;
   return createPortal(
     <div
+      className={scope}
       data-overlay-layer={layer}
       data-overlay-name={name}
       style={{ display: "contents", pointerEvents: layer === "modal" ? "auto" : "none" }}

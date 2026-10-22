@@ -93,12 +93,11 @@
 .who {
   grid-area: who;
   min-width: 0;
-  overflow: hidden;
   font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-1);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wraps, so "Initials not kept on this device" is never cut off. */
+  overflow-wrap: anywhere;
 }
 
 .facts {

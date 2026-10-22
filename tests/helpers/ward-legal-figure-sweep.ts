@@ -274,6 +274,49 @@ export function candidateEvents(
         subject: { kind: "movement" as const, id },
         action: "book_transport" as const,
       }));
+    // D-72: each stay on its own ward, then every episode that opened; one ward for the others.
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+      return state.admissions.map((stay) => ({
+        type,
+        role,
+        now,
+        unitId: stay.unitId,
+        actingUnitId: stay.unitId,
+        admissionId: stay.id,
+        practice: "seclusion" as const,
+        startedAt: now - 30,
+      }));
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+      return state.units.flatMap((unit) =>
+        (unit.restrictivePractice?.episodes ?? []).map((episode) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          episodeId: episode.id,
+          endedAt: now,
+        })),
+      );
+    case "RECORD_WARD_INCIDENT":
+      return unitIds.slice(-1).map((unitId) => ({
+        type,
+        role,
+        now,
+        unitId,
+        actingUnitId: unitId,
+        category: "fall" as const,
+        at: now - 10,
+      }));
+    case "SET_SECLUSION_ROOM_STATUS":
+      return unitIds.slice(-1).map((unitId) => ({
+        type,
+        role,
+        now,
+        unitId,
+        actingUnitId: unitId,
+        status: "out_of_service" as const,
+      }));
     // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
     // which ward copy exists and is still waiting.
     case "MARK_REFERRAL_OPENED":

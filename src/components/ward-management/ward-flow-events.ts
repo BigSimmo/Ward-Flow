@@ -96,6 +96,7 @@ export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Observation } from "@/components/ward-management/ward-observation";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -872,6 +873,8 @@ export type WardFlowEvent =
       action: BedMeetingActionKind;
       actingUnitId?: string;
     }
+  // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
+  | RestrictivePracticeWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;

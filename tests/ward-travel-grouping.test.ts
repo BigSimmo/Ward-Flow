@@ -1046,7 +1046,6 @@ describe("the counts a band group heading carries", () => {
       "referral-match-model.ts",
       "referral-match-not-a-bed.tsx",
       "referral-match-rows.tsx",
-      "referral-match-tiers.tsx",
       "referral-history-corrections.tsx",
       "use-referral-match-state.tsx",
     ]

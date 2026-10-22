@@ -17,3 +17,16 @@ export const RESTORED_NOTICE_PREFIX = "Restored the last successful save from";
 
 export const STORAGE_UNAVAILABLE =
   "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
+
+/**
+ * Josh's wording (21 Oct 2026, fix plan item 2): what a typed field holds in the copy of the session
+ * kept on this device, and so what it shows after a refresh. The typed value itself stays in memory
+ * for the session and is never written (D-18). Here so the stored-state fence can accept it without
+ * loading the typed-text ledger.
+ */
+export const TYPED_TEXT_NOT_KEPT = "Typed text not kept on this device";
+
+/** How a booking's initials read on screen, where the device copy may hold the placeholder instead. */
+export function plannedInitialsLabel(initials: string): string {
+  return `Initials ${initials === TYPED_TEXT_NOT_KEPT ? "not kept on this device" : initials}`;
+}

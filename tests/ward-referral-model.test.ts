@@ -557,6 +557,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Smart features idea 5: a task for a person about a record, never a refusal of it.
     RECORD_BED_MEETING_ACTION: false,
     COMPLETE_BED_MEETING_ACTION: false,
+    // D-72: operational records on a ward, never a refusal of a named referral or placement.
+    RECORD_RESTRICTIVE_PRACTICE_START: false,
+    RECORD_RESTRICTIVE_PRACTICE_END: false,
+    RECORD_WARD_INCIDENT: false,
+    SET_SECLUSION_ROOM_STATUS: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,

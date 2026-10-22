@@ -66,6 +66,7 @@ import type {
   ReferralSource,
   ReferralSuburb,
 } from "@/components/ward-management/ward-model-referral-parts";
+import type { WardRestrictivePractice } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   AtsCategory,
   CapacityFigure,
@@ -298,6 +299,12 @@ export type Unit = {
    * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
    */
   admissionsClosure?: WardAdmissionsClosure;
+  /**
+   * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
+   * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.
+   * Written only by `ward-flow-restrictive-practice-events.ts`. Absent until the ward records one.
+   */
+  restrictivePractice?: WardRestrictivePractice;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */

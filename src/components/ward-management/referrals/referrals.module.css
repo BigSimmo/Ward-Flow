@@ -964,12 +964,7 @@
   border: 1px solid var(--line);
 }
 
-/*
- * Phase 8, Task 4. `.matchList` is now the container for the five band groups rather than the flat
- * row list; the rows themselves live in `.bandRows` inside each group. The class name is kept (and
- * so is its `data-testid`) because the property it carries is unchanged: every unit in the network
- * is inside it, and its element count is what pins non-truncation on this screen.
- */
+/* The bed finder's list of wards with a free bed. */
 .matchList {
   display: grid;
   gap: var(--ward-space-8);
@@ -1008,124 +1003,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ward-space-8);
-}
-
-/*
- * A band group folds; it does not hide. The heading and both counts live in `.bandSummary`, which
- * a `<details>` renders open or shut alike — including for an empty group — so "there is nothing
- * available within an hour" is answerable without opening anything.
- */
-.bandGroup {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.bandGroupHasAvailable {
-  border-color: var(--line-strong);
-  box-shadow: var(--lift-sm);
-}
-
-.bandGroupHasAvailable > .bandSummary {
-  background: var(--surface-2);
-}
-
-.bandSummary {
-  display: flex;
-  min-height: var(--ward-tap);
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-  padding: var(--ward-space-8) var(--ward-space-12);
-  cursor: pointer;
-  list-style: none;
-  border-radius: var(--radius-md);
-  transition: background-color 150ms ease;
-}
-
-.bandSummary:hover {
-  background-color: var(--surface-subtle);
-}
-
-.bandGroupHasAvailable > .bandSummary:hover {
-  background-color: var(--ward-success-soft);
-}
-
-.bandSummaryLead {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-8);
-  flex-wrap: wrap;
-}
-
-.bandAvailableBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--ward-space-2) var(--ward-space-8);
-  border-radius: var(--radius-sm);
-  background: var(--ward-success);
-  color: var(--surface);
-  font-size: var(--t-0);
-  font-weight: 700;
-  line-height: var(--ward-leading-none);
-}
-
-.bandSummary::-webkit-details-marker {
-  display: none;
-}
-
-/* Drawn rather than written, so it adds no text to the heading: a glyph in the summary would
-   become part of every count and label assertion and could drift into wording. */
-.bandSummary::after {
-  width: 0;
-  height: 0;
-  border-top: 0.3125rem solid transparent;
-  border-bottom: 0.3125rem solid transparent;
-  border-left: 0.375rem solid var(--muted);
-  content: "";
-}
-
-.bandGroup[open] > .bandSummary::after {
-  transform: rotate(90deg);
-}
-
-.bandSummary:focus-visible {
-  outline: 0.125rem solid var(--focus);
-  outline-offset: -0.125rem;
-}
-
-.bandLabel {
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 700;
-}
-
-/* Two present facts, styled as quiet supporting text — never as a badge or a score, which would
-   read as this screen's own judgement of a band rather than a count of what is in it. */
-.bandCounts {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-}
-
-.bandRows {
-  display: grid;
-  gap: var(--ward-space-8);
-  margin: 0;
-  padding: 0 var(--ward-space-12) var(--ward-space-12);
-  list-style: none;
-}
-
-.bandEmpty {
-  margin: 0;
-  padding: 0 var(--ward-space-12) var(--ward-space-12);
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
 }
 
 /* An unrecorded band is named on the row, never left blank — a blank cell in a distance column is
@@ -1611,8 +1488,6 @@
 :global(.dark) .matchRowDeclines,
 :global([data-theme="dark"]) .matchRowAccepts,
 :global(.dark) .matchRowAccepts,
-:global([data-theme="dark"]) .bandGroup,
-:global(.dark) .bandGroup,
 :global([data-theme="dark"]) .card,
 :global(.dark) .card,
 :global([data-theme="dark"]) .kpiCard,
@@ -1726,39 +1601,15 @@
   /*
    * Every bordered, background-carrying card container across all three screens — the intake
    * form's field cards, the board's queued/decided sections and card-list items, the match
-   * panel, the match view's band groups, and its per-unit rows. `break-inside: avoid` keeps each
+   * panel and the match view's per-unit rows. `break-inside: avoid` keeps each
    * card from splitting across a page boundary, matching `morning.module.css`'s identical group.
    *
-   * `.bandGroup` joined this list in Phase 8 Task 10, having been added to the screen by Task 4
-   * AFTER this print block was written. It carries `background: var(--surface-raised)`, which the
-   * dark theme resolves to `rgb(28, 33, 38)`, so it was the one card left un-reset — and because
-   * `color-scheme: light` above makes `CanvasText` resolve to BLACK, every unit name, verdict and
-   * "Accepts this referral" label inside it would print black on a near-black island. Exactly the
-   * trap the header comment above describes, hit again by a container that did not exist when the
-   * comment was written.
-   *
-   * ON THE SEVERITY FIGURE, qualified by the whole-branch review (W4). This comment previously read
-   * "47 of the match view's 147 painted leaves at a contrast of 1.29:1, measured rather than read
-   * off this selector list". That figure is the output of Task 10's DOM-walking ink probe, which
-   * computed contrast by walking up from each text node to the nearest ancestor carrying a
-   * background and dividing the ink against it. Task 10's own fix round then withdrew that probe,
-   * having demonstrated with real print output that Chrome does not paint an element's background
-   * onto the sheet unless the reader ticks "Background graphics" — so for a container carrying its
-   * own background, which is precisely this case, the probe divides the ink by a colour that is not
-   * on the paper. The 1.29:1 therefore describes the probe's model, not the printed page, and
-   * nothing on this branch re-measured the pre-fix match view by the pixel method that replaced it.
-   * Treat the number as withdrawn; the count of affected leaves is unverified alongside it.
-   *
-   * THE RESET ITSELF STAYS, and is not in question. A reader who prints WITH background graphics
-   * does get the dark island, and black ink on it is genuinely unreadable; resetting the background
-   * is the right defensive fix whether or not the withdrawn probe measured its severity correctly.
-   * What was withdrawn was the method, not the defect.
+   * The travel-band groups that once sat in this list went with the band view itself (D-77).
    */
   .section,
   .sectionLive,
   .card,
   .matchPanel,
-  .bandGroup,
   .matchRowAccepts,
   .matchRowDeclines {
     border-color: CanvasText;
@@ -1870,9 +1721,6 @@
   .matchReasonText,
   .matchUnitName,
   .acceptsLabel,
-  .bandLabel,
-  .bandCounts,
-  .bandEmpty,
   .matchBand,
   .syntheticNotice,
   .allNotRecorded,
@@ -3418,218 +3266,6 @@
   flex-shrink: 0;
 }
 
-.tierCountBadge {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  padding: 2px 8px;
-  border-radius: var(--wf-r-tag);
-  color: inherit;
-}
-
-/* Unified Accordion Group Container — Zero White Space Between Closed Tabs */
-.tierAccordionGroup {
-  margin: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 8px);
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
-}
-
-.tierAccordionGroup > .tierCard {
-  margin: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  border-bottom: 1px solid var(--line);
-  transition: background 0.15s ease;
-}
-
-.tierAccordionGroup > .tierCard:last-child {
-  border-bottom: none;
-}
-
-/* Fallback for standalone .tierCard outside .tierAccordionGroup */
-.tierCard {
-  margin: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  overflow: hidden;
-  transition:
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.tierCard:hover {
-  border-color: var(--line-strong);
-}
-
-.tierCardHeader {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--surface-2);
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: background 0.15s ease;
-}
-
-.tierCardHeader:hover {
-  background: var(--surface-hover);
-}
-
-.tierCardHeader:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
-.tierCardHeaderExpanded {
-  border-bottom: 1px solid var(--line);
-}
-
-.tierCardHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.tierChevronChip {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  background: transparent;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--wf-fs-12);
-  font-family: var(--mono);
-  color: var(--ink-soft);
-  transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.tierChevronChipExpanded {
-  transform: rotate(90deg);
-  color: var(--ink);
-}
-
-.tierTitleGroup {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.tierTitleText {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-
-.tierSubtitle {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.tierCardHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.tierCountBadge {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2.5px 8px;
-  border-radius: var(--wf-r-tag);
-  letter-spacing: 0.01em;
-  line-height: 1;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
-.tierCountBadgeActive {
-  background: var(--surface);
-  border-color: var(--line-strong);
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.tierCountBadgeZero {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--muted);
-}
-
-/* Contained Empty State Well */
-.tierEmptyWell {
-  padding: 14px 16px;
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.tierEmptyIconWrap {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.tierEmptyText {
-  font-size: var(--t-0, 12px);
-  color: var(--ink-soft);
-  line-height: 1.45;
-  margin: 0;
-}
-
-.tierBody {
-  animation: tierBodyFade 0.15s ease-out;
-}
-
-@keyframes tierBodyFade {
-  from {
-    opacity: 0;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .unitActionStatusWrap {
   display: flex;
   flex-direction: column;
@@ -3798,32 +3434,6 @@
 .unitCardIneligible {
   border-left-color: var(--danger);
   background: var(--surface-2);
-}
-
-/* Seamless Bed Rows inside Tier Cards */
-.tierCard .unitCard {
-  margin: 0;
-  border: none;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  padding: 12px 14px;
-  transition: background 0.12s ease;
-  background: var(--surface);
-}
-
-.tierCard .unitCard:hover {
-  background: var(--surface-hover);
-  box-shadow: none;
-}
-
-.tierCard .unitCard:last-child {
-  border-bottom: none;
-}
-
-.tierCard .unitCardReady,
-.tierCard .unitCardTurnaround,
-.tierCard .unitCardIneligible {
-  background: var(--surface);
 }
 
 .unitCardTop {
@@ -4569,40 +4179,10 @@
   border-left: 3px solid var(--wf-danger);
 }
 
-/* The three tiers: one hairline card, each tier a ruled section. */
-.screen[data-ward-design="v6"] .tierAccordionGroup {
-  margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-}
-
-.screen[data-ward-design="v6"] .tierAccordionGroup > .tierCard {
-  border-bottom-color: var(--wf-line);
-}
-
-.screen[data-ward-design="v6"] .tierCard:hover {
-  border-color: var(--wf-line);
-}
-
-.screen[data-ward-design="v6"] .tierCardHeader {
-  min-height: var(--wf-h-lg);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  background: transparent;
-  color: var(--wf-ink-1);
-}
-
-.screen[data-ward-design="v6"] .tierCardHeader:hover {
-  background: var(--wf-hover);
-}
-
-.screen[data-ward-design="v6"] .tierCardHeader:focus-visible,
 .screen[data-ward-design="v6"] .gateToggle:focus-visible,
 .screen[data-ward-design="v6"] .acceptButton:focus-visible,
 .screen[data-ward-design="v6"] .btnGood:focus-visible,
 .screen[data-ward-design="v6"] .btnSubtle:focus-visible,
-.screen[data-ward-design="v6"] .bandSummary:focus-visible,
 .screen[data-ward-design="v6"] .criteriaSummary:focus-visible,
 .screen[data-ward-design="v6"] .localBedButton:focus-visible,
 .screen[data-ward-design="v6"] .matchOverrideButton:focus-visible,
@@ -4611,84 +4191,7 @@
   outline-offset: -2px;
 }
 
-.screen[data-ward-design="v6"] .tierCardHeaderExpanded {
-  border-bottom-color: var(--wf-line);
-}
-
-.screen[data-ward-design="v6"] .tierChevronChip,
-.screen[data-ward-design="v6"] .tierChevronChipExpanded {
-  color: var(--wf-ink-3);
-}
-
-.screen[data-ward-design="v6"] .tierTitleText {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-  letter-spacing: 0;
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .tierSubtitle {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .tierCountBadge {
-  height: var(--wf-h-chip);
-  padding: 0 var(--wf-s-2);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / calc(var(--wf-h-chip) - 2px) var(--wf-font);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
-}
-
-.screen[data-ward-design="v6"] .tierCountBadgeActive {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.screen[data-ward-design="v6"] .tierCountBadgeZero {
-  border-color: var(--wf-line);
-  color: var(--wf-ink-3);
-}
-
-.screen[data-ward-design="v6"] .tierEmptyWell {
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  background: transparent;
-}
-
-.screen[data-ward-design="v6"] .tierEmptyIconWrap {
-  border-color: var(--wf-line);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-3);
-}
-
-.screen[data-ward-design="v6"] .tierEmptyText {
-  color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
 /* A unit is a hairline row; the badge and its glyphs carry the state, not a coloured edge. */
-.screen[data-ward-design="v6"] .tierCard .unitCard {
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  border-left: 0;
-  background: transparent;
-  opacity: 1;
-}
-
-.screen[data-ward-design="v6"] .tierCard .unitCard:last-child {
-  border-bottom: 0;
-}
-
-.screen[data-ward-design="v6"] .tierCard .unitCard:hover {
-  background: var(--wf-hover);
-}
 
 .screen[data-ward-design="v6"] .unitCardTop {
   gap: var(--wf-s-3);
@@ -4890,67 +4393,9 @@
   gap: var(--wf-s-2);
 }
 
-.screen[data-ward-design="v6"] .bandGroup,
-.screen[data-ward-design="v6"] .bandGroupHasAvailable {
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-}
-
-.screen[data-ward-design="v6"] .bandSummary,
-.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary {
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-radius: var(--wf-r-lg);
-  background: transparent;
-}
-
-.screen[data-ward-design="v6"] .bandSummary:hover,
-.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary:hover {
-  background-color: var(--wf-hover);
-}
-
-.screen[data-ward-design="v6"] .bandGroup[open] > .bandSummary {
-  border-bottom: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
-}
-
-.screen[data-ward-design="v6"] .bandSummary::after {
-  border-left-color: var(--wf-ink-3);
-}
-
-.screen[data-ward-design="v6"] .bandLabel {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .bandAvailableBadge {
-  height: var(--wf-h-chip);
-  padding: 0 var(--wf-s-2);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  color: var(--wf-success-ink);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .bandCounts,
-.screen[data-ward-design="v6"] .bandEmpty,
 .screen[data-ward-design="v6"] .matchBand {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.screen[data-ward-design="v6"] .bandEmpty {
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
-}
-
-.screen[data-ward-design="v6"] .bandRows {
-  gap: 0;
-  padding: 0 var(--wf-s-4);
 }
 
 /* A unit inside a band is a ruled row, not a tinted card. */
@@ -4963,10 +4408,6 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-}
-
-.screen[data-ward-design="v6"] .bandRows > :last-child {
-  border-bottom: 0;
 }
 
 .screen[data-ward-design="v6"] .matchUnitName {
@@ -5131,7 +4572,6 @@
 }
 
 @media (pointer: coarse) {
-  .screen[data-ward-design="v6"] .tierCardHeader,
   .screen[data-ward-design="v6"] .gateToggle,
   .screen[data-ward-design="v6"] .criteriaSummary {
     min-height: var(--ward-tap);
@@ -5221,18 +4661,6 @@
     min-height: var(--spacing-tap, 3rem);
   }
 
-  .screen[data-ward-design="v6"] .tierTitleGroup {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 2px;
-  }
-
-  .screen[data-ward-design="v6"] .tierSubtitle {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   /* Each unit reads top to bottom: name and bed state, hospital, recorded facts, then the
      Accept button at its natural width, then the criteria line. The unit name keeps one line. */
   .screen[data-ward-design="v6"] .unitCardTop {
@@ -5289,28 +4717,8 @@
     font-size: var(--wf-fs-12);
   }
 
-  /* Travel bands: an opened band stays inside the sheet. Its grid tracks may shrink below their
-     content, and a criterion's detail wraps beside its name. */
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchList,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .bandRows,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowAccepts,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowDeclines {
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchList {
     grid-template-columns: minmax(0, 1fr);
-    min-width: 0;
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchDeclineSection,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideRow {
-    grid-template-columns: minmax(0, 1fr);
-    min-width: 0;
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideSelect {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .bandGroup {
     min-width: 0;
   }
 
@@ -5322,23 +4730,46 @@
     justify-self: start;
   }
 
-  .screen[data-ward-design="v6"][data-referral-view="register"] .criteriaDetail {
-    min-width: 0;
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchReasonText {
-    border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-sm);
-  }
-
-  .screen[data-ward-design="v6"][data-referral-view="register"] .localBedButton,
-  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideButton {
+  .screen[data-ward-design="v6"][data-referral-view="register"] .localBedButton {
     justify-content: flex-start;
     max-width: 100%;
     padding-block: var(--wf-s-2);
     text-align: left;
     white-space: normal;
   }
+}
+
+/* D-77: the picked ward's override or placement form sits in the decision pane at every width, so
+   it keeps the phone's fit. Its grid tracks may shrink below their content, and a criterion's
+   detail wraps beside its name. */
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchRowAccepts,
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchRowDeclines,
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchDeclineSection,
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideRow {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideSelect {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .criteriaDetail {
+  min-width: 0;
+}
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchReasonText {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+}
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideButton {
+  justify-content: flex-start;
+  max-width: 100%;
+  padding-block: var(--wf-s-2);
+  text-align: left;
+  white-space: normal;
 }
 
 /* ═══ v10: the decision panel for a referral no bed answers (ED review, community follow-up) ═══
