@@ -23,11 +23,12 @@ import type { absentOnOrder } from "@/components/ward-management/ward-absence-ta
 import {
   deriveAfternoonDischarges,
   restrictionNotice,
-  eligibilityWarning,
   stageCopy,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
-import { checkedGates, eligibility } from "@/components/ward-management/ward-eligibility";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { referralFit, wardStateLine } from "./ward-referral-fit";
+import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -329,6 +330,17 @@ export function WardHomeTab({
 
   function toggleLocalCheck(id: string) {
     setLocalChecks((current) => ({ ...current, [id]: current[id] === null ? now : null }));
+  }
+
+  const [referralDetailFor, setReferralDetailFor] = useState<string | null>(null);
+
+  function acceptIncoming(movementId: string) {
+    if (onAcceptInPrinciple) {
+      onAcceptInPrinciple(movementId, unit.id);
+    } else {
+      priorRejectionCountRef.current = rejections.length;
+      setCheckToken((token) => token + 1);
+    }
   }
 
   const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
@@ -1283,40 +1295,18 @@ export function WardHomeTab({
                   {visibleIncoming.map((movement) => {
                     const blocked = referralAnswerBlocked(movement, unit);
                     const notice = restrictionNotice(movement, unit);
-                    const eligibilityIssue = eligibilityWarning(movement, unit, now);
+                    const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
+                    const wardLine = wardStateLine(fit, now, unit);
                     const declineOpen = declineOpenFor === movement.id;
 
                     return (
                       <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
-                        <div className={styles.awaitingIdentity}>
-                          <span className={styles.awaitingTier} aria-hidden="true">
-                            {movement.urgency}
-                          </span>
-                          <span className={styles.awaitingName}>Incoming patient</span>
-                          <span className={styles.awaitingMeta}>
-                            {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                            {movement.legalStatus}
-                          </span>
-                          {/* A1-8 (audit round 2): the wait, origin and gate result the Ward answer
-                              view shows, in one line, so an accept from this list is not blind. */}
-                          <span
-                            className={`${styles.awaitingMeta} ${styles.awaitingSummary}`}
-                            data-testid={`ward-incoming-summary-${movement.id}`}
-                          >
-                            {(() => {
-                              const verdict = eligibility(movement, unit, now);
-                              const checked = checkedGates(verdict.gates);
-                              const pass = checked.filter((gate) => gate.pass).length;
-                              return [
-                                `Waiting ${durMinutes(Math.max(0, now - movement.openedAt))}`,
-                                edById(movement.originEdId) ? `Now at ${edById(movement.originEdId)?.name}` : undefined,
-                                `${pass} of ${checked.length} gates pass`,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ");
-                            })()}
-                          </span>
-                        </div>
+                        <AwaitingIdentity
+                          movement={movement}
+                          person={resolvePatientIdentity(movement)}
+                          now={now}
+                          onOpen={() => setReferralDetailFor(movement.id)}
+                        />
 
                         {notice ? (
                           <span
@@ -1328,15 +1318,12 @@ export function WardHomeTab({
                           </span>
                         ) : null}
 
-                        {eligibilityIssue ? (
-                          <span
-                            className={styles.noticeProminent}
-                            data-testid={`ward-eligibility-warning-${movement.id}`}
-                            data-level={eligibilityIssue.level}
-                          >
-                            {eligibilityIssue.text}
-                          </span>
-                        ) : null}
+                        <AwaitingFitLines
+                          movementId={movement.id}
+                          fit={fit}
+                          wardLine={wardLine}
+                          onUpdateBeds={onOpenConfirmNumbers}
+                        />
 
                         <div className={styles.awaitingActions}>
                           <Button
@@ -1366,18 +1353,7 @@ export function WardHomeTab({
                             reasonDisplay="tooltip"
                             type="button"
                             data-testid={`ward-accept-${movement.id}`}
-                            onClick={
-                              blocked
-                                ? ignoreUnavailableActivation
-                                : () => {
-                                    if (onAcceptInPrinciple) {
-                                      onAcceptInPrinciple(movement.id, unit.id);
-                                    } else {
-                                      priorRejectionCountRef.current = rejections.length;
-                                      setCheckToken((token) => token + 1);
-                                    }
-                                  }
-                            }
+                            onClick={blocked ? ignoreUnavailableActivation : () => acceptIncoming(movement.id)}
                           >
                             Accept in principle
                           </Button>
@@ -1743,7 +1719,7 @@ export function WardHomeTab({
                   <Count n={incoming.length} />
                 </h3>
                 <ul className={styles.phoneAwaitList}>
-                  {incoming.map((movement, index) => (
+                  {incoming.map((movement) => (
                     <li key={movement.id}>
                       <button
                         type="button"
@@ -1755,12 +1731,17 @@ export function WardHomeTab({
                         }}
                       >
                         <span className={styles.phoneAwaitText}>
-                          {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
+                          {/* D-79: a ward sees who is coming before it answers, never where else they were referred. */}
                           <span className={styles.phoneAwaitName}>
-                            Request {index + 1} · {movement.cohort}
+                            {resolvePatientIdentity(movement).displayName} · {movement.cohort}
                           </span>
                           <span className={styles.phoneAwaitMeta}>
-                            {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
+                            {[
+                              resolvePatientIdentity(movement).umrn,
+                              movement.sex,
+                              movement.legalStatus,
+                              edById(movement.originEdId)?.name,
+                            ]
                               .filter(Boolean)
                               .join(" · ")}
                           </span>
@@ -2083,6 +2064,30 @@ export function WardHomeTab({
       ) : (
         renderShiftCard()
       )}
+
+      {(() => {
+        const detailMovement = visibleIncoming.find((movement) => movement.id === referralDetailFor);
+        if (!detailMovement) return null;
+        return (
+          <WardReferralDetailDrawer
+            movement={detailMovement}
+            unit={unit}
+            now={now}
+            identity={resolvePatientIdentity(detailMovement)}
+            onClose={() => setReferralDetailFor(null)}
+            onUpdateBeds={onOpenConfirmNumbers}
+            blocked={referralAnswerBlocked(detailMovement, unit)}
+            onDecline={() => {
+              setReferralDetailFor(null);
+              if (declineOpenFor !== detailMovement.id) toggleDecline(detailMovement.id);
+            }}
+            onAccept={() => {
+              setReferralDetailFor(null);
+              acceptIncoming(detailMovement.id);
+            }}
+          />
+        );
+      })()}
 
       {/* Preserved test contracts for withdrawn referrals, overrides and answer history. */}
       <div className={styles.visuallyHidden}>
