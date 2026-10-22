@@ -52,7 +52,7 @@ import {
   durMinutes,
 } from "@/components/wf";
 
-import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { ReferralHistoryAndCorrections } from "./referral-history-corrections-lazy";
 import { ReferralMatchView } from "./referral-match-lazy";
 import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
