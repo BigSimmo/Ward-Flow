@@ -297,6 +297,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ED or community desk takes one for itself (the reducer checks which). The same desks log calls.
   ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
   LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+  ASK_MORE_WARDS: ["coordinator"],
   // Smart features idea 7: the ward for itself (reducer checks the acting unit), or the coordinator.
   CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
   REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],

@@ -5,6 +5,7 @@ import {
   PATIENT_SPECIFIC_CRITERIA_MAX,
   PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
 } from "../../src/components/ward-management/ward-discharge-criteria";
+import { PARALLEL_REFERRAL_CAP } from "../../src/components/ward-management/ward-model";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -93,6 +94,12 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     unitId: id,
     now: instant,
     source: z.optional(z.enum(["cld", "departure"])),
+  }),
+  // Fix plan item 16 (D-76): ward ids only, never more than the cap at once.
+  ASK_MORE_WARDS: z.looseObject({
+    referralId: id,
+    now: instant,
+    unitIds: z.array(id).min(1).max(PARALLEL_REFERRAL_CAP),
   }),
   RECORD_ARRIVED_IN_DEPARTMENT: z.looseObject({ referralId: id }),
   RECORD_MEDICAL_CLEARANCE: z.looseObject({ referralId: id, cleared: z.boolean() }),

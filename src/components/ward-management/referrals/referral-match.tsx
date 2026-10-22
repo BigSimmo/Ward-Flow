@@ -58,6 +58,7 @@ import {
   REJECTED_DECISION_LABELS,
 } from "./referral-match-model";
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { AskMoreWardsCard, AskMoreWardsFoot, useAskMoreWards } from "./referral-ask-more-wards";
 import { MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
@@ -121,6 +122,8 @@ export function ReferralMatchView({
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  // Fix plan item 16 (D-76): asking more wards about an open community referral.
+  const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
     "admissions",
     "patients",
@@ -544,6 +547,13 @@ export function ReferralMatchView({
                 "Accepted — unit not recorded."
             : referralAddressingStateLabel(ward)}
         </p>
+        {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}
+        <AskMoreWardsCard ask={askMore} />
+        {askMore.open ? (
+          <div className={ph.foot}>
+            <AskMoreWardsFoot ask={askMore} />
+          </div>
+        ) : null}
         {renderEdControls()}
         {communityArmLive ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls-community_team">
@@ -877,6 +887,29 @@ export function ReferralMatchView({
     });
   };
 
+  // Desk and phone both choose which asked ward to answer for, since Ask more wards (D-76) can leave several waiting.
+  const recipientSelect =
+    wardArms.length > 1 ? (
+      <label className={styles.fieldLabel}>
+        Review recipient ward
+        <select
+          className={styles.select}
+          value={ward?.destination.unitId ?? ""}
+          onChange={(event) => setReviewUnitId(event.target.value)}
+        >
+          {wardArms.map(
+            (arm) =>
+              arm.destination.kind === "psychiatric_ward" && (
+                <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                  {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                  {arm.state}
+                </option>
+              ),
+          )}
+        </select>
+      </label>
+    ) : null;
+
   return (
     <section
       className={`${styles.matchPanel} ${ph.sheet}`}
@@ -886,26 +919,7 @@ export function ReferralMatchView({
       {phone === undefined ? (
         <>
           <ReferralIntakeSummary intake={referral.intake} />
-          {wardArms.length > 1 && (
-            <label className={styles.fieldLabel}>
-              Review recipient ward
-              <select
-                className={styles.select}
-                value={ward?.destination.unitId ?? ""}
-                onChange={(event) => setReviewUnitId(event.target.value)}
-              >
-                {wardArms.map(
-                  (arm) =>
-                    arm.destination.kind === "psychiatric_ward" && (
-                      <option key={arm.destination.unitId} value={arm.destination.unitId}>
-                        {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
-                        {arm.state}
-                      </option>
-                    ),
-                )}
-              </select>
-            </label>
-          )}
+          {recipientSelect}
           {!hideDossierHeader ? (
             <div className={styles.matchDossierHeader}>
               <div className={styles.matchDossierTop}>
@@ -1024,7 +1038,12 @@ export function ReferralMatchView({
         </>
       ) : (
         <>
-          {phone !== undefined ? gpSourceNotice : null}
+          {phone !== undefined ? (
+            <>
+              {gpSourceNotice}
+              {recipientSelect}
+            </>
+          ) : null}
           {!hasCohort ? (
             <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
               No {referral.ageBand.toLowerCase()} unit exists in this network.
@@ -1049,6 +1068,7 @@ export function ReferralMatchView({
           {group("Fits, bed ready", tier1Candidates, "yes")}
           {group("Fits, no bed now", tier2Candidates, "nobed")}
           {group("Needs review", tier3Candidates, "review")}
+          <AskMoreWardsCard ask={askMore} />
           {pick && pickTurnaround ? (
             <div className={styles.unitActionStatusWrap}>
               <Button
@@ -1109,7 +1129,9 @@ export function ReferralMatchView({
       )}
 
       <div className={ph.foot}>
-        {phoneDeclining ? (
+        {askMore.open ? (
+          <AskMoreWardsFoot ask={askMore} />
+        ) : phoneDeclining ? (
           <>
             <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
               Back

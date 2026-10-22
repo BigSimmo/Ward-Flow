@@ -273,29 +273,12 @@ export function QueuedSection({
                     </td>
                     <td>
                       <span className={a.arms}>
-                        {referral.destinations.map((arm, index) => {
-                          const open = arm.state === "queued" && arm.withdrawnAt === undefined;
-                          const refused = arm.state === "declined";
-                          if (!open && !refused) return null;
-                          const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
-                          const words = `${shortKind(arm.destination.kind)}${
-                            open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
-                          }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
-                          return (
-                            <span
-                              key={`${arm.destination.kind}-${index}`}
-                              className={cx(a.arm, refused && a.armNo)}
-                              title={
-                                refused
-                                  ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
-                                  : referralDestinationLabel(arm.destination)
-                              }
-                            >
-                              <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
-                              {words}
-                            </span>
-                          );
-                        })}
+                        {armChips(referral).map(({ words, refused, titles }) => (
+                          <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
+                            <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
+                            {words}
+                          </span>
+                        ))}
                       </span>
                       {refusals.length > 0 ? (
                         <span className="sr-only" data-testid={`ward-referral-board-refusals-${referral.id}`}>
@@ -443,6 +426,27 @@ const SHORT_KIND: Record<Referral["destinations"][number]["destination"]["kind"]
   emergency_department: "ED review",
   community_team: "Community",
 };
+
+/** One chip per distinct need, so three wards asked read "Ward bed" once, with each ward in the title. */
+function armChips(referral: Referral) {
+  const chips = new Map<string, { words: string; refused: boolean; titles: string[] }>();
+  for (const arm of referral.destinations) {
+    const open = arm.state === "queued" && arm.withdrawnAt === undefined;
+    const refused = arm.state === "declined";
+    if (!open && !refused) continue;
+    const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
+    const words = `${shortKind(arm.destination.kind)}${
+      open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
+    }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
+    const title = refused
+      ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
+      : referralDestinationLabel(arm.destination);
+    const chip = chips.get(words) ?? { words, refused, titles: [] };
+    chip.titles.push(title);
+    chips.set(words, chip);
+  }
+  return [...chips.values()];
+}
 
 function shortKind(kind: Referral["destinations"][number]["destination"]["kind"]): string {
   return SHORT_KIND[kind];

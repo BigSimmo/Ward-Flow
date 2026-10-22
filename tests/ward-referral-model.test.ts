@@ -510,6 +510,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // recorded by DECLINE_REFERRAL on its own copy.
     ASSIGN_REFERRAL: false,
     LOG_REFERRAL_CONTACT: false,
+    ASK_MORE_WARDS: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,
