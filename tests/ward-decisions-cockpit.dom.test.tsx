@@ -112,11 +112,11 @@ describe("ward decisions cockpit", () => {
     expect(onConfirmRollup).toHaveBeenCalledOnce();
   });
 
-  it("says the overdue rollup is not wired when no confirm action is supplied", () => {
+  it("shows the overdue rollup with no confirm control and no not-wired note when no action is supplied", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration rollupOverdue />);
     expect(screen.getByTestId("ward-morning-rollup-overdue-banner")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-confirm-morning-rollup-btn")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Not wired in this prototype.")).not.toBeInTheDocument();
   });
 
   it("shows the decision windows on a quiet ward when the screen supplies its rollup action", () => {

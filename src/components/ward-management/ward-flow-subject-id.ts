@@ -50,6 +50,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
+    case "SEND_RELEASE_SUPPORT_NOTICE":
       return event.releaseId;
     case "RELEASE_BED":
       return event.releaseId;

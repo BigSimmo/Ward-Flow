@@ -8,6 +8,7 @@ import {
   setWardFeatureFlagOnDevice,
   useWardFeatureFlags,
 } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { WARD_FEATURE_FLAG_NOTES } from "@/components/ward-management/ward-feature-flag-notes";
 import { WARD_FEATURE_FLAG_SOURCE_LABELS, wardEnvironment } from "@/components/ward-management/ward-feature-flags";
 
 import { SettingRow } from "./settings-rows";
@@ -57,7 +58,7 @@ export function FeatureFlagsCard() {
           setting={`flag-${flag.name}`}
           testId={`feature-flag-${flag.name}`}
           title={flag.definition.label}
-          sub={`${WARD_FEATURE_FLAG_SOURCE_LABELS[flag.source]} · Owner ${flag.definition.owner} · Added ${flag.definition.added}`}
+          sub={`${WARD_FEATURE_FLAG_SOURCE_LABELS[flag.source]} · Owner ${WARD_FEATURE_FLAG_NOTES[flag.name].owner} · Added ${WARD_FEATURE_FLAG_NOTES[flag.name].added}`}
         >
           <Switch
             checked={flag.on}
@@ -73,8 +74,8 @@ export function FeatureFlagsCard() {
         {flags.map((flag) => (
           <div key={flag.name}>
             <dt>{flag.definition.label}</dt>
-            <dd>{flag.definition.description}</dd>
-            <dd>Remove when: {flag.definition.removeWhen}</dd>
+            <dd>{WARD_FEATURE_FLAG_NOTES[flag.name].description}</dd>
+            <dd>Remove when: {WARD_FEATURE_FLAG_NOTES[flag.name].removeWhen}</dd>
           </div>
         ))}
       </dl>

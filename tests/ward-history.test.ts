@@ -38,7 +38,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Smart features idea 5 (19 Oct 2026) adds RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION.
       // Fix plan item 4 (21 Oct 2026) adds ASSIGN_REFERRAL and LOG_REFERRAL_CONTACT, and FD-10
       // (21 Oct 2026) adds RECORD_WARD_DIAGNOSIS.
-      expect(allEventTypes.length).toBe(143);
+      // D-72 (21 Oct 2026) adds SEND_RELEASE_SUPPORT_NOTICE (#398) and RECORD_ARRIVAL_CHECK.
+      expect(allEventTypes.length).toBe(145);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
