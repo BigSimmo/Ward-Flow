@@ -186,4 +186,39 @@ describe("an observation draft's editing baseline", () => {
     });
     expect(validSharedCommand(JSON.parse(JSON.stringify(event)))).toBe(true);
   });
+
+  it.each(["movement", "admission"] as const)(
+    "refuses editing the %s if its linked record holds a different observation fact",
+    (kind) => {
+      const seed = seedWardFlowState();
+      const held = seed.admissions.find((admission) => admission.state === "occupied")!;
+      const movement = {
+        ...waiting().movements[0],
+        admissionId: held.id,
+        observation: kind === "movement" ? GENERAL_OBSERVATION : observationAt("arms_length"),
+      };
+      const admission = {
+        ...held,
+        movementId: movement.id,
+        observation: kind === "admission" ? GENERAL_OBSERVATION : observationAt("arms_length"),
+        observationChanges: undefined,
+      };
+      const state = { ...seed, movements: [movement], admissions: [admission], rejections: [] };
+      const target =
+        kind === "movement"
+          ? { kind, movementId: movement.id }
+          : { kind, admissionId: admission.id, actingUnitId: admission.unitId };
+      const next = wardFlowReducer(state, {
+        ...command(state, observationAt("intermittent"), {
+          observation: GENERAL_OBSERVATION,
+          changeCount: 0,
+        }),
+        role: "ward",
+        target,
+      });
+      expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+      expect(next.movements).toBe(state.movements);
+      expect(next.admissions).toBe(state.admissions);
+    },
+  );
 });

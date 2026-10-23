@@ -101,7 +101,8 @@ export function reduceObservationLevelEvent(
     (!target ||
       !sameObservation(target.observation, event.expected.observation) ||
       (target.observationChanges?.length ?? 0) !== event.expected.changeCount ||
-      (current && !sameObservation(current, event.expected.observation)))
+      (movement && !sameObservation(movement.observation, event.expected.observation)) ||
+      (admission && !sameObservation(admission.observation, event.expected.observation)))
   ) {
     return reject(state, event, "The recorded observation changed while editing. Reopen it to check the latest level.");
   }
