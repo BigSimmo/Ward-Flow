@@ -49,3 +49,14 @@ export function referralSentByDesk(
       return false;
   }
 }
+
+/**
+ * A route desk sends only its own kind of referral, so a ward never acts as sender on one it is
+ * answering. The screens ask this with `referralSentByDesk`, since a demo desk may have no scope.
+ */
+export function routeSentKind(routeRole: string, source: Referral["source"]): boolean {
+  if (routeRole === "ward") return source === "psychiatric_ward";
+  if (routeRole === "ed") return source === "ed_medical";
+  if (routeRole === "community") return source !== "psychiatric_ward" && source !== "ed_medical";
+  return true;
+}

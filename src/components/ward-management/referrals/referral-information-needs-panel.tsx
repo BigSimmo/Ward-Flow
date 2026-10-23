@@ -7,7 +7,7 @@ import { Button, DisabledReason, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { wardPlaceLookup } from "../ward-access-places";
-import { referralSentByDesk } from "../ward-referral-sender";
+import { referralSentByDesk, routeSentKind } from "../ward-referral-sender";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Referral, ReferralInformationNeedEntry } from "../ward-model";
@@ -124,14 +124,6 @@ export function WardInformationNeedsPicker({
 }
 
 const TICK_OFF_ROLES = ["ed", "community", "ward", "coordinator"] as const;
-
-/** A route desk sends only its own kind of referral, so a ward never ticks off one it is answering. */
-function routeSentKind(routeRole: string, source: Referral["source"]): boolean {
-  if (routeRole === "ward") return source === "psychiatric_ward";
-  if (routeRole === "ed") return source === "ed_medical";
-  if (routeRole === "community") return source !== "psychiatric_ward" && source !== "ed_medical";
-  return true;
-}
 
 /** The referrer's side: what each ward is still waiting on, ticked off one item at a time. */
 export function ReferralInformationNeedsPanel({ referral, now }: { referral: Referral; now: Instant }) {
