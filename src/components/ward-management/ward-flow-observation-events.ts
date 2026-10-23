@@ -10,19 +10,14 @@ import { isObservation, sameObservation, type Observation } from "@/components/w
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
 export type { Observation };
 
-/** The observation fact and history position captured when its editor opens. */
-type ObservationEditingBaseline = { observation: Observation; changeCount: number };
-
-function isEditingBaseline(value: unknown): value is ObservationEditingBaseline {
-  if (typeof value !== "object" || value === null) return false;
-  const record = value as Record<string, unknown>;
-  return (
-    Object.keys(record).sort().join() === "changeCount,observation" &&
-    isObservation(record.observation) &&
-    typeof record.changeCount === "number" &&
-    Number.isSafeInteger(record.changeCount) &&
-    record.changeCount >= 0
-  );
+/** A stable editing version: record identity, recorded fact and retained history position. */
+export function observationEditingToken(
+  kind: "movement" | "admission",
+  id: string,
+  observation: Observation,
+  changeCount: number,
+): string {
+  return JSON.stringify([kind, id, observation.level, observation.intervalMinutes, observation.reviewAt, changeCount]);
 }
 
 /**
@@ -40,7 +35,7 @@ export type ObservationLevelEvent = {
   target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
   /** Optional for older callers. When supplied, a stale editor cannot replace a newer record. */
-  expected?: ObservationEditingBaseline;
+  expected?: string;
 };
 
 type ObservationLevelHelpers = Pick<
@@ -65,8 +60,6 @@ export function reduceObservationLevelEvent(
   const level = event.observation;
   if (!isObservation(level))
     return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a level with a valid interval");
-  if (event.expected !== undefined && !isEditingBaseline(event.expected))
-    return reject(state, event, "Needs a valid editing baseline.");
 
   let movement: Movement | undefined;
   let admission: Admission | undefined;
@@ -98,11 +91,19 @@ export function reduceObservationLevelEvent(
   const target = event.target.kind === "movement" ? movement : admission;
   const expected = event.expected;
   if (
-    expected &&
-    (!target ||
-      (target.observationChanges?.length ?? 0) !== expected.changeCount ||
-      (movement && !sameObservation(movement.observation, expected.observation)) ||
-      (admission && !sameObservation(admission.observation, expected.observation)))
+    expected !== undefined &&
+    (typeof expected !== "string" ||
+      !target ||
+      [movement, admission].some(
+        (row) =>
+          row &&
+          observationEditingToken(
+            event.target.kind,
+            target.id,
+            row.observation,
+            target.observationChanges?.length ?? 0,
+          ) !== expected,
+      ))
   ) {
     return reject(state, event, "Observation changed while editing. Reopen to check the latest level.");
   }
