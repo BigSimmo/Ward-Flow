@@ -121,7 +121,13 @@ describe("an observation draft's editing baseline", () => {
 
   it("keeps older callers usable when they omit the optional baseline", () => {
     const state = waiting();
-    const { expected: _expected, ...event } = command(state, observationAt("within_sight"), undefined);
+    const event = {
+      type: "RECORD_OBSERVATION_LEVEL",
+      role: "ed",
+      now: NOW + 5,
+      target: { kind: "movement", movementId: state.movements[0].id },
+      observation: observationAt("within_sight"),
+    } as const;
     const next = wardFlowReducer(state, event);
     expect(next.rejections).toEqual([]);
     expect(next.movements[0].observation.level).toBe("within_sight");
