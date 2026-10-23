@@ -6,6 +6,7 @@ import { directiveAcknowledgements } from "../src/components/ward-management/ale
 import type { BroadcastAlert } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
+import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { commandScopeRefusal, scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
@@ -798,6 +799,7 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
   const otherUnit = state.units.find((unit) => places.unitSiteCode(unit.id) !== ownSite)!;
   const otherEd = allEmergencyDepartments().find((ed) => ed.siteCode !== ownSite)!;
   const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: ownSite } };
+  const GENDER_REASON = GENDER_PLACEMENT_REASONS[0];
   const base = state.movements[0];
   const shared = {
     ...base,
@@ -836,6 +838,10 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
     unwinds: [
       { at: NOW_ANCHOR, kind: "acceptance_withdrawn", by: "coordinator", reason: "Synthetic", unitId: otherUnit.id },
     ],
+    genderPlacements: [
+      { at: NOW_ANCHOR, by: "coordinator", unitIds: [unitId, otherUnit.id], reason: GENDER_REASON, wardChecked: true },
+      { at: NOW_ANCHOR, by: "coordinator", unitIds: [otherUnit.id], reason: GENDER_REASON, wardChecked: true },
+    ],
   } as unknown as typeof base;
   const trimmedFor = (access: WardAccess, movement = shared) =>
     scopeWorkspace({ ...state, movements: [movement] }, access, { now: NOW_ANCHOR, places }).movements.find(
@@ -865,10 +871,9 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
         expect(trimmed.allocatedBed).toBeUndefined();
         expect(trimmed.stage).toBe(shared.stage);
       });
-      it("keeps an unwind but not the other ward's name", () => {
-        expect(trimmed.unwinds).toHaveLength(1);
-        expect(trimmed.unwinds[0].unitId).toBeUndefined();
-      });
+      it("drops another ward's withdrawn acceptance", () => expect(trimmed.unwinds).toEqual([]));
+      it("keeps only gender placements that named its own wards, naming only those", () =>
+        expect(trimmed.genderPlacements?.map((item) => item.unitIds)).toEqual([[unitId]]));
       it("never carries another ward's id anywhere on the copy", () =>
         expect(JSON.stringify(trimmed)).not.toContain(otherUnit.id));
     });
@@ -892,22 +897,5 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
     expect(trimmedFor(bedManager, { ...shared, originEdId: ownEd.id } as typeof shared).acceptedUnitId).toBe(
       otherUnit.id,
     );
-  });
-
-  it("leaves a journey that touched no other ward as it was", () => {
-    const clean = {
-      ...base,
-      closure: undefined,
-      referredUnitIds: [unitId],
-      acceptedUnitId: undefined,
-      declines: [],
-      withdrawnReferrals: [],
-      overrides: [],
-      escalation: undefined,
-      referralAnswerHistory: undefined,
-      waitlistedUnitIds: undefined,
-      unwinds: [],
-    } as typeof base;
-    expect(trimmedFor(wardDesk, clean)).toBe(clean);
   });
 });

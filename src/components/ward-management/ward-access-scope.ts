@@ -98,44 +98,32 @@ function movementUnitIds(movement: Movement): string[] {
  * was accepted for: it is where its own person is going, and the stage reads from it.
  *
  * A desk that only received the movement learns nothing about any other ward either (FD-23, D-80):
- * no other ward's decline, withdrawn request, answer, waitlist, override or escalation attempt, and
- * no other ward's acceptance or bed. The stage itself stays, so the journey still reads in order.
+ * no other ward's decline, withdrawn request, answer, waitlist, override, gender placement or
+ * escalation attempt, and no other ward's acceptance or bed. The stage itself stays, so the journey
+ * still reads in order.
  */
 function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean, sent: boolean): Movement {
-  const own = movement.referredUnitIds.filter(unitIn);
-  const trimmed = own.length === movement.referredUnitIds.length ? movement : { ...movement, referredUnitIds: own };
-  if (sent) return trimmed;
-  const otherAccepted = movement.acceptedUnitId !== undefined && !unitIn(movement.acceptedUnitId);
-  const otherWards =
-    otherAccepted ||
-    movement.declines.some((decline) => !unitIn(decline.unitId)) ||
-    movement.withdrawnReferrals.some((withdrawal) => !unitIn(withdrawal.unitId)) ||
-    movement.overrides.some((override) => override.unitIds.some((unitId) => !unitIn(unitId))) ||
-    (movement.escalation?.triedUnitIds.some((unitId) => !unitIn(unitId)) ?? false) ||
-    (movement.referralAnswerHistory?.some((answer) => !unitIn(answer.unitId)) ?? false) ||
-    (movement.waitlistedUnitIds?.some((unitId) => !unitIn(unitId)) ?? false) ||
-    movement.unwinds.some((unwind) => unwind.unitId !== undefined && !unitIn(unwind.unitId));
-  if (!otherWards) return trimmed;
-  const copy: Movement = {
-    ...trimmed,
-    declines: movement.declines.filter((decline) => unitIn(decline.unitId)),
-    withdrawnReferrals: movement.withdrawnReferrals.filter((withdrawal) => unitIn(withdrawal.unitId)),
-    overrides: movement.overrides
-      .filter((override) => override.unitIds.length === 0 || override.unitIds.some(unitIn))
-      .map((override) => ({ ...override, unitIds: override.unitIds.filter(unitIn) })),
-    unwinds: movement.unwinds.map((unwind) => {
-      if (unwind.unitId === undefined || unitIn(unwind.unitId)) return unwind;
-      const { unitId: _other, ...rest } = unwind;
-      void _other;
-      return rest;
-    }),
-  };
+  const copy = { ...movement, referredUnitIds: movement.referredUnitIds.filter(unitIn) };
+  if (sent) return copy;
+  // Records naming one ward keep only this desk's own; records naming several keep only its own ids.
+  for (const key of ["declines", "withdrawnReferrals", "unwinds", "referralAnswerHistory"] as const) {
+    const items: { unitId?: string }[] | undefined = movement[key];
+    if (items) Object.assign(copy, { [key]: items.filter((item) => item.unitId === undefined || unitIn(item.unitId)) });
+  }
+  for (const key of ["overrides", "genderPlacements"] as const) {
+    const items: { unitIds: string[] }[] | undefined = movement[key];
+    if (items)
+      Object.assign(copy, {
+        [key]: items.flatMap((item) => {
+          const unitIds = item.unitIds.filter(unitIn);
+          return unitIds.length || !item.unitIds.length ? [{ ...item, unitIds }] : [];
+        }),
+      });
+  }
+  if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
   if (movement.escalation)
     copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
-  if (movement.referralAnswerHistory)
-    copy.referralAnswerHistory = movement.referralAnswerHistory.filter((answer) => unitIn(answer.unitId));
-  if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
-  if (otherAccepted) {
+  if (movement.acceptedUnitId && !unitIn(movement.acceptedUnitId)) {
     delete copy.acceptedUnitId;
     delete copy.heldBedNumber;
     delete copy.allocatedBed;
