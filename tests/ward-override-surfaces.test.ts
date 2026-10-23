@@ -613,10 +613,9 @@ describe("ward override-surface guard", () => {
     // call sites", "at least one construction site supplies an overrideReason field") and by the
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
-    // v10 pass 3: the ward page's Bed board placement (3). Home's Offer, plain fits only, was a
-    // fourth entry until 23 Oct 2026, when the unreachable phone ward sheet that held its only
-    // construction site was deleted.
-    // Top 25 item 8: the step down board's plain Refer (5).
+    // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
+    // Top 25 item 8: the step down board's plain Refer (6).
+    // 23 Oct 2026: Home's Offer went with the unreachable phone ward sheet (5).
     expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
     expect(stillInViolation.size).toBe(5);
   });
@@ -715,9 +714,6 @@ describe("ward override-surface guard", () => {
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
-      // coordinator-screen.tsx::REFER_TO_UNITS (1 -> 0, 23 Oct 2026): the unreachable phone ward sheet's
-      // plain Offer with Undo was the file's only site, and left with that sheet. Its allowlist entry
-      // above went with it.
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
