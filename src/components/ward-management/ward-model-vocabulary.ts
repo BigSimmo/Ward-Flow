@@ -346,6 +346,10 @@ export type LegalStatus =
  * a form code, or an assistant's recollection of the Mental Health Act. A typed value traced to
  * the clinician who typed it (`legalFormExpiryHistory`, below) is the only legitimate source.
  */
+/** Fixed reasons for correcting a transcribed paper expiry; no narrative is stored. */
+export const LEGAL_FORM_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
+export type LegalFormExpiryCorrectionReason = (typeof LEGAL_FORM_EXPIRY_CORRECTION_REASONS)[number];
+
 export type LegalForm = {
   code: string;
   /** Setting recorded from the current paper, never inferred from geography. */

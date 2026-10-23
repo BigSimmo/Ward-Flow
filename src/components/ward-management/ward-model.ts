@@ -74,6 +74,7 @@ import type {
   Cohort,
   HealthService,
   LegalForm,
+  LegalFormExpiryCorrectionReason,
   LegalStatus,
   MovementArrivalDetails,
   MovementStage,
@@ -700,7 +701,22 @@ export type Movement = MovementOrigin & {
    * backfill an actor or typed record for those examples. Legacy calculated clocks are not paper
    * evidence and cannot force a clinician's first actual entry to be treated as an extension.
    */
-  legalFormExpiryHistory?: { at: Instant; by: WardFlowRole; dueAt: Instant; basis: "written_on_form" | "extension" }[];
+  legalFormExpiryHistory?: {
+    at: Instant;
+    by: WardFlowRole;
+    dueAt: Instant;
+    basis: "written_on_form" | "extension" | "correction";
+  }[];
+  /** Checked paper corrections preserve both recorded values separately from extensions. */
+  legalFormExpiryCorrections?: {
+    at: Instant;
+    by: WardFlowRole;
+    formCode: string;
+    formWrittenAt?: Instant;
+    from: Instant;
+    to: Instant;
+    reason: LegalFormExpiryCorrectionReason;
+  }[];
   statusChanges: StatusChange[];
   /** Urgency-tier changes, in the order they were made. Empty for a movement whose urgency has
    *  never changed since it was raised. */

@@ -33,6 +33,7 @@ import {
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
 import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
+import { LEGAL_FORM_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
 
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -197,10 +198,12 @@ export type AuditEvent = AuditBase &
         category: "legal-form";
         action: "RECORD_LEGAL_FORM_EXPIRY" | "RECORD_COUNTRY_EXTENSION" | "RECORD_LEGAL_FORM_CONTINUATION";
         details: {
-          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded";
+          operation: "expiry-recorded" | "extension-recorded" | "continuation-recorded" | "expiry-corrected";
           dueAt: Instant | null;
           formCode?: string | null;
           startedAt?: Instant | null;
+          previousDueAt?: Instant | null;
+          reason?: LegalFormExpiryCorrectionReason | null;
         };
       }
     | {
@@ -728,8 +731,19 @@ export function captureAuditEvent(
         category: "legal-form",
         action: event.type,
         details: {
-          operation: priorDueAt !== undefined ? "extension-recorded" : "expiry-recorded",
+          operation:
+            event.correction !== undefined
+              ? "expiry-corrected"
+              : priorDueAt !== undefined
+                ? "extension-recorded"
+                : "expiry-recorded",
           dueAt: finiteInstant(event.dueAt),
+          ...(event.correction === undefined
+            ? {}
+            : {
+                previousDueAt: finiteInstant(priorDueAt),
+                reason: enumValue(LEGAL_FORM_EXPIRY_CORRECTION_REASONS, event.correction?.reason),
+              }),
         },
       };
       break;
