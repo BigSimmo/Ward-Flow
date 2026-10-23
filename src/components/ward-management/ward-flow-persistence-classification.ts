@@ -98,8 +98,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
 ]);
 
 /**
- * Every OTHER event type in the union — 57 of 62 (RA1, item 18, added `WITHDRAW_WARD_REQUEST`
- * 2026-09-17). Each one is on this list because its payload,
+ * Every OTHER event type in the union (the count is left out because it went stale as events were
+ * added). Each one is on this list because its payload,
  * read field by field in `ward-flow-events.ts`, is built only from ids, a value the reducer
  * membership-checks against a named constant, a boolean, an `Instant`/number, or the caller's own
  * `role` — never a `string` typed by a person and stored as typed. Built by reading every field on

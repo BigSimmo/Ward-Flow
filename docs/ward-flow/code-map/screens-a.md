@@ -136,7 +136,7 @@ Back to [the code map index](README.md).
   pitfalls) and `ed/ed-home-derivations.ts` (`edOpenSummaries`, for Home's ED pressure card).
 - **Tests:** 28 files under `tests/` reference this folder, including
   `ward-coordinator-screen.dom.test.tsx`, `ward-shortlist.dom.test.tsx` and four more
-  shortlist-specific specs, `ward-flow-diagram-status-truthfulness.test.ts`, `ward-override-register-render.dom.test.tsx`,
+  shortlist-specific specs, `ward-override-register-render.dom.test.tsx`,
   `ward-registers-drawer.dom.test.tsx`, `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx`.
 
 ### Files
@@ -149,10 +149,11 @@ Back to [the code map index](README.md).
   other component here imports it alongside its own smaller module.
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
-- **`flow-status.ts`** — `hubStatusText`, the hub's one-line status, used by `home-bedflow.tsx`.
-  The flow diagram it came from (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`)
-  were deleted on 20 Oct 2026 (Josh's yes); no route had drawn either since the v6 Home and the
-  Network screen's retirement.
+- **`home-bedflow.tsx`** — `HomeBedflow`, the State bedflow card drawn at the foot of Capacity: every
+  ward by health service with its bed states. Its patient mode (Offer, Fits first and the
+  patient strip) and the hub status line it read from `flow-status.ts` were removed on 23 Oct 2026
+  (Josh's yes), since no screen passed it a patient after Home v7. The flow diagram
+  (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`) were deleted on 20 Oct 2026.
 - **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the movement list in wait order
   (`ward-priority.ts`'s `queueOrder`; flags highlight, never move a row, D-71).
 - **`shortlist-panel.module.css`** (684 lines) — styles for `shortlist-panel.tsx` and reused by

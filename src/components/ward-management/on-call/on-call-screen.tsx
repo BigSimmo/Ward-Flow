@@ -64,7 +64,6 @@ import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
 import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
 import styles from "./on-call.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 export type Highlight = "now" | "soon" | "email" | "due";
@@ -739,7 +738,7 @@ export function OnCallScreen() {
         {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
-          note={`Not approved for clinical use. Synthetic records, mock numbers.${showsUnwiredPreviews() ? " Calling and email are not wired." : ""}`}
+          note="Not approved for clinical use. Synthetic records, mock numbers."
         />
       </main>
       {downtimeCard}

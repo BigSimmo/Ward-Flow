@@ -1347,6 +1347,55 @@
       "after": 1,
       "reason": "Home v7, approved by Josh on 22 Oct 2026, with State bedflow moved to the foot of Capacity unchanged. The two retired cases offered a ward from State bedflow on Home and checked its Undo toast. Capacity chooses no patient, so Offer is never shown there, and Home now refers from Placement, which opens the referral sheet. The override sign-off case stays; tests/ward-home-offer-visible.dom.test.tsx still checks what Home shows of an offer.",
       "approvedOn": "2026-10-22"
+    },
+    {
+      "path": "tests/ward-make-room.test.ts",
+      "before": 20,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. This suite tested only the deleted chain derivation and preview.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-feature-flags.test.ts",
+      "before": 12,
+      "after": 11,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. The retired case pinned the make-room flag to local builds; the other flag cases stay.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-review-feedback.dom.test.tsx",
+      "before": 4,
+      "after": 3,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. The retired case rendered the deleted Make room panel; the handover, legal forms and settings cases stay.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-home-phone-sheets.dom.test.tsx",
+      "before": 10,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z and his thread reply 13:45Z). The suite rendered only HomeWardSheet, the v10 phone ward sheet with Offer, which nothing could open after the phone sheet stopped taking a ward. PR #601 deletes the sheet, its lazy loader and this suite; the phone Since you looked and exceptions sheets keep their own tests.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-flow-diagram-status-truthfulness.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z and his thread reply 13:45Z). The suite covered hubStatusText in flow-status.ts, the State bedflow patient line. No screen has passed State bedflow a patient since Home v7 moved it to Capacity, so the PR removes the patient mode, flow-status.ts and this suite together.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-home-bedflow-fits.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z and his thread reply 13:45Z). The suite rendered State bedflow with a chosen patient to check its fitting wards and Offer. Capacity, the only caller, always passes no patient, so the patient mode was unreachable and is removed with this suite. The beds-only card keeps its Capacity coverage.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-escalation.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z, and 14:59Z \"Yes go ahead with all recommendations\"). escalationBoard had no production caller and its nowhereEligible list counted movements already holding a bed (A3-3). The PR deletes the function and this suite; the no eligible bed ruling test keeps its own inline check.",
+      "approvedOn": "2026-10-23"
     }
   ]
 }

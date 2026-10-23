@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "@/components/wf";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
-import { PatientNowLayout } from "@/components/ward-management/patients/patient-now-layouts";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { GovernanceWorkbench } from "@/components/ward-management/governance-registers";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -370,129 +369,66 @@ describe("endorsement feedback", () => {
   );
 });
 
-function calls() {
-  const noop = () => {};
-  return (
-    <ToastProvider>
-      <PatientNowLayout
-        mode="idle"
-        context={{
-          hasBedHold: false,
-          now: NOW_ANCHOR,
-          dayZero: new Date("2026-01-01"),
-          onOpenPlacement: noop,
-          onClearance: noop,
-          onBookTransport: noop,
-          onArrivalTime: noop,
-          onRecordReturn: noop,
-          onMarkAbsent: noop,
-          onAbsenceStep: noop,
-          onRecordCto: noop,
-          onEndCto: noop,
-        }}
-        legal={null}
-        why={null}
-        change={null}
-        sheetRows={null}
-        calls={[{ key: "mock", name: "Mock service", role: "Mock role", number: "(08) 0000 0000" }]}
-      />
-    </ToastProvider>
-  );
-}
-
 describe("clipboard feedback", () => {
-  it.each(["legal", "call"] as const)("reports unavailable clipboard in %s controls", async (kind) => {
+  it("reports unavailable clipboard in legal forms controls", async () => {
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
     render(
-      kind === "legal" ? (
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <LegalFormsScreen />
-        </WardFlowProvider>
-      ) : (
-        calls()
-      ),
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <LegalFormsScreen />
+      </WardFlowProvider>,
     );
-    fireEvent.click(
-      kind === "legal"
-        ? screen.getByRole("button", { name: /Copy for handover/ })
-        : screen.getByRole("button", { name: /^Call Mock service/ }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Copy for handover/ }));
     await act(async () => {});
-    expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(false);
+    expect(screen.queryByText("Copied") !== null).toBe(false);
     expect(screen.queryByText(/Could not copy/) !== null).toBe(true);
   });
-  it.each(["legal", "call"] as const)("waits for clipboard acceptance in %s controls", async (kind) => {
+  it("waits for clipboard acceptance in legal forms controls", async () => {
     const clipboard = deferred<void>();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: () => clipboard.promise },
     });
     render(
-      kind === "legal" ? (
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <LegalFormsScreen />
-        </WardFlowProvider>
-      ) : (
-        calls()
-      ),
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <LegalFormsScreen />
+      </WardFlowProvider>,
     );
-    const button =
-      kind === "legal"
-        ? screen.getByRole("button", { name: /Copy for handover/ })
-        : screen.getByRole("button", { name: /^Call Mock service/ });
+    const button = screen.getByRole("button", { name: /Copy for handover/ });
     fireEvent.click(button);
-    expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(false);
+    expect(screen.queryByText("Copied") !== null).toBe(false);
     await act(async () => clipboard.resolve());
-    expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(true);
+    expect(screen.queryByText("Copied") !== null).toBe(true);
   });
-  it.each(["legal", "call"] as const)(
-    "shows clipboard failure without a success claim in %s controls",
-    async (kind) => {
-      Object.defineProperty(navigator, "clipboard", {
-        configurable: true,
-        value: {
-          writeText: async () => {
-            throw new Error("denied");
-          },
+  it("shows clipboard failure without a success claim in legal forms controls", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error("denied");
         },
-      });
-      render(
-        kind === "legal" ? (
-          <WardFlowProvider initialNow={NOW_ANCHOR}>
-            <LegalFormsScreen />
-          </WardFlowProvider>
-        ) : (
-          calls()
-        ),
-      );
-      fireEvent.click(
-        kind === "legal"
-          ? screen.getByRole("button", { name: /Copy for handover/ })
-          : screen.getByRole("button", { name: /^Call Mock service/ }),
-      );
-      await act(async () => {});
-      expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(false);
-      expect(screen.queryByText(/Could not copy/) !== null).toBe(true);
-    },
-  );
-  it.each(["legal", "call"] as const)("falls back to the legacy copy path in %s controls", async (kind) => {
+      },
+    });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <LegalFormsScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Copy for handover/ }));
+    await act(async () => {});
+    expect(screen.queryByText("Copied") !== null).toBe(false);
+    expect(screen.queryByText(/Could not copy/) !== null).toBe(true);
+  });
+  it("falls back to the legacy copy path in legal forms controls", async () => {
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
     const execCommand = vi.fn(() => true);
     Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
     try {
       render(
-        kind === "legal" ? (
-          <WardFlowProvider initialNow={NOW_ANCHOR}>
-            <LegalFormsScreen />
-          </WardFlowProvider>
-        ) : (
-          calls()
-        ),
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <LegalFormsScreen />
+        </WardFlowProvider>,
       );
-      const button =
-        kind === "legal"
-          ? screen.getByRole("button", { name: /Copy for handover/ })
-          : screen.getByRole("button", { name: /^Call Mock service/ });
+      const button = screen.getByRole("button", { name: /Copy for handover/ });
       // Browsers move focus to a selected textarea; jsdom does not, so model it.
       const select = vi.spyOn(HTMLTextAreaElement.prototype, "select").mockImplementation(function (
         this: HTMLTextAreaElement,
@@ -506,7 +442,7 @@ describe("clipboard feedback", () => {
       // The fallback's temporary textarea hands focus back to the control.
       expect(document.activeElement).toBe(button);
       select.mockRestore();
-      expect(screen.queryByText(kind === "legal" ? "Copied" : "Number copied") !== null).toBe(true);
+      expect(screen.queryByText("Copied") !== null).toBe(true);
     } finally {
       Reflect.deleteProperty(document, "execCommand");
     }

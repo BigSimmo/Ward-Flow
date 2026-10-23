@@ -65,6 +65,7 @@ import {
   endAccessPreview,
   endDueCovers,
   lockWardDesk,
+  markDeskSwitch,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
   type BreakGlassRecord,
@@ -510,6 +511,11 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
+  const { switchFrom } = useWardAccessSnapshot();
+  // A desk switch ends when its new page arrives, so going Back later finds the page as it is.
+  useEffect(() => {
+    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
+  }, [switchFrom, pathname]);
   const address = screenForPath(pathname);
   const logged = recordViewFor(address, unscoped.movements);
   if (!on || accessIsWholeNetwork(access))
@@ -574,15 +580,25 @@ function WardRecordViewLog({ patientId, surface }: { patientId: string; surface:
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
-  // Focus the heading once on arrival, never again on a re-render (review on PR #330), so a reason
-  // being chosen or typed below keeps its place.
+  const { previewOf, switchFrom } = useWardAccessSnapshot();
+  // A desk switch still on its way from this page (`markDeskSwitch`): say so, not "closed".
+  const opening = switchFrom === usePathname();
+  // Focus the heading on arrival, or when a switch's wait ends here, never again on a re-render
+  // (review on PR #330), so a reason being chosen or typed below keeps its place.
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     headingRef.current?.focus();
-  }, []);
+  }, [opening]);
   const { units } = useUnscopedWardFlow();
-  const { previewOf } = useWardAccessSnapshot();
   const home = homeHrefFor(access, communityTeamSlug);
+  if (opening)
+    return (
+      <WardGround>
+        <main className={styles.closed}>
+          <p role="status">Opening the {ACCESS_ROLE_LABELS[access.role]} desk</p>
+        </main>
+      </WardGround>
+    );
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-closed">

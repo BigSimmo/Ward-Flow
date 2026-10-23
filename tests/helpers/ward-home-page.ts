@@ -3,10 +3,15 @@
 // coordinator would.
 import { expect, type Page } from "playwright/test";
 
-/** Switches Home's list to Everyone waiting (the priority queue); does nothing when it is showing. */
+/**
+ * Switches Home's list to Everyone waiting (the priority queue); does nothing when it is showing.
+ * A click that lands before Home hydrates is lost, so it clicks again until the switch takes it.
+ */
 export async function showEveryoneWaitingOn(page: Page): Promise<void> {
   const everyone = page.getByRole("radio", { name: /^Everyone waiting/u });
   await expect(everyone).toBeVisible({ timeout: 15_000 });
-  if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
-  await expect(everyone).toHaveAttribute("aria-checked", "true");
+  await expect(async () => {
+    if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
+    await expect(everyone).toHaveAttribute("aria-checked", "true", { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 }
