@@ -81,6 +81,7 @@ import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
 
+import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
 import styles from "./alerts.module.css";
 import {
   Button,
@@ -870,6 +871,13 @@ function AlertsWorkspace() {
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
         "None firing now. The conditions checked are named in the header.",
       )}
+      {access.role === "coordinator" ? (
+        <ForecastAlertsGroup
+          now={now}
+          className={styles.group}
+          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators only" />}
+        />
+      ) : null}
       {groupSection(
         "wait",
         "Waiting",
