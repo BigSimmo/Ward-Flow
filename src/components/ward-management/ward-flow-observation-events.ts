@@ -100,7 +100,7 @@ export function reduceObservationLevelEvent(
       ) !== event.expected ||
       (movement && admission && !sameObservation(movement.observation, admission.observation)))
   ) {
-    return reject(state, event, "Observation changed while editing. Reopen to check the latest level.");
+    return reject(state, event, "Observation changed. Reopen it.");
   }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 

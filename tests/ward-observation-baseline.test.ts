@@ -81,7 +81,7 @@ describe("an observation draft's editing baseline", () => {
     const expected = BASELINE;
     const latest = record(before, observationAt("arms_length"), expected);
     const staleSave = record(latest, observationAt("intermittent"), expected);
-    expect(staleSave.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(staleSave.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(staleSave.movements).toBe(latest.movements);
     expect(staleSave.movements[0].observation.level).toBe("arms_length");
     expect(staleSave.movements[0].observationChanges).toHaveLength(1);
@@ -92,7 +92,7 @@ describe("an observation draft's editing baseline", () => {
     const first = record(waiting(), observationAt("within_sight"), expected);
     const restored = record(first, GENERAL_OBSERVATION, '["movement","WF-OBS-BASELINE","within_sight",null,null,1]');
     const staleSave = record(restored, observationAt("intermittent"), expected);
-    expect(staleSave.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(staleSave.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(staleSave.movements).toBe(restored.movements);
     expect(staleSave.movements[0].observationChanges).toHaveLength(2);
   });
@@ -105,7 +105,7 @@ describe("an observation draft's editing baseline", () => {
     const seed = waiting();
     const state = { ...seed, movements: [{ ...seed.movements[0], observation: current }] };
     const next = record(state, observationAt("two_staff"), '["movement","WF-OBS-BASELINE","intermittent",15,null,0]');
-    expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(next.movements).toBe(state.movements);
   });
 
@@ -122,7 +122,7 @@ describe("an observation draft's editing baseline", () => {
   ])("refuses a malformed supplied baseline without changing the plan (%j)", (expected) => {
     const state = waiting();
     const next = record(state, observationAt("within_sight"), expected);
-    expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(next.movements).toBe(state.movements);
   });
 
@@ -183,7 +183,7 @@ describe("an observation draft's editing baseline", () => {
         ...event,
         observation: observationAt("intermittent"),
       });
-      expect(staleSave.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+      expect(staleSave.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
       expect(staleSave.movements).toBe(next.movements);
       expect(staleSave.admissions).toBe(next.admissions);
     },
@@ -224,7 +224,7 @@ describe("an observation draft's editing baseline", () => {
         role: "ward",
         target,
       });
-      expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+      expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
       expect(next.movements).toBe(state.movements);
       expect(next.admissions).toBe(state.admissions);
     },
@@ -234,7 +234,7 @@ describe("an observation draft's editing baseline", () => {
     const seed = waiting();
     const state = { ...seed, movements: [{ ...seed.movements[0], id: "WF-OBS-OTHER" as const }] };
     const next = record(state, observationAt("within_sight"), BASELINE);
-    expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(next.movements).toBe(state.movements);
   });
 
@@ -257,7 +257,7 @@ describe("an observation draft's editing baseline", () => {
       role: "ward",
       target: { kind: "admission", admissionId: admission.id, actingUnitId: admission.unitId },
     });
-    expect(next.rejections.at(-1)?.reason).toMatch(/changed.*editing/i);
+    expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
     expect(next.movements).toBe(state.movements);
     expect(next.admissions).toBe(state.admissions);
   });
