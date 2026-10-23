@@ -97,13 +97,13 @@ export function matchesSetting(
   if (setting === "all") return true;
 
   if (result.kind === "movement") {
-    if (setting === "transit" || setting === "inpatient" || setting === "ed") {
+    if (setting === "transit" || setting === "inpatient" || setting === "ed" || setting === "community") {
       return movementSearchState(result.movement, admissions).setting === setting;
     }
     if (setting === "discharged") {
       return result.movement.closure !== undefined;
     }
-    if (setting === "community" || setting === "scheduled") {
+    if (setting === "scheduled") {
       return false;
     }
   }

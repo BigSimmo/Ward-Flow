@@ -10,6 +10,8 @@ import { movementOriginLabel } from "@/components/ward-management/ward-movement-
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { matchesSetting } from "@/components/ward-management/search/search-filters";
 
 /**
  * D-76 item 1 (fix plan item 15): an accepted community referral starts a full journey at the
@@ -176,6 +178,50 @@ describe("a journey from an accepted community referral (D-76)", () => {
     const noWard = wardFlowReducer(state, { ...event, acceptedUnitId: undefined });
     expect(noWard.rejections.at(-1)?.reason).toContain("needs an emergency department");
     expect(noWard.movements).toEqual(state.movements);
+  });
+
+  it("tells the referring team, not an ED, when the pulled bed is released", () => {
+    const { state, event } = acceptedCommunityReferral();
+    const started = apply(state, event);
+    const movement = started.movements.at(-1)!;
+    const pulled = apply(started, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: now + 2,
+      movementId: movement.id,
+      unitId: UNIT_ID,
+      actingUnitId: UNIT_ID,
+    });
+    const released = apply(pulled, {
+      type: "RELEASE_PULL",
+      role: "ward",
+      now: now + 3,
+      movementId: movement.id,
+      reason: "ward_withdrew_the_bed",
+      actingUnitId: UNIT_ID,
+    });
+    expect(released.notices.at(-1)).toMatchObject({
+      kind: "bed_pull_released",
+      to: { role: "community", placeId: communityTeamSlug(TEAM_NAME) },
+    });
+  });
+
+  it("finds the journey under the Community setting in patient search", () => {
+    const { state, event } = acceptedCommunityReferral();
+    const movement = apply(state, event).movements.at(-1)!;
+    expect(matchesSetting({ kind: "movement", movement }, "community")).toBe(true);
+    expect(matchesSetting({ kind: "movement", movement }, "ed")).toBe(false);
+  });
+
+  it("refuses a start when the referral names no sending team", () => {
+    const { state, event, referral } = acceptedCommunityReferral();
+    const unnamed = {
+      ...state,
+      referrals: state.referrals.map((r) => (r.id === referral.id ? { ...r, sendingTeamName: undefined } : r)),
+    };
+    const refused = wardFlowReducer(unnamed, event);
+    expect(refused.rejections.length).toBe(unnamed.rejections.length + 1);
+    expect(refused.movements).toEqual(unnamed.movements);
   });
 
   it("refuses an ED on a community referral's start", () => {

@@ -40,6 +40,7 @@ import { createPatientResolver } from "@/components/ward-management/ward-patient
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { durMinutes } from "@/components/wf";
 
@@ -263,7 +264,11 @@ export function buildCensus(state: {
     const cause = causeById.get(movement.id);
     const [next, glyph] = nextStepFor(cause, movement, moving);
     const ed = edById(movement.originEdId);
-    const edText = ed ? `${ed.siteCode} ED` : "ED not recorded";
+    const edText = ed
+      ? `${ed.siteCode} ED`
+      : movement.originCommunity
+        ? communityOriginLabel(movement.originCommunity)
+        : "ED not recorded";
     const source = operational.sourceAdmission ? unitOf.get(operational.sourceAdmission.unitId) : undefined;
     const waited = Math.max(0, now - movement.openedAt);
     const form = movement.legalForm;

@@ -160,7 +160,7 @@ export function reduceReferralSendEvent(
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
             (department
               ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
-              : referral.source !== "community") ||
+              : referral.source !== "community" || referral.sendingTeamName === undefined) ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
