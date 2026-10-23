@@ -51,6 +51,10 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import { ForecastNetworkExtras } from "@/components/ward-management/forecast/forecast-network-extras";
+import { ForecastTomorrowFigure } from "@/components/ward-management/forecast/forecast-tomorrow-cell";
+import { ForecastWeekPanel } from "@/components/ward-management/forecast/forecast-week-panel";
 import { ShiftConfirmationsCard } from "./shift-confirmations-card";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import {
@@ -243,6 +247,11 @@ export function CapacityScreen() {
 
   const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
+  // Forecasting build (Josh, 23 Oct 2026): tomorrow per bed type, beside the mismatch now.
+  const tomorrowByKind = useMemo(
+    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? []),
+    [units, bedReleases, admissions, movements, now, plannedAdmissions],
+  );
   // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
   // changes it.
   // Stream D: booked planned admissions due in each window count as beds needed.
@@ -574,6 +583,7 @@ export function CapacityScreen() {
             <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
           </div>
           <BedsForecastPanel forecast={forecast} />
+          {isPhone ? null : <ForecastNetworkExtras now={now} />}
           {isPhone ? null : <ShiftConfirmationsCard units={scopedUnits} now={now} />}
           <CapacityTabs
             id="capacity-network"
@@ -949,7 +959,15 @@ export function CapacityScreen() {
            * Provenance badge removed as prototype is disclosed at page footer.
            */}
           {/* Audit A1-24: no header count; the hero already states waiting and beds that fit. */}
-          <WardPanel title="Where the mismatch is">
+          <WardPanel
+            title="Where the mismatch is"
+            blurb={
+              isPhone
+                ? undefined
+                : `Now, and likely by ${formatInstantWithDay(tomorrowByKind.until, now)} from recorded releases`
+            }
+            blurbInHeader
+          >
             <WardTable
               className={styles.gapTable}
               wrapperClassName={styles.gapBandWrap}
@@ -961,12 +979,18 @@ export function CapacityScreen() {
                   <th scope="col">Waiting</th>
                   <th scope="col">Beds of this kind</th>
                   <th scope="col">Gap</th>
+                  {isPhone ? null : <th scope="col">Tomorrow</th>}
                   <th scope="col">What that means</th>
                 </tr>
               </thead>
               <tbody>
                 {gapRows.map((row) => (
-                  <GapRow key={row.id} row={row} phone={isPhone} />
+                  <GapRow
+                    key={row.id}
+                    row={row}
+                    phone={isPhone}
+                    tomorrow={isPhone ? undefined : tomorrowByKind.kinds.find((kind) => kind.id === row.id)}
+                  />
                 ))}
               </tbody>
               <tfoot>
@@ -999,6 +1023,11 @@ export function CapacityScreen() {
                       />
                     </div>
                   </td>
+                  {isPhone ? null : (
+                    <td data-testid="ward-capacity-gap-tomorrow">
+                      <ForecastTomorrowFigure {...tomorrowByKind.total} />
+                    </td>
+                  )}
                   <td>{totalsSentence(gapTotals)}</td>
                 </tr>
               </tfoot>
@@ -1017,6 +1046,7 @@ export function CapacityScreen() {
               Across the whole network, not only {service}.
             </p>
           ) : null}
+          {isPhone ? null : <ForecastWeekPanel now={now} />}
           {isPhone && phoneTab === "overview" ? (
             <CapacityPhoneOverview
               rows={networkRows}

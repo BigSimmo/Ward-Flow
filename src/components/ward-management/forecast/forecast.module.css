@@ -1,0 +1,503 @@
+/* Forecasting build (Josh, 23 Oct 2026). Tokens only. */
+.section {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.meta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.caption {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.note {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-left: 3px solid var(--wf-warning);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-hold-tint);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
+}
+
+.noteCalm {
+  border-left-color: var(--wf-success);
+  background: var(--wf-surface-2);
+}
+
+.noteKey {
+  display: block;
+  font-weight: 600;
+}
+
+.levers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: lever;
+}
+
+.lever {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 2px var(--wf-s-2);
+  align-items: start;
+  counter-increment: lever;
+}
+
+.lever::before {
+  content: counter(lever);
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.leverTitle {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.leverBody {
+  grid-column: 2 / 4;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.leverAction {
+  grid-column: 2 / 4;
+  justify-self: start;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.tagGood {
+  border-color: var(--wf-success);
+  color: var(--wf-success-ink);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wf-s-4);
+}
+
+.groupHead {
+  margin: 0 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.groupHead:not(:first-child) {
+  margin-top: var(--wf-s-3);
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 2px 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.kvValue {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.short {
+  color: var(--wf-warning-ink);
+}
+
+.spare {
+  color: var(--wf-success-ink);
+}
+
+/* Tomorrow in the mismatch table and on Home: the likely figure and its range. */
+.tomorrowCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.tomorrowValue {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+/* Next 7 days. */
+.weekWrap {
+  overflow-x: auto;
+}
+
+.week {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+}
+
+.week th,
+.week td {
+  padding: var(--wf-s-2) var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.week thead th {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.week tbody th {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.week tfoot th,
+.week tfoot td {
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.weekend {
+  background: var(--wf-surface-2);
+}
+
+.far {
+  opacity: 0.6;
+}
+
+.out {
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.in {
+  font-family: var(--wf-mono);
+  color: var(--wf-info-ink);
+}
+
+.nil {
+  color: var(--wf-ink-3);
+}
+
+/* Try a scenario. */
+.scenario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0 var(--wf-s-4);
+  padding: var(--wf-s-3);
+  border: 1px dashed var(--wf-warning);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-hold-tint);
+}
+
+.scenarioLine {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--wf-row-touch);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.chip:has(input:checked) {
+  border-color: var(--wf-warning);
+  color: var(--wf-ink-1);
+}
+
+.chip input {
+  margin: 0;
+}
+
+.bedChange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.bedChange select,
+.bedChange input {
+  min-height: var(--wf-row-touch);
+  font: inherit;
+}
+
+.bedChange input {
+  width: 64px;
+}
+
+/* ED access risk. */
+.riskCard {
+  box-shadow: inset 4px 0 0 var(--wf-warning);
+}
+
+.riskTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+}
+
+.riskTable th,
+.riskTable td {
+  padding: var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.riskTable thead th {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.riskList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.riskItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+
+.riskTop {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.warn {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+  white-space: nowrap;
+}
+
+.sub {
+  display: block;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.edLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-hold-tint);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.edLineText {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Bed meeting brief. */
+.brief {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+  margin: var(--wf-s-2) 0 0;
+}
+
+.briefItem {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.briefLabel {
+  display: block;
+  margin-bottom: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+/* Statistics track record. */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr auto;
+  gap: var(--wf-s-2);
+  align-items: center;
+  font-size: var(--wf-fs-13);
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--wf-surface-2);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--wf-data-1);
+}
+
+.hours {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  align-items: end;
+  gap: 2px;
+  height: 64px;
+}
+
+.hourBar {
+  border-radius: 2px 2px 0 0;
+  background: var(--wf-data-2);
+}
+
+.hourLabels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+@media (width < 600px) {
+  .split,
+  .brief {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Alerts, Forecast group: rows line up with the Alerts rows beside them. */
+.alertList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+
+.alertRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--wf-s-3);
+  align-items: center;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.alertTitle {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.alertCaption {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}

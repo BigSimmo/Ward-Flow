@@ -28,6 +28,7 @@ import { openReferralSheet } from "@/components/ward-management/shell/ward-drawe
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "./ed-screen-actions";
 import { EdBoardSection } from "./ed-screen-board";
+import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast-lazy";
 import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
@@ -451,6 +452,9 @@ export function EdScreen({ edId }: EdScreenProps) {
         <EdRaiseIntoMovementSection ctx={ctx} />
 
         {isPhone ? <EdPhonePanes ctx={ctx} /> : null}
+
+        {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. */}
+        <EdAccessRiskCard edId={thisEdId} now={now} />
 
         <EdBoardSection ctx={ctx} />
 

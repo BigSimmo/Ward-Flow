@@ -58,6 +58,13 @@ const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = 
       "bed-release threshold (FD-19, 30 Aug).",
   },
   {
+    file: "forecast/forecast-alert-defaults.ts",
+    name: /^FORECAST_/,
+    ruling:
+      "Forecasting build (Josh approved the Settings mock-up at 09:53Z on 23 Oct 2026): the three Forecast " +
+      "alert lines are labelled on screen as the coordinator's own defaults, changeable in Settings, not standards.",
+  },
+  {
     file: "ward-operational-defaults.ts",
     name: /./,
     ruling:

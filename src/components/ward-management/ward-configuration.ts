@@ -18,6 +18,14 @@ import {
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import {
+  FORECAST_ED_RISK_LEAD_MINUTES,
+  FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+  FORECAST_SHORT_ALERT_BEDS,
+  FORECAST_SHORT_ALERT_RANGE_BEDS,
+  FORECAST_WORSE_ALERT_BEDS,
+  FORECAST_WORSE_ALERT_RANGE_BEDS,
+} from "@/components/ward-management/forecast/forecast-alert-defaults";
 
 /**
  * The four coordinator-tunable figures wired to an engine read site (Task 2 of the
@@ -50,6 +58,12 @@ export type WardConfiguration = {
   transferAcceptanceTargetMinutes: number;
   /** Minutes from the bed being pulled to transport being booked. Default, set in Settings. */
   transportBookedTargetMinutes: number;
+  /** Beds; a bed type likely this many short tomorrow raises a Forecast alert (23 Oct 2026). */
+  forecastShortAlertBeds: number;
+  /** Minutes; alert when someone in ED will pass the access target within this time. */
+  forecastEdRiskLeadMinutes: number;
+  /** Beds; alert when tomorrow's likely figure has dropped this much since the last look. */
+  forecastWorseAlertBeds: number;
 };
 
 /** The keys `WardConfiguration` carries, and no others — the same list `validateConfiguration`
@@ -64,6 +78,9 @@ const CONFIGURATION_KEYS = [
   "referralDecisionTargetMinutes",
   "transferAcceptanceTargetMinutes",
   "transportBookedTargetMinutes",
+  "forecastShortAlertBeds",
+  "forecastEdRiskLeadMinutes",
+  "forecastWorseAlertBeds",
 ] as const;
 
 /** Keys a stored or older payload may leave out; each takes its default when missing. */
@@ -74,6 +91,9 @@ const OPTIONAL_KEYS: readonly (keyof WardConfiguration)[] = [
   "referralDecisionTargetMinutes",
   "transferAcceptanceTargetMinutes",
   "transportBookedTargetMinutes",
+  "forecastShortAlertBeds",
+  "forecastEdRiskLeadMinutes",
+  "forecastWorseAlertBeds",
 ];
 
 const OPTIONAL_DEFAULTS: Pick<
@@ -84,6 +104,9 @@ const OPTIONAL_DEFAULTS: Pick<
   | "referralDecisionTargetMinutes"
   | "transferAcceptanceTargetMinutes"
   | "transportBookedTargetMinutes"
+  | "forecastShortAlertBeds"
+  | "forecastEdRiskLeadMinutes"
+  | "forecastWorseAlertBeds"
 > = {
   morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
   dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
@@ -91,6 +114,9 @@ const OPTIONAL_DEFAULTS: Pick<
   referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
   transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
+  forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
+  forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+  forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
 };
 
 /** Seeds `WardFlowState.configuration` and is what `RESET_SCENARIO`/`SET_SCENARIO` reseed to. */
@@ -105,6 +131,9 @@ export function defaultWardConfiguration(): WardConfiguration {
     referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
     transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
+    forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
+    forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+    forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
   };
 }
 
@@ -120,6 +149,9 @@ const BOUNDS: Record<keyof WardConfiguration, Bounds> = {
   referralDecisionTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
   transferAcceptanceTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
   transportBookedTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
+  forecastShortAlertBeds: FORECAST_SHORT_ALERT_RANGE_BEDS,
+  forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+  forecastWorseAlertBeds: FORECAST_WORSE_ALERT_RANGE_BEDS,
 };
 
 function isOnStep(value: number, bounds: Bounds): boolean {
@@ -167,6 +199,9 @@ export function validateConfiguration(payload: unknown): WardConfiguration | nul
     referralDecisionTargetMinutes: read("referralDecisionTargetMinutes"),
     transferAcceptanceTargetMinutes: read("transferAcceptanceTargetMinutes"),
     transportBookedTargetMinutes: read("transportBookedTargetMinutes"),
+    forecastShortAlertBeds: read("forecastShortAlertBeds"),
+    forecastEdRiskLeadMinutes: read("forecastEdRiskLeadMinutes"),
+    forecastWorseAlertBeds: read("forecastWorseAlertBeds"),
   };
   // The first warning must come before the second, or "due within the hour" would never show.
   if (configuration.dueSoonUrgentMinutes >= configuration.dueSoonMinutes) return null;
