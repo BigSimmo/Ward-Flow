@@ -55,7 +55,6 @@ import {
   type ChronologySource,
 } from "./patient-chronology";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
-import { reportDay, reportMoment } from "./report-parts";
 import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -109,9 +108,17 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
     const at = row.occurredAt ?? row.recordedAt;
     // Ops-18 (13 Oct 2026): keyed by the board-clock day it is labelled with, never the device's
     // time zone, so one Perth day is one group on any device and the server and browser agree.
-    const label = at === null ? "No time recorded" : reportDay(at, dayZero);
-    // Grouped by the full Perth calendar date: the label carries no year, so two rows a year apart
-    // on the same weekday, day and month must not share a heading.
+    const label =
+      at === null
+        ? "No time recorded"
+        : `${calendarDateOf(at, dayZero).toLocaleDateString("en-AU", {
+            timeZone: "Australia/Perth",
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })} AWST`;
+    // Keep the grouping key in the same full Perth calendar date as its heading.
     const key =
       at === null ? "none" : calendarDateOf(at, dayZero).toLocaleDateString("en-CA", { timeZone: "Australia/Perth" });
     const last = groups[groups.length - 1];
@@ -364,7 +371,11 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
     }`;
     return (
-      <div className={cx(styles.page, styles.phonePage)} data-testid="ward-patient-chronology" data-ward-design="v10">
+      <div
+        className={cx(styles.page, styles.phonePage, phone.outputPage)}
+        data-testid="ward-patient-chronology"
+        data-ward-design="v10"
+      >
         <main id="main-content" className={styles.main}>
           <PhoneHero
             level={1}
@@ -439,7 +450,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                       <ul className={phone.rows}>
                         {group.rows.map((row) => (
                           <li key={row.key}>
-                            <button type="button" className={phone.row} onClick={() => setOpenKey(row.key)}>
+                            <button
+                              type="button"
+                              className={phone.row}
+                              onClick={() => setOpenKey(row.key)}
+                              data-testid="ward-chronology-phone-event"
+                            >
                               <span className={phone.time}>
                                 {row.occurredAt === null ? (
                                   <span className={phone.noTime}>No time</span>
@@ -453,6 +469,20 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                               </span>
                               <SourceMark source={row.source} />
                             </button>
+                            <dl className={phone.printFacts} data-testid="ward-chronology-print-facts">
+                              {[
+                                ...detailFacts(row),
+                                { id: "record", label: "Record", value: row.record },
+                                { id: "before", label: "Before", value: row.before || NOT_RECORDED },
+                                { id: "after", label: "After", value: row.after || NOT_RECORDED },
+                                { id: "reason", label: "Reason", value: row.reason || NOT_RECORDED },
+                              ].map((fact) => (
+                                <div key={fact.id}>
+                                  <dt>{fact.label}</dt>
+                                  <dd>{fact.value}</dd>
+                                </div>
+                              ))}
+                            </dl>
                           </li>
                         ))}
                       </ul>
@@ -643,7 +673,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   /* -------------------------------------------------------------- desktop */
   return (
-    <div className={styles.page} data-testid="ward-patient-chronology" data-ward-design="v10">
+    <div className={cx(styles.page, phone.outputPage)} data-testid="ward-patient-chronology" data-ward-design="v10">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
@@ -790,11 +820,14 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                               aria-selected={selected}
                             >
                               <td className={styles.time}>{clockOrMissing(row.occurredAt)}</td>
-                              <td className={styles.time}>{clockOrMissing(row.recordedAt)}</td>
+                              <td className={styles.time} data-chronology-recorded="">
+                                {chronologyTime(row.recordedAt, dayZero)}
+                              </td>
                               <th scope="row">
                                 <button
                                   type="button"
                                   className={styles.eventButton}
+                                  data-chronology-event-action=""
                                   aria-expanded={selected}
                                   aria-controls={`${baseId}-panel`}
                                   onClick={() => openRow(row.key)}
@@ -805,7 +838,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                               </th>
                               <td>
                                 <span className={styles.cellMain}>{row.record}</span>
-                                <span className={styles.cellSub}>{row.who || "Who not recorded"}</span>
+                                <span className={styles.cellSub} data-chronology-event-detail="">
+                                  {row.who || "Who not recorded"}
+                                </span>
                               </td>
                               <td>
                                 <span className={styles.sourceCell}>
@@ -940,7 +975,7 @@ function EventChange({ row }: { row: ChronologyRow }) {
   const line = [change, row.reason].filter(Boolean).join(" · ");
   if (!line) return null;
   return (
-    <span className={styles.cellSub} title={line}>
+    <span className={styles.cellSub} title={line} data-chronology-event-detail="">
       {line}
     </span>
   );
@@ -952,5 +987,5 @@ function firstLast(rows: readonly ChronologyRow[], dayZero: Date, which: "first"
     .filter((at): at is Instant => at !== null)
     .sort((a, b) => a - b);
   const at = which === "first" ? times[0] : times[times.length - 1];
-  return at === undefined ? NOT_RECORDED : reportMoment(at, dayZero);
+  return at === undefined ? NOT_RECORDED : chronologyTime(at, dayZero);
 }
