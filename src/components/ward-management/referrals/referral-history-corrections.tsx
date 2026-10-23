@@ -6,8 +6,8 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS, type Referral } from "@/components/ward-management/ward-model";
 import { referralSentByDesk, routeSentKind } from "@/components/ward-management/ward-referral-sender";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -31,18 +31,22 @@ import styles from "./referrals.module.css";
 export function ReferralHistoryAndCorrections({
   referral,
   now,
+  dispatch: dispatchProp,
 }: {
   referral: Referral;
   now: Instant;
-  /** Unused since D-80: the panel raises as the route desk. Kept so its mount sites stay as they are. */
+  /** Used only outside a provider (the match view's own tests); inside one the panel raises through it. */
   dispatch?: Dispatch<WardFlowEvent>;
 }) {
   const routeRole = useRouteRole();
-  const raise = useWardRaise(routeRole);
+  const flow = useOptionalWardFlowSelect("dispatch", "units");
+  const dispatch = flow?.dispatch ?? dispatchProp;
+  const raise = wardRaise(dispatch ?? (() => undefined), routeRole, useWardFlowClock(now));
   const access = useEffectiveWardAccess();
-  const { units } = useWardFlowSelect("units");
   const sent =
-    routeSentKind(routeRole, referral.source) && referralSentByDesk(referral, access, wardPlaceLookup(units));
+    dispatch !== undefined &&
+    routeSentKind(routeRole, referral.source) &&
+    referralSentByDesk(referral, access, wardPlaceLookup(flow?.units ?? []));
   const [note, setNote] = useState("");
   const noteId = useId();
   const trimmedNote = note.trim();
