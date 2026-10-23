@@ -27,7 +27,14 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  formatSheetMoment,
+  perthCalendarDay,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
@@ -218,7 +225,14 @@ export function DowntimePackScreen() {
   }
   if (!ready && taking) setTaking(false);
 
-  const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : reportMoment(instant, dayZero));
+  const at = (instant: Instant | null) => {
+    if (instant === null) return NOT_RECORDED;
+    const year = (value: Instant) => perthCalendarDay(calendarDateOf(value, dayZero)).year;
+    // The provenance names the pack's year and zone. A row from another year must say its own year.
+    return year(instant) === year(pack?.generatedAt ?? now)
+      ? reportMoment(instant, dayZero)
+      : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
+  };
 
   if (pack === null) {
     return (
@@ -256,6 +270,9 @@ export function DowntimePackScreen() {
   // Owner, 22 Oct 2026: a pack taken offline reads "taken offline" with the last sync time, and its
   // age runs from that sync, so it is never presented as freshly generated.
   const syncedAt = pack.offline ? pack.offline.lastSyncAt : pack.generatedAt;
+  const provenance = pack.offline
+    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true })}`
+    : `Frozen ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })}`;
   const ageMinutes = syncedAt === null ? Infinity : Math.max(0, now - syncedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
   const frozenAt = pack.offline
@@ -342,7 +359,7 @@ export function DowntimePackScreen() {
     <span data-testid="ward-downtime-generated">
       {pack.offline
         ? `Taken offline · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
-        : `Taken ${at(pack.generatedAt)} · next pack ${nextPackAt}`}
+        : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · next pack ${nextPackAt}`}
     </span>
   );
   const staleLine = stale ? (
@@ -505,6 +522,7 @@ export function DowntimePackScreen() {
                       Accepted by
                     </th>
                   ) : null}
+                  <th scope="col">Recorded observations</th>
                 </tr>
               </thead>
               <tbody>
@@ -518,6 +536,7 @@ export function DowntimePackScreen() {
                     <td>{line.legalStatus}</td>
                     <td>{line.stage}</td>
                     {edAccepted ? <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td> : null}
+                    <td>{line.observation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -555,6 +574,7 @@ export function DowntimePackScreen() {
                   <th scope="col">Stage</th>
                   <th scope="col">Planned move</th>
                   {movesEta ? <th scope="col">Transport ETA</th> : null}
+                  <th scope="col">Recorded observations</th>
                 </tr>
               </thead>
               <tbody>
@@ -566,6 +586,7 @@ export function DowntimePackScreen() {
                     <td>{line.stage}</td>
                     <td className={styles.time}>{at(line.plannedAt)}</td>
                     {movesEta ? <td className={styles.time}>{at(line.transportEta)}</td> : null}
+                    <td>{line.observation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -736,6 +757,7 @@ export function DowntimePackScreen() {
                           { id: "arrived", label: "Arrived", value: at(line.openedAt) },
                           { id: "legal", label: "Legal status", value: line.legalStatus },
                           { id: "accepted", label: "Accepted by", value: line.acceptedWard || NOT_RECORDED },
+                          { id: "observation", label: "Recorded observations", value: line.observation },
                         ],
                       })
                     }
@@ -762,6 +784,7 @@ export function DowntimePackScreen() {
                           { id: "stage", label: "Stage", value: line.stage },
                           { id: "planned", label: "Planned move", value: at(line.plannedAt) },
                           { id: "eta", label: "Transport ETA", value: at(line.transportEta) },
+                          { id: "observation", label: "Recorded observations", value: line.observation },
                         ],
                       })
                     }
@@ -802,9 +825,7 @@ export function DowntimePackScreen() {
             </PhoneSheet>
           </div>
           <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
-            <p className={styles.printMeta}>
-              Downtime pack · synthetic data · frozen {frozenAt}, {reportDay(pack.generatedAt, dayZero)}
-            </p>
+            <p className={styles.printMeta}>Downtime pack · synthetic data · {provenance}. All row times are AWST.</p>
             <p className={styles.printMeta} data-testid="ward-downtime-print-notice">
               {PRINT_NOTICE}
             </p>
@@ -892,6 +913,9 @@ export function DowntimePackScreen() {
         </nav>
 
         {/* F-08: the printout says it holds invented records before its first table. */}
+        <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">
+          Downtime pack · {provenance}. All row times are AWST.
+        </p>
         <p className={cx(styles.printOnly, styles.printMeta)}>{PRINT_NOTICE}</p>
         {packTables}
 
