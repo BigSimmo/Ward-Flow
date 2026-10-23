@@ -220,6 +220,22 @@
   display: contents;
 }
 
+/* Forecasting build (23 Oct 2026): tomorrow's likely figure, a full-width line under each tile. */
+.screen .gapTable [data-testid="ward-capacity-gap-tomorrow"] {
+  grid-column: 1 / -1;
+  padding-top: 6px;
+  border-top: 1px dashed var(--wf-line);
+}
+
+.screen .gapTable [data-testid="ward-capacity-gap-tomorrow"]::before {
+  content: "Tomorrow";
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
 /* The sentence column restates the tile for screen readers. */
 .screen .gapTable tr > :last-child {
   position: absolute;

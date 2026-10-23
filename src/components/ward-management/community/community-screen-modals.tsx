@@ -13,7 +13,6 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
 import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import { useState } from "react";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -57,7 +56,7 @@ function AssignToTeam({ referralId }: { referralId: string }) {
   );
 }
 
-/** Review a referral (not wired in this prototype), or assign it to the team's desk. */
+/** Assign a referral to the team's desk. */
 export function CommunityScreenReferralModal({ view }: { view: CommunityScreenView }) {
   const { identityOf, activeModal, setActiveModal, referralModalRef, referralModalBackdropRef } = view;
   if (activeModal === null) return null;
@@ -79,7 +78,7 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
       >
         <div className={styles.modalHeader}>
           <h3 id="community-modal-title" className={styles.modalTitle}>
-            {activeModal.type === "review" ? "Review referral" : "Assign referral"}: {identityOf(activeModal.referral)}
+            Assign referral: {identityOf(activeModal.referral)}
           </h3>
           <button
             type="button"
@@ -91,13 +90,7 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
           </button>
         </div>
         <div className={styles.modalBody}>
-          {activeModal.type === "assign" ? (
-            <AssignToTeam referralId={activeModal.referral.id} />
-          ) : (
-            <p className={styles.modalProtNote}>
-              <strong>Not wired in this prototype.</strong>
-            </p>
-          )}
+          <AssignToTeam referralId={activeModal.referral.id} />
           <div className={styles.modalDetailsList}>
             <p>
               <strong>Patient:</strong> {identityOf(activeModal.referral)}
@@ -287,7 +280,6 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <div className={styles.deploymentNote}>
                 <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
                 {teamConfig.campus} to catchment residence.
-                {showsUnwiredPreviews() ? " Duress beacon: not wired in this prototype." : null}
               </div>
 
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>

@@ -536,7 +536,7 @@ export function ReferralPatientStep({
                 className={styles.textLink}
                 data-cleared={isMedicalCleared}
                 data-testid="ward-referral-medical-clearance-toggle"
-                onClick={() => setActiveSection("documentation")}
+                onClick={() => setActiveSection(destType === "community" ? "referral" : "documentation")}
               >
                 Review clearance
               </button>

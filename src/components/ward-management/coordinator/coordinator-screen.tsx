@@ -24,19 +24,11 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import {
-  allDeclines,
-  allOverrides,
-  type InboxItem,
-  isOpen,
-  referralBlockedReason,
-  shortlistCandidates,
-} from "@/components/ward-management/ward-derivations";
+import { allDeclines, allOverrides, type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -45,10 +37,10 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { currentInboxOwner } from "@/components/ward-management/ward-inbox-snooze";
-import { genderReviewNeeded, type Movement, type Referral } from "@/components/ward-management/ward-model";
+import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
@@ -69,17 +61,14 @@ import {
   OccupancyRing,
   Segmented,
   Sheet,
-  useOptionalToast,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
-import { fitKind } from "./home-fit";
 import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, ChosenAlertCard, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
-import { HomeWardSheet } from "./home-ward-sheet-lazy";
 import { PlacementPrompt } from "./placement-prompt";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
@@ -283,11 +272,9 @@ export function CoordinatorScreen() {
   const isTabletPortrait = layout === "tablet-portrait";
   // Where Placement is a sheet over the page, the chosen alert travels inside it.
   const sheetPlacement = isPhone || isTabletPortrait;
-  // Phone sheets (direction A): Since you looked, the registers, or one ward. The patient sheet is
+  // Phone sheets (direction A): Since you looked, or the registers. The patient sheet is
   // Placement itself, opened by picking a queue row.
-  const [phoneSheet, setPhoneSheet] = useState<
-    { kind: "since" } | { kind: "exceptions" } | { kind: "ward"; unitId: string } | undefined
-  >(undefined);
+  const [phoneSheet, setPhoneSheet] = useState<{ kind: "since" } | { kind: "exceptions" } | undefined>(undefined);
 
   // A ward choice belongs to the movement it was made for, so changing movement clears it.
   function selectMovement(movementId: string | undefined) {
@@ -421,66 +408,7 @@ export function CoordinatorScreen() {
     return () => window.removeEventListener("keydown", onKey);
   }, [sheetPlacementOpen, setFocusMovementId]);
 
-  /*
-   * Offer from the phone ward sheet (v10 Home): refers this patient to that ward at once (`REFER_TO_UNITS`)
-   * and offers Undo on the toast (`UNDO_REFER_TO_UNITS`), so leaving the page never loses the
-   * offer. The row reads Offered from the recorded referral. A ward the engine would refuse a plain
-   * referral for (a stage that cannot be referred, a gender placement still to record) is chosen
-   * in Placement instead, which says why.
-   */
-  // Null only where the screen renders without the layout (a test or preview): Offer then sends
-  // at once, with no Undo window.
-  const toast = useOptionalToast();
   const patientOf = usePatientOf();
-  const umrnText = useUmrnText();
-  const { run: runStep } = useUndoableStep({
-    dispatch,
-    rejections,
-    now: liveNow,
-    routeRole: "coordinator",
-    toast,
-    sayRefusal: umrnText,
-  });
-
-  function offer(movement: Movement, unitId: string) {
-    const unit = units.find((candidate) => candidate.id === unitId);
-    if (!unit) return;
-    const candidate = shortlistCandidates(movement, [unit], liveNow)[0];
-    const plain =
-      candidate !== undefined &&
-      fitKind(candidate, movement) === "bed" &&
-      referralBlockedReason(movement) === undefined &&
-      !(
-        genderReviewNeeded(movement.gender, movement.sex) &&
-        !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(unitId))
-      ) &&
-      !movement.referredUnitIds.includes(unitId);
-    if (!plain) {
-      setSelectedUnitId(unitId);
-      return;
-    }
-    setSelectedUnitId(unitId);
-    const who = patientOf(movement);
-    runStep(
-      {
-        type: "REFER_TO_UNITS",
-        role: "coordinator",
-        now: liveNow,
-        movementId: movement.id,
-        unitIds: [unitId],
-      },
-      {
-        success: `Offered ${unit.name} to ${who.umrn}`,
-        undo: (at) => ({
-          type: "UNDO_REFER_TO_UNITS",
-          role: "coordinator",
-          now: at,
-          movementId: movement.id,
-        }),
-        undone: `Offer withdrawn. ${unit.name} is no longer asked.`,
-      },
-    );
-  }
 
   /*
    * Option B (Josh, 13 Oct 2026; D-30): Refer on Home's placement shortlist writes a referral, not an
@@ -1203,26 +1131,6 @@ export function CoordinatorScreen() {
                 onSelectDischarge={() => setPhoneSheet(undefined)}
               />
             </Sheet>
-          ) : null}
-          {isPhone && phoneSheet?.kind === "ward" ? (
-            <HomeWardSheet
-              unitId={phoneSheet.unitId}
-              units={units}
-              admissions={admissions}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              queue={queue}
-              now={now}
-              onClose={() => setPhoneSheet(undefined)}
-              onOffer={(movement, unit) => {
-                setPhoneSheet(undefined);
-                offer(movement, unit.id);
-              }}
-              onOpenPatient={(movementId) => {
-                setPhoneSheet(undefined);
-                selectMovement(movementId);
-              }}
-            />
           ) : null}
         </div>
         <WardPrototypeFooter

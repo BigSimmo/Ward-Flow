@@ -85,6 +85,18 @@ describe("RECORD_REPATRIATION refuses a log with any answer missing or off its l
       "RECORD_REPATRIATION cadNumber must be answered, and it has no default",
     ],
     [
+      "a CAD number that is a placeholder",
+      { cadNumber: "CAD TBC" },
+      { cadNumber: "CAD-2" },
+      "RECORD_REPATRIATION cadNumber refused: the CAD number looks like a placeholder, so enter the number the provider gave",
+    ],
+    [
+      "a CAD number with no digits",
+      { cadNumber: "SYNTHETIC-CAD" },
+      { cadNumber: "SYNTHETIC-CAD-3" },
+      "RECORD_REPATRIATION cadNumber refused: the CAD number has no digits, so enter the number the provider gave",
+    ],
+    [
       "voluntary or involuntary, off its list",
       { transportLegalStatus: OFF_LIST },
       { transportLegalStatus: "involuntary" },

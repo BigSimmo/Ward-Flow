@@ -151,26 +151,6 @@
   font-weight: 500;
 }
 
-/* A card for fields the record cannot hold yet: dashed, never styled as data. */
-.dashed {
-  border-style: dashed;
-  box-shadow: none;
-  background: var(--wf-surface-2);
-}
-
-.preview {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 var(--wf-s-2);
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-tag);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .chip {
   display: inline-flex;
   align-items: center;

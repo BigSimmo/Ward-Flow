@@ -7,7 +7,7 @@ import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-ope
 import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
-import { SECTION_IDS, sectionLabel } from "./ward-referral-drawer-model";
+import { sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -62,10 +62,13 @@ export function ReferralSummaryRail({
     itemsReady,
     readyRows,
     needed,
+    sectionIds,
+    destType,
+    communityNeeds,
   } = s;
   // Overall review (20 Oct 2026): "0 of 18" sat beside steps whose "needed" figures add to 13. The
   // difference is the contact details asked at Send, so the rail names them when any are still empty.
-  const stepsLeft = SECTION_IDS.reduce((sum, id) => sum + needed[id], 0);
+  const stepsLeft = sectionIds.reduce((sum, id) => sum + needed[id], 0);
   const contactLeft = itemsLeft - stepsLeft;
   return (
     <aside
@@ -135,11 +138,20 @@ export function ReferralSummaryRail({
           </section>
           <section className={styles.railCard} data-layout="pair">
             {/* Audit 11 Oct 2026: the decision time appears once the referral is sent. */}
-            <div title={OPERATIONAL_DEFAULT_LABEL}>
-              <p className={styles.eyebrow}>Urgency</p>
-              <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
-              <small>Decision due shows after Send</small>
-            </div>
+            {destType === "community" ? (
+              // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
+              <div>
+                <p className={styles.eyebrow}>First contact</p>
+                <strong className={styles.mono}>{communityNeeds.firstContact ?? "Choose within"}</strong>
+                <small>Team sees it as the due time</small>
+              </div>
+            ) : (
+              <div title={OPERATIONAL_DEFAULT_LABEL}>
+                <p className={styles.eyebrow}>Urgency</p>
+                <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
+                <small>Decision due shows after Send</small>
+              </div>
+            )}
             <div>
               <p className={styles.eyebrow}>Already open</p>
               <strong>{alreadyOpen ? "Yes" : "None"}</strong>
@@ -204,6 +216,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
     phCloseSheet,
     phOpenStep,
     phStepIndex,
+    sectionIds,
   } = s;
   return (
     <div className={styles.sendReferralFoot}>
@@ -276,7 +289,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                   Send referral
                 </>
               ) : (
-                `Next, ${sectionLabel(SECTION_IDS[phStepIndex + 1]!, destType).toLowerCase()}`
+                `Next, ${sectionLabel(sectionIds[phStepIndex + 1]!, destType).toLowerCase()}`
               )}
             </button>
           </>
@@ -406,7 +419,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                     ? "Confirm and send"
                     : activeSection === "placement"
                       ? "Send referral"
-                      : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
+                      : `Next, ${sectionLabel(sectionIds[sectionIds.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
               </button>
             )}
             {confirmationOpen && !sendGate.allowed

@@ -105,7 +105,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
       );
       expect(dossier).not.toHaveTextContent(/Full blood count|No organic cause|persecutory delusions/);
       expect(within(dossier).queryByRole("combobox", { name: "Assign Key Clinician:" })).not.toBeInTheDocument();
-      expect(dossier).toHaveTextContent("Clinician assignment: Not wired in this prototype.");
+      expect(dossier).not.toHaveTextContent(/Not wired in this prototype/);
     },
   );
 

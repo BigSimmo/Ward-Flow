@@ -40,6 +40,13 @@ import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { suburbOptions } from "./referral-destination-options";
+import {
+  clearanceItems,
+  clearanceNeeded,
+  communityPurposeRow,
+  communityReferralError,
+  communityUrgency,
+} from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
 import { documentationError, EMPTY_DOCUMENTATION, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
@@ -54,6 +61,7 @@ import {
   useReferralDraftRecovery,
 } from "./referral-draft-store";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
+import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
@@ -87,13 +95,12 @@ import {
   type DrawerCategory,
   type DrawerSection,
   DESTINATIONS,
-  SECTION_IDS,
+  sectionIdsFor,
   RISK_FLAG_LABELS,
   documentationNeeded,
   documentationItems,
   CONTACT_FIELD_COUNT,
   contactFieldErrors,
-  recipientSummary,
   communityDestinations,
   singleRecipientLabel,
   missingDestinationError,
@@ -341,7 +348,8 @@ export function useWardReferralDrawerState({
   const [catchmentEditing, setCatchmentEditing] = useState(false);
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
   const [activeSection, setActiveSection] = useState<DrawerSection>(
-    kept?.activeSection ?? (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
+    (kept?.destType === "community" && kept.activeSection === "documentation" ? "referral" : kept?.activeSection) ??
+      (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
   );
   const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
@@ -407,6 +415,10 @@ export function useWardReferralDrawerState({
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
   const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(kept?.communityNeeds ?? {});
+  // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
+  const community = destType === "community";
+  const shownUrgency = community ? communityUrgency(communityNeeds.firstContact) : urgency;
+  const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
@@ -817,7 +829,10 @@ export function useWardReferralDrawerState({
       return "Choose the location of referral.";
     if (!sendingWard && sourceKind === "community" && !sendingTeam.trim())
       return "Record the referring community service.";
-    if (!URGENCY_LEVELS.some((tier) => String(tier) === urgency)) return "Choose the referral urgency.";
+    if (!URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency))
+      return community ? "Choose when the team should first make contact." : "Choose the referral urgency.";
+    const shortForm = community ? communityReferralError(communityPurpose, documentation) : null;
+    if (shortForm) return shortForm;
     if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
     if (doctorNote.length > reasonRoom) return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
     return null;
@@ -837,14 +852,16 @@ export function useWardReferralDrawerState({
       !catchmentConfirmed || !catchmentTeam.trim(),
       !homeRegion,
     ].filter(Boolean).length,
-    referral: [
-      !originValid,
-      needsSendingTeam && !sendingTeam.trim(),
-      !URGENCY_LEVELS.some((tier) => String(tier) === urgency),
-      (reasonNoteRequired && !doctorNote.trim()) || doctorNote.length > reasonRoom,
-    ].filter(Boolean).length,
-    documentation: documentationNeeded(documentation),
-    placement: selectedDestinations.length ? 0 : 1,
+    referral:
+      [
+        !originValid,
+        needsSendingTeam && !sendingTeam.trim(),
+        !URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency),
+        community && !communityPurpose,
+        (reasonNoteRequired && !doctorNote.trim()) || doctorNote.length > reasonRoom,
+      ].filter(Boolean).length + (community ? clearanceNeeded(documentation) : 0),
+    documentation: community ? 0 : documentationNeeded(documentation),
+    placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
   // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
@@ -852,7 +869,14 @@ export function useWardReferralDrawerState({
   // all ready. The checklist rows below are labels for the letter, not a second count.
   // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
   // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
-  const itemsTotal = 4 + (needsSendingTeam ? 3 : 2) + documentationItems(documentation) + 1 + CONTACT_FIELD_COUNT;
+  const itemsTotal =
+    4 +
+    (needsSendingTeam ? 3 : 2) +
+    (community ? 1 + clearanceItems(documentation) : documentationItems(documentation)) +
+    1 +
+    CONTACT_FIELD_COUNT;
+  // D-77: the community short form has no Documents step, so its checks skip triage and charts.
+  const docsError = () => (community ? null : documentationError(documentation));
   // The saved history carries the unidentified label ahead of the patient story, so the two together
   // must fit the history limit or the reducer refuses the referral with no visible reason.
   function storyError() {
@@ -865,7 +889,7 @@ export function useWardReferralDrawerState({
     if (!error) return null;
     if (patientError() === error) return "patient";
     if (referralError() === error || storyError() === error) return "referral";
-    if (documentationError(documentation) === error) return "documentation";
+    if (docsError() === error) return "documentation";
     return "placement";
   }
   const { activateSection, selectSection, phCloseSheet, phOpenStep } = useReferralSectionNavigation({
@@ -885,7 +909,7 @@ export function useWardReferralDrawerState({
     const error =
       patientError() ??
       (section !== "patient" ? (referralError() ?? storyError()) : null) ??
-      (section === "documentation" ? documentationError(documentation) : null);
+      (section === "documentation" ? docsError() : null);
     setFlowError(error);
     if (error) {
       const failed = sectionFor(error);
@@ -895,20 +919,18 @@ export function useWardReferralDrawerState({
       }
       return;
     }
-    activateSection(section === "patient" ? "referral" : section === "referral" ? "documentation" : "placement");
+    activateSection(sectionIds[sectionIds.indexOf(section) + 1] ?? "placement");
   }
   function goBack() {
     setFlowError(null);
-    activateSection(
-      activeSection === "placement" ? "documentation" : activeSection === "documentation" ? "referral" : "patient",
-    );
+    activateSection(sectionIds[sectionIds.indexOf(activeSection) - 1] ?? "patient");
   }
   function handleDispatch() {
     const error =
       patientError() ??
       referralError() ??
       storyError() ??
-      documentationError(documentation) ??
+      docsError() ??
       (selectedDestinations.length ? null : missingDestinationError(destType === "community" && !!selectedRecipient));
     setFlowError(error);
     if (error) {
@@ -927,11 +949,7 @@ export function useWardReferralDrawerState({
     event.preventDefault();
     if (sendPending || submissionRef.current || sentReferralId || !sendGate.allowed) return;
     const validation =
-      patientError() ??
-      referralError() ??
-      storyError() ??
-      documentationError(documentation) ??
-      referralContactError(contact);
+      patientError() ?? referralError() ?? storyError() ?? docsError() ?? referralContactError(contact);
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
@@ -953,9 +971,9 @@ export function useWardReferralDrawerState({
               contactPhone: documentation.contactPhone,
             }),
       },
-      triageAndRampCompleted: documentation.triage === "yes",
-      charts: documentation.charts,
-      additionalDocuments: documentation.additional === "yes",
+      triageAndRampCompleted: !community && documentation.triage === "yes",
+      charts: community ? [] : documentation.charts,
+      additionalDocuments: !community && documentation.additional === "yes",
       referrer: contact,
       ...(destType === "ward"
         ? {
@@ -971,7 +989,7 @@ export function useWardReferralDrawerState({
       return;
     }
     const cohort = effectiveCohort || undefined;
-    const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
+    const tier = URGENCY_LEVELS.find((level) => String(level) === shownUrgency);
     if (!cohort || !tier || !homeRegion || !selectedDestinations.length) {
       setFlowError("Check the patient, urgency and selected recipients.");
       return;
@@ -1010,7 +1028,7 @@ export function useWardReferralDrawerState({
   const inboxCount = inboxWards.reduce((sum, ward) => sum + ward.toDecide, 0);
   const inboxWard = inboxWards.find((ward) => ward.unit.unitId === inboxUnitId) ?? inboxWards[0];
 
-  const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
+  const tier = URGENCY_LEVELS.find((level) => String(level) === shownUrgency);
   const tierLabel = tier === undefined ? "Not recorded" : urgencyTierLabel(tier);
   const recordedFlags = (Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).filter(
     (key) => riskFlags[key],
@@ -1069,6 +1087,8 @@ export function useWardReferralDrawerState({
     destType === "ward" && Object.keys(clearanceChecks).length
       ? CLEARANCE_CHECKS.filter((check) => clearanceChecks[check] === "done").length
       : undefined;
+  const docsLeft = community ? clearanceNeeded(documentation) : needed.documentation;
+  const tierState = tier === undefined ? "needed" : "done";
   const readyRows: { label: string; value: string; state: "done" | "follow" | "needed" }[] = [
     { label: "Refer to", value: destination.label, state: "done" },
     {
@@ -1082,22 +1102,21 @@ export function useWardReferralDrawerState({
       state: catchmentConfirmed ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
+    ...(community ? [communityPurposeRow(communityPurpose)] : []),
     { label: "Legal status", value: legalStatus, state: legalStatus === NOT_RECORDED ? "follow" : "done" },
+    ...(community
+      ? []
+      : [{ label: "Urgency", value: tier === undefined ? "Needed" : `Tier ${tier}`, state: tierState } as const]),
     {
-      label: "Urgency",
-      value: tier === undefined ? "Needed" : `Tier ${tier}`,
-      state: tier === undefined ? "needed" : "done",
-    },
-    {
-      label: destination.check,
-      value: needed.documentation
-        ? `${needed.documentation} to answer`
+      label: community ? "Clearance" : destination.check,
+      value: docsLeft
+        ? `${docsLeft} to answer`
         : checksDone !== undefined
           ? `${checksDone} of ${CLEARANCE_CHECKS.length} done`
           : documentation.medical === "no"
             ? "Clearance to follow"
             : "Answered",
-      state: needed.documentation ? "needed" : documentation.medical === "no" ? "follow" : "done",
+      state: docsLeft ? "needed" : documentation.medical === "no" ? "follow" : "done",
     },
     {
       label: "Your contact",
@@ -1136,6 +1155,7 @@ export function useWardReferralDrawerState({
   function chooseDestination(kind: DrawerCategory) {
     if (kind === destType || sendPending || sentReferralId) return;
     setDestType(kind);
+    if (kind === "community" && activeSection === "documentation") setActiveSection("referral");
     setSelectedUnitIds([]);
     setSelectedRecipient("");
     setCommunityPurpose("");
@@ -1144,47 +1164,22 @@ export function useWardReferralDrawerState({
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
   }
 
-  const footStatus = (() => {
-    if (view === "inbox") {
-      return {
-        tone: "info" as WfTone,
-        first: inboxWard ? `${inboxWard.unit.name} inbox · ${inboxWard.toDecide} to decide` : "No referrals waiting",
-        second: `${inboxWards.length} ${inboxWards.length === 1 ? "ward has" : "wards have"} referrals`,
-      };
-    }
-    if (sentReferralId) {
-      return {
-        tone: "success" as WfTone,
-        first: `Sent ${sentAt === null ? "" : formatInstantWithDay(sentAt, now)} · ${sentReferralId}`,
-        second: `${recipientLabels.length} ${recipientLabels.length === 1 ? "location" : "locations"} notified`,
-      };
-    }
-    if (submissionAwaitingRecord) {
-      return {
-        tone: "info" as WfTone,
-        first: "Referral saved. Its record is not visible yet.",
-        second: "Check the Referrals board before sending again.",
-      };
-    }
-    if (flowError) {
-      return { tone: "danger" as WfTone, first: flowError, second: recipientSummary(recipientLabels), alert: true };
-    }
-    if (confirmationOpen) {
-      return {
-        tone: (contactNeeded ? (attempted.contact ? "danger" : "neutral") : "success") as WfTone,
-        first: contactNeeded
-          ? `${contactNeeded} contact ${contactNeeded === 1 ? "detail" : "details"} needed`
-          : "Ready to send",
-        second: recipientSummary(recipientLabels),
-      };
-    }
-    return {
-      tone: (itemsLeft ? "neutral" : "success") as WfTone,
-      // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
-      first: itemsLeft > 0 ? `${itemsLeft} of ${itemsTotal} items still needed` : "All items in",
-      second: recipientSummary(recipientLabels),
-    };
-  })();
+  const footStatus = drawerFootStatus({
+    view,
+    inboxWard,
+    inboxWardCount: inboxWards.length,
+    sentReferralId,
+    sentAt,
+    now,
+    recipientLabels,
+    submissionAwaitingRecord,
+    flowError,
+    confirmationOpen,
+    contactNeeded,
+    itemsLeft,
+    itemsTotal,
+    contactAttempted: !!attempted.contact,
+  });
 
   // v10 phone: which of the four phone layouts shows. The list holds the steps; the sheet holds one
   // step (or the letter, or the contact check before Send). Desktop never reads this.
@@ -1196,7 +1191,7 @@ export function useWardReferralDrawerState({
         : phoneStepOpen || confirmationOpen || previewOpen
           ? "sheet"
           : "list";
-  const phFirstNeeded = SECTION_IDS.find((id) => needed[id] > 0);
+  const phFirstNeeded = sectionIds.find((id) => needed[id] > 0);
   const phNeededLabels = readyRows.filter((row) => row.state === "needed").map((row) => row.label);
   const phNeedsLine = phNeededLabels.length
     ? `Needs ${phNeededLabels.slice(0, 3).join(", ")}${phNeededLabels.length > 3 ? ` and ${phNeededLabels.length - 3} more` : ""}`
@@ -1226,7 +1221,7 @@ export function useWardReferralDrawerState({
     }
     return destType === "ward" ? "Choose up to 3 wards" : destType === "community" ? "Choose a team" : "Choose an ED";
   }
-  const phStepIndex = SECTION_IDS.indexOf(activeSection);
+  const phStepIndex = sectionIds.indexOf(activeSection);
 
   return {
     onClose,
@@ -1492,6 +1487,7 @@ export function useWardReferralDrawerState({
     phCloseSheet,
     phOpenStep,
     phStepIndex,
+    sectionIds,
   } as const;
 }
 

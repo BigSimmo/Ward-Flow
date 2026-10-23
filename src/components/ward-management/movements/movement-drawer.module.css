@@ -421,10 +421,6 @@
   justify-content: center;
 }
 
-.preview {
-  border-style: dashed;
-}
-
 .urgent {
   display: flex;
   flex-direction: column;
