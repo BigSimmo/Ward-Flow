@@ -204,7 +204,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "Police transport only, no charges" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 190,
+      clearedAfterMinutes: 100,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -397,7 +397,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "None" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 95,
+      clearedAfterMinutes: 85,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -460,7 +460,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "On a community order for a driving offence" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 160,
+      clearedAfterMinutes: 65,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -572,7 +572,8 @@ function dossierDocuments(movementId: string, dossier: ReferralDossier): Dossier
       title: "Blood results",
       pages: 1,
       author: "Pathology",
-      addedAfterMinutes: Math.max(90, clearedAt - 15),
+      // These results support clearance, including journeys cleared within the first 90 minutes.
+      addedAfterMinutes: Math.max(0, clearedAt - 15),
       paragraphs: [`${checkLine("Bloods")}`, `Drug screen: ${checkLine("Drug screen")}`],
     },
   ];
