@@ -230,7 +230,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-ed-expects-derivation.test.ts`** (225 lines) — what counts as being in the department
 - **`tests/ward-ed-home-derivations.test.ts`** (311 lines) — isDetainedUnderTheAct
 - **`tests/ward-engine-defects.test.ts`** (542 lines) — PULL_PATIENT checks high-acuity places that are LEFT, not merely authored
-- **`tests/ward-escalation.test.ts`** (162 lines) — escalationBoard
 - **`tests/ward-event-permissions.test.ts`** (501 lines) — who may raise which event
 - **`tests/ward-facade-agrees-with-screens.test.ts`** (802 lines) — the shell facade agrees with the screens that own its figures
 - **`tests/ward-flow-chat-control.test.ts`** (2089 lines) — a Ward Verifier is given a criterion, not just a commit

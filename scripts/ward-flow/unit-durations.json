@@ -403,7 +403,6 @@
     "tests/ward-errata-freshness-gate.test.ts": 0.9,
     "tests/ward-error-boundaries.dom.test.tsx": 2.4,
     "tests/ward-escalation.dom.test.tsx": 1.9,
-    "tests/ward-escalation.test.ts": 0.4,
     "tests/ward-event-log.dom.test.tsx": 2.3,
     "tests/ward-event-permissions.test.ts": 0.5,
     "tests/ward-event-reachability.test.ts": 1.3,
