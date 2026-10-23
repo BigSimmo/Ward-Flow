@@ -65,11 +65,6 @@ export function CountCircle({
   );
 }
 
-/** Recessed box on surface-2 with a hairline, for figures inside a card. */
-export function Inset({ className, ...rest }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cx(styles.inset, className)} {...rest} />;
-}
-
 /** Spinner for loading states. Decorative: pair it with `aria-busy` on the region or button. */
 export function Spinner({ className }: { className?: string }) {
   return <span className={cx(styles.spin, className)} aria-hidden="true" />;
