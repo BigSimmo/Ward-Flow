@@ -66,7 +66,7 @@ export function reduceObservationLevelEvent(
   if (!isObservation(level))
     return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a level with a valid interval");
   if (event.expected !== undefined && !isEditingBaseline(event.expected))
-    return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a valid editing baseline");
+    return reject(state, event, "Needs a valid editing baseline.");
 
   let movement: Movement | undefined;
   let admission: Admission | undefined;
@@ -96,15 +96,15 @@ export function reduceObservationLevelEvent(
   // was created. Comparing the count also catches a level changed away and then back while an
   // older draft remained open. Linked records still have to agree with the captured fact.
   const target = event.target.kind === "movement" ? movement : admission;
+  const expected = event.expected;
   if (
-    event.expected &&
+    expected &&
     (!target ||
-      !sameObservation(target.observation, event.expected.observation) ||
-      (target.observationChanges?.length ?? 0) !== event.expected.changeCount ||
-      (movement && !sameObservation(movement.observation, event.expected.observation)) ||
-      (admission && !sameObservation(admission.observation, event.expected.observation)))
+      (target.observationChanges?.length ?? 0) !== expected.changeCount ||
+      (movement && !sameObservation(movement.observation, expected.observation)) ||
+      (admission && !sameObservation(admission.observation, expected.observation)))
   ) {
-    return reject(state, event, "The recorded observation changed while editing. Reopen it to check the latest level.");
+    return reject(state, event, "Observation changed while editing. Reopen to check the latest level.");
   }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
