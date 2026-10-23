@@ -104,8 +104,8 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
           {hasWeekend
             ? `${weekendOut} ${weekendOut === 1 ? "discharge is" : "discharges are"} recorded across the weekend and holidays shown. `
             : ""}
-          Days after tomorrow are faded because dates that far out often move. On Fridays and before WA public holidays
-          the forecast adds a third day. Tomorrow is likely {kindRangeWord(tomorrow.total.likely)}.
+          Days after tomorrow are in italics because dates that far out often move. On Fridays and before WA public
+          holidays the forecast adds a third day. Tomorrow is likely {kindRangeWord(tomorrow.total.likely)}.
         </p>
       </div>
     </WardPanel>

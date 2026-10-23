@@ -8,7 +8,7 @@
 // TEXT.** Same rules and lifetime as `coordinator/since-last-look.ts` (sessionStorage), under its
 // own key so the two never read each other's picture.
 import type { BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { kindRangeWord, type ForecastByKind } from "./forecast-by-kind";
 
 export const FORECAST_LAST_LOOK_STORAGE_KEY = "ward-flow-forecast-last-look";
@@ -103,11 +103,11 @@ export function forecastChangeSinceLook(
 }
 
 /** "Since you looked at 09:00, tomorrow moved from 9 short to 13 short. 2 more people waiting for a bed." */
-export function forecastChangeSentence(change: ForecastChange): string {
+export function forecastChangeSentence(change: ForecastChange, now: Instant): string {
   const head =
     change.delta === 0
-      ? `Since you looked at ${formatInstant(change.since)}, tomorrow is unchanged at ${kindRangeWord(change.to)}.`
-      : `Since you looked at ${formatInstant(change.since)}, tomorrow moved from ${kindRangeWord(change.from)} to ${kindRangeWord(change.to)}.`;
+      ? `Since you looked at ${formatInstantWithDay(change.since, now)}, tomorrow is unchanged at ${kindRangeWord(change.to)}.`
+      : `Since you looked at ${formatInstantWithDay(change.since, now)}, tomorrow moved from ${kindRangeWord(change.from)} to ${kindRangeWord(change.to)}.`;
   if (change.reasons.length === 0) return head;
   const list =
     change.reasons.length === 1
@@ -140,14 +140,6 @@ export function parseForecastLook(raw: string | null): ForecastLookSnapshot | un
     )
       return undefined;
     return value as unknown as ForecastLookSnapshot;
-  } catch {
-    return undefined;
-  }
-}
-
-export function readForecastLook(key = FORECAST_LAST_LOOK_STORAGE_KEY): ForecastLookSnapshot | undefined {
-  try {
-    return parseForecastLook(window.sessionStorage.getItem(key));
   } catch {
     return undefined;
   }

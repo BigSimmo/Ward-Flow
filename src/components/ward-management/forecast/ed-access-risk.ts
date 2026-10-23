@@ -17,7 +17,7 @@ import type { BedReleaseBlocker } from "@/components/ward-management/ward-change
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed, bedKindOfNeed, isWaitingForBed } from "./forecast-by-kind";
 
-export type EdAccessRelease = { unitId: string; unitName: string; at: Instant; blocker: BedReleaseBlocker | null };
+type EdAccessRelease = { unitId: string; unitName: string; at: Instant; blocker: BedReleaseBlocker | null };
 
 export type EdAccessRiskRow = {
   movementId: string;

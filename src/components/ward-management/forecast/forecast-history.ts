@@ -42,7 +42,7 @@ export function historyEntry(
   };
 }
 
-export type TrackRecordDay = {
+type TrackRecordDay = {
   day: number;
   forecast: ForecastHistoryEntry["tomorrow"];
   actual: number;

@@ -66,7 +66,7 @@ export function forecastLevers(
  * Grouping approved with the mock-up (Josh, 23 Oct 2026). It sorts the recorded reason only; it is
  * not a prediction of when any one discharge will happen.
  */
-export const SAME_DAY_BLOCKERS: ReadonlySet<BedReleaseBlocker> = new Set<BedReleaseBlocker>([
+const SAME_DAY_BLOCKERS: ReadonlySet<BedReleaseBlocker> = new Set<BedReleaseBlocker>([
   "Awaiting clean",
   "Awaiting pharmacy",
   "Awaiting transport",

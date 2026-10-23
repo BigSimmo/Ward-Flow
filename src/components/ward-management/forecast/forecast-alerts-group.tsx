@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 
 import { buttonClass } from "@/components/wf";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_KIND_LABEL, kindRangeWord } from "./forecast-by-kind";
 import type { ForecastAlert } from "./forecast-alerts";
 import { forecastEdName, useForecastAlerts } from "./use-forecast-model";
@@ -32,7 +32,7 @@ export function ForecastAlertsGroup({
       {head(alerts.length)}
       <ul className={styles.alertList}>
         {alerts.map((alert) => (
-          <ForecastAlertRow key={alertKey(alert)} alert={alert} />
+          <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} />
         ))}
       </ul>
       <p className={styles.alertCaption}>Forecast alerts are counts against your lines in Settings, Forecast alerts.</p>
@@ -46,7 +46,7 @@ function alertKey(alert: ForecastAlert): string {
   return "worse";
 }
 
-function ForecastAlertRow({ alert }: { alert: ForecastAlert }) {
+function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }) {
   const row = (title: string, body: string, href: string, action: string) => (
     <li className={styles.alertRow} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
       <span>
@@ -78,7 +78,7 @@ function ForecastAlertRow({ alert }: { alert: ForecastAlert }) {
     case "forecast_worse":
       return row(
         "Forecast got worse",
-        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstant(alert.since)}. Your line is ${alert.threshold} beds.`,
+        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Your line is ${alert.threshold} beds.`,
         "/ward-flow/capacity",
         "See forecast",
       );

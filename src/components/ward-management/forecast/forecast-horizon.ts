@@ -18,7 +18,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
  * falling on a weekend. Synthetic prototype reference data: check it against the WA Government's
  * published list before any real use.
  */
-export const WA_PUBLIC_HOLIDAYS: ReadonlySet<string> = new Set([
+const WA_PUBLIC_HOLIDAYS: ReadonlySet<string> = new Set([
   "2026-01-01",
   "2026-01-26",
   "2026-03-02",

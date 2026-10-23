@@ -28,7 +28,7 @@ export function ForecastNetworkExtras({ now }: { now: Instant }) {
       <section className={styles.section} aria-label="Forecast changes and limits" data-testid="forecast-network-notes">
         {change ? (
           <p className={`${styles.note} ${change.delta >= 0 ? styles.noteCalm : ""}`} data-testid="forecast-since-look">
-            {forecastChangeSentence(change)}
+            {forecastChangeSentence(change, now)}
           </p>
         ) : null}
         {threeDay ? (
@@ -88,10 +88,10 @@ export function ForecastNetworkExtras({ now }: { now: Instant }) {
         )}
         <p className={styles.caption}>Blocked beds count only in the best case.</p>
         <Link
-          href="/ward-flow/delays"
+          href="/ward-flow/waiting"
           className={buttonClass({ variant: "ghost", size: "sm", className: styles.leverAction })}
         >
-          Open delays
+          Open Waiting
         </Link>
       </section>
     </>
@@ -131,10 +131,10 @@ function LeverRow({ lever }: { lever: ForecastLever }) {
             {lever.reasons.map((entry) => `${shortBlocker(entry.reason)} ${entry.count}`).join(", ")}.
           </p>
           <Link
-            href="/ward-flow/delays"
+            href="/ward-flow/waiting"
             className={buttonClass({ variant: "sec", size: "sm", className: styles.leverAction })}
           >
-            See delays
+            See Waiting
           </Link>
         </li>
       );
@@ -187,7 +187,7 @@ function BlockerGroup({
 }
 
 /** "A, B and C". */
-export function listWords(words: readonly string[]): string {
+function listWords(words: readonly string[]): string {
   if (words.length <= 1) return words[0] ?? "";
   return `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`;
 }

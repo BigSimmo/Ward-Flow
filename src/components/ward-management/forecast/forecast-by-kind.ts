@@ -71,7 +71,7 @@ export function bedKindOfPlannedAdmission(booking: PlannedAdmission): BedKindId 
   return isDetainedUnderTheAct(booking.legalStatus) ? "locked_adult" : "open_adult";
 }
 
-export const WAITING_STAGES: readonly Movement["stage"][] = [
+const WAITING_STAGES: readonly Movement["stage"][] = [
   "placement_requested",
   "destination_review",
   "accepted_awaiting_bed",

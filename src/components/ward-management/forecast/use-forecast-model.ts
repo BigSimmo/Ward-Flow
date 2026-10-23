@@ -9,7 +9,7 @@
 import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { demoDayZero, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { edAccessRisk } from "./ed-access-risk";
@@ -52,7 +52,7 @@ export function useForecastModel(now: Instant) {
     leaveBeds,
     repatriations,
     configuration,
-    dayZero,
+    dayZero: recordedDayZero,
   } = useWardFlowSelect(
     "units",
     "bedReleases",
@@ -65,6 +65,8 @@ export function useForecastModel(now: Instant) {
     "dayZero",
   );
   const planned = useMemo(() => plannedAdmissions ?? [], [plannedAdmissions]);
+  // A test or preview world may carry no day 0; fall back the way the search previews do.
+  const dayZero = useMemo(() => recordedDayZero ?? demoDayZero(new Date()), [recordedDayZero]);
   const horizons = useMemo(() => forecastHorizonDays(now, dayZero), [now, dayZero]);
   const byDays = useMemo(
     () => horizons.map((days) => forecastByKind(units, bedReleases, admissions, movements, now, days, planned)),

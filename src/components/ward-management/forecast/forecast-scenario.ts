@@ -35,7 +35,7 @@ export function scenarioIsEmpty(scenario: ForecastScenario): boolean {
 }
 
 /** The bed type a ward's opened or closed beds count against. An adult ward's are open beds. */
-export function scenarioKindOfUnit(unit: Unit): BedKindId {
+function scenarioKindOfUnit(unit: Unit): BedKindId {
   if (unit.cohort === "Older adult") return "older_adult";
   if (unit.cohort === "Youth") return "youth";
   return "open_adult";
