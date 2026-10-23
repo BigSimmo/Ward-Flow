@@ -535,8 +535,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
   const nextWorld = wardFlowReducer(container.world, event);
   const outcome = localCommandOutcome(container.world, nextWorld);
   const accepted = outcome.status === "accepted";
-  const sequence = (container.eventLog?.at(-1)?.sequence ?? -1) + 1;
-  const logged = { ...eventLogEntryFor(event, accepted, container.world), sequence };
+  const logged = { ...eventLogEntryFor(event, accepted), sequence: (container.eventLog?.at(-1)?.sequence ?? -1) + 1 };
   const earlyOutcomes = container.sessionAdopted
     ? container.earlyOutcomes
     : [...(container.earlyOutcomes ?? []), { event, outcome }];

@@ -692,7 +692,7 @@ export class SharedWorkspaceClient {
           );
         const previousLog = this.view.eventLog ?? [];
         const logged = {
-          ...eventLogEntryFor(command.event, response.ok, this.view.snapshot?.payload.state),
+          ...eventLogEntryFor(command.event, response.ok),
           sequence: (previousLog.at(-1)?.sequence ?? -1) + 1,
         };
         this.publish({

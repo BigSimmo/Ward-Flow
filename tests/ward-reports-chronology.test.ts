@@ -162,12 +162,12 @@ describe("PIR chronology: one person's records", () => {
     const ended = wardFlowReducer(started, end);
     expect(ended.rejections).toEqual(seed.rejections);
 
-    const endEntry = eventLogEntryFor(end, true, started);
-    expect(endEntry.admissionId).toBe(stay.id);
-    // Without the state it was raised against, the end cannot be joined to a stay.
-    expect(eventLogEntryFor(end, true).admissionId).toBeUndefined();
+    // The end names only its episode; the chronology reads the stay from the ward's record.
+    const endEntry = eventLogEntryFor(end, true);
+    expect(endEntry).toMatchObject({ episodeId, unitId: stay.unitId });
+    expect(endEntry.admissionId).toBeUndefined();
 
-    const eventLog = [eventLogEntryFor(start, true, seed), endEntry];
+    const eventLog = [eventLogEntryFor(start, true), endEntry];
     const chronology = patientChronology(inputFor(ended, { personId, auditEvents: null, eventLog }));
     const actions = chronology.rows.filter((row) => row.source === "Session log").map((row) => row.action);
     expect(actions).toEqual(["Seclusion or restraint started", "Seclusion or restraint ended"]);
