@@ -49,6 +49,7 @@ import {
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "./ward-sites";
+import { referralSentByDesk } from "./ward-referral-sender";
 
 type Context = {
   readonly state: WardFlowState;
@@ -552,25 +553,15 @@ export function commandScopeRefusal(
         : undefined;
     if (!origin || !edInScope(scope, origin, places)) return outside;
   }
-  if (command.type === "ADD_REFERRAL_CORRECTION" || command.type === "RECORD_REFERRER_WITHDRAWAL") {
+  // The sender's own tools, for the desk that sent the referral only: a ward's or team's scope also
+  // takes in referrals sent to it (role access plan v2, D-80).
+  if (
+    command.type === "ADD_REFERRAL_CORRECTION" ||
+    command.type === "RECORD_REFERRER_WITHDRAWAL" ||
+    command.type === "MARK_REFERRAL_INFORMATION_MET"
+  ) {
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
-    if (referral && access.role !== "coordinator") {
-      const ownsSender =
-        access.role === "ed"
-          ? referral.source === "ed_medical" &&
-            scope.kind === "ed" &&
-            places.edSiteCode(scope.edId) === referral.originSiteCode
-          : access.role === "community"
-            ? referral.source !== "psychiatric_ward" &&
-              referral.source !== "ed_medical" &&
-              referral.sendingTeamName !== undefined &&
-              teamIsOwn(access, referral.sendingTeamName, places)
-            : access.role === "ward" &&
-              referral.source === "psychiatric_ward" &&
-              referral.originUnitId !== undefined &&
-              unitInScope(scope, referral.originUnitId, places);
-      if (!ownsSender) return outside;
-    }
+    if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
   if (command.type === "RECORD_TRANSPORT_NEED") {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
@@ -593,10 +584,35 @@ export function commandScopeRefusal(
         return outside;
     }
   }
+  // A ward or team changes a journey's urgency, legal status or form receipt only on a journey it
+  // sent: the person's journey to it is the receiving ward's to answer, not to amend (D-80).
+  if (
+    (access.role === "ward" || access.role === "community") &&
+    (command.type === "CHANGE_URGENCY" ||
+      command.type === "CHANGE_LEGAL_STATUS" ||
+      command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
+      command.type === "CORRECT_LEGAL_FORM_RECEIPT")
+  ) {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (movement) {
+      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      const sendingWard =
+        referral?.originUnitId ??
+        movementSourceAdmission(state, movement)?.unitId ??
+        (movement as { originUnitId?: string }).originUnitId;
+      const sent =
+        access.role === "ward"
+          ? sendingWard !== undefined && unitInScope(scope, sendingWard, places)
+          : referral !== undefined && referralSentByDesk(referral, access, places);
+      if (!sent) return outside;
+    }
+  }
+  // Every desk names its own place when it adds a patient, so the record it adds stays in its own
+  // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.
   if (
     command.type === "ADD_PATIENT" &&
-    command.registrationScope !== undefined &&
-    (!isPatientRegistrationScope(command.registrationScope, state.units) ||
+    (command.registrationScope === undefined ||
+      !isPatientRegistrationScope(command.registrationScope, state.units) ||
       !registrationIsInScope(command.registrationScope, access, places))
   )
     return outside;

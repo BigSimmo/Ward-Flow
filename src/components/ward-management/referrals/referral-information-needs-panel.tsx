@@ -5,7 +5,10 @@ import { useId, useState } from "react";
 import { Button, DisabledReason, StatusGlyph } from "@/components/wf";
 
 import { formatInstantWithDay, type Instant } from "../ward-clock";
-import { useWardFlowClock } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { wardPlaceLookup } from "../ward-access-places";
+import { referralSentByDesk } from "../ward-referral-sender";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Referral, ReferralInformationNeedEntry } from "../ward-model";
 import { useRouteRole } from "../ward-role-gate";
@@ -120,7 +123,15 @@ export function WardInformationNeedsPicker({
   );
 }
 
-const TICK_OFF_ROLES = ["ed", "community", "coordinator"] as const;
+const TICK_OFF_ROLES = ["ed", "community", "ward", "coordinator"] as const;
+
+/** A route desk sends only its own kind of referral, so a ward never ticks off one it is answering. */
+function routeSentKind(routeRole: string, source: Referral["source"]): boolean {
+  if (routeRole === "ward") return source === "psychiatric_ward";
+  if (routeRole === "ed") return source === "ed_medical";
+  if (routeRole === "community") return source !== "psychiatric_ward" && source !== "ed_medical";
+  return true;
+}
 
 /** The referrer's side: what each ward is still waiting on, ticked off one item at a time. */
 export function ReferralInformationNeedsPanel({ referral, now }: { referral: Referral; now: Instant }) {
@@ -133,24 +144,32 @@ export function ReferralInformationNeedsPanel({ referral, now }: { referral: Ref
       : [];
   });
   // Nothing asked: render nothing, and read no workspace state (the timeline also renders alone).
-  return arms.length === 0 ? null : <NeedsToTickOff referralId={referral.id} arms={arms} now={now} />;
+  return arms.length === 0 ? null : <NeedsToTickOff referral={referral} arms={arms} now={now} />;
 }
 
 function NeedsToTickOff({
-  referralId,
+  referral,
   arms,
   now,
 }: {
-  referralId: string;
+  referral: Referral;
   arms: { unitId: string; where: string; waiting: ReferralInformationNeedEntry[] }[];
   now: Instant;
 }) {
+  const referralId = referral.id;
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
   const reasonId = useId();
-  const refusal = (TICK_OFF_ROLES as readonly string[]).includes(routeRole)
-    ? undefined
-    : rolesOnlyReason([...TICK_OFF_ROLES]);
+  const access = useEffectiveWardAccess();
+  const { units } = useWardFlowSelect("units");
+  // D-80: the sender ticks off, never the ward answering it, which shares the referral's view.
+  const sent =
+    routeSentKind(routeRole, referral.source) && referralSentByDesk(referral, access, wardPlaceLookup(units));
+  const refusal = !(TICK_OFF_ROLES as readonly string[]).includes(routeRole)
+    ? rolesOnlyReason([...TICK_OFF_ROLES])
+    : sent
+      ? undefined
+      : "Only the desk that sent this referral can mark these provided.";
   return (
     <section className={styles.panel} aria-label="What the ward still needs" data-testid="ward-referral-needs-panel">
       {arms.map((arm) => (

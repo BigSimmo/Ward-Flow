@@ -296,7 +296,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // information is the ward's (or the coordinator's for it); the referrer side ticks items off.
   MARK_REFERRAL_OPENED: ["ward", "coordinator"],
   REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
-  MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+  // D-80: a sending ward ticks off what the receiving ward asked it for, on referrals it sent only.
+  MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "ward", "coordinator"],
   // Fix plan item 4 (21 Oct 2026): the coordinator assigns a referral to any listed desk, and an
   // ED or community desk takes one for itself (the reducer checks which). The same desks log calls.
   ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
@@ -442,11 +443,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
   /**
    * RB7, build plan item 27 (2026-09-17): the three parties who could plausibly need to correct a
-   * referral after the fact — the referrer's own team (`community` or `ed`, whichever raised it),
-   * and the coordinator who may be handling it. `ward` is excluded: a ward answers a referral, it
-   * does not author or amend the referrer's own account of it.
+   * referral after the fact — the referrer's own desk (`community`, `ed` or, since wards send
+   * referrals too (FD-25), the sending `ward`), and the coordinator who may be handling it. The
+   * server's sender check keeps a ward to the referrals it sent, never one it is answering (D-80).
    */
-  ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+  ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
   /**
    * F1 (Task 5, 2026-09-04): only the coordinator may raise either event. This table entry is the
    * ENTIRE enforcement — the generic role check in `wardFlowReducer`'s switch preamble rejects any
