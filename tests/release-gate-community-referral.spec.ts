@@ -106,7 +106,7 @@ async function homeReferralIds(page: Page): Promise<string[]> {
     );
 }
 
-test("Community referral: a community team refers from its own desk, the ward it asked accepts into a held bed, the board and team desk agree, and the ward runs the journey to arrival", async ({
+test("Community referral: a community team refers from its own desk, the ward it asked accepts into a held bed, and the coordinator's board and the team's desk agree", async ({
   page,
 }, testInfo) => {
   const team = communityTeamById(TEAM_ID);
