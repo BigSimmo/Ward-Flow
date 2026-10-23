@@ -1586,16 +1586,15 @@ test(
       assert.equal((await store.revokeAccess(bView, given.body.membership.id)).status, 403);
       assert.equal((await store.revokeAccess(aView, given.body.membership.id)).status, 200);
       assert.deepEqual((await store.viewer(nurseB)).access, { role: "ward", scope: wardB });
-      // Held with no ward of their own, cover is the whole desk, and it is never given on.
+      // D-80: an account with no ward or ED role of its own is given no cover, so cover is never a
+      // way in for a new account.
       const relief = randomUUID();
-      const reliefCover = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      const refusedRelief = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      assert.equal(refusedRelief.status, 422);
+      assert.equal(refusedRelief.body.error, engine.COVER_NEEDS_ROLE);
+      assert.deepEqual(await store.viewer(relief), { status: "none" });
+      const reliefCover = await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 });
       assert.equal(reliefCover.status, 200);
-      const reliefView = await store.viewer(relief);
-      assert.deepEqual(reliefView.access, { role: "ward", scope: wardA });
-      assert.equal(reliefView.ownAccess, null);
-      const passedOn = await store.giveCover(reliefView, { actorId: nurseB, scope: wardA, minutes: 60 });
-      assert.equal(passedOn.status, 403);
-      assert.match(passedOn.body.error, /cannot be passed on/);
       // A coordinator for the ward's own service sees that cover and may end it, though not its giver.
       const service = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find((name) =>
         engine.scopeWithin(before, wardA, { kind: "service", service: name }),
