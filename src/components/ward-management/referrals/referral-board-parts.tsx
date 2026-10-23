@@ -95,11 +95,24 @@ export function needWords(referral: Referral): string[] {
   return words;
 }
 
-/** How many units accept the ward arm right now, or undefined when no ward bed is still asked for. */
+/**
+ * How many units accept a ward request still waiting right now, or undefined when no ward bed is
+ * still asked for. Ask more wards (D-76) can leave several named wards waiting, so a ward counts
+ * when any waiting request to it accepts, each ward once.
+ */
 export function readyUnitCount(referral: Referral, units: Unit[], now: Instant): number | undefined {
-  const ward = wardArm(referral);
-  if (!ward || ward.arm.state !== "queued" || ward.arm.withdrawnAt !== undefined) return undefined;
-  return referralCandidates(referral, ward.destination, units, now).filter(candidateAccepts).length;
+  const waiting = openArms(referral).flatMap((arm) =>
+    arm.destination.kind === "psychiatric_ward" ? [arm.destination] : [],
+  );
+  if (waiting.length === 0) return undefined;
+  const ready = new Set(
+    waiting.flatMap((ward) =>
+      referralCandidates(referral, ward, units, now)
+        .filter(candidateAccepts)
+        .map((candidate) => candidate.unit.id),
+    ),
+  );
+  return ready.size;
 }
 
 export function declineReasonWords(reason: string | undefined): string {
