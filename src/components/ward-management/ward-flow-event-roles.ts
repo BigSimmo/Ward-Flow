@@ -517,9 +517,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
-  // The handover sheet is signed by whoever is handing over: the coordinator, the ward or the site's
-  // bed manager (D-80).
-  RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward", "bed_manager"],
+  // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
+  // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
+  RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
   // Statewide broadcast directives: coordinators and bed managers dispatch, and every desk that
@@ -562,7 +562,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
   UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   UNDO_REPATRIATION: ["coordinator"],
-  UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward", "bed_manager"],
+  UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],

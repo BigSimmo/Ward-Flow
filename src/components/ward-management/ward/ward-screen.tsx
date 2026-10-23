@@ -1091,6 +1091,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleAcknowledgeNotice(noticeId: string) {
     if (!unit) return;
+    // A notice sent to the ward is the ward's to acknowledge; the reducer refuses anyone else's.
+    if (routeRole === "bed_manager") {
+      setToastMessage("The ward acknowledges its own notices.");
+      return;
+    }
     raise("MARK_NOTICE_READ", {
       noticeId,
       actingPlaceId: unit.id,
