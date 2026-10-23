@@ -92,7 +92,7 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
 describe("the sheet on Capacity", () => {
   function openSheet() {
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={Date.parse("2026-12-30T16:00:00Z")}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
@@ -105,7 +105,9 @@ describe("the sheet on Capacity", () => {
     for (const id of ["bed-meeting-capacity", "bed-meeting-discharges", "bed-meeting-ed", "bed-meeting-delays"]) {
       expect(within(dialog).getByTestId(id)).toBeTruthy();
     }
-    expect(within(dialog).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(/^As at \d\d:\d\d$/u);
+    expect(within(dialog).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(
+      /^As at Thu,? 31 Dec 2026, \d\d:\d\d AWST$/u,
+    );
     expect(dialog.textContent).toMatch(/Synthetic prototype/u);
     expect(dialog.textContent).toMatch(/your default, not a legal limit/u);
   });

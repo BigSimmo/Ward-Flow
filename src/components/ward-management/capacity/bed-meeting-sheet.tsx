@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
@@ -41,7 +42,8 @@ function More({ count, noun }: { count: number; noun: string }) {
 }
 
 function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Instant }) {
-  const stamp = asAtStamp(now);
+  const flow = useOptionalWardFlowSelect("dayZero");
+  const stamp = asAtStamp(now, flow?.dayZero);
   const { capacity, discharges, ed, delays } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
 
