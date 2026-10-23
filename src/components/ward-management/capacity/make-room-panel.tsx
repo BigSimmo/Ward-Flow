@@ -7,7 +7,6 @@ import { ArrowRight, BedDouble, Check, Clock, Info } from "lucide-react";
 import { useMemo } from "react";
 
 import { Avatar, Badge, Icon, SrOnly, cx, durMinutes } from "@/components/wf";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EligibilityGate, GateResult } from "@/components/ward-management/ward-eligibility";
@@ -183,7 +182,7 @@ function PlanHeader({ chain, moves, now }: { chain: MakeRoomChain; moves: Move[]
   );
 }
 
-function PlanFooter({ chain }: { chain: MakeRoomChain }) {
+function PlanFooter() {
   return (
     <div className={styles.planFoot}>
       <p className={styles.planNote}>
@@ -191,10 +190,6 @@ function PlanFooter({ chain }: { chain: MakeRoomChain }) {
         Starting raises each move in order through the usual steps. If one falls through, the later moves pause and you
         are told.
       </p>
-      <div className={styles.planActions}>
-        <NotWiredButton size="sm" variant="ghost" label="Not now" name={`Not now for ${chain.targetUnit.name}`} />
-        <NotWiredButton size="sm" variant="pri" label="Start plan" name={`Start plan for ${chain.targetUnit.name}`} />
-      </div>
     </div>
   );
 }
@@ -253,7 +248,7 @@ export function MakeRoomPanel({ now, service = null }: { now: Instant; service?:
                   <PlanHeader chain={chain} moves={moves} now={now} />
                   <RouteStrip chain={chain} moves={moves} />
                   <Stepper moves={moves} bedReleases={bedReleases} />
-                  <PlanFooter chain={chain} />
+                  <PlanFooter />
                 </li>
               );
             })}

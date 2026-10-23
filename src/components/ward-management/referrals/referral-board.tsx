@@ -6,7 +6,7 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useS
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
-import { ChevronRight, ClipboardList, Hand, ListOrdered, Megaphone, Search, TriangleAlert, X } from "lucide-react";
+import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -54,7 +54,6 @@ import {
 
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections-lazy";
 import { ReferralMatchView } from "./referral-match-lazy";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { WardOffersSection } from "./ward-offers-section";
@@ -952,16 +951,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </>
                       );
                     })()}
-                    {!isPhone ? (
-                      <NotWiredButton
-                        label="Claim"
-                        variant="sec"
-                        size="sm"
-                        icon={Hand}
-                        className={a.preview}
-                        data-testid="ward-referral-claim"
-                      />
-                    ) : null}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1046,15 +1035,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       onDecision={decide(selectedReferral)}
                       phone={
                         <>
-                          <span className={a.notWiredStart}>
-                            <NotWiredButton
-                              label="Claim this referral"
-                              variant="sec"
-                              icon={Hand}
-                              className={mph.tall}
-                              data-testid="ward-referral-phone-claim"
-                            />
-                          </span>
                           <button
                             type="button"
                             className={mph.more}
@@ -1086,15 +1066,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
                           ) : null}
                           <div className={mph.acts}>
-                            <span className={a.notWiredUp}>
-                              <NotWiredButton
-                                label="Escalate"
-                                variant="ghost"
-                                size="sm"
-                                icon={Megaphone}
-                                data-testid="ward-referral-phone-escalate"
-                              />
-                            </span>
                             <span className={a.spacer} />
                             <SummaryButton onClick={() => setSheet("summary")} />
                             <Button
@@ -1144,16 +1115,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
                 {!isPhone ? (
                   <div className={a.panelFoot}>
-                    <span className={a.notWiredUp}>
-                      <NotWiredButton
-                        label="Escalate"
-                        variant="ghost"
-                        size="sm"
-                        icon={Megaphone}
-                        className={a.preview}
-                        data-testid="ward-referral-escalate"
-                      />
-                    </span>
                     <span className={a.spacer} />
                     <SummaryButton onClick={() => setSheet("summary")} />
                     <Button
