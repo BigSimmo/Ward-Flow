@@ -71,7 +71,6 @@ import {
 } from "./ward-access-store";
 
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
-import { DESK_SWITCH_WAIT_MS, clearDeskSwitch, useDeskSwitchFrom } from "./ward-desk-switch";
 import { announceToWardShell } from "./ward-live-region";
 import { forgetStepUp, useStepUp } from "./ward-step-up";
 import { accessPlaceLabel } from "./ward-access-labels";
@@ -513,12 +512,6 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const glass = useBreakGlassPatientIds();
   const address = screenForPath(pathname);
   const logged = recordViewFor(address, unscoped.movements);
-  // A desk switch is on its way while the page is still the one it left (`ward-desk-switch.ts`).
-  const switchingFrom = useDeskSwitchFrom();
-  const switching = switchingFrom === pathname;
-  useEffect(() => {
-    if (switchingFrom !== null && switchingFrom !== pathname) clearDeskSwitch();
-  }, [pathname, switchingFrom]);
   if (!on || accessIsWholeNetwork(access))
     return (
       <>
@@ -528,9 +521,9 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
     );
   const places = wardPlaceLookup(unscoped.units);
   const decision = screenDecision(access, address, places);
-  if (!decision.open) return switching ? <DeskOpening access={access} /> : <ClosedScreen access={access} />;
+  if (!decision.open) return <ClosedScreen access={access} />;
   if (address?.movementId !== undefined && !scoped.movements.some((movement) => movement.id === address.movementId))
-    return switching ? <DeskOpening access={access} /> : <ClosedScreen access={access} />;
+    return <ClosedScreen access={access} />;
   const subject = address?.patientId;
   if (subject === undefined) return <>{children}</>;
   // The patient page takes a person id or a movement id (`people/[patientId]/page.tsx`).
@@ -542,8 +535,7 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const person = subject.startsWith("PT-")
     ? subject
     : unscoped.movements.find((movement) => movement.id === subject)?.patientId;
-  if (!seen)
-    return switching ? <DeskOpening access={access} /> : <ClosedScreen access={access} patientId={person ?? subject} />;
+  if (!seen) return <ClosedScreen access={access} patientId={person ?? subject} />;
   return (
     <>
       {logged ? <WardRecordViewLog {...logged} /> : null}
@@ -580,21 +572,6 @@ function WardRecordViewLog({ patientId, surface }: { patientId: string; surface:
   return null;
 }
 
-/** The old page's place while a desk switch reaches its home. After the wait, the closed screen. */
-function DeskOpening({ access }: { access: WardAccess }) {
-  useEffect(() => {
-    const timer = window.setTimeout(clearDeskSwitch, DESK_SWITCH_WAIT_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
-  return (
-    <WardGround>
-      <main className={styles.closed} aria-busy="true" data-testid="ward-access-opening">
-        <p role="status">Opening the {ACCESS_ROLE_LABELS[access.role]} desk</p>
-      </main>
-    </WardGround>
-  );
-}
-
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
   // Focus the heading once on arrival, never again on a re-render (review on PR #330), so a reason
@@ -604,8 +581,17 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
     headingRef.current?.focus();
   }, []);
   const { units } = useUnscopedWardFlow();
-  const { previewOf } = useWardAccessSnapshot();
+  const { previewOf, switchFrom } = useWardAccessSnapshot();
   const home = homeHrefFor(access, communityTeamSlug);
+  // A desk switch still on its way from this page (`markDeskSwitch`): say so, not "closed".
+  if (switchFrom === usePathname())
+    return (
+      <WardGround>
+        <main className={styles.closed}>
+          <p role="status">Opening the {ACCESS_ROLE_LABELS[access.role]} desk</p>
+        </main>
+      </WardGround>
+    );
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-closed">

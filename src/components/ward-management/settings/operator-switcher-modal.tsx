@@ -40,6 +40,7 @@ import { isOpen as isOpenMovement } from "@/components/ward-management/ward-deri
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access-context";
 import {
+  markDeskSwitch,
   setWardAccess,
   startAccessPreview,
   useWardAccessSnapshot,
@@ -47,7 +48,6 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
-import { noteDeskSwitch } from "@/components/ward-management/shell/ward-desk-switch";
 import {
   ACCESS_ROLE_LABELS,
   STATEWIDE_COORDINATOR,
@@ -99,6 +99,17 @@ const SERVICE_SWATCH: Record<string, string> = {
   CAHS: "cahs",
   Private: "private",
 };
+
+/** How long the page a desk switch leaves may say the desk is opening (`markDeskSwitch`). */
+export const DESK_SWITCH_WAIT_MS = 15_000;
+let deskSwitchTimer: number | undefined;
+
+/** The page left behind says the desk is opening until the new home arrives or the wait ends. */
+function noteDeskSwitch(leaving: string | undefined) {
+  window.clearTimeout(deskSwitchTimer);
+  markDeskSwitch(leaving);
+  deskSwitchTimer = window.setTimeout(() => markDeskSwitch(), DESK_SWITCH_WAIT_MS);
+}
 
 function useSafePathname(): string {
   try {
@@ -193,9 +204,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   /** Takes the desk's access on the way to `href`, so the page left behind waits rather than closing. */
   function takeAccess(access: WardAccess, href: string) {
     if (!accessOn || (shared && !previewing)) return;
-    noteDeskSwitch(pathname, href);
     if (previewing) startAccessPreview(access);
     else setWardAccess(access);
+    noteDeskSwitch(pathname === href ? undefined : pathname);
   }
 
   /** False, with a note, when the signed-in role cannot open this address. */

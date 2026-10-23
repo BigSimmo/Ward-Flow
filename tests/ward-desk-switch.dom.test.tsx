@@ -1,7 +1,7 @@
 // Visual desk on #576: under load, choosing Executive or Access admin in Go to a desk left the old
 // page reading "Not part of your role" until the new desk's home arrived. The access changes at once
 // and the page follows, so the old page now says the desk is opening, and only that page, only for
-// the wait (shell/ward-desk-switch.ts).
+// the wait (`markDeskSwitch` in shell/ward-access-store.ts, set by settings/operator-switcher-modal.tsx).
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -24,10 +24,12 @@ vi.mock("next/link", () => ({
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
-import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
+import {
+  DESK_SWITCH_WAIT_MS,
+  OperatorSwitcherModal,
+} from "@/components/ward-management/settings/operator-switcher-modal";
 import { WardAccessGate, WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
-import { DESK_SWITCH_WAIT_MS, clearDeskSwitch } from "@/components/ward-management/shell/ward-desk-switch";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -60,7 +62,6 @@ afterEach(() => {
   nav.pathname = "/ward-flow";
   nav.push.mockReset();
   act(() => {
-    clearDeskSwitch();
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
   });
@@ -70,26 +71,31 @@ describe("a desk switch on its way", () => {
   it("says the desk is opening on the page it left, not that the page is closed", () => {
     switchToExecutive();
     expect(nav.push).toHaveBeenCalledWith("/ward-flow/statistics");
-    expect(screen.getByTestId("ward-access-opening")).toHaveTextContent("Opening the Executive desk");
+    expect(screen.getByText("Opening the Executive desk")).toHaveAttribute("role", "status");
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.queryByText("Coordinator home")).toBeNull();
   });
 
-  it("opens the new home once it arrives, and forgets the switch", () => {
+  it("opens the new home once it arrives", () => {
     const view = switchToExecutive();
     nav.pathname = "/ward-flow/statistics";
     view.rerender(app(false));
     expect(screen.getByText("Coordinator home")).toBeInTheDocument();
-    // Back on the page it left, the desk's closed screen applies as usual.
-    nav.pathname = "/ward-flow";
-    view.rerender(app(false));
+    expect(screen.queryByText(/^Opening the/)).toBeNull();
+  });
+
+  it("leaves another closed page closed while a switch is on its way", () => {
+    switchToExecutive();
+    cleanup();
+    nav.pathname = "/ward-flow/capacity";
+    render(app(false));
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
   });
 
   it("shows the closed screen if the new home has not arrived after the wait", () => {
     vi.useFakeTimers();
     switchToExecutive();
-    expect(screen.getByTestId("ward-access-opening")).toBeInTheDocument();
+    expect(screen.getByText("Opening the Executive desk")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(DESK_SWITCH_WAIT_MS));
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
   });
