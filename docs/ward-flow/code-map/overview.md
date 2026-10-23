@@ -166,7 +166,7 @@ grouped:
 - **World (5):** `ADVANCE_CLOCK` (demo role only), `RESET_SCENARIO`, `SET_SCENARIO`,
   `SET_CONFIGURATION`, `REVIEW_AUDIT_EVENT`.
 
-**Guard order** for protected events (`ward-flow-reducer.ts`, via `reduceRecordEvent`; line numbers are in [Engine](engine.md)):
+**Guard order** for protected events (`ward-flow-protected-record-events.ts`, via `reduceProtectedRecordEvent`; line numbers are in [Engine](engine.md)):
 
 1. Role check first, against `EVENT_ROLE`.
 2. Payload sanity (finite times, safe counters).
