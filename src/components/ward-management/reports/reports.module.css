@@ -849,6 +849,7 @@
   .page * {
     color: CanvasText !important;
     background-color: Canvas !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 
