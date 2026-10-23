@@ -42,7 +42,7 @@ import { wardPlaceFor } from "@/components/ward-management/ward-place";
  * view or a recorded exception with a reason — the same two-way property this file already
  * enforces for routes, which is what stopped D8.
  *
- * The order is the rail's order for the six that are listed, with the retained id last.
+ * The order is the rail's order for the listed views.
  *
  * ⚠️ **`queue` BECAME `delays` AND `exceptions` WAS RETIRED ON 2026-09-06.** MERGE 01 pointed the
  * queue entry at `/delays` and relabelled it "Delays" while leaving its ID as `queue` — so the
@@ -54,7 +54,7 @@ import { wardPlaceFor } from "@/components/ward-management/ward-place";
  * stubs to `/delays`, so an existing bookmark still resolves. **The id and the route path are two
  * different things** — this change moves the id only.
  */
-export const WARD_MODES = ["command", "network", "delays", "capacity", "movements", "governance", "transport"] as const;
+export const WARD_MODES = ["command", "delays", "capacity", "movements", "governance"] as const;
 
 export type WardMode = (typeof WARD_MODES)[number];
 
@@ -78,16 +78,9 @@ export type WardMode = (typeof WARD_MODES)[number];
  * this directly). It remains the most-used mode id in the application; an id absent from ONE
  * consumer is not an unused id, and the two claims still look identical from inside that consumer.
  */
-export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map([
-  [
-    "network",
-    "The Network screen was retired on 19 October 2026 (Josh's decision): it repeated Home and Capacity, its ready-beds-by-road-time list moved to Capacity, and /ward-flow/network is now a redirect to Home. RETAINED as an id, as 'transport' was after MERGE 03, to keep the retirement small: removing it also touches WARD_MODES, WARD_VIEW_ICONS and the role orders, which is a separate tidy-up.",
-  ],
-  [
-    "transport",
-    "MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into MovementsScreen. The current /ward-flow/transport route redirects to /ward-flow/transport/officer. The id is RETAINED in WARD_MODES only. tracker/live-tracker.tsx and ClinicalRail, which once rendered it, have both been deleted, and nothing passes this mode now (checked 21 Oct 2026). tracker/tracker-derivations.ts is still used by the Movements derivations. Retiring the id is a separate rename.",
-  ],
-] as const);
+// Empty since 23 October 2026 (D-80 tidy-up): "network" (Network screen retired 19 Oct) and
+// "transport" (folded into Movements by MERGE 03) were retired as ids. Both routes still redirect.
+export const WARD_MODES_NOT_LISTED: ReadonlyMap<WardMode, string> = new Map<WardMode, string>();
 
 export type WardViewItem = {
   id: WardMode;
@@ -122,13 +115,13 @@ export type WardViewItem = {
  * used to be two separate entries — the six-stage movement board and the live vehicle tracker,
  * asking "where is everyone right now" two different ways. `MovementsScreen` answers both, so the
  * `transport` entry is gone; the current route redirects to `/ward-flow/transport/officer` — see
- * `WARD_NAV_INTENTIONALLY_UNLISTED` below. The `transport` id itself is untouched in the `WardMode`
- * type below, for the same reason `queue`/`exceptions` stayed untouched after MERGE 01.
+ * `WARD_NAV_INTENTIONALLY_UNLISTED` below. The `transport` id stayed in `WardMode` until the
+ * D-80 tidy-up on 23 October 2026 retired it.
  *
  * FIVE as of 19 October 2026 (Josh's decision): the `network` entry is gone. The Network screen
  * repeated Home and Capacity; its one unique list, ready beds by road time, moved to Capacity, and
  * `/ward-flow/network` is now a redirect to Home — see `WARD_NAV_INTENTIONALLY_UNLISTED`. The
- * `network` id itself is untouched in the `WardMode` type, as `transport` was after MERGE 03.
+ * `network` id was retired from `WardMode` with `transport` on 23 October 2026 (D-80 tidy-up).
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
   { id: "command", href: "/ward-flow", label: "Home" },
