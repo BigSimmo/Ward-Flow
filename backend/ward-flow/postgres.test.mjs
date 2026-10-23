@@ -1465,6 +1465,21 @@ test(
   },
 );
 
+test("break glass answers an unknown id and a patient already in care alike (D-80)", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const unitId = world.state.units[0].id;
+  const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [unitId] });
+  const stay = world.state.admissions.find(
+    (admission) => admission.unitId === unitId && admission.state !== "departed" && admission.patientId,
+  );
+  const unknown = engine.breakGlassRefusal(world, ward, "synthetic-no-such-patient", at);
+  assert.equal(unknown, engine.BREAK_GLASS_NOT_OPENED);
+  assert.equal(engine.breakGlassRefusal(world, ward, stay.patientId, at), unknown);
+  assert.equal(engine.breakGlassRefusal(world, ward, 42, at), unknown);
+});
+
 test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-07T10:00:00Z");
@@ -1473,12 +1488,13 @@ test("a ward desk may send the events its screen sends under another role, and n
   const notYours = "This change is not part of your role.";
   const refusal = (event) => engine.commandRefusal(world, ward, event, at);
   // A ward raises referrals in its own name only, from Raise referral and from its New referral
-  // sheet (Josh, 15 Oct 2026). The sheet still adds a patient as ED, through its CROSS_ROLE_ALLOWED
-  // pair.
+  // sheet (Josh, 15 Oct 2026). It adds a patient in its own name too (role access plan v2, D-80), so
+  // it no longer borrows the ED role for that.
   assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
-  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
+  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ward" }), notYours);
+  assert.equal(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
   // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
   // still refused.
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);

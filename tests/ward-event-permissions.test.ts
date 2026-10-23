@@ -55,7 +55,7 @@ describe("who may raise which event", () => {
     // Pinned in `tests/ward-referral-reducer.test.ts` ("RB5 — a community team's own
     // acceptance...").
     ACCEPT_REFERRAL: ["ward", "coordinator", "ed", "community"],
-    ADD_PATIENT: ["ed", "community", "coordinator"],
+    ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.
     ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
@@ -466,17 +466,17 @@ describe("who may raise which event", () => {
     FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
     EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
     CONFIRM_MORNING_ROLLUP: ["ward", "coordinator"],
-    SEND_WARD_BUZZ: ["coordinator", "bed_manager", "executive"],
+    SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
     // Recorded 2026-09-25 (test fixer) at the roles the engine already enforces. Added by unreviewed
     // 23-25 Sept commits (6eec76bd85, 65090c4db6, 5d7f438126) with no written ruling; pinned here so
     // any later widening still fails, which is this table's job.
     RECORD_REPATRIATION: ["coordinator"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
-    DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-    ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
-    STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-    EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+    DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+    ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
+    STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+    EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     RAISE_PULL_NOW: ["coordinator"],
     REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
@@ -539,6 +539,16 @@ describe("who may raise which event", () => {
     const singleRoleEvents = Object.values(PERMISSIONS).filter((roles) => roles.length === 1);
     expect(singleRoleEvents.length).toBeGreaterThan(0);
     expect(allRoles.size).toBeGreaterThan(2);
+  });
+
+  it("gives the executive and the access admin no action at all (role access plan v2, D-80)", () => {
+    // The server refuses both outright (`commandRefusal` in backend/ward-flow/engine.ts), so a
+    // screen that offered either one an action would only ever fail. The access admin is not a
+    // workflow role, so it can never appear here; the executive must not either.
+    for (const [type, roles] of Object.entries(EVENT_ROLE)) {
+      expect(roles as readonly string[], type).not.toContain("executive");
+      expect(roles as readonly string[], type).not.toContain("admin");
+    }
   });
 });
 

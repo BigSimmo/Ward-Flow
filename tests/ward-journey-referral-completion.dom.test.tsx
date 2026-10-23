@@ -219,7 +219,8 @@ describe("referral command completion across shared snapshots", () => {
   });
   it.each([
     ["/ward-flow/ed/rph", "ed"],
-    ["/ward-flow/ward/rph-adult-secure", "community"],
+    // D-80: a ward adds a patient in its own name, with no borrowed role.
+    ["/ward-flow/ward/rph-adult-secure", "ward"],
   ] as const)("registers from %s using the supported source actor %s", (pathname, role) => {
     setup(<AddPatientForm />, pathname);
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999993" } });
