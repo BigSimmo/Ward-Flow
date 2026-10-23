@@ -21,7 +21,7 @@ import {
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -1284,7 +1284,7 @@ export function HandoverPage() {
         scopeLabel={scopeLabel}
         shiftLabel={`${shiftInfo.label}, ${formatInstantWithDay(shiftAt, now)}`}
         densityLabel={customColumns === null ? DENSITY_LABEL[density] : "Chosen"}
-        sheetDate={formatSheetMoment(now, dayZero).split(",")[0] ?? ""}
+        dayZero={dayZero}
         options={printOptions}
         onOptionsChange={setPrintOptions}
         controls={

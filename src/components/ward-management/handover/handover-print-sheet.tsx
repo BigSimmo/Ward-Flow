@@ -11,7 +11,12 @@ import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
 import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
   groupOf,
@@ -217,7 +222,10 @@ export type HandoverPrintSheetProps = {
   scopeLabel: string;
   shiftLabel: string;
   densityLabel: string;
-  sheetDate: string;
+  /** Calendar origin for a complete, unambiguous paper timestamp. */
+  dayZero?: Date;
+  /** Legacy fixture/date label; real sheets supply dayZero. */
+  sheetDate?: string;
   options: PrintOptions;
   onOptionsChange: (next: PrintOptions) => void;
   controls: ReactNode;
@@ -249,7 +257,8 @@ export function HandoverPrintSheet({
   scopeLabel,
   shiftLabel,
   densityLabel,
-  sheetDate,
+  dayZero,
+  sheetDate = "",
   options,
   onOptionsChange,
   controls,
@@ -320,7 +329,9 @@ export function HandoverPrintSheet({
     ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],
   ];
 
-  const prepared = formatInstantWithDay(preparedAt ?? now, now);
+  const prepared = dayZero
+    ? formatSheetMoment(preparedAt ?? now, dayZero, { includeYearAndZone: true })
+    : `${formatInstantWithDay(preparedAt ?? now, now)} ${sheetDate} AWST`.trim();
   const meta = `${scopeLabel} · ${shiftLabel} · ${densityLabel} columns${anyHighlight ? " · highlighted rows marked" : ""}`;
 
   const header = (pageNumber: number) => (
@@ -331,7 +342,7 @@ export function HandoverPrintSheet({
       </div>
       <div className={styles.stamp}>
         {/* Until a copy is prepared (onPrintPrepared), the open sheet is a preview, never a prepared copy. */}
-        {preparedAt === null ? "Preview" : "Prepared"} {prepared} {sheetDate} AWST
+        {preparedAt === null ? "Preview" : "Prepared"} {prepared}
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
