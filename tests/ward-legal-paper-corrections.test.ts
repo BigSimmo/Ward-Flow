@@ -40,8 +40,8 @@ describe("checked paper-expiry corrections", () => {
         by: "coordinator",
         formCode: "1A",
         formWrittenAt: 400,
-        from: 700,
-        to: 650,
+        previousDueAt: 700,
+        dueAt: 650,
         reason: "transcription_error",
       },
     ]);
@@ -69,23 +69,34 @@ describe("checked paper-expiry corrections", () => {
     },
   );
 
-  it.each([null, {}, { reason: "unrecognised" }, "transcription_error"])(
-    "refuses malformed correction facts without treating them as an extension: %j",
-    (invalid) => {
-      const { state, movementId } = paperState();
-      const next = wardFlowReducer(state, {
-        ...correction(movementId),
-        dueAt: 750,
-        correction: invalid,
-      } as unknown as WardFlowEvent);
-      expect(next.rejections).toHaveLength(state.rejections.length + 1);
-      expect(next.movements).toBe(state.movements);
-    },
-  );
+  it.each([
+    null,
+    {},
+    { ...correction("").correction, reason: "unrecognised" },
+    { ...correction("").correction, expectedDueAt: Number.NaN },
+    { ...correction("").correction, expectedFormWrittenAt: Number.NaN },
+    { ...correction("").correction, note: "extra" },
+    "transcription_error",
+  ])("refuses malformed correction facts without treating them as an extension: %j", (invalid) => {
+    const { state, movementId } = paperState();
+    const next = wardFlowReducer(state, {
+      ...correction(movementId),
+      dueAt: 750,
+      correction: invalid,
+    } as unknown as WardFlowEvent);
+    expect(next.rejections).toHaveLength(state.rejections.length + 1);
+    expect(next.movements).toBe(state.movements);
+  });
 
   it("keeps an ordinary extension later-only and requires a different corrected value", () => {
     const { state, movementId } = paperState();
-    const { correction: _correction, ...ordinary } = correction(movementId);
+    const ordinary = {
+      type: "RECORD_LEGAL_FORM_EXPIRY" as const,
+      role: "coordinator" as const,
+      now: 540,
+      movementId,
+      dueAt: 650,
+    };
     expect(wardFlowReducer(state, ordinary).movements).toBe(state.movements);
     expect(wardFlowReducer(state, { ...correction(movementId), dueAt: 700 }).movements).toBe(state.movements);
     const extended = wardFlowReducer(state, { ...ordinary, dueAt: 750 });

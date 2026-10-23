@@ -65,6 +65,7 @@ export function reduceRecordedLegalEvent(
           correction === null ||
           typeof correction !== "object" ||
           Array.isArray(correction) ||
+          Object.keys(correction).sort().join() !== "expectedDueAt,expectedFormCode,expectedFormWrittenAt,reason" ||
           !LEGAL_FORM_EXPIRY_CORRECTION_REASONS.includes(correction.reason) ||
           !Number.isFinite(correction.expectedDueAt) ||
           (correction.expectedFormWrittenAt !== null && !Number.isFinite(correction.expectedFormWrittenAt))
@@ -102,8 +103,8 @@ export function reduceRecordedLegalEvent(
               by: event.role,
               formCode: movement.legalForm.code,
               ...(movement.formedAt === undefined ? {} : { formWrittenAt: movement.formedAt }),
-              from: currentDueAt,
-              to: event.dueAt,
+              previousDueAt: currentDueAt,
+              dueAt: event.dueAt,
               reason: correction.reason,
             },
           ],

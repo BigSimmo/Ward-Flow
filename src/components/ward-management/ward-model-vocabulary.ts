@@ -313,6 +313,10 @@ export const stepBackReasonLabels: Record<StepBackReason, string> = {
 export type LegalStatus =
   "Voluntary" | "Referred for psychiatric examination" | "Detained awaiting examination" | "Involuntary inpatient";
 
+/** Fixed reasons for correcting a transcribed paper expiry; no narrative is stored. */
+export const LEGAL_FORM_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
+export type LegalFormExpiryCorrectionReason = (typeof LEGAL_FORM_EXPIRY_CORRECTION_REASONS)[number];
+
 /**
  * The legal clock and the ED clock are different clocks (spec "Model changes this phase
  * requires", `Movement.formedAt`). `dueAt`, when present, is the legal clock — never computed by
@@ -346,10 +350,6 @@ export type LegalStatus =
  * a form code, or an assistant's recollection of the Mental Health Act. A typed value traced to
  * the clinician who typed it (`legalFormExpiryHistory`, below) is the only legitimate source.
  */
-/** Fixed reasons for correcting a transcribed paper expiry; no narrative is stored. */
-export const LEGAL_FORM_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
-export type LegalFormExpiryCorrectionReason = (typeof LEGAL_FORM_EXPIRY_CORRECTION_REASONS)[number];
-
 export type LegalForm = {
   code: string;
   /** Setting recorded from the current paper, never inferred from geography. */

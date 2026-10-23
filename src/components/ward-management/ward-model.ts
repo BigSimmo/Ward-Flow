@@ -713,8 +713,8 @@ export type Movement = MovementOrigin & {
     by: WardFlowRole;
     formCode: string;
     formWrittenAt?: Instant;
-    from: Instant;
-    to: Instant;
+    previousDueAt: Instant;
+    dueAt: Instant;
     reason: LegalFormExpiryCorrectionReason;
   }[];
   statusChanges: StatusChange[];
