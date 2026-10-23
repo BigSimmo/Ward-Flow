@@ -122,6 +122,8 @@ describe("clinical values file", () => {
       stepUpWindow: 10,
       accessExpiringSoon: 14,
       accessUnused: 45,
+      // Role access plan v2 (Josh, 23 Oct 2026, D-80): the longest a role may be granted for.
+      accessMaxTerm: 365,
       // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,

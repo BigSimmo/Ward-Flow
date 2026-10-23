@@ -3,6 +3,9 @@ import { activeActNowItems } from "../../src/components/ward-management/ward-act
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
   PUSH_ROLES,
+  ACCESS_MAX_TERM_MINUTES as ACCESS_MAX_TERM_RULE_MINUTES,
+  ACCESS_TOO_LONG as ACCESS_TOO_LONG_RULE,
+  COVER_NEEDS_ROLE as COVER_NEEDS_ROLE_RULE,
   ACCESS_UNUSED_MINUTES as ACCESS_UNUSED_RULE_MINUTES,
   STEP_UP_MINUTES as STEP_UP_RULE_MINUTES,
   coverAccess as coverAccessRule,
@@ -405,13 +408,17 @@ export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: W
 export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
 /** A role not worked as for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = ACCESS_UNUSED_RULE_MINUTES;
+/** The latest end date a role may be given (D-80), and what the server says past it. */
+export const ACCESS_MAX_TERM_MINUTES = ACCESS_MAX_TERM_RULE_MINUTES;
+export const ACCESS_TOO_LONG = ACCESS_TOO_LONG_RULE;
+export const COVER_NEEDS_ROLE = COVER_NEEDS_ROLE_RULE;
 /** A sign-in lasts at most this long, however busy the desk (ISM-0428, D-65). */
 export const SESSION_LIMIT_MINUTES = CLINICAL_VALUES.sessionLimit.value * 60;
 
 /**
  * Why this cover may not be given, or `null` (feature 2): the same rule the Access tab uses. The
  * role it carries comes from `coverAccess`: a ward's cover is a nurse in charge's, an ED's an ED
- * clinician's.
+ * clinician's. `recipientRoles` is the roles the colleague holds now; D-80 needs a ward or ED one.
  */
 export function coverRefusal(
   world: SharedWorld,
@@ -420,8 +427,19 @@ export function coverRefusal(
   recipientId: string,
   scope: WardAccessScope,
   minutes: number,
+  recipientRoles: readonly string[],
 ): string | null {
-  return coverRefusalRule({ giver, giverId, recipientId, scope, minutes, places: accessPlaces(world) });
+  return coverRefusalRule({
+    giver,
+    giverId,
+    recipientId,
+    scope,
+    minutes,
+    places: accessPlaces(world),
+    recipientRoles: recipientRoles.filter((role): role is WardAccess["role"] =>
+      (WARD_ACCESS_ROLES as readonly string[]).includes(role),
+    ),
+  });
 }
 
 export function coverAccess(scope: WardAccessScope): WardAccess | null {

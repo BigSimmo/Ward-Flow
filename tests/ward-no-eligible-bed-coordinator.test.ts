@@ -3,7 +3,6 @@ import { seedWardFlowState } from "../src/components/ward-management/ward-flow-r
 import {
   buildActionInbox,
   eligibleCandidatesAmong,
-  escalationBoard,
   INFORMATIONAL_GATES,
   isOpen,
 } from "../src/components/ward-management/ward-derivations";
@@ -18,8 +17,12 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
 describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
   const state = seedWardFlowState();
   const open = state.movements.filter(isOpen);
-  const nowhere = escalationBoard(open, state.units, NOW_ANCHOR).nowhereEligible.filter(
+  // Every ward is asked, never the default top three, so no ward is missed.
+  const nowhere = open.filter(
     (movement) =>
+      eligibleCandidatesAmong(movement, state.units, NOW_ANCHOR, state.units.length).every(
+        (candidate) => !candidate.verdict.eligible,
+      ) &&
       movement.acceptedUnitId === undefined &&
       (movement.stage === "placement_requested" || movement.stage === "destination_review"),
   );
@@ -28,9 +31,9 @@ describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
     expect(nowhere.length).toBeGreaterThan(0);
   });
 
-  // The board lists a movement as having "nowhere eligible" when no ward's verdict is eligible. A ward
+  // A movement has "nowhere eligible" when no ward's verdict is eligible. A ward
   // that failed ONLY because its capacity figure is stale, or ONLY because it declined before, can
-  // still be referred to, so those movements are on the board but are not "no eligible bed" for the
+  // still be referred to, so those movements count as nowhere eligible but are not "no eligible bed" for the
   // coordinator (WF-009 in the seed has a ward that failed only a prior decline).
   const stillReferable = (movement: Movement) =>
     eligibleCandidatesAmong(movement, state.units, NOW_ANCHOR, state.units.length).some((candidate) =>

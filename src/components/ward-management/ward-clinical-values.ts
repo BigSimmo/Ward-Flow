@@ -78,6 +78,8 @@ const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner
  * intervals for the prototype (fix plan item 10) on 21 Oct 2026.
  */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
+/** Josh approved the role access plan version 2, with its 12 month role ceiling, on 23 Oct 2026 (D-80). */
+const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
 
 /**
  * The name each observation level is shown under, everywhere Ward Flow shows one (fix plan item 10,
@@ -495,6 +497,13 @@ export const CLINICAL_VALUES = {
     name: "A role not used for this long is switched off by itself",
     group: "Access and privacy",
     value: 45,
+    unit: "days",
+  },
+  accessMaxTerm: {
+    ...SIGNED_BY_JOSH_23_OCT,
+    name: "A role is granted for at most",
+    group: "Access and privacy",
+    value: 365,
     unit: "days",
   },
   // ---- Observation levels (fix plan item 10, Josh, 21 Oct 2026) -----------------------------------

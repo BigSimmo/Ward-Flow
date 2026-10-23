@@ -399,6 +399,8 @@ function CoverPanel() {
             scope: option.scope,
             minutes: 60,
             places,
+            // Only which places this desk may cover is asked here; the colleague is checked on giving.
+            recipientRoles: ["ward", "ed"],
           }) === null,
       ),
     [desk, deskId, units, places],
@@ -444,6 +446,7 @@ function CoverPanel() {
         scope: place.scope,
         minutes,
         places,
+        recipientRoles: [recipientAccess.role],
       });
       if (refusal) return refusal;
       return giveCover({ recipient: recipientAccess, scope: place.scope, now, until: now + minutes })

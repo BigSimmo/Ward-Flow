@@ -20,7 +20,7 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
   const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: site } };
   const options = { now: NOW, places };
 
-  it("may take the approved bed flow actions and none of the seclusion records", () => {
+  it("may take the approved bed flow actions, and no seclusion record or handover sign-off", () => {
     for (const type of [
       "CONFIRM_CAPACITY",
       "CONFIRM_MORNING_ROLLUP",
@@ -34,8 +34,6 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
       "CLEAR_STAY_DISCHARGE_BLOCKER",
       "CLOSE_WARD_TO_ADMISSIONS",
       "REOPEN_WARD_TO_ADMISSIONS",
-      "RECORD_HANDOVER_SIGN_OFF",
-      "UNDO_HANDOVER_SIGN_OFF",
       "COMPLETE_BED_MEETING_ACTION",
       "REPLY_BROADCAST_ALERT",
       "MARK_NOTICE_READ",
@@ -46,6 +44,9 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
       "RECORD_RESTRICTIVE_PRACTICE_START",
       "RECORD_RESTRICTIVE_PRACTICE_END",
       "RECORD_WARD_INCIDENT",
+      // A sign-off carries no site yet, so one site's would mark every site's sheet.
+      "RECORD_HANDOVER_SIGN_OFF",
+      "UNDO_HANDOVER_SIGN_OFF",
     ] as const) {
       expect(EVENT_ROLE[type], type).not.toContain("bed_manager");
     }

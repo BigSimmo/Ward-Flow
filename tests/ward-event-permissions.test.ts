@@ -471,7 +471,7 @@ describe("who may raise which event", () => {
     // 23-25 Sept commits (6eec76bd85, 65090c4db6, 5d7f438126) with no written ruling; pinned here so
     // any later widening still fails, which is this table's job.
     RECORD_REPATRIATION: ["coordinator"],
-    RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward", "bed_manager"],
+    RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
@@ -503,7 +503,7 @@ describe("who may raise which event", () => {
     UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
     UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
     UNDO_REPATRIATION: ["coordinator"],
-    UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward", "bed_manager"],
+    UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
     UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
     UNDO_DEPARTURE: ["ward", "coordinator"],
