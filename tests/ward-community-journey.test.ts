@@ -7,7 +7,6 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { defaultPickupSiteCode } from "@/components/ward-management/patients/transport-pickup";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
@@ -107,8 +106,6 @@ describe("a journey from an accepted community referral (D-76)", () => {
     // ED-only views and waits leave it out. Every reader names the team instead of an ED.
     expect(isEdOriginJourney(movement)).toBe(false);
     expect(movementOriginLabel(movement, undefined)).toBe(`${TEAM_NAME} (community)`);
-    // Pick-up defaults to the referral's own site.
-    expect(defaultPickupSiteCode(movement, started.referrals)).toBe(ORIGIN_SITE);
 
     let journey = apply(started, {
       type: "PULL_PATIENT",

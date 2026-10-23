@@ -1458,11 +1458,6 @@
   font-size: var(--t-1);
 }
 
-.modalProtNote {
-  margin: 0;
-  color: var(--warn);
-}
-
 .modalDetailsList {
   display: flex;
   flex-direction: column;

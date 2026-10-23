@@ -391,13 +391,21 @@ export const DESTINATIONS: Record<
     icon: Users,
     check: "Documents",
     place: "team",
-    places: "Teams",
+    // D-77 short form: a community referral goes to one team.
+    places: "Team",
     phrase: "a community team",
   },
   ed: { label: "ED", icon: Siren, check: "Documents", place: "ED", places: "EDs", phrase: "an emergency department" },
 };
 
-export const SECTION_IDS: readonly DrawerSection[] = ["patient", "referral", "documentation", "placement"];
+const SECTION_IDS: readonly DrawerSection[] = ["patient", "referral", "documentation", "placement"];
+
+const COMMUNITY_SECTION_IDS = SECTION_IDS.filter((id) => id !== "documentation");
+
+/** D-77 short form: a community referral has no Documents step. Its one clearance question is on Referral. */
+export function sectionIdsFor(destination: DrawerCategory): readonly DrawerSection[] {
+  return destination === "community" ? COMMUNITY_SECTION_IDS : SECTION_IDS;
+}
 
 export function sectionLabel(id: DrawerSection, destination: DrawerCategory): string {
   if (id === "patient") return "Patient";

@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BedSingle, ChevronRight, FileText, Flag, Lock, PhoneCall, Truck, X } from "lucide-react";
+import { BedSingle, ChevronRight, FileText, Flag, Lock, Truck, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/wf/sheet";
@@ -38,16 +38,12 @@ import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 
 /**
  * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
  * tells an assistive-technology reader the button exists and nothing about why it does not respond.
  */
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
-
-/** D4: the exact words for a control this prototype shows but does not connect. */
-const NOT_WIRED = "Not wired in this prototype.";
 
 /**
  * **The patient pop-up (Movements overhaul, option A, 9 Oct 2026).** Opened from a worklist row,
@@ -60,7 +56,7 @@ const NOT_WIRED = "Not wired in this prototype.";
  * Add to a shortlist and Record an override were declined). Pull bed, Refer and Escalate open
  * the Patient page, where those forms and the pull's gate checks and override reason already live. Every other step belongs to
  * ED, the receiving ward or transport, so the pop-up names the owner and offers nothing it is not
- * allowed to record. Call ward desk is Preview: there is no ward desk number in the model.
+ * allowed to record. There is no Call ward desk: the model holds no ward desk number.
  *
  * The record sections below keep the five the drawing ships (Person, Journey, Which wards were
  * asked, Escalation, Transport leg). *Watch and flag* is still not built and is named in the foot,
@@ -531,18 +527,6 @@ export function MovementDrawer({
             </Link>
           ) : null}
           {open ? <PullNowButton movement={movement} /> : null}
-          <UnwiredPreview>
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm", className: d.preview })}
-              aria-disabled="true"
-              title={`Preview. ${NOT_WIRED}`}
-              onClick={ignoreUnavailableActivation}
-            >
-              <PhoneCall size={14} aria-hidden="true" />
-              Call ward desk
-            </button>
-          </UnwiredPreview>
         </div>
         <div className={d.urgent}>
           <p className={d.urgentLine}>
