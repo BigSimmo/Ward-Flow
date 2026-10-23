@@ -48,7 +48,8 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * so every later screen reads the same live state. Synthetic data only.
  */
 
-test.describe.configure({ timeout: 180_000 });
+// The journey runs from referral to arrival across five desks, so it gets more time than one screen.
+test.describe.configure({ timeout: 300_000 });
 
 /** The team page the journey starts from: a clinic the catchment table names. */
 const TEAM_ID = "midland";
@@ -328,9 +329,9 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expect(awaiting.getByTestId("ward-accepted-placement-coordinator")).toHaveCount(0);
   await expectAccessible(page, testInfo, "ward board with the accepted community referral to start");
   await awaiting.getByRole("button", { name: "Start placement", exact: true }).click();
-  await awaiting.getByLabel("Legal status", { exact: true }).selectOption("Voluntary");
-  await awaiting.getByLabel("Legal form", { exact: true }).selectOption("none");
-  await awaiting.getByLabel("Observation level", { exact: true }).selectOption("general");
+  await awaiting.getByRole("combobox", { name: /^Legal status/u }).selectOption("Voluntary");
+  await awaiting.getByRole("combobox", { name: /^Legal form/u }).selectOption("none");
+  await awaiting.getByRole("combobox", { name: /^Observation level/u }).selectOption("general");
   await awaiting.getByRole("button", { name: "Confirm and start placement", exact: true }).click();
   await expect(awaiting).toHaveCount(0);
   await expectNoReloadSince(page, "the ward starting the community journey");
@@ -349,7 +350,10 @@ test("Community referral: a community team refers from its own desk, the ward it
   // The coordinator's Movements board names the team as where the journey starts.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/ward-flow/movements", "ward-movements-page");
-  await expect(page.getByTestId("ward-movements-page")).toContainText(`${teamName} (community)`);
+  // The worklist search reads the origin as the board names it: exactly this journey matches.
+  const board = page.getByTestId("ward-movements-page");
+  await board.getByRole("searchbox", { name: "Find movements by name, UMRN or ED" }).fill(`${teamName} (community)`);
+  await expect(board.getByText(/^1 of \d+ match, highlighted$/u).first()).toBeVisible();
   await expectAccessible(page, testInfo, "movements board with the community journey");
   await expectNoReloadSince(page, "opening the movements board");
 
