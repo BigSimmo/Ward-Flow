@@ -11,6 +11,8 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
+import { HomeEdAccessLine } from "@/components/ward-management/forecast/forecast-lazy";
+
 import styles from "./home.module.css";
 
 /**
@@ -163,6 +165,8 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           );
         })}
       </ul>
+      {/* Forecasting build (Josh, 23 Oct 2026, screen 1): who will pass the access target first. */}
+      <HomeEdAccessLine now={now} />
       {service ? (
         <p className={styles.cardNote} data-testid="ward-pressure-strip-service-foot">
           {`${hiddenByService} departments outside ${service} are not shown.`}

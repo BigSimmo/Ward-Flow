@@ -275,6 +275,12 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-bed-availability.ts", name: "MIDDAY_MINUTES", why: "a day-part bin" },
   { file: "ward-bed-availability.ts", name: "LATE_AFTERNOON_MINUTES", why: "a day-part bin" },
   { file: "ward-board-derivations.ts", name: "ARROW_HORIZON_DAYS", why: "how far ahead the board draws" },
+  { file: "forecast/ed-access-risk.ts", name: "RELEASE_LOOKAHEAD_DAYS", why: "how far ahead the ED risk card looks" },
+  {
+    file: "ward-operational-defaults.ts",
+    name: "FORECAST_ED_RISK_LEAD_MINUTES",
+    why: "forecast alert lead time, set in Settings",
+  },
 ];
 
 /** Synthetic fixtures build made-up records; their times are data, not thresholds. */

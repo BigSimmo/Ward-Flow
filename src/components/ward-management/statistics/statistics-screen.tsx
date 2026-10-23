@@ -85,6 +85,8 @@ import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -211,6 +213,7 @@ export function StatisticsScreen({
   } = live.state;
   const now = live.now;
   const service = useServiceScope();
+  const { countsOnly } = useStatisticsCounts();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
   const sourceReferrals = referrals ?? liveReferrals;
@@ -1132,6 +1135,16 @@ export function StatisticsScreen({
               </StatCard>
 
               <StatisticsSessionTrendsCard now={now} />
+
+              {/* Forecasting build (Josh, 23 Oct 2026, screen 8). Not on the count-only executive view. */}
+              {countsOnly ? null : (
+                <ForecastTrackRecordCard
+                  now={now}
+                  units={units}
+                  admissions={sourceAdmissions}
+                  movements={sourceMovements}
+                />
+              )}
             </div>
           </div>
         )}

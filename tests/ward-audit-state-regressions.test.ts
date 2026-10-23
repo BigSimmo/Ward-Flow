@@ -79,7 +79,7 @@ function fixture() {
       receivingWardAgreed: true,
       mode: "road",
       provider: "Ambulance service",
-      cadNumber: "SYN-CAD-AUDIT",
+      cadNumber: "SYN-CAD-AUDIT-0001",
       transportLegalStatus: "voluntary",
       estimatedAt: 700,
     });
