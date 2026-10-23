@@ -869,10 +869,8 @@ export const STANDARD_WARD_SITES: Site[] = [
  * network of the scenario on screen. It is the standard network unless a demonstration scenario
  * is loaded, which swaps in its own wards (`ward-scenarios.ts`, `activateScenarioNetwork`).
  *
- * Sites, site codes and emergency departments are the same in every network; only the wards
- * differ. So the identity lookups (`siteDirectory`, `siteByCode`, `edById`,
- * `allEmergencyDepartments`) read the standard network and give the same answer whatever is on
- * screen, which lets a screen call them without the scenario as an input. A screen that needs
+ * Legacy scenarios share sites and departments. The opt-in fictional network has its own
+ * identities, so directory and department lookups follow the active network too. A screen that needs
  * the WARDS reads them through `useWardNetwork()`, never from this module-wide value: the React
  * Compiler caches a calculation on the inputs it can see, and the scenario is not one of them here
  * (Josh's card, 15 Oct 2026, "Pass values in"). Calculations outside React may still read it.
@@ -887,7 +885,10 @@ export let wardSites: Site[] = STANDARD_WARD_SITES;
 
 /** Points every lookup at `sites`. Idempotent; pass `STANDARD_WARD_SITES` to go back. */
 export function activateWardNetwork(sites: Site[]): void {
+  if (wardSites === sites) return;
   wardSites = sites;
+  siteDirectory = sites.map(identityOf);
+  emergencyDepartmentList = sites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
 }
 
 /*
@@ -924,19 +925,19 @@ function identityOf(site: Site): SiteIdentity {
   return identity;
 }
 
-/** Every site, without its wards. The same in every network. */
-export const siteDirectory: readonly SiteIdentity[] = STANDARD_WARD_SITES.map(identityOf);
+/** Active sites without their wards. Replaced, never mutated, when the network changes. */
+export let siteDirectory: readonly SiteIdentity[] = STANDARD_WARD_SITES.map(identityOf);
 
-const standardEmergencyDepartments: EmergencyDepartment[] = STANDARD_WARD_SITES.flatMap((site) =>
+let emergencyDepartmentList: EmergencyDepartment[] = STANDARD_WARD_SITES.flatMap((site) =>
   site.emergencyDepartment ? [site.emergencyDepartment] : [],
 );
 
 /**
- * The same emergency departments in every network (each network keeps the standard site's own).
- * Built once, since screens call this many times per render. Callers must not change it in place.
+ * Active emergency departments, rebuilt only when the chosen network changes.
+ * Callers must not change the returned list in place.
  */
 export function allEmergencyDepartments(): EmergencyDepartment[] {
-  return standardEmergencyDepartments;
+  return emergencyDepartmentList;
 }
 
 /**
