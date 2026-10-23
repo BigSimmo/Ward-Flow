@@ -702,10 +702,19 @@ function auditRows(
   return rows;
 }
 
-function logRecord(entry: EventLogEntry, ids: PatientChronology["recordIds"]): string | null {
+function logRecord(entry: EventLogEntry, ids: PatientChronology["recordIds"], units: readonly Unit[]): string | null {
   if (entry.movementId && ids.movements.includes(entry.movementId)) return `Movement ${entry.movementId}`;
   if (entry.referralId && ids.referrals.includes(entry.referralId)) return `Referral ${entry.referralId}`;
-  if (entry.admissionId && ids.admissions.includes(entry.admissionId)) return `Admission ${entry.admissionId}`;
+  // D-72: an episode end names only its episode, so its stay is read from the ward's record. The
+  // command must not name the stay, since a ward ends an episode after the patient has left its scope.
+  const admissionId =
+    entry.admissionId ??
+    (entry.episodeId
+      ? units
+          .find((unit) => unit.id === entry.unitId)
+          ?.restrictivePractice?.episodes.find((episode) => episode.id === entry.episodeId)?.admissionId
+      : undefined);
+  if (admissionId && ids.admissions.includes(admissionId)) return `Admission ${admissionId}`;
   return null;
 }
 
@@ -751,7 +760,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     ),
   );
   for (const entry of input.eventLog) {
-    const record = logRecord(entry, recordIds);
+    const record = logRecord(entry, recordIds, units);
     const at = finite(entry.now);
     if (record === null) continue;
     if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
