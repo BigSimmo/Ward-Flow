@@ -744,7 +744,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-announced-figures-carry-their-marker.test.ts`** (1037 lines) — the population this guard walks
 - **`tests/ward-bed-designation-fixture.test.ts`** (70 lines) — invented bed designations
 - **`tests/ward-empty-bed-exclusion-is-visible.dom.test.tsx`** (139 lines) — an impossible empty-bed record is excluded AND said out loud
-- **`tests/ward-flow-diagram-status-truthfulness.test.ts`** (146 lines) — the flow diagram's hub status line
 - **`tests/ward-freshness-count-wording.test.ts`** (113 lines) — the wards-confirmed count states coverage, never recency
 - **`tests/ward-handover-destination-truthfulness.test.ts`** (138 lines) — the handover page's Destination column
 - **`tests/ward-invented-figures.test.ts`** (131 lines) — an invented figure has to say so in its own sentence
