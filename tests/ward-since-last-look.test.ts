@@ -284,7 +284,7 @@ it("scopes ED referrals by explicit address or linked sender department, never a
   const world = seededWorld();
   const movement = world.movements[0]!;
   const referral = world.referrals[0]!;
-  const edId = movement.originEdId;
+  const edId = movement.originEdId!;
   const addressed = {
     ...referral,
     id: "RF-SYNTHETIC-ED",
@@ -415,7 +415,7 @@ it("retains this ward's own closed answer but ignores subsequent movement at ano
 it("counts an explicit incoming ED referral's recorded physical arrival, independently of its sender site", () => {
   const world = seededWorld();
   const referral = world.referrals[0]!;
-  const edId = world.movements[0]!.originEdId;
+  const edId = world.movements[0]!.originEdId!;
   const scope = `ed:${edId}`;
   const beforeWorld = {
     ...world,

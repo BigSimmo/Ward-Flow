@@ -73,7 +73,7 @@ describe("deriveMovementHorizonLanes reads the live movements it is given", () =
         const movement = movementById.get(event.id)!;
         const ed = edById(movement.originEdId);
 
-        expect(event.origin).toBe(departmentLabel(movement.originEdId, ed?.name));
+        expect(event.origin).toBe(departmentLabel(movement.originEdId!, ed?.name));
         expect(event.dest).toBe(lane.name);
         expect(event.carrier).toBe(movement.transport?.provider ?? "");
 
@@ -130,7 +130,7 @@ describe("deriveMovementHorizonLanes reads the live movements it is given", () =
     expect(event).toBeDefined();
     expect(event.type).toBe("transit");
     const ed = edById(wf014.originEdId);
-    expect(event.origin).toBe(departmentLabel(wf014.originEdId, ed?.name));
+    expect(event.origin).toBe(departmentLabel(wf014.originEdId!, ed?.name));
     expect(event.dest).toBe(lane.name);
   });
 });

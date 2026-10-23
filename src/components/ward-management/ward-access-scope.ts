@@ -632,7 +632,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   const scope = access.scope;
   const unitIn = (unitId: string) => unitInScope(scope, unitId, places);
-  const edIn = (edId: string) => edInScope(scope, edId, places);
+  // D-76: a journey from a community team is in no ED's scope.
+  const edIn = (edId: string | undefined) => edId !== undefined && edInScope(scope, edId, places);
   const siteCodesInScope = new Set<string>();
   for (const unit of workspace.units) if (unitIn(unit.id)) siteCodesInScope.add(unit.siteCode);
   for (const ed of workspace.edDepartments ?? []) if (edIn(ed.id)) siteCodesInScope.add(ed.siteCode);

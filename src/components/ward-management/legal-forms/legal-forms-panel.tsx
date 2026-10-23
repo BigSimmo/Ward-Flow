@@ -268,7 +268,7 @@ export function FocusPanel({
                     Mark Form {legalForm?.code} received
                   </Button>
                 ) : null}
-                {fact.gap === "examination" && fact.at === undefined ? (
+                {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
                   <Link
                     ref={examRef}
                     href={edHref(movement.originEdId)}

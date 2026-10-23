@@ -54,7 +54,7 @@ export function unitHealthService(unit: Unit): HealthService | undefined {
 
 /** An emergency department's service is its site's service. `undefined` for an id that resolves
  *  to no real department — never a guessed service. */
-export function edHealthService(edId: string): HealthService | undefined {
+export function edHealthService(edId: string | undefined): HealthService | undefined {
   const ed = edById(edId);
   return ed ? siteByCode(ed.siteCode)?.service : undefined;
 }

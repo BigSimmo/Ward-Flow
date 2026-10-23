@@ -573,7 +573,12 @@ export function commandScopeRefusal(
         (movement as { originUnitId?: string }).originUnitId;
       if (!sendingWard || !unitInScope(scope, sendingWard, places)) return outside;
     }
-    if (movement && access.role === "ed" && !edInScope(scope, movement.originEdId, places)) return outside;
+    if (
+      movement &&
+      access.role === "ed" &&
+      (movement.originEdId === undefined || !edInScope(scope, movement.originEdId, places))
+    )
+      return outside;
     if (movement && access.role === "community") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
       if (

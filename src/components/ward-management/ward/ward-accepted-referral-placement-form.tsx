@@ -44,8 +44,9 @@ export function WardAcceptedReferralPlacementForm({
   const inboxEntries = wardReferralInbox(unitId);
   const raise = useWardRaise("ward");
   const completeCommand = useWardCommandCompletion();
-  // Starting the journey raises it for the source ED, so a desk scoped to its own ward(s) only is refused
+  // Starting an ED journey raises it for the source ED, so a desk scoped to its own ward(s) only is refused
   // by the engine. Send that desk to the coordinator instead of offering a button that cannot succeed.
+  // A community journey (D-76) names no ED, so the accepting ward may start it.
   const deskInScope = useDeskInScope();
   const [placementDraft, setPlacementDraft] = useState<{
     referralId: string;
@@ -62,14 +63,18 @@ export function WardAcceptedReferralPlacementForm({
       (entry) =>
         entry.state === "accepted" &&
         entry.withdrawnAt === undefined &&
-        entry.source === "ed_medical" &&
+        (entry.source === "ed_medical" || entry.source === "community") &&
         !movements.some(
           (movement) => movement.referralId === entry.id && movement.closure?.outcome !== "did_not_proceed",
         ),
     )
     .flatMap((entry) => {
-      const ed = allEmergencyDepartments().find((place) => place.siteCode === entry.originSiteCode);
-      return entry.ageBand && ed ? [{ entry, cohort: entry.ageBand, ed }] : [];
+      // D-76: an accepted community referral starts its journey at the referring team, with no ED.
+      const ed =
+        entry.source === "community"
+          ? undefined
+          : allEmergencyDepartments().find((place) => place.siteCode === entry.originSiteCode);
+      return entry.ageBand && (ed || entry.source === "community") ? [{ entry, cohort: entry.ageBand, ed }] : [];
     });
   function startAcceptedPlacement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,7 +89,7 @@ export function WardAcceptedReferralPlacementForm({
       `start:${entry.id}`,
       () =>
         raise("RAISE_REFERRAL", {
-          edId: ed.id,
+          ...(ed ? { edId: ed.id } : {}),
           referralId: entry.id,
           acceptedUnitId: unitId,
           actingUnitId: unitId,
@@ -211,7 +216,7 @@ export function WardAcceptedReferralPlacementForm({
                 </button>
               </div>
             </form>
-          ) : deskInScope && !deskInScope(ed.id) ? (
+          ) : ed && deskInScope && !deskInScope(ed.id) ? (
             <p className={styles.cardMeta} data-testid="ward-accepted-placement-coordinator">
               This desk cannot start a placement from {ed.name}. Ask the flow coordinator to start it.
             </p>
