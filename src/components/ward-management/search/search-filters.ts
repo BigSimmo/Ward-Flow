@@ -57,7 +57,12 @@ export function matchesService(result: PatientSearchResult, service: string): bo
   if (service === "all") return true;
 
   if (result.kind === "movement") {
-    const originService = siteByEdId.get(result.movement.originEdId)?.service;
+    const { originEdId, originCommunity } = result.movement;
+    const originService = (
+      originEdId === undefined
+        ? wardSites.find((site) => site.code === originCommunity?.siteCode)
+        : siteByEdId.get(originEdId)
+    )?.service;
     const destService = result.movement.acceptedUnitId
       ? siteByUnitId.get(result.movement.acceptedUnitId)?.service
       : undefined;
@@ -92,13 +97,13 @@ export function matchesSetting(
   if (setting === "all") return true;
 
   if (result.kind === "movement") {
-    if (setting === "transit" || setting === "inpatient" || setting === "ed") {
+    if (setting === "transit" || setting === "inpatient" || setting === "ed" || setting === "community") {
       return movementSearchState(result.movement, admissions).setting === setting;
     }
     if (setting === "discharged") {
       return result.movement.closure !== undefined;
     }
-    if (setting === "community" || setting === "scheduled") {
+    if (setting === "scheduled") {
       return false;
     }
   }

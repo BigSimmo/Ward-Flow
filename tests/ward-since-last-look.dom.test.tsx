@@ -212,10 +212,10 @@ describe("scoped Ward and ED last-look sheets", () => {
     ward.unmount();
     render(
       <WardFlowProvider initialNow={NOW}>
-        <EdScreen edId={state.movements[0]!.originEdId} />
+        <EdScreen edId={state.movements[0]!.originEdId!} />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId(`since-last-look-ed:${state.movements[0]!.originEdId}`)).toBeInTheDocument();
+    expect(screen.getByTestId(`since-last-look-ed:${state.movements[0]!.originEdId!}`)).toBeInTheDocument();
   });
 });
 

@@ -131,7 +131,7 @@ describe("what a ward surface says when an origin department will not resolve", 
    * both possible and necessary, and this failure is where somebody finds that out.
    */
   it("has no seeded movement whose origin department fails to resolve", () => {
-    const unresolvable = wardMovements.filter((movement) => !departmentIds.has(movement.originEdId));
+    const unresolvable = wardMovements.filter((movement) => !departmentIds.has(movement.originEdId!));
     expect(
       unresolvable.map((movement) => `${movement.id} -> ${movement.originEdId}`),
       "a seeded movement now reaches the unresolved branch, so this file should assert over the " +

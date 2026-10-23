@@ -20,7 +20,7 @@ const END_OF_DAY = 24 * 60 - 1;
 
 function waiting(variant: DemoNetworkVariant) {
   return demoNetwork(variant).movements.filter(
-    (movement) => EMHS_EDS.includes(movement.originEdId) && !movement.closure && movement.stage !== "moving",
+    (movement) => EMHS_EDS.includes(movement.originEdId!) && !movement.closure && movement.stage !== "moving",
   );
 }
 

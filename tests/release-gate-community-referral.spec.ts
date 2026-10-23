@@ -12,6 +12,7 @@ import {
   goToDesk,
   goViaNav,
   isPhoneLayout,
+  openWardList,
   plantSentinel,
   waitForScreen,
   wardDesk,
@@ -30,11 +31,12 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * it as accepted at that ward, and the team's own desk is unchanged: the referral went to a ward,
  * so it never joins the team's own "waiting for your answer" queue.
  *
+ * D-76 (fix plan item 15): the accepting ward then starts the journey from its own desk. It starts
+ * at the referring team, with no ED. The coordinator's Movements board names the team, and the
+ * ward pulls the bed and confirms arrival. The team recorded that a carer brings the patient, so
+ * no transport is booked. Acceptance alone still moves nobody, as the board's note says.
+ *
  * What this journey cannot drive, because the product does not have it (source, not taste):
- * - No pull and no arrival. `ACCEPT_REFERRAL` creates no movement and no admission, and a movement
- *   is raised only from an emergency department (`RAISE_REFERRAL` needs an ED, and the accepted
- *   "Start the accepted journey" form takes ED-sourced referrals only). The board says so itself:
- *   "No bed is pulled, no patient is moved and no transport is arranged", asserted below.
  * - No coordinator "ask wards" act for a referral. The referrer names the wards in the slide-out;
  *   `REFER_TO_UNITS` works on movements only. The coordinator reviews the named ward here.
  * - The team's own "Referrals we have made" list (fix plan item 17) is covered by unit and DOM
@@ -46,7 +48,8 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * so every later screen reads the same live state. Synthetic data only.
  */
 
-test.describe.configure({ timeout: 180_000 });
+// The journey runs from referral to arrival across five desks, so it gets more time than one screen.
+test.describe.configure({ timeout: 300_000 });
 
 /** The team page the journey starts from: a clinic the catchment table names. */
 const TEAM_ID = "midland";
@@ -299,7 +302,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expect(decided).toHaveCount(1);
   await expect(decided).toContainText("Accepted");
   await expect(decided).toContainText(unitName);
-  // The product's own statement of where a community referral stops today (see the header).
+  // Acceptance records the decision only: the ward starts the journey as its own step (see the header).
   const decidedNote = page.getByTestId("ward-referral-board-decided-note");
   await expect(decidedNote).toContainText("No bed is pulled");
   await expect(decidedNote).toContainText("no transport is arranged");
@@ -314,4 +317,64 @@ test("Community referral: a community team refers from its own desk, the ward it
   );
   await expectAccessible(page, testInfo, "community team desk after the ward's acceptance");
   await expectNoReloadSince(page, "returning to the team's desk");
+
+  // --- D-76: the ward starts the journey from the team, pulls the bed and confirms arrival. ---
+  await goToDesk(page, wardDesk(UNIT_ID, unitName), "ward-unit-screen");
+  const boardTabAgain = page.getByTestId("ward-tab-board");
+  if (await boardTabAgain.isVisible()) await boardTabAgain.click();
+  else await page.getByRole("button", { name: "Bed board shows where everyone is", exact: true }).click();
+  const awaiting = page.getByRole("region", { name: "Accepted referrals awaiting placement" });
+  await expect(awaiting).toContainText(`${PERSON.givenName} ${PERSON.familyName}`);
+  // No ED is named, so the ward's own desk may start it: never "Ask the flow coordinator".
+  await expect(awaiting.getByTestId("ward-accepted-placement-coordinator")).toHaveCount(0);
+  await expectAccessible(page, testInfo, "ward board with the accepted community referral to start");
+  await awaiting.getByRole("button", { name: "Start placement", exact: true }).click();
+  await awaiting.getByRole("combobox", { name: /^Legal status/u }).selectOption("Voluntary");
+  await awaiting.getByRole("combobox", { name: /^Legal form/u }).selectOption("none");
+  await awaiting.getByRole("combobox", { name: /^Observation level/u }).selectOption("general");
+  await awaiting.getByRole("button", { name: "Confirm and start placement", exact: true }).click();
+  await expect(awaiting).toHaveCount(0);
+  await expectNoReloadSince(page, "the ward starting the community journey");
+
+  await openWardList(page, "Admissions");
+  const wardScreen = page.getByTestId("ward-unit-screen");
+  const pull = wardScreen.locator('[data-testid^="ward-pull-"]').filter({ visible: true });
+  await expect(pull, "the started journey is the ward's one bed to pull").toHaveCount(1);
+  const movementId = ((await pull.getAttribute("data-testid")) ?? "").replace("ward-pull-", "");
+  expect(movementId).not.toBe("");
+  await expectAccessible(page, testInfo, "ward admissions with the community journey to pull");
+  await pull.click();
+  await expect(page.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);
+  await expectNoReloadSince(page, "the ward pulling the bed");
+
+  // The coordinator's Movements board names the team as where the journey starts.
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
+  await goViaNav(page, "/ward-flow/movements", "ward-movements-page");
+  // The worklist search reads the origin as the board names it: exactly this journey matches.
+  const board = page.getByTestId("ward-movements-page");
+  await board.getByRole("searchbox", { name: "Find movements by name, UMRN or ED" }).fill(`${teamName} (community)`);
+  await expect(board.getByText(/^1 of \d+ match, highlighted$/u).first()).toBeVisible();
+  await expectAccessible(page, testInfo, "movements board with the community journey");
+  await expectNoReloadSince(page, "opening the movements board");
+
+  // The carer brings the patient, so the ward confirms arrival straight from the pulled bed.
+  await goToDesk(page, wardDesk(UNIT_ID, unitName), "ward-unit-screen");
+  await openWardList(page, "Admissions");
+  const arrive = page.getByTestId(`ward-confirm-arrival-${movementId}`);
+  await expect(arrive).not.toHaveAttribute("aria-disabled", "true");
+  await arrive.click();
+  // With no fit-to-travel record the ward is asked why, and records a reason. Never blocked.
+  const arriveCheck = page.getByTestId("ward-arrive-check");
+  if (
+    await arriveCheck
+      .waitFor({ state: "visible", timeout: 2_000 })
+      .then(() => true)
+      .catch(() => false)
+  ) {
+    await page.getByTestId("ward-arrive-check-reason").selectOption({ index: 1 });
+    await arriveCheck.getByRole("button", { name: /record reason/u }).click();
+  }
+  await expect(arrive).toHaveCount(0);
+  await expectAccessible(page, testInfo, "ward admissions after the community arrival");
+  await expectNoReloadSince(page, "confirming the community arrival");
 });

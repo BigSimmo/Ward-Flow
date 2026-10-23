@@ -81,7 +81,7 @@ const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set([
   "statistics-ward-screen/blocked/the-derivation-takes-admissions-only",
   "statistics-ward-screen/blocked/the-nearest-equivalent-measures-from-referral-raised-at",
   "statistics-ed-screen/attributable/department-record-holds-three-fields",
-  "statistics-ed-screen/attributable/origin-ed-id-is-required",
+  "statistics-ed-screen/attributable/origin-ed-id-is-missing-only-on-a-community-journey",
   "statistics-ed-screen/attributable/a-movement-records-when-it-opened",
   "statistics-ed-screen/attributable/a-movement-records-its-stage",
   "statistics-ed-screen/attributable/a-movement-records-every-ward-decline",

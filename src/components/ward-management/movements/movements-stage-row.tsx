@@ -17,7 +17,7 @@ import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-pro
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useRef } from "react";
 import { edById } from "@/components/ward-management/ward-sites";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -166,7 +166,7 @@ export function StageRow({
     rowRef.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
   }, [revealRequest, consumeReveal]);
   const originEd = edById(movement.originEdId);
-  const originLabel = departmentLabel(movement.originEdId, originEd?.name);
+  const originLabel = movementOriginLabel(movement, originEd?.name);
   const { destinationLabel } = transportRouteLabels(movement, units);
   const blocker = meaningfulBlocker(movement);
   const healthService = movementHealthService(movement) ?? "Origin service not identified";

@@ -34,6 +34,7 @@ import {
 import { PilotMeasuresSection } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type ReasonCount, type ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /** The out of area bands, in the words the rest of the app uses for them. */
 const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
@@ -298,7 +299,7 @@ export function WeeklyReportScreen() {
                         key={row.movement.id}
                         as="li"
                         name={admissionLabel(row.movement.id)}
-                        meta={`${edShortName(edById(row.movement.originEdId)) || row.movement.originEdId}${row.stillWaiting ? " · still waiting" : ""}`}
+                        meta={`${edShortName(edById(row.movement.originEdId)) || (originName(row.movement) ?? row.movement.originEdId)}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
                             {/* One tone rule with the ED page: red at the long-wait line, amber before. */}
@@ -476,7 +477,7 @@ export function WeeklyReportScreen() {
                       {report.edWaits.rows.map((row) => (
                         <tr key={row.movement.id}>
                           <th scope="row">{admissionLabel(row.movement.id)}</th>
-                          <td>{edById(row.movement.originEdId)?.name ?? row.movement.originEdId}</td>
+                          <td>{originName(row.movement) ?? row.movement.originEdId}</td>
                           <td className={styles.time}>
                             {formatSheetMoment(row.movement.openedAt as Instant, dayZero)}
                           </td>

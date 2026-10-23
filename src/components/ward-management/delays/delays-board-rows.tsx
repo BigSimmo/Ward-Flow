@@ -13,8 +13,7 @@ import {
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
-import { edById } from "@/components/ward-management/ward-sites";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { type WfTone } from "@/components/wf";
 import { Glyph } from "./delays-board-parts";
 import { OVER_24H, OVER_8H, dueTone, rowEvents, type BoardRow } from "./delays-board-model";
@@ -22,7 +21,8 @@ import styles from "./delays-board.module.css";
 
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
 export function originLabel(movement: Movement): string {
-  return edById(movement.originEdId)?.name ?? `This movement names ${departmentLabel(movement.originEdId, undefined)}`;
+  if (movement.originEdId === undefined) return movementOriginLabel(movement, undefined);
+  return originName(movement) ?? `This movement names ${movementOriginLabel(movement, undefined)}`;
 }
 
 export function ago(minutes: number): string {

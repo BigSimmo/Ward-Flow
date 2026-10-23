@@ -184,7 +184,11 @@ export type WardFlowEvent =
       type: "RAISE_REFERRAL";
       role: WardFlowRole;
       now: Instant;
-      edId: string;
+      /**
+       * The ED the journey starts at. D-76: absent only when an accepting ward or the coordinator
+       * starts the journey of an accepted community referral, which starts at the referring team.
+       */
+      edId?: string;
       draft: ReferralDraft;
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */

@@ -30,7 +30,6 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   PULL_PATIENT: "Pull a bed",
   PATIENT_ARRIVED: "Confirm Arrival",
 };
-import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
@@ -43,11 +42,13 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
 import { observationSummary } from "@/components/ward-management/ward-observation";
+import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 
 export { pullBlockedReason };
 
-function originPlaceLabel(originEdId: string): string {
-  return edById(originEdId)?.name ?? "Emergency department";
+function originPlaceLabel(movement: Movement): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  return originName(movement) ?? "Emergency department";
 }
 
 function arrivalIsLate(movement: Movement, now: Instant): boolean {
@@ -214,7 +215,7 @@ export function WardArrivalsCorridor({
                       <path d="M2 8h12M10 4l4 4-4 4" />
                     </svg>
                     <span>
-                      Origin: <strong>{originPlaceLabel(movement.originEdId)}</strong>
+                      Origin: <strong>{originPlaceLabel(movement)}</strong>
                     </span>
                   </div>
                   <div className={styles.tagCluster}>

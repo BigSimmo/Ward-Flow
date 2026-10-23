@@ -30,6 +30,7 @@ import { censusRowsByPatient, nextStepLine, whereNowLine } from "./search-answer
 import styles from "./global-search-preview.module.css";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * THE RIGHT-HAND PREVIEW OF THE HEADER SEARCH PALETTE (Josh, 8 Oct 2026, option B).
@@ -195,7 +196,6 @@ function MovementPreview({
   const next = censusRow ? nextStepLine(censusRow) : undefined;
   const subject = resolveSubjectPatient(movement, lookup);
   const patient = subject.patient;
-  const origin = edById(movement.originEdId);
   const destination = destinationUnit(movement, units);
   const declined = movement.declines
     .map((decline) => units.find((unit) => unit.id === decline.unitId)?.name)
@@ -245,7 +245,7 @@ function MovementPreview({
           </>
         ) : null}
         <dt>From</dt>
-        <dd>{origin?.name ?? movement.originEdId}</dd>
+        <dd>{originName(movement) ?? movement.originEdId}</dd>
         {destination ? (
           <>
             <dt>{movement.acceptedUnitId ? "Accepted" : "Referred"}</dt>
@@ -339,7 +339,6 @@ function PersonPreview({
   const openMovement = movements.find(
     (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
   );
-  const origin = openMovement ? edById(openMovement.originEdId) : undefined;
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
   const wait = openMovement ? waited(openMovement, now) : null;
   const personReferrals = lookup.referrals ?? [];
@@ -393,7 +392,7 @@ function PersonPreview({
               </>
             ) : null}
             <dt>From</dt>
-            <dd>{origin?.name ?? openMovement.originEdId}</dd>
+            <dd>{originName(openMovement) ?? openMovement.originEdId}</dd>
             {destination ? (
               <>
                 <dt>{openMovement.acceptedUnitId ? "Accepted" : "Referred"}</dt>

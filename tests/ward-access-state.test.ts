@@ -474,7 +474,7 @@ describe("a command from a desk", () => {
     // A referral's origin is the desk's own ED or ward; its destinations may be anywhere.
     const ed = desks.ed;
     const ownEd = ed.scope.kind === "ed" ? ed.scope.edId : "";
-    const otherEd = state.movements.find((movement) => movement.originEdId !== ownEd)!.originEdId;
+    const otherEd = state.movements.find((movement) => movement.originEdId !== ownEd)!.originEdId!;
     const raise = (edId: string) =>
       commandScopeRefusal(state, ed, { type: "RAISE_REFERRAL", role: "ed", edId }, options);
     expect(raise(ownEd)).toBeNull();

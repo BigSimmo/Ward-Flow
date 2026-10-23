@@ -118,6 +118,7 @@ import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
 // and fence the completion so an old patient's save cannot dismiss another patient's form.
@@ -569,7 +570,7 @@ export function PatientNowScreen({
     declined: {},
   };
 
-  const originName = liveMovement ? (edById(liveMovement.originEdId)?.name ?? "Origin not recorded") : undefined;
+  const originName = liveMovement ? (movementOriginName(liveMovement) ?? "Origin not recorded") : undefined;
   const tierTone = urgencyTier === 1 ? "danger" : urgencyTier === 2 ? "warning" : "neutral";
   const documentCount = record.documents.length + uploadedForms.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
@@ -686,7 +687,7 @@ export function PatientNowScreen({
     ].join(" · "),
     onOrder: isOnOrder(stayLegalStatusNow),
   };
-  const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
+  const heroStayOrigin = heroStayMovement ? movementOriginName(heroStayMovement) : undefined;
   const phoneStatusFoot =
     mode === "ward" && heroStay?.arrivedAt != null
       ? `Arrived ${dayLabel(heroStay.arrivedAt, dayZero).replace(",", "")}${heroStay.arrivedAt >= 0 ? ` ${clock(heroStay.arrivedAt)}` : ""}${heroStayOrigin ? ` from ${heroStayOrigin}` : ""}`
@@ -901,8 +902,11 @@ export function PatientNowScreen({
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
   const contacts: ContactRow[] = [];
+  // D-76: a journey from a community team has the team as its sender, not an ED.
+  const sender = liveMovement?.originEdId === undefined && liveMovement ? "Sending community team" : "Sending ED";
   if (mode === "find" || mode === "held") {
-    if (originName) contacts.push({ name: originName, role: "Sending ED, nurse in charge" });
+    if (originName)
+      contacts.push({ name: originName, role: sender === "Sending ED" ? "Sending ED, nurse in charge" : sender });
     if (acceptingUnit) contacts.push({ name: acceptingUnit.name, role: "Receiving ward" });
   } else if (mode === "transit") {
     if (acceptingUnit) contacts.push({ name: acceptingUnit.name, role: "Receiving ward" });
@@ -911,7 +915,7 @@ export function PatientNowScreen({
         name: liveMovement.transport.provider,
         role: displayCadNumber ? `Transport, CAD ${displayCadNumber}` : "Transport",
       });
-    if (originName) contacts.push({ name: originName, role: "Sending ED" });
+    if (originName) contacts.push({ name: originName, role: sender });
   } else if ((mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed") && (stayUnit ?? acceptingUnit)) {
     const wardUnit = stayUnit ?? acceptingUnit;
     if (wardUnit) contacts.push({ name: wardUnit.name, role: "Ward, nurse in charge" });

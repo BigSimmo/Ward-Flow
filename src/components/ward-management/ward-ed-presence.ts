@@ -1,9 +1,12 @@
 import type { Instant } from "./ward-clock";
 import type { Movement } from "./ward-model";
 
-/** A ward transfer may retain an ED routing id; it never originated as an ED wait. */
-export function isEdOriginJourney(movement: Pick<Movement, "sourceAdmissionId">): boolean {
-  return movement.sourceAdmissionId === undefined;
+/**
+ * A ward transfer may retain an ED routing id; it never originated as an ED wait. D-76: nor did a
+ * journey from an accepted community referral, which has no ED at all.
+ */
+export function isEdOriginJourney(movement: Pick<Movement, "sourceAdmissionId" | "originEdId">): boolean {
+  return movement.sourceAdmissionId === undefined && movement.originEdId !== undefined;
 }
 
 type DepartureRecord = Pick<Movement, "leftDepartmentAt" | "transport"> & Partial<Pick<Movement, "stageChanges">>;
