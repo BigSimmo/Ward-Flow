@@ -10,6 +10,21 @@ import { isObservation, sameObservation, type Observation } from "@/components/w
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
 export type { Observation };
 
+/** The observation fact and history position captured when its editor opens. */
+export type ObservationEditingBaseline = { observation: Observation; changeCount: number };
+
+function isEditingBaseline(value: unknown): value is ObservationEditingBaseline {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    Object.keys(record).sort().join() === "changeCount,observation" &&
+    isObservation(record.observation) &&
+    typeof record.changeCount === "number" &&
+    Number.isSafeInteger(record.changeCount) &&
+    record.changeCount >= 0
+  );
+}
+
 /**
  * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after intake.
  * Targets the open movement, or the admission once a bed is held; the movement and its live
@@ -24,6 +39,8 @@ export type ObservationLevelEvent = {
   now: Instant;
   target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
+  /** Optional for older callers. When supplied, a stale editor cannot replace a newer record. */
+  expected?: ObservationEditingBaseline;
 };
 
 type ObservationLevelHelpers = Pick<
@@ -48,6 +65,8 @@ export function reduceObservationLevelEvent(
   const level = event.observation;
   if (!isObservation(level))
     return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a level with a valid interval");
+  if (event.expected !== undefined && !isEditingBaseline(event.expected))
+    return reject(state, event, "RECORD_OBSERVATION_LEVEL needs a valid editing baseline");
 
   let movement: Movement | undefined;
   let admission: Admission | undefined;
@@ -73,6 +92,19 @@ export function reduceObservationLevelEvent(
   }
 
   const current = admission?.observation ?? movement?.observation;
+  // History belongs to the named target: a movement may have changes from before its admission
+  // was created. Comparing the count also catches a level changed away and then back while an
+  // older draft remained open. Linked records still have to agree with the captured fact.
+  const target = event.target.kind === "movement" ? movement : admission;
+  if (
+    event.expected &&
+    (!target ||
+      !sameObservation(target.observation, event.expected.observation) ||
+      (target.observationChanges?.length ?? 0) !== event.expected.changeCount ||
+      (current && !sameObservation(current, event.expected.observation)))
+  ) {
+    return reject(state, event, "The recorded observation changed while editing. Reopen it to check the latest level.");
+  }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
   const changed = <T extends Movement | Admission>(row: T): T => ({
