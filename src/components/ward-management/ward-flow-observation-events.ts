@@ -11,7 +11,7 @@ import { isObservation, sameObservation, type Observation } from "@/components/w
 export type { Observation };
 
 /** The observation fact and history position captured when its editor opens. */
-export type ObservationEditingBaseline = { observation: Observation; changeCount: number };
+type ObservationEditingBaseline = { observation: Observation; changeCount: number };
 
 function isEditingBaseline(value: unknown): value is ObservationEditingBaseline {
   if (typeof value !== "object" || value === null) return false;
