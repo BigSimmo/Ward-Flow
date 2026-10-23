@@ -1106,6 +1106,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setDismissedBuzzes((current) => (current.includes(buzzKey) ? current : [...current, buzzKey]));
   }
 
+  // A notice sent to the ward is the ward's to acknowledge, so a bed manager is not shown one it
+  // cannot clear (it would keep the badge lit until the ward reads it).
+  const wardNotices = routeRole === "bed_manager" ? [] : notices;
+
   const unreadAlertsCount = (() => {
     if (!unit) return 0;
     let count = 0;
@@ -1119,7 +1123,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     count += overdueArrivals.length;
     count += wardClearanceAlerts(movements, unit.id).count;
     // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
-    count += notices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
+    count += wardNotices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
     return count;
   })();
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
@@ -2252,7 +2256,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             wardRoleLockNote={wardRoleLockNote}
             notificationCenterOpen={notificationCenterOpen}
             movements={movements}
-            notices={notices}
+            notices={wardNotices}
             refreshRequests={refreshRequests}
             isRollupConfirmedToday={isRollupConfirmedToday}
             morningRollupDeadlinePassed={morningRollupDeadlinePassed}
