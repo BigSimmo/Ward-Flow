@@ -7,6 +7,11 @@ import { expect, type Page } from "playwright/test";
 export async function showEveryoneWaitingOn(page: Page): Promise<void> {
   const everyone = page.getByRole("radio", { name: /^Everyone waiting/u });
   await expect(everyone).toBeVisible({ timeout: 15_000 });
-  if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
-  await expect(everyone).toHaveAttribute("aria-checked", "true");
+  // The server-rendered radio is visible before React attaches its listeners, and a click in that
+  // gap changes nothing and throws nothing (seen in CI as aria-checked stuck on "false"). Press
+  // again until the switch takes, the way `openCapacityTable` does; the assertion stays strict.
+  await expect(async () => {
+    if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
+    await expect(everyone).toHaveAttribute("aria-checked", "true", { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 }
