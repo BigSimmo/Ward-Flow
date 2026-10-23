@@ -6,6 +6,7 @@
 import { StatusGlyph } from "@/components/wf";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
+import { ForecastTomorrowFigure } from "@/components/ward-management/forecast/forecast-tomorrow-cell";
 import type { BedKindGap } from "./capacity-derivations";
 import styles from "./capacity.module.css";
 import { formatGap, gapWord, phoneGap, rowSentence } from "./capacity-gap-words";
@@ -120,7 +121,16 @@ export function GapWord({ gap }: { gap: number }) {
   );
 }
 
-export function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolean }) {
+export function GapRow({
+  row,
+  phone = false,
+  tomorrow,
+}: {
+  row: BedKindGap;
+  phone?: boolean;
+  /** Forecasting build (23 Oct 2026): tomorrow's likely figure for this bed type, on desktop. */
+  tomorrow?: { likely: number; low: number; high: number };
+}) {
   const isDeficit = row.gap < 0;
   const isBalanced = row.gap === 0;
   const fillPct = row.waiting > 0 ? Math.min(100, Math.round((row.bedsThatFit / row.waiting) * 100)) : 100;
@@ -151,6 +161,11 @@ export function GapRow({ row, phone = false }: { row: BedKindGap; phone?: boolea
           />
         </div>
       </td>
+      {tomorrow ? (
+        <td data-testid="ward-capacity-gap-tomorrow">
+          <ForecastTomorrowFigure {...tomorrow} />
+        </td>
+      ) : null}
       <td>{rowSentence(row)}</td>
     </tr>
   );

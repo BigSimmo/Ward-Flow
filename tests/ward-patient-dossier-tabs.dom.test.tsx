@@ -144,14 +144,14 @@ describe("polished patient dossier tabs", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
-  it("shows fields the record cannot hold as a dashed Preview, never as data", () => {
+  it("shows no preview cards for fields the record cannot hold (unfinished features cleanup, 23 Oct 2026)", () => {
     setup("PT-005");
     const details = tab("Details");
-    expect(details.getByRole("heading", { name: "Not in the record yet" })).toBeVisible();
-    expect(details.getAllByText("Needs a record field")).toHaveLength(6);
+    expect(details.queryByRole("heading", { name: "Not in the record yet" })).toBeNull();
+    expect(details.queryAllByText("Needs a record field")).toHaveLength(0);
     const community = tab("Community");
-    expect(community.getByRole("heading", { name: "Family and carers" })).toBeVisible();
-    expect(community.getByText("Preview, not in the record yet")).toBeVisible();
+    expect(community.queryByRole("heading", { name: "Family and carers" })).toBeNull();
+    expect(community.getByRole("heading", { name: "Community plan" })).toBeVisible();
   });
   it("lists a CTO recorded on the Community tab in the forms register, with no lapse column (D5, D-38)", () => {
     setup("PT-005");

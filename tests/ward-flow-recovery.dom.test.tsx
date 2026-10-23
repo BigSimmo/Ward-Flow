@@ -362,7 +362,7 @@ describe("conservative demo recovery", () => {
             receivingWardAgreed: true,
             mode: "road",
             provider: "Ambulance service",
-            cadNumber: "Synthetic-private-CAD",
+            cadNumber: "SYN-PRIVATE-CAD-7731",
             transportLegalStatus: "voluntary",
             estimatedAt: value.now + 60,
           })}
@@ -372,7 +372,7 @@ describe("conservative demo recovery", () => {
     expect(current.eventLog).toHaveLength(1);
     // D-72: the repatriation is kept with its CAD number as the placeholder, never the typed words.
     const stored = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
-    expect(stored).not.toContain("Synthetic-private-CAD");
+    expect(stored).not.toContain("SYN-PRIVATE-CAD-7731");
     expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
   });
   it("rejects a backward system clock", () => {
@@ -484,15 +484,15 @@ describe("reviewed event privacy", () => {
         receivingWardAgreed: true,
         mode: "road",
         provider: "Ambulance service",
-        cadNumber: "Synthetic-private-CAD",
+        cadNumber: "SYN-PRIVATE-CAD-7731",
         transportLegalStatus: "voluntary",
         estimatedAt: current.now + 60,
       }),
     );
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("Synthetic-private-CAD");
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("SYN-PRIVATE-CAD-7731");
     expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
     act(() => current.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current.now, minutes: 5 }));
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("Synthetic-private-CAD");
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("SYN-PRIVATE-CAD-7731");
     expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
   });
 });

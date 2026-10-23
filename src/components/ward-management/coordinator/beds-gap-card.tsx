@@ -13,6 +13,8 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, StatusGlyph } from "@/components/wf";
+import { forecastByKind, kindRangeWord, signedFigure } from "@/components/ward-management/forecast/forecast-by-kind";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./home-list.module.css";
 
@@ -37,6 +39,12 @@ export function BedsGapCard({
   const rows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const totals = useMemo(() => bedKindTotals(rows), [rows]);
   const totalWord = gapWord(totals.gap);
+  // Forecasting build (Josh, 23 Oct 2026, screen 1): tomorrow per bed type, from the same records.
+  const { bedReleases, plannedAdmissions } = useWardFlowSelect("bedReleases", "plannedAdmissions");
+  const tomorrow = useMemo(
+    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? []),
+    [units, bedReleases, admissions, movements, now, plannedAdmissions],
+  );
   return (
     <Card className={styles.gapCard} data-testid="home-beds-gap">
       <CardHead
@@ -70,11 +78,32 @@ export function BedsGapCard({
           );
         })}
       </ul>
+      <ul className={styles.gapTiles} aria-label="Tomorrow, likely" data-testid="home-beds-gap-tomorrow">
+        {tomorrow.kinds.map((kind) => {
+          const word = gapWord(kind.likely);
+          return (
+            <li key={kind.id} className={styles.gapTile} data-short={kind.likely < 0 ? "true" : undefined}>
+              <span className={styles.gapNeed}>Tomorrow</span>
+              <span className={styles.gapValue}>
+                <StatusGlyph tone={word.tone} size={9} />
+                <span className={styles.gapNum}>{signedFigure(kind.likely)}</span>
+              </span>
+              <span className={styles.gapSub}>
+                {kindRangeWord(kind.low)} to
+                <br />
+                {kindRangeWord(kind.high)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
       <p className={styles.gapTotal}>
         <StatusGlyph tone={totalWord.tone} size={9} />
         <span>
           {totalWord.text} <b className={styles.mono}>{formatGap(totals.gap)}</b> across all four: {totals.waiting}{" "}
-          waiting for {totals.bedsThatFit} beds of the right kind.
+          waiting for {totals.bedsThatFit} beds of the right kind. Tomorrow likely{" "}
+          <b className={styles.mono}>{kindRangeWord(tomorrow.total.likely)}</b>, range{" "}
+          {kindRangeWord(tomorrow.total.low)} to {kindRangeWord(tomorrow.total.high)}.
         </span>
       </p>
     </Card>

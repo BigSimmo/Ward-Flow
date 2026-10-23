@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-23 - added D-72 to D-79 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list and the ward referral detail view); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-23 - added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -763,6 +763,7 @@ is inferred.
 - **Decision:** Remove the second approval requirement for coordinator and access-admin role grants in the synthetic Ward Flow prototype. An authorised grant works immediately. Existing unexpired, unrevoked and recently used grants with null approval fields also work; their history is preserved rather than recording an approval that did not happen. The compatibility `/approve` endpoint refuses an unnecessary approval without changing the record.
 - **Still required:** Sign-in, an authorised granter, no self grants, a valid place within the granter's scope, a future end date, automatic switch off when unused, revocation, recent sign-in for access changes, and the existing audit trail. This decision does not authorise real patient data.
 - **Why:** The only bootstrap coordinator could grant the synthetic test admin a role but could not also provide its second approval. Josh chose to remove that prototype requirement. This replaces the second approval part of the role access plan; it is a policy change, not evidence of independent approval.
+- **Before real data:** D-80 item 17 brings the second approver back at pilot. Until then this decision stands.
 
 ## D-67. Recover synthetic form drafts within the browser session (17 October 2026)
 
@@ -916,3 +917,17 @@ is inferred.
 - **What it replaces:** Josh's 26 September 2026 rule that a ward sees no identity before it accepts, and the part of D-68 item 3 that kept the name and UMRN off the accept card until acceptance. D-39 and D-74 item 5 stand: no `WF-...` journey number or referral number shows on the card.
 - **Boundary:** Synthetic data only, with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
 - **Why:** A ward cannot make a safe decision on a referral it cannot read. The engine already held about half the fields, and community teams already saw them.
+
+## D-80. Role access plan version 2: all 17 recommendations (23 October 2026)
+
+- **Date:** 23 October 2026 (`2026-10-23`), 9:02 PM AWST (13:02 UTC). **Decided by:** Josh, on the decision card in the Role access plan thread, choosing "Approve all recommendations" over "Leak and bug fixes only" and "I'll answer item by item". The plan is the version 2 role access review, read from `main` a41ddee.
+- **Decision:** build in this order.
+  1. **PR 1, the FD-23 journey leak (#600).** A ward's and a bed manager's copy of a journey no longer carries other wards that declined, withdrawn or overridden requests, the number of wards tried or the accepting ward, in the browser or on the server. This enforces FD-23 and needs no new rule.
+  2. **PR 2, bugs that change no rules.** Bed manager discharge records, the phone Add patient check, the access admin label, the executive taken out of broadcast entries, demo controls per desk, and the same break glass reply for any id.
+  3. **PR 3, items 1 to 4 (bed manager).** Site bed-flow actions: confirm beds, bed releases, discharge blockers, close or reopen a ward, handover sign-off, bed meeting actions, replying to a bed call, marking notices read and its own tasks. A read-only Referrals list for its site. Seclusion and restraint view and room status only, with recording back to the ward. Capacity shows its own site in detail and other sites as counts. Acceptance, placement and discharge stay with the ward.
+  4. **PR 4, items 5, 6, 8 and 16.** Ward and community referrers get the sender tools for their own referrals only: correct, mark information supplied, change urgency and legal status. The sending ward or team may mark a legal form received for its own journey. Cover goes only to accounts that already hold a ward or ED role. Role grants have a 12 month ceiling.
+  5. **PR 5, items 7, 9 to 13 and 15.** Transport officers see their own service's jobs only, with the referral's risk categories as flags. Wards, EDs and community teams get own-place Statistics as counts. Community teams get a Movements screen for their own journeys. Phone alerts go to officers for new or changed jobs, and to community teams when a referral is answered or a catchment client is admitted or discharged. The ward sees the readmission flag once it has accepted, which changes Josh's 9 October 2026 ruling. The ED sees the wards asked, their state and the accepting ward, but not other wards' decline reasons. Opening the full referral detail is logged as a record view.
+- **Mock-ups first (item 14):** a review screen for break glass openings and record views, read from the server, for statewide and service coordinators, and an Access log in Settings for the access admin. Both are made from the running app at current `main` and built only after Josh approves them (D-74).
+- **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands.
+- **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
+- **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.

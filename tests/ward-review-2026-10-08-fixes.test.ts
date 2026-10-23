@@ -88,7 +88,7 @@ function collectedRepatriation(h: Harness, admissionId: string, sendingUnitId: s
     receivingWardAgreed: true,
     mode: "road",
     provider: "Ambulance service",
-    cadNumber: "SYN-CAD-FIX",
+    cadNumber: "SYN-CAD-FIX-0001",
     transportLegalStatus: "voluntary",
     estimatedAt: 700,
   });
