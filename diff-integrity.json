@@ -1375,6 +1375,13 @@
       "after": 0,
       "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z and his thread reply 13:45Z). The suite rendered only HomeWardSheet, the v10 phone ward sheet with Offer, which nothing could open after the phone sheet stopped taking a ward. PR #601 deletes the sheet, its lazy loader and this suite; the phone Since you looked and exceptions sheets keep their own tests.",
       "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-transport-pickup.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "helper unused, deleted with its only test",
+      "approvedOn": "2026-10-23"
     }
   ]
 }
