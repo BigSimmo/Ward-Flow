@@ -17,7 +17,6 @@ import {
   Scale,
   Search,
   Users,
-  Wrench,
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
@@ -31,15 +30,14 @@ import { formTimeLeft } from "../legal-forms/legal-form-time-left";
 import { standingWord } from "../legal-forms/legal-forms-view";
 import { useDueSoonThresholds } from "../ward-flow-provider";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
- * Community, Details and Documents hold everything else. Every value comes from the record: a
- * field the record cannot hold yet is a dashed Preview card that says so, never a guess.
+ * Community, Details and Documents hold everything else. Every value comes from the record, and a
+ * field the record cannot hold yet is left out, never guessed.
  */
 
 function CopyFact({ value, label }: { value: string; label: string }) {
@@ -538,27 +536,6 @@ export function PatientCommunityTab({
               A recorded catchment does not confirm current case management or an active appointment.
             </p>
           </Card>
-          <UnwiredPreview>
-            <Card className={styles.dashed}>
-              <CardHead
-                level={2}
-                icon={Users}
-                title="Family and carers"
-                aside={<span className={styles.preview}>Preview, not in the record yet</span>}
-              />
-              <div className={styles.rows}>
-                <Row k="Next of kin">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-                <Row k="Carer">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-                <Row k="Guardian">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-              </div>
-            </Card>
-          </UnwiredPreview>
         </div>
         <div className={styles.col}>
           <Card>
@@ -778,28 +755,6 @@ export function PatientDetailsTab({
             )}
           </Card>
         ))}
-        {/* Fields Ward Flow has no record for yet: a builder's note, so it shows only where
-            unfinished previews do (UX audit, 21 Oct 2026). */}
-        <UnwiredPreview>
-          <Card className={styles.dashed}>
-            <CardHead
-              level={2}
-              icon={Wrench}
-              title="Not in the record yet"
-              aside={<span className={styles.preview}>Preview</span>}
-            />
-            <dl className={styles.fields}>
-              {["Next of kin", "Carer", "Guardian", "Advance health directive", "NDIS participant", "Alerts"].map(
-                (label) => (
-                  <div className={styles.detailField} key={label}>
-                    <dt>{label}</dt>
-                    <dd data-missing="true">Needs a record field</dd>
-                  </div>
-                ),
-              )}
-            </dl>
-          </Card>
-        </UnwiredPreview>
       </div>
       <p className={legacy.note}>
         Record completeness describes available fields; it is not a clinical safety assessment.

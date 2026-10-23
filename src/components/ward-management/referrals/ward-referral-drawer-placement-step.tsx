@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, Stethoscope, Truck, Users } from "lucide-react";
+import { useState } from "react";
 import {
   arrivalEtaLabel,
   arrivalModeLabel,
@@ -15,8 +16,8 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { communityTeamOptions } from "./referral-destination-options";
-import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
+import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel } from "./referral-flow-panels";
 import { StatusGlyph } from "@/components/wf";
 import {
@@ -147,10 +148,8 @@ export function ReferralDocumentationStep({ s }: { s: WardReferralDrawerState })
   );
 }
 
-const COMMUNITY_PURPOSE_LABELS = {
-  follow_up: communityReferralPurposeLabel("follow_up"),
-  assess_for_admission: communityReferralPurposeLabel("assess_for_admission"),
-};
+/** D-77 mock-up: the team list opens on this many rows, with Show all and a search for the rest. */
+const COMMUNITY_TEAMS_SHOWN = 6;
 
 /** Step 4, Wards, Teams or EDs: the places to refer to, the summary and the arrival plan. */
 export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
@@ -165,7 +164,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     selectedRecipient,
     setSelectedRecipient,
     communityPurpose,
-    setCommunityPurpose,
+    communityNeeds,
     previewOpen,
     confirmationOpen,
     setFlowError,
@@ -204,6 +203,22 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     legalStatus,
     highAcuity,
   });
+  const [teamSearch, setTeamSearch] = useState("");
+  const [allTeams, setAllTeams] = useState(false);
+  const community = destType === "community";
+  const teams = community
+    ? Array.from(new Set([catchmentTeam, ...communityTeamOptions()].filter(Boolean))).sort(
+        (a, b) => Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b),
+      )
+    : [];
+  const matchingTeams = communityTeamsMatching(teams, teamSearch);
+  const teamsCut = !allTeams && !teamSearch.trim() && matchingTeams.length > COMMUNITY_TEAMS_SHOWN;
+  const shownTeams = teamsCut
+    ? [
+        ...matchingTeams.slice(0, COMMUNITY_TEAMS_SHOWN),
+        ...(matchingTeams.indexOf(selectedRecipient) >= COMMUNITY_TEAMS_SHOWN ? [selectedRecipient] : []),
+      ]
+    : matchingTeams;
   return (
     <div
       id={`${sectionId}-placement`}
@@ -367,14 +382,25 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                 : "Goes to psychiatry, observation beds not recorded"}
             </p>
           </div>
+          {community ? (
+            <div className={styles.cardBody} data-tight="true">
+              <input
+                type="search"
+                className={styles.fieldInput}
+                placeholder="Search teams or suburbs"
+                aria-label="Search community teams"
+                autoComplete="off"
+                value={teamSearch}
+                onChange={(e) => setTeamSearch(e.target.value)}
+              />
+            </div>
+          ) : null}
           <div
             role="radiogroup"
             aria-label={destType === "community" ? "Community team to refer to" : "Emergency department to refer to"}
           >
-            {(destType === "community"
-              ? Array.from(new Set([catchmentTeam, ...communityTeamOptions()].filter(Boolean)))
-                  .sort((a, b) => Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b))
-                  .map((team) => ({ value: team, name: team, inCatchment: team === catchmentTeam }))
+            {(community
+              ? shownTeams.map((team) => ({ value: team, name: team, inCatchment: team === catchmentTeam }))
               : allEmergencyDepartments().map((ed) => ({
                   value: ed.id,
                   name: ed.name,
@@ -429,19 +455,15 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               </label>
             ))}
           </div>
-          {destType === "community" ? (
-            <div className={styles.cardBody} data-testid="ward-referral-community-purpose">
-              <Choice
-                legend="What is the referral for?"
-                name={`${sectionId}-community-purpose`}
-                options={COMMUNITY_REFERRAL_PURPOSES}
-                labels={COMMUNITY_PURPOSE_LABELS}
-                value={communityPurpose || undefined}
-                onChange={(purpose) => {
-                  setCommunityPurpose(purpose);
-                  setFlowError(null);
-                }}
-              />
+          {community && (teamsCut || !matchingTeams.length) ? (
+            <div className={styles.cardBody}>
+              {matchingTeams.length ? (
+                <button type="button" className={styles.textLink} onClick={() => setAllTeams(true)}>
+                  Show all {matchingTeams.length} teams
+                </button>
+              ) : (
+                <p className={styles.bodyMeta}>No team or suburb matches the search.</p>
+              )}
             </div>
           ) : null}
         </section>
@@ -459,14 +481,29 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <dt>Catchment</dt>
               <dd>{catchmentConfirmed ? catchmentTeam : "Needs confirming"}</dd>
             </div>
-            <div>
-              <dt>Documents</dt>
-              <dd>{documentation.charts.length} attached</dd>
-            </div>
-            <div>
-              <dt>Clearance</dt>
-              <dd>{clearance.label}</dd>
-            </div>
+            {community ? (
+              <>
+                <div>
+                  <dt>Purpose</dt>
+                  <dd>{communityPurpose ? communityReferralPurposeLabel(communityPurpose) : "Not chosen"}</dd>
+                </div>
+                <div>
+                  <dt>First contact</dt>
+                  <dd>{communityNeeds.firstContact ? `Within ${communityNeeds.firstContact}` : "Not chosen"}</dd>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <dt>Documents</dt>
+                  <dd>{documentation.charts.length} attached</dd>
+                </div>
+                <div>
+                  <dt>Clearance</dt>
+                  <dd>{clearance.label}</dd>
+                </div>
+              </>
+            )}
           </dl>
           {recipientLabels.length ? (
             <ul className={styles.tickList}>

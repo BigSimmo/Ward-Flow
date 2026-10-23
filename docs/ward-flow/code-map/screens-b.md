@@ -517,9 +517,8 @@ patient record holds `communityTreatmentOrder`). The status card gains a missing
 for absences; `patient-now-cards.tsx` adds the leave and Last seen cards. The record tabs in
 `patient-dossier-tabs.tsx` (with `patient-record-tabs.module.css`, alongside the older module it
 still reuses for search, filters, episodes and documents) now follow the mockup: History opens with
-a pattern strip and a recorded-events timeline for this presentation; Community has Care team, a
-dashed Family and carers Preview, and a Community plan that records or ends a CTO; Details has a
-not-recorded count and a dashed "Not in the record yet" card; Documents has a forms register on the
+a pattern strip and a recorded-events timeline for this presentation; Community has Care team and a
+Community plan that records or ends a CTO; Details has a not-recorded count; Documents has a forms register on the
 shared wf table with no lapse column. Interpreter language and Aboriginal status stay in separate
 Details groups, never beside the Now history (placement rule in `person-screen.tsx`).
 

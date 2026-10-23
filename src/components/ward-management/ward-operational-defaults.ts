@@ -123,6 +123,24 @@ export const TRANSPORT_BOOKED_TARGET_MINUTES = CLINICAL_VALUES.transportBookedTa
 export const DECISION_TARGET_RANGE_MINUTES = { min: 15, max: 12 * MINUTES_PER_HOUR, step: 15 } as const;
 
 /**
+ * The three forecast alert rules in Settings (forecasting build, Josh approved the mock-up at
+ * 09:53Z on 23 Oct 2026). Labelled defaults a coordinator can change, not service standards.
+ * - `FORECAST_SHORT_ALERT_BEDS`: a bed type likely this many short tomorrow raises an alert.
+ * - `FORECAST_ED_RISK_LEAD_MINUTES`: someone in ED will pass the access target within this time.
+ * - `FORECAST_WORSE_ALERT_BEDS`: tomorrow's likely figure dropped this much since the last look.
+ */
+export const FORECAST_SHORT_ALERT_BEDS = 3;
+export const FORECAST_SHORT_ALERT_RANGE_BEDS = { min: 1, max: 20, step: 1 } as const;
+export const FORECAST_ED_RISK_LEAD_MINUTES = 12 * MINUTES_PER_HOUR;
+export const FORECAST_ED_RISK_LEAD_RANGE_MINUTES = {
+  min: 2 * MINUTES_PER_HOUR,
+  max: 24 * MINUTES_PER_HOUR,
+  step: MINUTES_PER_HOUR,
+} as const;
+export const FORECAST_WORSE_ALERT_BEDS = 2;
+export const FORECAST_WORSE_ALERT_RANGE_BEDS = { min: 1, max: 10, step: 1 } as const;
+
+/**
  * The longest a red (act-now) alert or task may be snoozed. Acknowledging is always allowed;
  * hiding a red row for longer than this is refused by the reducer. A prototype default.
  * Named without the legal token `ACT` so Part 3's incomplete denylist does not trip on it.

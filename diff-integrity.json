@@ -1347,6 +1347,27 @@
       "after": 1,
       "reason": "Home v7, approved by Josh on 22 Oct 2026, with State bedflow moved to the foot of Capacity unchanged. The two retired cases offered a ward from State bedflow on Home and checked its Undo toast. Capacity chooses no patient, so Offer is never shown there, and Home now refers from Placement, which opens the referral sheet. The override sign-off case stays; tests/ward-home-offer-visible.dom.test.tsx still checks what Home shows of an offer.",
       "approvedOn": "2026-10-22"
+    },
+    {
+      "path": "tests/ward-make-room.test.ts",
+      "before": 20,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. This suite tested only the deleted chain derivation and preview.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-feature-flags.test.ts",
+      "before": 12,
+      "after": 11,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. The retired case pinned the make-room flag to local builds; the other flag cases stay.",
+      "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-review-feedback.dom.test.tsx",
+      "before": 4,
+      "after": 3,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z: remove the Make room mock-up; thread reply 13:45Z: record the retired tests). PR #605 deletes the make-room-chains flag, a local-build-only mock-up with preview data that waited since 20 Oct for a design pick, with its panel, preview and chain derivation. The retired case rendered the deleted Make room panel; the handover, legal forms and settings cases stay.",
+      "approvedOn": "2026-10-23"
     }
   ]
 }

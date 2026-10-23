@@ -54,6 +54,9 @@ import {
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
+import { ForecastBriefPanel } from "@/components/ward-management/forecast/forecast-brief-panel";
+import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
+import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -280,7 +283,7 @@ function bedCountText({ wards, notConfirmed, oldestAt }: TvBedCountAge, now: num
   return wards === 1 ? `Confirmed ${at}` : `Oldest count confirmed ${at}`;
 }
 
-function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
+function BedsThatFit({ gaps, tomorrow }: { gaps: BedKindGap[]; tomorrow?: readonly KindForecast[] }) {
   return (
     <table className={styles.table}>
       <thead>
@@ -295,6 +298,11 @@ function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
           <th scope="col" className={styles.numWide}>
             Gap
           </th>
+          {tomorrow ? (
+            <th scope="col" className={styles.numWide}>
+              Tomorrow
+            </th>
+          ) : null}
         </tr>
       </thead>
       <tbody>
@@ -304,11 +312,19 @@ function BedsThatFit({ gaps }: { gaps: BedKindGap[] }) {
             <td className={styles.num}>{row.waiting}</td>
             <td className={styles.num}>{row.bedsThatFit}</td>
             <td className={styles.num}>{gapText(row.gap)}</td>
+            {tomorrow ? (
+              <td className={styles.num}>{tomorrowText(tomorrow.find((kind) => kind.id === row.id))}</td>
+            ) : null}
           </tr>
         ))}
       </tbody>
     </table>
   );
+}
+
+/** Forecasting build (23 Oct 2026): tomorrow's likely figure for the bed type, network-wide. */
+function tomorrowText(kind: KindForecast | undefined): string {
+  return kind ? gapText(kind.likely) : "";
 }
 
 function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
@@ -410,6 +426,7 @@ function BedMeetingTvView({
   const dischargingToday = discharges.heldUp + discharges.confirmed + discharges.expected;
   const longest = ed.longestWaits[0];
   const shortKinds = extras.gaps.filter((row) => row.gap < 0);
+  const forecast = useForecastModel(now);
 
   return (
     <>
@@ -482,8 +499,14 @@ function BedMeetingTvView({
           title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${healthServiceAcronym(sheet.service)}`}
           testId="bed-meeting-tv-fit-panel"
         >
-          <BedsThatFit gaps={extras.gaps} />
+          <BedsThatFit gaps={extras.gaps} tomorrow={sheet.service === null ? forecast.tomorrow.kinds : undefined} />
         </Panel>
+
+        {sheet.service === null ? (
+          <Panel title="Brief for this meeting" testId="bed-meeting-tv-brief-panel" wide>
+            <ForecastBriefPanel now={now} />
+          </Panel>
+        ) : null}
 
         <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel">
           {ed.longestWaits.length === 0 ? (

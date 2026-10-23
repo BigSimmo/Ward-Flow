@@ -62,9 +62,10 @@ describe("referral slide-out, option B", () => {
     expect(steps().getByRole("button", { name: "Clearance" })).toBeInTheDocument();
     expect(steps().getByRole("button", { name: "Wards" })).toBeInTheDocument();
 
+    // D-77 short form: a community referral has three steps and no Documents step.
     fireEvent.click(referTo().getByRole("button", { name: "Community" }));
-    expect(steps().getByRole("button", { name: "Documents" })).toBeInTheDocument();
-    expect(steps().getByRole("button", { name: "Teams" })).toBeInTheDocument();
+    expect(steps().queryByRole("button", { name: "Documents" })).not.toBeInTheDocument();
+    expect(steps().getByRole("button", { name: "Team" })).toBeInTheDocument();
 
     fireEvent.click(referTo().getByRole("button", { name: "ED" }));
     expect(steps().getByRole("button", { name: "EDs" })).toBeInTheDocument();
@@ -273,7 +274,8 @@ describe("needs cards and the clearance checklist", () => {
     renderDrawer({ initialDestination: "community" });
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     const needs = screen.getByTestId("ward-referral-needs");
-    expect(needs).toHaveTextContent("Follow-up needs");
+    expect(needs).toHaveTextContent("Follow-up");
+    expect(needs).toHaveTextContent("First contact required");
     fireEvent.click(
       within(within(needs).getByRole("group", { name: "First contact within" })).getByLabelText("72 hours"),
     );
@@ -287,13 +289,55 @@ describe("needs cards and the clearance checklist", () => {
 
   it("asks whether a community referral is for follow-up or to assess for admission (D-74)", () => {
     renderDrawer({ initialDestination: "community" });
-    fireEvent.click(steps().getByRole("button", { name: "Teams" }));
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     const purpose = within(screen.getByTestId("ward-referral-community-purpose")).getByRole("group", {
-      name: "What is the referral for?",
+      name: "What is this referral for?",
     });
     expect(within(purpose).getByLabelText("Community follow-up")).not.toBeChecked();
     fireEvent.click(within(purpose).getByLabelText("Assess for admission"));
     expect(within(purpose).getByLabelText("Assess for admission")).toBeChecked();
+  });
+
+  // D-77 short form (mock-up approved 21 Oct 2026, clearance and urgency choices 23 Oct 2026).
+  it("asks a short community form: purpose and first contact first, one clearance question, no bed or urgency", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const panel = document.getElementById(screen.getByTestId("ward-referral-needs").closest("[id]")!.id)!;
+    const titles = [...panel.querySelectorAll("h3")].map((heading) => heading.textContent);
+    expect(titles.slice(0, 5)).toEqual(["Purpose", "Follow-up", "From", "Legal status", "Medical clearance"]);
+    expect(within(panel).getByRole("group", { name: "Has the patient been medically cleared?" })).toBeInTheDocument();
+    expect(within(panel).queryByRole("group", { name: "Triage and RAMP completed" })).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Bed security")).not.toBeInTheDocument();
+    expect(within(panel).queryByRole("radio", { name: /Tier 1/u })).not.toBeInTheDocument();
+    expect(within(panel).queryByLabelText("ATS category (optional)")).not.toBeInTheDocument();
+  });
+
+  it("sets a community referral's urgency from its first contact time", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const rail = screen.getByTestId("ward-referral-summary-rail");
+    expect(rail).toHaveTextContent("Choose within");
+    const firstContact = within(screen.getByTestId("ward-referral-needs")).getByRole("group", {
+      name: "First contact within",
+    });
+    fireEvent.click(within(firstContact).getByLabelText("24 hours"));
+    expect(rail).toHaveTextContent("24 hours");
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent("Urgency: Tier 1");
+  });
+
+  it("searches the community teams by team or suburb, showing six until asked for all", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Team" }));
+    const teams = () =>
+      within(screen.getByRole("radiogroup", { name: "Community team to refer to" })).getAllByRole("radio");
+    expect(teams()).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ teams$/u }));
+    expect(teams().length).toBeGreaterThan(6);
+    fireEvent.change(screen.getByLabelText("Search community teams"), { target: { value: "Albany" } });
+    expect(teams().map((radio) => radio.getAttribute("value"))).toContain("Albany");
+    fireEvent.change(screen.getByLabelText("Search community teams"), { target: { value: "zzzz" } });
+    expect(screen.getByText("No team or suburb matches the search.")).toBeInTheDocument();
   });
 
   it("asks how the person reaches an ED", () => {

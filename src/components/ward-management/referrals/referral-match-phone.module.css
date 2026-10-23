@@ -249,12 +249,6 @@
   white-space: nowrap;
 }
 
-.tall.tall {
-  justify-content: center;
-  width: 100%;
-  min-height: 48px;
-}
-
 .acts {
   display: flex;
   align-items: center;

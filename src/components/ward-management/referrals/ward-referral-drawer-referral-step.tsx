@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Ambulance, BedDouble, HeartHandshake, MapPin, Shield } from "lucide-react";
+import { Activity, Ambulance, BedDouble, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   ATS_CATEGORIES,
@@ -25,6 +25,87 @@ import {
 } from "./ward-referral-drawer-model";
 import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-fields";
 import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
+import { DocumentationPanel } from "./referral-flow-panels";
+
+const COMMUNITY_PURPOSE_LABELS = {
+  follow_up: communityReferralPurposeLabel("follow_up"),
+  assess_for_admission: communityReferralPurposeLabel("assess_for_admission"),
+};
+
+/** D-77 short form: what a community referral is for, then when the team should first make contact. */
+function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
+  const { sectionId, communityPurpose, setCommunityPurpose, communityNeeds, setCommunityNeeds, setFlowError } = s;
+  return (
+    <>
+      <section className={styles.refCard} data-testid="ward-referral-community-purpose">
+        <CardHead icon={Target} title="Purpose">
+          <span className={styles.asideText}>Required</span>
+        </CardHead>
+        <div className={styles.cardBody}>
+          <Choice
+            legend="What is this referral for?"
+            name={`${sectionId}-community-purpose`}
+            options={COMMUNITY_REFERRAL_PURPOSES}
+            labels={COMMUNITY_PURPOSE_LABELS}
+            value={communityPurpose || undefined}
+            required
+            onChange={(purpose) => {
+              setCommunityPurpose(purpose);
+              setFlowError(null);
+            }}
+          />
+          <p className={styles.bodyMeta}>
+            No bed is asked for either way. The team sees the purpose in its inbox. Older referrals read as Community
+            follow-up.
+          </p>
+        </div>
+      </section>
+      <section className={styles.refCard} data-testid="ward-referral-needs">
+        <CardHead icon={HeartHandshake} title="Follow-up">
+          <span className={styles.asideText}>First contact required</span>
+        </CardHead>
+        <div className={styles.cardBody}>
+          <div className={styles.fieldGrid}>
+            <Choice
+              legend="First contact within"
+              name={`${sectionId}-first-contact`}
+              options={FIRST_CONTACT_TARGETS}
+              value={communityNeeds.firstContact}
+              required
+              onChange={(firstContact) => {
+                setCommunityNeeds((n) => ({ ...n, firstContact }));
+                setFlowError(null);
+              }}
+            />
+            <Choice
+              legend="Home visit"
+              name={`${sectionId}-home-visit`}
+              options={YES_NO}
+              value={yesNo(communityNeeds.homeVisit)}
+              onChange={(v) => setCommunityNeeds((n) => ({ ...n, homeVisit: v === "Yes" }))}
+            />
+            <Choice
+              legend="Interpreter"
+              name={`${sectionId}-interpreter`}
+              options={YES_NO}
+              value={yesNo(communityNeeds.interpreter)}
+              onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
+            />
+            <Choice
+              legend="Contact the carer"
+              name={`${sectionId}-carer`}
+              options={YES_NO}
+              value={yesNo(communityNeeds.carerContact)}
+              onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
+            />
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
 
 /** Step 2, Referral: where it comes from, legal status and urgency, the presentation and the destination's needs. */
 export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
@@ -63,8 +144,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     clinicalSummary,
     setClinicalSummary,
     riskFlags,
-    communityNeeds,
-    setCommunityNeeds,
     edNeeds,
     setEdNeeds,
     toggleRisk,
@@ -73,13 +152,18 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     senderMissing,
     reasonRoom,
     reasonNoteRequired,
+    activePatientKey,
+    documentation,
+    setDocumentation,
   } = s;
+  const community = destType === "community";
   return (
     <div
       id={`${sectionId}-referral`}
       className={styles.sectionPanel}
       hidden={previewOpen || confirmationOpen || activeSection !== "referral"}
     >
+      {community ? <CommunityPurposeAndFollowUp s={s} /> : null}
       <section className={styles.refCard}>
         <CardHead icon={MapPin} title="From">
           <span className={styles.asideText}>
@@ -173,14 +257,14 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
       </section>
 
       <section className={styles.refCard}>
-        <CardHead icon={Shield} title="Legal status and urgency">
+        <CardHead icon={Shield} title={community ? "Legal status" : "Legal status and urgency"}>
           <span className={styles.asideText}>
             <StatusGlyph tone="neutral" size={9} />
             <LegalLimitsNotChecked variant="tag" />
           </span>
         </CardHead>
         <div className={styles.cardBody}>
-          <div className={styles.fieldGrid} data-layout="wide-narrow">
+          <div className={styles.fieldGrid} data-layout={community ? undefined : "wide-narrow"}>
             <Field label="Legal status" htmlFor={`${sectionId}-refLegalSelect`} required>
               <SelectBox>
                 <select
@@ -206,78 +290,87 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 </select>
               </SelectBox>
             </Field>
-            <fieldset className={styles.radioField}>
-              <legend className={styles.required}>Bed security</legend>
-              <div className={styles.segmented}>
-                {(["Secure", "Open"] as const).map((level) => (
-                  <label key={level} data-selected={security === level}>
-                    <input
-                      type="radio"
-                      name={`${sectionId}-security`}
-                      value={level}
-                      checked={security === level}
-                      onChange={() => {
-                        setSecurity(level);
-                        setSelectedUnitIds([]);
-                      }}
-                    />
-                    {level}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-          <fieldset className={styles.radioField}>
-            <legend className={styles.required}>Urgency</legend>
-            <div className={styles.tierGrid}>
-              {URGENCY_LEVELS.map((level) => {
-                const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
-                return (
-                  <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
-                    <input
-                      type="radio"
-                      name={`${sectionId}-urgency`}
-                      value={String(level)}
-                      aria-label={urgencyTierLabel(level)}
-                      checked={urgency === String(level)}
-                      onChange={() => setUrgency(String(level))}
-                    />
-                    <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
+            {community ? null : (
+              <fieldset className={styles.radioField}>
+                <legend className={styles.required}>Bed security</legend>
+                <div className={styles.segmented}>
+                  {(["Secure", "Open"] as const).map((level) => (
+                    <label key={level} data-selected={security === level}>
+                      <input
+                        type="radio"
+                        name={`${sectionId}-security`}
+                        value={level}
+                        checked={security === level}
+                        onChange={() => {
+                          setSecurity(level);
+                          setSelectedUnitIds([]);
+                        }}
+                      />
                       {level}
-                    </span>
-                    <span className={styles.tierWords}>{words.charAt(0).toUpperCase() + words.slice(1)}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-          <Field
-            label="ATS category"
-            htmlFor={`${sectionId}-atsCategory`}
-            hint="optional — does not change Ward Flow urgency"
-          >
-            <SelectBox>
-              <select
-                id={`${sectionId}-atsCategory`}
-                data-testid="ward-referral-drawer-atsCategory"
-                className={styles.fieldSelect}
-                aria-label="ATS category (optional)"
-                value={atsCategory ?? ""}
-                onChange={(event) =>
-                  setAtsCategory(ATS_CATEGORIES.find((category) => String(category) === event.target.value))
-                }
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+          </div>
+          {community ? null : (
+            <>
+              <fieldset className={styles.radioField}>
+                <legend className={styles.required}>Urgency</legend>
+                <div className={styles.tierGrid}>
+                  {URGENCY_LEVELS.map((level) => {
+                    const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
+                    return (
+                      <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
+                        <input
+                          type="radio"
+                          name={`${sectionId}-urgency`}
+                          value={String(level)}
+                          aria-label={urgencyTierLabel(level)}
+                          checked={urgency === String(level)}
+                          onChange={() => setUrgency(String(level))}
+                        />
+                        <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
+                          {level}
+                        </span>
+                        <span className={styles.tierWords}>{words.charAt(0).toUpperCase() + words.slice(1)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+              <Field
+                label="ATS category"
+                htmlFor={`${sectionId}-atsCategory`}
+                hint="optional — does not change Ward Flow urgency"
               >
-                <option value="">ATS not recorded</option>
-                {ATS_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    ATS {category}
-                  </option>
-                ))}
-              </select>
-            </SelectBox>
-          </Field>
+                <SelectBox>
+                  <select
+                    id={`${sectionId}-atsCategory`}
+                    data-testid="ward-referral-drawer-atsCategory"
+                    className={styles.fieldSelect}
+                    aria-label="ATS category (optional)"
+                    value={atsCategory ?? ""}
+                    onChange={(event) =>
+                      setAtsCategory(ATS_CATEGORIES.find((category) => String(category) === event.target.value))
+                    }
+                  >
+                    <option value="">ATS not recorded</option>
+                    {ATS_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        ATS {category}
+                      </option>
+                    ))}
+                  </select>
+                </SelectBox>
+              </Field>
+            </>
+          )}
         </div>
       </section>
+      {community ? (
+        <DocumentationPanel key={activePatientKey} draft={documentation} onChange={setDocumentation} clearanceOnly />
+      ) : null}
 
       <section className={styles.refCard}>
         <CardHead icon={Activity} title="Clinical presentation" />
@@ -416,45 +509,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   <span aria-hidden="true">{highAcuity ? "On" : "Off"}</span>
                 </span>
               </div>
-            </div>
-          </div>
-        </section>
-      )}
-      {destType === "community" && (
-        <section className={styles.refCard} data-testid="ward-referral-needs">
-          <CardHead icon={HeartHandshake} title="Follow-up needs">
-            <span className={styles.asideText}>Optional</span>
-          </CardHead>
-          <div className={styles.cardBody}>
-            <div className={styles.fieldGrid}>
-              <Choice
-                legend="First contact within"
-                name={`${sectionId}-first-contact`}
-                options={FIRST_CONTACT_TARGETS}
-                value={communityNeeds.firstContact}
-                onChange={(firstContact) => setCommunityNeeds((n) => ({ ...n, firstContact }))}
-              />
-              <Choice
-                legend="Home visit"
-                name={`${sectionId}-home-visit`}
-                options={YES_NO}
-                value={yesNo(communityNeeds.homeVisit)}
-                onChange={(v) => setCommunityNeeds((n) => ({ ...n, homeVisit: v === "Yes" }))}
-              />
-              <Choice
-                legend="Interpreter"
-                name={`${sectionId}-interpreter`}
-                options={YES_NO}
-                value={yesNo(communityNeeds.interpreter)}
-                onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
-              />
-              <Choice
-                legend="Contact the carer"
-                name={`${sectionId}-carer`}
-                options={YES_NO}
-                value={yesNo(communityNeeds.carerContact)}
-                onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
-              />
             </div>
           </div>
         </section>

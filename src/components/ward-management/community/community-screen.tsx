@@ -338,10 +338,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
-  const [activeModal, setActiveModal] = useState<{
-    type: "review" | "assign";
-    referral: CommunityScopedReferral;
-  } | null>(null);
+  const [activeModal, setActiveModal] = useState<{ referral: CommunityScopedReferral } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
@@ -451,7 +448,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setAcceptanceError(null);
       setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
-      setActiveModal({ type: "assign", referral });
+      setActiveModal({ referral });
     }
   }
 

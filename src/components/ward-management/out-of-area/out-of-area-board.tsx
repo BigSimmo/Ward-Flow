@@ -3,11 +3,10 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search, X } from "lucide-react";
 
 import {
   Button,
@@ -841,7 +840,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 title="Export list as CSV"
                 onClick={exportList}
               />
-              <NotWiredButton variant="onHero" size="sm" iconOnly icon={Printer} label="Print handover list" />
             </span>
           }
           foot={

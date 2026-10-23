@@ -12,7 +12,6 @@ import {
   Filter,
   ListChecks,
   Phone,
-  PhoneCall,
   RotateCcw,
   Search,
   Send,
@@ -27,7 +26,7 @@ import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, buttonClass, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -61,8 +60,6 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 
 import styles from "./ward-tasks-drawer.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
-import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
@@ -303,7 +300,6 @@ export function WardTasksDrawer({
   const [escalating, setEscalating] = useState<string | null>(null);
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
-  const toast = useOptionalToast();
 
   const openerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -362,20 +358,7 @@ export function WardTasksDrawer({
     return () => drawer.removeEventListener("keydown", onKeyDown);
   }, [withBackdrop]);
 
-  /** Calling is not wired: the number is copied and the toast says so. */
-  function callNumber(row: CallRow) {
-    const number = row.number;
-    if (!number) return;
-    const failed = () =>
-      toast?.push({ tone: "warning", title: "Number not copied", body: `Copy it by hand: ${number}` });
-    // Says copied only once the clipboard has taken it.
-    copyTextToClipboard(number).then(
-      () => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }),
-      failed,
-    );
-  }
-
-  function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {
+  function renderCallRow(row: CallRow) {
     return (
       <li key={row.key} className={styles.callRow}>
         <span className={styles.callText}>
@@ -386,17 +369,6 @@ export function WardTasksDrawer({
           {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
           {row.hours ? <span>{row.hours}</span> : null}
         </span>
-        {/* Calling only copies the number shown beside it: local development builds only (overall review, 20 Oct 2026). */}
-        {row.number && showsUnwiredPreviews() ? (
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnIcon}`}
-            aria-label={`Call ${row.name}, ${row.number}`}
-            onClick={(event) => onCall(event.currentTarget)}
-          >
-            <PhoneCall aria-hidden="true" />
-          </button>
-        ) : null}
       </li>
     );
   }
@@ -535,7 +507,7 @@ export function WardTasksDrawer({
     return (
       <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
         <ul className={styles.callList} aria-label="Who to call, mock numbers">
-          {rows.map((row) => renderCallRow(row, () => callNumber(row)))}
+          {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Mock numbers from On-call.</span>
@@ -608,15 +580,9 @@ export function WardTasksDrawer({
             </button>
           ))}
         </div>
-        {/* Ops-6: each pick's number, with Call. Calling only copies the number and fills in that
-            contact; nothing is recorded until Record escalation is pressed. */}
+        {/* Ops-6: each pick's number. Nothing is recorded until Record escalation is pressed. */}
         <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
-          {callRows(escalationTargets(movement), now).map((row) =>
-            renderCallRow(row, () => {
-              callNumber(row);
-              setContact(row.name);
-            }),
-          )}
+          {callRows(escalationTargets(movement), now).map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Records only. Sends nothing.</span>

@@ -220,8 +220,12 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`. `ward-flow-diagnosis-events.ts`
   (FD-10, 21 Oct 2026) holds `reduceWardDiagnosis`, the guard and effect for
   `RECORD_WARD_DIAGNOSIS`: the ward's own diagnosis block, kept beside the referrer's.
-  Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
-  slice imports only types from the reducer, so there is no runtime import cycle.
+  `ward-flow-protected-record-events.ts` (22 Oct 2026) holds `reduceProtectedRecordEvent`, the
+  wrapper's protected record path (open a discharge record, review an audit event or undo that
+  review, record a discharge, a follow-up or admission care) and `UNLINKED_CARE_REFUSAL`; it takes
+  `(state, event, helpers)`, since that path makes its own audit decision.
+  The other slice files take `(state, event, decision, helpers)`. The reducer passes its shared
+  helpers in, and each slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
@@ -319,15 +323,17 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   — build and append `Notice` rows; `appendNotices` is where a `demo`-addressed notice is refused.
 - **`departAdmission`** (`:1478`) — the shared admission-closing helper (`RECORD_LEAVING`,
   `RECORD_PATIENT_DISCHARGE`).
-- **`protectedRefusal`** (`:1521`), **`reduceRecordEvent`** (`:1546`) — the separate path for the
-  three "protected" events (`OPEN_DISCHARGE_RECORD`, `REVIEW_AUDIT_EVENT`,
-  `RECORD_PATIENT_DISCHARGE`): role → payload sanity → generation-staleness → event-specific
-  checks, entirely outside the big `reduceClinicalEvent` switch.
+- **`PROTECTED_RECORD_EVENT_HELPERS`** — the helpers passed to `reduceProtectedRecordEvent` in
+  `ward-flow-protected-record-events.ts` (moved out on 22 Oct 2026 with its refusal helper), the
+  separate path for the six "protected" events (`OPEN_DISCHARGE_RECORD`, `REVIEW_AUDIT_EVENT`,
+  `UNDO_AUDIT_REVIEW`, `RECORD_PATIENT_DISCHARGE`, `RECORD_ADMISSION_FOLLOW_UP`,
+  `RECORD_ADMISSION_CARE`): role → payload sanity → generation-staleness → event-specific checks,
+  entirely outside the big `reduceClinicalEvent` switch.
 - **`advanceResourceRevisions`** (`:1668`) — bumps `unit.allocatable.revision` for any unit whose
   `allocatable` value changed this dispatch, so `CONFIRM_CAPACITY`'s optimistic-concurrency check
   (`expectedRevision`) can detect a stale capacity draft.
 - **`wardFlowReducer(state, event)`** (`:1682`, exported) — the public entry point. Routes
-  protected events to `reduceRecordEvent`; otherwise refuses on counter exhaustion, then calls
+  protected events to `reduceProtectedRecordEvent`; otherwise refuses on counter exhaustion, then calls
   `reduceClinicalEvent`, then (for `RESET_SCENARIO`/`SET_SCENARIO`) bumps `worldGeneration` only
   if the world actually changed reference (guards against a rejected reset silently incrementing
   generation), then always calls `appendAudit`.
@@ -358,12 +364,12 @@ terminal); "open" means no closure yet.
 
 - **`RECORD_PATIENT_DISCHARGE`** — roles: `ward`. Effect: ends the admission via
   `departAdmission` (sets `admission.state` `departed`, `leftAt`/destination, adjusts
-  `unit.empty`/`sexMix`). Guards: handled outside the main switch, in `reduceRecordEvent`
+  `unit.empty`/`sexMix`). Guards: handled outside the main switch, in `reduceProtectedRecordEvent`
   (`:1546`) — admission/unit exist and match, patient identity matches, discharge revision
   matches `expectedRevision`, destination is a member of `LEAVING_DESTINATIONS`, admission is
   `occupied`, involuntary/detained patients cannot discharge to community or "left against
   advice", and a patient still in transit cannot be discharged. Case at `:1746` (no-op stub; real
-  logic is in `reduceRecordEvent`).
+  logic is in `reduceProtectedRecordEvent`).
 - **`UPDATE_EXPECTED_DISCHARGE`** — roles: `ward`, `coordinator`. Effect: sets
   `admission.expectedDischargeAt`, bumps `dischargeDateMoves` if the date changed, stamps
   `dischargeDateSetAt`/`By`. Guards: admission exists; not `departed`; `actingUnitId` (if a
@@ -371,11 +377,11 @@ terminal); "open" means no closure yet.
   `:1751`.
 - **`OPEN_DISCHARGE_RECORD`** — roles: `coordinator`, `ward`. Effect: records an audit
   "record-access" entry; returns state unchanged otherwise (a read, not a write). Guards: handled
-  in `reduceRecordEvent`; the record is resolvable to the caller (`selectDischargeRecord`), and a
+  in `reduceProtectedRecordEvent`; the record is resolvable to the caller (`selectDischargeRecord`), and a
   repeated request with the same `requestId` replays the earlier read rather than re-auditing.
   Case at `:1747` (no-op stub in the main switch).
 - **`REVIEW_AUDIT_EVENT`** — roles: `coordinator`. Effect: appends an `AuditReview` (decision:
-  `reviewed`/`follow-up-required`) to `state.auditReviews`. Guards: handled in `reduceRecordEvent`
+  `reviewed`/`follow-up-required`) to `state.auditReviews`. Guards: handled in `reduceProtectedRecordEvent`
   — the audit entry exists, is not itself a review, generation matches, and `expectedReviewCount`
   matches the current review count for that entry (optimistic concurrency). Case at `:1748` (no-op
   stub).
