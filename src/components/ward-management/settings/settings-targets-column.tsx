@@ -2,7 +2,12 @@
 
 // Settings' second rules column: decision targets and recent rule changes. Moved out of `settings-screen.tsx` to keep it under the line cap.
 import Link from "next/link";
-import { History, Timer } from "lucide-react";
+import { History, Telescope, Timer } from "lucide-react";
+import {
+  FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+  FORECAST_SHORT_ALERT_RANGE_BEDS,
+  FORECAST_WORSE_ALERT_RANGE_BEDS,
+} from "@/components/ward-management/ward-operational-defaults";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -90,6 +95,80 @@ export function SettingsTargetsColumn({
         })}
       </Card>
 
+      {/* Forecasting build (Josh, 23 Oct 2026, screen 7): the three Forecast alert rules. */}
+      <Card aria-labelledby="forecast-alerts-title" data-setting="forecast-alerts">
+        <CardHead
+          iconPlain
+          id="forecast-alerts-title"
+          icon={Telescope}
+          title="Forecast alerts"
+          meta="Coordinators only. Your defaults"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-short"
+          testId="setting-forecast-short"
+          title="Bed type short tomorrow"
+          sub="Likely this many short"
+          value={rules.forecastShort}
+          saved={saved.forecastShort}
+          savedDisplay={bedsText(saved.forecastShort)}
+          display={bedsText(rules.forecastShort)}
+          noun="bed type short alert"
+          range={{
+            id: "setting-forecast-short-range",
+            ...FORECAST_SHORT_ALERT_RANGE_BEDS,
+            minLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.min),
+            maxLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.max),
+          }}
+          onChange={(beds) => setRule({ forecastShortBeds: beds })}
+          onReset={() => setRule({ forecastShortBeds: saved.forecastShort })}
+          usedBy="Alerts"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-ed-lead"
+          testId="setting-forecast-ed-lead"
+          title="ED access risk"
+          sub="Passes the ED target within"
+          value={rules.forecastEdLead}
+          saved={saved.forecastEdLead}
+          savedDisplay={shortDuration(saved.forecastEdLead)}
+          display={shortDuration(rules.forecastEdLead)}
+          noun="ED access risk alert"
+          range={{
+            id: "setting-forecast-ed-lead-range",
+            ...FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+            minLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.min),
+            maxLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.max),
+          }}
+          onChange={(minutes) => setRule({ forecastEdLeadMinutes: minutes })}
+          onReset={() => setRule({ forecastEdLeadMinutes: saved.forecastEdLead })}
+          usedBy="Alerts"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-worse"
+          testId="setting-forecast-worse"
+          title="Forecast got worse"
+          sub="Drop since you looked"
+          value={rules.forecastWorse}
+          saved={saved.forecastWorse}
+          savedDisplay={bedsText(saved.forecastWorse)}
+          display={bedsText(rules.forecastWorse)}
+          noun="forecast worse alert"
+          range={{
+            id: "setting-forecast-worse-range",
+            ...FORECAST_WORSE_ALERT_RANGE_BEDS,
+            minLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.min),
+            maxLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.max),
+          }}
+          onChange={(beds) => setRule({ forecastWorseBeds: beds })}
+          onReset={() => setRule({ forecastWorseBeds: saved.forecastWorse })}
+          usedBy="Alerts"
+        />
+      </Card>
+
       <Card aria-labelledby="changes-title" data-testid="ward-settings-recent-changes" data-setting="recent-changes">
         <CardHead
           iconPlain
@@ -132,4 +211,8 @@ export function SettingsTargetsColumn({
       </Card>
     </div>
   );
+}
+
+function bedsText(beds: number): string {
+  return `${beds} ${beds === 1 ? "bed" : "beds"}`;
 }

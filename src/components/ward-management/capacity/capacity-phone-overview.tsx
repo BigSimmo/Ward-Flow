@@ -15,6 +15,7 @@ import { PhoneSheet, StatusGlyph, durMinutes } from "@/components/wf";
 import type { NetworkWardRow } from "./capacity-derivations";
 import { forecastHeadline, type BedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { ForecastNetworkExtras } from "@/components/ward-management/forecast/forecast-network-extras";
 import styles from "./capacity.module.css";
 
 const NEEDS_YOU_LIMIT = 4;
@@ -128,6 +129,7 @@ export function CapacityPhoneOverview({
         description="Whole network, estimate"
       >
         <BedsForecastPanel forecast={forecast} />
+        <ForecastNetworkExtras now={now} />
       </PhoneSheet>
 
       <PhoneSheet
