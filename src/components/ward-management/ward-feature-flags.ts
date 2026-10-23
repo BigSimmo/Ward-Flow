@@ -67,12 +67,6 @@ export const WARD_FEATURE_FLAGS = {
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
   },
-  "make-room-chains": {
-    label: "Make room plans",
-    // Mockup stage with preview data, so on only for a local build until Josh picks a design.
-    defaults: { development: true, demo: false, production: false },
-    localOnly: true,
-  },
   "referral-opened-receipts": {
     label: "Opened by the ward",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.

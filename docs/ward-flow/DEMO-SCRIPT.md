@@ -25,8 +25,7 @@ the seeded Keira Pellingworth journey, true claims only, no endorsement lines; D
 ## Setup (before the audience arrives)
 
 1. Build and start the demo build. Do not use `npm run ensure`: that starts a development server,
-   which shows preview data (for example a "Make room" panel with invented full wards) and has role
-   access off.
+   which has role access off.
 
    ```
    npm run build

@@ -166,13 +166,14 @@ grouped:
 - **World (5):** `ADVANCE_CLOCK` (demo role only), `RESET_SCENARIO`, `SET_SCENARIO`,
   `SET_CONFIGURATION`, `REVIEW_AUDIT_EVENT`.
 
-**Guard order** for protected events (`ward-flow-reducer.ts`, via `reduceRecordEvent`; line numbers are in [Engine](engine.md)):
+**Guard order** for protected events (`ward-flow-protected-record-events.ts`, via `reduceProtectedRecordEvent`; line numbers are in [Engine](engine.md)):
 
 1. Role check first, against `EVENT_ROLE`.
 2. Payload sanity (finite times, safe counters).
 3. Stale-view check: `expectedGeneration` must equal `worldGeneration`.
-4. Domain guards: eligibility (12 calls), legal status, catchment answered, scenario,
-   configuration, record-actor rights.
+4. Event-specific guards: record scope, audit entry and review count, admission, unit and patient
+   identity, revision, legal status, receiving-ward eligibility on transfer arrival, and transit or
+   state checks.
 
 A refused event changes nothing except to record a `Rejection` (and, for protected events, an
 audit entry). Eligibility is "refuse unless a reason is recorded": the coordinator can override

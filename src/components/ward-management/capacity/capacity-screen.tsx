@@ -31,7 +31,6 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { WardPanel } from "@/components/ward-management/ward-panel";
-import { MakeRoomPanel } from "./make-room-panel";
 import { StepDownBoard } from "./step-down-board";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
@@ -156,7 +155,6 @@ export function CapacityScreen() {
   );
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  const makeRoomOn = useWardFeatureFlag("make-room-chains");
   const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -1120,7 +1118,6 @@ export function CapacityScreen() {
           </div>
           {/* Top 25 item 8: desktop only, so the phone design is unchanged. */}
           {!isPhone ? <StepDownBoard now={now} /> : null}
-          {makeRoomOn && !isPhone ? <MakeRoomPanel now={now} service={service} /> : null}
           {!isPhone ? (
             <HomeBedflow
               movement={undefined}
