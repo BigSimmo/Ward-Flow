@@ -205,7 +205,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "plannedAdmissions",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("ward");
+  // D-80: a site bed manager on its own ward's page confirms beds, moves releases and records
+  // blockers in its own name. Every other ward action stays gated to the ward.
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   const completeCommand = useWardCommandCompletion();
 
   // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
@@ -346,7 +349,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardToken, setBoardToken] = useState(0);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
-  const routeRole = useRouteRole();
   const raiseAsRouteRole = useWardRaise(routeRole);
   const setRole = useCallback(
     (nextRole: "ward") => {
@@ -355,7 +357,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     [pathname],
   );
   const wardRoleLockNote =
-    routeRole !== "ward" ? (
+    // A bed manager cannot switch desks, and each button it may not use says so itself.
+    routeRole !== "ward" && routeRole !== "bed_manager" ? (
       <span className="lockline" data-testid="ward-role-lockline">
         Viewing as {routeRole} desk (ward actions are read-only) &middot;{" "}
         <button
