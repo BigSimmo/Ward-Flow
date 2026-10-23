@@ -52,13 +52,6 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
     added: "2026-10-17",
     removeWhen: "Josh reviews the bed hold time against local procedure, then keeps or removes the review.",
   },
-  "make-room-chains": {
-    description:
-      "Mockups only: a waiting referral whose ward is full shows how stepping down patients already marked for step down could free a bed, in two or three moves.",
-    owner: "Josh",
-    added: "2026-10-17",
-    removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
-  },
   "referral-opened-receipts": {
     description: "The referrer sees when a ward first opened a referral.",
     owner: "Josh",

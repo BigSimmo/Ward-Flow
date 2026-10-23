@@ -66,19 +66,6 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
-  it("keeps the make-room mockup to local builds, whatever a device or the server says (Audit 1, D-71)", () => {
-    for (const environment of ["demo", "production"] as const) {
-      const resolved = resolveWardFeatureFlags({
-        environment,
-        server: { "make-room-chains": true },
-        device: { "make-room-chains": true },
-      });
-      expect(flag(resolved, "make-room-chains")).toMatchObject({ on: false, deviceCanChange: false });
-    }
-    const local = resolveWardFeatureFlags({ environment: "development", server: {}, device: {} });
-    expect(flag(local, "make-room-chains").on).toBe(true);
-  });
-
   it("turns every finished feature on in all environments (Josh, 20 Oct 2026), leaving only the held-back flags off", () => {
     const allOn = [
       "bed-meeting-tv",
@@ -101,10 +88,7 @@ describe("resolveWardFeatureFlags", () => {
     ).toBe(false);
     expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
-    expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual([
-      "demo-reset",
-      "make-room-chains",
-    ]);
+    expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual(["demo-reset"]);
   });
 
   it("keeps demo reset off on the live site, which runs as demo, and on for a local build (Josh, 20 Oct 2026)", () => {
@@ -113,10 +97,6 @@ describe("resolveWardFeatureFlags", () => {
     expect(at("development")).toBe(true);
     expect(at("demo")).toBe(false);
     expect(at("production")).toBe(false);
-    // Make room plans stay a local-build mockup.
-    const makeRoom = (environment: "development" | "demo" | "production") =>
-      flag(resolveWardFeatureFlags({ environment, server: {}, device: {} }), "make-room-chains").on;
-    expect([makeRoom("development"), makeRoom("demo"), makeRoom("production")]).toEqual([true, false, false]);
   });
 
   it("keeps role access on in production whatever the server setting says (review item 14)", () => {
