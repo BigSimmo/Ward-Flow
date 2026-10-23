@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { ShieldCheck, UsersRound } from "lucide-react";
 
 import { useTheme } from "@/components/clinical-dashboard/use-theme";
-import { Badge, Button, Icon, IconTile, Kbd, Segmented, StatusGlyph, TabPanel, Tabs, ToastView } from "@/components/wf";
+import { Badge, Icon, IconTile, Kbd, Segmented, StatusGlyph, TabPanel, Tabs } from "@/components/wf";
 import type { ThemePreference } from "@/lib/theme";
 
 import {
@@ -71,9 +71,10 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * account, session or person-who-logs-in is introduced by this build) and Q-8 (a reload wiping the
  * demonstration is the ruled default for this whole build).
  *
- * ⚠️ **"GO IN" STAYS INERT, AS DRAWN.** The drawing's own `#signIn` handler does not navigate; it
- * only announces what pressing it *would* open, and says so in its own note text ("Not wired in
- * this prototype"). Contract §5 states wiring this to a real destination is "a decision, not a
+ * ⚠️ **NO "GO IN" BUTTON.** The drawing's own `#signIn` handler does not navigate; it only
+ * announces what pressing it *would* open. The preview button that copied it was removed on
+ * 23 Oct 2026 (unfinished features cleanup), so this screen names the destination and offers no
+ * control. Contract §5 states wiring this to a real destination is "a decision, not a
  * given" this contract does not make, because four of the drawing's seven roles (Coordinator on
  * call, Duty consultant, Governance lead, Service lead) have no distinct route the live app
  * recognises as a separate role home — see `ward-role-switcher.tsx`'s own comment on the same gap.
@@ -99,25 +100,12 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * made here is the same choice the ward screens show after sign-in.
  */
 
-/**
- * The ward rule for not-wired controls (`showsUnwiredPreviews`, Josh 20 Oct 2026), restated here
- * because the sign-in screen sits outside the ward seam: shown only in a development build.
- */
-function showsUnwiredPreviews(
-  configured: string | undefined = process.env.NEXT_PUBLIC_WARD_ENVIRONMENT,
-  nodeEnv: string | undefined = process.env.NODE_ENV,
-): boolean {
-  const named = configured?.trim().toLowerCase();
-  if (named === "demo" || named === "production") return false;
-  return named === "development" || nodeEnv !== "production";
-}
 export function WardFlowSignInScreen() {
   const [chosen, setChosen] = useState<SignInRoleId>(SIGN_IN_ROLES[0].id);
   const [selectedCatchment, setSelectedCatchment] = useState<CatchmentId>("Statewide");
   const [selectedShift, setSelectedShift] = useState<ShiftRosterId>("Morning");
   const [tab, setTab] = useState<"actions" | "limits">("actions");
   const [announcement, setAnnouncement] = useState("");
-  const [toastOpen, setToastOpen] = useState(false);
   const { preference, setPreference } = useTheme();
   const roleGroupId = useId();
 
@@ -150,7 +138,6 @@ export function WardFlowSignInScreen() {
 
   const chooseRole = useCallback((id: SignInRoleId) => {
     setChosen(id);
-    setToastOpen(false);
     const next = roleById(id);
     const can = actionsForRole(id).length;
     const cannot = actionsNotForRole(id).length;
@@ -161,18 +148,8 @@ export function WardFlowSignInScreen() {
     );
   }, []);
 
-  const pressSignIn = useCallback(() => {
-    // Deliberately no navigation, no dispatch, no network call — see this component's own
-    // header comment. The drawing's own handler is the same one line: announce what would open.
-    setAnnouncement(
-      `Sign in as ${role.as} would open ${role.opens}. Not wired in this prototype, so nothing has opened.`,
-    );
-    setToastOpen(true);
-  }, [role]);
-
-  // v6 (7 Oct 2026): the role list's number keys and the Preview button's Enter hint are real.
-  // Digits pick a role only while its picker has focus; Enter previews only when no control has focus,
-  // so it never steals a focused button's own Enter.
+  // v6 (7 Oct 2026): the role list's number keys are real. Digits pick a role only while its picker
+  // has focus.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) return;
@@ -182,20 +159,11 @@ export function WardFlowSignInScreen() {
       if (document.getElementById(roleGroupId)?.contains(target) && /^[1-9]$/.test(event.key) && SIGN_IN_ROLES[index]) {
         event.preventDefault();
         chooseRole(SIGN_IN_ROLES[index].id);
-        return;
-      }
-      if (
-        showsUnwiredPreviews() &&
-        event.key === "Enter" &&
-        !target?.closest("button, a, summary, [role='tab'], [role='radio']")
-      ) {
-        event.preventDefault();
-        pressSignIn();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [chooseRole, pressSignIn, roleGroupId]);
+  }, [chooseRole, roleGroupId]);
 
   return (
     <main id="main-content" className={styles.page}>
@@ -354,13 +322,6 @@ export function WardFlowSignInScreen() {
             <span className={styles.goContext}>
               {catchment.id} · {shift.id} · {role.name}
             </span>
-            {/* The button only says what would open, so it is a not-wired control: shown in a local
-                development build only (Josh, 20 Oct 2026, see ward-management/unwired-previews.tsx). */}
-            {showsUnwiredPreviews() ? (
-              <Button variant="pri" size="lg" kbd="Enter" onClick={pressSignIn}>
-                Preview as {role.as}
-              </Button>
-            ) : null}
           </section>
         </section>
 
@@ -470,17 +431,7 @@ export function WardFlowSignInScreen() {
           </p>
 
           <div className={styles.toastDock} role="status" aria-live="polite">
-            {toastOpen ? (
-              <ToastView
-                tone="info"
-                title={`${role.name} would open ${role.opens}`}
-                body="Not wired in this prototype, so nothing has opened."
-                onClose={() => setToastOpen(false)}
-                closeLabel="Dismiss preview note"
-              />
-            ) : (
-              <span className="sr-only">{announcement}</span>
-            )}
+            <span className="sr-only">{announcement}</span>
           </div>
         </section>
       </div>

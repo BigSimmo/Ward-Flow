@@ -107,13 +107,13 @@ describe("the tasks drawer", () => {
       // Focus goes back to the trigger that opened the form, not to the page.
       expect(escalateTrigger).toHaveFocus();
 
-      // The same for the Contact panel: Escape from one of its Call buttons closes the panel and
-      // returns focus to that row's Contact trigger.
+      // The same for the Contact panel: Escape from inside it closes the panel and returns focus
+      // to that row's Contact trigger.
       const contactTrigger = within(card).getByRole("button", { name: "Contact" });
       fireEvent.click(contactTrigger);
-      const callButton = within(card).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u })[0]!;
-      callButton.focus();
-      fireEvent.keyDown(callButton, { key: "Escape" });
+      const insidePanel = within(card).getByRole("button", { name: "Open patient contacts" });
+      insidePanel.focus();
+      fireEvent.keyDown(insidePanel, { key: "Escape" });
       expect(onClose).not.toHaveBeenCalled();
       expect(within(card).queryByTestId(`ward-task-contacts-${item.id}`)).toBeNull();
       expect(contactTrigger).toHaveFocus();
@@ -274,13 +274,13 @@ describe("task workspace state filters and actions", () => {
     expect(stateFilter.parentElement).not.toHaveTextContent(String(items.length));
   });
 
-  it("fills in a pick when its Call is pressed, and records only on Record escalation (ops-6)", () => {
+  it("fills in a pick when it is pressed, and records only on Record escalation (ops-6)", () => {
     const { drawer, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
     const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
-    fireEvent.click(within(card).getByRole("button", { name: /^Call State bed desk, / }));
-    // Calling copies a mock number only: nobody has confirmed the call, so nothing is recorded yet.
+    fireEvent.click(within(card).getByRole("button", { name: "State bed desk" }));
+    // A pick only fills in the contact: nobody has confirmed the call, so nothing is recorded yet.
     expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "RECORD_ESCALATION" }));
     expect(within(card).getByRole("textbox")).toHaveValue("State bed desk");
     fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
@@ -303,16 +303,17 @@ describe("task workspace state filters and actions", () => {
     fireEvent.click(within(card).getByRole("button", { name: "Contact" }));
     const contacts = within(card).getByTestId(`ward-task-contacts-${item.id}`);
     expect(within(contacts).getByText("ED mental health liaison")).toBeInTheDocument();
-    expect(within(contacts).getAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u }).length).toBeGreaterThan(0);
+    expect(within(contacts).getAllByText(/^08 0000 \d{4}$/u).length).toBeGreaterThan(0);
     fireEvent.click(within(contacts).getByRole("button", { name: "Open patient contacts" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
-    // Ops-6: each escalation pick shows its number with Call.
+    // Ops-6: each escalation pick is offered, with its number listed below.
+    const escalationList = within(card).getByRole("list", { name: "Escalation contacts, mock numbers" });
     for (const pick of ["Duty consultant", "State bed desk", "Executive on call"]) {
-      expect(
-        within(card).getByRole("button", { name: new RegExp(`^Call ${pick}, 08 0000 \\d{4}$`, "u") }),
-      ).toBeTruthy();
+      expect(within(card).getByRole("button", { name: pick })).toBeTruthy();
+      expect(within(escalationList).getByText(pick)).toBeTruthy();
     }
+    expect(within(escalationList).getAllByText(/^08 0000 \d{4}$/u).length).toBeGreaterThan(0);
     fireEvent.change(within(card).getByRole("textbox"), { target: { value: "Duty coordinator" } });
     fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(
