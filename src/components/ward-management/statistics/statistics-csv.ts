@@ -10,7 +10,7 @@ export function csvCell(value: string | number): string {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export type CsvProvenance = {
+type CsvProvenance = {
   /** The snapshot time, already formatted with its calendar year and time zone. */
   readonly asAt: string;
   readonly scope: string;
