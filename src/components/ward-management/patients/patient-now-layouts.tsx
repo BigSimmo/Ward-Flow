@@ -1,16 +1,13 @@
 "use client";
 
-import { ChevronRight, Phone, PhoneCall } from "lucide-react";
+import { ChevronRight, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { useOptionalToast } from "@/components/wf";
-import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 
 import type { CallRow } from "./patient-call-list";
 import type { PatientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 import styles from "./patient-now-layouts.module.css";
 
 /**
@@ -98,35 +95,6 @@ export function PatientNowLayout({
 
 /* ---------------- Who to call ---------------- */
 
-function CallButton({ row }: { row: CallRow }) {
-  const toast = useOptionalToast();
-  // Calling only copies the number (shown beside it), so the button is left out of demo and
-  // production builds (overall review, 20 Oct 2026).
-  if (!row.number || !showsUnwiredPreviews()) return null;
-  const number = row.number;
-  return (
-    <button
-      type="button"
-      className={styles.call}
-      aria-label={`Call ${row.name}, ${number}`}
-      onClick={async () => {
-        try {
-          await copyTextToClipboard(number);
-          toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." });
-        } catch {
-          toast?.push({
-            tone: "warning",
-            title: "Could not copy number",
-            body: "Check clipboard access and try again.",
-          });
-        }
-      }}
-    >
-      <PhoneCall size={20} aria-hidden="true" />
-    </button>
-  );
-}
-
 function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; title?: string }) {
   return (
     <Card data-testid="ward-patient-who-to-call">
@@ -147,7 +115,6 @@ function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; tit
                 )}
                 {row.hours ? <span className={styles.callRole}>{row.hours}</span> : null}
               </span>
-              <CallButton row={row} />
             </li>
           ))}
         </ul>
