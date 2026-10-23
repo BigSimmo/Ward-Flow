@@ -25,7 +25,12 @@ describe("the sender's own journey tools (D-80)", () => {
   const teamSent = { ...base, id: "REF-D80-TEAM", source: "community", sendingTeamName: team } as Referral;
   const edSent = { ...base, id: "REF-D80-ED", source: "ed_medical" } as Referral;
   const open = seed.movements.find((movement) => !movement.closure)!;
-  const journey = (id: string, referralId: string) => ({ ...open, id, referralId, sourceAdmissionId: undefined });
+  const journey = (id: `WF-${string}`, referralId: string) => ({
+    ...open,
+    id,
+    referralId,
+    sourceAdmissionId: undefined,
+  });
   const state: WardFlowState = {
     ...seed,
     referrals: [wardSent, teamSent, edSent, ...seed.referrals],
