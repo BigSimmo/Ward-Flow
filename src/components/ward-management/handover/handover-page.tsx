@@ -452,7 +452,7 @@ export function HandoverPage() {
   // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
   // audit 11 Oct 2026). Full and custom columns keep their own set.
   const railBeside = useMediaQuery("(min-width: 75.0625rem)");
-  const fitted = railBeside && !present && customColumns === null && density === "std";
+  const fitted = railBeside && !present && !sheetOpen && customColumns === null && density === "std";
   const columnIds =
     customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);
