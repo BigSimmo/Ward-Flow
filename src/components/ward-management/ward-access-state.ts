@@ -49,7 +49,7 @@ import {
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "./ward-sites";
-import { referralSentByDesk } from "./ward-referral-sender";
+import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 
 type Context = {
   readonly state: WardFlowState;
@@ -589,28 +589,19 @@ export function commandScopeRefusal(
         return outside;
     }
   }
-  // A ward or team changes a journey's urgency, legal status or form receipt only on a journey it
-  // sent: the person's journey to it is the receiving ward's to answer, not to amend (D-80).
+  // A ward or team changes a journey's urgency, legal status or form receipt, and a team readies its
+  // handover, only on a journey it sent: the person's journey to it is the receiving ward's to
+  // answer, not to amend (D-80).
   if (
-    (access.role === "ward" || access.role === "community") &&
-    (command.type === "CHANGE_URGENCY" ||
-      command.type === "CHANGE_LEGAL_STATUS" ||
-      command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
-      command.type === "CORRECT_LEGAL_FORM_RECEIPT")
+    ((access.role === "ward" || access.role === "community") &&
+      (command.type === "CHANGE_URGENCY" ||
+        command.type === "CHANGE_LEGAL_STATUS" ||
+        command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
+        command.type === "CORRECT_LEGAL_FORM_RECEIPT")) ||
+    (access.role === "community" && command.type === "HANDOVER_READY")
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
-    if (movement) {
-      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
-      const sendingWard =
-        referral?.originUnitId ??
-        movementSourceAdmission(state, movement)?.unitId ??
-        (movement as { originUnitId?: string }).originUnitId;
-      const sent =
-        access.role === "ward"
-          ? sendingWard !== undefined && unitInScope(scope, sendingWard, places)
-          : referral !== undefined && referralSentByDesk(referral, access, places);
-      if (!sent) return outside;
-    }
+    if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
   }
   // Every desk names its own place when it adds a patient, so the record it adds stays in its own
   // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.

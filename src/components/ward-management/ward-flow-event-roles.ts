@@ -50,16 +50,18 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    */
   RECORD_TRANSPORT_NEED: ["ed", "ward", "community", "coordinator"],
   /*
-   * `ed` ALONE: the department physically holding the form is who can mark it received. Widened
-   * codes (1A, 3A, 3C, 3D, 6A, 6B, 6C, 5A, 5B) do not widen the role.
+   * The place physically holding the form is who can mark it received. Widened codes (1A, 3A, 3C,
+   * 3D, 6A, 6B, 6C, 5A, 5B) do not widen the role. On a ward transfer or a community journey (D-76)
+   * that place is the sending ward or team, so D-80 adds both, for journeys they sent only (the
+   * reducer checks the kind, the server's scope check which ward or team).
    */
-  RECORD_LEGAL_FORM_RECEIVED: ["ed", "coordinator"],
+  RECORD_LEGAL_FORM_RECEIVED: ["ed", "ward", "community", "coordinator"],
   /*
    * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
-   * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the department physically
-   * holding the form is who can say a receipt was recorded in error.
+   * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the place physically holding
+   * the form is who can say a receipt was recorded in error, with the same D-80 sender check.
    */
-  CORRECT_LEGAL_FORM_RECEIPT: ["ed", "coordinator"],
+  CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
   /*
    * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
@@ -84,7 +86,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * reducer refuses it against a bed that is not ready whichever role raises it. */
   PULL_PATIENT: ["ward", "coordinator"],
   DECLINE: ["ward", "coordinator"],
-  HANDOVER_READY: ["ed", "coordinator"],
+  // D-80 follow-up to #611: a community team readies the handover of a journey it sent, as an ED
+  // does for its own. The reducer and the server check it is the team's own journey.
+  HANDOVER_READY: ["ed", "community", "coordinator"],
   TRANSPORT_ACCEPTED: ["officer", "coordinator"],
   TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
   PATIENT_COLLECTED: ["officer", "coordinator"],
@@ -100,8 +104,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_SCENARIO: ["demo"],
   // Task 3 of the audit-wiring plan: only a coordinator may save the settings-screen draft.
   SET_CONFIGURATION: ["coordinator"],
-  CHANGE_URGENCY: ["coordinator", "ed"],
-  CHANGE_LEGAL_STATUS: ["coordinator", "ed"],
+  // D-80: the referrer changes its own referral's urgency or legal status, whether an ED, a ward
+  // or a team, on journeys it sent only (reducer and server sender checks).
+  CHANGE_URGENCY: ["coordinator", "ed", "ward", "community"],
+  CHANGE_LEGAL_STATUS: ["coordinator", "ed", "ward", "community"],
   RELEASE_PULL: ["coordinator", "ward"],
   // TR-D6 (owner, 2026-08-30): the team that BOOKED it, and the coordinator. The sending team
   // owns the job (TR-D5) and every movement originates at an emergency department
@@ -273,7 +279,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // can retract.
   CLEAR_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
   /*
-   * ⚠️ MIRRORS `CHANGE_URGENCY` EXACTLY, AND THAT IS THE ARGUMENT RATHER THAN A CONVENIENCE.
+   * ⚠️ NEVER WIDER THAN `CHANGE_URGENCY`, AND THAT IS THE ARGUMENT RATHER THAN A CONVENIENCE.
+   * D-80 gave sending wards and teams `CHANGE_URGENCY` on their own journeys; the flag stays with
+   * the two roles below, which is stricter and so still safe.
    * `queueOrder` puts this flag ABOVE all three urgency tiers, so it MUST NOT be easier to raise
    * than the tier it outranks: a control available to more roles than `CHANGE_URGENCY` would let
    * somebody who may not move a patient from tier 3 to tier 1 put them above every tier 1 instead.

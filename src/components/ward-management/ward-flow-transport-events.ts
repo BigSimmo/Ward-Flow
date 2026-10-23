@@ -1,4 +1,5 @@
 import { finiteInstant, type AuditDecision } from "./ward-audit";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -76,6 +77,10 @@ export function reduceTransportEvent(
     case "HANDOVER_READY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may ready its handover`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot ready a handover for a closed movement (${movement.closure.reason})`);
       }
