@@ -59,8 +59,8 @@ export function reduceRecordedLegalEvent(
       // current entered values are; absence of an old actor-history record does not discard them.
       const legacyCalculatedExpiry =
         movement.legalClock !== undefined && currentDueAt === movement.legalClock.expiresAt;
-      if (event.correction !== undefined) {
-        const correction = event.correction;
+      const correction = event.correction;
+      if (correction !== undefined) {
         if (
           correction === null ||
           typeof correction !== "object" ||
@@ -88,44 +88,40 @@ export function reduceRecordedLegalEvent(
         if (event.dueAt === currentDueAt) {
           return reject(state, event, "The corrected expiry must differ from the expiry already recorded.");
         }
-        const updated: Movement = {
-          ...movement,
-          legalForm: { ...movement.legalForm, dueAt: event.dueAt },
-          legalClock: undefined,
-          legalFormExpiryHistory: [
-            ...(movement.legalFormExpiryHistory ?? []),
-            { at: event.now, by: event.role, dueAt: event.dueAt, basis: "correction" },
-          ],
-          legalFormExpiryCorrections: [
-            ...(movement.legalFormExpiryCorrections ?? []),
-            {
-              at: event.now,
-              by: event.role,
-              formCode: movement.legalForm.code,
-              ...(movement.formedAt === undefined ? {} : { formWrittenAt: movement.formedAt }),
-              previousDueAt: currentDueAt,
-              dueAt: event.dueAt,
-              reason: correction.reason,
-            },
-          ],
-        };
-        decision.outcome = "accepted";
-        decision.reasonCode = "none";
-        return replaceMovement(state, movement.id, updated);
       }
       const isExtension = currentDueAt !== undefined && !legacyCalculatedExpiry;
       // An extension only ever moves an expiry later; the clinician types it, this only orders it
       // against what is recorded.
-      if (isExtension && event.dueAt <= currentDueAt) {
+      if (correction === undefined && isExtension && event.dueAt <= currentDueAt) {
         return reject(state, event, "An extension's new expiry must be later than the expiry already recorded.");
       }
-      const basis: "written_on_form" | "extension" = isExtension ? "extension" : "written_on_form";
+      const basis = correction
+        ? ("correction" as const)
+        : isExtension
+          ? ("extension" as const)
+          : ("written_on_form" as const);
       const historyEntry = { at: event.now, by: event.role, dueAt: event.dueAt, basis };
       const updated: Movement = {
         ...movement,
         legalForm: { ...movement.legalForm, dueAt: event.dueAt },
         legalClock: undefined,
         legalFormExpiryHistory: [...(movement.legalFormExpiryHistory ?? []), historyEntry],
+        ...(correction
+          ? {
+              legalFormExpiryCorrections: [
+                ...(movement.legalFormExpiryCorrections ?? []),
+                {
+                  at: event.now,
+                  by: event.role,
+                  formCode: movement.legalForm.code,
+                  ...(movement.formedAt === undefined ? {} : { formWrittenAt: movement.formedAt }),
+                  previousDueAt: correction.expectedDueAt,
+                  dueAt: event.dueAt,
+                  reason: correction.reason,
+                },
+              ],
+            }
+          : {}),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
