@@ -89,21 +89,16 @@ export function reduceObservationLevelEvent(
   // was created. Comparing the count also catches a level changed away and then back while an
   // older draft remained open. Linked records still have to agree with the captured fact.
   const target = event.target.kind === "movement" ? movement : admission;
-  const expected = event.expected;
   if (
-    expected !== undefined &&
-    (typeof expected !== "string" ||
-      !target ||
-      [movement, admission].some(
-        (row) =>
-          row &&
-          observationEditingToken(
-            event.target.kind,
-            target.id,
-            row.observation,
-            target.observationChanges?.length ?? 0,
-          ) !== expected,
-      ))
+    event.expected !== undefined &&
+    (!target ||
+      observationEditingToken(
+        event.target.kind,
+        target.id,
+        target.observation,
+        target.observationChanges?.length ?? 0,
+      ) !== event.expected ||
+      (movement && admission && !sameObservation(movement.observation, admission.observation)))
   ) {
     return reject(state, event, "Observation changed while editing. Reopen to check the latest level.");
   }
