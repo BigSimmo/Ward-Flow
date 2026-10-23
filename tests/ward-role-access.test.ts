@@ -838,6 +838,7 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
     unwinds: [
       { at: NOW_ANCHOR, kind: "acceptance_withdrawn", by: "coordinator", reason: "Synthetic", unitId: otherUnit.id },
     ],
+    legalMismatch: { at: NOW_ANCHOR, unitId: otherUnit.id, kind: "involuntary_on_voluntary_ward" },
     genderPlacements: [
       { at: NOW_ANCHOR, by: "coordinator", unitIds: [unitId, otherUnit.id], reason: GENDER_REASON, wardChecked: true },
       { at: NOW_ANCHOR, by: "coordinator", unitIds: [otherUnit.id], reason: GENDER_REASON, wardChecked: true },
@@ -872,6 +873,7 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
         expect(trimmed.stage).toBe(shared.stage);
       });
       it("drops another ward's withdrawn acceptance", () => expect(trimmed.unwinds).toEqual([]));
+      it("drops another ward's legal mismatch", () => expect(trimmed.legalMismatch).toBeUndefined());
       it("keeps only gender placements that named its own wards, naming only those", () =>
         expect(trimmed.genderPlacements?.map((item) => item.unitIds)).toEqual([[unitId]]));
       it("never carries another ward's id anywhere on the copy", () =>
@@ -883,6 +885,10 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
     const own = trimmedFor(wardDesk, { ...shared, acceptedUnitId: unitId } as typeof shared);
     expect(own.acceptedUnitId).toBe(unitId);
     expect(own.heldBedNumber).toBe(4);
+    const mismatch = { at: NOW_ANCHOR, unitId, kind: "involuntary_on_voluntary_ward" as const };
+    expect(trimmedFor(wardDesk, { ...shared, legalMismatch: mismatch } as typeof shared).legalMismatch).toEqual(
+      mismatch,
+    );
   });
 
   it("leaves the ward that sent the person knowing where they were accepted", () => {

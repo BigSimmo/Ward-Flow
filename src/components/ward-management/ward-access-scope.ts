@@ -128,6 +128,8 @@ function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolea
     delete copy.heldBedNumber;
     delete copy.allocatedBed;
   }
+  // The legal mismatch names the accepting ward too, so it goes with that ward's acceptance.
+  if (movement.legalMismatch && !unitIn(movement.legalMismatch.unitId)) delete copy.legalMismatch;
   return copy;
 }
 
