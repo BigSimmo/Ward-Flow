@@ -49,8 +49,19 @@ describe("forecastByKind", () => {
     const base = wardAdmissions[0];
     expect(bedKindOfBed(adult, { ...base, bedKind: "locked" } as Admission)).toBe("locked_adult");
     expect(bedKindOfBed(adult, { ...base, bedKind: "open" } as Admission)).toBe("open_adult");
-    expect(bedKindOfBed(adult, undefined)).toBe("open_adult");
     expect(bedKindOfBed(older, { ...base, bedKind: "locked" } as Admission)).toBe("older_adult");
+  });
+
+  it("sorts a bed with no recorded designation by its bed number, then by the ward", () => {
+    const adult = units.find((unit) => unit.cohort === "Adult")!;
+    const mixed = { ...adult, beds: 10, lockedBeds: 4 };
+    const allLocked = { ...adult, beds: 10, lockedBeds: 10 };
+    const unrecorded = { ...wardAdmissions[0], bedKind: undefined, bedNumber: undefined } as Admission;
+    expect(bedKindOfBed(mixed, { ...unrecorded, bedNumber: 2 })).toBe("locked_adult");
+    expect(bedKindOfBed(mixed, { ...unrecorded, bedNumber: 7 })).toBe("open_adult");
+    expect(bedKindOfBed(mixed, unrecorded)).toBe("open_adult");
+    expect(bedKindOfBed(allLocked, unrecorded)).toBe("locked_adult");
+    expect(bedKindOfBed(allLocked, undefined)).toBe("locked_adult");
   });
 
   it("sorts a planned admission by age band and legal status", () => {

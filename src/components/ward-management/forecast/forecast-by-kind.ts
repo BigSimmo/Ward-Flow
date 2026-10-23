@@ -14,6 +14,7 @@ import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/
 import { isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { numberedBedKind, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 
@@ -47,11 +48,19 @@ export const BED_KIND_LABEL: Record<BedKindId, string> = {
 
 const KIND_ORDER: readonly BedKindId[] = ["locked_adult", "open_adult", "older_adult", "youth"];
 
-/** The bed type a ward's bed belongs to: its cohort, and for an adult ward the bed's designation. */
+/**
+ * The bed type a ward's bed belongs to: its cohort, and for an adult ward the bed's designation.
+ * Seeded and older admissions carry no `bedKind`, so the bed number decides next, then the ward:
+ * an adult ward with no open beds can only free a locked one.
+ */
 export function bedKindOfBed(unit: Unit, admission: Admission | undefined): BedKindId {
   if (unit.cohort === "Older adult") return "older_adult";
   if (unit.cohort === "Youth") return "youth";
-  return admission?.bedKind === "locked" ? "locked_adult" : "open_adult";
+  const kind =
+    admission?.bedKind ??
+    (admission?.bedNumber === undefined ? undefined : numberedBedKind(unit, admission.bedNumber)) ??
+    (unitHasOpenBeds(unit) ? "open" : "locked");
+  return kind === "locked" ? "locked_adult" : "open_adult";
 }
 
 /**

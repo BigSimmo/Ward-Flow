@@ -211,12 +211,13 @@ function readLocal(key: string): string | null {
 
 /**
  * The daily forecast snapshots behind the track record. Every forecast view records today's entry
- * once (a second view the same demo day changes nothing). Kept per scenario and person.
+ * once (a second view the same demo day changes nothing). Kept per scenario, reseed and person.
  */
 export function useForecastHistory(model: ForecastModel, now: Instant) {
-  const { scenario } = useWardFlowSelect("scenario");
+  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
-  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}`;
+  // A reseed restarts the demo days, so it starts a fresh history rather than comparing two worlds.
+  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
   const stored = useSyncExternalStore(subscribeHistory, () => readLocal(key), serverLook);
   const history = useMemo(() => parseForecastHistory(stored), [stored]);
   const entry = useMemo(() => historyEntry(now, model.tomorrow.total.now, model.tomorrow.total), [now, model.tomorrow]);

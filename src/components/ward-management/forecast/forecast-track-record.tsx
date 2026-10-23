@@ -52,6 +52,7 @@ export function ForecastTrackRecordCard({
   );
   const busiest = Math.max(1, ...hours);
   const peak = hours.indexOf(Math.max(...hours));
+  const referralsOnRecord = hours.reduce((a, b) => a + b, 0);
 
   return (
     <StatCard
@@ -124,8 +125,10 @@ export function ForecastTrackRecordCard({
           <span>23</span>
         </p>
         <p className={styles.caption} data-testid="ward-statistics-forecast-hours">
-          {hours.reduce((a, b) => a + b, 0)} ED referrals on record. Busiest hour starts at{" "}
-          {String(peak).padStart(2, "0")}:00. Shown to help staff a bed meeting, not to predict arrivals.
+          {referralsOnRecord === 0
+            ? "No ED referrals on record yet."
+            : `${referralsOnRecord} ED referrals on record. Busiest hour starts at ${String(peak).padStart(2, "0")}:00.`}{" "}
+          Shown to help staff a bed meeting, not to predict arrivals.
         </p>
       </CardBody>
     </StatCard>
