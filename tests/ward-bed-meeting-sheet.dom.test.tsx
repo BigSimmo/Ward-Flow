@@ -21,8 +21,19 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
 /**
  * The morning bed-meeting sheet (Capacity → "Bed-meeting sheet"). Two properties matter:
  *   1. Every figure on the paper is the figure its own screen shows — the sheet re-derives nothing.
- *   2. Printing while the sheet is open sends the sheet alone, on one page.
+ *   2. Printing while the sheet is open sends the sheet alone on A4.
  */
+
+const phone = vi.hoisted(() => ({ value: false }));
+vi.mock("@/components/wf", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/wf")>()),
+  useIsPhone: () => phone.value,
+}));
+
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 const units = allUnits();
 const input = {
@@ -38,6 +49,7 @@ const input = {
 };
 
 afterEach(() => {
+  phone.value = false;
   document.documentElement.classList.remove(BED_MEETING_PRINTING_CLASS);
 });
 
@@ -110,6 +122,9 @@ describe("the sheet on Capacity", () => {
     );
     expect(dialog.textContent).toMatch(/Synthetic prototype/u);
     expect(dialog.textContent).toMatch(/your default, not a legal limit/u);
+    expect(within(dialog).getByTestId("ward-print-attribution").textContent).toBe(
+      "Printed by Flow coordinator, Statewide, at 10:42. Synthetic data.",
+    );
   });
 
   it("marks the page for sheet-only printing while open, prints on request, and unmarks on close", () => {
@@ -124,6 +139,25 @@ describe("the sheet on Capacity", () => {
     expect(screen.queryByRole("dialog", { name: /Morning bed meeting/u })).toBeNull();
     expect(document.documentElement.classList.contains(BED_MEETING_PRINTING_CLASS)).toBe(false);
     print.mockRestore();
+  });
+
+  it.each([false, true])("keeps the open sheet when print media changes the phone layout from %s", (initialPhone) => {
+    phone.value = initialPhone;
+    const content = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+      </WardFlowProvider>
+    );
+    const view = render(content());
+    fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
+    const portal = screen.getByTestId("bed-meeting-sheet-portal");
+    phone.value = !initialPhone;
+    view.rerender(content());
+    expect(screen.getByTestId("bed-meeting-sheet-portal")).toBe(portal);
+    expect(document.documentElement.classList.contains(BED_MEETING_PRINTING_CLASS)).toBe(true);
+    phone.value = initialPhone;
+    view.rerender(content());
+    expect(screen.getByTestId("bed-meeting-sheet-portal")).toBe(portal);
   });
 
   it("the print rules hide everything but the sheet and fit it to an A4 page", () => {

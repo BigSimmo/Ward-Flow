@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+import { WardPrintFooter } from "@/components/ward-management/shell/ward-access";
 import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -18,7 +19,7 @@ import type { BedMeetingSheet } from "./bed-meeting-derivations";
 import styles from "./bed-meeting-sheet.module.css";
 
 /**
- * THE MORNING BED-MEETING SHEET — opened from Capacity, previewed in a dialog, printed on one page.
+ * THE MORNING BED-MEETING SHEET — opened from Capacity, previewed in a dialog, printed on A4.
  *
  * Every figure arrives already computed by `bedMeetingSheet` (`bed-meeting-derivations.ts`); this
  * file only lays it out. While the dialog is open the page is marked so that printing — by the
@@ -226,6 +227,7 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
         Figures come from the Capacity, Discharges, ED and Waiting screens at the moment above. Legal time limits are
         not checked in this prototype.
       </p>
+      {flow !== null ? <WardPrintFooter /> : null}
     </article>
   );
 }
@@ -238,11 +240,14 @@ export function BedMeetingSheetLauncher({
   buildSheet,
   now,
   buttonClassName,
+  hidden = false,
   icon,
 }: {
   buildSheet: () => BedMeetingSheet;
   now: Instant;
   buttonClassName?: string;
+  /** Hide only the launcher so an open sheet survives responsive print transitions. */
+  hidden?: boolean;
   /** An optional leading icon (phone shows a printer). */
   icon?: ReactNode;
 }) {
@@ -261,10 +266,11 @@ export function BedMeetingSheetLauncher({
     <>
       <button
         type="button"
-        className={buttonClassName ?? styles.openButton}
+        className={`${buttonClassName ?? styles.openButton}${hidden ? ` ${styles.launcherHidden}` : ""}`}
+        hidden={hidden}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        data-testid="bed-meeting-sheet-open"
+        data-testid={hidden ? undefined : "bed-meeting-sheet-open"}
       >
         {icon}
         Bed meeting sheet

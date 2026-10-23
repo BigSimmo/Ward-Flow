@@ -808,28 +808,27 @@ export function CapacityScreen() {
           aside={
             <>
               <PageLiveChip paused={paused} onTogglePause={togglePause} />
-              {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
+              {/* The A4 morning bed-meeting sheet: today's capacity, expected discharges, people
                *  waiting in ED and the top delays, scoped to the service chosen here. */}
-              {isPhone ? null : (
-                <BedMeetingSheetLauncher
-                  now={now}
-                  buttonClassName={buttonClass({ variant: "onHero" })}
-                  icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
-                  buildSheet={() =>
-                    bedMeetingSheet({
-                      units,
-                      movements,
-                      bedReleases,
-                      admissions,
-                      leaveBeds,
-                      now,
-                      thresholds,
-                      service,
-                      nameOf: (movement) => patientOf(movement).displayName,
-                    })
-                  }
-                />
-              )}
+              <BedMeetingSheetLauncher
+                hidden={isPhone}
+                now={now}
+                buttonClassName={buttonClass({ variant: "onHero" })}
+                icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
+                buildSheet={() =>
+                  bedMeetingSheet({
+                    units,
+                    movements,
+                    bedReleases,
+                    admissions,
+                    leaveBeds,
+                    now,
+                    thresholds,
+                    service,
+                    nameOf: (movement) => patientOf(movement).displayName,
+                  })
+                }
+              />
               {/* The same figures on the meeting room screen, for this scope, behind the `bed-meeting-tv` flag. */}
               {!isPhone && bedMeetingTvOn ? (
                 <Link
@@ -1128,28 +1127,26 @@ export function CapacityScreen() {
             <PlannedAdmissionsPanel key={worldGeneration} now={now} />
           </div>
         ) : null}
-        {isPhone && phoneTab === "overview" ? (
-          // Option A: printing the bed meeting sheet is a desk task, so on a phone it leaves the hero
-          // for one quiet button at the foot of Overview.
-          <BedMeetingSheetLauncher
-            now={now}
-            buttonClassName={buttonClass({ variant: "sec" })}
-            icon={<Printer size={16} aria-hidden="true" />}
-            buildSheet={() =>
-              bedMeetingSheet({
-                units,
-                movements,
-                bedReleases,
-                admissions,
-                leaveBeds,
-                now,
-                thresholds,
-                service,
-                nameOf: (movement) => patientOf(movement).displayName,
-              })
-            }
-          />
-        ) : null}
+        {/* Keep both launchers mounted: print media can change the responsive query while a sheet is open. */}
+        <BedMeetingSheetLauncher
+          hidden={!isPhone || phoneTab !== "overview"}
+          now={now}
+          buttonClassName={buttonClass({ variant: "sec" })}
+          icon={<Printer size={16} aria-hidden="true" />}
+          buildSheet={() =>
+            bedMeetingSheet({
+              units,
+              movements,
+              bedReleases,
+              admissions,
+              leaveBeds,
+              now,
+              thresholds,
+              service,
+              nameOf: (movement) => patientOf(movement).displayName,
+            })
+          }
+        />
         <WardPrototypeFooter
           testId="ward-capacity-governance"
           note="Statewide bed capacity · Not approved for clinical use"
