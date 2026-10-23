@@ -18,7 +18,7 @@ export {
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
-export { Button, DisabledReason, buttonClass, type ButtonVariant, type ButtonSize } from "./button";
+export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat } from "./hero";
