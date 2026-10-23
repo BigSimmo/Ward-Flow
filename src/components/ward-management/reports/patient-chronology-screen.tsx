@@ -42,7 +42,7 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 
@@ -288,7 +288,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const generated = (
     <span data-testid="ward-chronology-generated">
-      Generated {reportMoment(now, dayZero)} · Synthetic demo data, not a clinical record
+      Generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo data, not a clinical
+      record
     </span>
   );
 
@@ -369,7 +370,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             level={1}
             eyebrow={
               <span data-testid="ward-chronology-generated">
-                PIR chronology · generated {formatInstant(now)}
+                PIR chronology · generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                 <span className={phone.srOnly}> · Synthetic demo data</span>
               </span>
             }

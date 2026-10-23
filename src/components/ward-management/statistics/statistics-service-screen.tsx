@@ -24,7 +24,7 @@ import { useStatisticsCounts } from "@/components/ward-management/shell/ward-acc
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import {
   statisticsSectionById,
   STATISTICS_SERVICE_CHOOSER_HREF,
@@ -109,7 +109,7 @@ function referralOriginService(referral: Referral): HealthService | undefined {
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const live = useStatisticsLive();
   const { countsOnly, small, parts } = useStatisticsCounts();
-  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements } = live.state;
+  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements, dayZero } = live.state;
   const now = live.now;
   const isPhone = useIsPhone();
 
@@ -388,6 +388,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         <>
           <FlushRow layout="lead2" id="capacity">
             <StatisticsCapacityChart
+              asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
               units={serviceUnits}
               bedReleases={bedReleases}
               admissions={admissions}

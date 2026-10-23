@@ -1,7 +1,5 @@
 "use client";
 
-import { downloadBlob } from "@/components/ward-management/ward-download";
-
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, Search, X } from "lucide-react";
@@ -28,7 +26,7 @@ import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
 
@@ -75,6 +73,7 @@ export function StatisticsCapacityChart({
   leaveBeds = [],
   initialGroup = "hospital",
   scopeLabel = "across the network",
+  asAt = "Not recorded",
   title = "Where beds are available",
 }: {
   units: Unit[];
@@ -83,6 +82,7 @@ export function StatisticsCapacityChart({
   leaveBeds?: readonly LeaveBed[];
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
+  asAt?: string;
   title?: string;
 }) {
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
@@ -210,10 +210,10 @@ export function StatisticsCapacityChart({
         row.onLeave,
       ]),
     ];
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      "ward-flow-synthetic-capacity.csv",
-    );
+    downloadCsv("ward-flow-synthetic-capacity.csv", lines, {
+      asAt,
+      scope: `Capacity ${scopeLabel}; ${service === "all" ? "all services" : service}; grouped by ${groupBy}`,
+    });
   }
 
   const sortItems: MenuItem[] = (Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({

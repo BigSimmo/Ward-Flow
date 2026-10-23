@@ -42,6 +42,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   calendarDateOf,
+  formatSheetMoment,
   dayOf,
   formatInstant,
   splitDuration,
@@ -583,6 +584,7 @@ export function StatisticsScreen({
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
                 <StatisticsCapacityChart
+                  asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                   units={units}
                   bedReleases={sourceBedReleases}
                   admissions={sourceAdmissions}

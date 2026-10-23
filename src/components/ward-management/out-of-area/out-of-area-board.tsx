@@ -1,7 +1,6 @@
 "use client";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -30,7 +29,12 @@ import {
   DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -41,7 +45,7 @@ import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-manageme
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 
 import {
@@ -567,10 +571,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ]);
     }
     try {
-      downloadBlob(
-        new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-        "ward-flow-synthetic-out-of-area.csv",
-      );
+      downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope: "Out-of-area admissions; matching rows in this desk's view",
+      });
     } catch {
       setToolNote("Export is not available in this browser");
     }

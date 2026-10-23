@@ -1,7 +1,5 @@
 "use client";
 
-import { downloadBlob } from "@/components/ward-management/ward-download";
-
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -53,7 +51,7 @@ import {
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { MINUTES_PER_DAY, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, dayOf, splitDuration, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -71,7 +69,7 @@ import {
 } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -1121,10 +1119,10 @@ function Roster({
         row.admission.dischargeDateMoves,
       ]),
     ];
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      `ward-flow-synthetic-${unit.id}-roster.csv`,
-    );
+    downloadCsv(`ward-flow-synthetic-${unit.id}-roster.csv`, lines, {
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      scope: `${unit.name}; ${filter === "all" ? "all roster rows" : filter}`,
+    });
   }
 
   return (
