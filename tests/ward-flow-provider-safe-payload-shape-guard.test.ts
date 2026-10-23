@@ -118,4 +118,16 @@ describe("WARD_FLOW_TEXT_SAFE payload-shape compile-time guard", () => {
     // `tsc` is what runs it, and vitest passing this `it` block with zero assertions is honest about
     // that rather than manufacturing a fake one.
   });
+
+  it("keeps an arbitrary expected string unreviewed outside the observation command's specific review", () => {
+    type UnreviewedExpected = Extract<WardFlowEvent, { type: "ADVANCE_CLOCK" }> & { expected: string };
+    expectTypeOf<UnreviewedStringOrUnknownKeys<UnreviewedExpected>>().toEqualTypeOf<"expected">();
+    expectTypeOf<
+      UnreviewedStringOrUnknownKeys<Extract<WardFlowEvent, { type: "RECORD_OBSERVATION_LEVEL" }>>
+    >().toEqualTypeOf<"expected">();
+
+    // @ts-expect-error — no global exemption for a field named expected.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile-time assertion
+    type _GenericExpectedMustNotCompile = AssertNever<UnreviewedStringOrUnknownKeys<UnreviewedExpected>>;
+  });
 });

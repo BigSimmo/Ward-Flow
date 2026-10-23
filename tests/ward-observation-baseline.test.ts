@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { validSharedCommand } from "../backend/ward-flow/command-schemas";
+import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { observationEditingToken } from "../src/components/ward-management/ward-flow-observation-events";
+import { eventCarriesTypedTextPayload } from "../src/components/ward-management/ward-flow-persistence-classification";
 import {
   seedWardFlowState,
   wardFlowReducer,
@@ -192,6 +194,21 @@ describe("an observation draft's editing baseline", () => {
   it("passes a well-formed baseline through the shared command boundary", () => {
     const event = command(waiting(), observationAt("within_sight"), BASELINE);
     expect(validSharedCommand(JSON.parse(JSON.stringify(event)))).toBe(true);
+    expect(eventCarriesTypedTextPayload(event)).toBe(false);
+  });
+
+  it("never copies a refused raw token into the saved world or the allowlisted session log", () => {
+    const state = waiting();
+    const marker = "SYNTHETIC-RAW-TOKEN-ONLY";
+    const event = command(state, observationAt("within_sight"), marker);
+    const next = wardFlowReducer(state, event);
+    expect(next.rejections.at(-1)?.reason).toMatch(/observation changed.*reopen/i);
+    expect(next.movements).toBe(state.movements);
+    expect(JSON.stringify(next)).not.toContain(marker);
+    const logged = eventLogEntryFor(event, false);
+    expect(logged.accepted).toBe(false);
+    expect(logged).not.toHaveProperty("expected");
+    expect(JSON.stringify(logged)).not.toContain(marker);
   });
 
   it.each(["movement", "admission"] as const)(
