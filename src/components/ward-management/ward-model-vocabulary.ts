@@ -317,6 +317,42 @@ export type LegalStatus =
 export const LEGAL_FORM_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
 export type LegalFormExpiryCorrectionReason = (typeof LEGAL_FORM_EXPIRY_CORRECTION_REASONS)[number];
 
+/** Paper-expiry facts carried by a movement, kept here with the legal vocabulary. */
+export type LegalFormExpiryMetadata = {
+  /**
+   * EVERY TYPED EXPIRY EVER RECORDED AGAINST THIS MOVEMENT'S LEGAL FORM, OLDEST FIRST — added T2
+   * (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item 5
+   * (regional extensions): *"the clinician records the extension and the new expiry; the app
+   * never calculates one."*
+   *
+   * Referral capture, written-form capture, continuation and typed-expiry events append the
+   * supplied expiry. Replacement forms may have no expiry while this history remains intact;
+   * current authority is legalForm.dueAt, never the last historical entry. An extension of the
+   * current recorded form must be later than its entered expiry. A replacement form begins a new
+   * current value and does not erase the prior form's history.
+   *
+   * Absent on the six authored synthetic fixture expiries, which predate these writers. Never
+   * backfill an actor or typed record for those examples. Legacy calculated clocks are not paper
+   * evidence and cannot force a clinician's first actual entry to be treated as an extension.
+   */
+  legalFormExpiryHistory?: {
+    at: Instant;
+    by: WardFlowRole;
+    dueAt: Instant;
+    basis: "written_on_form" | "extension" | "correction";
+  }[];
+  /** Checked paper corrections preserve both recorded values separately from extensions. */
+  legalFormExpiryCorrections?: {
+    at: Instant;
+    by: WardFlowRole;
+    formCode: string;
+    formWrittenAt?: Instant;
+    previousDueAt: Instant;
+    dueAt: Instant;
+    reason: LegalFormExpiryCorrectionReason;
+  }[];
+};
+
 /**
  * The legal clock and the ED clock are different clocks (spec "Model changes this phase
  * requires", `Movement.formedAt`). `dueAt`, when present, is the legal clock — never computed by
