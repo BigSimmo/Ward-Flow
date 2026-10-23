@@ -110,7 +110,7 @@ describe("the referral drawer shows only what the record holds", () => {
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
     // Option B (8 Oct 2026): Refer to is the first choice, in the header above the steps.
     fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "Community" }));
-    fireEvent.click(sections.getByRole("button", { name: "Documents" }));
+    fireEvent.click(sections.getByRole("button", { name: "Team" }));
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
     expect(clinician).toHaveValue("Synthetic reason for referral");
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));

@@ -25,7 +25,6 @@ import { HandoverSignOffPanel } from "@/components/ward-management/handover/hand
 import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { showsUnwiredPreviews, UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState, seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
@@ -38,12 +37,13 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 
 /**
  * Overall review, 20 Oct 2026 (Josh accepted): "hide every not-wired button in the pilot build, so
- * nothing on screen pretends to work." A control or note that only says "Not wired in this
- * prototype." shows in a local development build and is absent from demo and production builds.
+ * nothing on screen pretends to work." Unfinished features cleanup, 23 Oct 2026: the previews that
+ * still showed in a local development build were deleted, so a control or note that only says
+ * "Not wired in this prototype." is absent from every build.
  *
- * Each case renders the same screen twice: once as a production build (`NEXT_PUBLIC_WARD_ENVIRONMENT`
- * set to production) and once as a local development build, so a passing "absent" is never the
- * screen failing to render the control at all.
+ * Each case renders the same screen as a production build (`NEXT_PUBLIC_WARD_ENVIRONMENT` set to
+ * production) and as a local development build, and each still asserts the neighbouring content
+ * that does render, so a passing "absent" is never the screen failing to render at all.
  */
 
 type Build = "production" | "demo" | "development";
@@ -63,34 +63,11 @@ beforeEach(() => {
   Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
 });
 
-describe("showsUnwiredPreviews", () => {
-  it("is true only for a local development build", () => {
-    expect(showsUnwiredPreviews("development")).toBe(true);
-    expect(showsUnwiredPreviews("demo")).toBe(false);
-    expect(showsUnwiredPreviews("production")).toBe(false);
-  });
-
-  it.each([
-    ["production", false],
-    ["demo", false],
-    ["development", true],
-  ] as const)("reads the build environment (%s)", (build, shown) => {
-    asBuild(build);
-    expect(showsUnwiredPreviews()).toBe(shown);
-    render(<UnwiredPreview>Preview control</UnwiredPreview>);
-    expect(screen.queryByText("Preview control") !== null).toBe(shown);
-  });
-
-  it("hides them from a deployed build that names no environment", () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "");
-    vi.stubEnv("NODE_ENV", "production");
-    expect(showsUnwiredPreviews()).toBe(false);
-  });
-});
-
+// Unfinished features cleanup (23 Oct 2026): the development-build previews were deleted too, so
+// every case now expects the control absent in both builds.
 const BUILDS = [
   ["production", false],
-  ["development", true],
+  ["development", false],
 ] as const;
 
 describe.each(BUILDS)("a %s build", (build, shown) => {

@@ -183,11 +183,6 @@
   font-weight: 500;
 }
 
-/* Run sheet (D-16): a working control that says it is not wired; this class only places or hides it. */
-.previewTool {
-  display: inline-flex;
-}
-
 /* ---------- Needs you ---------- */
 
 .needsList {
@@ -724,10 +719,6 @@
     width: 100%;
   }
 
-  .heroTools > .previewTool {
-    display: none;
-  }
-
   .heroTools > :last-child {
     flex: 1;
     justify-content: center;
@@ -1243,14 +1234,8 @@
   }
 }
 
-/* Tablet (device audit, 11 Oct 2026): no Run sheet preview on a touch station, and on portrait the
-   Needs you items read as one column so three items never leave an empty grid cell. */
-@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
-  .heroTools > .previewTool {
-    display: none;
-  }
-}
-
+/* Tablet (device audit, 11 Oct 2026): on portrait the Needs you items read as one column so three
+   items never leave an empty grid cell. */
 @media (min-width: 48.0625rem) and (max-width: 64rem) {
   .needsList {
     grid-template-columns: minmax(0, 1fr);
