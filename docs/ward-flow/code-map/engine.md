@@ -224,8 +224,8 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   wrapper's protected record path (open a discharge record, review an audit event or undo that
   review, record a discharge, a follow-up or admission care) and `UNLINKED_CARE_REFUSAL`; it takes
   `(state, event, helpers)`, since that path makes its own audit decision.
-  Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
-  slice imports only types from the reducer, so there is no runtime import cycle.
+  The other slice files take `(state, event, decision, helpers)`. The reducer passes its shared
+  helpers in, and each slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
