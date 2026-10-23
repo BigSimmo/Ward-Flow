@@ -45,6 +45,7 @@ import type {
   ExaminationOutcome,
   GenderPlacement,
   MovementId,
+  MovementOrigin,
   MovementReferralAbsence,
   MovementTransportNeed,
   Override,
@@ -476,15 +477,13 @@ export type MovementClosure = {
   reason: string;
 };
 
-export type Movement = {
+export type Movement = MovementOrigin & {
   turnaroundPriority?: TurnaroundPriority;
   id: MovementId;
   /**
    * The patient this movement is for. Links directly to a Person in state.patients.
    */
   patientId?: PatientId;
-  /** Where the patient physically is. Detention here is lawful even when unauthorised. */
-  originEdId: string;
   openedAt: Instant;
   /**
    * THE FRONT-DOOR REFERRAL THIS JOURNEY WAS RAISED FROM — the link that did not exist.

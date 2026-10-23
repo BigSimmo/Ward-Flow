@@ -1092,7 +1092,7 @@ export function candidateEvents(
         role,
         now,
         movementId: movement.id,
-        actingPlaceId: movement.originEdId,
+        actingPlaceId: movement.originEdId!,
       }));
     case "RECORD_LEAVING":
       // One candidate per admission already in `state.admissions`, crossed with EVERY leaving
@@ -1129,7 +1129,7 @@ export function candidateEvents(
         role,
         now,
         movementId: movement.id,
-        actingPlaceId: movement.originEdId,
+        actingPlaceId: movement.originEdId!,
       }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
@@ -2300,7 +2300,7 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
       role: "ed",
       now: NOW_ANCHOR,
       movementId: forDeterioration.movementId,
-      actingPlaceId: beforeDeterioration.originEdId,
+      actingPlaceId: beforeDeterioration.originEdId!,
     });
     expect(deteriorated.rejections, `D-34 for Form ${code} was refused`).toEqual([]);
     const paused = deteriorated.movements.find((movement) => movement.id === forDeterioration.movementId)!;

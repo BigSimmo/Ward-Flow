@@ -633,7 +633,10 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
       siteByOrigin.set(candidate.code, candidate.name);
     }
   }
-  const origins = new Map<string, string>(state.movements.map((movement) => [movement.id, movement.originEdId]));
+  // D-76: a community journey has no ED, so its referring location names the site.
+  const origins = new Map<string, string | undefined>(
+    state.movements.map((movement) => [movement.id, movement.originEdId ?? movement.originCommunity?.siteCode]),
+  );
   return activeActNowItems(state, worldNow(world, at)).map((item) => {
     const origin = origins.get(item.movementId);
     return { id: item.id, site: (origin ? siteByOrigin.get(origin) : undefined) ?? null };

@@ -222,7 +222,7 @@ describe("the Movements screen", () => {
     for (const movement of wardMovements) {
       const row = findRecordRow(board, movement.id);
       const originEd = edById(movement.originEdId);
-      const expected = departmentLabel(movement.originEdId, originEd?.name);
+      const expected = departmentLabel(movement.originEdId!, originEd?.name);
       // The short code is what the eye reads; the full name is the screen-reader text beside it
       // (a name on a plain span does not reach assistive technology, audit UI-1).
       const origin = within(row).getByTitle(expected, { exact: true });
@@ -252,7 +252,7 @@ describe("the Movements screen", () => {
       expect(row, `provider missing for ${leg.movement.id}`).toHaveTextContent(leg.provider);
 
       const originEd = edById(leg.movement.originEdId);
-      const originLabel = departmentLabel(leg.movement.originEdId, originEd?.name);
+      const originLabel = departmentLabel(leg.movement.originEdId!, originEd?.name);
       expect(row, `origin missing for ${leg.movement.id}`).toHaveTextContent(originLabel);
 
       const destinationUnit = leg.movement.acceptedUnitId

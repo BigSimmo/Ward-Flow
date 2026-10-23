@@ -19,6 +19,7 @@ import { Frac, type WfTone } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { FORMS_HREF } from "./governance-shared";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 type GapKey = RecordGap | SupportNotificationParty;
 export const GAP_KEYS: GapKey[] = ["written", "received", "examination", "carer", "personal_support_person", "mhas"];
@@ -69,7 +70,11 @@ export function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteG
   for (const movement of flow.movements) {
     if (!isOpen(movement) || !movement.legalForm) continue;
     const ed = edById(movement.originEdId);
-    const entry = site(`ed-${movement.originEdId}`, ed ? edShortName(ed) : movement.originEdId, "ed");
+    // D-76: a journey from a community team has the form facts of a start site, under the team's row.
+    const entry =
+      movement.originEdId === undefined
+        ? site(`community-${movement.originCommunity?.siteCode}`, communityOriginLabel(movement.originCommunity), "ed")
+        : site(`ed-${movement.originEdId}`, ed ? edShortName(ed) : movement.originEdId, "ed");
     const missing: string[] = [];
     for (const fact of recordedFacts(movement)) {
       entry.cells[fact.gap].total += 1;

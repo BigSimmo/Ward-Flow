@@ -39,7 +39,7 @@ import {
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { edById } from "@/components/ward-management/ward-sites";
 import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 
@@ -114,7 +114,7 @@ type KpiFacet = "all" | "live" | "unplaced" | "notin" | "breaches";
 
 function originDepartmentText(movement: Movement): string {
   const originEd = edById(movement.originEdId);
-  return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
+  return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
 }
 
 const NO_CLINICAL_NOTE = "No clinical note is recorded in Ward Flow.";

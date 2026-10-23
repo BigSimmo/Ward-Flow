@@ -4,6 +4,7 @@
 import {
   type ModelClaim,
   WARD_MODEL,
+  WARD_MODEL_MOVEMENT_PARTS,
   WARD_ADMISSIONS,
   WARD_REDUCER,
   WARD_RECORD_EVENTS,
@@ -23,7 +24,7 @@ import {
   DECLINE_LOSES_ITS_UNIT,
   DECLINE_GAINS_FREE_TEXT,
   MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST,
-  MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
+  MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED,
   REFERRED_UNIT_IDS_BECOMES_ONE_ID,
   THE_PARALLEL_REFERRAL_CAP_IS_REMOVED,
   REFERRAL_ID_STOPS_BEING_NULLABLE,
@@ -355,10 +356,11 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     id: "statistics-screen/declines/a-movement-is-inside-an-emergency-department",
     renderedIn: STATISTICS_SCREEN,
     rendered: "people already inside an emergency department.",
-    claim: "Every movement names the emergency department the person is physically in.",
-    sourceFile: WARD_MODEL,
-    evidence: "originEdId: string;",
-    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
+    claim:
+      "A movement names the emergency department it started from, except a journey from an accepted community referral (D-76), which names the referring community team instead.",
+    sourceFile: WARD_MODEL_MOVEMENT_PARTS,
+    evidence: "originEdId?: string;",
+    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED,
   },
 
   // ── statistics-screen.tsx — empty beds that were not offered (the figure that is not built) ───

@@ -165,7 +165,7 @@ describe("no dispatch in this application can create an unresolvable department 
 
     expect(
       wardMovements
-        .filter((movement) => !departments.has(movement.originEdId))
+        .filter((movement) => !departments.has(movement.originEdId!))
         .map((movement) => `${movement.id} -> ${movement.originEdId}`),
       "the seed now carries a dangling department — the sentence is reachable by rendering and " +
         "should be asserted there",

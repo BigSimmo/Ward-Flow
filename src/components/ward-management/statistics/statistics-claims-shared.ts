@@ -59,6 +59,7 @@ export type ModelClaim = {
 };
 
 export const WARD_MODEL = "src/components/ward-management/ward-model.ts";
+export const WARD_MODEL_MOVEMENT_PARTS = "src/components/ward-management/ward-model-movement-parts.ts";
 export const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 export const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 export const WARD_RECORD_EVENTS = "src/components/ward-management/ward-flow-record-events.ts";
@@ -263,13 +264,13 @@ export const MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST: FalsifyingEdit = {
   replaceWith: "declines: Decline | null;",
 };
 
-export const MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL: FalsifyingEdit = {
+/** D-76 (23 Oct 2026): the origin department became optional for a journey from a community team. */
+export const MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED: FalsifyingEdit = {
   change:
-    "The origin department stops being required — `originEdId: string | null;` — so a movement no longer " +
-    "always names one. (Where a screen adds that the person is PHYSICALLY in that department, that is a " +
-    "reading of what the field MEANS, and no substring witnesses a meaning.)",
-  find: "originEdId: string;",
-  replaceWith: "originEdId: string | null;",
+    "The origin department becomes required again — `originEdId: string;` — so no journey can start at a " +
+    "community team and every movement names a department.",
+  find: "originEdId?: string;",
+  replaceWith: "originEdId: string;",
 };
 
 export const REFERRED_UNIT_IDS_BECOMES_ONE_ID: FalsifyingEdit = {

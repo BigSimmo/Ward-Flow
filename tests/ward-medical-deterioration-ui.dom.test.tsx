@@ -42,7 +42,7 @@ function Probe() {
 function openControls() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <EdScreen edId={held.originEdId} />
+      <EdScreen edId={held.originEdId!} />
       <Probe />
     </WardFlowProvider>,
   );
