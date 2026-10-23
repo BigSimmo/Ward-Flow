@@ -31,9 +31,6 @@ export type CrossRoleAllowance = {
   readonly reason: string;
 };
 
-const REFERRAL_SHEET =
-  "New referral is on every page (Josh, 9 Oct 2026); the sheet dispatches as the referral's source (ED or community), chosen in the form";
-
 /**
  * Open questions for Josh, one per pair: a dedicated route for that role, or an `EVENT_ROLE`
  * widening (with a ruling and a `tests/ward-event-permissions.test.ts` change). Removing a pair
@@ -46,10 +43,10 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
   // plan, 15 Oct 2026) and the reducer takes it from a ward only as source `psychiatric_ward`.
   // The New referral sheet on a ward page sends in that ward's own name too (Josh, 15 Oct 2026),
   // so it needs no pair either.
-  // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
   // Role access plan decision 6 (Josh, 15 Oct 2026): the transport officer does not raise referrals
   // or add patients, so the officer's two pairs are gone and its sheet shows "… only".
-  { routeRole: "ward", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
+  // Role access plan v2 (D-80): a ward adds a patient in its own name (`EVENT_ROLE.ADD_PATIENT`), so
+  // the last pair is gone. The list stays as the one place a future borrowed role must be named.
 ];
 
 /** The allowance that lets `role` dispatch `eventType` outside `EVENT_ROLE`, if any. */

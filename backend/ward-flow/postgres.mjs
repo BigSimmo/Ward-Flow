@@ -117,8 +117,10 @@ export function createWorkspaceStore(
   };
   const snapshot = (row, at, view) => ({
     dataMode: row.data_mode,
-    // Whether the demonstration controls work here, so the screens can say when they do not.
-    demoControls: demoEvents,
+    // Whether the demonstration controls work here for this desk, so the screens can say when they
+    // do not. They are the statewide coordinator's alone (commandRefusal), so no other desk is told
+    // they work (role access plan v2, D-80).
+    demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
     revision: Number(row.revision),
     ...accessContext(at, view),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,

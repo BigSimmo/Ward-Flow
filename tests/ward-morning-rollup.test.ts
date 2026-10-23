@@ -159,7 +159,7 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
       });
     });
 
-    it("adds a buzz from executive role", () => {
+    it("refuses a buzz from the executive role, which changes nothing (role access plan v2, D-80)", () => {
       const state = seedWardFlowState();
       const unit = state.units[0]!;
 
@@ -172,17 +172,8 @@ describe("Morning Bed Rollup and Ward Buzz state tracking", () => {
         urgent: true,
       });
 
-      expect(next.rejections).toHaveLength(state.rejections.length);
-      const latestRequest = next.refreshRequests[next.refreshRequests.length - 1]!;
-      expect(latestRequest).toEqual({
-        id: "buzz:0:1",
-        unitId: unit.id,
-        at: now,
-        byRole: "executive",
-        message: "Please review and confirm ward capacity.",
-        urgent: true,
-        confirmations: unit.allocatable.confirmations ?? 0,
-      });
+      expect(next.rejections).toHaveLength(state.rejections.length + 1);
+      expect(next.refreshRequests).toEqual(state.refreshRequests);
     });
 
     it("rejects buzz for non-existent unit", () => {

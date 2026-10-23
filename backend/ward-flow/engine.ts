@@ -483,11 +483,15 @@ export const BREAK_GLASS_SHIFT_HOURS = CLINICAL_VALUES.breakGlassShift.value;
 /**
  * Whether this desk may open this patient's record outside its care, or why not. Only clinical
  * roles break glass, only for a patient who exists, and never for one already in its own care.
+ * An unknown id and a patient already in care get the same reply, so the form cannot be used to
+ * learn which ids name a patient (role access plan v2, D-80).
  */
+export const BREAK_GLASS_NOT_OPENED = "That record cannot be opened outside your care from here.";
+
 export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patientId: unknown, at: Date): string | null {
   if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
   if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
-    return "That patient is not in the workspace.";
+    return BREAK_GLASS_NOT_OPENED;
   const { state, scoped } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
     places: getWardPlaceLookup(world.state.units),
@@ -508,7 +512,7 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
         admission.state !== "departed" &&
         !scoped.datesOnlyAdmissionIds.has(admission.id),
     );
-  if (inFullCare) return "That patient is already in your care.";
+  if (inFullCare) return BREAK_GLASS_NOT_OPENED;
   return null;
 }
 

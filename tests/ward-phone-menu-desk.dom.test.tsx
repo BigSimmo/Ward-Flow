@@ -96,3 +96,21 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
   });
 });
+
+describe("Create sheet asks the access check for Add patient (role access plan v2, D-80)", () => {
+  it("offers no Add patient on a desk whose role cannot add one", () => {
+    route.pathname = "/ward-flow/transport/officer";
+    openMenu();
+    fireEvent.click(screen.getByTestId("ward-phone-create"));
+    const sheet = screen.getByTestId("ward-phone-create-sheet");
+    expect(within(sheet).queryByRole("link", { name: /Add patient/u })).toBeNull();
+  });
+
+  it("offers Add patient on a ward's own page, which now adds in the ward's name", () => {
+    route.pathname = unitHref(allUnits()[0].id);
+    openMenu();
+    fireEvent.click(screen.getByTestId("ward-phone-create"));
+    const sheet = screen.getByTestId("ward-phone-create-sheet");
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
+  });
+});

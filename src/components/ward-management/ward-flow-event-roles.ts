@@ -350,7 +350,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // `ed` to `ed_medical`, so a ward cannot file a referral under another source.
   RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
-  ADD_PATIENT: ["ed", "community", "coordinator"],
+  // A ward adds one in its own name from Add patient and its New referral sheet (role access plan
+  // v2, D-80), registered to its own ward, rather than borrowing the ED or community role.
+  ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
   /**
    * Owner ruling FD-25: a WARD answers a referral addressed to it. The coordinator keeps the role
    * too — it overrides, and an override nobody can exercise is not an override.
@@ -504,18 +506,20 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
   EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
   CONFIRM_MORNING_ROLLUP: ["ward", "coordinator"],
-  SEND_WARD_BUZZ: ["coordinator", "bed_manager", "executive"],
+  SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
   // The handover sheet is signed by whoever is handing over — coordinator or the ward.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
-  // Statewide broadcast directives — coordinators, bed managers, and executives dispatch; all roles may acknowledge for their unit.
-  DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-  ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
-  STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  // Statewide broadcast directives: coordinators and bed managers dispatch, and every desk that
+  // receives one acknowledges it. The executive changes nothing and is sent none (role access plan
+  // v2, D-80; the server already refused it).
+  DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+  ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
+  STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
