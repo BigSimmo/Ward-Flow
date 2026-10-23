@@ -1347,6 +1347,13 @@
       "after": 1,
       "reason": "Home v7, approved by Josh on 22 Oct 2026, with State bedflow moved to the foot of Capacity unchanged. The two retired cases offered a ward from State bedflow on Home and checked its Undo toast. Capacity chooses no patient, so Offer is never shown there, and Home now refers from Placement, which opens the referral sheet. The override sign-off case stays; tests/ward-home-offer-visible.dom.test.tsx still checks what Home shows of an offer.",
       "approvedOn": "2026-10-22"
+    },
+    {
+      "path": "tests/ward-home-phone-sheets.dom.test.tsx",
+      "before": 10,
+      "after": 0,
+      "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z and his thread reply 13:45Z). The suite rendered only HomeWardSheet, the v10 phone ward sheet with Offer, which nothing could open after the phone sheet stopped taking a ward. PR #601 deletes the sheet, its lazy loader and this suite; the phone Since you looked and exceptions sheets keep their own tests.",
+      "approvedOn": "2026-10-23"
     }
   ]
 }
