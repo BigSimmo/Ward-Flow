@@ -3,10 +3,10 @@ import dynamic from "next/dynamic";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
 import { durMinutes } from "@/components/wf";
 import { patientFitLine, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-home-tab.module.css";
+import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 // The full referral loads when a ward opens it, so its sections and the seeded referral details
 // stay out of the ward page's first script.
@@ -34,7 +34,7 @@ export function AwaitingIdentity({
   // Opted out of the React Compiler, as ward-screen-tab-sections.tsx is: memoising this small card
   // part changed nothing visible but added to the ward page's phone download (script-budget.json).
   "use no memo";
-  const originName = edById(movement.originEdId)?.name;
+  const originName = movementOriginName(movement);
   return (
     <div className={styles.awaitingIdentity}>
       <span className={styles.awaitingTier} title={`Tier ${movement.urgency}`} aria-hidden="true">

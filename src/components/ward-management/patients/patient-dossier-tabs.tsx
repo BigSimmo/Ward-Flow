@@ -22,7 +22,6 @@ import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, typ
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
-import { edById } from "../ward-sites";
 import { calendarDateOf } from "../ward-clock";
 import { legalFormName } from "../ward-legal-forms";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
@@ -33,6 +32,7 @@ import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
@@ -79,7 +79,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     {
       at: movement.openedAt,
       tone: "neutral",
-      text: `Opened at ${edById(movement.originEdId)?.name ?? "an origin not recorded"}`,
+      text: `Opened at ${originName(movement) ?? "an origin not recorded"}`,
     },
   ];
   if (movement.examination)
@@ -607,7 +607,7 @@ export function PatientCommunityTab({
             <Card>
               <CardHead level={2} icon={Phone} title="Transfer coordination contacts" meta="Service roles" />
               <div className={styles.rows}>
-                <Row k="Sending location">{edById(movement.originEdId)?.name ?? notRecorded}</Row>
+                <Row k="Sending location">{originName(movement) ?? notRecorded}</Row>
                 <Row k="Receiving ward">
                   {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
                 </Row>

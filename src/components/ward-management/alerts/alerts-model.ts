@@ -6,9 +6,9 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
 import { patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * Alerts, Command queue (9 Oct 2026, round 2 option A). What each inbox row is, where it sits in
@@ -226,7 +226,7 @@ export function resolveAlertSubject(
     };
   }
   const info = resolveSubjectPatient(movement ?? { id: movementId ?? "", patientId: personId }, lookup);
-  const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
+  const origin = movement ? (originName(movement) ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {
     displayName: info.formalName,

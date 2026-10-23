@@ -9,6 +9,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * DOWNTIME PACK — a frozen, printable snapshot of the network for when the system is unavailable:
@@ -95,9 +96,10 @@ export type DowntimePackInput = {
 };
 
 /** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
-function edLabel(id: string): string {
-  const ed = edById(id);
-  return edShortName(ed) || ed?.name || id;
+function originLabel(movement: Movement): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  const ed = edById(movement.originEdId);
+  return edShortName(ed) || ed?.name || movement.originEdId;
 }
 
 function finiteOrNull(value: Instant | undefined): Instant | null {
@@ -137,13 +139,17 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   );
 
   const open = movements.filter(isOpen);
-  const stillInEd = open.filter((movement) => movement.stage !== "moving" && movement.leftDepartmentAt === undefined);
+  // D-76: a journey from a community team was never in an ED.
+  const stillInEd = open.filter(
+    (movement) =>
+      movement.originEdId !== undefined && movement.stage !== "moving" && movement.leftDepartmentAt === undefined,
+  );
 
   const edQueue = stillInEd
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      ed: edLabel(movement.originEdId),
+      ed: originLabel(movement),
       openedAt: movement.openedAt,
       waitedMinutes: Math.max(0, now - movement.openedAt),
       urgency: movement.urgency,
@@ -158,7 +164,7 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      from: edLabel(movement.originEdId),
+      from: originLabel(movement),
       to: unitName(movement.acceptedUnitId),
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       plannedAt: finiteOrNull(movement.plannedMoveAt),

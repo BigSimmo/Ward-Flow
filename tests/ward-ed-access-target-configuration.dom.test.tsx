@@ -59,7 +59,7 @@ function renderScreen(edId: string) {
 
 describe("the ED screen reads the coordinator-configured ED access target", () => {
   it("SET_CONFIGURATION flips ward-ed-access-target-<id> from under to over, and the screen's own label follows it", () => {
-    renderScreen(target.originEdId);
+    renderScreen(target.originEdId!);
     const testid = `ward-ed-access-target-${target.id}`;
 
     // Under the default 1440-minute target, this movement's wait has not yet passed it.
@@ -83,7 +83,7 @@ describe("the ED screen reads the coordinator-configured ED access target", () =
   });
 
   it("the screen's text names the new label and carries no '24-hour' wording", () => {
-    renderScreen(target.originEdId);
+    renderScreen(target.originEdId!);
     act(() => {
       current.dispatch({
         type: "SET_CONFIGURATION",
