@@ -36,8 +36,8 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
- * Community, Details and Documents hold everything else. Every value comes from the record: a
- * field the record cannot hold yet is a dashed Preview card that says so, never a guess.
+ * Community, Details and Documents hold everything else. Every value comes from the record, and a
+ * field the record cannot hold yet is left out, never guessed.
  */
 
 function CopyFact({ value, label }: { value: string; label: string }) {
