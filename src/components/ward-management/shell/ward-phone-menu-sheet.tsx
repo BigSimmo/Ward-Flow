@@ -335,6 +335,28 @@ function CreateSheet({
   const canAddPatient = canOpen(WARD_ADD_PERSON_HREF) && gate("ADD_PATIENT").allowed;
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
+  const rows = CREATE_LINKS.flatMap((item) => {
+    if (item.id === "add-patient" && !canAddPatient) return [];
+    const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
+    return entry
+      ? [
+          <li key={item.id}>
+            <Link
+              href={
+                item.id === "wards" && currentUnitId !== undefined
+                  ? unitHref(decodeURIComponent(currentUnitId))
+                  : entry.href
+              }
+              className={styles.row}
+              onClick={onClose}
+            >
+              <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+              <Chevron />
+            </Link>
+          </li>,
+        ]
+      : [];
+  });
   return (
     <Sheet
       id="ward-phone-create"
@@ -364,30 +386,12 @@ function CreateSheet({
           New referral
         </button>
       ) : null}
-      <ul className={`${styles.list} ${styles.rich}`}>
-        {CREATE_LINKS.flatMap((item) => {
-          if (item.id === "add-patient" && !canAddPatient) return [];
-          const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
-          return entry
-            ? [
-                <li key={item.id}>
-                  <Link
-                    href={
-                      item.id === "wards" && currentUnitId !== undefined
-                        ? unitHref(decodeURIComponent(currentUnitId))
-                        : entry.href
-                    }
-                    className={styles.row}
-                    onClick={onClose}
-                  >
-                    <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                    <Chevron />
-                  </Link>
-                </li>,
-              ]
-            : [];
-        })}
-      </ul>
+      {rows.length > 0 ? (
+        <ul className={`${styles.list} ${styles.rich}`}>{rows}</ul>
+      ) : canRefer ? null : (
+        // An officer or executive desk has nothing to start, so the sheet says so rather than open empty.
+        <p className={styles.empty}>Nothing to start from this desk.</p>
+      )}
     </Sheet>
   );
 }
