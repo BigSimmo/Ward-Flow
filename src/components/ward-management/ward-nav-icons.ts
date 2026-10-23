@@ -20,11 +20,9 @@ import {
   ShieldCheck,
   Siren,
   TriangleAlert,
-  Truck,
   Tv,
   UserPlus,
   Users,
-  Waypoints,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,11 +38,9 @@ import type { WardMode, WardNavId } from "./ward-nav";
  */
 export const WARD_VIEW_ICONS: Record<WardMode, LucideIcon> = {
   command: LayoutDashboard,
-  network: Waypoints,
   delays: ListFilter,
   capacity: BedSingle,
   movements: Route,
-  transport: Truck,
   governance: ShieldCheck,
 };
 
