@@ -230,17 +230,7 @@ export function HandoverPrintSheet({
       paper.height - 30 - 24 - PAGE_HEADER_HEIGHT - 22,
       measurements,
     );
-  }, [
-    options.beds,
-    options.holds,
-    options.signatures,
-    options.orientation,
-    landscape,
-    wards,
-    held,
-    paper.height,
-    measurements,
-  ]);
+  }, [options.beds, options.holds, options.signatures, landscape, wards, held, paper.height, measurements]);
   const totalPages = pages.length + extraPages.length;
 
   const rows = useMemo(() => {
