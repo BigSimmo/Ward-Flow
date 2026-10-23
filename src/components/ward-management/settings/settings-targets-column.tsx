@@ -7,7 +7,7 @@ import {
   FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
   FORECAST_SHORT_ALERT_RANGE_BEDS,
   FORECAST_WORSE_ALERT_RANGE_BEDS,
-} from "@/components/ward-management/forecast/forecast-alert-defaults";
+} from "@/components/ward-management/ward-operational-defaults";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -121,8 +121,8 @@ export function SettingsTargetsColumn({
             minLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.min),
             maxLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.max),
           }}
-          onChange={(beds) => setRule({ forecastShortAlertBeds: beds })}
-          onReset={() => setRule({ forecastShortAlertBeds: saved.forecastShort })}
+          onChange={(beds) => setRule({ forecastShortBeds: beds })}
+          onReset={() => setRule({ forecastShortBeds: saved.forecastShort })}
           usedBy="Alerts"
         />
         <RuleRow
@@ -142,8 +142,8 @@ export function SettingsTargetsColumn({
             minLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.min),
             maxLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.max),
           }}
-          onChange={(minutes) => setRule({ forecastEdRiskLeadMinutes: minutes })}
-          onReset={() => setRule({ forecastEdRiskLeadMinutes: saved.forecastEdLead })}
+          onChange={(minutes) => setRule({ forecastEdLeadMinutes: minutes })}
+          onReset={() => setRule({ forecastEdLeadMinutes: saved.forecastEdLead })}
           usedBy="Alerts"
         />
         <RuleRow
@@ -163,8 +163,8 @@ export function SettingsTargetsColumn({
             minLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.min),
             maxLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.max),
           }}
-          onChange={(beds) => setRule({ forecastWorseAlertBeds: beds })}
-          onReset={() => setRule({ forecastWorseAlertBeds: saved.forecastWorse })}
+          onChange={(beds) => setRule({ forecastWorseBeds: beds })}
+          onReset={() => setRule({ forecastWorseBeds: saved.forecastWorse })}
           usedBy="Alerts"
         />
       </Card>

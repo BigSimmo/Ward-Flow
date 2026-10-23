@@ -28,7 +28,7 @@ import {
   FORECAST_ED_RISK_LEAD_MINUTES,
   FORECAST_SHORT_ALERT_BEDS,
   FORECAST_WORSE_ALERT_BEDS,
-} from "../src/components/ward-management/forecast/forecast-alert-defaults";
+} from "../src/components/ward-management/ward-operational-defaults";
 
 describe("defaultWardConfiguration", () => {
   it("equals the named model constants", () => {
@@ -42,9 +42,9 @@ describe("defaultWardConfiguration", () => {
       referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
-      forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-      forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-      forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+      forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+      forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+      forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
     });
   });
 
@@ -88,9 +88,9 @@ describe("validateConfiguration", () => {
     referralDecisionTargetMinutes: 90,
     transferAcceptanceTargetMinutes: 180,
     transportBookedTargetMinutes: 45,
-    forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-    forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-    forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+    forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+    forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+    forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
   };
 
   it("accepts a valid in-range, on-step payload", () => {
@@ -151,9 +151,9 @@ describe("validateConfiguration", () => {
       referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
-      forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-      forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-      forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+      forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+      forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+      forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
     });
   });
 
@@ -173,9 +173,9 @@ describe("validateConfiguration", () => {
       referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
-      forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-      forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-      forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+      forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+      forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+      forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
     });
   });
 
@@ -187,18 +187,18 @@ describe("validateConfiguration", () => {
     expect(validateConfiguration({ ...valid, transportBookedTargetMinutes: 30 })).toEqual({
       ...valid,
       transportBookedTargetMinutes: 30,
-      forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-      forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-      forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+      forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+      forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+      forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
     });
   });
 
   // Forecasting build, 23 Oct 2026: the three Forecast alert rules are optional, with ranges.
   it("rejects forecast alert rules out of range and keeps an older payload loading", () => {
-    expect(validateConfiguration({ ...valid, forecastShortAlertBeds: 0 })).toBeNull();
-    expect(validateConfiguration({ ...valid, forecastEdRiskLeadMinutes: 90 })).toBeNull();
-    expect(validateConfiguration({ ...valid, forecastWorseAlertBeds: 11 })).toBeNull();
-    expect(validateConfiguration({ ...valid, forecastEdRiskLeadMinutes: 6 * 60 })?.forecastEdRiskLeadMinutes).toBe(360);
+    expect(validateConfiguration({ ...valid, forecastShortBeds: 0 })).toBeNull();
+    expect(validateConfiguration({ ...valid, forecastEdLeadMinutes: 90 })).toBeNull();
+    expect(validateConfiguration({ ...valid, forecastWorseBeds: 11 })).toBeNull();
+    expect(validateConfiguration({ ...valid, forecastEdLeadMinutes: 6 * 60 })?.forecastEdLeadMinutes).toBe(360);
   });
 
   it("rejects due-time warnings out of range, off step, or with the first not before the second", () => {

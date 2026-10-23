@@ -17,9 +17,9 @@ const validPayload = {
   referralDecisionTargetMinutes: 120,
   transferAcceptanceTargetMinutes: 240,
   transportBookedTargetMinutes: 60,
-  forecastShortAlertBeds: 3,
-  forecastEdRiskLeadMinutes: 720,
-  forecastWorseAlertBeds: 2,
+  forecastShortBeds: 3,
+  forecastEdLeadMinutes: 720,
+  forecastWorseBeds: 2,
 };
 
 function setConfiguration(
@@ -79,9 +79,9 @@ describe("SET_CONFIGURATION", () => {
       referralDecisionTargetMinutes: 120,
       transferAcceptanceTargetMinutes: 240,
       transportBookedTargetMinutes: 60,
-      forecastShortAlertBeds: 3,
-      forecastEdRiskLeadMinutes: 720,
-      forecastWorseAlertBeds: 2,
+      forecastShortBeds: 3,
+      forecastEdLeadMinutes: 720,
+      forecastWorseBeds: 2,
     });
   });
 

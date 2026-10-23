@@ -17,7 +17,7 @@ import {
   FORECAST_ED_RISK_LEAD_MINUTES,
   FORECAST_SHORT_ALERT_BEDS,
   FORECAST_WORSE_ALERT_BEDS,
-} from "./forecast-alert-defaults";
+} from "@/components/ward-management/ward-operational-defaults";
 import { forecastAlerts, type ForecastAlertThresholds } from "./forecast-alerts";
 import { forecastByKind } from "./forecast-by-kind";
 import { forecastHorizonDays } from "./forecast-horizon";
@@ -85,14 +85,14 @@ export function useForecastModel(now: Instant) {
   );
   const thresholds: ForecastAlertThresholds = useMemo(
     () => ({
-      shortBeds: configuration.forecastShortAlertBeds ?? FORECAST_SHORT_ALERT_BEDS,
-      edLeadMinutes: configuration.forecastEdRiskLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
-      worseBeds: configuration.forecastWorseAlertBeds ?? FORECAST_WORSE_ALERT_BEDS,
+      shortBeds: configuration.forecastShortBeds ?? FORECAST_SHORT_ALERT_BEDS,
+      edLeadMinutes: configuration.forecastEdLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
+      worseBeds: configuration.forecastWorseBeds ?? FORECAST_WORSE_ALERT_BEDS,
     }),
     [
-      configuration.forecastShortAlertBeds,
-      configuration.forecastEdRiskLeadMinutes,
-      configuration.forecastWorseAlertBeds,
+      configuration.forecastShortBeds,
+      configuration.forecastEdLeadMinutes,
+      configuration.forecastWorseBeds,
     ],
   );
   return {

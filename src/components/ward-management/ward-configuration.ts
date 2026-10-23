@@ -17,15 +17,13 @@ import {
   WARD_ANSWER_TARGET_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
-import {
   FORECAST_ED_RISK_LEAD_MINUTES,
   FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
   FORECAST_SHORT_ALERT_BEDS,
   FORECAST_SHORT_ALERT_RANGE_BEDS,
   FORECAST_WORSE_ALERT_BEDS,
   FORECAST_WORSE_ALERT_RANGE_BEDS,
-} from "@/components/ward-management/forecast/forecast-alert-defaults";
+} from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * The four coordinator-tunable figures wired to an engine read site (Task 2 of the
@@ -59,11 +57,11 @@ export type WardConfiguration = {
   /** Minutes from the bed being pulled to transport being booked. Default, set in Settings. */
   transportBookedTargetMinutes: number;
   /** Beds; a bed type likely this many short tomorrow raises a Forecast alert (23 Oct 2026). */
-  forecastShortAlertBeds: number;
+  forecastShortBeds: number;
   /** Minutes; alert when someone in ED will pass the access target within this time. */
-  forecastEdRiskLeadMinutes: number;
+  forecastEdLeadMinutes: number;
   /** Beds; alert when tomorrow's likely figure has dropped this much since the last look. */
-  forecastWorseAlertBeds: number;
+  forecastWorseBeds: number;
 };
 
 /** The keys `WardConfiguration` carries, and no others — the same list `validateConfiguration`
@@ -78,23 +76,10 @@ const CONFIGURATION_KEYS = [
   "referralDecisionTargetMinutes",
   "transferAcceptanceTargetMinutes",
   "transportBookedTargetMinutes",
-  "forecastShortAlertBeds",
-  "forecastEdRiskLeadMinutes",
-  "forecastWorseAlertBeds",
+  "forecastShortBeds",
+  "forecastEdLeadMinutes",
+  "forecastWorseBeds",
 ] as const;
-
-/** Keys a stored or older payload may leave out; each takes its default when missing. */
-const OPTIONAL_KEYS: readonly (keyof WardConfiguration)[] = [
-  "morningRollupDeadlineMinutes",
-  "dueSoonUrgentMinutes",
-  "dueSoonMinutes",
-  "referralDecisionTargetMinutes",
-  "transferAcceptanceTargetMinutes",
-  "transportBookedTargetMinutes",
-  "forecastShortAlertBeds",
-  "forecastEdRiskLeadMinutes",
-  "forecastWorseAlertBeds",
-];
 
 const OPTIONAL_DEFAULTS: Pick<
   WardConfiguration,
@@ -104,9 +89,9 @@ const OPTIONAL_DEFAULTS: Pick<
   | "referralDecisionTargetMinutes"
   | "transferAcceptanceTargetMinutes"
   | "transportBookedTargetMinutes"
-  | "forecastShortAlertBeds"
-  | "forecastEdRiskLeadMinutes"
-  | "forecastWorseAlertBeds"
+  | "forecastShortBeds"
+  | "forecastEdLeadMinutes"
+  | "forecastWorseBeds"
 > = {
   morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
   dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
@@ -114,10 +99,13 @@ const OPTIONAL_DEFAULTS: Pick<
   referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
   transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
-  forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-  forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-  forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+  forecastShortBeds: FORECAST_SHORT_ALERT_BEDS,
+  forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
+  forecastWorseBeds: FORECAST_WORSE_ALERT_BEDS,
 };
+
+/** Keys a stored or older payload may leave out; each takes its default when missing. */
+const OPTIONAL_KEYS = Object.keys(OPTIONAL_DEFAULTS) as readonly (keyof WardConfiguration)[];
 
 /** Seeds `WardFlowState.configuration` and is what `RESET_SCENARIO`/`SET_SCENARIO` reseed to. */
 export function defaultWardConfiguration(): WardConfiguration {
@@ -125,15 +113,7 @@ export function defaultWardConfiguration(): WardConfiguration {
     edAccessTargetMinutes: ED_ACCESS_TARGET_MINUTES,
     parallelReferralCap: PARALLEL_REFERRAL_CAP,
     pullHoldMinutes: PULL_HOLD_MINUTES,
-    morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
-    dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
-    dueSoonMinutes: DUE_SOON_MINUTES,
-    referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
-    transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
-    transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
-    forecastShortAlertBeds: FORECAST_SHORT_ALERT_BEDS,
-    forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_MINUTES,
-    forecastWorseAlertBeds: FORECAST_WORSE_ALERT_BEDS,
+    ...OPTIONAL_DEFAULTS,
   };
 }
 
@@ -149,9 +129,9 @@ const BOUNDS: Record<keyof WardConfiguration, Bounds> = {
   referralDecisionTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
   transferAcceptanceTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
   transportBookedTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
-  forecastShortAlertBeds: FORECAST_SHORT_ALERT_RANGE_BEDS,
-  forecastEdRiskLeadMinutes: FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
-  forecastWorseAlertBeds: FORECAST_WORSE_ALERT_RANGE_BEDS,
+  forecastShortBeds: FORECAST_SHORT_ALERT_RANGE_BEDS,
+  forecastEdLeadMinutes: FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+  forecastWorseBeds: FORECAST_WORSE_ALERT_RANGE_BEDS,
 };
 
 function isOnStep(value: number, bounds: Bounds): boolean {
@@ -166,6 +146,11 @@ function isValidField(key: keyof WardConfiguration, value: unknown): value is nu
   return value >= bounds.min && value <= bounds.max && isOnStep(value, bounds);
 }
 
+/** The keys a payload with these keys must carry: every required key, plus the optional ones it has. */
+function expectedKeysOf(keys: string[]) {
+  return CONFIGURATION_KEYS.filter((key) => keys.includes(key) || !OPTIONAL_KEYS.includes(key));
+}
+
 /**
  * Refuses anything that is not in-range, on-step integers matching the configuration keys.
  * Supports legacy 3-key payloads (without `morningRollupDeadlineMinutes`), defaulting it.
@@ -178,7 +163,7 @@ export function validateConfiguration(payload: unknown): WardConfiguration | nul
   const record = payload as Record<string, unknown>;
   const keys = Object.keys(record);
 
-  const expectedKeys = CONFIGURATION_KEYS.filter((key) => keys.includes(key) || !OPTIONAL_KEYS.includes(key));
+  const expectedKeys = expectedKeysOf(keys);
 
   if (keys.length !== expectedKeys.length) return null;
   if (!expectedKeys.every((key) => keys.includes(key))) return null;
@@ -187,22 +172,13 @@ export function validateConfiguration(payload: unknown): WardConfiguration | nul
     if (!isValidField(key, record[key])) return null;
   }
 
-  const read = (key: keyof typeof OPTIONAL_DEFAULTS): number =>
-    keys.includes(key) ? (record[key] as number) : OPTIONAL_DEFAULTS[key];
-  const configuration: WardConfiguration = {
-    edAccessTargetMinutes: record.edAccessTargetMinutes as number,
-    parallelReferralCap: record.parallelReferralCap as number,
-    pullHoldMinutes: record.pullHoldMinutes as number,
-    morningRollupDeadlineMinutes: read("morningRollupDeadlineMinutes"),
-    dueSoonUrgentMinutes: read("dueSoonUrgentMinutes"),
-    dueSoonMinutes: read("dueSoonMinutes"),
-    referralDecisionTargetMinutes: read("referralDecisionTargetMinutes"),
-    transferAcceptanceTargetMinutes: read("transferAcceptanceTargetMinutes"),
-    transportBookedTargetMinutes: read("transportBookedTargetMinutes"),
-    forecastShortAlertBeds: read("forecastShortAlertBeds"),
-    forecastEdRiskLeadMinutes: read("forecastEdRiskLeadMinutes"),
-    forecastWorseAlertBeds: read("forecastWorseAlertBeds"),
-  };
+  // Every key is checked above; a missing optional one takes its default. Built in key order.
+  const configuration = Object.fromEntries(
+    CONFIGURATION_KEYS.map((key) => [
+      key,
+      keys.includes(key) ? record[key] : OPTIONAL_DEFAULTS[key as keyof typeof OPTIONAL_DEFAULTS],
+    ]),
+  ) as WardConfiguration;
   // The first warning must come before the second, or "due within the hour" would never show.
   if (configuration.dueSoonUrgentMinutes >= configuration.dueSoonMinutes) return null;
   return configuration;
@@ -221,7 +197,7 @@ export function describeInvalidConfiguration(payload: unknown): string {
   const record = payload as Record<string, unknown>;
   const keys = Object.keys(record);
 
-  const expectedKeys = CONFIGURATION_KEYS.filter((key) => keys.includes(key) || !OPTIONAL_KEYS.includes(key));
+  const expectedKeys = expectedKeysOf(keys);
 
   const missing = expectedKeys.filter((key) => !keys.includes(key));
   if (missing.length > 0) return `configuration payload is missing ${missing.join(", ")}`;
@@ -233,8 +209,7 @@ export function describeInvalidConfiguration(payload: unknown): string {
       return `${key} must be an integer between ${bounds.min} and ${bounds.max} in steps of ${bounds.step}`;
     }
   }
-  const urgent = keys.includes("dueSoonUrgentMinutes") ? record.dueSoonUrgentMinutes : DUE_SOON_URGENT_MINUTES;
-  const soon = keys.includes("dueSoonMinutes") ? record.dueSoonMinutes : DUE_SOON_MINUTES;
+  const { dueSoonUrgentMinutes: urgent, dueSoonMinutes: soon } = { ...OPTIONAL_DEFAULTS, ...record };
   if (typeof urgent === "number" && typeof soon === "number" && urgent >= soon) {
     return "dueSoonUrgentMinutes must be less than dueSoonMinutes";
   }

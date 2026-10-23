@@ -19,7 +19,7 @@ import {
   FORECAST_ED_RISK_LEAD_MINUTES,
   FORECAST_SHORT_ALERT_BEDS,
   FORECAST_WORSE_ALERT_BEDS,
-} from "@/components/ward-management/forecast/forecast-alert-defaults";
+} from "@/components/ward-management/ward-operational-defaults";
 import { type WfTone } from "@/components/wf";
 import { SETTINGS_TABS, type SettingsTab } from "./settings-search-index";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -71,9 +71,9 @@ export function fullRules(value: WardConfiguration) {
     referralTarget: value.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES,
     transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
-    forecastShort: value.forecastShortAlertBeds ?? FORECAST_SHORT_ALERT_BEDS,
-    forecastEdLead: value.forecastEdRiskLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
-    forecastWorse: value.forecastWorseAlertBeds ?? FORECAST_WORSE_ALERT_BEDS,
+    forecastShort: value.forecastShortBeds ?? FORECAST_SHORT_ALERT_BEDS,
+    forecastEdLead: value.forecastEdLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
+    forecastWorse: value.forecastWorseBeds ?? FORECAST_WORSE_ALERT_BEDS,
   };
 }
 
