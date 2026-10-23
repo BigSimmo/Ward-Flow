@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { buildScenarioFile, readScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-demo-storage-constants";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function paperState() {
   const state = seedWardFlowState();
@@ -102,5 +105,66 @@ describe("checked paper-expiry corrections", () => {
     const extended = wardFlowReducer(state, { ...ordinary, dueAt: 750 });
     expect(extended.movements.find((candidate) => candidate.id === movementId)?.legalForm?.dueAt).toBe(750);
     expect(extended.auditEvents.at(-1)).toMatchObject({ details: { operation: "extension-recorded" } });
+  });
+});
+
+function savedCorrection() {
+  const { state, movementId } = paperState();
+  const corrected = wardFlowReducer(state, correction(movementId));
+  expect(corrected.rejections).toHaveLength(state.rejections.length);
+  const file = buildScenarioFile(
+    corrected,
+    NOW_ANCHOR,
+    WARD_FLOW_STORED_STATE_VERSION,
+    new Date("2026-10-23T00:00:00Z"),
+  );
+  expect(file.ok).toBe(true);
+  if (!file.ok) throw new Error("The synthetic correction fixture must be saveable.");
+  return { file, movementId };
+}
+
+describe("paper corrections in saved synthetic scenarios", () => {
+  it("preserves old and corrected paper facts through the real file save and load path", () => {
+    const { file, movementId } = savedCorrection();
+    const restored = readScenarioFile(file.json, WARD_FLOW_STORED_STATE_VERSION);
+    expect(restored.ok).toBe(true);
+    if (!restored.ok) return;
+    const movement = restored.state.movements.find((candidate) => candidate.id === movementId)!;
+    expect(movement.legalForm?.dueAt).toBe(650);
+    expect(movement.legalFormExpiryCorrections).toEqual([
+      {
+        at: 540,
+        by: "coordinator",
+        formCode: "1A",
+        formWrittenAt: 400,
+        previousDueAt: 700,
+        dueAt: 650,
+        reason: "transcription_error",
+      },
+    ]);
+  });
+
+  it.each([
+    ["an unrecognised reason", { reason: "unknown" }],
+    ["a missing previous expiry", { previousDueAt: undefined }],
+    ["a non-numeric corrected expiry", { dueAt: "650" }],
+    ["an unknown actor", { by: "unknown" }],
+    ["an empty form code", { formCode: "" }],
+    ["identical old and corrected expiries", { previousDueAt: 650 }],
+    ["an unexpected narrative field", { note: "extra" }],
+  ])("refuses a correction history containing %s instead of restoring invented facts", (_label, changed) => {
+    const { file, movementId } = savedCorrection();
+    const envelope = JSON.parse(file.json);
+    const movement = envelope.state.movements.find((candidate: { id: string }) => candidate.id === movementId);
+    movement.legalFormExpiryCorrections[0] = { ...movement.legalFormExpiryCorrections[0], ...changed };
+    expect(readScenarioFile(JSON.stringify(envelope), WARD_FLOW_STORED_STATE_VERSION).ok).toBe(false);
+  });
+
+  it("still loads an earlier synthetic save with no correction history", () => {
+    const { state } = paperState();
+    const file = buildScenarioFile(state, NOW_ANCHOR, WARD_FLOW_STORED_STATE_VERSION, new Date("2026-10-23T00:00:00Z"));
+    expect(file.ok).toBe(true);
+    if (!file.ok) return;
+    expect(readScenarioFile(file.json, WARD_FLOW_STORED_STATE_VERSION).ok).toBe(true);
   });
 });

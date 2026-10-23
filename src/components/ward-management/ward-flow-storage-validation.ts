@@ -51,6 +51,7 @@ import {
 import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 import { REPATRIATION_MODES } from "./ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { LEGAL_FORM_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -135,6 +136,17 @@ const id = text.check(z.minLength(1));
 // Pass 1: rules for known keys at any depth. A history list holds rows with a finite time and the
 // named text fields; a record key holds an object; a unit list holds strings.
 const history = (shape: z.core.$ZodShape) => z.array(z.looseObject({ at: finite, ...shape }));
+const legalFormExpiryCorrection = z
+  .strictObject({
+    at: finite,
+    by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+    formCode: id,
+    formWrittenAt: z.optional(finite),
+    previousDueAt: finite,
+    dueAt: finite,
+    reason: z.enum(LEGAL_FORM_EXPIRY_CORRECTION_REASONS),
+  })
+  .check(z.refine((row) => row.previousDueAt !== row.dueAt));
 const legalFormRule = z.looseObject({
   code: text,
   region: z.optional(z.enum(["metro", "country"])),
@@ -152,6 +164,7 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["unwinds", history({ kind: text, by: text, reason: text })],
   ["stageChanges", history({ to: text, by: text })],
   ["legalFormExpiryHistory", history({ by: text, basis: text })],
+  ["legalFormExpiryCorrections", z.array(legalFormExpiryCorrection)],
   ["legalFormReceiptCorrections", history({ by: text, reason: text })],
   ["genderChanges", history({ by: text, to: text })],
   ["supersededExaminations", history({ outcome: text })],
