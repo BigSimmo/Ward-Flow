@@ -121,6 +121,58 @@ describe("PIR chronology: one person's records", () => {
     expect(chronology.rows.filter((row) => row.source === "Session log")).toEqual([]);
   });
 
+  it("shows a seclusion ending on the patient's chronology, though the end names only its episode", () => {
+    const seed = seedWardFlowState();
+    const stay = seed.admissions.find(
+      (admission) =>
+        admission.state === "occupied" &&
+        seed.patients.some((patient) =>
+          patientRecordIds(
+            patient.id,
+            seed.patients,
+            seed.movements,
+            seed.referrals,
+            seed.admissions,
+          ).admissions.includes(admission.id),
+        ),
+    )!;
+    const personId = seed.patients.find((patient) =>
+      patientRecordIds(patient.id, seed.patients, seed.movements, seed.referrals, seed.admissions).admissions.includes(
+        stay.id,
+      ),
+    )!.id;
+    const acting = { role: "ward", unitId: stay.unitId, actingUnitId: stay.unitId } as const;
+    const start: WardFlowEvent = {
+      type: "RECORD_RESTRICTIVE_PRACTICE_START",
+      ...acting,
+      now: NOW_ANCHOR + 5,
+      admissionId: stay.id,
+      practice: "seclusion",
+      startedAt: NOW_ANCHOR - 15,
+    };
+    const started = wardFlowReducer(seed, start);
+    const episodeId = started.units.find((unit) => unit.id === stay.unitId)!.restrictivePractice!.episodes[0]!.id;
+    const end: WardFlowEvent = {
+      type: "RECORD_RESTRICTIVE_PRACTICE_END",
+      ...acting,
+      now: NOW_ANCHOR + 10,
+      episodeId,
+      endedAt: NOW_ANCHOR,
+    };
+    const ended = wardFlowReducer(started, end);
+    expect(ended.rejections).toEqual(seed.rejections);
+
+    const endEntry = eventLogEntryFor(end, true, started);
+    expect(endEntry.admissionId).toBe(stay.id);
+    // Without the state it was raised against, the end cannot be joined to a stay.
+    expect(eventLogEntryFor(end, true).admissionId).toBeUndefined();
+
+    const eventLog = [eventLogEntryFor(start, true, seed), endEntry];
+    const chronology = patientChronology(inputFor(ended, { personId, auditEvents: null, eventLog }));
+    const actions = chronology.rows.filter((row) => row.source === "Session log").map((row) => row.action);
+    expect(actions).toEqual(["Seclusion or restraint started", "Seclusion or restraint ended"]);
+  });
+
   it("shows a refused session act, and drops the audit trail when the reader may not see it", () => {
     const state = seedWardFlowState();
     const refused: WardFlowEvent = {

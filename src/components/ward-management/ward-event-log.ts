@@ -1,5 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { Unit } from "@/components/ward-management/ward-model";
 
 /**
  * Event log, step 1 (25 Sept 2026): an in-memory record of every event dispatched in this browser
@@ -38,7 +39,16 @@ const ID_FIELDS = [
   "plannedAdmissionId",
 ] as const;
 
-export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): EventLogEntry {
+/**
+ * `world` is the state the event was raised against. An episode end names only its episode, so the
+ * stay comes from the episode on the ward's record; the command itself must not name the stay, since
+ * a ward ends an episode after the patient has left its scope (Codex P2 on #553).
+ */
+export function eventLogEntryFor(
+  event: WardFlowEvent,
+  accepted: boolean,
+  world?: { units: readonly Unit[] },
+): EventLogEntry {
   const role = "role" in event && typeof event.role === "string" ? (event.role as WardFlowRole) : undefined;
   const now = "now" in event && typeof event.now === "number" ? event.now : undefined;
   const entry: EventLogEntry = {
@@ -53,6 +63,12 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
       const value = Reflect.get(event, field);
       if (typeof value === "string" && value.length > 0) entry[field] = value;
     }
+  }
+  if (event.type === "RECORD_RESTRICTIVE_PRACTICE_END") {
+    const episode = world?.units
+      .find((unit) => unit.id === event.unitId)
+      ?.restrictivePractice?.episodes.find((candidate) => candidate.id === event.episodeId);
+    if (episode) entry.admissionId = episode.admissionId;
   }
   return entry;
 }
