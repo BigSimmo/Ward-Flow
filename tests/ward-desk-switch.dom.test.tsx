@@ -84,6 +84,16 @@ describe("a desk switch on its way", () => {
     expect(screen.queryByText(/^Opening the/)).toBeNull();
   });
 
+  it("ends the switch once the new home arrives, so going Back finds the page closed", () => {
+    const view = switchToExecutive();
+    nav.pathname = "/ward-flow/statistics";
+    view.rerender(app(false));
+    nav.pathname = "/ward-flow";
+    view.rerender(app(false));
+    expect(screen.getByText("Not part of your role")).toBeInTheDocument();
+    expect(screen.queryByText(/^Opening the/)).toBeNull();
+  });
+
   it("leaves another closed page closed while a switch is on its way", () => {
     switchToExecutive();
     cleanup();
@@ -97,6 +107,6 @@ describe("a desk switch on its way", () => {
     switchToExecutive();
     expect(screen.getByText("Opening the Executive desk")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(DESK_SWITCH_WAIT_MS));
-    expect(screen.getByText("Not part of your role")).toBeInTheDocument();
+    expect(screen.getByText("Not part of your role")).toHaveFocus();
   });
 });
