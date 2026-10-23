@@ -25,6 +25,8 @@ export type EventLogEntry = {
   releaseId?: string;
   /** The booking a planned-admission event acts on (stream D). An id, never the initials. */
   plannedAdmissionId?: string;
+  /** D-72: the seclusion or restraint episode an end names; the chronology finds its stay. */
+  episodeId?: string;
 };
 
 const ID_FIELDS = [
@@ -36,6 +38,7 @@ const ID_FIELDS = [
   "bedId",
   "releaseId",
   "plannedAdmissionId",
+  "episodeId",
 ] as const;
 
 export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): EventLogEntry {
