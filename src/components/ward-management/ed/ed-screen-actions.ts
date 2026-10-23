@@ -7,7 +7,7 @@ import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
-import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs, type EdStepEvent } from "./ed-screen-model";
+import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 
 export function edScreenActions({
@@ -15,20 +15,17 @@ export function edScreenActions({
   now,
   dayZero,
   thisEdId,
-  recordEdStep,
+  submitExamination,
   panels,
 }: {
   raise: WardRaise;
   now: Instant;
   dayZero: WardFlowContextValue["dayZero"];
   thisEdId: string;
-  recordEdStep: (event: EdStepEvent) => void;
+  submitExamination: (event: FormEvent<HTMLFormElement>, movementId: string) => void;
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
   const {
-    examinationOutcome,
-    setExaminationOpenFor,
-    setExaminationOutcome,
     urgencyDraft,
     setUrgencyChangeOpenFor,
     legalStatusDraft,
@@ -43,14 +40,6 @@ export function edScreenActions({
     transportDraft,
     closeTransportDialog,
   } = panels;
-
-  function submitExamination(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    if (!examinationOutcome) return;
-    recordEdStep({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
-    setExaminationOpenFor(undefined);
-    setExaminationOutcome(undefined);
-  }
 
   function submitUrgencyChange(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
