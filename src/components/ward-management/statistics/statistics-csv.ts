@@ -18,7 +18,7 @@ type CsvProvenance = {
 };
 
 /** Metadata is separate from the unchanged data-column header and rows. */
-export function csvProvenanceLines(provenance: CsvProvenance): (string | number)[][] {
+function csvProvenanceLines(provenance: CsvProvenance): (string | number)[][] {
   return [
     ["Data", "Synthetic, not clinical records"],
     ["As at", provenance.asAt],

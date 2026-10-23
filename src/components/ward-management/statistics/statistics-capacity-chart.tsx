@@ -212,7 +212,7 @@ export function StatisticsCapacityChart({
     ];
     downloadCsv("ward-flow-synthetic-capacity.csv", lines, {
       asAt,
-      scope: `Capacity ${scopeLabel}; ${service === "all" ? "all services" : service}; grouped by ${groupBy}`,
+      scope: `Capacity ${scopeLabel}; all matching rows; ${service === "all" ? "all services highlighted" : `${service} highlighted`}; grouped by ${groupBy}`,
     });
   }
 
