@@ -47,6 +47,7 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
+import { noteDeskSwitch } from "@/components/ward-management/shell/ward-desk-switch";
 import {
   ACCESS_ROLE_LABELS,
   STATEWIDE_COORDINATOR,
@@ -189,10 +190,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   // and a desk whose screens that role cannot open is not opened at all (review on PR #363).
   const keepsSignedInRole = accessOn && shared && !previewing;
 
-  function takeAccess(access: WardAccess) {
-    if (!accessOn) return;
+  /** Takes the desk's access on the way to `href`, so the page left behind waits rather than closing. */
+  function takeAccess(access: WardAccess, href: string) {
+    if (!accessOn || (shared && !previewing)) return;
+    noteDeskSwitch(pathname, href);
     if (previewing) startAccessPreview(access);
-    else if (!shared) setWardAccess(access);
+    else setWardAccess(access);
   }
 
   /** False, with a note, when the signed-in role cannot open this address. */
@@ -224,7 +227,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
   function openAccessDesk(access: WardAccess, href: string) {
     if (!reachable(href)) return;
-    takeAccess(access);
+    takeAccess(access, href);
     // PR #489 review: a service coordinator is a coordinator, so the rail's person resets as it does
     // for the statewide coordinator tile, rather than keeping the last desk's persona.
     if (access.role === "coordinator" && !keepsSignedInRole) dispatchPersonaSyncForRole("coordinator");
@@ -235,7 +238,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
 
   function open(desk: Desk): boolean {
     if (!reachable(desk.href)) return false;
-    takeAccess(accessFor(desk));
+    takeAccess(accessFor(desk), desk.href);
     rememberDesk(desk.id);
     if (!keepsSignedInRole) {
       onSelectRole?.(desk.role);
