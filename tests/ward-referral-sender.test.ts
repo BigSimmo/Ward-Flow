@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { commandScopeRefusal } from "@/components/ward-management/ward-access-state";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-import { seedWardFlowState, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { referralSentByDesk } from "@/components/ward-management/ward-referral-sender";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
@@ -24,6 +24,14 @@ describe("the sender's own referral tools (D-80)", () => {
     destinations: [{ destination: { kind: "psychiatric_ward", unitId: receiving!.id }, state: "queued" }],
   } as Referral;
   const state: WardFlowState = { ...seed, referrals: [sent, ...seed.referrals.slice(1)] };
+
+  it("lets a ward correct only a referral a ward sent, even with no desk scope", () => {
+    const correct = (referralId: string) =>
+      wardFlowReducer(state, { type: "ADD_REFERRAL_CORRECTION", role: "ward", now: NOW_ANCHOR, referralId, note: "Synthetic" });
+    expect(correct(sent.id).rejections).toEqual(state.rejections);
+    const community = state.referrals.find((referral) => referral.source !== "psychiatric_ward")!;
+    expect(correct(community.id).rejections).toHaveLength(state.rejections.length + 1);
+  });
 
   it("names the sending ward as the sender, never the ward answering it", () => {
     expect(referralSentByDesk(sent, sendingWard, places)).toBe(true);
