@@ -18,10 +18,10 @@ import { stepBackReasonLabels, type Movement, type Referral, type Unit } from "@
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { COMMUNITY_DECLINE_REASON_LABELS, DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * PIR CHRONOLOGY (D-37): every recorded fact about one synthetic person, in time order, for a
@@ -253,7 +253,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
     recordedAt: finite(movement.openedAt),
     who: NOT_RECORDED,
     action: "Placement request opened",
-    after: edById(movement.originEdId)?.name ?? movement.originEdId,
+    after: originName(movement) ?? movement.originEdId,
   });
   if (finite(movement.referredAt) !== null && movement.referredUnitIds.length > 0) {
     add({

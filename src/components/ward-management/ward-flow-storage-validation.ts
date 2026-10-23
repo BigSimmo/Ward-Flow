@@ -366,6 +366,7 @@ const unit = z
   );
 
 const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
+const knownSiteCode = text.check(z.refine((code) => !!siteByCode(code)));
 const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
 // Smart features idea 5: a bed meeting action is chosen from fixed lists, never typed text.
 // A ward owner always names its ward, and a done action records both when and by whom.
@@ -392,7 +393,9 @@ const observationChangeRule = z.strictObject({ at: finite, from: observationRule
 const movement = z
   .looseObject({
     id,
-    originEdId: emergencyDepartmentId,
+    originEdId: z.optional(emergencyDepartmentId),
+    // D-76: a journey from an accepted community referral starts at the referring team instead.
+    originCommunity: z.optional(z.strictObject({ teamName: z.optional(text), siteCode: knownSiteCode })),
     turnaroundPriority: z.optional(turnaroundPriority),
     cohort: z.enum(COHORTS),
     security: z.enum(["Open", "Secure"]),
@@ -431,6 +434,8 @@ const movement = z
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })
+  // D-76: a journey starts at an ED or, from an accepted community referral, at the referring team.
+  .check(z.refine((movement) => (movement.originEdId === undefined) !== (movement.originCommunity === undefined)))
   .check(
     z.refine((movement) => {
       const pause = movement.medicalDeterioration;

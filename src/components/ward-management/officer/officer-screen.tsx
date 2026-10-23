@@ -45,7 +45,8 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import {
   changeReasonLabels,
@@ -223,9 +224,9 @@ export function OfficerScreen() {
       : "No accepted destination recorded";
   const originLabelFor = (movement: Movement) => {
     const originEd = edById(movement.originEdId);
-    return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
+    return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
   };
-  const originShortFor = (movement: Movement) => edById(movement.originEdId)?.siteCode ?? originLabelFor(movement);
+  const originShortFor = (movement: Movement) => originSiteCode(movement) ?? originLabelFor(movement);
 
   // Highlights (Josh, 9 Oct 2026, page A): a pill, chip, provider or search lights rows up. Nothing
   // here hides a job, so the officer never loses a job behind a filter they forgot was on.

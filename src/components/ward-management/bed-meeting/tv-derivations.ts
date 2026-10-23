@@ -39,6 +39,7 @@ import {
 } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById, edShortName } from "@/components/ward-management/ward-sites";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * THE WARD AND ED TV VIEWS (Josh, 15 Oct 2026): the bed meeting TV, narrowed to one ward or one
@@ -104,9 +105,10 @@ function stageText(movement: Movement, label: string, now: Instant): string {
   return `In transit ${splitDuration(Math.max(0, now - collectedAt))}`;
 }
 
-function edLabel(edId: string): string {
-  const ed = edById(edId);
-  return ed ? edShortName(ed) : edId;
+function originLabel(movement: Movement): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  const ed = edById(movement.originEdId);
+  return ed ? edShortName(ed) : movement.originEdId;
 }
 
 /**
@@ -165,7 +167,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   const row = (movement: Movement, stage: string): TvJourneyRow => ({
     id: movement.id,
     name: nameOf(movement),
-    where: edLabel(movement.originEdId),
+    where: originLabel(movement),
     stage: stageText(movement, stage, now),
     waitMinutes: elapsedOpenMinutes(movement, now),
   });

@@ -53,7 +53,6 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
-import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -69,6 +68,7 @@ import {
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -1740,7 +1740,7 @@ export function WardHomeTab({
                               resolvePatientIdentity(movement).umrn,
                               movement.sex,
                               movement.legalStatus,
-                              edById(movement.originEdId)?.name,
+                              originName(movement),
                             ]
                               .filter(Boolean)
                               .join(" · ")}
