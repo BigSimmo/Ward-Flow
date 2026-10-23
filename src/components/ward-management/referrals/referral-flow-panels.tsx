@@ -28,10 +28,17 @@ export const EMPTY_DOCUMENTATION: DocumentationDraft = {
   charts: [],
 };
 
-export function documentationError(draft: DocumentationDraft): string | null {
+/** The clearance answers alone, which the community short form asks on its Referral step (D-77). */
+export function clearanceError(draft: DocumentationDraft): string | null {
   if (!draft.medical) return "Answer whether medical clearance is complete.";
   if (draft.medical === "no" && (!draft.expectedAt || !draft.contactName.trim() || !draft.contactPhone.trim()))
     return "Add expected medical clearance, a clarification contact and phone number.";
+  return null;
+}
+
+export function documentationError(draft: DocumentationDraft): string | null {
+  const clearance = clearanceError(draft);
+  if (clearance) return clearance;
   if (!draft.triage) return "Answer whether triage and RAMP are completed.";
   if (
     !draft.charts.some((chart) => chart.kind === "medication") ||
@@ -206,9 +213,12 @@ function PanelHead({ icon: Icon, title, children }: { icon: typeof User; title: 
 export function DocumentationPanel({
   draft,
   onChange,
+  clearanceOnly = false,
 }: {
   draft: DocumentationDraft;
   onChange: Dispatch<SetStateAction<DocumentationDraft>>;
+  /** D-77: the community short form asks clearance only, with no triage or charts. */
+  clearanceOnly?: boolean;
 }) {
   const id = useId();
   // Audit F-01: the shared board keeps each file's name, type and size, never the file itself.
@@ -306,61 +316,63 @@ export function DocumentationPanel({
           )}
         </div>
       </section>
-      <section className={styles.refCard}>
-        <PanelHead icon={FileText} title="Triage and documents">
-          <span className={styles.asideText}>{draft.charts.length} attached</span>
-        </PanelHead>
-        <div className={styles.cardBody}>
-          <YesNo
-            label="Triage and RAMP completed"
-            value={draft.triage}
-            onChange={(triage) => onChange({ ...draft, triage })}
-          />
-          <div className={styles.uploadList} role="group" aria-label="Supporting documentation">
-            <ChartUpload
-              key={`${id}-medication`}
-              kind="medication"
-              label="Medication chart"
-              file={draft.charts.find((file) => file.kind === "medication")}
-              onChange={(file) => changeChart("medication", file)}
+      {clearanceOnly ? null : (
+        <section className={styles.refCard}>
+          <PanelHead icon={FileText} title="Triage and documents">
+            <span className={styles.asideText}>{draft.charts.length} attached</span>
+          </PanelHead>
+          <div className={styles.cardBody}>
+            <YesNo
+              label="Triage and RAMP completed"
+              value={draft.triage}
+              onChange={(triage) => onChange({ ...draft, triage })}
             />
-            <ChartUpload
-              key={`${id}-observation`}
-              kind="observation"
-              label="Observation chart"
-              file={draft.charts.find((file) => file.kind === "observation")}
-              onChange={(file) => changeChart("observation", file)}
-            />
-          </div>
-          <YesNo
-            label="Anything else to attach?"
-            value={draft.additional}
-            onChange={(additional) =>
-              onChange({
-                ...draft,
-                additional,
-                charts: additional === "no" ? draft.charts.filter((file) => file.kind !== "other") : draft.charts,
-              })
-            }
-          />
-          {draft.additional === "yes" && (
-            <div className={styles.uploadList}>
+            <div className={styles.uploadList} role="group" aria-label="Supporting documentation">
               <ChartUpload
-                kind="other"
-                label="Additional document"
-                file={draft.charts.find((file) => file.kind === "other")}
-                onChange={(file) => changeChart("other", file)}
+                key={`${id}-medication`}
+                kind="medication"
+                label="Medication chart"
+                file={draft.charts.find((file) => file.kind === "medication")}
+                onChange={(file) => changeChart("medication", file)}
+              />
+              <ChartUpload
+                key={`${id}-observation`}
+                kind="observation"
+                label="Observation chart"
+                file={draft.charts.find((file) => file.kind === "observation")}
+                onChange={(file) => changeChart("observation", file)}
               />
             </div>
-          )}
-          <p className={styles.bodyMeta}>
-            <Lock aria-hidden="true" />
-            {shared
-              ? "Synthetic documents only. The shared board keeps the file name and size, not the file"
-              : "Synthetic documents only, kept for this session"}
-          </p>
-        </div>
-      </section>
+            <YesNo
+              label="Anything else to attach?"
+              value={draft.additional}
+              onChange={(additional) =>
+                onChange({
+                  ...draft,
+                  additional,
+                  charts: additional === "no" ? draft.charts.filter((file) => file.kind !== "other") : draft.charts,
+                })
+              }
+            />
+            {draft.additional === "yes" && (
+              <div className={styles.uploadList}>
+                <ChartUpload
+                  kind="other"
+                  label="Additional document"
+                  file={draft.charts.find((file) => file.kind === "other")}
+                  onChange={(file) => changeChart("other", file)}
+                />
+              </div>
+            )}
+            <p className={styles.bodyMeta}>
+              <Lock aria-hidden="true" />
+              {shared
+                ? "Synthetic documents only. The shared board keeps the file name and size, not the file"
+                : "Synthetic documents only, kept for this session"}
+            </p>
+          </div>
+        </section>
+      )}
     </>
   );
 }
