@@ -89,11 +89,7 @@ export function useForecastModel(now: Instant) {
       edLeadMinutes: configuration.forecastEdLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
       worseBeds: configuration.forecastWorseBeds ?? FORECAST_WORSE_ALERT_BEDS,
     }),
-    [
-      configuration.forecastShortBeds,
-      configuration.forecastEdLeadMinutes,
-      configuration.forecastWorseBeds,
-    ],
+    [configuration.forecastShortBeds, configuration.forecastEdLeadMinutes, configuration.forecastWorseBeds],
   );
   return {
     tomorrow: byDays[0]!,
