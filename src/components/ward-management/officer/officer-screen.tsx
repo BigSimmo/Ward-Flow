@@ -3,11 +3,10 @@
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Badge,
@@ -781,7 +780,6 @@ export function OfficerScreen() {
           Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
         </Button>
       ) : null}
-      <NotWiredButton variant="onHero" size="sm" icon={Truck} label="Log booking" wrapClassName={styles.deskOnly} />
     </div>
   );
 
