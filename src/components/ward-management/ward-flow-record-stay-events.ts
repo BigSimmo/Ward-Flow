@@ -13,6 +13,7 @@ import type {
 } from "./ward-flow-reducer";
 import type { RecordedFactEvent, RecordedFactEventHelpers } from "./ward-flow-record-events";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { REPATRIATION_MODES } from "@/components/ward-management/ward-flow-events";
 import {
@@ -439,6 +440,15 @@ export function reduceRecordedStayEvent(
       }
       if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
         return reject(state, event, `RECORD_REPATRIATION cadNumber must be answered, and it has no default`);
+      }
+      // The same CAD rule as BOOK_TRANSPORT and the return plan form (HAZ-03). The receiving ward's
+      // agreement re-sends the plan's number, which a device may hold only as the typed-text
+      // placeholder, so a number the record already carries is not checked again.
+      if (event.cadNumber.trim() !== existingRecord?.cadNumber) {
+        const cadProblem = cadNumberProblem(event.cadNumber);
+        if (cadProblem !== undefined) {
+          return reject(state, event, `RECORD_REPATRIATION cadNumber refused: ${cadProblem}`);
+        }
       }
       if (!TRANSPORT_LEGAL_STATUSES.includes(event.transportLegalStatus)) {
         return reject(

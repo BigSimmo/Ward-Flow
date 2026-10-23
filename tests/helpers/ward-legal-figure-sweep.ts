@@ -686,7 +686,7 @@ export function candidateEvents(
         receivingWardAgreed: true,
         mode: "road",
         provider: TRANSPORT_PROVIDERS[0],
-        cadNumber: "SYNTHETIC-GUARD",
+        cadNumber: "SYNTHETIC-GUARD-0001",
         transportLegalStatus: "voluntary",
         estimatedAt: now + 30,
       }));
