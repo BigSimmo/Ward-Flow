@@ -215,14 +215,4 @@ export function PhonePinnedAction({
   );
 }
 
-/** A figure with a glyph in front, for row values ("● 94%"). */
-export function Flagged({ glyph, children }: { glyph?: ReactNode; children: ReactNode }) {
-  return (
-    <span className={styles.flagged}>
-      {glyph}
-      {children}
-    </span>
-  );
-}
-
 export { styles as phoneBodyStyles };

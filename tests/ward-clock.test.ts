@@ -209,6 +209,14 @@ describe("the clock knows what day it is, not only what time it is", () => {
     expect(formatSheetMoment(60 + MINUTES_PER_DAY, zero)).toBe("Mon, 31 Aug, 01:00");
   });
 
+  it("identifies saved output across a Perth year boundary without changing compact timestamps", () => {
+    const zero = perthMidnight(2026, 11, 31);
+    expect(formatSheetMoment(0, zero, { includeYearAndZone: true })).toBe("Thu, 31 Dec 2026, 00:00 AWST");
+    expect(formatSheetMoment(MINUTES_PER_DAY, zero, { includeYearAndZone: true })).toBe("Fri, 1 Jan 2027, 00:00 AWST");
+    expect(formatSheetMoment(-1, zero, { includeYearAndZone: true })).toBe("Wed, 30 Dec 2026, 23:59 AWST");
+    expect(formatSheetMoment(0, zero)).toBe("Thu, 31 Dec, 00:00");
+  });
+
   it("reads a typed date and time as Perth wall time, and refuses one that is not real", () => {
     expect(perthDateTimeLocal("2026-08-30T14:30")?.toISOString()).toBe("2026-08-30T06:30:00.000Z");
     expect(perthDateTimeLocal("2026-02-31T10:00")).toBeUndefined();
