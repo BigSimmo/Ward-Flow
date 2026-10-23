@@ -27,7 +27,13 @@ describe("the sender's own referral tools (D-80)", () => {
 
   it("lets a ward correct only a referral a ward sent, even with no desk scope", () => {
     const correct = (referralId: string) =>
-      wardFlowReducer(state, { type: "ADD_REFERRAL_CORRECTION", role: "ward", now: NOW_ANCHOR, referralId, note: "Synthetic" });
+      wardFlowReducer(state, {
+        type: "ADD_REFERRAL_CORRECTION",
+        role: "ward",
+        now: NOW_ANCHOR,
+        referralId,
+        note: "Synthetic",
+      });
     expect(correct(sent.id).rejections).toEqual(state.rejections);
     const community = state.referrals.find((referral) => referral.source !== "psychiatric_ward")!;
     expect(correct(community.id).rejections).toHaveLength(state.rejections.length + 1);
