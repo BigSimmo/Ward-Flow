@@ -775,6 +775,13 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     return true;
   });
   const hasAnyReferralsForTeam = sourceReferrals.some((r) => r.addressing.destination.teamName === team.name);
+  // Use the same unfiltered queue as the rendered list. Priority chips narrow visible rows,
+  // while the tab and urgent total continue to describe the whole queue.
+  const usesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
+  const waitingCount = usesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
+  const urgentAnswerCount = usesDemoReferrals
+    ? demoTeamReferrals.filter((referral) => referral.urgency === 1 || referral.urgency === 2).length
+    : urgentWaitingCount;
   const caseloadRows = caseloadRowsForTeam(sourceReferrals, movements, patients, team, [
     ...lists.currentlyAdmitted,
     ...lists.dischargedIntoTheArea,
@@ -840,14 +847,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // Sent is left out of both lists on purpose: it is a record of what the team asked for, not work
   // waiting on the team, so the page still opens on the first list that needs the team.
   const tabCounts: [ActiveTabType, number][] = [
-    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
+    ["tab-triage", waitingCount],
     ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
     ["tab-egress", isDemoMode ? teamConfig.egress : lists.expectedBack.length],
     ["tab-caseload", isDemoMode ? teamConfig.caseload : caseloadRows.length],
   ];
   // Phone lists render live rows (or the sample referrals), so the phone opens on one with rows in it.
   const phoneRowCounts: [ActiveTabType, number][] = [
-    ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? demoTeamReferrals.length : waitingReferrals.length],
+    ["tab-triage", waitingCount],
     ["tab-inpatients", lists.currentlyAdmitted.length],
     ["tab-egress", lists.expectedBack.length],
     ["tab-caseload", caseloadRows.length],
@@ -885,11 +892,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   };
   // With no recorded referrals the demonstration lists its sample referrals, so the phone count and
   // rows come from the same source.
-  const phoneUsesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
-  const phoneWaitingValue = phoneUsesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
-  const phoneUrgent = phoneUsesDemoReferrals
-    ? demoTeamReferrals.filter((referral) => referral.urgency === 1).length
-    : urgentWaitingCount;
+  const phoneUsesDemoReferrals = usesDemoReferrals;
+  const phoneWaitingValue = waitingCount;
+  const phoneUrgent = urgentAnswerCount;
   const phoneCtoRows = caseloadRows.filter((row) => {
     const code = caseloadStatutoryFormCode(row);
     return code === "5A" || code === "5B";
@@ -1055,6 +1060,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     waitlistedForTeam,
     waitingReferrals,
     urgentWaitingCount,
+    waitingCount,
+    urgentAnswerCount,
     p1ReferralsCount,
     p2ReferralsCount,
     p3ReferralsCount,

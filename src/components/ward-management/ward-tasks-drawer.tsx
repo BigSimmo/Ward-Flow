@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type Dispatch } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -58,6 +58,7 @@ import {
   type InboxSnoozeEntry,
 } from "./ward-inbox-snooze";
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
+import { useDirtyStateGuard } from "./use-dirty-state-guard";
 
 import styles from "./ward-tasks-drawer.module.css";
 import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
@@ -76,6 +77,8 @@ type WardTasksDrawerProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
+  /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
+  dismissalGuardRef?: RefObject<(() => boolean) | null>;
   /** `href` is a row's own destination when it is not about a movement (a planned admission). */
   onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
   /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
@@ -125,6 +128,9 @@ function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
+const DISCARD_ESCALATION = "You have an unsaved escalation contact. Discard it?";
+// These links dismiss the drawer as well as navigating, including a link to the current page.
+const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
 /**
  * Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers
@@ -274,6 +280,7 @@ export function WardTasksDrawer({
   now,
   dispatch,
   onClose,
+  dismissalGuardRef,
   onSelectMovement,
   onSelectDischarge,
   records,
@@ -301,6 +308,54 @@ export function WardTasksDrawer({
   const [escalating, setEscalating] = useState<string | null>(null);
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
+  const escalatingItem = allItems.find((item) => item.id === escalating);
+  const savedContact =
+    records?.movements.find((movement) => movement.id === escalatingItem?.movementId)?.escalation?.contact ?? "";
+  const hasUnsavedEscalation = escalating !== null && contact !== savedContact;
+  const dirtyEscalationRef = useRef(hasUnsavedEscalation);
+  useEffect(() => {
+    dirtyEscalationRef.current = hasUnsavedEscalation;
+  }, [hasUnsavedEscalation]);
+  const { approveNextHistoryNavigation } = useDirtyStateGuard({
+    isDirty: hasUnsavedEscalation,
+    value: JSON.stringify([escalating, contact]),
+    confirmMessage: DISCARD_ESCALATION,
+    skipAnchor: isTasksDrawerLink,
+  });
+
+  const discardEscalation = useCallback(() => {
+    if (dirtyEscalationRef.current && !window.confirm(DISCARD_ESCALATION)) return false;
+    // The shell can recheck within this event, before React commits the cleared draft below.
+    dirtyEscalationRef.current = false;
+    setEscalating(null);
+    setContact("");
+    return true;
+  }, []);
+
+  const confirmDrawerDismissal = useCallback(() => {
+    if (!discardEscalation()) return false;
+    approveNextHistoryNavigation();
+    return true;
+  }, [discardEscalation, approveNextHistoryNavigation]);
+
+  useEffect(() => {
+    if (!dismissalGuardRef) return;
+    dismissalGuardRef.current = confirmDrawerDismissal;
+    return () => {
+      if (dismissalGuardRef.current === confirmDrawerDismissal) dismissalGuardRef.current = null;
+    };
+  }, [dismissalGuardRef, confirmDrawerDismissal]);
+
+  function closeDrawer() {
+    if (!confirmDrawerDismissal()) return false;
+    // The shell may close through browser Back. The local decision owns this one traversal.
+    onClose();
+    return true;
+  }
+
+  function closeFromLink(event: MouseEvent<HTMLAnchorElement>) {
+    if (!closeDrawer()) event.preventDefault();
+  }
 
   const openerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -309,22 +364,21 @@ export function WardTasksDrawer({
     }
   }, [withBackdrop]);
 
-  function handleEscape() {
-    if (escalating !== null) {
-      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
-        'button[data-escalate][aria-expanded="true"]',
-      );
-      setEscalating(null);
-      setContact("");
-      trigger?.focus();
-      return;
-    }
-    if (contacting !== null) {
+  function handleEscape(target: EventTarget | null = document.activeElement) {
+    const inContacts = target instanceof Element && target.closest("[data-ward-task-contacts]") !== null;
+    if (contacting !== null && (escalating === null || inContacts)) {
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
         `button[data-contact="${CSS.escape(contacting)}"]`,
       );
       setContacting(null);
       trigger?.focus();
+      return;
+    }
+    if (escalating !== null) {
+      const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
+        'button[data-escalate][aria-expanded="true"]',
+      );
+      if (discardEscalation()) trigger?.focus();
       return;
     }
     const opener = !withBackdrop
@@ -333,7 +387,7 @@ export function WardTasksDrawer({
           '[data-testid="ward-tasks-opener"], button[aria-controls*="tasks"], button[aria-label*="Tasks"]',
         ))
       : null;
-    onClose();
+    if (!closeDrawer()) return;
     if (opener && opener.isConnected) opener.focus();
   }
 
@@ -351,9 +405,10 @@ export function WardTasksDrawer({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       // Let nested popovers/dialogs (such as the Snooze popover) handle Escape first:
-      if (event.target instanceof Element && event.target.closest('[role="dialog"]') !== null) return;
+      const nestedDialog = event.target instanceof Element ? event.target.closest('[role="dialog"]') : null;
+      if (nestedDialog && drawer.contains(nestedDialog)) return;
       event.stopPropagation();
-      handleEscapeRef.current();
+      handleEscapeRef.current(event.target);
     };
     drawer.addEventListener("keydown", onKeyDown);
     return () => drawer.removeEventListener("keydown", onKeyDown);
@@ -489,8 +544,13 @@ export function WardTasksDrawer({
             className={styles.btn}
             data-escalate
             aria-expanded={escalating === item.id}
-            onClick={() => {
-              setEscalating(escalating === item.id ? null : item.id);
+            onClick={(event) => {
+              if (!discardEscalation()) return;
+              if (escalating === item.id) {
+                event.currentTarget.focus();
+                return;
+              }
+              setEscalating(item.id);
               setContact(movement.escalation?.contact ?? "");
             }}
           >
@@ -506,7 +566,7 @@ export function WardTasksDrawer({
     if (contacting !== item.id || !movement) return null;
     const rows = callRows(contactTargets(item, movement, records?.units), now);
     return (
-      <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
+      <div className={styles.escalationForm} data-ward-task-contacts data-testid={`ward-task-contacts-${item.id}`}>
         <ul className={styles.callList} aria-label="Who to call, mock numbers">
           {rows.map((row) => renderCallRow(row))}
         </ul>
@@ -591,8 +651,8 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
             onClick={(event) => {
+              if (!discardEscalation()) return;
               focusTrigger(event.currentTarget);
-              setEscalating(null);
             }}
           >
             Cancel
@@ -628,7 +688,7 @@ export function WardTasksDrawer({
         href={
           action.kind === "release" ? `${WARD_ALERTS_HREF}?alert=${encodeURIComponent(item.id)}&release=1` : action.href
         }
-        onClick={onClose}
+        onClick={closeFromLink}
         data-testid={`ward-task-action-${item.id}`}
         className={`${styles.btn} ${styles.btnPrimary}`}
       >
@@ -876,6 +936,7 @@ export function WardTasksDrawer({
                   actNow={inboxItemIsActNow(item.id)}
                   now={now}
                   onSnooze={(until, reason) => {
+                    if (escalating === item.id && !discardEscalation()) return;
                     dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
                   }}
                 />
@@ -895,7 +956,7 @@ export function WardTasksDrawer({
       {withBackdrop ? (
         <div
           className={styles.drawerBackdrop}
-          onClick={onClose}
+          onClick={closeDrawer}
           aria-hidden="true"
           data-testid="ward-tasks-drawer-backdrop"
         />
@@ -906,6 +967,7 @@ export function WardTasksDrawer({
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? "true" : undefined}
         aria-label={words.name}
+        data-ward-tasks-drawer
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">
@@ -928,7 +990,7 @@ export function WardTasksDrawer({
           <button
             type="button"
             className={styles.closeButton}
-            onClick={onClose}
+            onClick={closeDrawer}
             aria-label={`Close ${words.plural} panel`}
             title={`Close ${words.plural} panel`}
             data-sheet-autofocus="true"
@@ -1212,7 +1274,7 @@ export function WardTasksDrawer({
             {words === ALERTS_WORDS ? (
               <Link
                 href={WARD_ALERTS_HREF}
-                onClick={onClose}
+                onClick={closeFromLink}
                 data-testid="ward-tasks-open-alerts"
                 className={buttonClass({ variant: "pri", size: "sm" })}
               >
@@ -1221,7 +1283,7 @@ export function WardTasksDrawer({
             ) : null}
             <Link
               href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
-              onClick={onClose}
+              onClick={closeFromLink}
               data-testid="ward-tasks-jump-delays"
               className={styles.quickJump}
             >
@@ -1234,7 +1296,7 @@ export function WardTasksDrawer({
               <>
                 <Link
                   href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
-                  onClick={onClose}
+                  onClick={closeFromLink}
                   data-testid="ward-tasks-jump-alerts"
                   className={styles.quickJump}
                 >
@@ -1247,7 +1309,7 @@ export function WardTasksDrawer({
             )}
             <Link
               href={WARD_HOME_HREF}
-              onClick={onClose}
+              onClick={closeFromLink}
               data-testid="ward-tasks-jump-coordinator"
               className={styles.quickJump}
             >
@@ -1261,7 +1323,7 @@ export function WardTasksDrawer({
           {oneAction ? (
             <Link
               href={WARD_ALERTS_HREF}
-              onClick={onClose}
+              onClick={closeFromLink}
               data-testid="ward-tasks-open-alerts"
               className={buttonClass({ variant: "pri", size: "sm" })}
             >

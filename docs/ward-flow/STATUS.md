@@ -53,7 +53,7 @@ A dated summary of merged pull request titles from #393 to #527, not a fresh ver
 
 ## What is built
 
-**Screens** (**50 page routes** under `src/app/ward-flow/`, plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 total routes**; engine and components under
+**Screens** (<!-- fact:ward-route-count -->53<!-- /fact --> page routes under `src/app/ward-flow/`, plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = <!-- fact:app-route-count -->55<!-- /fact --> total routes; engine and components under
 `src/components/ward-management/` and `src/components/wf/`):
 
 | Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |

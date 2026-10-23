@@ -48,6 +48,29 @@ function windowOf(sources: ReturnType<typeof bedsForecastSources>, id: string) {
 }
 
 describe("bedsForecastSources", () => {
+  it("uses the current plan for direct callers and keeps its date provenance separate from the release report", () => {
+    const flagged = release(first, { admissionId: "AD-SRC-MOVED", expectedAt: NOW + 3 * MINUTES_PER_DAY });
+    const stay = {
+      ...wardAdmissions[0]!,
+      id: flagged.admissionId,
+      unitId: first.id,
+      expectedDischargeAt: NOW + 60,
+      dischargeDateSetAt: NOW - 10,
+      dischargeDateSetBy: "Ward manager" as const,
+    };
+    const sources = bedsForecastSources([ward(first)], [flagged], [stay], NOW);
+    const entries = sources.windows.flatMap((window) => window.wards.flatMap((unit) => unit.entries));
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      expectedAt: NOW + 60,
+      saidBy: flagged.confirmedBy,
+      saidAt: flagged.confirmedAt,
+      planDate: { recordedAt: NOW - 10, recordedBy: "Ward manager" },
+    });
+    expect(sources.laterFlagged).toBe(0);
+    expect(flagged.expectedAt).toBe(NOW + 3 * MINUTES_PER_DAY);
+  });
+
   it("splits the next 24 hours on the shift pattern, with an overdue group last", () => {
     const units = [ward(first), ward(second)];
     const releases = [
