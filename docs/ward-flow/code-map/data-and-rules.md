@@ -316,7 +316,6 @@ capacity figure anywhere in this group is real.
   - `overridesAgainstUnit` — overrides recorded against one specific unit.
   - `allDeclines` — every recorded decline across a movement list.
   - `handoverSnapshot` — the shift-handover summary for a set of movements.
-  - `escalationBoard` — patients with nowhere currently eligible to go.
   - `searchMovements` — filters movements by a free-text/structured search query.
   - `searchPatients` — searches movements and referrals by patient-identifying terms.
   - `movementTimeline` — the ordered event timeline for one movement.
@@ -334,7 +333,7 @@ capacity figure anywhere in this group is real.
 
   Also exports `wardServiceOrder`, `roleLabels`, `roleTaskLabel`, `bedReleaseStateLabels`,
   `BED_RELEASE_BLOCKED_LABEL`, `BED_RELEASE_BLOCKED_FIGURE_LABEL`, `INFORMATIONAL_GATES`, and
-  several result/shape types (`InboxItem`, `HandoverSnapshot`, `EscalationBoard`,
+  several result/shape types (`InboxItem`, `HandoverSnapshot`,
   `ShortlistCandidate`, `ContentionMap`-adjacent types, `ChangeAuditEntry`,
   `EffectivenessMeasure`).
 

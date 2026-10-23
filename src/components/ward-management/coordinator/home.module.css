@@ -677,64 +677,6 @@
   gap: var(--wf-s-1);
 }
 
-.forStrip {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
-}
-
-.forLine {
-  display: flex;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.forName {
-  font-weight: 600;
-}
-
-.forFits {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  margin-left: auto;
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-}
-
-.forCount {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-}
-
-.forName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Offered (inside its Undo window, or a live referral): a word with its info glyph, no button. */
-.unitOffered {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.forStatus {
-  margin: 0;
-  color: var(--wf-ink-2);
-}
-
 .flowBody {
   display: flex;
   flex-direction: column;
@@ -816,22 +758,6 @@
   box-shadow: inset 3px 0 0 var(--wf-pri-1);
 }
 
-/* Where the selected patient can go: a soft tint, never a stripe. Green fits with a bed ready,
-   amber fits with no bed now. Selection keeps its own look. */
-.unitRow[data-highlight="fit"]:not(.unitRowSelected),
-.unitRow[data-highlight="accepted"]:not(.unitRowSelected) {
-  background: var(--wf-fit-tint);
-}
-
-.unitRow[data-highlight="fit-no-bed"]:not(.unitRowSelected) {
-  background: var(--wf-hold-tint);
-}
-
-/* v10: only a free or fit place takes a tint. A referred ward keeps a thin edge instead. */
-.unitRow[data-highlight="referred"]:not(.unitRowSelected) {
-  box-shadow: inset 0 0 0 1px var(--wf-line-3);
-}
-
 .unitNameLine {
   display: flex;
   align-items: center;
@@ -841,30 +767,6 @@
 
 .unitNameLine > .unitNameText {
   min-width: 0;
-}
-
-.groupFit {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.groupNoBed {
-  color: var(--wf-ink-2);
-}
-
-.groupFit[data-none="true"] {
-  color: var(--wf-ink-3);
-  font-weight: 500;
-}
-
-.unitRowDim .unitNameText,
-.unitRowDim .unitSub,
-.unitRowDim .unitReady,
-.unitRowDim .unitExpected,
-.unitRowDim .unitPending {
-  color: var(--wf-ink-off);
 }
 
 .unitMain {
@@ -935,17 +837,6 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   text-transform: lowercase;
-}
-
-.unitStatus {
-  display: inline-flex;
-  grid-column: 1 / -1;
-  /* A notice can wrap to two lines; the glyph stays beside its first line. */
-  align-items: first baseline;
-  gap: var(--wf-s-1);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
 }
 
 .unitAction {

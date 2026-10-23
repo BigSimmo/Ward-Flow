@@ -230,7 +230,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-ed-expects-derivation.test.ts`** (225 lines) — what counts as being in the department
 - **`tests/ward-ed-home-derivations.test.ts`** (311 lines) — isDetainedUnderTheAct
 - **`tests/ward-engine-defects.test.ts`** (542 lines) — PULL_PATIENT checks high-acuity places that are LEFT, not merely authored
-- **`tests/ward-escalation.test.ts`** (162 lines) — escalationBoard
 - **`tests/ward-event-permissions.test.ts`** (501 lines) — who may raise which event
 - **`tests/ward-facade-agrees-with-screens.test.ts`** (802 lines) — the shell facade agrees with the screens that own its figures
 - **`tests/ward-flow-chat-control.test.ts`** (2089 lines) — a Ward Verifier is given a criterion, not just a commit
@@ -744,7 +743,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-announced-figures-carry-their-marker.test.ts`** (1037 lines) — the population this guard walks
 - **`tests/ward-bed-designation-fixture.test.ts`** (70 lines) — invented bed designations
 - **`tests/ward-empty-bed-exclusion-is-visible.dom.test.tsx`** (139 lines) — an impossible empty-bed record is excluded AND said out loud
-- **`tests/ward-flow-diagram-status-truthfulness.test.ts`** (146 lines) — the flow diagram's hub status line
 - **`tests/ward-freshness-count-wording.test.ts`** (113 lines) — the wards-confirmed count states coverage, never recency
 - **`tests/ward-handover-destination-truthfulness.test.ts`** (138 lines) — the handover page's Destination column
 - **`tests/ward-invented-figures.test.ts`** (131 lines) — an invented figure has to say so in its own sentence
