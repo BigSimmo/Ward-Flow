@@ -1,5 +1,19 @@
 # Ward Flow Handover Implementation Plan
 
+_Updated 2026-10-23 - mark the merged implementation and dated receipts as history; Documentation owns._
+
+> **Historical implementation and repair record. Do not execute this as a new plan.**
+> PR #402 merged as `af3d9f06dda554e6ee6112b103feea8ad5d98021` and is in the reviewed
+> Ward Flow `main` history. The worker instructions, assessments, package checkboxes, budgets
+> and receipts below describe their named revisions; they are not current test or hosted
+> acceptance results. Start new work from the [product entry](../../ward-flow/README.md),
+> [current task receipt](../../task-receipts.md), current source and actual sign-out log.
+> Later [D-71](../../ward-flow/decisions.md#d-71-audit-1-clinical-safety-fixes-no-suggested-wards-wait-order-queues-recorded-facts-only-20-october-2026)
+> forbids suggested or ranked wards and restores wait-order queues.
+> [D-72 item 1](../../ward-flow/decisions.md#d-72-seven-product-decisions-for-the-21-october-fix-plan-21-october-2026)
+> permits scrubbed device state saves after typed events; D-67's bounded synthetic form drafts
+> remain a separate exception. Apply those successors rather than the old design/privacy wording below.
+
 > **For agentic workers:** Use the installed `superpowers:executing-plans` skill to implement each package. The root agent coordinates bounded subagents, integrates their work in order, and requests an independent final review.
 
 **Goal:** Complete the four remaining handover improvements without changing placement authority or silently weakening draft privacy.
