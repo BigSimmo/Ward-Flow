@@ -86,16 +86,6 @@ export function DataRow({
   );
 }
 
-/** A truncating cell. `align="end"` for numbers. `mono` for times and counts. */
-export function Cell({
-  align = "start",
-  mono = false,
-  className,
-  ...rest
-}: ComponentPropsWithoutRef<"div"> & { align?: "start" | "end"; mono?: boolean }) {
-  return <div className={cx(styles.cell, align === "end" && styles.end, mono && styles.num, className)} {...rest} />;
-}
-
 /** Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge; the digit carries it. */
 export function TierTile({
   tier,

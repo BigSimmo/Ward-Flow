@@ -1,5 +1,7 @@
 # Ward Flow UI and local server workflow
 
+_Updated 2026-10-23 - surface the D-74/D-75 mock-up evidence and approval requirements; Documentation owns._
+
 Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.md](../../AGENTS.md) governs safeguards. The dedicated repository engine/tests own behaviour; current accepted appearance must be preserved.
 
 ## Local server safety
@@ -12,6 +14,13 @@ Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.m
 - Do not run a permanent watcher. Start or verify the server only when the task needs the app or the user asks.
 
 ## Building UI
+
+Before building from a mock-up, follow the
+[D-74 standing approval rule](../ward-flow/decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026)
+and [D-75 evidence rule](../ward-flow/decisions.md#d-75-ux-audit-follow-up-page-caching-community-gaps-and-the-extra-travel-bed-hold-21-october-2026):
+make it from screenshots and visual assessment of the running app at current `main` or the
+hosted site, record which commit it depicts, and obtain Josh's explicit approval of that
+specific mock-up before implementation. This does not authorise a provider read or deployment.
 
 React mockups, owner direction of 5 October 2026:
 

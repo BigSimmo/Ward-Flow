@@ -1,5 +1,7 @@
 # Screen definition of done
 
+_Updated 2026-10-23 - add the D-74/D-75 mock-up evidence and approval prerequisite; Documentation owns._
+
 ## Active acceptance checklist — 2 October 2026
 
 The current accepted Ward Flow app is the appearance baseline. The owner reconfirmed the current
@@ -12,6 +14,12 @@ earlier failures; its mockup-matching and blanket fold commands are superseded b
       in the evidence notes. Do not infer visual acceptance from a source hash or a passing test.
 - [ ] Preserve the accepted layout, interactions and synthetic-data disclosure, except for explicitly
       authorised changes. Record intentional differences and their reasons.
+- [ ] For a change built from a mock-up, use screenshots and visual assessment of the running app
+      at current `main` or the hosted site, and record its commit
+      ([D-75](decisions.md#d-75-ux-audit-follow-up-page-caching-community-gaps-and-the-extra-travel-bed-hold-21-october-2026)).
+      Obtain Josh's explicit approval of that specific mock-up before implementation
+      ([D-74](decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026)).
+      This checklist does not authorise a provider read or deployment.
 - [ ] Inspect the affected view against that baseline in a real browser, using the URL printed by
       `npm run ensure` after confirming `/api/local-project-id`. Drawings are optional background.
 - [ ] Use Fast Preview for exploration and visual tweaks; Release Validation for integration/release.
