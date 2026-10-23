@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   ACCESS_ENDING_SOON_MINUTES,
+  ACCESS_MAX_TERM_MINUTES,
+  ACCESS_TOO_LONG,
   ACCESS_UNUSED_MINUTES,
+  COVER_NEEDS_ROLE,
   COVER_MAX_MINUTES,
   approveRefusal,
   coverRefusal,
@@ -93,6 +96,9 @@ describe("granting a role", () => {
       "That role is wider than your own.",
     );
     expect(grant({ expiresAt: now })).toBe("A role needs an end date in the future.");
+    // D-80: 12 months at most, so every role comes back to a review.
+    expect(grant({ expiresAt: now + ACCESS_MAX_TERM_MINUTES })).toBeNull();
+    expect(grant({ expiresAt: now + ACCESS_MAX_TERM_MINUTES + 1 })).toBe(ACCESS_TOO_LONG);
     expect(grant({ granter: fshWard })).toBe("Granting and removing roles is not part of your role.");
     expect(grant({ access: { role: "ward", scope: { kind: "ed", edId: "fsh-ed" } } })).toBe(
       "A role and a place that go together are required.",
@@ -181,6 +187,7 @@ describe("the access review", () => {
   it("reads its windows from the clinical values module", () => {
     expect(ACCESS_ENDING_SOON_MINUTES).toBe(CLINICAL_VALUES.accessExpiringSoon.value * 1440);
     expect(ACCESS_UNUSED_MINUTES).toBe(CLINICAL_VALUES.accessUnused.value * 1440);
+    expect(ACCESS_MAX_TERM_MINUTES).toBe(CLINICAL_VALUES.accessMaxTerm.value * 1440);
     expect(COVER_MAX_MINUTES).toBe(CLINICAL_VALUES.coverLength.value * 60);
   });
 });
@@ -194,6 +201,7 @@ describe("cover for a second ward or ED", () => {
       scope: { kind: "ward", unitIds: ["fsh-adult-secure"] },
       minutes: 8 * 60,
       places,
+      recipientRoles: ["ward"],
       ...over,
     });
 
@@ -203,6 +211,10 @@ describe("cover for a second ward or ED", () => {
       `Cover lasts up to ${CLINICAL_VALUES.coverLength.value} hours.`,
     );
     expect(cover({ recipientId: "nic-1" })).toBe("Nobody gives themselves cover.");
+    // D-80: only to a colleague who already holds a ward or ED role.
+    expect(cover({ recipientRoles: ["ed"] })).toBeNull();
+    expect(cover({ recipientRoles: [] })).toBe(COVER_NEEDS_ROLE);
+    expect(cover({ recipientRoles: ["officer", "community"] })).toBe(COVER_NEEDS_ROLE);
     expect(cover({ scope: { kind: "ward", unitIds: ["fsh-older-adult"] } })).toBe(
       "That ward or ED is not in your own place.",
     );

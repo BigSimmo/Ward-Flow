@@ -90,10 +90,13 @@ export function edAccessRisk(
   let alreadyOver = 0;
   const overByEd = new Map<string, number>();
   for (const movement of inEd) {
+    // `isWaitingInEd` already leaves out a journey from a community team (D-76), which has no ED.
+    const edId = movement.originEdId;
+    if (edId === undefined) continue;
     const passesAt = movement.openedAt + targetMinutes;
     if (passesAt <= now) {
       alreadyOver += 1;
-      overByEd.set(movement.originEdId, (overByEd.get(movement.originEdId) ?? 0) + 1);
+      overByEd.set(edId, (overByEd.get(edId) ?? 0) + 1);
       continue;
     }
     if (passesAt > now + horizonMinutes) continue;
@@ -110,7 +113,7 @@ export function edAccessRisk(
     const first = candidates[0];
     atRisk.push({
       movementId: movement.id,
-      edId: movement.originEdId,
+      edId,
       kind,
       urgency: movement.urgency,
       passesAt,

@@ -26,7 +26,7 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { type WardChipLevel } from "@/components/ward-management/ward-chip";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * Task 10 (spec item 8). `changeReasonLabels` covers the four reason lists in
@@ -200,7 +200,7 @@ export function urgentFigureFlags(conditions: { deadlineBreached: boolean; decli
  * has already failed, so the unresolved branch is the only branch.
  */
 export function unresolvedOriginDepartment(movement: Movement): string {
-  return departmentLabel(movement.originEdId, undefined);
+  return movementOriginLabel(movement, undefined);
 }
 
 export function stageReachedAt(movement: Movement, stage: MovementStage): Instant | undefined {

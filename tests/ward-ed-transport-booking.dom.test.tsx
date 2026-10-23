@@ -96,7 +96,7 @@ function TransportProbe({ movementId }: { movementId: string }) {
 function renderEdFor(movement: Movement) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <EdScreen edId={movement.originEdId} />
+      <EdScreen edId={movement.originEdId!} />
       <TransportProbe movementId={movement.id} />
     </WardFlowProvider>,
   );
@@ -300,7 +300,7 @@ describe("booking transport from the sending emergency department", () => {
 
   it("does not offer a booking outside stage pulled, and names the stage it is at", () => {
     const held = heldBedMovement();
-    const other = notHeldMovementAtSameEd(held.originEdId);
+    const other = notHeldMovementAtSameEd(held.originEdId!);
     renderEdFor(other);
 
     const toggle = screen.getByTestId(`ward-ed-book-transport-toggle-${other.id}`);

@@ -60,6 +60,7 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 
 import styles from "./ward-tasks-drawer.module.css";
+import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
@@ -136,7 +137,7 @@ function escalationTargets(movement: Movement): CallTarget[] {
       kind: "consultant",
       name: "Duty consultant",
       role: "Consultant psychiatrist on call",
-      siteCode: edById(movement.originEdId)?.siteCode,
+      siteCode: originSiteCode(movement),
       service,
     },
     { kind: "bedFlow", name: "State bed desk", role: "Statewide bed flow", service: undefined },
@@ -767,7 +768,7 @@ export function WardTasksDrawer({
                 <Clock aria-hidden="true" />
                 <span>{stageCopy[movement.stage].label}</span>
                 <span aria-hidden="true">·</span>
-                <span>{edById(movement.originEdId)?.name ?? "Origin not recorded"}</span>
+                <span>{originName(movement) ?? "Origin not recorded"}</span>
                 {movement.escalation ? (
                   <>
                     <span aria-hidden="true">·</span>

@@ -94,12 +94,43 @@ function movementUnitIds(movement: Movement): string[] {
 
 /**
  * Only the desk's own wards in a movement's list of wards asked, so a ward never learns which other
- * wards the person was sent to (review on PR #330). The accepted ward stays: it is where the person
- * is going, and the stage reads from it.
+ * wards the person was sent to (review on PR #330). A desk that sent the movement keeps the ward it
+ * was accepted for: it is where its own person is going, and the stage reads from it.
+ *
+ * A desk that only received the movement learns nothing about any other ward either (FD-23, D-80):
+ * no other ward's decline, withdrawn request, answer, waitlist, override, gender placement or
+ * escalation attempt, and no other ward's acceptance or bed. The stage itself stays, so the journey
+ * still reads in order.
  */
-function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean): Movement {
-  const own = movement.referredUnitIds.filter(unitIn);
-  return own.length === movement.referredUnitIds.length ? movement : { ...movement, referredUnitIds: own };
+function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean, sent: boolean): Movement {
+  const copy = { ...movement, referredUnitIds: movement.referredUnitIds.filter(unitIn) };
+  if (sent) return copy;
+  // Records naming one ward keep only this desk's own; records naming several keep only its own ids.
+  for (const key of ["declines", "withdrawnReferrals", "unwinds", "referralAnswerHistory"] as const) {
+    const items: { unitId?: string }[] | undefined = movement[key];
+    if (items) Object.assign(copy, { [key]: items.filter((item) => item.unitId === undefined || unitIn(item.unitId)) });
+  }
+  for (const key of ["overrides", "genderPlacements"] as const) {
+    const items: { unitIds: string[] }[] | undefined = movement[key];
+    if (items)
+      Object.assign(copy, {
+        [key]: items.flatMap((item) => {
+          const unitIds = item.unitIds.filter(unitIn);
+          return unitIds.length || !item.unitIds.length ? [{ ...item, unitIds }] : [];
+        }),
+      });
+  }
+  if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
+  if (movement.escalation)
+    copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
+  if (movement.acceptedUnitId && !unitIn(movement.acceptedUnitId)) {
+    delete copy.acceptedUnitId;
+    delete copy.heldBedNumber;
+    delete copy.allocatedBed;
+  }
+  // The legal mismatch names the accepting ward too, so it goes with that ward's acceptance.
+  if (movement.legalMismatch && !unitIn(movement.legalMismatch.unitId)) delete copy.legalMismatch;
+  return copy;
 }
 
 /** Has this movement finished, and when. `undefined` while it is still open. */
@@ -601,7 +632,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   const scope = access.scope;
   const unitIn = (unitId: string) => unitInScope(scope, unitId, places);
-  const edIn = (edId: string) => edInScope(scope, edId, places);
+  // D-76: a journey from a community team is in no ED's scope.
+  const edIn = (edId: string | undefined) => edId !== undefined && edInScope(scope, edId, places);
   const siteCodesInScope = new Set<string>();
   for (const unit of workspace.units) if (unitIn(unit.id)) siteCodesInScope.add(unit.siteCode);
   for (const ed of workspace.edDepartments ?? []) if (edIn(ed.id)) siteCodesInScope.add(ed.siteCode);
@@ -684,7 +716,15 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
             (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
         )
-        .map((movement) => ownReferredUnits(movement, unitIn));
+        .map((movement) =>
+          ownReferredUnits(
+            movement,
+            unitIn,
+            edIn(movement.originEdId) ||
+              (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+              (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
+          ),
+        );
       const referralIds = new Set(movements.map((movement) => movement.referralId).filter(Boolean));
       referrals = workspace.referrals.flatMap((referral) => {
         if (
@@ -727,7 +767,14 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         const ended = movementEndedAt(movement);
         return ended === undefined || now - ended <= wardWindow;
       });
-      movements = movements.map((movement) => ownReferredUnits(movement, unitIn));
+      movements = movements.map((movement) =>
+        ownReferredUnits(
+          movement,
+          unitIn,
+          (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+            (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
+        ),
+      );
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),

@@ -185,8 +185,8 @@ export function AddPatientForm() {
   const now = useWardFlowClock();
   const role = useRouteRole();
   const access = useEffectiveWardAccess();
-  // The approved ward registration allowance uses the source/community event role.
-  const raise = useWardRaise(role === "ward" ? "community" : role);
+  // A ward adds a patient in its own name, registered to its own ward (role access plan v2, D-80).
+  const raise = useWardRaise(role);
   const registrationScope = patientRegistrationScope(access.scope);
   // Smart features idea 9 (19 Oct 2026): an ED desk presents at its own ED unless someone picks another.
   const deskEdId = access.scope.kind === "ed" ? access.scope.edId : undefined;

@@ -4,6 +4,7 @@
 import {
   type ModelClaim,
   WARD_MODEL,
+  WARD_MODEL_MOVEMENT_PARTS,
   WARD_ADMISSIONS,
   WARD_BED_EVENTS,
   WARD_REFERRAL_ANSWER_EVENTS,
@@ -33,7 +34,7 @@ import {
   ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   DECLINE_LOSES_ITS_UNIT,
   MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST,
-  MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
+  MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED,
   REFERRED_UNIT_IDS_BECOMES_ONE_ID,
   THE_PARALLEL_REFERRAL_CAP_IS_REMOVED,
   REFERRAL_ID_STOPS_BEING_NULLABLE,
@@ -107,10 +108,11 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     id: "statistics-overview-screen/precedent/a-movement-is-inside-an-emergency-department",
     renderedIn: OVERVIEW_SCREEN,
     rendered: "already inside a department",
-    claim: "Every movement names the emergency department the person is physically in.",
-    sourceFile: WARD_MODEL,
-    evidence: "originEdId: string;",
-    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
+    claim:
+      "A movement names the emergency department it started from, except a journey from an accepted community referral (D-76), which names the referring community team instead.",
+    sourceFile: WARD_MODEL_MOVEMENT_PARTS,
+    evidence: "originEdId?: string;",
+    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED,
   },
 
   // ── statistics-compare-screen.tsx ─────────────────────────────────────────────────────────────
@@ -402,7 +404,7 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
       reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
     },
 
-    id: "statistics-ed-screen/attributable/origin-ed-id-is-required",
+    id: "statistics-ed-screen/attributable/origin-ed-id-is-missing-only-on-a-community-journey",
     renderedIn: ED_SCREEN,
     /*
      * ⚠️ **NARROWED 2026-09-05 BECAUSE THE BARE `<code>` STOPPED BEING UNIQUE.** A second sentence
@@ -416,10 +418,12 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     // that drops the requiredness still takes the locator with it. That was the whole point of
     // spanning the clause rather than the identifier, and it survives the reword intact.
     rendered: "A movement says which department a person is physically in — always, never missing",
-    claim: "`Movement.originEdId` is a required string, so it is never missing.",
-    sourceFile: WARD_MODEL,
-    evidence: "originEdId: string;",
-    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
+    claim:
+      "`Movement.originEdId` is missing only on a journey from an accepted community referral (D-76), which " +
+      "records `originCommunity` instead.",
+    sourceFile: WARD_MODEL_MOVEMENT_PARTS,
+    evidence: "originEdId?: string;",
+    falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED,
   },
   {
     retiredPageProse: {
@@ -432,11 +436,11 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     rendered: "alongside when their movement opened",
     claim: "A movement records the instant it opened.",
     sourceFile: WARD_MODEL,
-    evidence: "originEdId: string; openedAt: Instant;",
+    evidence: "patientId?: PatientId; openedAt: Instant;",
     falsifiedBy: {
       change: "A movement stops recording the instant it opened.",
-      find: "originEdId: string; openedAt: Instant;",
-      replaceWith: "originEdId: string;",
+      find: "patientId?: PatientId; openedAt: Instant;",
+      replaceWith: "patientId?: PatientId;",
     },
   },
   {

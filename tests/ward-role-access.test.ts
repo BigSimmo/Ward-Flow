@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { directiveAcknowledgements } from "../src/components/ward-management/alerts/global-alert-view";
 import type { BroadcastAlert } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
+import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { commandScopeRefusal, scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
@@ -651,7 +652,7 @@ describe("the desk store", () => {
         },
       ],
     };
-    const edId = state.movements[0].originEdId;
+    const edId = state.movements[0].originEdId!;
     const edSiteCode = places.edSiteCode(edId) ?? sendingUnit.siteCode;
     const edOutboundReferral = {
       ...baseReferral,
@@ -790,5 +791,117 @@ describe("the desk store", () => {
         { now: NOW_ANCHOR, places, grants: [{ patientId: catchmentPatient.id, until: NOW_ANCHOR + 60 }] },
       ),
     ).toMatch(/outside/);
+  });
+});
+
+describe("a receiving desk learns nothing about other wards on a journey (FD-23, D-80)", () => {
+  const ownSite = places.unitSiteCode(unitId)!;
+  const otherUnit = state.units.find((unit) => places.unitSiteCode(unit.id) !== ownSite)!;
+  const otherEd = allEmergencyDepartments().find((ed) => ed.siteCode !== ownSite)!;
+  const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: ownSite } };
+  const GENDER_REASON = GENDER_PLACEMENT_REASONS[0];
+  const base = state.movements[0];
+  const shared = {
+    ...base,
+    originEdId: otherEd.id,
+    sourceAdmissionId: undefined,
+    referralId: undefined,
+    closure: undefined,
+    referredUnitIds: [unitId, otherUnit.id],
+    acceptedUnitId: otherUnit.id,
+    acceptedAt: NOW_ANCHOR,
+    heldBedNumber: 4,
+    allocatedBed: 4,
+    declines: [
+      { unitId, at: NOW_ANCHOR, reason: "no_bed" },
+      { unitId: otherUnit.id, at: NOW_ANCHOR, reason: "no_bed" },
+    ],
+    withdrawnReferrals: [
+      { unitId, at: NOW_ANCHOR, reason: "another_unit_accepted" },
+      { unitId: otherUnit.id, at: NOW_ANCHOR, reason: "another_unit_accepted" },
+    ],
+    overrides: [
+      {
+        at: NOW_ANCHOR,
+        by: "coordinator",
+        reason: "Clinical urgency outweighs the mismatch",
+        unitIds: [unitId, otherUnit.id],
+      },
+      { at: NOW_ANCHOR, by: "coordinator", reason: "Clinical urgency outweighs the mismatch", unitIds: [otherUnit.id] },
+    ],
+    escalation: { at: NOW_ANCHOR, triedUnitIds: [unitId, otherUnit.id], contact: "Synthetic contact" },
+    referralAnswerHistory: [
+      { unitId, at: NOW_ANCHOR, answer: "declined" },
+      { unitId: otherUnit.id, at: NOW_ANCHOR, answer: "waitlisted" },
+    ],
+    waitlistedUnitIds: [unitId, otherUnit.id],
+    unwinds: [
+      { at: NOW_ANCHOR, kind: "acceptance_withdrawn", by: "coordinator", reason: "Synthetic", unitId: otherUnit.id },
+    ],
+    legalMismatch: { at: NOW_ANCHOR, unitId: otherUnit.id, kind: "involuntary_on_voluntary_ward" },
+    genderPlacements: [
+      { at: NOW_ANCHOR, by: "coordinator", unitIds: [unitId, otherUnit.id], reason: GENDER_REASON, wardChecked: true },
+      { at: NOW_ANCHOR, by: "coordinator", unitIds: [otherUnit.id], reason: GENDER_REASON, wardChecked: true },
+    ],
+  } as unknown as typeof base;
+  const trimmedFor = (access: WardAccess, movement = shared) =>
+    scopeWorkspace({ ...state, movements: [movement] }, access, { now: NOW_ANCHOR, places }).movements.find(
+      (item) => item.id === movement.id,
+    )!;
+
+  for (const [label, access] of [
+    ["ward", wardDesk],
+    ["bed manager", bedManager],
+  ] as const) {
+    describe(`for a ${label}`, () => {
+      const trimmed = trimmedFor(access);
+      it("keeps only its own wards asked", () => expect(trimmed.referredUnitIds).toEqual([unitId]));
+      it("keeps only its own declines", () => expect(trimmed.declines.map((item) => item.unitId)).toEqual([unitId]));
+      it("keeps only its own withdrawn requests", () =>
+        expect(trimmed.withdrawnReferrals.map((item) => item.unitId)).toEqual([unitId]));
+      it("keeps only overrides that touched its own wards, naming only those", () =>
+        expect(trimmed.overrides.map((item) => item.unitIds)).toEqual([[unitId]]));
+      it("keeps the escalation but names only its own wards tried", () =>
+        expect(trimmed.escalation?.triedUnitIds).toEqual([unitId]));
+      it("keeps only its own answers", () =>
+        expect(trimmed.referralAnswerHistory?.map((item) => item.unitId)).toEqual([unitId]));
+      it("keeps only its own waitlist place", () => expect(trimmed.waitlistedUnitIds).toEqual([unitId]));
+      it("never names the ward that accepted or its bed", () => {
+        expect(trimmed.acceptedUnitId).toBeUndefined();
+        expect(trimmed.heldBedNumber).toBeUndefined();
+        expect(trimmed.allocatedBed).toBeUndefined();
+        expect(trimmed.stage).toBe(shared.stage);
+      });
+      it("drops another ward's withdrawn acceptance", () => expect(trimmed.unwinds).toEqual([]));
+      it("drops another ward's legal mismatch", () => expect(trimmed.legalMismatch).toBeUndefined());
+      it("keeps only gender placements that named its own wards, naming only those", () =>
+        expect(trimmed.genderPlacements?.map((item) => item.unitIds)).toEqual([[unitId]]));
+      it("never carries another ward's id anywhere on the copy", () =>
+        expect(JSON.stringify(trimmed)).not.toContain(otherUnit.id));
+    });
+  }
+
+  it("keeps its own acceptance and bed", () => {
+    const own = trimmedFor(wardDesk, { ...shared, acceptedUnitId: unitId } as typeof shared);
+    expect(own.acceptedUnitId).toBe(unitId);
+    expect(own.heldBedNumber).toBe(4);
+    const mismatch = { at: NOW_ANCHOR, unitId, kind: "involuntary_on_voluntary_ward" as const };
+    expect(trimmedFor(wardDesk, { ...shared, legalMismatch: mismatch } as typeof shared).legalMismatch).toEqual(
+      mismatch,
+    );
+  });
+
+  it("leaves the ward that sent the person knowing where they were accepted", () => {
+    const admission = state.admissions.find((item) => item.unitId === unitId && item.leftAt === null)!;
+    const sent = trimmedFor(wardDesk, { ...shared, sourceAdmissionId: admission.id } as typeof shared);
+    expect(sent.acceptedUnitId).toBe(otherUnit.id);
+    expect(sent.declines).toHaveLength(2);
+  });
+
+  it("leaves a bed manager whose own ED sent the person knowing where they were accepted", () => {
+    const ownEd = allEmergencyDepartments().find((ed) => ed.siteCode === ownSite)!;
+    expect(trimmedFor(bedManager, { ...shared, originEdId: ownEd.id } as typeof shared).acceptedUnitId).toBe(
+      otherUnit.id,
+    );
   });
 });

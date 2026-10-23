@@ -9,9 +9,10 @@
  *
  * - Nobody grants themselves a role, and nobody grants a role wider than their own place.
  * - Every granted role works immediately; no second approval is required (D-66).
- * - Every role has an end date. One not used for the set time is switched off by itself.
+ * - Every role has an end date, at most 12 months away (D-80). One not used for the set time is
+ *   switched off by itself.
  * - Cover is given by a coordinator, or by a nurse in charge or ED clinician for their own ward
- *   or ED, to a colleague, for one shift at most. It needs no admin, because an admin is not on at
+ *   or ED, to a colleague who already holds a ward or ED role (D-80), for one shift at most. It needs no admin, because an admin is not on at
  *   2 am, and it ends by itself.
  *
  * Pure and browser free. Times are `Instant` minutes; the server passes epoch minutes.
@@ -24,6 +25,7 @@ import {
   edInScope,
   type PlaceLookup,
   type WardAccess,
+  type WardAccessRole,
   type WardAccessScope,
 } from "@/components/ward-management/ward-role-access";
 
@@ -36,6 +38,12 @@ export const COVER_MAX_MINUTES = CLINICAL_VALUES.coverLength.value * 60;
 export const ACCESS_ENDING_SOON_MINUTES = CLINICAL_VALUES.accessExpiringSoon.value * MINUTES_PER_DAY;
 /** A role not used for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = CLINICAL_VALUES.accessUnused.value * MINUTES_PER_DAY;
+/** The latest end date a role may be given (D-80), so every role comes back to a review. */
+export const ACCESS_MAX_TERM_MINUTES = CLINICAL_VALUES.accessMaxTerm.value * MINUTES_PER_DAY;
+/** Said wherever a role's end date is past the ceiling, by the screen and the server alike. */
+export const ACCESS_TOO_LONG = "A role lasts 12 months at most. Give it again at its review.";
+/** Said when cover is offered to an account that holds no ward or ED role of its own (D-80). */
+export const COVER_NEEDS_ROLE = "Cover goes only to a colleague who already holds a ward or ED role.";
 
 type AccessMembershipKind = "role" | "cover";
 
@@ -150,6 +158,7 @@ export function grantRefusal(input: {
   if (!accessIsValid(input.access)) return "A role and a place that go together are required.";
   if (input.actorId === input.granterId) return "Nobody grants themselves a role.";
   if (!(input.expiresAt > input.now)) return "A role needs an end date in the future.";
+  if (input.expiresAt > input.now + ACCESS_MAX_TERM_MINUTES) return ACCESS_TOO_LONG;
   if (!scopeNamesPlace(input.access.scope, input.places)) return "That place is not in the workspace.";
   if (!scopeWithinScope(input.access.scope, input.granter.scope, input.places)) return WIDER;
   return null;
@@ -210,7 +219,9 @@ export function coverAccess(scope: WardAccessScope): WardAccess | null {
 /**
  * Why this cover may not be given, or `null` (feature 2). A coordinator gives cover of any ward or
  * ED inside its own place. A nurse in charge gives cover of its own ward, and an ED clinician of
- * its own ED, so a colleague can hold it while they are off the floor.
+ * its own ED, so a colleague can hold it while they are off the floor. The colleague must already
+ * hold a ward or ED role (D-80): `recipientRoles` is the roles they hold now, and an account with
+ * neither is refused, so cover is never a way in for a new account.
  */
 export function coverRefusal(input: {
   readonly giver: WardAccess;
@@ -219,6 +230,7 @@ export function coverRefusal(input: {
   readonly scope: WardAccessScope;
   readonly minutes: number;
   readonly places: AccessPlaces;
+  readonly recipientRoles: readonly WardAccessRole[];
 }): string | null {
   const { giver, scope, places } = input;
   const access = coverAccess(scope);
@@ -239,6 +251,7 @@ export function coverRefusal(input: {
       ? "That ward or ED is not in your own place."
       : "Giving cover is not part of your role.";
   if (input.recipientId === input.giverId) return "Nobody gives themselves cover.";
+  if (!input.recipientRoles.some((role) => role === "ward" || role === "ed")) return COVER_NEEDS_ROLE;
   if (!Number.isInteger(input.minutes) || input.minutes < 1 || input.minutes > COVER_MAX_MINUTES)
     return `Cover lasts up to ${CLINICAL_VALUES.coverLength.value} hours.`;
   return null;

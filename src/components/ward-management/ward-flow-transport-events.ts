@@ -696,7 +696,7 @@ export function reduceTransportEvent(
         return reject(
           state,
           event,
-          `${event.type} was raised acting as ED ${event.actingPlaceId} but movement origin is ${movement.originEdId}; only the origin ED can book or record transport for its own movement`,
+          `${event.type} was raised acting as ED ${event.actingPlaceId} but movement origin is ${movement.originEdId ?? "a community team"}; only the origin ED can book or record transport for its own movement`,
         );
       }
       // The job id counts prior cancellations from `unwinds` (append-only), so a re-booking after a

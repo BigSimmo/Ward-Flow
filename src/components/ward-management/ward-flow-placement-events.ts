@@ -22,6 +22,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { movementBedReservation } from "./ward-movement-bed-hold";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -509,7 +510,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           "bed_pull_released",
-          { role: "ed", placeId: movement.originEdId },
+          referrerOf(movement),
           { movementId: movement.id, unitId: unit.id },
           `${unit.name} released the bed it had pulled for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
         ),
@@ -784,7 +785,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           heldBed ? "bed_pull_released" : "acceptance_withdrawn_referrer",
-          { role: "ed", placeId: movement.originEdId },
+          referrerOf(movement),
           { movementId: movement.id, unitId: releasedUnitId },
           heldBed
             ? `Bed released and search reopened for ${movement.id} (${reasonText}).`
@@ -820,4 +821,12 @@ function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: st
     movement.acceptedAt === movement.extendedHoldAt &&
     movement.acceptedUnitId === unitId;
   return state.configuration.pullHoldMinutes + (extended ? EXTRA_TRAVEL_HOLD_MINUTES : 0);
+}
+
+/** D-76: the referrer told about a released bed is the origin ED, or the referring community team. */
+function referrerOf(movement: Movement) {
+  const team = movement.originCommunity?.teamName;
+  return team === undefined
+    ? { role: "ed" as const, placeId: movement.originEdId }
+    : { role: "community" as const, placeId: communityTeamSlug(team) };
 }

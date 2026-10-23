@@ -566,3 +566,15 @@ export type Rejection = {
   attempted: string;
   reason: string;
 };
+
+/** Where a journey starts. Exactly one of the two is present (the storage validator enforces it). */
+export type MovementOrigin = {
+  /** Where the patient physically is. Detention here is lawful even when unauthorised. */
+  originEdId?: string;
+  /**
+   * D-76 (21 Oct 2026): a journey from an accepted community referral starts at the referring
+   * team, by name and with no address, at the referring service location the referral gave as a
+   * site code. It has no `originEdId`. Owner ruling 8 still holds for every other journey.
+   */
+  originCommunity?: { teamName?: string; siteCode: string };
+};

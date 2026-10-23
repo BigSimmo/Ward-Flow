@@ -210,6 +210,9 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days. Checked against the September 2026 ISM on cyber.gov.au (D-65)",
   },
+  accessMaxTerm: {
+    source: "D-80 (23 Oct 2026), a 12 month ceiling that fits the quarterly access review",
+  },
   observationIntermittentShort: {
     source: OBSERVATION_LEVEL_SOURCE,
   },

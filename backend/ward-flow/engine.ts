@@ -3,6 +3,9 @@ import { activeActNowItems } from "../../src/components/ward-management/ward-act
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
   PUSH_ROLES,
+  ACCESS_MAX_TERM_MINUTES as ACCESS_MAX_TERM_RULE_MINUTES,
+  ACCESS_TOO_LONG as ACCESS_TOO_LONG_RULE,
+  COVER_NEEDS_ROLE as COVER_NEEDS_ROLE_RULE,
   ACCESS_UNUSED_MINUTES as ACCESS_UNUSED_RULE_MINUTES,
   STEP_UP_MINUTES as STEP_UP_RULE_MINUTES,
   coverAccess as coverAccessRule,
@@ -405,13 +408,17 @@ export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: W
 export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
 /** A role not worked as for this long stops working by itself (synthetic). */
 export const ACCESS_UNUSED_MINUTES = ACCESS_UNUSED_RULE_MINUTES;
+/** The latest end date a role may be given (D-80), and what the server says past it. */
+export const ACCESS_MAX_TERM_MINUTES = ACCESS_MAX_TERM_RULE_MINUTES;
+export const ACCESS_TOO_LONG = ACCESS_TOO_LONG_RULE;
+export const COVER_NEEDS_ROLE = COVER_NEEDS_ROLE_RULE;
 /** A sign-in lasts at most this long, however busy the desk (ISM-0428, D-65). */
 export const SESSION_LIMIT_MINUTES = CLINICAL_VALUES.sessionLimit.value * 60;
 
 /**
  * Why this cover may not be given, or `null` (feature 2): the same rule the Access tab uses. The
  * role it carries comes from `coverAccess`: a ward's cover is a nurse in charge's, an ED's an ED
- * clinician's.
+ * clinician's. `recipientRoles` is the roles the colleague holds now; D-80 needs a ward or ED one.
  */
 export function coverRefusal(
   world: SharedWorld,
@@ -420,8 +427,19 @@ export function coverRefusal(
   recipientId: string,
   scope: WardAccessScope,
   minutes: number,
+  recipientRoles: readonly string[],
 ): string | null {
-  return coverRefusalRule({ giver, giverId, recipientId, scope, minutes, places: accessPlaces(world) });
+  return coverRefusalRule({
+    giver,
+    giverId,
+    recipientId,
+    scope,
+    minutes,
+    places: accessPlaces(world),
+    recipientRoles: recipientRoles.filter((role): role is WardAccess["role"] =>
+      (WARD_ACCESS_ROLES as readonly string[]).includes(role),
+    ),
+  });
 }
 
 export function coverAccess(scope: WardAccessScope): WardAccess | null {
@@ -483,11 +501,15 @@ export const BREAK_GLASS_SHIFT_HOURS = CLINICAL_VALUES.breakGlassShift.value;
 /**
  * Whether this desk may open this patient's record outside its care, or why not. Only clinical
  * roles break glass, only for a patient who exists, and never for one already in its own care.
+ * An unknown id and a patient already in care get the same reply, so the form cannot be used to
+ * learn which ids name a patient (role access plan v2, D-80).
  */
+export const BREAK_GLASS_NOT_OPENED = "That record cannot be opened outside your care from here.";
+
 export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patientId: unknown, at: Date): string | null {
   if (!canBreakGlass(access.role)) return "Opening a record outside your care is not part of your role.";
   if (typeof patientId !== "string" || !world.state.patients.some((patient) => patient.id === patientId))
-    return "That patient is not in the workspace.";
+    return BREAK_GLASS_NOT_OPENED;
   const { state, scoped } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
     places: getWardPlaceLookup(world.state.units),
@@ -508,7 +530,7 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
         admission.state !== "departed" &&
         !scoped.datesOnlyAdmissionIds.has(admission.id),
     );
-  if (inFullCare) return "That patient is already in your care.";
+  if (inFullCare) return BREAK_GLASS_NOT_OPENED;
   return null;
 }
 
@@ -611,7 +633,10 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
       siteByOrigin.set(candidate.code, candidate.name);
     }
   }
-  const origins = new Map<string, string>(state.movements.map((movement) => [movement.id, movement.originEdId]));
+  // D-76: a community journey has no ED, so its referring location names the site.
+  const origins = new Map<string, string | undefined>(
+    state.movements.map((movement) => [movement.id, movement.originEdId ?? movement.originCommunity?.siteCode]),
+  );
   return activeActNowItems(state, worldNow(world, at)).map((item) => {
     const origin = origins.get(item.movementId);
     return { id: item.id, site: (origin ? siteByOrigin.get(origin) : undefined) ?? null };

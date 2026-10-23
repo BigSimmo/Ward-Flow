@@ -1465,6 +1465,21 @@ test(
   },
 );
 
+test("break glass answers an unknown id and a patient already in care alike (D-80)", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const unitId = world.state.units[0].id;
+  const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [unitId] });
+  const stay = world.state.admissions.find(
+    (admission) => admission.unitId === unitId && admission.state !== "departed" && admission.patientId,
+  );
+  const unknown = engine.breakGlassRefusal(world, ward, "synthetic-no-such-patient", at);
+  assert.equal(unknown, engine.BREAK_GLASS_NOT_OPENED);
+  assert.equal(engine.breakGlassRefusal(world, ward, stay.patientId, at), unknown);
+  assert.equal(engine.breakGlassRefusal(world, ward, 42, at), unknown);
+});
+
 test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-07T10:00:00Z");
@@ -1473,12 +1488,13 @@ test("a ward desk may send the events its screen sends under another role, and n
   const notYours = "This change is not part of your role.";
   const refusal = (event) => engine.commandRefusal(world, ward, event, at);
   // A ward raises referrals in its own name only, from Raise referral and from its New referral
-  // sheet (Josh, 15 Oct 2026). The sheet still adds a patient as ED, through its CROSS_ROLE_ALLOWED
-  // pair.
+  // sheet (Josh, 15 Oct 2026). It adds a patient in its own name too (role access plan v2, D-80), so
+  // it no longer borrows the ED role for that.
   assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
-  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
+  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ward" }), notYours);
+  assert.equal(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
   // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
   // still refused.
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
@@ -1570,16 +1586,15 @@ test(
       assert.equal((await store.revokeAccess(bView, given.body.membership.id)).status, 403);
       assert.equal((await store.revokeAccess(aView, given.body.membership.id)).status, 200);
       assert.deepEqual((await store.viewer(nurseB)).access, { role: "ward", scope: wardB });
-      // Held with no ward of their own, cover is the whole desk, and it is never given on.
+      // D-80: an account with no ward or ED role of its own is given no cover, so cover is never a
+      // way in for a new account.
       const relief = randomUUID();
-      const reliefCover = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      const refusedRelief = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      assert.equal(refusedRelief.status, 422);
+      assert.equal(refusedRelief.body.error, engine.COVER_NEEDS_ROLE);
+      assert.deepEqual(await store.viewer(relief), { status: "none" });
+      const reliefCover = await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 });
       assert.equal(reliefCover.status, 200);
-      const reliefView = await store.viewer(relief);
-      assert.deepEqual(reliefView.access, { role: "ward", scope: wardA });
-      assert.equal(reliefView.ownAccess, null);
-      const passedOn = await store.giveCover(reliefView, { actorId: nurseB, scope: wardA, minutes: 60 });
-      assert.equal(passedOn.status, 403);
-      assert.match(passedOn.body.error, /cannot be passed on/);
       // A coordinator for the ward's own service sees that cover and may end it, though not its giver.
       const service = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find((name) =>
         engine.scopeWithin(before, wardA, { kind: "service", service: name }),

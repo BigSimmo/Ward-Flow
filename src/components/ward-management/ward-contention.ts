@@ -9,9 +9,9 @@ import type { Movement, MovementId, Unit } from "@/components/ward-management/wa
  * INDEPENDENTLY — measured, 2026-09-04, across 96 of the 97 files under `ward-management/`. Two
  * places do it with more than one patient in the same pass:
  *
- *   - `escalationBoard` (`ward-derivations.ts`) asks per movement whether ANY unit is eligible, so
- *     two patients whose only eligible ward is the SAME single-bed ward are both omitted from
- *     `nowhereEligible` — each, asked alone, has somewhere to go.
+ *   - `escalationBoard` (`ward-derivations.ts`, removed unused on 23 Oct 2026) asked per movement
+ *     whether ANY unit is eligible, so two patients whose only eligible ward is the SAME single-bed
+ *     ward were both omitted from `nowhereEligible` — each, asked alone, had somewhere to go.
  *   - `QueueView`'s eligible-ward column (`ward-management-modes.tsx`) renders one ward name per
  *     patient row, and two rows can name the same ward's only bed. (It was headed "Top candidate"
  *     until 2026-09-04, over a comparison that never ran — see the note at its own site.)

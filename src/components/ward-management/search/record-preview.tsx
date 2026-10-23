@@ -18,7 +18,7 @@ import { patientDisplayName, patientAgeYears, type Patient } from "@/components/
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { edById } from "@/components/ward-management/ward-sites";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -59,7 +59,7 @@ export type MovementSummary = {
 
 function originDepartmentText(movement: Movement): string {
   const originEd = edById(movement.originEdId);
-  return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
+  return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
 }
 
 export function buildMovementSummary(movement: Movement, units: Unit[], now: number): MovementSummary {

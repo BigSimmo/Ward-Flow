@@ -117,7 +117,7 @@ describe("the screens survive a malformed decline reason", () => {
     // would read as "no ward refused for want of a bed", which is a different false claim.
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <StatisticsEdScreen edId={seedMovements()[0].originEdId} movements={withMalformedDecline(seedMovements())} />
+        <StatisticsEdScreen edId={seedMovements()[0].originEdId!} movements={withMalformedDecline(seedMovements())} />
       </WardFlowProvider>,
     );
 

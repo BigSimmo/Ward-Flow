@@ -123,27 +123,17 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 export function CapacityScreen() {
   const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
-  const {
-    movements,
-    units,
-    bedReleases,
-    admissions,
-    leaveBeds,
-    dispatch,
-    worldGeneration,
-    plannedAdmissions,
-    configuration,
-  } = useWardFlowSelect(
-    "movements",
-    "units",
-    "bedReleases",
-    "admissions",
-    "leaveBeds",
-    "dispatch",
-    "worldGeneration",
-    "plannedAdmissions",
-    "configuration",
-  );
+  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "bedReleases",
+      "admissions",
+      "leaveBeds",
+      "dispatch",
+      "worldGeneration",
+      "plannedAdmissions",
+    );
   const network = useWardNetwork();
   // Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of this screen, unchanged.
   // No patient is chosen here, so it reads beds only: a ward can be picked out, never offered.
@@ -1120,7 +1110,6 @@ export function CapacityScreen() {
           {!isPhone ? <StepDownBoard now={now} /> : null}
           {!isPhone ? (
             <HomeBedflow
-              movement={undefined}
               units={units}
               movements={movements}
               bedReleases={bedReleases}
@@ -1129,8 +1118,6 @@ export function CapacityScreen() {
               now={now}
               selectedUnitId={bedflowUnitId}
               onSelectUnit={(unitId) => setBedflowUnitId((current) => (current === unitId ? undefined : unitId))}
-              onOffer={() => undefined}
-              parallelReferralCap={configuration.parallelReferralCap}
               dischargesHeldUp={bedflowDischargesHeldUp}
               service={service}
             />

@@ -29,7 +29,9 @@ export function movementSearchState(movement: Movement, admissions: readonly Adm
         ? "inpatient"
         : edById(movement.originEdId)
           ? "ed"
-          : "unknown";
+          : movement.originCommunity
+            ? "community"
+            : "unknown";
   const holdStatus = inTransit
     ? "In-Transit"
     : hasBedHold

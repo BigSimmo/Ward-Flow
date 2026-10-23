@@ -29,7 +29,7 @@ import {
   type WfFill,
   useIsPhone,
 } from "@/components/wf";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
@@ -225,7 +225,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const umrnOf = (movement: Movement) => patientOf(movement).umrn;
   const edNameOf = (movement: Movement) => {
     const ed = edById(movement.originEdId);
-    return ed ? edShortName(ed) : departmentLabel(movement.originEdId, undefined);
+    return ed ? edShortName(ed) : movementOriginLabel(movement, undefined);
   };
   const wardNameOf = (movement: Movement) =>
     movement.acceptedUnitId ? (units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? null) : null;

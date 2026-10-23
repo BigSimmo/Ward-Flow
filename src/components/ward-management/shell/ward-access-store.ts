@@ -77,6 +77,8 @@ type Snapshot = {
   /** The coordinator previewing another role: the coordinator's own access to return to. */
   readonly previewOf: WardAccess | null;
   readonly covers: readonly CoverRecord[];
+  /** The page a desk switch is leaving while the new desk's home loads (`markDeskSwitch`). */
+  readonly switchFrom?: string;
 };
 
 const EMPTY: Snapshot = {
@@ -244,6 +246,17 @@ export function setWardAccess(access: WardAccess, { fromServer = false }: { from
     previewOf: null,
     covers: fromServer ? [] : snapshot.covers,
   });
+}
+
+/**
+ * Go to a desk takes the new desk's access at once, then moves to its home. On a slow server the old
+ * page stays up for seconds and, under the new desk, read "Not part of your role" as though the
+ * switch had failed (visual desk, #576). While a switch is on its way that page's closed screen says
+ * the desk is opening instead. The switcher marks it and clears it after a wait. Nothing here
+ * changes what a desk can open.
+ */
+export function markDeskSwitch(leaving?: string): void {
+  emit({ ...snapshot, switchFrom: leaving });
 }
 
 /** The coordinator previews another role, read only, and can return in one tap (feature 4). */

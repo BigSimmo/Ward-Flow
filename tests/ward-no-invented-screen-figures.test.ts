@@ -173,6 +173,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^help\/ward-tour(?:-auto-start)?\.tsx$/,
     name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS|TOUR_SETTLE_MS)$/,
   },
+  {
+    id: "desk-switch-wait",
+    why: "Go to a desk (23 Oct 2026): how long the page a switch leaves says the desk is opening before the closed screen returns; a UI wait, never shown, not a limit.",
+    file: /^settings\/operator-switcher-modal\.tsx$/,
+    name: /^DESK_SWITCH_WAIT_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

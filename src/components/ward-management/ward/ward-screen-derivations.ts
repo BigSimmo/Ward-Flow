@@ -417,7 +417,7 @@ export function wardLiveFormAlerts({
       title: "Referral awaiting this ward's answer",
       countdown: stageCopy[movement.stage].label,
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-      text: `${resolvePatientIdentity(movement).displayName} from ${originPlaceLabel(movement.originEdId)}.`,
+      text: `${resolvePatientIdentity(movement).displayName} from ${originPlaceLabel(movement)}.`,
       actionLabel: "Answer",
       actionTarget: "answer" as const,
     })),
