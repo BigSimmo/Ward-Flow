@@ -1,4 +1,5 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { isSyntheticReferralTimelineBase } from "@/components/ward-management/ward-referral-seed-time";
 
 /**
  * Shifts a seeded Ward Flow state onto a different anchor, preserving every relative offset.
@@ -195,16 +196,31 @@ export function shiftInstants<T>(value: T, offsetMinutes: number): T {
   return shift(value, offsetMinutes) as T;
 }
 
-function shift(value: unknown, offsetMinutes: number): unknown {
-  if (Array.isArray(value)) return value.map((entry) => shift(entry, offsetMinutes));
+function shift(value: unknown, offsetMinutes: number, path: string[] = []): unknown {
+  if (Array.isArray(value)) return value.map((entry) => shift(entry, offsetMinutes, path));
   if (value === null || typeof value !== "object") return value;
 
   const result: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    // Form targets are ISO strings; shift only these structured intake fields, never prose.
+    const isoTarget =
+      path.at(-2) === "intake" &&
+      ((path.at(-1) === "medicalClearance" && key === "expectedAt") ||
+        (path.at(-1) === "arrival" && key === "estimatedAt"));
+    if (
+      isoTarget &&
+      isSyntheticReferralTimelineBase((value as Record<string, unknown>).syntheticTimelineBase) &&
+      typeof entry === "string" &&
+      offsetMinutes !== 0 &&
+      Number.isFinite(Date.parse(entry))
+    ) {
+      result[key] = new Date(Date.parse(entry) + offsetMinutes * 60_000).toISOString();
+      continue;
+    }
     result[key] =
       INSTANT_FIELDS.has(key) && typeof entry === "number"
         ? ((entry + offsetMinutes) as Instant)
-        : shift(entry, offsetMinutes);
+        : shift(entry, offsetMinutes, [...path, key]);
   }
   return result;
 }

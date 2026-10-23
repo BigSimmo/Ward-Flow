@@ -8,6 +8,8 @@ import Link from "next/link";
 import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import type { BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -525,6 +527,7 @@ export function ReferralPatientTab({
   now: Instant;
   readyUnits: number | undefined;
 }) {
+  const { dayZero } = useWardFlowSelect("dayZero");
   const intake = referral.intake;
   const ward = wardArm(referral)?.destination;
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -578,9 +581,17 @@ export function ReferralPatientTab({
         <Section
           title="Ready to transfer"
           aside={
-            intake.medicalClearance.cleared
-              ? "Medically cleared"
-              : `Clearance expected ${intake.medicalClearance.expectedAt?.slice(11, 16) ?? "time not recorded"}`
+            intake.medicalClearance.cleared ? (
+              "Medically cleared"
+            ) : (
+              <span
+                title={`Clearance expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}`}
+                aria-label={`Clearance expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}`}
+              >
+                Expected{" "}
+                {formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now)}
+              </span>
+            )
           }
         >
           {checkRows.length > 0 ? (
