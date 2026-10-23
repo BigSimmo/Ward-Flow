@@ -839,11 +839,6 @@
   flex: 0 0 auto;
 }
 
-/* Preview controls read as dashed: shown for review, not connected (D4). */
-.preview {
-  border-style: dashed;
-}
-
 .alerts {
   display: flex;
   flex-wrap: nowrap;
@@ -1899,28 +1894,4 @@
 .rowOn[data-overdue="true"],
 .cardOn[data-overdue="true"] {
   background: var(--wf-selected);
-}
-
-/* D-16 not-wired popovers (shared `NotWiredButton`). At the panel foot it opens upward so the
-   clipped panel never hides it; on the phone's full-width Claim it opens from the left edge. */
-.notWiredUp {
-  display: inline-flex;
-}
-
-.notWiredStart,
-.notWiredStart > span {
-  display: flex;
-  width: 100%;
-}
-
-.notWiredUp [role="group"] {
-  top: auto;
-  right: auto;
-  bottom: calc(100% + 4px);
-  left: 0;
-}
-
-.notWiredStart [role="group"] {
-  right: auto;
-  left: 0;
 }
