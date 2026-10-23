@@ -651,7 +651,7 @@ describe("the desk store", () => {
         },
       ],
     };
-    const edId = state.movements[0].originEdId;
+    const edId = state.movements[0].originEdId!;
     const edSiteCode = places.edSiteCode(edId) ?? sendingUnit.siteCode;
     const edOutboundReferral = {
       ...baseReferral,

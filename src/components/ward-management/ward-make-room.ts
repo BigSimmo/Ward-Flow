@@ -23,10 +23,11 @@ import {
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { stepDownSubject } from "@/components/ward-management/ward-step-down";
 import { observationStaff } from "@/components/ward-management/ward-observation";
+import { originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * MAKE ROOM CHAINS (`make-room-chains`, mockup stage, Josh 17 Oct 2026). A waiting referral whose
@@ -130,7 +131,7 @@ function serviceOf(unit: Unit): string | undefined {
 
 /** The health service of the emergency department a referral came from. */
 function movementService(movement: Movement): string | undefined {
-  const siteCode = edById(movement.originEdId)?.siteCode;
+  const siteCode = originSiteCode(movement);
   return siteCode ? siteByCode(siteCode)?.service : undefined;
 }
 

@@ -34,7 +34,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "UNDO_HANDOVER_SIGN_OFF":
       return "none";
     case "RAISE_REFERRAL":
-      return event.edId;
+      // D-76: a journey from an accepted community referral starts at no ED; its ward is the subject.
+      return event.edId ?? event.acceptedUnitId ?? "none";
     case "CONFIRM_CAPACITY":
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
     case "CLOSE_WARD_TO_ADMISSIONS":

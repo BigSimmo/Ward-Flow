@@ -263,6 +263,9 @@ function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
  * adding one is Phase 2 model work, not a derivation this module can safely invent.
  */
 export function movementHealthService(movement: Movement): HealthService | undefined {
+  // D-76: a journey from a community team takes the service of the location its referral gave.
+  if (movement.originEdId === undefined)
+    return movement.originCommunity && siteByCode(movement.originCommunity.siteCode)?.service;
   return edServiceById.get(movement.originEdId);
 }
 

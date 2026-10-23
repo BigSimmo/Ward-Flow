@@ -43,6 +43,7 @@ import {
   observationRatio,
   observationSummary,
 } from "@/components/ward-management/ward-observation";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /* ------------------------------------------------------------------ shifts */
 
@@ -190,7 +191,8 @@ export function toHandoverRow(
   referrals: Referral[],
 ): HandoverRow {
   const identity = resolveSubjectPatient(movement, { patients, referrals });
-  const ed = edNames(movement.originEdId);
+  const community = movement.originEdId === undefined ? communityOriginLabel(movement.originCommunity) : undefined;
+  const ed = community ? { short: community, full: community } : edNames(movement.originEdId!);
   const accepted = movement.acceptedUnitId;
   const leg = transportLeg(movement.transport);
   const toUnit = accepted === undefined ? undefined : units.find((unit) => unit.id === accepted);

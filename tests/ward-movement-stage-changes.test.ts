@@ -275,7 +275,7 @@ function buildDrivenFixture() {
     role: "ed",
     now: t(60),
     movementId: MOVEMENT_ID,
-    actingPlaceId: movementIn(s5, MOVEMENT_ID).originEdId,
+    actingPlaceId: movementIn(s5, MOVEMENT_ID).originEdId!,
   });
   assertStepAccepted(s5, sDeteriorated, "RECORD_ED_MEDICAL_DETERIORATION");
 

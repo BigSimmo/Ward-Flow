@@ -978,7 +978,7 @@ export function activeWardNetwork(): WardNetwork {
  * than leaving every future caller to write its own inline `.find()`. Returns `undefined` for an
  * unknown id — never falls back to a different department.
  */
-export function edById(id: string): EmergencyDepartment | undefined {
+export function edById(id: string | undefined): EmergencyDepartment | undefined {
   if (!id) return undefined;
   const trimmed = id.trim();
   const lower = trimmed.toLowerCase();

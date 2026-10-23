@@ -19,6 +19,7 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { makeRoomPreview } from "./make-room-preview";
 import styles from "./make-room-panel.module.css";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /** Plain names for every check a move can pass, so the count shown is the count run. */
 const CHECK_LABELS: Record<EligibilityGate, string> = {
@@ -61,7 +62,7 @@ function movesOf(chain: MakeRoomChain, nameOf: NameOf): Move[] {
     {
       key: chain.movement.id,
       who: nameOf(chain.movement),
-      fromName: edShortName(edById(chain.movement.originEdId)),
+      fromName: edShortName(edById(chain.movement.originEdId)) || (originName(chain.movement) ?? ""),
       to: chain.targetUnit,
       isReferral: true,
       checks: chain.checks,

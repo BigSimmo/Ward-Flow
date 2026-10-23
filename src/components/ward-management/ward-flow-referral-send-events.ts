@@ -93,10 +93,18 @@ export function reduceReferralSendEvent(
         return reject(state, event, "RAISE_REFERRAL observation must be a recorded level with a valid interval.");
       if (event.draft.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.draft.atsCategory))
         return reject(state, event, "RAISE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
-      const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);
-      if (!department) {
+      // D-76: with no ED named, only an accepted community referral's journey may start (checked below).
+      const department =
+        event.edId === undefined ? undefined : allEmergencyDepartments().find((ed) => ed.id === event.edId);
+      if (event.edId !== undefined && !department) {
         return reject(state, event, `no emergency department found for id ${event.edId}`);
       }
+      if (!department && event.acceptedUnitId === undefined)
+        return reject(
+          state,
+          event,
+          "RAISE_REFERRAL needs an emergency department unless it starts an accepted community referral",
+        );
       const sequence = state.referralSequence + 1;
       // The clinician chooses the form; nothing derives one from `legalStatus` (product owner:
       // "avoid any hard rules now please"). `null` means the clinician chose no form, a real
@@ -150,8 +158,9 @@ export function reduceReferralSendEvent(
           if (
             (event.role !== "ward" && event.role !== "coordinator") ||
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
-            referral.source !== "ed_medical" ||
-            department.siteCode !== referral.originSiteCode ||
+            (department
+              ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
+              : referral.source !== "community") ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
@@ -184,7 +193,7 @@ export function reduceReferralSendEvent(
           return reject(
             state,
             event,
-            `referral ${referral.id} was never addressed to ${department.name}, so a journey raised there did not come from it`,
+            `referral ${referral.id} was never addressed to ${department?.name ?? "this ward"}, so a journey raised there did not come from it`,
           );
         }
         /**
@@ -206,7 +215,7 @@ export function reduceReferralSendEvent(
           return reject(
             state,
             event,
-            `${department.name} declined referral ${referral.id}, so no journey can be raised from it`,
+            `${department?.name ?? "This ward"} declined referral ${referral.id}, so no journey can be raised from it`,
           );
         }
         /**
@@ -254,7 +263,15 @@ export function reduceReferralSendEvent(
       }
       const created: Movement = {
         id: nextReferralId(sequence),
-        originEdId: event.edId,
+        ...(department
+          ? { originEdId: department.id }
+          : // D-76: the referring team and location, as the accepted community referral recorded them.
+            // The team's own transport answer carries over, so a carer-brought patient can arrive
+            // without a booking. A needed vehicle is booked on the journey as for any other.
+            {
+              originCommunity: { siteCode: raisedFrom!.originSiteCode, teamName: raisedFrom!.sendingTeamName },
+              ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
+            }),
         openedAt: event.now,
         patientId: event.patientId ?? raisedFrom?.patientId,
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
@@ -307,7 +324,7 @@ export function reduceReferralSendEvent(
         urgencyChanges: [],
         overrides: [],
         stage: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested",
-        owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department.name,
+        owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department!.name,
         // Acceptance empties the live requests, as ACCEPT_IN_PRINCIPLE does: the accepted ward lives
         // in `acceptedUnitId`, so WITHDRAW_WARD_REQUEST cannot take it back (review: CodeRabbit).
         referredUnitIds: [],

@@ -21,7 +21,8 @@ import { patientDisplayName, type Patient } from "@/components/ward-management/w
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   URGENT_MARK_REASONS,
@@ -192,7 +193,7 @@ export function MovementDrawer({
   const open = isOpen(movement);
   const closure = movement.closure;
   const originEd = edById(movement.originEdId);
-  const originLabel = departmentLabel(movement.originEdId, originEd?.name);
+  const originLabel = movementOriginLabel(movement, originEd?.name);
   const originSite = originEd?.siteCode ? siteByCode(originEd.siteCode) : undefined;
   const accepted =
     movement.acceptedUnitId === undefined

@@ -57,7 +57,12 @@ export function matchesService(result: PatientSearchResult, service: string): bo
   if (service === "all") return true;
 
   if (result.kind === "movement") {
-    const originService = siteByEdId.get(result.movement.originEdId)?.service;
+    const { originEdId, originCommunity } = result.movement;
+    const originService = (
+      originEdId === undefined
+        ? wardSites.find((site) => site.code === originCommunity?.siteCode)
+        : siteByEdId.get(originEdId)
+    )?.service;
     const destService = result.movement.acceptedUnitId
       ? siteByUnitId.get(result.movement.acceptedUnitId)?.service
       : undefined;

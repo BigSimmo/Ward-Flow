@@ -260,7 +260,7 @@ export function reduceRecordedFactEvent(
         return reject(
           state,
           event,
-          `${event.type} was raised acting as ED ${actingPlaceId} but movement origin is ${movement.originEdId}; only the origin ED can book or record transport for its own movement`,
+          `${event.type} was raised acting as ED ${actingPlaceId} but movement origin is ${movement.originEdId ?? "a community team"}; only the origin ED can book or record transport for its own movement`,
         );
       }
       // Re-recording overwrites on purpose, as for medical clearance. "Not needed" is refused while

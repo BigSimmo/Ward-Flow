@@ -27,6 +27,7 @@ import { type CommunityReferralPurpose } from "@/components/ward-management/ward
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { type DocumentationDraft } from "./referral-flow-panels";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * The referral slide-out's constants, types and pure helpers, moved unchanged from
@@ -297,7 +298,7 @@ export function sampleProfile(
       movementSexOrGender && movementSexOrGender !== "Not recorded" ? movementSexOrGender.charAt(0).toUpperCase() : "",
     umrn: info.umrn,
     dob: patient?.dateOfBirth ?? NOT_RECORDED,
-    origin: edById(movement.originEdId)?.name ?? NOT_RECORDED,
+    origin: originName(movement) ?? NOT_RECORDED,
     legalStatus: movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus,
     recordedExpiry: dueAt === undefined ? "not recorded" : `${formatInstantWithDay(dueAt, now)}, clinician-entered`,
     security: movement.security,
