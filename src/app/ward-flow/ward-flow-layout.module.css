@@ -312,6 +312,15 @@
 
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
 @media print {
+  /* The document's dark colour scheme also paints the paper canvas outside the routed content.
+     Pin it to paper appearance; resetting only the nested shell backgrounds leaves dark margins. */
+  :global(html):has(.shellRow),
+  :global(body):has(.shellRow) {
+    color-scheme: light !important;
+    color: CanvasText;
+    background: Canvas !important;
+  }
+
   .shellRow,
   .shellContent {
     display: block;
@@ -321,6 +330,11 @@
     max-height: none;
     overflow: visible;
     background: transparent;
+  }
+
+  /* The phone dock is hidden on paper, so its reserved clearance must not create a blank page. */
+  .shellContent {
+    padding-bottom: 0 !important;
   }
 
   .bannerHolder {
