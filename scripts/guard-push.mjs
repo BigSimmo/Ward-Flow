@@ -22,8 +22,10 @@
  *      for actors without write permission GitHub disables auto-merge outright. If
  *      `gh` reports an armed autoMergeRequest AND this push force-updates that
  *      branch, block without an automation override.
- *      Fails OPEN (never blocks) when gh is missing/unauthenticated, so
- *      contributors without gh can still push.
+ *      A fast-forward push fails OPEN when gh is missing/unauthenticated, so
+ *      contributors without gh can still push. A force-push whose branch's
+ *      auto-merge state cannot be read (gh missing, signed out, offline) fails
+ *      CLOSED: the rule has no override, so an unknown state blocks too.
  *
  *   2. In-flight CI push guard (all PR branches)
  *      Detects when an operator or branch sync pushes a commit to a PR branch while
@@ -619,31 +621,73 @@ export function autoMergeVerdict(branch, prPayload, isForcePush = false, carries
   return { block: false, warn: false, reason: "auto-merge-not-armed" };
 }
 
-/** Exported for tests: does this push carry a hosted migration? */
+/** Exported for tests: does this push carry a hosted migration?
+ * PsychSift-era and not wired: autoMergeGuard never passes `carriesMigration`, so the
+ * "auto-merge-armed-migration" verdict above cannot fire in Ward Flow, whose migrations
+ * live in backend/ward-flow/migrations/ and are applied by hand. Removing it needs Josh's yes. */
 export function touchesProductionMigrations(changedFiles = []) {
   return changedFiles.some((f) => f.startsWith("supabase/migrations/"));
 }
 
-function autoMergeGuard(branches, forcePushBranches = new Set()) {
-  if (!ghIsAvailable()) {
+/** Exported for tests: `gh pr view` exits non-zero both when the branch has no PR and when
+ * gh is signed out, offline or rate-limited. Only the first is a known answer. */
+export function isNoPullRequestError(stderr) {
+  return /no (?:open )?pull requests? found/iu.test(String(stderr ?? ""));
+}
+
+/** Reads one branch's PR auto-merge state: { payload } (null payload when there is no PR) or { error }. */
+function defaultAutoMergePrView(branch) {
+  try {
+    const raw = execFileSync("gh", ["pr", "view", branch, "--json", "autoMergeRequest,state,number"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: 30000,
+    });
+    return { payload: JSON.parse(raw) };
+  } catch (error) {
+    const stderr = String(error?.stderr ?? "");
+    if (isNoPullRequestError(stderr)) return { payload: null };
+    const detail = stderr.trim().split("\n")[0] || error?.message || "unknown error";
+    return { error: detail.slice(0, 200) };
+  }
+}
+
+/**
+ * The force-push half has no override (AGENTS.md rule 6), so it fails CLOSED: when this push
+ * force-updates a branch and gh cannot say whether that branch's PR has auto-merge armed (gh
+ * missing, signed out, offline, rate-limited or unreadable output), the push is blocked.
+ * Fast-forward pushes stay fail-open, so contributors without gh can still push normally.
+ */
+export function autoMergeGuard(
+  branches,
+  forcePushBranches = new Set(),
+  { ghAvailable = ghIsAvailable, prViewer = defaultAutoMergePrView } = {},
+) {
+  const unconfirmed = (reasons) => ({
+    name: "auto-merge",
+    ok: false,
+    message:
+      `This push force-updates ${reasons.join(", ")}, and the auto-merge state could not be read.\n` +
+      `  A force-push while auto-merge is armed is blocked with no override, so an unknown state blocks too.\n` +
+      `  Install gh and sign in (\`gh auth login\`), then push again, or push a fast-forward commit instead.`,
+  });
+  if (!ghAvailable()) {
+    if (forcePushBranches.size > 0) {
+      return unconfirmed([...forcePushBranches].map((branch) => `${branch} (gh is not installed)`));
+    }
     return { name: "auto-merge", ok: true, note: "gh not available — auto-merge check skipped (fail-open)" };
   }
   const warnings = [];
+  const unreadable = [];
   for (const branch of branches) {
-    let payload;
-    try {
-      const raw = execFileSync("gh", ["pr", "view", branch, "--json", "autoMergeRequest,state,number"], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-        timeout: 30000,
-      });
-      payload = JSON.parse(raw);
-    } catch {
-      // No PR for this branch, or gh unauthenticated: fail open.
+    const view = prViewer(branch);
+    if (!view || view.error || view.payload === undefined) {
+      // Unknown state: harmless for a fast-forward, blocking for a force-push.
+      if (forcePushBranches.has(branch)) unreadable.push(`${branch} (${view?.error ?? "no gh result"})`);
       continue;
     }
     // This repository cannot apply PsychSift's clinical Supabase migrations.
-    const verdict = autoMergeVerdict(branch, payload, forcePushBranches.has(branch));
+    const verdict = autoMergeVerdict(branch, view.payload, forcePushBranches.has(branch));
     if (verdict.block) {
       const message =
         `PR #${verdict.number} on ${branch} has auto-merge ARMED and this push force-updates the branch.\n` +
@@ -655,6 +699,7 @@ function autoMergeGuard(branches, forcePushBranches = new Set()) {
       warnings.push(`PR #${verdict.number} on ${branch} has auto-merge ARMED — pushing anyway (fast-forward).`);
     }
   }
+  if (unreadable.length > 0) return unconfirmed(unreadable);
   if (warnings.length > 0) {
     return {
       name: "auto-merge",
@@ -1234,9 +1279,11 @@ export function formatGuard(changedBlobs, prettierResolver = resolvePrettierBin)
 /**
  * Roots that `lint:internal` passes to eslint, plus `eslint-rules/` (custom
  * rules are not in the lint:internal arg list today but changing one still
- * re-decides the verdict for every file that loads them).
+ * re-decides the verdict for every file that loads them) and `backend/` (the
+ * shared-save server; it lints clean under the same config but sits outside
+ * the whole-tree lint).
  */
-const LINT_ROOTS = ["src/", "tests/", "scripts/", "worker/", "supabase/", "playwright/", "eslint-rules/"];
+const LINT_ROOTS = ["src/", "tests/", "scripts/", "backend/", "playwright/", "eslint-rules/"];
 const LINT_ROOT_FILES = new Set([
   "eslint.config.mjs",
   "next.config.ts",
@@ -1711,6 +1758,36 @@ function selfTest() {
     autoMergeVerdict("claude/x", { autoMergeRequest: {}, state: "MERGED" }).block === false,
     "non-open PR does not block",
   );
+  // auto-merge guard: an unreadable armed state blocks a force-push, never a fast-forward
+  const armedView = () => ({ payload: { autoMergeRequest: { enabledAt: "t" }, state: "OPEN", number: 8 } });
+  const forced = new Set(["claude/x"]);
+  assert(
+    autoMergeGuard(["claude/x"], forced, { ghAvailable: () => false }).ok === false,
+    "missing gh blocks a force-push (state unknown)",
+  );
+  assert(
+    autoMergeGuard(["claude/x"], new Set(), { ghAvailable: () => false }).ok === true,
+    "missing gh still lets a fast-forward through",
+  );
+  assert(
+    autoMergeGuard(["claude/x"], forced, { ghAvailable: () => true, prViewer: () => ({ error: "auth" }) }).ok === false,
+    "signed-out gh blocks a force-push",
+  );
+  assert(
+    autoMergeGuard(["claude/x"], new Set(), { ghAvailable: () => true, prViewer: () => ({ error: "auth" }) }).ok ===
+      true,
+    "signed-out gh still lets a fast-forward through",
+  );
+  assert(
+    autoMergeGuard(["claude/x"], forced, { ghAvailable: () => true, prViewer: () => ({ payload: null }) }).ok === true,
+    "a force-push to a branch with no PR is allowed",
+  );
+  assert(
+    autoMergeGuard(["claude/x"], forced, { ghAvailable: () => true, prViewer: armedView }).ok === false,
+    "armed auto-merge blocks a force-push through the guard",
+  );
+  assert(isNoPullRequestError('no pull requests found for branch "claude/x"'), "gh no-PR message is recognised");
+  assert(!isNoPullRequestError("To get started with GitHub CLI, please run:  gh auth login"), "gh auth error is not");
 
   // in-flight CI verdicts (#HSSHRG)
   const activeCiRun = { databaseId: 101, name: "Ward Flow CI", status: "in_progress", conclusion: null };
