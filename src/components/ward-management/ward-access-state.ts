@@ -567,9 +567,11 @@ export function commandScopeRefusal(
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && access.role === "ward") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      // The stay a journey leaves names its sender before the referral does: a repatriation keeps the
+      // referral that brought the patient in (review on PR #617).
       const sendingWard =
-        referral?.originUnitId ??
         movementSourceAdmission(state, movement)?.unitId ??
+        referral?.originUnitId ??
         (movement as { originUnitId?: string }).originUnitId;
       if (!sendingWard || !unitInScope(scope, sendingWard, places)) return outside;
     }

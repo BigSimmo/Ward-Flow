@@ -654,9 +654,10 @@ export function reduceTransportEvent(
       }
       if (event.role === "ward" && event.actingUnitId !== undefined) {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        // The stay a journey leaves names its sender first, as in the access check (review on PR #617).
         const sendingWard =
-          referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
           (movement as { originUnitId?: string }).originUnitId;
         if (sendingWard) {
           if (event.actingUnitId !== sendingWard) {

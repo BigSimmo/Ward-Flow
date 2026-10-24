@@ -97,5 +97,11 @@ describe("the sender's own journey tools (D-80)", () => {
     expect(commandScopeRefusal(returning, sendingWard, urgency("ward", back.id), options)).not.toBeNull();
     expect(journeySentByKind(returning.referrals, back, "ward")).toBe(true);
     expect(journeySentByKind([teamSent], { ...back, referralId: teamSent.id }, "community")).toBe(false);
+    // The transport need is the returning ward's to record too (review on PR #617).
+    const need = { type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: back.id } as Parameters<
+      typeof commandScopeRefusal
+    >[2];
+    expect(commandScopeRefusal(returning, receivingWard, need, options)).toBeNull();
+    expect(commandScopeRefusal(returning, sendingWard, need, options)).not.toBeNull();
   });
 });
