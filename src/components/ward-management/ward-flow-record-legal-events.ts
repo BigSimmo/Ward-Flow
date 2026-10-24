@@ -10,7 +10,7 @@ import { countryExtensionEligible } from "@/components/ward-management/ward-lega
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
-import { LEGAL_FORM_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -66,7 +66,7 @@ export function reduceRecordedLegalEvent(
           typeof correction !== "object" ||
           Array.isArray(correction) ||
           Object.keys(correction).sort().join() !== "expectedDueAt,expectedFormCode,expectedFormWrittenAt,reason" ||
-          !LEGAL_FORM_EXPIRY_CORRECTION_REASONS.includes(correction.reason) ||
+          !PAPER_EXPIRY_CORRECTION_REASONS.includes(correction.reason) ||
           !Number.isFinite(correction.expectedDueAt) ||
           (correction.expectedFormWrittenAt !== null && !Number.isFinite(correction.expectedFormWrittenAt))
         ) {

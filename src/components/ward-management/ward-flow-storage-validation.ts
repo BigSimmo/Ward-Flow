@@ -51,7 +51,7 @@ import {
 import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 import { REPATRIATION_MODES } from "./ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
-import { LEGAL_FORM_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -144,7 +144,7 @@ const legalFormExpiryCorrection = z
     formWrittenAt: z.optional(finite),
     previousDueAt: finite,
     dueAt: finite,
-    reason: z.enum(LEGAL_FORM_EXPIRY_CORRECTION_REASONS),
+    reason: z.enum(PAPER_EXPIRY_CORRECTION_REASONS),
   })
   .check(z.refine((row) => row.previousDueAt !== row.dueAt));
 const legalFormRule = z.looseObject({

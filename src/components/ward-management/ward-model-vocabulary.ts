@@ -314,8 +314,8 @@ export type LegalStatus =
   "Voluntary" | "Referred for psychiatric examination" | "Detained awaiting examination" | "Involuntary inpatient";
 
 /** Fixed reasons for correcting a transcribed paper expiry; no narrative is stored. */
-export const LEGAL_FORM_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
-export type LegalFormExpiryCorrectionReason = (typeof LEGAL_FORM_EXPIRY_CORRECTION_REASONS)[number];
+export const PAPER_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
+export type LegalFormExpiryCorrectionReason = (typeof PAPER_EXPIRY_CORRECTION_REASONS)[number];
 
 /** Paper-expiry facts carried by a movement, kept here with the legal vocabulary. */
 export type LegalFormExpiryMetadata = {

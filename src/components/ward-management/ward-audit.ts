@@ -33,7 +33,7 @@ import {
 import { validateConfiguration, type WardConfiguration } from "./ward-configuration";
 import { SELECTABLE_LEGAL_FORMS, CONTINUATION_LEGAL_FORMS } from "./ward-legal-forms";
 import { LEGAL_CLOCK_FORM_CODES } from "./ward-legal-clock";
-import { LEGAL_FORM_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
+import { PAPER_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
 
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -742,7 +742,7 @@ export function captureAuditEvent(
             ? {}
             : {
                 previousDueAt: finiteInstant(priorDueAt),
-                reason: enumValue(LEGAL_FORM_EXPIRY_CORRECTION_REASONS, event.correction?.reason),
+                reason: enumValue(PAPER_EXPIRY_CORRECTION_REASONS, event.correction?.reason),
               }),
         },
       };
