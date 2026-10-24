@@ -53,6 +53,7 @@ import {
   canBreakGlass,
   edInScope,
   homeHrefFor,
+  ownStatisticsHrefFor,
   screenDecision,
   screenForPath,
   unitInScope,
@@ -438,11 +439,15 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
       if (!on || accessIsWholeNetwork(access)) return [...entries];
       const places = wardPlaceLookup(units);
       const own = OWN_PLACE_ENTRY[access.scope.kind];
+      // D-80: Statistics opens a ward, ED or team desk's own place's page.
+      const ownStatistics = ownStatisticsHrefFor(access, communityTeamSlug);
       return entries.flatMap((entry) => {
         const shown =
           own && entry.id === own.id
             ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label }
-            : entry;
+            : ownStatistics && entry.id === "statistics"
+              ? { ...entry, href: ownStatistics }
+              : entry;
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
