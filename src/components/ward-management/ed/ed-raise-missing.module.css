@@ -30,6 +30,11 @@ fieldset.missing {
   font-size: var(--wf-fs-13);
   font-weight: 600;
 }
-.saveFields {
+.saveFields,
+.saveFields > fieldset {
   min-inline-size: 0;
+}
+
+.saveFields > fieldset {
+  flex-wrap: wrap;
 }
