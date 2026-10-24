@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 
-import { OverlayPortal } from "@/components/wf/overlay-root";
+import { OverlayPortal } from "@/components/wf";
 
 import { openWardHelp } from "./ward-help-events";
 import styles from "./ward-whats-new.module.css";
