@@ -122,7 +122,23 @@ export function hasOpenSheet() {
  * board uses them to remember what it held when each popup opened (audit CS-19).
  */
 export function openSheetHandles(): readonly object[] {
-  return openSheets.slice();
+  return [...openSheets, ...openForms];
+}
+
+const openForms = new Set<object>();
+
+/**
+ * Holds an inline edit form open as if it were a popup, so the shared board checks a save from it
+ * against what the form opened on (Audit 4 A4-01: the Placement panel's urgency and legal status
+ * forms overwrote a colleague's change unseen). Returns the release, safe to call more than once.
+ */
+export function holdOpenForm(): () => void {
+  const handle = {};
+  openForms.add(handle);
+  notifyStackListeners();
+  return () => {
+    if (openForms.delete(handle)) notifyStackListeners();
+  };
 }
 
 /**
