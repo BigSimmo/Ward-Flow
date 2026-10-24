@@ -164,7 +164,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your screens",
-          `Needs you is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
+          `My list is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
         ),
         step(
           "Your daily work",
