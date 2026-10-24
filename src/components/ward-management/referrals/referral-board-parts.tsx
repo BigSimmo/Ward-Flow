@@ -3,6 +3,8 @@
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
@@ -315,9 +317,11 @@ export function WaitRunway({
 export type BedsReadySummary = {
   cells: { label: string; value: number }[];
   /**
-   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure, the same sum Home, Capacity and
-   * the rail read (`capacityBreakdown(...).availableNow`, as `serviceRollup` sums it). Locked is a
-   * part of the cohort cells, never added on top: summing every cell read 33 against 26.
+   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure. NA2-06 (audit 24 Oct 2026): with
+   * `admissions` it is `readyBedsNow` per ward, the figure Home, Capacity, the rail, Handover and
+   * Statistics print (`totalReadyBedsNow`), so a bed pulled for an incoming patient is not offered
+   * twice. Without them it falls back to the older `capacityBreakdown(...).availableNow`. Locked is
+   * a part of the cohort cells, never added on top: summing every cell read 33 against 26.
    */
   total: number;
   /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
@@ -330,6 +334,8 @@ export function bedsReadySummary(
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  /** NA2-06: pass the workspace's admissions to read the shared `readyBedsNow` figure. */
+  admissions?: readonly Admission[],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -338,7 +344,10 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready = capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
+    const ready =
+      admissions !== undefined
+        ? readyBedsNow(unit, admissions, bedReleases)
+        : capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.

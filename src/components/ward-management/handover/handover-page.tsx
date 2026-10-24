@@ -290,11 +290,11 @@ export function HandoverPage() {
 
   /* rows and wards */
   // Act now reads the shared act-now list (`ward-act-now-items.ts`), the one Alerts and Tasks show.
-  const actNowMovementIds = useMemo(
-    () =>
-      new Set(activeActNowItems({ movements, units, configuration, inboxSnoozes }, now).map((item) => item.movementId)),
+  const actNowItems = useMemo(
+    () => activeActNowItems({ movements, units, configuration, inboxSnoozes }, now),
     [movements, units, configuration, inboxSnoozes, now],
   );
+  const actNowMovementIds = useMemo(() => new Set(actNowItems.map((item) => item.movementId)), [actNowItems]);
   const allRows = useMemo(
     () =>
       movements
@@ -361,6 +361,15 @@ export function HandoverPage() {
     [groups, collapsed],
   );
 
+  // Audit 24-4 decision 5 (Josh, 24 Oct 2026): Act now counts people (one row per journey), while
+  // Alerts counts alerts; one person can carry two, and some alerts have no journey. The pill names
+  // both, so the two screens are never read as disagreeing. An alert with no journey counts only on
+  // the whole network, where nothing is scoped out.
+  const actNowAlertCount = useMemo(() => {
+    const inScope = new Set<string>(rows.map((row) => row.movement.id));
+    return actNowItems.filter((item) => (item.movementId ? inScope.has(item.movementId) : scope.kind === "network"))
+      .length;
+  }, [actNowItems, rows, scope]);
   const counts = useMemo(
     () => ({
       act: rows.filter((row) => groupOf(row, now, cutoff) === "act").length,
@@ -898,16 +907,18 @@ export function HandoverPage() {
     </Button>
   );
   /*
-   * v10 (build guide Handover): the title is the answer, the count due by the shift time, and it
-   * equals the Due by chip. The eyebrow names the shift; five chips highlight rows; the foot holds
-   * the shift switch, the countdown and the bed meter. Sign off is the one light primary.
+   * v10 (build guide Handover): the title is the answer. NA2-01 (audit 24 Oct 2026): it counts every
+   * row listed under Act now, Flagged urgent and Due by, the same sum the phone title uses
+   * (`handover-phone.tsx`), so the two never disagree and an Act now row is never left out. The
+   * eyebrow names the shift; five chips highlight rows; the foot holds the shift switch, the
+   * countdown and the bed meter. Sign off is the one light primary.
    */
   const hero = (
     <Hero
       level={1}
       testId="ward-handover-hero"
       eyebrow={`Handover · ${shiftClock} ${shiftInfo.label}`}
-      title={`${counts.due} to hand over`}
+      title={`${counts.act + counts.urg + counts.due} to hand over`}
       titleMeta={scopeLabel}
       aside={
         <>
@@ -968,7 +979,7 @@ export function HandoverPage() {
               <span className={styles.heroPillCount}>{counts[id]}</span>
               <StatusGlyph tone={PILL_TONE[id]} size={9} />
               {id === "act"
-                ? "Act now"
+                ? `Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlertCount} ${actNowAlertCount === 1 ? "alert" : "alerts"})`
                 : id === "urg"
                   ? "Flagged urgent"
                   : id === "due"
