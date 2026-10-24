@@ -126,8 +126,9 @@ describe("synthetic-data-guard", () => {
       "Medicare 2950 12345 6 1",
     ])
       expect(checkSyntheticPayload({ note }).safe, note).toBe(false);
-    for (const phone of ["02 5550 0142", "(03) 7010 1234", "+61 7 5550 0100"])
+    for (const phone of ["02 5550 0142", "(03) 7010 1234", "+61 7 5550 0100", "+61855500142"])
       expect(checkSyntheticPayload({ referrer: { phone } }).safe, phone).toBe(true);
+    expect(checkSyntheticPayload({ note: "+61855500142, Medicare 29501234561" }).safe).toBe(false);
   });
 
   it("handles circular references gracefully without crashing", () => {

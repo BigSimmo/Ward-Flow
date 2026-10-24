@@ -33,7 +33,11 @@ const fictitiousPhone = (match: string) => FICTITIOUS_LANDLINE.test(match.replac
 const SYNTHETIC_TOKEN_PATTERN = /\bSYNTHETIC-\d{8}\b/gi;
 
 function scanString(value: string): SyntheticCheckResult | null {
-  const sanitized = value.replace(SYNTHETIC_TOKEN_PATTERN, "");
+  // Fictitious phone numbers are blanked first so a compact international one (`+61855500142`)
+  // cannot read as an 11-digit Medicare number; real numbers beside them are still scanned.
+  const sanitized = value
+    .replace(SYNTHETIC_TOKEN_PATTERN, "")
+    .replace(new RegExp(PHONE_PATTERN, "g"), (match) => (fictitiousPhone(match) ? " " : match));
 
   const medicareMatch = MEDICARE_PATTERN.exec(sanitized);
   if (medicareMatch) {
