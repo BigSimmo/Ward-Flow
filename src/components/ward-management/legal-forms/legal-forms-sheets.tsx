@@ -22,6 +22,7 @@ import {
   CATALOGUE,
   STANDING_TONE,
   clockStanding,
+  instantFromDateAndTimeInputs,
   receiptEventAccepts,
   isOwnedLegalFormCode,
   standingWord,
@@ -397,17 +398,31 @@ type ExtendSheetProps = {
   onClose: () => void;
   extendUnavailable?: string;
   onExtendForm: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
+  /** The provider's day zero, so a typed expiry date resolves to its Perth day (Audit 24-6 TC-01). */
+  dayZero?: Date;
 };
 
 export function ExtendSheet(props: ExtendSheetProps) {
   return <ExtendSheetContent key={props.target?.id ?? "closed"} {...props} />;
 }
 
-function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, onExtendForm }: ExtendSheetProps) {
+function ExtendSheetContent({
+  target,
+  label,
+  now,
+  onClose,
+  extendUnavailable,
+  onExtendForm,
+  dayZero,
+}: ExtendSheetProps) {
   const thresholds = useDueSoonThresholds();
   const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
-  const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
+  const [expiryState, setExpiryState] = useState<{
+    targetId: string | undefined;
+    value: string;
+    date?: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
   const submissionVersion = useRef(0);
@@ -417,11 +432,27 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
     },
     [],
   );
-  const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
-  const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
+  const currentExpiry = expiryState && expiryState.targetId === target?.id ? expiryState : null;
+  const expiryValue = currentExpiry?.value ?? "";
+  const expiryDate = currentExpiry?.date ?? "";
+  // A typed date is the day written on the form; blank keeps the next-occurrence reading of the time.
+  const datedDueAt =
+    expiryDate !== "" && dayZero
+      ? (instantFromDateAndTimeInputs(expiryDate, expiryValue.trim(), dayZero) ?? null)
+      : null;
+  const parsedDueAt = !target
+    ? null
+    : expiryDate !== ""
+      ? datedDueAt !== null && datedDueAt > now
+        ? datedDueAt
+        : null
+      : parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt);
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
+    (expiryDate !== "" && datedDueAt !== null && datedDueAt <= now
+      ? "The new expiry written on the form is already past. Check the date and time."
+      : undefined) ??
     (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
@@ -495,10 +526,24 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
           <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />
           </Field>
+          <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
+            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
+          </Field>
           <div className={styles.fieldPair}>
-            <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
-              <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
-            </Field>
+            {dayZero ? (
+              <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
+                <TextInput
+                  type="date"
+                  data-testid="ward-legal-forms-renew-date"
+                  autoComplete="off"
+                  disabled={saving}
+                  value={expiryDate}
+                  onChange={(event) =>
+                    setExpiryState({ targetId: target.id, value: expiryValue, date: event.target.value })
+                  }
+                />
+              </Field>
+            ) : null}
             <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>
               <TextInput
                 data-testid="ward-legal-forms-renew-expiry"
@@ -509,12 +554,14 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
                 aria-required="true"
                 disabled={saving}
                 value={expiryValue}
-                onChange={(event) => setExpiryState({ targetId: target.id, value: event.target.value })}
+                onChange={(event) =>
+                  setExpiryState({ targetId: target.id, value: event.target.value, date: expiryDate })
+                }
               />
             </Field>
           </div>
           {parsedDueAt !== null ? (
-            // The field takes a time only, so the resolved day is shown before Confirm records it.
+            // The resolved day is shown before Confirm records it, typed or read from the time alone.
             <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
               Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
             </p>
