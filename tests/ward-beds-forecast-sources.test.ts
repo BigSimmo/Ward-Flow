@@ -74,6 +74,48 @@ describe("bedsForecastSources", () => {
     },
   );
 
+  it.each([true, false])("counts a current occupied discharge-plan edit as an update (flagged %s)", (flagged) => {
+    const unit = ward(first, { allocatable: { ...first.allocatable, confirmedAt: DAY_SHIFT_START - 1 } });
+    const stay: Admission = {
+      ...wardAdmissions[0]!,
+      unitId: first.id,
+      state: "occupied",
+      expectedDischargeAt: NOW + 60,
+      dischargeDateSetAt: NOW,
+    };
+    const releases = flagged
+      ? [release(first, { admissionId: stay.id, expectedAt: NOW + 60, confirmedAt: DAY_SHIFT_START - 1 })]
+      : [];
+    expect(
+      bedsForecastSources([unit], releases, [{ ...stay, dischargeDateSetAt: DAY_SHIFT_START - 1 }], NOW)
+        .notUpdatedThisShift,
+    ).toBe(1);
+    expect(bedsForecastSources([unit], releases, [stay], NOW).notUpdatedThisShift).toBe(0);
+    expect(stay.dischargeDateSetAt).toBe(NOW);
+  });
+
+  it.each([
+    { state: "departed" as const, planAt: NOW + 60, recordedAt: NOW },
+    { state: "waitlisted" as const, planAt: NOW + 60, recordedAt: NOW },
+    { state: "occupied" as const, planAt: null, recordedAt: NOW },
+    { state: "occupied" as const, planAt: NOW + 60, recordedAt: null },
+    { state: "occupied" as const, planAt: NOW + 60, recordedAt: NaN },
+    { state: "occupied" as const, planAt: NaN, recordedAt: NOW },
+  ])(
+    "does not count an inactive or unrecorded plan as a fresh update ($state, $planAt, $recordedAt)",
+    ({ state, planAt, recordedAt }) => {
+      const unit = ward(first, { allocatable: { ...first.allocatable, confirmedAt: DAY_SHIFT_START - 1 } });
+      const stay: Admission = {
+        ...wardAdmissions[0]!,
+        unitId: first.id,
+        state,
+        expectedDischargeAt: planAt,
+        dischargeDateSetAt: recordedAt,
+      };
+      expect(bedsForecastSources([unit], [], [stay], NOW).notUpdatedThisShift).toBe(1);
+    },
+  );
+
   it("splits the next 24 hours on the shift pattern, with an overdue group last", () => {
     const units = [ward(first), ward(second)];
     const releases = [

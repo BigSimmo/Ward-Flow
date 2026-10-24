@@ -171,6 +171,21 @@ export function bedsForecastSources(
     const known = lastUpdate.get(release.unitId);
     if (known !== undefined && release.confirmedAt > known) lastUpdate.set(release.unitId, release.confirmedAt);
   }
+  for (const admission of admissions) {
+    const at = admission.dischargeDateSetAt;
+    const known = lastUpdate.get(admission.unitId);
+    if (
+      known !== undefined &&
+      bedIsOccupied(admission) &&
+      admission.expectedDischargeAt !== null &&
+      Number.isFinite(admission.expectedDischargeAt) &&
+      at !== null &&
+      Number.isFinite(at) &&
+      at > known
+    ) {
+      lastUpdate.set(admission.unitId, at);
+    }
+  }
   const lastUpdateAt = (unitId: string) => lastUpdate.get(unitId) ?? Number.NEGATIVE_INFINITY;
   const updatedThisShift = (unitId: string) => lastUpdateAt(unitId) >= shiftStart;
 
