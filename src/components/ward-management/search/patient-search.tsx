@@ -501,7 +501,7 @@ export function PatientSearchPage() {
     const notIn = unifiedCaseload.filter((p) => p.presence === "community" || p.presence === "scheduled").length;
     const past = unifiedCaseload.filter((p) => p.presence === "past").length;
     const breaches = unifiedCaseload.filter((p) => p.waitHours * 60 >= LONG_WAIT_MINUTES).length;
-    const holds = unifiedCaseload.filter((p) => p.holdStatus === "Bed hold active").length;
+    const holds = unifiedCaseload.filter((p) => p.holdStatus === "Bed pulled").length;
     const transit = unifiedCaseload.filter((p) => p.setting === "transit").length;
     return { total, live, unplaced, notIn, past, breaches, holds, transit };
   }, [unifiedCaseload]);

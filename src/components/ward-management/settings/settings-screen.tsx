@@ -841,13 +841,13 @@ export function SettingsScreen() {
             <RuleRow
               unavailableReason={configurationBlockReason}
               setting="pull-hold"
-              title="Pull hold"
-              sub="Before a held bed returns"
+              title="Pull time limit"
+              sub="Before a pulled bed returns"
               value={rules.hold}
               saved={saved.hold}
               savedDisplay={shortDuration(saved.hold)}
               display={shortDuration(rules.hold)}
-              noun="pulled bed hold duration"
+              noun="pull time limit"
               range={{
                 id: "setting-hold-duration",
                 ...PULL_HOLD_RANGE_MINUTES,

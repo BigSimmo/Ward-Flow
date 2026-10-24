@@ -286,7 +286,7 @@ export function MovementWorkspaceCockpit({
       return [
         {
           at: unwind.at,
-          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its pulled bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
         },
       ];
     }),
@@ -664,7 +664,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
             {patient.pullExpiresAt !== undefined ? (
               <WardFigure
-                label="Hold on the bed"
+                label="Pull time limit"
                 value={formatRemaining(minutesUntil(patient.pullExpiresAt, now))}
                 flagged={flagged.has("pull")}
                 sub={`${patient.pullExpiresAt <= now ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
@@ -1534,7 +1534,7 @@ export function MovementWorkspaceCockpit({
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
-                  Transport for this patient was stopped and the bed is still held. Releasing it gives the bed back to
+                  Transport for this patient was stopped and the bed is still pulled. Releasing it gives the bed back to
                   the ward.
                 </p>
                 <button
@@ -1660,7 +1660,7 @@ export function MovementWorkspaceCockpit({
               <section className={styles.actionSection} data-testid="ward-patient-release-diverted-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
-                  This patient was diverted and the bed is still held. Releasing it gives the bed back to the ward and
+                  This patient was diverted and the bed is still pulled. Releasing it gives the bed back to the ward and
                   ends the journey.
                 </p>
                 <button

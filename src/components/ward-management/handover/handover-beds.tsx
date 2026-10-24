@@ -217,7 +217,7 @@ function WardPanel({
     { label: "Due out today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
     { label: "Stays over 7 days", value: String(ward.longStays) },
-    { label: "Discharges held", value: String(ward.holds) },
+    { label: "Discharges held up", value: String(ward.holds) },
   ];
   return (
     <Card className={styles.panel} aria-labelledby={`ward-panel-${ward.id}`}>
@@ -507,12 +507,12 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
                   <th scope="col">Ready</th>
                   <th scope="col">Incoming</th>
                   <th scope="col">Updated</th>
-                  <th scope="col">Held</th>
+                  <th scope="col">Pulled</th>
                   <th scope="col" title="Out today">
                     Out today
                   </th>
                   <th scope="col">Past EDD</th>
-                  <th scope="col">Holds</th>
+                  <th scope="col">Held up</th>
                 </tr>
               </thead>
               {groups.map((group) => (

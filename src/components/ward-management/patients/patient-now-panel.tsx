@@ -306,7 +306,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
             <PatientSheetRow
               icon={<RotateCcw size={16} aria-hidden="true" />}
               title={canWithdraw ? "Withdraw referral" : "Review and corrections"}
-              sub={canWithdraw ? "Closes the movement and frees any held bed" : "Step back with a recorded reason"}
+              sub={canWithdraw ? "Closes the movement and frees any pulled bed" : "Step back with a recorded reason"}
               onOpen={() => setNowSheet("destination")}
             />
           </PatientSheetRows>

@@ -914,7 +914,7 @@ describe("withdrawing an acceptance while a bed is held (Q16)", () => {
       within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/no ward has accepted this patient/i),
     ).toBeInTheDocument();
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
-    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+    expect(page).toMatch(/withdrawn and its pulled bed released, by coordinator · The bed was lost/);
   });
 
   it("lists a withdrawal from a stepped-back stage, which writes no stage entry, in the timeline", () => {
@@ -927,7 +927,7 @@ describe("withdrawing an acceptance while a bed is held (Q16)", () => {
     fireEvent.click(screen.getByTestId("ward-console-withdraw-acceptance"));
 
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
-    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+    expect(page).toMatch(/withdrawn and its pulled bed released, by coordinator · The bed was lost/);
   });
 });
 

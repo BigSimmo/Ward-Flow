@@ -35,7 +35,7 @@ export function movementSearchState(movement: Movement, admissions: readonly Adm
   const holdStatus = inTransit
     ? "In-Transit"
     : hasBedHold
-      ? "Bed hold active"
+      ? "Bed pulled"
       : movement.acceptedUnitId
         ? "Accepted, awaiting bed"
         : "Unplaced";

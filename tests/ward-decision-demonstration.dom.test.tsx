@@ -150,6 +150,6 @@ describe("ward decision demonstration boundaries", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getAllByText("Stopped transport holding bed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Stopped transport, bed still pulled").length).toBeGreaterThan(0);
   });
 });
