@@ -47,13 +47,32 @@ function targetFromChoice(choice: string): ReferralContactTarget | undefined {
 const teamName = (teamId: string) => communityTeamById(teamId)?.name;
 
 /** Shows nothing outside a provider, where there is nothing to record into. */
-export function ReferralOwnerAndCalls({ referral, now }: { referral: Referral; now: Instant }) {
+export function ReferralOwnerAndCalls({
+  referral,
+  now,
+  readOnly = false,
+}: {
+  referral: Referral;
+  now: Instant;
+  /** D-80: the owner and the call log only, with no Assign or Log a call (a read-only board). */
+  readOnly?: boolean;
+}) {
   const flow = useOptionalWardFlowSelect("units");
   if (!flow) return null;
-  return <OwnerAndCalls referral={referral} now={now} units={flow.units} />;
+  return <OwnerAndCalls referral={referral} now={now} units={flow.units} readOnly={readOnly} />;
 }
 
-function OwnerAndCalls({ referral, now, units }: { referral: Referral; now: Instant; units: readonly Unit[] }) {
+function OwnerAndCalls({
+  referral,
+  now,
+  units,
+  readOnly,
+}: {
+  referral: Referral;
+  now: Instant;
+  units: readonly Unit[];
+  readOnly: boolean;
+}) {
   const role = useRouteRole();
   const raise = useWardRaise(role);
   const gate = useRoleGate();
@@ -110,107 +129,111 @@ function OwnerAndCalls({ referral, now, units }: { referral: Referral; now: Inst
         )}
       </p>
 
-      <div className={styles.row}>
-        {coordinator ? (
-          <Field label="Assign to" className={styles.field}>
-            <Select
-              value={ownerChoice}
-              onChange={(event) => setOwnerChoice(event.target.value as ReferralOwnerDesk | "")}
-              data-testid={`ward-referral-assign-choice-${referral.id}`}
+      {readOnly ? null : (
+        <>
+          <div className={styles.row}>
+            {coordinator ? (
+              <Field label="Assign to" className={styles.field}>
+                <Select
+                  value={ownerChoice}
+                  onChange={(event) => setOwnerChoice(event.target.value as ReferralOwnerDesk | "")}
+                  data-testid={`ward-referral-assign-choice-${referral.id}`}
+                >
+                  <option value="">Choose a desk</option>
+                  {REFERRAL_OWNER_DESKS.map((desk) => (
+                    <option key={desk} value={desk}>
+                      {referralOwnerLabel(desk)}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
+            <Button
+              size="sm"
+              variant="sec"
+              aria-disabled={assignRefusal !== undefined ? "true" : undefined}
+              aria-describedby={assignRefusal ? `${baseId}-assign-why` : undefined}
+              onClick={() => {
+                if (assignRefusal) return;
+                const next = coordinator ? ownerChoice : ownDesk;
+                if (!next) return;
+                raise("ASSIGN_REFERRAL", { referralId: referral.id, owner: next });
+                setOwnerChoice("");
+              }}
+              data-testid={`ward-referral-assign-${referral.id}`}
             >
-              <option value="">Choose a desk</option>
-              {REFERRAL_OWNER_DESKS.map((desk) => (
-                <option key={desk} value={desk}>
-                  {referralOwnerLabel(desk)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        ) : null}
-        <Button
-          size="sm"
-          variant="sec"
-          aria-disabled={assignRefusal !== undefined ? "true" : undefined}
-          aria-describedby={assignRefusal ? `${baseId}-assign-why` : undefined}
-          onClick={() => {
-            if (assignRefusal) return;
-            const next = coordinator ? ownerChoice : ownDesk;
-            if (!next) return;
-            raise("ASSIGN_REFERRAL", { referralId: referral.id, owner: next });
-            setOwnerChoice("");
-          }}
-          data-testid={`ward-referral-assign-${referral.id}`}
-        >
-          {coordinator ? "Assign" : "Take this referral"}
-        </Button>
-        {assignRefusal ? <DisabledReason id={`${baseId}-assign-why`}>{assignRefusal}</DisabledReason> : null}
-      </div>
+              {coordinator ? "Assign" : "Take this referral"}
+            </Button>
+            {assignRefusal ? <DisabledReason id={`${baseId}-assign-why`}>{assignRefusal}</DisabledReason> : null}
+          </div>
 
-      <fieldset className={styles.call}>
-        <legend className={styles.heading}>Log a call</legend>
-        <div className={styles.row}>
-          <Field label="Who was rung" className={styles.field}>
-            <Select
-              value={contactChoice}
-              onChange={(event) => setContactChoice(event.target.value)}
-              data-testid={`ward-referral-call-who-${referral.id}`}
-            >
-              <option value="">Choose</option>
-              <option value={REFERRER}>The referrer</option>
-              <optgroup label="Wards">
-                {wards.map((unit) => (
-                  <option key={unit.id} value={`${WARD_PREFIX}${unit.id}`}>
-                    {unit.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Community teams">
-                {teams.map((team) => (
-                  <option key={team.id} value={`${TEAM_PREFIX}${team.id}`}>
-                    {team.name}
-                  </option>
-                ))}
-              </optgroup>
-            </Select>
-          </Field>
-          <Field label="What they said" className={styles.field}>
-            <Select
-              value={outcomeChoice}
-              onChange={(event) => setOutcomeChoice(event.target.value as ReferralContactOutcome | "")}
-              data-testid={`ward-referral-call-outcome-${referral.id}`}
-            >
-              <option value="">Choose</option>
-              {REFERRAL_CONTACT_OUTCOMES.map((outcome) => (
-                <option key={outcome.id} value={outcome.id}>
-                  {outcome.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-        <div className={styles.row}>
-          <Button
-            size="sm"
-            variant="sec"
-            aria-disabled={callRefusal !== undefined ? "true" : undefined}
-            aria-describedby={callRefusal ? `${baseId}-call-why` : undefined}
-            onClick={() => {
-              if (callRefusal || !target || outcomeChoice === "") return;
-              raise("LOG_REFERRAL_CONTACT", { referralId: referral.id, contact: target, outcome: outcomeChoice });
-              setContactChoice("");
-              setOutcomeChoice("");
-            }}
-            data-testid={`ward-referral-call-log-${referral.id}`}
-          >
-            Log a call
-          </Button>
-          {callRefusal ? <DisabledReason id={`${baseId}-call-why`}>{callRefusal}</DisabledReason> : null}
-        </div>
-        <p className={styles.note}>
-          A call does not answer the referral. Record the ward&apos;s answer on its copy. The decision time keeps
-          running.
-        </p>
-      </fieldset>
+          <fieldset className={styles.call}>
+            <legend className={styles.heading}>Log a call</legend>
+            <div className={styles.row}>
+              <Field label="Who was rung" className={styles.field}>
+                <Select
+                  value={contactChoice}
+                  onChange={(event) => setContactChoice(event.target.value)}
+                  data-testid={`ward-referral-call-who-${referral.id}`}
+                >
+                  <option value="">Choose</option>
+                  <option value={REFERRER}>The referrer</option>
+                  <optgroup label="Wards">
+                    {wards.map((unit) => (
+                      <option key={unit.id} value={`${WARD_PREFIX}${unit.id}`}>
+                        {unit.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Community teams">
+                    {teams.map((team) => (
+                      <option key={team.id} value={`${TEAM_PREFIX}${team.id}`}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </Select>
+              </Field>
+              <Field label="What they said" className={styles.field}>
+                <Select
+                  value={outcomeChoice}
+                  onChange={(event) => setOutcomeChoice(event.target.value as ReferralContactOutcome | "")}
+                  data-testid={`ward-referral-call-outcome-${referral.id}`}
+                >
+                  <option value="">Choose</option>
+                  {REFERRAL_CONTACT_OUTCOMES.map((outcome) => (
+                    <option key={outcome.id} value={outcome.id}>
+                      {outcome.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+            <div className={styles.row}>
+              <Button
+                size="sm"
+                variant="sec"
+                aria-disabled={callRefusal !== undefined ? "true" : undefined}
+                aria-describedby={callRefusal ? `${baseId}-call-why` : undefined}
+                onClick={() => {
+                  if (callRefusal || !target || outcomeChoice === "") return;
+                  raise("LOG_REFERRAL_CONTACT", { referralId: referral.id, contact: target, outcome: outcomeChoice });
+                  setContactChoice("");
+                  setOutcomeChoice("");
+                }}
+                data-testid={`ward-referral-call-log-${referral.id}`}
+              >
+                Log a call
+              </Button>
+              {callRefusal ? <DisabledReason id={`${baseId}-call-why`}>{callRefusal}</DisabledReason> : null}
+            </div>
+            <p className={styles.note}>
+              A call does not answer the referral. Record the ward&apos;s answer on its copy. The decision time keeps
+              running.
+            </p>
+          </fieldset>
+        </>
+      )}
 
       {calls.length > 0 ? (
         <ul className={styles.list} aria-label="Calls logged" data-testid={`ward-referral-calls-${referral.id}`}>

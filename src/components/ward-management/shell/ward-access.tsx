@@ -92,6 +92,8 @@ export function useWardRecordActors(): readonly WardRecordActor[] {
     if (access.role === "community" && access.scope.kind === "team")
       return [{ role: "community", actingTeamId: communityTeamSlug(access.scope.teamName) }];
     if (access.role === "ed" || access.role === "officer") return [{ role: access.role }];
+    // D-80: the site bed manager reads in its own name; the scope above keeps it to its site.
+    if (access.role === "bed_manager" && access.scope.kind === "site") return [{ role: "bed_manager" }];
     return [{ role: "demo" }];
   }, [access]);
 }
