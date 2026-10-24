@@ -38,6 +38,8 @@ import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+// Closing the loop, package D (24 Oct 2026): cancelled-move checklist and acceptance conditions.
+import { MovementLoopChecks } from "@/components/ward-management/loop-checks/loop-checks-lazy";
 
 /**
  * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
@@ -425,6 +427,8 @@ export function MovementDrawer({
           </span>
         </div>
       )}
+
+      <MovementLoopChecks movement={movement} units={units} now={now} />
 
       <ol className={d.journeySteps} aria-label="Journey stage">
         {STEPS.map((s, index) => (

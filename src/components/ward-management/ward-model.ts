@@ -7,6 +7,13 @@ import type {
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+// Closing the loop, package D (24 Oct 2026): type-only, for the four optional records below.
+import type {
+  AcceptanceCondition,
+  CancelledMoveCheck,
+  ClosureTransitionMark,
+  WardRestrictionReview,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -265,6 +272,8 @@ export type WardAdmissionsClosure = {
   /** The role label of whoever closed it, as history records it. */
   by: string;
   until?: Instant;
+  /** Closing the loop D4: transition items a person marked dealt with. Cleared with the closure. */
+  transitionMarks?: ClosureTransitionMark[];
 };
 
 export type Unit = {
@@ -438,6 +447,8 @@ export type Unit = {
    * limiting intake is recorded".
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
+  /** Closing the loop D3: who reviews each temporary restriction, and when. Absent when none. */
+  restrictionReviews?: WardRestrictionReview[];
   homeRegion?: HomeRegion;
 };
 
@@ -851,6 +862,10 @@ export type Movement = MovementBase & {
   extendedHoldAt?: Instant;
   /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
   meetingActions?: BedMeetingAction[];
+  /** Closing the loop D1: a cancelled move's checklist marks. Absent until someone marks one. */
+  cancellationChecks?: CancelledMoveCheck[];
+  /** Closing the loop D2: conditions the accepting ward attached. Read only for display. */
+  acceptanceConditions?: AcceptanceCondition[];
   /**
    * WHEN THE COORDINATOR PLANS THE MOVE TO HAPPEN (owner, 26 Sept 2026: "go ahead with your
    * recommendations" — the 48-hour horizon shows demo moves spread across the window rather than

@@ -37,6 +37,16 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+// Closing the loop, package D (24 Oct 2026).
+import {
+  ACCEPTANCE_CONDITION_AGREED_WITH,
+  ACCEPTANCE_CONDITION_KINDS,
+  CANCELLED_MOVE_CHECK_ITEMS,
+  CANCELLED_MOVE_CHECK_MARKS,
+  CLOSURE_TRANSITION_ITEM_KINDS,
+  RESTRICTION_REVIEWER_ROLES,
+  WARD_RESTRICTION_KINDS,
+} from "./loop-checks/ward-loop-checks";
 import {
   BED_MEETING_ACTION_KINDS,
   BED_MEETING_ACTION_OWNERS,
@@ -280,6 +290,40 @@ const capacityFigure = z.looseObject({
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
 });
+// Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
+const closureTransitionMarkRule = z.strictObject({
+  kind: z.enum(CLOSURE_TRANSITION_ITEM_KINDS),
+  recordId: id,
+  at: finite,
+  by: text,
+});
+const restrictionReviewRule = z.strictObject({
+  restriction: z.enum(WARD_RESTRICTION_KINDS),
+  reviewer: z.enum(RESTRICTION_REVIEWER_ROLES),
+  expectedAt: finite,
+  recordedAt: finite,
+  by: text,
+  startedAt: z.optional(finite),
+});
+const cancelledMoveCheckRule = z.strictObject({
+  item: z.enum(CANCELLED_MOVE_CHECK_ITEMS),
+  mark: z.enum(CANCELLED_MOVE_CHECK_MARKS),
+  at: finite,
+  by: text,
+});
+const acceptanceConditionRule = z
+  .strictObject({
+    kind: z.enum(ACCEPTANCE_CONDITION_KINDS),
+    unitId: id,
+    acceptedAt: z.optional(finite),
+    agreedWith: z.enum(ACCEPTANCE_CONDITION_AGREED_WITH),
+    agreedBy: text,
+    recordedAt: finite,
+    readyAt: z.optional(finite),
+    met: z.optional(z.strictObject({ at: finite, by: text })),
+  })
+  .check(z.refine((condition) => (condition.kind === "bed_after_time") === (condition.readyAt !== undefined)));
+
 const unit = z
   .looseObject({
     id,
@@ -320,8 +364,10 @@ const unit = z
         at: finite,
         by: text,
         until: z.optional(finite),
+        transitionMarks: z.optional(z.array(closureTransitionMarkRule)),
       }),
     ),
+    restrictionReviews: z.optional(z.array(restrictionReviewRule)),
     // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
     restrictivePractice: z.optional(
       z.looseObject({
@@ -456,6 +502,8 @@ const movement = z
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.
     communityPurpose: z.optional(z.custom(isCommunityReferralPurpose)),
     meetingActions: z.optional(z.array(meetingAction)),
+    cancellationChecks: z.optional(z.array(cancelledMoveCheckRule)),
+    acceptanceConditions: z.optional(z.array(acceptanceConditionRule)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })

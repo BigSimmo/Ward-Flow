@@ -293,6 +293,12 @@ describe("who may raise which event", () => {
     RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
     RECORD_WARD_INCIDENT: ["ward", "coordinator"],
     SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
+    // Closing the loop, package D (24 Oct 2026).
+    MARK_CANCELLED_MOVE_CHECK: ["coordinator", "ward"],
+    RECORD_ACCEPTANCE_CONDITION: ["coordinator", "ward"],
+    MARK_ACCEPTANCE_CONDITION_MET: ["coordinator", "ward"],
+    RECORD_RESTRICTION_REVIEW: ["ward", "bed_manager", "coordinator"],
+    MARK_CLOSURE_TRANSITION_ITEM: ["ward", "bed_manager", "coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
     CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
     RECORD_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],

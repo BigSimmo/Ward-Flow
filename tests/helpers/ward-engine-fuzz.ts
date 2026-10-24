@@ -107,6 +107,18 @@ import {
   openEpisodes,
 } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+// Closing the loop, package D (24 Oct 2026).
+import {
+  ACCEPTANCE_BED_AFTER_HOURS,
+  ACCEPTANCE_CONDITION_AGREED_WITH,
+  ACCEPTANCE_CONDITION_KINDS,
+  CANCELLED_MOVE_CHECK_ITEMS,
+  CANCELLED_MOVE_CHECK_MARKS,
+  RESTRICTION_REVIEW_AFTER_HOURS,
+  RESTRICTION_REVIEWER_ROLES,
+  WARD_RESTRICTION_KINDS,
+  closureTransitionItems,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -1782,6 +1794,80 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       type: "STAND_DOWN_BROADCAST_ALERT",
       alertId: id(prefer(random, alerts(state), (alert) => alert.status === "active")),
     }),
+  ],
+  // Closing the loop, package D (24 Oct 2026): records only; none may move a bed.
+  [
+    1,
+    (state, random) => ({
+      type: "MARK_CANCELLED_MOVE_CHECK",
+      movementId: id(prefer(random, state.movements, (m) => m.closure?.outcome === "did_not_proceed")),
+      item: pick(random, CANCELLED_MOVE_CHECK_ITEMS),
+      mark: pick(random, CANCELLED_MOVE_CHECK_MARKS),
+    }),
+  ],
+  [
+    1,
+    (state, random) => {
+      const movement = prefer(random, state.movements, (m) => m.acceptedUnitId !== undefined && !m.closure);
+      const condition = pick(random, ACCEPTANCE_CONDITION_KINDS);
+      return {
+        type: "RECORD_ACCEPTANCE_CONDITION",
+        movementId: id(movement),
+        ...(movement?.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+        condition,
+        agreedWith: pick(random, ACCEPTANCE_CONDITION_AGREED_WITH),
+        ...(condition === "bed_after_time"
+          ? { readyAt: currentNow + pick(random, ACCEPTANCE_BED_AFTER_HOURS)! * 60 }
+          : {}),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const movement = prefer(random, state.movements, (m) => (m.acceptanceConditions ?? []).some((c) => !c.met));
+      return {
+        type: "MARK_ACCEPTANCE_CONDITION_MET",
+        movementId: id(movement),
+        ...(movement?.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+        condition:
+          movement?.acceptanceConditions?.find((c) => !c.met)?.kind ?? pick(random, ACCEPTANCE_CONDITION_KINDS),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (u) => Boolean(u.isClosed) || (u.intakeConstraints ?? []).length > 0);
+      return {
+        type: "RECORD_RESTRICTION_REVIEW",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        restriction: unit?.isClosed ? "admissions_closure" : pick(random, WARD_RESTRICTION_KINDS),
+        reviewer: pick(random, RESTRICTION_REVIEWER_ROLES),
+        expectedAt: currentNow + pick(random, RESTRICTION_REVIEW_AFTER_HOURS)! * 60,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (u) => Boolean(u.isClosed));
+      const item = unit
+        ? pick(random, closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions))
+        : undefined;
+      return {
+        type: "MARK_CLOSURE_TRANSITION_ITEM",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        item: item?.kind ?? "accepted",
+        ...(item?.kind === "referral"
+          ? { referralId: item.recordId }
+          : item?.kind === "booked_arrival"
+            ? { plannedAdmissionId: item.recordId }
+            : { movementId: item?.recordId ?? MISSING_ID }),
+      };
+    },
   ],
 ];
 
