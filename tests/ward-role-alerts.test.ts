@@ -121,6 +121,33 @@ describe("phone alerts for officers and community teams (D-80)", () => {
     expect(ids(scopedActNowAlerts(updated, team, later)).filter((id) => ids(heard).includes(id))).toEqual([]);
   });
 
+  it("gives two wards answering in the same minute an alert each", () => {
+    const updated = withTeamUpdates(world);
+    const referral = updated.state.referrals.find((candidate) => candidate.sendingTeamName === TEAM)!;
+    const [first] = referral.destinations;
+    const twoWards: SharedWorld = {
+      ...updated,
+      state: {
+        ...updated.state,
+        referrals: updated.state.referrals.map((candidate) =>
+          candidate.id === referral.id
+            ? {
+                ...candidate,
+                destinations: [
+                  { ...first, destination: { ...first.destination, kind: "psychiatric_ward", unitId: "ward-a" } },
+                  { ...first, destination: { ...first.destination, kind: "psychiatric_ward", unitId: "ward-b" } },
+                ],
+              }
+            : candidate,
+        ),
+      } as SharedWorld["state"],
+    };
+    const answered = ids(scopedActNowAlerts(twoWards, team, at)).filter((id) =>
+      id.startsWith(`answered:${referral.id}:`),
+    );
+    expect(new Set(answered).size).toBe(2);
+  });
+
   it("keeps jobs and team updates from the coordinator and place desks", () => {
     const updated = withTeamUpdates(world);
     expect(scopedActNowAlerts(updated, coordinator, at).every((alert) => alert.kind === "act-now")).toBe(true);

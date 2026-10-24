@@ -46,6 +46,17 @@ export function jobAlerts(state: Pick<WardFlowState, "movements">): RoleAlert[] 
   });
 }
 
+function destinationKey(destination: WardFlowState["referrals"][number]["destinations"][number]["destination"]) {
+  switch (destination.kind) {
+    case "psychiatric_ward":
+      return fingerprint([destination.kind, destination.unitId]);
+    case "emergency_department":
+      return fingerprint([destination.kind, destination.edId]);
+    case "community_team":
+      return fingerprint([destination.kind, destination.teamName]);
+  }
+}
+
 const recent = (at: Instant | null | undefined, now: Instant) =>
   at !== null && at !== undefined && at <= now && now - at < ROLE_ALERT_WINDOW_MINUTES;
 
@@ -54,11 +65,15 @@ export function communityAlerts(state: Pick<WardFlowState, "referrals" | "admiss
   const alerts: RoleAlert[] = [];
   for (const referral of state.referrals) {
     if (referral.source !== "community") continue;
-    // Named by the answer's time, not its place in the list, so a desk's trimmed copy of the
-    // referral gives the same id as the whole record.
+    // Named by the destination and the answer's time, not its place in the list, so a desk's
+    // trimmed copy of the referral gives the same id as the whole record, and two wards answering
+    // in the same minute are two alerts. A team's name is hashed, never written into the id.
     for (const line of referral.destinations)
       if ((line.state === "accepted" || line.state === "declined") && recent(line.decidedAt, now))
-        alerts.push({ id: `answered:${referral.id}:${line.decidedAt}:${line.state}`, kind: "community" });
+        alerts.push({
+          id: `answered:${referral.id}:${destinationKey(line.destination)}:${line.decidedAt}:${line.state}`,
+          kind: "community",
+        });
   }
   for (const admission of state.admissions) {
     if (recent(admission.arrivedAt, now)) alerts.push({ id: `admitted:${admission.id}`, kind: "community" });
