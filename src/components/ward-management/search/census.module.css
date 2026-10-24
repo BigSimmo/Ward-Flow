@@ -81,8 +81,8 @@
 }
 
 .searchForm > div > div:first-of-type:focus-within {
-  /* The hero overrides its ring to white; this field needs the theme accent. */
-  outline: 2px solid var(--wf-accent);
+  /* A solid ring contrasts with the hero's painted gradient in both themes. */
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
   border-color: var(--wf-hero-ink);
   box-shadow:
