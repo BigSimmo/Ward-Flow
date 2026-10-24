@@ -578,3 +578,18 @@ export type MovementOrigin = {
    */
   originCommunity?: { teamName?: string; siteCode: string };
 };
+
+/**
+ * Fields a transport officer's copy of a journey carries and the stored record never does (D-80
+ * item 7). The scoped workspace fills them so the officer can collect the person safely without
+ * seeing the referral or the stay.
+ */
+export type OfficerCollection = {
+  /** The referral's risk categories, copied from the linked referral's intake. */
+  collectionRiskFlags?: import("./referrals/referral-submission").ReferralIntakeDetails["riskFlags"];
+  /** The sending ward of a ward to ward journey. */
+  collectionFromUnitId?: string;
+};
+
+/** Where a journey starts, and what an officer's copy adds, under every movement's own fields. */
+export type MovementRoot = MovementOrigin & OfficerCollection;

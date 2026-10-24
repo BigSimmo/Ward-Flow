@@ -45,7 +45,7 @@ import type {
   ExaminationOutcome,
   GenderPlacement,
   MovementId,
-  MovementOrigin,
+  MovementRoot,
   MovementReferralAbsence,
   MovementTransportNeed,
   Override,
@@ -477,7 +477,7 @@ export type MovementClosure = {
   reason: string;
 };
 
-export type Movement = MovementOrigin & {
+export type Movement = MovementRoot & {
   turnaroundPriority?: TurnaroundPriority;
   id: MovementId;
   /**
@@ -682,14 +682,6 @@ export type Movement = MovementOrigin & {
    * that high-acuity nursing was considered and ruled out.**
    */
   highAcuity: boolean;
-  /**
-   * The referral's risk categories, on a transport officer's copy only (D-80 item 7). Never stored:
-   * the scoped workspace copies them from the linked referral's intake, so the officer collecting
-   * the person knows them without seeing the referral.
-   */
-  collectionRiskFlags?: import("./referrals/referral-submission").ReferralIntakeDetails["riskFlags"];
-  /** The sending ward of a ward to ward journey, on a transport officer's copy only (D-80 item 7). */
-  collectionFromUnitId?: string;
   legalStatus: LegalStatus;
   legalForm?: LegalForm;
   /**
