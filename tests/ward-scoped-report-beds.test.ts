@@ -43,9 +43,27 @@ describe("report bed figures for a scoped desk", () => {
   it("gives the site's wards the same bed states in its downtime pack as the coordinator's", () => {
     const input = { now: NOW_ANCHOR, identify: () => "Synthetic person" };
     const whole = downtimePack({ ...input, ...state, units: state.units });
-    const desk = downtimePack({ ...input, ...scoped, units: own, bedReleases: releases, leaveBeds: leave });
+    const desk = downtimePack({ ...input, ...scoped, bedUnits: own, bedReleases: releases, leaveBeds: leave });
     expect(desk.wards.map((ward) => ward.unitId).sort()).toEqual(own.map((unit) => unit.id).sort());
     for (const ward of desk.wards)
       expect(ward.counts, ward.name).toEqual(whole.wards.find((candidate) => candidate.unitId === ward.unitId)!.counts);
+  });
+
+  it("still names a destination ward outside an ED desk's own wards", () => {
+    const journey = state.movements.find(
+      (movement) => movement.acceptedUnitId !== undefined && movement.originEdId !== undefined,
+    )!;
+    const ed: WardAccess = { role: "ed", scope: { kind: "ed", edId: journey.originEdId! } };
+    expect(ownUnits(ed, state.units)).toEqual([]);
+    const pack = downtimePack({
+      ...state,
+      bedUnits: ownUnits(ed, state.units),
+      movements: [journey],
+      now: NOW_ANCHOR,
+      identify: () => "Synthetic person",
+    });
+    expect(pack.wards).toEqual([]);
+    const ward = state.units.find((unit) => unit.id === journey.acceptedUnitId)!;
+    expect(JSON.stringify(pack)).toContain(ward.name);
   });
 });

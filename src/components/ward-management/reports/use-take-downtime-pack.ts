@@ -19,16 +19,17 @@ import { useOwnUnits } from "./use-own-units";
  */
 export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | null }) => void {
   const now = useWardFlowClock();
-  const {
-    units: everyUnit,
-    admissions,
-    bedReleases,
-    leaveBeds,
-    movements,
-    worldGeneration,
-  } = useWardFlowSelect("units", "admissions", "bedReleases", "leaveBeds", "movements", "worldGeneration");
-  // The desk's own wards only (issue #628): another ward's stays are not in this desk's records.
-  const units = useOwnUnits(everyUnit);
+  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "movements",
+    "worldGeneration",
+  );
+  // Beds of the desk's own wards only (issue #628): another ward's stays are not in this desk's
+  // records. Every ward still names a destination.
+  const bedUnits = useOwnUnits(units);
   const patientOf = usePatientOf();
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
@@ -40,6 +41,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
       if (!ready) return;
       const pack = downtimePack({
         units,
+        bedUnits,
         admissions,
         bedReleases,
         leaveBeds,
@@ -58,6 +60,19 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         owner,
       );
     },
-    [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready, online],
+    [
+      units,
+      bedUnits,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      movements,
+      now,
+      patientOf,
+      worldGeneration,
+      owner,
+      ready,
+      online,
+    ],
   );
 }
