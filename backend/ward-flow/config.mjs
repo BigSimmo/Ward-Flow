@@ -1,4 +1,5 @@
 // @ts-check
+import { isIP } from "node:net";
 import { readPushConfig } from "./push.mjs";
 import { readSupabaseIdentityConfig, readSupabaseDatabaseConfig } from "./supabase-config.mjs";
 import { readPortablePostgresConfig } from "./postgres-config.mjs";
@@ -45,6 +46,10 @@ export function readConfig(env = process.env, dependencies = {}) {
     .split(",")
     .map((address) => address.trim().replace(/^::ffff:/i, ""))
     .filter(Boolean);
+  // A socket address is always a literal IP, so a CIDR range or host name would never match and every
+  // client would quietly share the proxy's sign-in check limit.
+  if (trustedProxyAddresses.some((address) => address !== "*" && !isIP(address)))
+    throw new Error("Invalid trusted proxy configuration");
   const shared = env.WARD_SHARED_ENABLED === "true";
   // The demonstration controls (advance clock, reset or set scenario) on the shared workspace.
   const sharedDemoEvents = env.WARD_SHARED_DEMO_EVENTS === "true";

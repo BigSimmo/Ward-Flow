@@ -33,23 +33,14 @@ export function readSupabaseMigrationConfig(env = process.env) {
 
 export async function migrateSupabasePostgres(pool) {
   await verifyPostgresNamespace(pool);
-  await migrate(pool);
-  const client = await pool.connect();
-  let rollbackFailure;
-  try {
-    await client.query("BEGIN");
-    await client.query(await readFile(new URL("./infra/supabase-runtime-role.sql", import.meta.url), "utf8"));
-    await client.query("COMMIT");
-  } catch (error) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (rollbackError) {
-      rollbackFailure = rollbackError;
-    }
-    throw error;
-  } finally {
-    client.release(rollbackFailure);
-  }
+  const grants = await readFile(new URL("./infra/supabase-runtime-role.sql", import.meta.url), "utf8");
+  // The grants commit in migrate()'s transaction, so a refused grant leaves the ledger unchanged and
+  // the running backend never sees tables it cannot read.
+  await migrate(pool, {
+    afterMigrations: async (client) => {
+      await client.query(grants);
+    },
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

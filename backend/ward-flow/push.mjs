@@ -24,12 +24,16 @@ function decodedLength(value) {
   return typeof value === "string" && BASE64URL.test(value) ? Buffer.from(value, "base64url").length : -1;
 }
 
-/** Null (feature off) unless all three settings are set; throws when they are set but malformed. */
+/**
+ * Null (feature off) when none of the three settings is set; throws when only some are set, or when
+ * they are set but malformed, so a missing or misspelt setting cannot turn phone alerts off silently.
+ */
 export function readPushConfig(env = process.env) {
   const publicKey = env.WARD_FLOW_VAPID_PUBLIC_KEY?.trim();
   const privateKey = env.WARD_FLOW_VAPID_PRIVATE_KEY?.trim();
   const subject = env.WARD_FLOW_VAPID_SUBJECT?.trim();
-  if (!publicKey || !privateKey || !subject) return null;
+  if (!publicKey && !privateKey && !subject) return null;
+  if (!publicKey || !privateKey || !subject) throw new Error("Invalid phone push configuration");
   const publicBytes = decodedLength(publicKey);
   if (
     publicBytes !== 65 ||

@@ -293,7 +293,7 @@ test("migration namespace refusal performs no mutation or administrator checkout
   assert.equal(connects, 0);
 });
 
-test("administrator grant failure rolls back its transaction and releases the client for recovery", async () => {
+test("administrator grant failure rolls back the migration transaction and releases the client for recovery", async () => {
   const queries = [];
   let releases = 0;
   let connects = 0;
@@ -318,9 +318,10 @@ test("administrator grant failure rolls back its transaction and releases the cl
     },
   };
   await assert.rejects(migratePortablePostgres(pool), /synthetic grant refusal/);
-  assert.equal(connects, 2);
-  assert.equal(releases, 2);
-  assert.ok(queries.includes("COMMIT"));
+  // Schema, ledger and grants share one transaction, so nothing commits when the grants refuse.
+  assert.equal(connects, 1);
+  assert.equal(releases, 1);
+  assert.ok(!queries.includes("COMMIT"));
   assert.equal(queries.at(-1), "ROLLBACK");
 });
 
@@ -630,7 +631,7 @@ test("migrateSupabasePostgres applies migrations, runs supabase-runtime-role.sql
     connect: async () => client,
   };
   await migrateSupabasePostgres(pool);
-  assert.equal(releases, 2);
+  assert.equal(releases, 1);
   assert.ok(executed.some((sql) => sql.includes("REVOKE CREATE ON SCHEMA public FROM PUBLIC, wardflow_backend")));
   assert.ok(executed.some((sql) => sql.includes("ALTER ROLE wardflow_backend SET statement_timeout = '10s'")));
 });
