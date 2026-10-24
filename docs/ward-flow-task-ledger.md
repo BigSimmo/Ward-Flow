@@ -409,7 +409,8 @@ Acceptance requires production build and Ward journeys for the final candidate. 
 Every item still listed as open in §7.78 and §7.79 was re-checked against source and tests on
 `main` at `64beeda1` (PR #671), not against earlier "Resolved" labels. Claude thread "Clear the
 task ledger", branch `claude/project-thread-s5g5ad`. Local checks only; no hosted CI or deployment
-claim. §7.83 (PR #675) and §7.84 (PR #677) are separate open work and are not repeated here.
+claim. §7.83 (PR #675, open) and §7.84 (PR #677, merged 24 October) are separate work and are not
+repeated here.
 
 **Done already (evidence in source or tests):** items 4–8; L1-01, L1-02, L1-04, L1-05, L1-06,
 L1-08, L1-09; L2-01 to L2-04, L2-06, L2-07, L2-09, L2-10; L3-01 to L3-05 (L3-02 and L3-03 have
@@ -434,8 +435,8 @@ only `ward-movements.ts`, 3,275 lines, is still over 3,000).
   the retired header as live. `tests/ui-ward-chrome-header.spec.ts` is kept: it tests the current
   `WardBar` under its old name.
 
-**Carried by other open PRs:** L2-05 / L3-07 null legal expiry and L1-03 `ClinicalRail` comments
-(PR #677, §7.84); L1-10 `STATUS.md` header (PR #681).
+**Fixed by other PRs (both merged 24 October):** L2-05 / L3-07 null legal expiry and L1-03
+`ClinicalRail` comments (PR #677, §7.84); L1-10 `STATUS.md` header (PR #681).
 
 **Still open, not started here:**
 
