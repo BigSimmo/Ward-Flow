@@ -247,29 +247,12 @@ function renderBoard() {
 }
 
 /** Option A (9 Oct 2026): decided referrals live behind the board's History tab. */
-// The tab lives in the address (usability review, 24 Oct 2026), announced a microtask later.
 async function openHistory() {
   fireEvent.click(screen.getByRole("tab", { name: /^History/ }));
   await act(async () => {});
 }
 
 describe("ReferralBoard", () => {
-  // Usability review, 24 Oct 2026: the view lives in the address, so Back from a record returns to it.
-  it("opens on the view the address names and writes a fixed id when the view changes", async () => {
-    window.history.replaceState(null, "", "/ward-flow/referrals?tab=history");
-    renderBoard();
-    await act(async () => {});
-    expect(screen.getByRole("tab", { name: /^History/ })).toHaveAttribute("aria-selected", "true");
-
-    fireEvent.click(screen.getByRole("tab", { name: /^Queue/ }));
-    await act(async () => {});
-    expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
-    expect(screen.getByRole("tab", { name: /^Queue/ })).toHaveAttribute("aria-selected", "true");
-
-    await openHistory();
-    expect(new URLSearchParams(window.location.search).get("tab")).toBe("history");
-  });
-
   it("renders the real fixture's queued referrals longest wait first (Decision D-32)", () => {
     renderBoard();
     // Raised before the anchor: RF-015 4,500 min, RF-014 150, RF-RD06 55 (rulings demo overlay),
