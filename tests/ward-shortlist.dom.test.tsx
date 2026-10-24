@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
@@ -463,5 +464,46 @@ describe("ShortlistPanel record forms (audit A4-01)", () => {
     expect(openSheetHandles().length).toBe(before + 1);
     fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
     expect(openSheetHandles().length).toBe(before);
+  });
+});
+
+// Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker beside it, with
+// its fix when the fix is on this screen; the full sentence stays its accessible description.
+describe("ShortlistPanel greyed Override", () => {
+  it("names why in visible words, keeps the full sentence for screen readers, and Choose a ward goes to the list", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    renderShortlist();
+    const override = screen.getByTestId("ward-shortlist-override-toggle");
+    expect(override.getAttribute("aria-disabled")).toBe("true");
+    const description = document.getElementById(override.getAttribute("aria-describedby")!);
+    expect(description?.textContent).toBe(override.title);
+    expect(screen.getByTestId("ward-placement-override-why").textContent).toContain(
+      "Override needs a ward chosen first",
+    );
+    fireEvent.click(screen.getByTestId("ward-placement-override-fix"));
+    expect(document.activeElement?.getAttribute("data-testid")).toMatch(/^ward-shortlist-candidate-/);
+  });
+
+  it("on phone, Override with no ward chosen takes the person to the ward list", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === WF_PHONE_QUERY,
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    Element.prototype.scrollIntoView = vi.fn();
+    try {
+      renderShortlist();
+      const override = screen.getByTestId("ward-shortlist-override-toggle");
+      expect(override.getAttribute("aria-disabled")).toBeNull();
+      fireEvent.click(override);
+      // Before the 24 Oct fix the jump started from the button itself, matched it, and went nowhere.
+      expect(document.activeElement?.getAttribute("data-testid")).toMatch(/^ward-shortlist-candidate-/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

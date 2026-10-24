@@ -9,7 +9,7 @@ import { movementHref, patientHref, unitHref } from "@/components/ward-managemen
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { holdOpenForm } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { Button, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { Button, DisabledReason, SrOnly, StatusGlyph, buttonClass, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -391,8 +391,10 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
 
 /** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
 function focusFirstCandidate(from: HTMLElement) {
-  const first = from
-    .closest("[data-testid^='ward-shortlist-']")
+  // From the parent, never the control itself: Refer and Override carry `ward-shortlist-` test ids
+  // too, and `closest` matches the element it starts on, which found no ward list (24 Oct 2026).
+  const first = from.parentElement
+    ?.closest("[data-testid^='ward-shortlist-']")
     ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
   first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
@@ -1915,6 +1917,25 @@ export function ShortlistPanel({
             {!canOverride ? (
               <span id="ward-shortlist-override-unavailable" className="sr-only">
                 {overrideUnavailableReason}
+              </span>
+            ) : null}
+            {!canOverride && !isPhone ? (
+              // Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker in short
+              // visible words, with the one fix beside it when the fix is on this screen. Screen readers
+              // keep the full sentence above (the button's description); the short words are visual.
+              // The fix is the same jump to the ward list the phone's Override already makes.
+              <span className={shortlistStyles.unavailableLine} data-testid="ward-placement-override-why">
+                <span aria-hidden="true">
+                  <DisabledReason id="ward-placement-override-words">Override needs a ward chosen first</DisabledReason>
+                </span>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  data-testid="ward-placement-override-fix"
+                  onClick={(event) => focusFirstCandidate(event.currentTarget)}
+                >
+                  Choose a ward
+                </button>
               </span>
             ) : null}
 

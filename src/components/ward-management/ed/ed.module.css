@@ -5430,3 +5430,59 @@
   font-size: 0.82rem;
   color: var(--muted);
 }
+
+/* Usability review, Josh approved 24 Oct 2026 ("blocker named, with the fix beside it"). A greyed row
+   action says why in visible words under it, with its one fix beside the words when the row has
+   one. Existing tokens only; the words are the shared `DisabledReason` line. */
+.unavailableNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+  min-width: 0;
+}
+
+/* The shared reason line truncates to one line; here it may wrap, so nothing is cut off. */
+.unavailableNote span[id] {
+  white-space: normal;
+}
+
+.unavailableFix {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.unavailableFix:hover {
+  border-color: var(--wf-accent);
+}
+
+/* In the person sheet's action list the words sit under the greyed row, inside the same box. */
+.phoneSheetActions > .unavailableNote {
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.phoneSheetActions > .unavailableNote:last-child {
+  border-bottom: 0;
+}
+
+.phoneSheetSection .phoneSheetActions > button:has(+ .unavailableNote) {
+  border-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .phoneSheetActions .unavailableFix {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-3);
+  }
+}
