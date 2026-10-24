@@ -13,11 +13,10 @@ type Attempt = {
   record: ContactRecord;
   source: Source;
   generation: number;
-  sequence: number;
   outcome?: WardCommandOutcome;
 };
 
-type Options = Pick<WardFlowContextValue, "dispatch" | "shared" | "eventLog"> & {
+type Options = Pick<WardFlowContextValue, "dispatch" | "shared"> & {
   now: Instant;
   teamId: string;
   generation: number;
@@ -27,7 +26,7 @@ type Options = Pick<WardFlowContextValue, "dispatch" | "shared" | "eventLog"> & 
 
 /** A contact is recorded only by this command's answer, including its original-ID Retry. */
 export function useCommunityContactSave(options: Options) {
-  const { dispatch, now, teamId, generation, shared, eventLog } = options;
+  const { dispatch, now, teamId, generation, shared } = options;
   const latest = useRef(options);
   useEffect(() => {
     latest.current = options;
@@ -84,18 +83,47 @@ export function useCommunityContactSave(options: Options) {
       setMessage("The workspace changed. Review this team before recording contact.");
       return;
     }
-    if (attempt.outcome?.status !== "failed" || shared?.status !== "ready") return;
-    // This log contains this tab's command replies, not contacts found in a polled snapshot.
-    // No team/time guess from another desk can turn an unconfirmed save into success.
-    const commandId = attempt.outcome.commandId;
-    const receipt = eventLog?.find(
-      (entry) => entry.sequence > attempt.sequence && Reflect.get(entry, "commandId") === commandId && commandId !== "",
-    );
-    if (receipt && !receipt.accepted) {
+    // Older adapters have no confirmation channel. A recovered board permits review and a
+    // fresh manual action, but cannot itself prove that this contact was recorded.
+    if (attempt.outcome?.status === "failed" && !attempt.outcome.confirmation && shared?.status === "ready") {
       release();
-      say(attempt, shared.error ?? "Contact was not recorded. Review this team and try again.");
-    } else if (receipt?.accepted) accept(attempt);
-  }, [attempt, generation, teamId, shared?.enabled, shared?.status, shared?.error, eventLog, release, say, accept]);
+      say(attempt, wardCommandFailure(attempt.outcome));
+    }
+  }, [attempt, generation, teamId, shared?.enabled, shared?.status, release, say]);
+
+  const finish = useCallback(
+    function finishAttempt(started: Attempt, outcome: WardCommandOutcome): void {
+      if (!current(started)) return;
+      if ((started.outcome?.isCurrent && !started.outcome.isCurrent()) || (outcome.isCurrent && !outcome.isCurrent())) {
+        release();
+        say(started, "The workspace changed. Review this team before recording contact.");
+        return;
+      }
+      if (outcome.status === "accepted") {
+        accept(started);
+        return;
+      }
+      say(started, wardCommandFailure(outcome));
+      if (outcome.status === "failed" && outcome.commandId && latest.current.shared?.enabled) {
+        const failed = { ...started, outcome };
+        active.current = failed;
+        setAttempt(failed);
+        if (outcome.confirmation) {
+          void outcome.confirmation.then(
+            (terminal) => {
+              if (terminal.status === "failed") return; // Still uncertain; never convert it to success.
+              finishAttempt(failed, terminal);
+            },
+            () => {
+              if (!current(failed)) return;
+              say(failed, "Save is not confirmed. Use Retry before recording another contact.");
+            },
+          );
+        }
+      } else release();
+    },
+    [current, release, say, accept],
+  );
 
   function saveContact(source: Source) {
     if (active.current || (shared?.enabled && shared.status !== "ready")) {
@@ -111,36 +139,17 @@ export function useCommunityContactSave(options: Options) {
       record: { role: "community", at: now, teamId },
       source,
       generation,
-      sequence: eventLog?.at(-1)?.sequence ?? -1,
     };
     active.current = started; // Synchronous: a second click cannot enqueue another command.
     setAttempt(started);
     say(started, "Saving contact…");
-    const finish = (outcome: WardCommandOutcome) => {
-      if (!current(started)) return;
-      if (outcome.isCurrent && !outcome.isCurrent()) {
-        release();
-        say(started, "The workspace changed. Review this team before recording contact.");
-        return;
-      }
-      if (outcome.status === "accepted") {
-        accept(started);
-        return;
-      }
-      say(started, wardCommandFailure(outcome));
-      if (outcome.status === "failed" && outcome.commandId && latest.current.shared?.enabled) {
-        const failed = { ...started, outcome };
-        active.current = failed;
-        setAttempt(failed);
-      } else release();
-    };
-    const failed = () => finish({ commandId: "", status: "failed" });
+    const failed = () => finish(started, { commandId: "", status: "failed" });
     try {
       const completion = confirmedWardCommand(
         dispatch({ type: "RECORD_CLINICAL_CONTACT", role: "community", now, teamId }),
       );
-      if ("then" in completion) void completion.then(finish, failed);
-      else finish(completion);
+      if ("then" in completion) void completion.then((outcome) => finish(started, outcome), failed);
+      else finish(started, completion);
     } catch {
       failed();
     }

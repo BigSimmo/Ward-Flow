@@ -285,7 +285,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     readDischargeRecord,
     dispatch,
     shared,
-    eventLog,
     worldGeneration,
   } = useWardFlowSelect(
     "admissions",
@@ -298,7 +297,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "readDischargeRecord",
     "dispatch",
     "shared",
-    "eventLog",
     "worldGeneration",
   );
   const liveReferrals = useCommunityScopedReferrals();
@@ -404,7 +402,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     teamId,
     generation: worldGeneration,
     shared,
-    eventLog,
     onAccepted: (source) => {
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");

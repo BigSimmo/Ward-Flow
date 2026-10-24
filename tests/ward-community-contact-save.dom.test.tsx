@@ -1,12 +1,18 @@
-import { createRef, useState } from "react";
+import { createRef, useEffect, useState } from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
-import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { CommunityScreenView } from "@/components/ward-management/community/community-screen";
 import { CommunityScreenNoteModal } from "@/components/ward-management/community/community-screen-modals";
+import {
+  SharedWorkspaceClient,
+  type SharedView,
+  type SharedSnapshot,
+} from "@/components/ward-management/ward-shared-client";
+import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { useCommunityContactSave } from "@/components/ward-management/community/use-community-contact-save";
 
 vi.mock("@/components/ward-management/ward-flow-provider", () => ({
@@ -30,34 +36,22 @@ function deferred() {
   });
   return { promise, resolve, reject };
 }
-function receipt(accepted: boolean, commandId = "synthetic-contact-command", sequence = 1): EventLogEntry {
-  const entry = {
-    commandId,
-    sequence,
-    type: "RECORD_CLINICAL_CONTACT" as const,
-    role: "community" as const,
-    now: at,
-    accepted,
-  };
-  return entry;
+function unconfirmed(
+  confirmation: Promise<WardCommandOutcome>,
+  extra: Partial<WardCommandOutcome> = {},
+): WardCommandOutcome {
+  const outcome = { ...answer("failed"), confirmation, ...extra };
+  return outcome;
 }
 
 type HarnessProps = {
   dispatch: WardCommandDispatch;
   shared?: WardFlowContextValue["shared"];
-  eventLog?: readonly EventLogEntry[];
   teamId?: string;
   generation?: number;
   onAccepted?: (source: string) => void;
 };
-function Harness({
-  dispatch,
-  shared = ready,
-  eventLog = [],
-  teamId = "synthetic-team",
-  generation = 1,
-  onAccepted,
-}: HarnessProps) {
+function Harness({ dispatch, shared = ready, teamId = "synthetic-team", generation = 1, onAccepted }: HarnessProps) {
   const [modal, setModal] = useState<"contact" | null>("contact");
   const [quick, setQuick] = useState("");
   const save = useCommunityContactSave({
@@ -66,7 +60,6 @@ function Harness({
     teamId,
     generation,
     shared,
-    eventLog,
     onAccepted: (source) => {
       onAccepted?.(source);
       if (source === "modal") setModal(null);
@@ -131,65 +124,69 @@ describe("community contact command confirmation", () => {
     },
   );
 
-  it("retains a failed draft and confirms original-ID Retry from its own receipt", async () => {
-    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
-    const props = { dispatch, shared: unavailable };
+  it("retains a failed draft and confirms original-ID Retry without a scoped event log", async () => {
+    const terminal = deferred();
+    const dispatch = vi.fn(() => Promise.resolve(unconfirmed(terminal.promise)));
     const { rerender } = render(<Harness dispatch={dispatch} />);
     fireEvent.click(saveButton());
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
-    rerender(<Harness {...props} />);
+    rerender(<Harness dispatch={dispatch} shared={unavailable} />);
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(saveButton());
     expect(dispatch).toHaveBeenCalledTimes(1);
-    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await act(async () => terminal.resolve(answer("accepted")));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(confirmed()).toHaveTextContent(/^recorded$/);
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
-  it("does not infer acceptance from another command's same-minute contact receipt or a poll", async () => {
-    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+  it("does not infer acceptance from a recovered board or another command's confirmation", async () => {
+    const own = deferred(),
+      other = deferred();
+    const dispatch = vi.fn(() => Promise.resolve(unconfirmed(own.promise)));
     const { rerender } = render(<Harness dispatch={dispatch} />);
     fireEvent.click(saveButton());
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
-    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true, "other-contact-command")]} />);
+    rerender(<Harness dispatch={dispatch} shared={unavailable} />);
+    await act(async () => other.resolve({ ...answer("accepted"), commandId: "another-contact" }));
+    rerender(<Harness dispatch={dispatch} />);
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(confirmed()).toHaveTextContent("not recorded");
     expect(saveButton()).toHaveAttribute("aria-disabled", "true");
-    rerender(
-      <Harness dispatch={dispatch} eventLog={[receipt(true, "other-contact-command"), receipt(true, undefined, 2)]} />,
-    );
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await act(async () => own.resolve(answer("accepted")));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("makes a refused Retry terminal, preserving its draft through later matching contacts", async () => {
-    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+  it("makes a refused Retry terminal through later polls and other confirmations", async () => {
+    const own = deferred(),
+      other = deferred();
+    const dispatch = vi.fn(() => Promise.resolve(unconfirmed(own.promise)));
     const { rerender } = render(<Harness dispatch={dispatch} />);
     fireEvent.click(saveButton());
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
-    rerender(
-      <Harness
-        dispatch={dispatch}
-        shared={{ ...ready, error: "Contact was refused. Nothing changed." }}
-        eventLog={[receipt(false)]}
-      />,
-    );
-    await waitFor(() => expect(saveButton()).not.toHaveAttribute("aria-disabled", "true"));
-    rerender(<Harness dispatch={dispatch} eventLog={[receipt(false), receipt(true, "other-command", 2)]} />);
+    await act(async () => own.resolve(answer("refused", "Synthetic contact refusal.")));
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
+    await act(async () => other.resolve({ ...answer("accepted"), commandId: "another-contact" }));
+    rerender(<Harness dispatch={dispatch} />);
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(confirmed()).toHaveTextContent("not recorded");
-    expect(screen.getByRole("status")).toHaveTextContent("Contact was refused.");
+    expect(screen.getByRole("status")).toHaveTextContent("Synthetic contact refusal.");
   });
 
-  it("does not use an older same-ID receipt as the new attempt's confirmation", async () => {
-    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
-    const { rerender } = render(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+  it("keeps a legacy adapter's failed draft until connection recovery without claiming acceptance", async () => {
+    const pending = deferred();
+    const dispatch = vi.fn(() => pending.promise);
+    const { rerender } = render(<Harness dispatch={dispatch} />);
     fireEvent.click(saveButton());
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
-    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+    rerender(<Harness dispatch={dispatch} shared={unavailable} />);
+    await act(async () => pending.resolve(answer("failed")));
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+    rerender(<Harness dispatch={dispatch} />);
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(confirmed()).toHaveTextContent("not recorded");
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed.");
   });
 
   it("only announces quick-action success after acceptance and reports quick failures", async () => {
@@ -303,27 +300,29 @@ describe("community contact command confirmation", () => {
     },
   );
 
-  it("confirms a failed quick action only from its own Retry receipt", async () => {
-    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
-    const { rerender } = render(<Harness dispatch={dispatch} />);
+  it("confirms a failed quick action only from its own terminal completion", async () => {
+    const terminal = deferred();
+    const dispatch = vi.fn(() => Promise.resolve(unconfirmed(terminal.promise)));
+    render(<Harness dispatch={dispatch} />);
     fireEvent.click(screen.getByText("Contacted quick action"));
     await waitFor(() => expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Save is not confirmed."));
     fireEvent.click(screen.getByText("Contacted quick action"));
     expect(dispatch).toHaveBeenCalledTimes(1);
-    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
-    await waitFor(() => expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Team contact logged."));
+    await act(async () => terminal.resolve(answer("accepted")));
+    expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Team contact logged.");
     expect(confirmed()).toHaveTextContent(/^recorded$/);
   });
 
-  it("ignores Retry receipts after the failed command lifetime ends", async () => {
+  it("ignores terminal completion after the failed command lifetime ends", async () => {
     let current = true;
-    const dispatch = vi.fn(() => Promise.resolve({ ...answer("failed"), isCurrent: () => current }));
+    const terminal = deferred();
+    const dispatch = vi.fn(() => Promise.resolve(unconfirmed(terminal.promise, { isCurrent: () => current })));
     const onAccepted = vi.fn();
-    const { rerender } = render(<Harness dispatch={dispatch} onAccepted={onAccepted} />);
+    render(<Harness dispatch={dispatch} onAccepted={onAccepted} />);
     fireEvent.click(saveButton());
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
     current = false;
-    rerender(<Harness dispatch={dispatch} onAccepted={onAccepted} eventLog={[receipt(true)]} />);
+    await act(async () => terminal.resolve(answer("accepted")));
     expect(onAccepted).not.toHaveBeenCalled();
     expect(confirmed()).toHaveTextContent("not recorded");
   });
@@ -336,6 +335,76 @@ describe("community contact command confirmation", () => {
     unmount();
     await act(async () => pending.resolve(answer("accepted")));
     expect(onAccepted).not.toHaveBeenCalled();
+  });
+
+  it("integrates a real shared-client Retry while the role-scoped UI has no event log", async () => {
+    let snapshot: SharedSnapshot = {
+      dataMode: "prototype",
+      revision: 1,
+      now: at,
+      payload: {
+        version: 1,
+        state: seedWardFlowStateAt(0),
+        dayZero: "2026-10-24T00:00:00Z",
+        startedAt: "2026-10-24T10:00:00Z",
+      },
+    };
+    let seen: SharedView, notify: ((view: SharedView) => void) | undefined;
+    let drop = false;
+    const teamId = COMMUNITY_TEAM_PAGES[0]!.id;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "synthetic-token",
+      changed: (view) => {
+        seen = view;
+        notify?.(view);
+      },
+      fetch: async (_url, init) => {
+        if (!init?.body) return Response.json({ snapshot });
+        if (drop) throw new TypeError("Synthetic lost connection");
+        const command = JSON.parse(String(init.body));
+        snapshot = {
+          ...snapshot,
+          revision: snapshot.revision + 1,
+          payload: { ...snapshot.payload, state: wardFlowReducer(snapshot.payload.state, command.event) },
+        };
+        return Response.json({ outcome: "accepted", snapshot });
+      },
+    });
+    try {
+      await client.refresh();
+      function ScopedContact() {
+        const [view, setView] = useState(seen);
+        useEffect(() => {
+          notify = setView;
+          return () => {
+            notify = undefined;
+          };
+        }, []);
+        // WardAccessScope deliberately hides eventLog from community. Recovery must use the
+        // exact dispatch completion instead of bypassing that recipient projection.
+        return (
+          <Harness
+            dispatch={client.dispatchConfirmed}
+            teamId={teamId}
+            shared={{ enabled: true, status: view.status, error: view.error }}
+          />
+        );
+      }
+      render(<ScopedContact />);
+      drop = true;
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+      expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("dialog")).toBeVisible();
+      drop = false;
+      await act(async () => client.retry());
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(confirmed()).toHaveTextContent(/^recorded$/);
+      expect(seen!.eventLog).toHaveLength(1);
+    } finally {
+      client.dispose();
+    }
   });
 
   it("does not issue a new command while the shared board is unavailable", () => {
