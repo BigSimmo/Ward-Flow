@@ -39,7 +39,7 @@ describe("capacity observations on the answer screen", () => {
     const unit = context.units[0];
     const view = render(<WardAnswerView unitId={unit.id} />);
     // v10: allocatable is a stepper only. Step the draft away from the confirmed figure.
-    fireEvent.click(screen.getByRole("button", { name: "Increase allocatable beds" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase free beds" }));
     expect(screen.getByTestId("ward-capacity-input")).toHaveAttribute(
       "aria-valuenow",
       String(Math.min(unit.beds, unit.allocatable.value + 1)),
@@ -68,7 +68,7 @@ describe("capacity observations on the answer screen", () => {
   it("does not carry one ward's draft into another ward", () => {
     const [first, second] = context.units;
     const view = render(<WardAnswerView unitId={first.id} />);
-    fireEvent.click(screen.getByRole("button", { name: "Increase allocatable beds" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase free beds" }));
     view.rerender(<WardAnswerView unitId={second.id} />);
     expect(screen.getByTestId("ward-capacity-input")).toHaveAttribute(
       "aria-valuenow",

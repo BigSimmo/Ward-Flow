@@ -19,7 +19,7 @@ describe("changing the observation level in the bed drawer", () => {
     expect(screen.getByTestId("ward-observation-review-time")).toHaveValue("14:30");
     fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "within_sight" } });
     fireEvent.click(screen.getByTestId("ward-observation-save"));
-    expect(onSave).toHaveBeenCalledWith({ level: "within_sight", intervalMinutes: null, reviewAt });
+    expect(onSave).toHaveBeenCalledWith({ level: "within_sight", intervalMinutes: null, reviewAt }, undefined);
   });
 
   it("keeps a review time outside today or tomorrow unless the box is edited", () => {
@@ -28,7 +28,7 @@ describe("changing the observation level in the bed drawer", () => {
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     expect(screen.getByTestId("ward-observation-review-time")).toHaveValue("");
     fireEvent.click(screen.getByTestId("ward-observation-save"));
-    expect(onSave).toHaveBeenCalledWith({ level: "general", intervalMinutes: null, reviewAt });
+    expect(onSave).toHaveBeenCalledWith({ level: "general", intervalMinutes: null, reviewAt }, undefined);
   });
 
   it("clears the review time only when the box is emptied", () => {
@@ -36,7 +36,7 @@ describe("changing the observation level in the bed drawer", () => {
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     fireEvent.change(screen.getByTestId("ward-observation-review-time"), { target: { value: "" } });
     fireEvent.click(screen.getByTestId("ward-observation-save"));
-    expect(onSave).toHaveBeenCalledWith({ level: "general", intervalMinutes: null, reviewAt: null });
+    expect(onSave).toHaveBeenCalledWith({ level: "general", intervalMinutes: null, reviewAt: null }, undefined);
   });
 
   it("reopens on the recorded interval, not one left from a cancelled edit", () => {
@@ -48,6 +48,6 @@ describe("changing the observation level in the bed drawer", () => {
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     expect(screen.getByTestId("ward-observation-interval")).toHaveValue("30");
     fireEvent.click(screen.getByTestId("ward-observation-save"));
-    expect(onSave).toHaveBeenCalledWith({ level: "intermittent", intervalMinutes: 30, reviewAt: null });
+    expect(onSave).toHaveBeenCalledWith({ level: "intermittent", intervalMinutes: 30, reviewAt: null }, undefined);
   });
 });

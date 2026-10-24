@@ -57,21 +57,27 @@ export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configurat
  *
  * The header badge, the phone menu, the act-now notifier and Home each build this list, so the last
  * answer is shared until a record or the clock minute changes (`ward-last-call.ts`). Callers must
- * not change the returned list in place.
+ * not change the returned list in place. They pass different optional records (the notifier leaves
+ * out the warning-only ones), so four answers are kept: one per caller shape, not one shared slot
+ * that each caller evicts in turn (production audit PERF-02).
  */
-export const taskItems = rememberLastCall(deriveTaskItems, (source: TaskSource, now: Instant) => [
-  source.movements,
-  source.units,
-  source.configuration,
-  source.admissions,
-  source.patients,
-  source.referrals,
-  source.supportNotifications,
-  source.plannedAdmissions,
-  source.leaveBeds,
-  source.stuckHandoverMinutes,
-  now,
-]);
+export const taskItems = rememberLastCall(
+  deriveTaskItems,
+  (source: TaskSource, now: Instant) => [
+    source.movements,
+    source.units,
+    source.configuration,
+    source.admissions,
+    source.patients,
+    source.referrals,
+    source.supportNotifications,
+    source.plannedAdmissions,
+    source.leaveBeds,
+    source.stuckHandoverMinutes,
+    now,
+  ],
+  4,
+);
 
 function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
   const open = source.movements.filter(isOpen);

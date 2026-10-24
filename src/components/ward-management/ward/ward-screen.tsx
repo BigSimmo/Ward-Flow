@@ -1762,10 +1762,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
   function confirmBedRelease(releaseId: string) {
-    raise("CONFIRM_BED_RELEASE", {
-      releaseId,
-      actingUnitId: unitId,
-    });
+    // Audit 24-3 SV-5: a shared refusal is said on this screen, not only in the status line.
+    completeCommand(
+      `release:${releaseId}`,
+      () => raise("CONFIRM_BED_RELEASE", { releaseId, actingUnitId: unitId }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) setToastMessage(failure);
+      },
+    );
     setNoticesForRelease(releaseId);
   }
 

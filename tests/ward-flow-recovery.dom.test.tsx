@@ -272,9 +272,8 @@ describe("conservative demo recovery", () => {
     mounts = 0;
     render(consumerTree());
     expect(mounts).toBe(1);
-    expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from \d{2}:\d{2} on the board clock\. Later changes may not have been saved\.$/,
-    );
+    // Nothing changed before the reload, so nothing was restored and no notice shows.
+    expect(screen.queryByRole("status")).toBeNull();
   });
   it("starts one-time screen state from the restored day when a changed day is reloaded", () => {
     const first = render(consumerTree());
