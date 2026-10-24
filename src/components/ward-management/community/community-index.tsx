@@ -1,7 +1,6 @@
 "use client";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
@@ -54,7 +53,7 @@ import {
   lookupCatchment,
   parseFollowUpClinicSet,
 } from "@/components/ward-management/ward-catchment";
-import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 
 import styles from "./community-index.module.css";
 
@@ -437,10 +436,11 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
     }
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      "ward-flow-synthetic-community-team-list.csv",
-    );
+    downloadCsv("ward-flow-synthetic-community-team-list.csv", lines, {
+      asAt: `${new Date().toLocaleString("en-AU", { timeZone: "Australia/Perth", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} AWST`,
+      scope: "Community team directory; all teams",
+      period: "Reference directory at export time; not a clinical snapshot",
+    });
   }
 
   const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({

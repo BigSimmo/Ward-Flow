@@ -51,6 +51,20 @@ const nextConfig: NextConfig = {
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
   reactCompiler: true,
+  // Narrow the shell's server imports without changing the design-system API or other chunks.
+  modularizeImports: {
+    "@/components/wf": {
+      transform: {
+        "^OverlayScope$": "@/components/wf/overlay-root",
+        "^ToastProvider$": "@/components/wf/toast-provider",
+        "^WfServerPhoneProvider$": "@/components/wf/use-is-phone",
+        "^guessPhoneFromRequest$": "@/components/wf/phone-guess",
+        "^guessTabletFromRequest$": "@/components/wf/phone-guess",
+        "^.*$": "@/components/wf",
+      },
+      skipDefaultConversion: true,
+    },
+  },
   experimental: {
     // Default 1 is the safe fallback for a Node-24 webpack WasmHash worker crash
     // seen on constrained local builds (see the webpack hashFunction override

@@ -25,7 +25,7 @@
 .viewButton[aria-pressed="true"] {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
 }
 
 .viewButton:focus-visible,
