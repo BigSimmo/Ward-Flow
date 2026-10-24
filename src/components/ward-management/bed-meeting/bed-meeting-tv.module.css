@@ -433,6 +433,10 @@
     padding-block: calc(var(--wf-s-2) * 0.5);
   }
 
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) [data-fit="full"] {
+    display: none;
+  }
+
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) > .panel {
     padding-block: calc(var(--tv-gap) * 0.6);
   }
@@ -651,6 +655,17 @@
   margin: var(--wf-s-2) 0 0;
   color: var(--wf-ink-2);
   font-size: var(--tv-small);
+}
+
+/* The 1080p State TV's own count (DR-02): shown only where that layout hides rows. */
+.more[data-fit="short"] {
+  display: none;
+}
+
+@container (min-width: 90rem) and (max-width: 170rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) .more[data-fit="short"] {
+    display: block;
+  }
 }
 
 .footer {

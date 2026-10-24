@@ -102,6 +102,8 @@ function edName(department: string): string {
  * delays by cause) take two or three lines a row, so each names three and counts the rest.
  */
 const MEETING_TV_ROWS = 3;
+/** Delay causes that fit under the ED waits on a 1080p State TV (DR-02). */
+const DELAYS_SHORT_ROWS = 1;
 
 function Figure({ value }: { value: number | string }) {
   return <>{value === 0 ? "None" : value}</>;
@@ -191,10 +193,21 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 /** "and 3 more causes", or with `one`, "and 1 more cause". */
-function More({ count, noun, one = noun }: { count: number; noun: string; one?: string }) {
+function More({
+  count,
+  noun,
+  one = noun,
+  fit,
+}: {
+  count: number;
+  noun: string;
+  one?: string;
+  /** Which layout this count belongs to, when a 1080p State TV shows fewer rows than the rest. */
+  fit?: "full" | "short";
+}) {
   if (count === 0) return null;
   return (
-    <p className={styles.more}>
+    <p className={styles.more} data-fit={fit}>
       and {count} more {count === 1 ? one : noun}
     </p>
   );
@@ -542,15 +555,23 @@ function BedMeetingTvView({
           ) : (
             <>
               <ol className={styles.list}>
-                {delays.groups.slice(0, MEETING_TV_ROWS).map((group) => (
-                  <li key={group.cause}>
+                {delays.groups.slice(0, MEETING_TV_ROWS).map((group, index) => (
+                  // On a 1080p State TV only the first cause fits under the ED waits (DR-02); the
+                  // rest keep their order and are counted below, never re-sorted.
+                  <li key={group.cause} data-fit={index >= DELAYS_SHORT_ROWS ? "full" : undefined}>
                     <span className={styles.who}>{group.title}</span>
                     <span className={styles.where}>longest {splitDuration(group.longestWaitMinutes)}</span>
                     <span className={styles.wait}>{group.count}</span>
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" />
+              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" fit="full" />
+              <More
+                count={Math.max(0, delays.groups.length - DELAYS_SHORT_ROWS)}
+                noun="causes"
+                one="cause"
+                fit="short"
+              />
             </>
           )}
         </Panel>
