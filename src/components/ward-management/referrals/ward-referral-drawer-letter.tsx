@@ -7,6 +7,7 @@ import { formatInstant, formatInstantWithDay } from "@/components/ward-managemen
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-referral-drawer.module.css";
 import { ContactFields, UseMyDetailsButton, ReferralDocumentLinks } from "./referral-flow-panels";
+import { submittedTime } from "./referral-intake-summary";
 import { referralIsbarText, referralLetterText } from "./referral-letter";
 import { StatusGlyph } from "@/components/wf";
 import { transportLabel, countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
@@ -206,7 +207,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                       <dt>Proposed arrival</dt>
                       <dd>
                         {transportLabel(sentDetails.arrival.transport)} ·{" "}
-                        {sentDetails.arrival.estimatedAt?.replace("T", " ").replace("+08:00", "") ||
+                        {submittedTime(sentDetails.arrival.estimatedAt, { now, dayZero: s.dayZero }) ??
                           "time not recorded"}
                       </dd>
                     </div>
