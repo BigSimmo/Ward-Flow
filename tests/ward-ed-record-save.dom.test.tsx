@@ -10,7 +10,6 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -51,7 +50,6 @@ type Kind = (typeof cases)[number]["kind"];
 type Panels = ReturnType<typeof useEdRowPanels>;
 let world = 0;
 let shared: WardFlowContextValue["shared"];
-let eventLog: EventLogEntry[] = [];
 let overrideDispatch: WardCommandDispatch | undefined;
 function Scope({ children }: { children: ReactNode }) {
   const value = useWardFlow();
@@ -71,7 +69,7 @@ function Scope({ children }: { children: ReactNode }) {
         movements,
         worldGeneration: world,
         shared,
-        eventLog,
+        eventLog: [],
         ...(overrideDispatch ? { dispatch: overrideDispatch } : {}),
       }}
     >
@@ -141,15 +139,10 @@ function openSave(kind: Kind, dispatch: WardCommandDispatch) {
     state: () => view.result.current.recordSaveState(kind, ID),
   };
 }
-function receipt(type: EventLogEntry["type"], accepted = true, commandId = "synthetic-correction"): EventLogEntry {
-  const entry = { sequence: 0, commandId, type, role: "ed" as const, now: NOW_ANCHOR, movementId: ID, accepted };
-  return entry;
-}
 afterEach(() => {
   cleanup();
   world = 0;
   shared = undefined;
-  eventLog = [];
   overrideDispatch = undefined;
   sessionStorage.clear();
 });
@@ -221,44 +214,61 @@ describe.each(cases)("ED $kind save confirmation", ({ kind, type, toggle, form: 
     expect(dispatch).toHaveBeenCalledTimes(2);
   });
 
-  it("Retry closes only for the failed command's own accepted receipt", async () => {
+  it("Retry closes through the failed command's private confirmation with an empty scoped log", async () => {
     shared = connected();
     const reply = deferred();
+    const terminal = deferred();
     const dispatch = vi.fn<WardCommandDispatch>(() => reply.promise);
     const view = openSave(kind, dispatch);
     view.submit();
     shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-correction", status: "failed" }));
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-correction", status: "failed", confirmation: terminal.promise }),
+    );
+    shared = connected();
     view.rerender(view.props);
     view.submit();
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(view.state().disabled).toBe(true);
-    eventLog = [receipt(type, true, "synthetic-other-command")];
-    shared = connected();
-    view.rerender(view.props);
     expect(view.draft().open).toBe(ID);
-    eventLog = [receipt(type)];
-    view.rerender(view.props);
+    await act(async () => terminal.resolve({ commandId: "synthetic-correction", status: "accepted" }));
     expect(view.draft().open).toBeUndefined();
+    expect(view.state().disabled).toBe(false);
   });
 
-  it("a refused Retry remains a refusal after later matching replies", async () => {
+  it("a private Retry refusal survives later reads clearing the global error", async () => {
     shared = connected();
     const reply = deferred();
+    const terminal = deferred();
     const view = openSave(kind, () => reply.promise);
     const before = view.draft();
     view.submit();
-    shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-correction", status: "failed" }));
-    eventLog = [receipt(type, false)];
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-correction", status: "failed", confirmation: terminal.promise }),
+    );
+    await act(async () =>
+      terminal.resolve({ commandId: "synthetic-correction", status: "refused", message: "Synthetic Retry refusal." }),
+    );
     shared = connected();
     view.rerender(view.props);
-    expect(view.state().message).toContain("Not recorded");
+    expect(view.state().message).toBe("Not recorded: Synthetic Retry refusal.");
     expect(view.draft()).toEqual(before);
-    const later = { ...receipt(type), sequence: 1 };
-    eventLog = [receipt(type, false), later];
-    view.rerender(view.props);
-    expect(view.draft()).toEqual(before);
+    expect(view.state().disabled).toBe(false);
+  });
+
+  it("private Retry acceptance does not clear a revised choice", async () => {
+    shared = connected();
+    const reply = deferred();
+    const terminal = deferred();
+    const view = openSave(kind, () => reply.promise);
+    view.submit();
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-correction", status: "failed", confirmation: terminal.promise }),
+    );
+    act(() => setDraft(view.result.current.panels, kind, true));
+    const revised = view.draft();
+    await act(async () => terminal.resolve({ commandId: "synthetic-correction", status: "accepted" }));
+    expect(view.draft()).toEqual(revised);
   });
 
   it("a delayed acceptance does not clear a revised choice", async () => {
@@ -302,6 +312,39 @@ describe("ED correction lifecycle", () => {
     view.submit();
     expect(view.draft()).toEqual(before);
     expect(view.state().message).toContain("Save is not confirmed");
+    expect(view.state().disabled).toBe(false);
+  });
+  it("an ended world ignores a delayed private Retry confirmation", async () => {
+    shared = connected();
+    const reply = deferred();
+    const terminal = deferred();
+    const view = openSave("urgency", () => reply.promise);
+    view.submit();
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-correction", status: "failed", confirmation: terminal.promise }),
+    );
+    world++;
+    view.rerender(view.props);
+    const before = view.draft();
+    await act(async () => terminal.resolve({ commandId: "synthetic-correction", status: "accepted" }));
+    expect(view.draft()).toEqual(before);
+    expect(view.state().disabled).toBe(false);
+  });
+  it("a private confirmation from an ended session retains the draft and releases its guard", async () => {
+    shared = connected();
+    const reply = deferred();
+    const terminal = deferred();
+    const view = openSave("receipt", () => reply.promise);
+    view.submit();
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-correction", status: "failed", confirmation: terminal.promise }),
+    );
+    const before = view.draft();
+    await act(async () =>
+      terminal.resolve({ commandId: "synthetic-correction", status: "cancelled", isCurrent: () => false }),
+    );
+    expect(view.draft()).toEqual(before);
+    expect(view.state().disabled).toBe(false);
   });
   it("does not dispatch missing required selections on any correction", () => {
     const dispatch = vi.fn<WardCommandDispatch>();

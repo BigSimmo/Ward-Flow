@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useOptionalWardFlowSelect, type WardFlowContextValue } from "../ward-flow-provider";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardCommandOutcome } from "../ward-shared-client";
@@ -18,7 +18,6 @@ type Attempt = {
   kind: Kind;
   event: Correction;
   world: number | undefined;
-  sequence: number;
   draft: Draft;
   completion?: WardCommandOutcome;
 };
@@ -42,7 +41,7 @@ export function useEdRecordSave({
   now,
   panels,
 }: Pick<WardFlowContextValue, "dispatch" | "now"> & { panels: Panels }) {
-  const context = useOptionalWardFlowSelect("worldGeneration", "shared", "eventLog");
+  const context = useOptionalWardFlowSelect("worldGeneration", "shared");
   const world = context?.worldGeneration;
   const shared = context?.shared;
   const [attempt, setAttempt] = useState<Attempt>();
@@ -51,15 +50,17 @@ export function useEdRecordSave({
   const [messageFor, setMessageFor] = useState<{ kind: Kind; movementId: string }>();
   const current = useRef<Attempt | undefined>(undefined);
   const latestPanels = useRef(panels);
+  const latestWorld = useRef(world);
   useEffect(
     () => () => {
       current.current = undefined;
     },
     [],
   );
-  useEffect(() => {
+  useLayoutEffect(() => {
     latestPanels.current = panels;
-  }, [panels]);
+    latestWorld.current = world;
+  }, [panels, world]);
   const completeCommand = useWardCommandCompletion(setMessage);
   const finish = useCallback((said?: string) => {
     current.current = undefined;
@@ -70,6 +71,10 @@ export function useEdRecordSave({
   const accepted = useCallback(
     (saved: Attempt) => {
       if (current.current !== saved) return;
+      if (saved.world !== latestWorld.current) {
+        finish();
+        return;
+      }
       const latest = latestPanels.current;
       const draft = readDraft(saved.kind, latest);
       if (
@@ -95,25 +100,12 @@ export function useEdRecordSave({
       finish();
       return;
     }
-    if (attempt.completion?.status !== "failed") return;
-    // Polls and other desks' matching records cannot supply this command's own receipt.
-    const receipt = context?.eventLog?.find(
-      (entry) =>
-        entry.sequence > attempt.sequence &&
-        Reflect.get(entry, "commandId") === attempt.completion?.commandId &&
-        entry.type === attempt.event.type &&
-        entry.movementId === attempt.event.movementId &&
-        entry.role === "ed" &&
-        entry.now === attempt.event.now,
-    );
-    if (!receipt || (shared?.enabled && shared.status !== "ready")) return;
-    if (receipt.accepted) accepted(attempt);
-    else finish(shared?.error ?? "Not recorded. Review the current record before trying again.");
-  }, [attempt, world, context?.eventLog, shared?.enabled, shared?.status, shared?.error, accepted, finish]);
+  }, [attempt, world, shared?.enabled, shared?.status, finish]);
 
-  const disabled = pending || !!(shared?.enabled && shared.status !== "ready");
+  const recovering = attempt?.completion?.status === "failed" && !!attempt.completion.commandId;
+  const disabled = pending || recovering || !!(shared?.enabled && shared.status !== "ready");
   function save(kind: Kind, event: Correction) {
-    if (disabled || (current.current && !current.current.completion)) return;
+    if (disabled || (current.current && (!current.current.completion || current.current.completion.commandId))) return;
     let started: Attempt;
     completeCommand(
       wardCommandKey("ed-record-correction", event.movementId),
@@ -122,7 +114,6 @@ export function useEdRecordSave({
           kind,
           event,
           world,
-          sequence: context?.eventLog?.at(-1)?.sequence ?? -1,
           draft: readDraft(kind, panels),
         };
         current.current = started;
@@ -139,6 +130,10 @@ export function useEdRecordSave({
       },
       (outcome) => {
         if (current.current !== started) return;
+        if (started.world !== latestWorld.current) {
+          finish();
+          return;
+        }
         if (outcome?.status === "accepted") accepted(started);
         else if (outcome?.status === "failed") {
           const failed = { ...started, completion: outcome };
@@ -146,6 +141,25 @@ export function useEdRecordSave({
           setAttempt(failed);
           setPending(false);
           setMessage(wardCommandFailure(outcome));
+          // The private command confirmation survives Retry while ED's event log stays scoped away.
+          void outcome.confirmation?.then(
+            (answer) => {
+              if (current.current !== failed || answer.commandId !== outcome.commandId) return;
+              if (
+                failed.world !== latestWorld.current ||
+                (answer.isCurrent && !answer.isCurrent()) ||
+                (outcome.isCurrent && !outcome.isCurrent())
+              ) {
+                finish();
+                return;
+              }
+              if (answer.status === "accepted") accepted(failed);
+              else if (answer.status === "refused" || answer.status === "cancelled") finish(wardCommandFailure(answer));
+            },
+            () => {
+              if (current.current === failed) setMessage("Save is not confirmed. Use Retry before submitting again.");
+            },
+          );
         } else finish(wardCommandFailure(outcome) ?? "Save is not confirmed. Review the board before trying again.");
       },
     );
