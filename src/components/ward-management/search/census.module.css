@@ -81,6 +81,8 @@
 }
 
 .searchForm > div > div:first-of-type:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
   border-color: var(--wf-hero-ink);
   box-shadow:
     0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent),
