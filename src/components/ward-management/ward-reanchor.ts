@@ -110,6 +110,9 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
    * read a data error.
    */
   "withdrawnAt",
+  // Closing-the-loop package A: a promised answer time and a next callback time on a commitment entry.
+  "promisedFor",
+  "nextCallbackAt",
   // ── `Admission`, in `ward-admissions.ts`. Absent until 2026-08-31 because the guard test never
   //    looked at that file; see this set's own comment for what each one was getting wrong.
   "pulledAt",

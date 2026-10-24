@@ -284,6 +284,9 @@ describe("who may raise which event", () => {
     // desk takes a referral for itself; the same desks log calls about it.
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
     LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+    // Closing-the-loop package A (24 Oct 2026): the coordinator records any commitment step; a
+    // ward records acknowledged or promised on its own copy (the reducer checks which).
+    RECORD_REFERRAL_COMMITMENT: ["coordinator", "ward"],
     ASK_MORE_WARDS: ["coordinator"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],

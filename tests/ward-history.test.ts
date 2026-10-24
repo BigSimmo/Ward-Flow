@@ -45,8 +45,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Observation levels (fix plan item 10) add RECORD_OBSERVATION_LEVEL.
       // Closing the loop, package D (24 Oct 2026) adds MARK_CANCELLED_MOVE_CHECK,
       // RECORD_ACCEPTANCE_CONDITION, MARK_ACCEPTANCE_CONDITION_MET, RECORD_RESTRICTION_REVIEW and
-      // MARK_CLOSURE_TRANSITION_ITEM.
-      expect(allEventTypes.length).toBe(156);
+      // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT.
+      expect(allEventTypes.length).toBe(157);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

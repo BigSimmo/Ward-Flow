@@ -39,6 +39,8 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-patients.ts",
   // D-60: discharge criteria on an admission hold when they were set and when each was met.
   "src/components/ward-management/ward-discharge-criteria.ts",
+  // Closing-the-loop package A: a response commitment entry holds a promised time and a callback time.
+  "src/components/ward-management/referrals/referral-commitments.ts",
 ];
 
 /**

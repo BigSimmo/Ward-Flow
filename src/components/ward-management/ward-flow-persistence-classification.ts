@@ -199,6 +199,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // and instants only. Nothing typed.
   "ASSIGN_REFERRAL",
   "LOG_REFERRAL_CONTACT",
+  // Closing-the-loop package A: ids, a step from a fixed list and instants. Nothing typed.
+  "RECORD_REFERRAL_COMMITMENT",
   // Fix plan item 16 (D-76): ward ids and an instant only.
   "ASK_MORE_WARDS",
   "OPEN_DISCHARGE_RECORD",

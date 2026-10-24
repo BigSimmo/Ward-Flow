@@ -21,6 +21,8 @@ import {
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
+// Closing-the-loop package A (24 Oct 2026): response commitments.
+import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -611,6 +613,27 @@ const referralContactEntry = z.strictObject({
   at: finite,
   by: text,
 });
+// Closing-the-loop package A: a commitment entry is a ward id, a listed step or a time, the time
+// it was recorded and the role that recorded it. Strict, so no typed field can ride along; a
+// promised time only beside the promised step.
+const referralCommitmentEntry = z
+  .strictObject({
+    unitId: text,
+    step: z.optional(
+      text.check(z.refine((step) => (REFERRAL_COMMITMENT_STEP_IDS as readonly string[]).includes(step))),
+    ),
+    promisedFor: z.optional(finite),
+    nextCallbackAt: z.optional(finite),
+    at: finite,
+    by: text,
+  })
+  .check(
+    z.refine(
+      (entry) =>
+        (entry.step !== undefined || entry.nextCallbackAt !== undefined) &&
+        (entry.promisedFor === undefined) === (entry.step !== "promised"),
+    ),
+  );
 const referral = z.looseObject({
   id,
   submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
@@ -634,6 +657,7 @@ const referral = z.looseObject({
       acceptedUnitId: link,
       openedAt: z.optional(finite),
       informationNeeds: z.optional(z.array(informationNeed)),
+      commitments: z.optional(z.array(referralCommitmentEntry)),
     }),
   ),
   patientId: link,

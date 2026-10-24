@@ -372,6 +372,19 @@ export function candidateEvents(
           outcome: "no_answer" as const,
         })),
       );
+    // Closing-the-loop package A: every referral, asking each ward on its own for a response.
+    case "RECORD_REFERRAL_COMMITMENT":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          unitId,
+          actingUnitId: unitId,
+          step: "response_requested" as const,
+        })),
+      );
     // Fix plan item 16 (D-76): every referral, asking each ward on its own.
     case "ASK_MORE_WARDS":
       return state.referrals.flatMap((referral) =>
