@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Button, StatusGlyph } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -106,7 +106,11 @@ export function useAskMoreWards({
           .slice(attemptedAt)
           .findLast((entry) => entry.attempted === "ASK_MORE_WARDS" && entry.movementId === referral.id);
 
+  // Each opening of the list is its own form: an answer to an ask from an earlier opening, after
+  // Cancel, must not close and clear the ticks of the current one.
+  const opening = useRef(0);
   function close() {
+    opening.current += 1;
     save.clearError();
     setOpen(false);
     setPicked([]);
@@ -144,9 +148,12 @@ export function useAskMoreWards({
     ask() {
       if (chosen.length === 0 || chosen.length > slots || save.pending) return;
       setAttemptedAt(rejections.length);
+      const asked = opening.current;
       save.submit(
         () => wardRaise(dispatch, "coordinator", now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen }),
-        close,
+        () => {
+          if (opening.current === asked) close();
+        },
       );
     },
   };

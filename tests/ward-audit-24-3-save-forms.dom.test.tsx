@@ -167,6 +167,63 @@ describe("SV-1 seclusion, restraint and incident forms (shared mode)", () => {
     expect(screen.getByTestId("seclusion-incident-time")).toHaveValue(kept ? typedTime() : "");
     expectSaid("seclusion-incident-failure", mode);
   });
+
+  it("Record incident: a later Retry that confirms the unconfirmed save clears the form, with no second send", async () => {
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => (confirm = resolve));
+    const dispatch = vi.fn(async (): Promise<WardCommandOutcome> => ({
+      commandId: "c-1",
+      status: "failed",
+      message: FAILED_SAYS,
+      confirmation,
+    }));
+    fake.connection = sharedConnection(dispatch);
+    render(
+      <WardFlowProvider>
+        <SeclusionScreen />
+      </WardFlowProvider>,
+    );
+    const category = screen.getByTestId("seclusion-incident-category") as HTMLSelectElement;
+    const value = within(category).getAllByRole("option")[1]!.getAttribute("value")!;
+    fireEvent.change(category, { target: { value } });
+    fireEvent.change(screen.getByTestId("seclusion-incident-time"), { target: { value: typedTime() } });
+    await press(screen.getByTestId("seclusion-incident-record"));
+    // Held for the status bar's Retry: the same incident cannot go again under a new command id.
+    expect(screen.getByTestId("seclusion-incident-category")).toHaveValue(value);
+    expect(screen.getByTestId("seclusion-incident-record")).toHaveAttribute("aria-disabled", "true");
+    await press(screen.getByTestId("seclusion-incident-record"));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    await act(async () => confirm({ commandId: "c-1", status: "accepted" }));
+    expect(screen.getByTestId("seclusion-incident-category")).toHaveValue("");
+    expect(screen.getByTestId("seclusion-incident-time")).toHaveValue("");
+    expect(screen.queryByTestId("seclusion-incident-failure")).toBeNull();
+  });
+
+  it("Record incident: a Retry that is refused says so and frees the form", async () => {
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => (confirm = resolve));
+    const dispatch = vi.fn(async (): Promise<WardCommandOutcome> => ({
+      commandId: "c-1",
+      status: "failed",
+      message: FAILED_SAYS,
+      confirmation,
+    }));
+    fake.connection = sharedConnection(dispatch);
+    render(
+      <WardFlowProvider>
+        <SeclusionScreen />
+      </WardFlowProvider>,
+    );
+    const category = screen.getByTestId("seclusion-incident-category") as HTMLSelectElement;
+    fireEvent.change(category, {
+      target: { value: within(category).getAllByRole("option")[1]!.getAttribute("value")! },
+    });
+    fireEvent.change(screen.getByTestId("seclusion-incident-time"), { target: { value: typedTime() } });
+    await press(screen.getByTestId("seclusion-incident-record"));
+    await act(async () => confirm({ commandId: "c-1", status: "refused", message: REFUSED_SAYS }));
+    expectSaid("seclusion-incident-failure", "refused");
+    expect(screen.getByTestId("seclusion-incident-record")).not.toHaveAttribute("aria-disabled");
+  });
 });
 
 describe("SV-1 seclusion end form (shared mode)", () => {
@@ -420,6 +477,52 @@ describe("SV-3 Ask more wards (referral decision pane)", () => {
     expect(screen.getByTestId("ward-referral-ask-list")).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-referral-ask-list")).getAllByRole("checkbox")[0]).toBeChecked();
     expectSaid("ward-referral-ask-failure", mode);
+  });
+
+  it("an ask answered after Cancel and a fresh opening leaves the new ticks alone (PR #695 review)", async () => {
+    let answer!: (outcome: WardCommandOutcome) => void;
+    function Late() {
+      const { referrals, units, now, dispatch, rejections } = useWardFlow();
+      const referral = referrals.find((candidate) => candidate.id === RAISED_ID);
+      if (!referral) return null;
+      const answered = ((event: Parameters<typeof dispatch>[0]) =>
+        event.type === "ASK_MORE_WARDS"
+          ? new Promise<WardCommandOutcome>((resolve) => (answer = resolve))
+          : dispatch(event)) as typeof dispatch;
+      return (
+        <ReferralMatchView
+          referral={referral}
+          units={units}
+          now={now}
+          dispatch={answered}
+          rejections={rejections}
+          phone={null}
+        />
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <FirstOpenUnit />
+        <Late />
+      </WardFlowProvider>,
+    );
+    const card = screen.getByTestId("ward-referral-ask-more-wards");
+    const fitting = () =>
+      within(
+        within(screen.getByTestId("ward-referral-ask-more-wards")).getByRole("group", { name: "Fits, bed ready" }),
+      ).getAllByRole("checkbox");
+    fireEvent.click(within(card).getByRole("button", { name: "Ask more wards" }));
+    fireEvent.click(fitting()[0]!);
+    await press(screen.getByRole("button", { name: "Ask 1 ward" }));
+    fireEvent.click(screen.getByTestId("ward-referral-ask-cancel"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-referral-ask-more-wards")).getByRole("button", { name: "Ask more wards" }),
+    );
+    const fresh = fitting().at(-1)!;
+    fireEvent.click(fresh);
+    await act(async () => answer({ commandId: "c-1", status: "accepted" }));
+    expect(screen.getByTestId("ward-referral-ask-list")).toBeInTheDocument();
+    expect(fitting().at(-1)).toBeChecked();
   });
 });
 

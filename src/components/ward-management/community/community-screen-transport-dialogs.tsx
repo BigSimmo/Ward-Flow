@@ -39,7 +39,8 @@ const NO_TRANSPORT_PROVIDER_VALUE = "";
 
 /** Audit 24-3 SV-2: a save still out, or why it was not recorded. The dialog and its answers stay. */
 function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: string }) {
-  if (save.pending)
+  // A save held for the status bar's Retry is pending and not confirmed: say why it is held.
+  if (save.pending && !save.error)
     return (
       <p className={styles.transportHint} role="status">
         Saving…
