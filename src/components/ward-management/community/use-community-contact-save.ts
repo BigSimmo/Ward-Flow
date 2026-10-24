@@ -78,7 +78,6 @@ export function useCommunityContactSave(options: Options) {
       (attempt.outcome?.isCurrent && !attempt.outcome.isCurrent()) ||
       (shared?.enabled && !["ready", "saving", "unavailable"].includes(shared.status))
     ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- The external workspace ended this form's save lifetime.
       release();
       setMessage("The workspace changed. Review this team before recording contact.");
       return;
