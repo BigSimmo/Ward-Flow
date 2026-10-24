@@ -191,7 +191,17 @@ export function reduceBedEvent(
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return replaceAdmission(state, admission.id, updated);
+      const withDate = replaceAdmission(state, admission.id, updated);
+      // Pending linked releases follow the stay's expected discharge date. Completed releases
+      // retain their historical dates, and changing a plan does not restate confirmation.
+      return {
+        ...withDate,
+        bedReleases: withDate.bedReleases.map((release) =>
+          release.admissionId === admission.id && release.state !== "discharged"
+            ? { ...release, expectedAt: event.expectedDischargeAt }
+            : release,
+        ),
+      };
     }
 
     case "CLEAR_STAY_DISCHARGE_BLOCKER": {
@@ -372,9 +382,9 @@ export function reduceBedEvent(
       // than choosing a different state, so `capacityBreakdown` counts a held-up release.
       // `waitingOn` is kept on both paths.
       //
-      // `expectedAt` is the ward's estimate of when the bed will be free (`event.expectedAt`), so
-      // `releaseBand()` can classify it; `confirmedAt` is when the ward reported. Neither carries
-      // anything about the departing patient's own timing (binding spec §4).
+      // `expectedAt` starts with the ward's estimate (`event.expectedAt`) and follows later edits
+      // to the linked stay's expected discharge date. `releaseBand()` classifies that plan;
+      // `confirmedAt` separately records when the ward reported the release's stage.
       const flaggingRole = recordedByLabel(event.role, flaggedUnit.name);
       const release: BedRelease = {
         // "WR-9NN": the "9" prefix marks a runtime id. Safe to derive from `bedReleases.length`:

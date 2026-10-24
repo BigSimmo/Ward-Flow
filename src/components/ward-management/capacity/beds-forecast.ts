@@ -137,7 +137,13 @@ export function bedsForecast(
         admission.expectedDischargeAt <= until &&
         !flaggedAdmissionIds.has(admission.id),
     ).length;
-    const planned = plannedAdmissionsStillNeedingABed(plannedAdmissions, unitIds, until, waitingMovements).length;
+    const planned = plannedAdmissionsStillNeedingABed(
+      plannedAdmissions,
+      unitIds,
+      until,
+      waitingMovements,
+      admissions,
+    ).length;
     const bedsNeeded = waitingForBed + planned;
     const low = readyNow + confirmed - bedsNeeded;
     const likely = low + expected;
