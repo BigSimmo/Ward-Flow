@@ -406,8 +406,15 @@ function PhoneDock({
         );
     }
   };
+  // B6-05 (device sweep, 24 Oct 2026): a desk with fewer than two slots a side (executive, admin)
+  // keeps the + in the middle column, under the dock's centred hump, with empty cells beside it.
+  const gap = (count: number, side: string) =>
+    Array.from({ length: Math.max(0, 2 - count) }, (_, index) => (
+      <span key={`${side}-gap-${index}`} aria-hidden="true" />
+    ));
   return (
     <nav className={styles.dock} aria-label="Quick open" data-testid="ward-phone-dock">
+      {gap(places.length, "left")}
       {places.map(slot)}
       <span className={styles.riseSlot}>
         <button
@@ -422,6 +429,7 @@ function PhoneDock({
         </button>
       </span>
       {right.map(slot)}
+      {gap(right.length, "right")}
     </nav>
   );
 }

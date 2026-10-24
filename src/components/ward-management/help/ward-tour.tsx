@@ -88,6 +88,13 @@ function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (!box) {
+    // B6-20 (device sweep, 24 Oct 2026): on a phone a step with no control still docks to the foot
+    // like every other phone step, rather than floating mid-screen over the page.
+    if (device === "phone") {
+      card.dataset.place = "bottom";
+      style.bottom = `${EDGE}px`;
+      return;
+    }
     card.dataset.place = "centre";
     return;
   }
@@ -98,14 +105,17 @@ function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void
     card.dataset.place = above > below ? "top" : "bottom";
     if (above > below) style.top = `${EDGE}px`;
     else style.bottom = `${EDGE}px`;
-    // Never cover the control when there is room for a readable card, else take just over half.
-    style.maxHeight = `${room >= 200 ? room : Math.round(vh * 0.56)}px`;
+    // Never cover the control when there is room for a readable card, else take just over half,
+    // and on a short screen (a phone on its side) at least 260px, so a step reads with Next in view.
+    style.maxHeight = `${room >= 200 ? room : Math.round(Math.max(vh * 0.56, Math.min(vh - EDGE * 2, 260)))}px`;
     return;
   }
   card.dataset.place = "beside";
   const cw = card.offsetWidth;
   const ch = card.offsetHeight;
-  const clampTop = (top: number) => Math.min(Math.max(EDGE, top), Math.max(EDGE, vh - ch - EDGE));
+  // D2 (device sweep, 24 Oct 2026): twice the edge below, so Next and its focus ring never touch the
+  // bottom of the window.
+  const clampTop = (top: number) => Math.min(Math.max(EDGE, top), Math.max(EDGE, vh - ch - EDGE * 2));
   const clampLeft = (left: number) => Math.min(Math.max(EDGE, left), Math.max(EDGE, vw - cw - EDGE));
   const bottom = box.top + box.height;
   const right = box.left + box.width;

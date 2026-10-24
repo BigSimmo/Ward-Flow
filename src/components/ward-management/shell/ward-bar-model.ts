@@ -260,7 +260,20 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
       ? "Statistics overview"
       : pathname === STATISTICS_COMPARE_HREF
         ? "Statistics compare"
-        : "Ward Flow");
+        : undefined) ??
+    // A14 / R3-24 (device sweep, 24 Oct 2026): the statistics tabs and the bed meeting agenda named
+    // no page, so the bar fell back to "Ward Flow". Each now takes its tab's word, as compare does.
+    (
+      {
+        eds: "Statistics EDs",
+        services: "Statistics services",
+        teams: "Statistics teams",
+        wards: "Statistics wards",
+        weekly: "Weekly operations",
+      } as Record<string, string | undefined>
+    )[/^\/ward-flow\/statistics\/([a-z]+)\/?$/u.exec(pathname)?.[1] ?? ""] ??
+    (/^\/ward-flow\/bed-meeting\/agenda\/?$/u.test(pathname) ? "Bed meeting agenda" : undefined) ??
+    "Ward Flow";
   return routeTitle;
 }
 
