@@ -27,7 +27,7 @@ export function DueActions({
   actions,
 }: {
   subject: BedMeetingSubject;
-  desk: BedMeetingActionOwner;
+  desk: BedMeetingActionOwner | "bed_manager";
   actions: readonly BedMeetingAction[];
 }) {
   const raise = useWardRaise(desk);
@@ -64,7 +64,7 @@ export function DueActions({
                   raise("COMPLETE_BED_MEETING_ACTION", {
                     subject,
                     action: action.kind,
-                    ...(desk === "ward" ? { actingUnitId: action.ownerUnitId } : {}),
+                    ...(desk === "ward" || desk === "bed_manager" ? { actingUnitId: action.ownerUnitId } : {}),
                   });
                 }}
                 aria-label={`Mark done: ${bedMeetingActionLabel(action.kind)}`}
