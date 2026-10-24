@@ -162,6 +162,9 @@ import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+// Closing the loop, package D (24 Oct 2026).
+import { reduceLoopCheckEvent } from "./ward-flow-loop-check-events";
+import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
@@ -513,7 +516,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissions: network ? [] : structuredClone(wardPlannedAdmissions),
     plannedAdmissionSequence: 0,
   };
-  return network ? seed : applyRulingsDemoOverlay(seed, NOW_ANCHOR);
+  // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
+  return network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /**
@@ -1865,6 +1869,19 @@ export function reduceClinicalEvent(
       return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
     case "RECORD_ARRIVAL_CHECK":
       return reduceArrivalCheckEvent(state, event, decision, { findMovement, reject, replaceMovement });
+    // Closing the loop, package D (24 Oct 2026).
+    case "MARK_CANCELLED_MOVE_CHECK":
+    case "RECORD_ACCEPTANCE_CONDITION":
+    case "MARK_ACCEPTANCE_CONDITION_MET":
+    case "RECORD_RESTRICTION_REVIEW":
+    case "MARK_CLOSURE_TRANSITION_ITEM":
+      return reduceLoopCheckEvent(state, event, decision, {
+        findMovement,
+        findUnit,
+        reject,
+        replaceMovement,
+        replaceUnit,
+      });
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return reduceBedMeetingEvent(state, event, decision, {

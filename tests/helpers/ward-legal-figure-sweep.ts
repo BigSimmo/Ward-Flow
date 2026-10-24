@@ -1,3 +1,9 @@
+// Closing the loop, package D (24 Oct 2026).
+import {
+  activeWardRestrictions,
+  closureTransitionItems,
+  currentAcceptanceConditions,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
 import { buildTurnaroundFixture } from "./ward-turnaround-fixture";
 import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 /**
@@ -1491,6 +1497,59 @@ export function candidateEvents(
       });
       return [...arrivalCandidates, ...dischargeCandidates];
     }
+    // Closing the loop, package D (24 Oct 2026): records only, each against the records it names.
+    case "MARK_CANCELLED_MOVE_CHECK":
+      return state.movements
+        .filter((movement) => movement.closure?.outcome === "did_not_proceed")
+        .map((movement) => ({ type, role, now, movementId: movement.id, item: "escort", mark: "not_applicable" }));
+    case "RECORD_ACCEPTANCE_CONDITION":
+      return state.movements
+        .filter((movement) => movement.acceptedUnitId !== undefined && !movement.closure)
+        .map((movement) => ({
+          type,
+          role,
+          now,
+          movementId: movement.id,
+          condition: "call_ward_before_leaving",
+          agreedWith: "ed",
+        }));
+    case "MARK_ACCEPTANCE_CONDITION_MET":
+      return state.movements.flatMap((movement) =>
+        currentAcceptanceConditions(movement)
+          .filter((condition) => !condition.met)
+          .map((condition) => ({ type, role, now, movementId: movement.id, condition: condition.kind })),
+      );
+    case "RECORD_RESTRICTION_REVIEW":
+      return state.units.flatMap((unit) =>
+        activeWardRestrictions(unit).map((restriction) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          restriction,
+          reviewer: "nurse_unit_manager" as const,
+          expectedAt: now + 240,
+        })),
+      );
+    case "MARK_CLOSURE_TRANSITION_ITEM":
+      return state.units
+        .filter((unit) => unit.isClosed)
+        .flatMap((unit) =>
+          closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions).map((item) => ({
+            type,
+            role,
+            now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            item: item.kind,
+            ...(item.kind === "referral"
+              ? { referralId: item.recordId }
+              : item.kind === "booked_arrival"
+                ? { plannedAdmissionId: item.recordId }
+                : { movementId: item.recordId }),
+          })),
+        );
     default:
       return [];
   }

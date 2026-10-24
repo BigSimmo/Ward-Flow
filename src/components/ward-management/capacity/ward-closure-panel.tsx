@@ -1,33 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { useId, useState } from "react";
 
 import { Button, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
-import { movementHref } from "../shell/ward-facade";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
-import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import {
   WARD_CLOSURE_REASONS,
   WARD_REOPEN_AFTER_HOURS,
-  pointedAtWard,
   wardClosureReasonLabel,
   wardReopeningDue,
   type WardClosureReason,
-  type WaitingOnClosedWard,
 } from "./ward-closure";
 import styles from "./ward-closure-panel.module.css";
-
-const STATUS_WORDS: Record<Extract<WaitingOnClosedWard, { kind: "bed_request" }>["status"], string> = {
-  asked: "asked this ward",
-  accepted: "accepted here",
-  bed_held: "bed pulled here",
-};
+// Closing the loop, package D (24 Oct 2026): restriction reviews and the closure transition list.
+import { ClosureTransitionChecklist, WardRestrictionReviews } from "../loop-checks/loop-checks-lazy";
 
 /**
  * Smart features idea 7 (19 Oct 2026), the screen half: close a whole ward to admissions with a
@@ -37,11 +28,15 @@ const STATUS_WORDS: Record<Extract<WaitingOnClosedWard, { kind: "bed_request" }>
 export function WardClosurePanel({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
   const enabled = useWardFeatureFlag("ward-closure-mode");
   if (!enabled) return null;
-  return <WardClosureControls unit={unit} now={now} actor={actor} />;
+  return (
+    <>
+      <WardClosureControls unit={unit} now={now} actor={actor} />
+      <WardRestrictionReviews unit={unit} now={now} actor={actor} />
+    </>
+  );
 }
 
 function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
-  const { movements, referrals } = useWardFlowSelect("movements", "referrals");
   const [reason, setReason] = useState<WardClosureReason | "">("");
   const [reopenAfter, setReopenAfter] = useState("");
   const reasonId = useId();
@@ -119,7 +114,6 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   }
 
   const closure = unit.admissionsClosure;
-  const waiting = pointedAtWard(unit.id, movements, referrals);
   const due = wardReopeningDue(unit, now);
   return (
     <section className={styles.panel} aria-label={`${unit.name} closed to admissions`} data-testid="ward-closure-panel">
@@ -138,26 +132,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
             : `Expected to reopen ${formatInstantWithDay(closure.until, now)}.`}
         </p>
       ) : null}
-      {waiting.length > 0 ? (
-        <>
-          <p className={styles.subheading}>Still pointed at this ward ({waiting.length})</p>
-          <ul className={styles.list} data-testid="ward-closure-waiting">
-            {/* Audit 1: no internal journey numbers on screen, and no names on a ward panel, so each
-                item is numbered in this list only. */}
-            {waiting.map((item, index) =>
-              item.kind === "bed_request" ? (
-                <li key={`m-${item.id}`}>
-                  <Link href={movementHref(item.id)}>Bed request {index + 1}</Link> · {STATUS_WORDS[item.status]}
-                </li>
-              ) : (
-                <li key={`r-${item.id}`}>Referral {index + 1} · waiting on this ward&rsquo;s answer</li>
-              ),
-            )}
-          </ul>
-        </>
-      ) : (
-        <p className={styles.line}>Nothing else is pointed at this ward.</p>
-      )}
+      {/* Closing the loop D4: each item links to its record and is marked dealt with by a person. */}
+      <ClosureTransitionChecklist unit={unit} now={now} actor={actor} />
       <Button
         size="sm"
         variant="sec"

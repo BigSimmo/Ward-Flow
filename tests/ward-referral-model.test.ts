@@ -568,6 +568,13 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_RESTRICTIVE_PRACTICE_END: false,
     RECORD_WARD_INCIDENT: false,
     SET_SECLUSION_ROOM_STATUS: false,
+    // Closing the loop, package D (24 Oct 2026): records about what people did or agreed, never a
+    // refusal of a named referral or placement.
+    MARK_CANCELLED_MOVE_CHECK: false,
+    RECORD_ACCEPTANCE_CONDITION: false,
+    MARK_ACCEPTANCE_CONDITION_MET: false,
+    RECORD_RESTRICTION_REVIEW: false,
+    MARK_CLOSURE_TRANSITION_ITEM: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,

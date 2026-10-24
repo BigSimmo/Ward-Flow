@@ -169,6 +169,12 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_RESTRICTIVE_PRACTICE_END: { category: "both", plainWording: "Seclusion or restraint ended" },
   RECORD_WARD_INCIDENT: { category: "bed", plainWording: "Ward incident recorded" },
   SET_SECLUSION_ROOM_STATUS: { category: "bed", plainWording: "Seclusion room status recorded" },
+  // Closing the loop, package D (24 Oct 2026).
+  MARK_CANCELLED_MOVE_CHECK: { category: "patient", plainWording: "Cancelled move check marked" },
+  RECORD_ACCEPTANCE_CONDITION: { category: "patient", plainWording: "Acceptance condition recorded" },
+  MARK_ACCEPTANCE_CONDITION_MET: { category: "patient", plainWording: "Acceptance condition met" },
+  RECORD_RESTRICTION_REVIEW: { category: "bed", plainWording: "Ward restriction review set" },
+  MARK_CLOSURE_TRANSITION_ITEM: { category: "bed", plainWording: "Closed ward item dealt with" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },

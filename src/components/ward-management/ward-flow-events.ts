@@ -96,6 +96,8 @@ export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+// Closing the loop, package D (24 Oct 2026).
+import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -805,6 +807,9 @@ export type WardFlowEvent =
     }
   // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
   | RestrictivePracticeWardFlowEvent
+  // Closing the loop, package D (24 Oct 2026): cancelled-move checks, acceptance conditions,
+  // restriction reviews and closure transition marks. Records only.
+  | LoopCheckWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;
