@@ -170,7 +170,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Handover ready", meaning: "The bed and paperwork are ready. Only the physical move is left." },
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
   { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },
-  { term: "Held bed", meaning: "A bed kept for a patient already in it while they are on leave or away." },
+  { term: "Held bed", meaning: "A bed kept for a patient on leave or away from the ward, ready for their return." },
   { term: "Pull time limit", meaning: "How long a pulled bed is kept before it returns to the ward." },
   { term: "Confirmed beds", meaning: "The bed figures a ward last confirmed, with the time it did so." },
   {

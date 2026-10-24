@@ -237,8 +237,8 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       const numbers = rows.map((row) => Number(/^Bed (\d+)/.exec(row.getAttribute("aria-label") ?? "")?.[1]));
       expect(numbers).toEqual([...numbers].sort((left, right) => left - right));
       expect(screen.queryByTestId("ward-phone-bed-groups")).toBeNull();
-      // This shift and Ward flow are rows under Needs you, not chips above the tabs.
-      expect(screen.getByRole("heading", { name: "Needs you" })).toBeInTheDocument();
+      // This shift and Ward flow are rows under My list, not chips above the tabs.
+      expect(screen.getByRole("heading", { name: "My list" })).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
       expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();

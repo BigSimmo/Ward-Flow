@@ -1701,7 +1701,7 @@ export function WardHomeTab({
           {/* Option B (Josh, 20 Oct 2026): what needs this ward in one card. The answers waiting,
               then This shift and Ward flow as rows, which were chips above the tabs. */}
           <h2 className={styles.phoneSectionHead}>
-            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "Needs you"}</span>
+            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "My list"}</span>
           </h2>
           <div className={styles.needsCard}>
             {incoming.length === 0 ? (

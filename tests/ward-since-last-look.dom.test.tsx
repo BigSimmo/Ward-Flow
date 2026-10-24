@@ -61,6 +61,15 @@ describe("the Command screen's 'Since you last looked' list", () => {
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
   });
 
+  it("does not save the picture when the screen closes because the session ended (Audit 4 A4-07)", async () => {
+    const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
+    const { unmount } = renderCommand();
+    endWardFlowBrowserSession();
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+  });
+
   it("lists what is new since the remembered picture, and clears when marked as seen", () => {
     const snapshot = seededSnapshot();
     const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;

@@ -520,10 +520,13 @@ export function ReferralPatientTab({
   referral,
   now,
   readyUnits,
+  readOnly = false,
 }: {
   referral: Referral;
   now: Instant;
   readyUnits: number | undefined;
+  /** D-80: the owner and calls show, with no Assign or Log a call. */
+  readOnly?: boolean;
 }) {
   const intake = referral.intake;
   const ward = wardArm(referral)?.destination;
@@ -662,7 +665,7 @@ export function ReferralPatientTab({
 
       {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
       <Section title="Owner and calls">
-        <ReferralOwnerAndCalls referral={referral} now={now} />
+        <ReferralOwnerAndCalls referral={referral} now={now} readOnly={readOnly} />
       </Section>
 
       <Section title="Recorded legal information" aside="For the receiving unit">

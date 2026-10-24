@@ -21,7 +21,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
   RECORD_PATIENT_DISCHARGE: ["ward", "coordinator"],
   UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
-  OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
+  // D-80: the site bed manager opens its own site's discharge records; it records no discharge.
+  OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community", "bed_manager"],
   REVIEW_AUDIT_EVENT: ["coordinator"],
   /**
    * Owner ruling FD-25, 2026-08-30: a referral is raised by whoever is with the patient, and that

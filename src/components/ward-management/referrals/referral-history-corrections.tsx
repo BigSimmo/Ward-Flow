@@ -32,11 +32,14 @@ export function ReferralHistoryAndCorrections({
   referral,
   now,
   dispatch: dispatchProp,
+  readOnly = false,
 }: {
   referral: Referral;
   now: Instant;
   /** Used only outside a provider (the match view's own tests); inside one the panel raises through it. */
   dispatch?: Dispatch<WardFlowEvent>;
+  /** D-80: the history and corrections only, with no control to add one (a read-only board). */
+  readOnly?: boolean;
 }) {
   const routeRole = useRouteRole();
   const flow = useOptionalWardFlowSelect("dispatch", "units");
@@ -44,6 +47,7 @@ export function ReferralHistoryAndCorrections({
   const raise = wardRaise(dispatch ?? (() => undefined), routeRole, useWardFlowClock(now));
   const access = useEffectiveWardAccess();
   const sent =
+    !readOnly &&
     dispatch !== undefined &&
     routeSentKind(routeRole, referral.source) &&
     referralSentByDesk(referral, access, wardPlaceLookup(flow?.units ?? []));

@@ -33,6 +33,7 @@ import {
 
 import { PilotMeasuresSection } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type ReasonCount, type ReportWeek } from "./weekly-report";
+import { useOwnUnits } from "./use-own-units";
 import styles from "./reports.module.css";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
@@ -74,7 +75,9 @@ function ReasonList({ reasons, testId }: { reasons: ReasonCount[]; testId: strin
  */
 export function WeeklyReportScreen() {
   const { state, now, paused, togglePause } = useStatisticsLive();
-  const { movements, referrals, admissions, patients, units, bedReleases, leaveBeds, configuration, dayZero } = state;
+  const { movements, referrals, admissions, patients, bedReleases, leaveBeds, configuration, dayZero } = state;
+  // Beds are the desk's own wards only (issue #628), so its occupancy is its stays over its beds.
+  const units = useOwnUnits(state.units);
   const pickerId = useId();
   const [offset, setOffset] = useState<number>(0);
   const isPhone = useIsPhone();
