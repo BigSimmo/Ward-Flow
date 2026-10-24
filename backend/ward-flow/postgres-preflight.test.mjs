@@ -18,6 +18,7 @@ const sqlFiles = [
   "010-workspace-records",
   "011-record-access-and-sign-out",
   "012-foreign-key-indexes",
+  "013-referral-record-views",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -235,6 +236,11 @@ function fixture(version = LATEST_MIGRATION) {
   if (version >= 7)
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
+  if (version >= 13) {
+    const [, surface] = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[12]);
+    catalog.constraints.find((c) => c.table_name === "record_access" && c.definition.includes("surface")).definition =
+      `CHECK (${checkExpressions(surface)[0]})`;
+  }
   if (version >= 6)
     for (const object of catalog.objects.filter((o) => o.kind === "r")) {
       object.rls = true;

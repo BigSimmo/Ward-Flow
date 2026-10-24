@@ -216,6 +216,65 @@ describe("the scoped workspace", () => {
     expect(seen?.destinations[0].destination).toMatchObject({ unitId });
   });
 
+  it("never restores another destination through a receiving referral's placement or contact history", () => {
+    const source = state.referrals[0];
+    const other = state.units.find((unit) => unit.id !== unitId)!;
+    for (const destinations of [[unitId], [unitId, other.id]]) {
+      const referral: typeof source = {
+        ...source,
+        source: "ed_medical",
+        destinations: destinations.map((id) => ({
+          destination: {
+            kind: "psychiatric_ward",
+            unitId: id,
+            sex: "Female",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+          state: "queued",
+        })),
+        genderPlacements: [
+          {
+            at: NOW_ANCHOR,
+            by: "coordinator",
+            unitIds: [unitId, other.id],
+            reason: GENDER_PLACEMENT_REASONS[0],
+            wardChecked: true,
+          },
+          {
+            at: NOW_ANCHOR,
+            by: "coordinator",
+            unitIds: [other.id],
+            reason: GENDER_PLACEMENT_REASONS[0],
+            wardChecked: true,
+          },
+        ],
+        contactLog: [unitId, other.id].map((id) => ({
+          contact: { kind: "psychiatric_ward", unitId: id },
+          at: NOW_ANCHOR,
+          by: "ward",
+          outcome: "no_answer",
+        })),
+      };
+      for (const candidate of [referral, { ...referral, genderPlacements: undefined }]) {
+        const workspace = { ...state, referrals: [candidate] };
+        const before = JSON.stringify(candidate);
+        const [seen] = scopeWorkspace(workspace, wardDesk, { now: NOW_ANCHOR, places }).referrals;
+        expect(seen.contactLog?.map(({ contact }) => contact.kind === "psychiatric_ward" && contact.unitId)).toEqual([
+          unitId,
+        ]);
+        if (candidate.genderPlacements)
+          expect(seen.genderPlacements?.map((placement) => placement.unitIds)).toEqual([[unitId]]);
+        expect(JSON.stringify(seen)).not.toContain(other.id);
+        expect(seen.destinations.map((line) => line.destination)).toEqual([referral.destinations[0].destination]);
+        expect(JSON.stringify(candidate)).toBe(before);
+        const projected = scopeWardFlowState(workspace, wardDesk, { now: NOW_ANCHOR, places }).state;
+        expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(projected)))).toBe(true);
+      }
+    }
+  });
+
   it("gives a community team its catchment clients' stays as ward and dates only", () => {
     const admission = state.admissions.find((item) => item.patientId !== null)!;
     const patient = state.patients.find((item) => item.id === admission.patientId)!;

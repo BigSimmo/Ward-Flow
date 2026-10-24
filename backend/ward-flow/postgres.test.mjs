@@ -1003,10 +1003,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-009-access-cover-requests.sql"), /not at migration 9/);
       await assert.rejects(rollBack("./infra/rollback-010-workspace-records.sql"), /not at migration 10/);
       await assert.rejects(rollBack("./infra/rollback-011-record-access-and-sign-out.sql"), /not at migration 11/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 12);
+      await assert.rejects(rollBack("./infra/rollback-012-foreign-key-indexes.sql"), /not at migration 12/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 13);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-013-referral-record-views.sql", 12],
         ["./infra/rollback-012-foreign-key-indexes.sql", 11],
         ["./infra/rollback-011-record-access-and-sign-out.sql", 10],
         ["./infra/rollback-010-workspace-records.sql", 9],
@@ -1434,11 +1436,14 @@ test(
         /role-ended/,
       );
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
-      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (012,
-      // 011, 010 and 009, which keep every audit row, go first).
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (013,
+      // 012, 011, 010 and 009, which keep every audit row, go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-013-referral-record-views.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-012-foreign-key-indexes.sql", import.meta.url), "utf8"),
         );
@@ -1899,6 +1904,14 @@ test(
       assert.equal(views.views.length, 1);
       assert.equal(views.views[0].actor_role, "coordinator");
       assert.equal(views.views[0].surface, "patient");
+      // From migration 13 the full referral detail is logged as its own screen (D-80).
+      const referred = initial.payload.state.referrals.find((referral) => referral.patientId)?.patientId;
+      assert.ok(referred, "the seed has a referral that names a patient");
+      const referralOpened = await request(`${first}/record-access`, credential, {
+        patientId: referred,
+        surface: "referral",
+      });
+      assert.deepEqual(await referralOpened.json(), { logged: true });
       const leaving = token(actor);
       assert.equal((await request(first, leaving)).status, 200);
       const signedOut = await request(`${first}/sign-out`, leaving, {});

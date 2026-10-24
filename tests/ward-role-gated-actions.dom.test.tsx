@@ -19,6 +19,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 
 afterEach(() => {
   cleanup();
@@ -166,7 +167,8 @@ describe("the gated commands are refused below the UI too", () => {
     (type) => {
       const at = new Date("2026-10-07T10:00:00Z");
       const world = seedWorld(at);
-      const officer = parseAccess("officer", { kind: "jobs" });
+      // A granted officer names its health service (D-80 item 7).
+      const officer = parseAccess("officer", { kind: "jobs", service: HEALTH_SERVICES[0] });
       expect(officer).not.toBeNull();
       for (const role of ["officer", "ward", "ed"]) {
         expect(commandRefusal(world, officer!, { type, role, movementId: world.state.movements[0].id }, at)).toBe(

@@ -21,7 +21,7 @@ import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
-import { SharedSessionContext, type SharedSession } from "./shell/ward-shared-session-context";
+import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
@@ -66,7 +66,7 @@ export type WardSharedConnection = SharedView & {
   /** The step-up sign-in with the account's own password. */
   reauthenticate?: (password: string) => Promise<void>;
   /** Tells the server this desk opened a patient's record. Best effort; nothing when not connected. */
-  logRecordView?: (patientId: string, surface: "patient" | "movement") => void;
+  logRecordView?: (patientId: string, surface: RecordViewSurface) => void;
 };
 
 /**
