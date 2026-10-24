@@ -51,6 +51,7 @@ type WardScreenHomeSectionProps = {
   setBedQuery: Dispatch<SetStateAction<string>>;
   unit: Unit;
   handleAcceptInPrinciple: (movementId: string, unitId: string) => void;
+  answerBlockedReason?: string;
   units: Unit[];
   capacity: ReturnType<typeof unitCapacity>;
   accepted: Movement[];
@@ -133,6 +134,7 @@ export function WardScreenHomeSection({
   setBedQuery,
   unit,
   handleAcceptInPrinciple,
+  answerBlockedReason,
   units,
   capacity,
   accepted,
@@ -245,6 +247,7 @@ export function WardScreenHomeSection({
         }
         unit={unit}
         onAcceptInPrinciple={handleAcceptInPrinciple}
+        answerBlockedReason={answerBlockedReason}
         units={units}
         capacity={capacity}
         accepted={accepted}

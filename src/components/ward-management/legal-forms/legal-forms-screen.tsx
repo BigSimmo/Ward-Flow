@@ -38,6 +38,10 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
+import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -292,13 +296,24 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     setRecordOpen(true);
   };
 
-  // Feature 11: Mark received is the ED's or the coordinator's event, raised as the route's role.
+  // Feature 11: Mark received is raised as the route's role by the place holding the form. A ward
+  // or team holds it only on a journey it sent (D-80), the same rule the server checks.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
+  const access = useEffectiveWardAccess();
+  const receivedUnavailable = (movement: Movement): string | undefined =>
+    receivedGate.reason ??
+    ((routeRole === "ward" || routeRole === "community") &&
+    !(
+      journeySentByKind(referrals, movement, routeRole) &&
+      journeySentByDesk({ referrals, admissions }, movement, access, wardPlaceLookup(units))
+    )
+      ? "Only the place that sent this journey marks its form received."
+      : undefined);
   // Record a form: the coordinator always may; another route sees it greyed with the reason.
   const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
   const markReceived = (movement: Movement) => {
-    if (!receivedGate.allowed) return;
+    if (receivedUnavailable(movement) !== undefined) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     runStep(
       { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
@@ -471,7 +486,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       }}
       recordUnavailable={recordGate.reason}
       onMarkReceived={() => markReceived(selected)}
-      markReceivedUnavailable={receivedGate.reason}
+      markReceivedUnavailable={receivedUnavailable(selected)}
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
       onRecordNext={() => openRecord(selected.id)}
@@ -496,7 +511,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       ? {
           label: GAP_ACTION[nextGap],
           disabledReason:
-            nextGap === "received" ? receivedGate.reason : nextGap === "written" ? recordGate.reason : undefined,
+            nextGap === "received"
+              ? receivedUnavailable(selected)
+              : nextGap === "written"
+                ? recordGate.reason
+                : undefined,
           onAction: () => {
             if (nextGap === "received") markReceived(selected);
             else {
