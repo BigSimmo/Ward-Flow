@@ -237,7 +237,7 @@ describe("community crisis card is labelled synthetic (CT-21)", () => {
     expect(dialog).not.toHaveTextContent("Active in Field");
     expect(dialog).not.toHaveTextContent("Current Deployment");
     expect(dialog).not.toHaveTextContent("En-route");
-    expect(dialog).toHaveTextContent("0491 570 156");
+    expect(dialog).toHaveTextContent("0491 570 110");
     expect(dialog).not.toHaveTextContent("0411 902 441");
   });
 
