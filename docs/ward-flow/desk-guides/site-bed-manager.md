@@ -9,8 +9,9 @@ bed counts only.
 
 ## Jobs you do most
 
-1. **Confirm beds.** Check each ward's bed figures. Use **Request ward update** when a ward's
-   figure looks out of date. The page shows who confirmed each figure.
+1. **Check beds.** Check each ward's bed figures. The page shows who confirmed each figure. If
+   one looks out of date, ask the coordinator to use **Request ward update**; only the
+   coordinator can send it.
 2. **Bed releases.** Flag, confirm or block a bed that is due to come free, from the ward page.
 3. **Discharge blockers.** Record or clear what is holding up a discharge, on **Discharges**.
 4. **Close or reopen a ward.** Choose a reason, then **Close [ward] to admissions**. Use
