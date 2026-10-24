@@ -8,8 +8,10 @@ The ED examination form delegates to `ed/use-ed-examination-save.ts`, on the net
 `8c2ff460` main base. The hook retains the selected outcome until acceptance, guards repeated
 submissions and uses the existing command completion and Undo feedback. An unconfirmed shared
 save disables a fresh submission while the existing Retry remains available in the active sheet.
-Retry reconciliation checks the recorded outcome, time and repeat-examination history; a refused
-Retry keeps the draft and its refusal even when another desk's winning record has matching values.
+Shared Retry uses the command's private definitive completion, so acceptance remains confirmed
+when a replay carries a newer examination. Record, time and history matching is reserved for
+legacy local void dispatch. A refused Retry retains the draft and its own refusal. Undo follows
+the definitive answer while preserving the original command lifetime and its own step metadata.
 World, command lifetime, movement and selection checks stop old replies clearing a newer draft.
 `ward-ed-examination-save.dom.test.tsx` covers these save and recovery paths.
 
