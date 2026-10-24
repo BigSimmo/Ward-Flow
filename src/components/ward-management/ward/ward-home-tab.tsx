@@ -404,6 +404,19 @@ export function WardHomeTab({
     nested?: Array<{ key: string; detail: string }>;
   };
   const logRows: LogRow[] = [];
+  // A later date edit changes the current plan, not what the earlier stage report said.
+  // Only the matching stay date can supply that edit's time and recorded author.
+  const laterReleasePlans = new Map(
+    pendingBedReleases.flatMap((release) => {
+      const stay = admissions.find((admission) => admission.id === release.admissionId);
+      return stay &&
+        stay.expectedDischargeAt === release.expectedAt &&
+        stay.dischargeDateSetAt !== null &&
+        stay.dischargeDateSetAt > release.confirmedAt
+        ? [[release.id, stay] as const]
+        : [];
+    }),
+  );
   if (capacityConfirmed && unit.allocatable.confirmedAt !== undefined) {
     logRows.push({
       key: "capacity",
@@ -421,7 +434,7 @@ export function WardHomeTab({
       at: release.confirmedAt,
       timeLabel: formatInstantWithDay(release.confirmedAt, now),
       title: "Bed expected out",
-      detail: `Departure ${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+      detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : `Departure ${formatInstant(release.expectedAt)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       status: release.state === "confirmed" ? "Confirmed" : "Expected",
     });
   } else if (pendingBedReleases.length > 1) {
@@ -432,12 +445,25 @@ export function WardHomeTab({
       at: Math.max(...pendingBedReleases.map((release) => release.confirmedAt)),
       timeLabel: formatInstantWithDay(Math.max(...pendingBedReleases.map((release) => release.confirmedAt)), now),
       title: `${pendingBedReleases.length} beds expected out`,
-      detail: `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
+      detail:
+        laterReleasePlans.size > 0
+          ? "Current departure plan shown separately"
+          : `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
       status: "Expected",
       nested: ordered.map((release) => ({
         key: release.id,
-        detail: `${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+        detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       })),
+    });
+  }
+  for (const [releaseId, stay] of laterReleasePlans) {
+    logRows.push({
+      key: `date-${releaseId}`,
+      at: stay.dischargeDateSetAt!,
+      timeLabel: formatInstantWithDay(stay.dischargeDateSetAt!, now),
+      title: "Expected departure updated",
+      detail: `Departure ${formatInstant(stay.expectedDischargeAt!)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
+      status: "Updated",
     });
   }
   for (const release of dischargedBedReleases) {

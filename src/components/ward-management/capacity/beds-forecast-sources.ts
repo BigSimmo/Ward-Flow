@@ -39,6 +39,8 @@ export type ForecastSourceEntry = {
   /** The role that last reported this discharge, never a personal name. */
   saidBy: string;
   saidAt: Instant;
+  /** Current admission-plan attribution is separate from the release-stage report. */
+  planDate?: { recordedAt: Instant | null; recordedBy: string | null };
 };
 
 type ForecastSourceWard = {
@@ -142,7 +144,24 @@ export function bedsForecastSources(
   // capacity, so its discharges are named as closed rather than listed as beds coming.
   const openUnits = [...units].filter((unit) => !unit.isClosed).sort((a, b) => a.name.localeCompare(b.name));
   const openIds = new Set(openUnits.map((unit) => unit.id));
-  const pending = releases.filter((release) => release.state !== "discharged" && openIds.has(release.unitId));
+  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const pending = releases
+    .filter((release) => release.state !== "discharged" && openIds.has(release.unitId))
+    .map((release) => {
+      const admission = admissionsById.get(release.admissionId);
+      const expectedAt = release.expectedAt;
+      return {
+        ...release,
+        expectedAt,
+        planDate:
+          admission?.expectedDischargeAt == null || admission.expectedDischargeAt !== expectedAt
+            ? undefined
+            : {
+                recordedAt: admission?.dischargeDateSetAt ?? null,
+                recordedBy: admission?.dischargeDateSetBy ?? null,
+              },
+      };
+    });
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
 
   const lastUpdate = new Map<string, Instant>();
@@ -150,6 +169,21 @@ export function bedsForecastSources(
   for (const release of releases) {
     const known = lastUpdate.get(release.unitId);
     if (known !== undefined && release.confirmedAt > known) lastUpdate.set(release.unitId, release.confirmedAt);
+  }
+  for (const admission of admissions) {
+    const at = admission.dischargeDateSetAt;
+    const known = lastUpdate.get(admission.unitId);
+    if (
+      known !== undefined &&
+      bedIsOccupied(admission) &&
+      admission.expectedDischargeAt !== null &&
+      Number.isFinite(admission.expectedDischargeAt) &&
+      at !== null &&
+      Number.isFinite(at) &&
+      at > known
+    ) {
+      lastUpdate.set(admission.unitId, at);
+    }
   }
   const lastUpdateAt = (unitId: string) => lastUpdate.get(unitId) ?? Number.NEGATIVE_INFINITY;
   const updatedThisShift = (unitId: string) => lastUpdateAt(unitId) >= shiftStart;
@@ -177,6 +211,7 @@ export function bedsForecastSources(
             overdue: release.expectedAt < now,
             saidBy: release.confirmedBy,
             saidAt: release.confirmedAt,
+            ...(release.planDate === undefined ? {} : { planDate: release.planDate }),
           }));
         const datedNotFlagged = admissions.filter(
           (admission) =>
