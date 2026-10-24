@@ -54,8 +54,6 @@ import {
   parseFollowUpClinicSet,
 } from "@/components/ward-management/ward-catchment";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
-import { calendarDateOf } from "@/components/ward-management/ward-clock";
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./community-index.module.css";
 
@@ -173,31 +171,6 @@ const SERVICE_BAR_LABEL: Record<Exclude<ServiceFilter, "all">, string> = {
 };
 
 /** The same key `communityTeamOptions()` folds spellings with: case, whitespace and punctuation. */
-/**
- * The team list's CSV export. Its "as at" stamp is the board clock's time, the time the rest of the
- * board shows, not the device's (audit 24-6 TC-07). Its own component so the minute tick re-renders
- * only this button, not the directory.
- */
-function ExportTeamListButton({ lines }: { lines: () => (string | number)[][] }) {
-  const clock = useOptionalWardFlowSelect("now", "dayZero");
-  return (
-    <Button
-      variant="sec"
-      icon={Download}
-      onClick={() => {
-        const asAt = clock ? calendarDateOf(clock.now, clock.dayZero) : new Date();
-        downloadCsv("ward-flow-synthetic-community-team-list.csv", lines(), {
-          asAt: `${asAt.toLocaleString("en-AU", { timeZone: "Australia/Perth", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} AWST`,
-          scope: "Community team directory; all teams",
-          period: "Reference directory at export time; not a clinical snapshot",
-        });
-      }}
-    >
-      Export team list
-    </Button>
-  );
-}
-
 function clinicKey(name: string): string {
   return name
     .toLowerCase()
@@ -457,13 +430,17 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     }, 0);
   }
 
-  function teamListLines() {
+  function exportTeamList() {
     const lines: (string | number)[][] = [["Team", "Health service", "Catchment suburbs", "Reads like another name"]];
     for (const team of allTeams) {
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
     }
-    return lines;
+    downloadCsv("ward-flow-synthetic-community-team-list.csv", lines, {
+      asAt: `${new Date().toLocaleString("en-AU", { timeZone: "Australia/Perth", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} AWST`,
+      scope: "Community team directory; all teams",
+      period: "Reference directory at export time; not a clinical snapshot",
+    });
   }
 
   const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({
@@ -995,7 +972,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     <Icon icon={ArrowRight} size={16} />
                     Open referrals
                   </Link>
-                  <ExportTeamListButton lines={teamListLines} />
+                  <Button variant="sec" icon={Download} onClick={exportTeamList}>
+                    Export team list
+                  </Button>
                 </div>
               </section>
             )}

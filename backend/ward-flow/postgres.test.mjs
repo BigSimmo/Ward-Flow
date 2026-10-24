@@ -2797,6 +2797,7 @@ test(
       assert.deepEqual((await store.viewer(asker)).access, { role: "ward", scope: ward });
 
       // A grant stored before the ceiling was checked stops 12 months after it was given.
+      /** @type {(actorId: string, grantedAt: Date, expiresAt: Date, role?: string, scope?: object) => Promise<unknown>} */
       const insert = (actorId, grantedAt, expiresAt, role = "ward", scope = ward) =>
         pool.query(
           "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at, last_used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",

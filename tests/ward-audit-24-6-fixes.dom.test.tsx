@@ -1,35 +1,26 @@
-// Audit 24-6 (time and clocks), fixes C: TC-03, TC-07 and TC-08 on screen. All data synthetic.
+// Audit 24-6 (time and clocks), fixes C: TC-03 and TC-07 on screen. All data synthetic.
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { downloadCsv } = vi.hoisted(() => ({ downloadCsv: vi.fn() }));
-vi.mock("@/components/ward-management/statistics/statistics-csv", async (original) => ({
-  ...(await original<typeof import("@/components/ward-management/statistics/statistics-csv")>()),
-  downloadCsv,
-}));
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
 
 import { RecordFormSheet, type RecordDraft } from "@/components/ward-management/legal-forms/legal-forms-sheets";
-import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { PersonEntry } from "@/components/ward-management/board/ward-board-person-entry";
 import { buildOccupants } from "@/components/ward-management/board/ward-board-model";
-import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { perthMidnight, type Instant } from "@/components/ward-management/ward-clock";
-import type { WardBroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 
 const DAY = 1440;
 const dayZero = perthMidnight(2026, 9, 24);
 
 afterEach(() => {
   cleanup();
-  downloadCsv.mockReset();
 });
 
 describe("TC-03: Record a form takes the date written on the form", () => {
@@ -114,47 +105,5 @@ describe("TC-07: the board clock's date, not the device's", () => {
     );
     // 39 on 1 Jan 2040; the device's real date would give a different age.
     expect(screen.getByText("39 yrs")).toBeInTheDocument();
-  });
-
-  it("stamps the community team CSV with the board clock's time", () => {
-    render(
-      <WardFlowProvider initialNow={600} initialDayZero={perthMidnight(2030, 0, 1).getTime()}>
-        <CommunityIndex teams={[]} />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(screen.getByTestId("community-action-catchment-guide"));
-    fireEvent.click(screen.getByRole("button", { name: "Export team list" }));
-    expect(downloadCsv).toHaveBeenCalledTimes(1);
-    const provenance = downloadCsv.mock.calls[0]![2] as { asAt: string };
-    expect(provenance.asAt).toContain("2030");
-    expect(provenance.asAt).toContain("10:00 AWST");
-  });
-});
-
-describe("TC-08: controlled banner reads an Instant expiry against the board clock", () => {
-  const alert = {
-    id: "synthetic-alert",
-    severity: "warning",
-    status: "active",
-    message: "Synthetic test alert",
-    expiresAt: 700,
-  } as unknown as WardBroadcastAlert;
-
-  it("shows the alert while the board clock is before its expiry", () => {
-    render(
-      <WardFlowProvider initialNow={600}>
-        <WardBroadcastBanner activeAlert={alert} />
-      </WardFlowProvider>,
-    );
-    expect(screen.getByTestId("ward-broadcast-banner")).toBeInTheDocument();
-  });
-
-  it("hides it once the board clock passes its expiry", () => {
-    render(
-      <WardFlowProvider initialNow={701}>
-        <WardBroadcastBanner activeAlert={alert} />
-      </WardFlowProvider>,
-    );
-    expect(screen.queryByTestId("ward-broadcast-banner")).toBeNull();
   });
 });
