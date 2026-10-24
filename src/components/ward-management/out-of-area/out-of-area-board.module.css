@@ -366,8 +366,11 @@
 
 /* ---- register ---- */
 
+/* Device sweep (24 Oct 2026): at 1024 and 1280 px the search box sat over the History tab. The
+   tools wrap under the tabs when the register is too narrow for one line. */
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-height: 48px;
@@ -375,8 +378,13 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+.toolbar > :first-child {
+  flex: none;
+}
+
 .toolbarTools {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   margin-left: auto;
@@ -464,6 +472,18 @@
    patient column. It wraps above the UMRN instead. */
 .table .two > .legalUmrn {
   overflow: visible;
+  white-space: normal;
+}
+
+/* Device sweep (24 Oct 2026): the name, the discharge reason and the travel time wrap to a second
+   line rather than cut ("Alaric Ferrowm…", "Awaiting accom…", "3 hours or m…") at 1024 to 1440. */
+.table td:first-child .two > b,
+.table td:nth-child(4) .two > span:last-child {
+  overflow: visible;
+  white-space: normal;
+}
+
+.table .travel {
   white-space: normal;
 }
 
@@ -717,6 +737,9 @@
 
 .regionRow {
   display: flex;
+  /* Device sweep (24 Oct 2026): the travel time wraps to its own line rather than being cut at
+     the card edge ("Under 1 hour") in the narrow rail at 1024 and 1280 px. */
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   width: 100%;
