@@ -192,7 +192,3 @@ export function kindRangeWord(value: number): string {
   if (value > 0) return `${value} spare`;
   return "even";
 }
-
-export function signedFigure(value: number): string {
-  return value > 0 ? `+${value}` : `${value}`;
-}
