@@ -390,7 +390,9 @@ capacity figure anywhere in this group is real.
   so "the role IS the route". A chrome hint only, never a permission (permissions stay in the
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
   `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
-  readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
+  readmission flag is the coordinator's on every route, Josh, 9 Oct 2026; since D-80 a ward also
+  sees it on its own accepted journeys, carried on its scoped copy as the discharge time only by
+  `ward-readmission-copy.ts`), `CHROME_ROLE_LABELS`.
 - **`src/components/ward-management/ward-role-permissions.ts`** (145 lines, added 9 Oct 2026,
   feature 11) — Whether the route's role may take an action: `EVENT_ROLE` plus the one explicit
   `CROSS_ROLE_ALLOWED` list of borrowed-role pairs (Patient page, Legal forms Mark received, ward

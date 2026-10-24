@@ -27,6 +27,7 @@ import { communityTeamOptions } from "@/components/ward-management/referrals/ref
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { withWardReadmission } from "@/components/ward-management/ward-readmission-copy";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditSubject } from "@/components/ward-management/ward-audit";
@@ -818,6 +819,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
         ),
       );
+      // D-80: the readmission flag on its own accepted journeys, as a discharge time only.
+      movements = withWardReadmission(movements, workspace, unitIn);
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),
