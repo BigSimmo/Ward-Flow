@@ -621,14 +621,29 @@ const KEPT_ON_ED_COPY: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
 
 /** A movement on an ED's copy: each ward's decline without its reason, unless it waitlisted. */
 function edMovementCopy(movement: Movement): Movement {
-  if (!movement.declines.some((decline) => decline.reason !== undefined && !KEPT_ON_ED_COPY.includes(decline.reason)))
-    return movement;
+  const hidden = movement.declines.filter(
+    (decline) => decline.reason !== undefined && !KEPT_ON_ED_COPY.includes(decline.reason),
+  );
+  if (hidden.length === 0) return movement;
   return {
     ...movement,
     declines: movement.declines.map(({ reason, ...decline }) =>
       reason !== undefined && KEPT_ON_ED_COPY.includes(reason) ? { ...decline, reason } : decline,
     ),
+    // The reducer also records the decline reason on the stage change it appends.
+    stageChanges: movement.stageChanges.map(({ reason, ...change }) =>
+      reason !== undefined && hidden.some((decline) => decline.at === change.at && decline.reason === reason)
+        ? change
+        : { ...change, ...(reason === undefined ? {} : { reason }) },
+    ),
   };
+}
+
+/** The reducer's decline notices end in "(reason).", so an ED's copy drops that bracket. */
+function edNoticeCopy(notice: Notice): Notice {
+  if (notice.kind !== "referral_declined") return notice;
+  if (notice.about.referralId !== undefined && !notice.sentence.startsWith("psychiatric ward declined")) return notice;
+  return { ...notice, sentence: notice.sentence.replace(/\s*\([^()]*\)(\.?)$/, "$1") };
 }
 
 /** A referral on an ED's copy: a ward's answer without its decline reason. */
@@ -1016,7 +1031,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   if (officer) patients = patients.map(officerPatient);
   if (anonymise) patients = workspace.patients.filter((patient) => patientIds.has(patient.id)).map(anonymousPatient);
 
-  const notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  let notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  if (access.role === "ed") notices = notices.map(edNoticeCopy);
 
   const visibleOnlyByGrant = new Set<string>();
   for (const id of grantIds) if (!ownPatientIds.has(id)) visibleOnlyByGrant.add(id);
