@@ -165,7 +165,7 @@ function RestrictionReviewRow({
                 setAfterHours("");
               }}
             >
-              Save review
+              Save review for {unit.name}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
               Cancel
@@ -257,6 +257,7 @@ export function ClosureTransitionChecklist({ unit, now, actor }: { unit: Unit; n
                     variant="sec"
                     aria-disabled={who ? undefined : "true"}
                     aria-describedby={who ? undefined : `${baseId}-${index}`}
+                    aria-label={`Mark ${label} dealt with for ${unit.name}`}
                     data-testid={`ward-closure-item-done-${index}`}
                     onClick={() => {
                       if (!who) return;
