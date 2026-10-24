@@ -47,6 +47,9 @@ import {
   useEdRowPanels,
 } from "./use-ed-screen-state";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { useEdExpirySave } from "./use-ed-expiry-save";
+import { useEdRecordSave } from "./use-ed-record-save";
+import { useEdExaminationSave } from "./use-ed-examination-save";
 
 /*
  * Fix list 2.5 and 9.6 (15 Oct 2026): this screen was one 6,500 line file. It is now split into
@@ -132,6 +135,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   const { draft, raisingFromReferralId } = referralDraft;
   const boardDrafts = useEdBoardDrafts();
   const rowPanels = useEdRowPanels();
+  const expirySave = useEdExpirySave({ dispatch, now, dayZero, panels: rowPanels });
+  const recordSave = useEdRecordSave({ dispatch, now, panels: rowPanels });
   const { arrivalPlanOpenFor, setArrivalPlanOpenFor, transportOpenFor, closeTransportDialog, toggleBookTransport } =
     rowPanels;
   /**
@@ -144,6 +149,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
   const referralSave = useEdReferralSave(referralDraft, edId);
+  const examinationSave = useEdExaminationSave({ dispatch, movements, rejections, now, panels: rowPanels, offerStep });
   function recordEdStep(event: EdStepEvent) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {
@@ -273,7 +279,16 @@ export function EdScreen({ edId }: EdScreenProps) {
     activeHeroChip,
     arrivalPlanMovement,
   } = derived;
-  const actions = edScreenActions({ raise, now, dayZero, thisEdId, recordEdStep, panels: rowPanels });
+  const actions = edScreenActions({
+    raise,
+    now,
+    dayZero,
+    thisEdId,
+    submitExamination: examinationSave.submitExamination,
+    submitLegalFormExpiry: expirySave.submitLegalFormExpiry,
+    recordSave,
+    panels: rowPanels,
+  });
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -377,7 +392,10 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...boardView,
     ...inboxDecline,
     ...derived,
+    ...examinationSave,
     ...actions,
+    ...expirySave,
+    ...recordSave,
   };
 
   const boardSplit = waitingSplit(patients);
