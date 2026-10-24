@@ -48,7 +48,7 @@ describe("canDispatch", () => {
     expect(dispatchPermission("ward", "REFER_TO_UNITS")).toEqual({ allowed: false, reason: "Coordinator only" });
     expect(dispatchPermission("ed", "CONFIRM_CAPACITY")).toEqual({
       allowed: false,
-      reason: "Ward or coordinator only",
+      reason: "Ward, bed manager or coordinator only",
     });
     expect(dispatchPermission("coordinator", "REFER_TO_UNITS")).toEqual({ allowed: true });
   });

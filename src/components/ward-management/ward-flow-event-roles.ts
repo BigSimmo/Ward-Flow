@@ -89,7 +89,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
   PATIENT_COLLECTED: ["officer", "coordinator"],
   PATIENT_ARRIVED: ["officer", "ward", "coordinator"],
-  CONFIRM_CAPACITY: ["ward", "coordinator"],
+  // Role access plan v2 (D-80): the site's bed manager for its own wards, which the scope check enforces.
+  CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
   RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
@@ -179,15 +180,17 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RELEASE_DIVERTED_BED: ["coordinator", "ward", "ed"],
   REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
   RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
-  FLAG_BED_RELEASE: ["ward", "coordinator"],
-  CONFIRM_BED_RELEASE: ["ward", "coordinator"],
+  // D-80: the site's bed manager may move, block and prepare a release for its own wards too.
+  // Chasing releases is its main job.
+  FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
   // Bed-model rework (2026-08-28). All three are `ward`-only for the same reason the four above
   // are: only the ward moves a bed between stages, flags it stuck or unstuck, or says it is being
   // made ready. A coordinator sees every one of them and changes none of them.
-  REVERT_BED_RELEASE: ["ward", "coordinator"],
-  BLOCK_BED_RELEASE: ["ward", "coordinator"],
-  CLEAR_BED_RELEASE_BLOCK: ["ward", "coordinator"],
-  SET_BED_PREPARATION: ["ward", "coordinator"],
+  REVERT_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
+  SET_BED_PREPARATION: ["ward", "bed_manager", "coordinator"],
   RELEASE_BED: ["ward", "coordinator"],
   RECORD_LEAVE_BED: ["ward", "coordinator"],
   END_LEAVE_BED: ["ward", "coordinator"],
@@ -216,8 +219,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   // A stay-level discharge blocker is the ward's to record, exactly like the release-level one.
-  RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
-  CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+  // D-80: and the site's bed manager. The discharge date and the discharge itself stay with the ward.
+  RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
+  CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
   // Fix plan item 10: the ED records the level at intake and may change it while the patient waits,
   // the ward changes it for its own beds, and the coordinator for either.
   RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
@@ -298,16 +302,20 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
   LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
   ASK_MORE_WARDS: ["coordinator"],
-  // Smart features idea 7: the ward for itself (reducer checks the acting unit), or the coordinator.
-  CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
-  REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
-  // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair completes.
+  // Smart features idea 7: the ward for itself (reducer checks the acting unit), its site's bed
+  // manager (D-80), or the coordinator.
+  CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair
+  // completes. D-80: the site's bed manager may complete an action owned by one of its wards.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
-  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
-  // D-72: the ward for itself (reducer checks the acting unit), its site's bed manager, or the coordinator.
-  RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "bed_manager", "coordinator"],
-  RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "bed_manager", "coordinator"],
-  RECORD_WARD_INCIDENT: ["ward", "bed_manager", "coordinator"],
+  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  // D-72: the ward for itself (reducer checks the acting unit), or the coordinator. A record about
+  // one patient on one ward is made by the ward that is present, so the site's bed manager keeps the
+  // view and the room status only (D-80).
+  RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
+  RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
+  RECORD_WARD_INCIDENT: ["ward", "coordinator"],
   SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
@@ -459,7 +467,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * whose `to.placeId` matches its own claim. Widening this list costs nothing a role could not
    * already be refused for by that check.
    */
-  MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community"],
+  MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community", "bed_manager"],
   /*
    * COORDINATOR-ONLY, ALL THREE — read from where the row is OBSERVED, not assumed. `buildActionInbox`
    * (`ward-derivations.ts`) is rendered by exactly one screen in this codebase today:
@@ -505,11 +513,12 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
   EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
-  CONFIRM_MORNING_ROLLUP: ["ward", "coordinator"],
+  CONFIRM_MORNING_ROLLUP: ["ward", "bed_manager", "coordinator"],
   SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
-  // The handover sheet is signed by whoever is handing over — coordinator or the ward.
+  // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
+  // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
@@ -524,7 +533,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
   RAISE_PULL_NOW: ["coordinator"],
-  REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
+  // D-80: the site's bed manager answers a bed call for one of its own wards.
+  REPLY_BROADCAST_ALERT: ["ward", "bed_manager", "coordinator"],
   // Planned admissions (stream D): booked and managed by the coordinator, bed manager or the
   // receiving ward; the ward or coordinator records the arrival.
   BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
