@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import type { WardCommandOutcome } from "../ward-shared-client";
@@ -31,7 +31,6 @@ export function EdMedicalPlacementControls({
     "worldGeneration",
     "shared",
   );
-  const now = useWardFlowClock();
   const raise = useWardRaise("ed");
   const movement = movements.find((record) => record.id === movementId);
   const clearance = movement ? recordedMovementMedicalClearance(movement, referrals) : undefined;
