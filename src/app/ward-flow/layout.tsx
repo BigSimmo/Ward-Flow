@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 
-import {
-  OverlayScope,
-  ToastProvider,
-  WfServerPhoneProvider,
-  guessPhoneFromRequest,
-  guessTabletFromRequest,
-} from "@/components/wf";
+import { OverlayScope } from "@/components/wf/overlay-root";
+import { ToastProvider } from "@/components/wf/toast-provider";
+import { WfServerPhoneProvider } from "@/components/wf/use-is-phone";
+import { guessPhoneFromRequest, guessTabletFromRequest } from "@/components/wf/phone-guess";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
