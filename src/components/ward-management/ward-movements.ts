@@ -19,6 +19,7 @@ import { requiresAuthorisedDestination } from "@/components/ward-management/ward
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
+import { completeSyntheticReferralIntakes } from "./ward-referral-intake-seed";
 
 /**
  * The transport-form name seeded onto `TransportJob.formRequired` below. This is a single fact
@@ -2284,7 +2285,7 @@ const midlandDemonstrationReferrals: Referral[] = MIDLAND_DEMONSTRATION_ROWS.map
   history: row.history,
 }));
 
-export const referrals: Referral[] = [
+export const referrals: Referral[] = completeSyntheticReferralIntakes([
   {
     id: "RF-001",
     // T2 (seed-audit follow-up, section 3): PT-079 (Tilly Mossgrave), hand-authored to agree —
@@ -3271,4 +3272,4 @@ export const referrals: Referral[] = [
   // hand-authored referrals above and the nine added to populate one team's page is visible in the
   // array itself. See `MIDLAND_DEMONSTRATION_ROWS` for what they are and why they are safe.
   ...midlandDemonstrationReferrals,
-];
+]);

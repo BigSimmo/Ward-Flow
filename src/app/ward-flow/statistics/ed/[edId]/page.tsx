@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
-import { edById } from "@/components/ward-management/ward-sites";
+import { knownEmergencyDepartment } from "@/components/ward-management/ward-known-places";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default async function WardStatisticsEdPage({ params }: { params: Promise<{ edId: string }> }) {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
-  const ed = edById(id);
+  const ed = knownEmergencyDepartment(id);
   // DA-32: an address that names no emergency department shows "Page not found", not a page reporting success.
   if (!ed) notFound();
   return <StatisticsEdScreen edId={ed.id} />;
