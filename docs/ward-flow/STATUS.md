@@ -6,6 +6,8 @@ _Updated 19 October 2026 — persistence wording aligned with D-67; dated accept
 
 _Updated 21 October 2026 — added the 17 to 21 October summary below, through `main` at `90e92444` (PR #527). The 17 October baseline and counts above are not re-verified._
 
+_Updated 2026-10-23 - current saving and route summaries checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns. Earlier acceptance receipts are unchanged; no new runtime, hosted CI or deployment verification is claimed._
+
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
 
@@ -23,11 +25,12 @@ for real patient data or clinical deployment.
 
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
 (9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
-10,881 tests during remediation). The estate now spans **52 total routes** (**50
-Next.js page routes under `/ward-flow/*`**, including `/ward-flow/bed-meeting`
-and **12 Statistics routes**,
-plus `/ward-flow-sign-in` and the `/mockups/ward-flow-digest` route handler,
-with `/` and `/ward-flow` entry points redirecting to `/ward-flow`). Note that
+10,881 tests during remediation). These are dated test results. The current source tree has
+**<!-- fact:ward-route-count -->53<!-- /fact --> Ward page routes** and
+**<!-- fact:app-route-count -->55<!-- /fact --> scoped app pages/handlers**, including
+sign-in and the digest. Counts include redirect files, not distinct interactive screens.
+The separate `/` page redirects to `/ward-flow`; `/ward-flow` renders the Coordinator screen
+directly. Note that
 `"v10 sections 8 to 14"` in `src/components/wf/v10-parts.tsx` implements Sections 8–14
 of [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
 
@@ -53,17 +56,20 @@ A dated summary of merged pull request titles from #393 to #527, not a fresh ver
 
 ## What is built
 
-**Screens** (<!-- fact:ward-route-count -->53<!-- /fact --> page routes under `src/app/ward-flow/`, plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = <!-- fact:app-route-count -->55<!-- /fact --> total routes; engine and components under
-`src/components/ward-management/` and `src/components/wf/`):
+**Route and screen overview.** The <!-- fact:ward-route-count -->53<!-- /fact --> Ward page routes
+form part of the <!-- fact:app-route-count -->55<!-- /fact --> scoped app pages/handlers including
+sign-in and digest. The separate root redirect is additional. Engine and components are under
+`src/components/ward-management/` and `src/components/wf/`. Redirect routes are retained
+for old links; their presence does not establish an independent screen:
 
-| Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Coordinator day        | Home and master hub (`/` and `/command`), coordinator Command horizon ("Since you last looked"), bed-meeting sheet (`/bed-meeting`), queue, referrals (`/referrals`, `/referrals/new`), movements (`/movements`, `/movements/[movementId]`), transport (`/transport`, `/transport/officer`), delays runway, discharges                                                                                                                                                                                                               |
-| Beds and wards         | Bed board (`/board/[unitId]` with stranded prompts), ward view (`/ward/[unitId]`, `/ward/[unitId]/answer`), wards directory (`/wards`), capacity (with bed-meeting sheet and tomorrow's forecast), network view (`/network`, `/constellation`), shortlist, out-of-area                                                                                                                                                                                                                                                               |
-| Pressure and safety    | ED psychiatry directory (`/ed`), individual ED psychiatry hub (`/ed/[edId]`), alerts centre (`/alerts`), escalation (`/escalation`), exceptions (`/exceptions`), governance (`/governance`)                                                                                                                                                                                                                                                                                                                                          |
-| People and directories | Patient search (`/search` Floating Glass Command Horizon), unified Patient Now flight deck (`/people/[patientId]`), add patient (`/people/new`), community directory (`/community`, `/community/[teamId]`), on-call directory (`/on-call`)                                                                                                                                                                                                                                                                                           |
-| Records and reports    | Handover (`/handover` Command Horizon flight deck and print), legal forms (`/legal-forms` with MHA expiry reminders), patient chronology (`/reports/chronology`), downtime pack (`/reports/downtime`), **12 Statistics routes** (`/statistics`, `/statistics/overview`, `/statistics/compare`, `/statistics/weekly`, `/statistics/wards`, `/statistics/ward/[unitId]`, `/statistics/eds`, `/statistics/ed/[edId]`, `/statistics/teams`, `/statistics/community/[teamId]`, `/statistics/services`, `/statistics/service/[serviceId]`) |
-| Other                  | Settings (`/settings`), sign-in (`/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner                                                                                                                                                                                                                                                                                                                           |
+| Area                   | Screens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coordinator day        | Home (`/ward-flow`; `/` and `/ward-flow/command` redirect there), bed meeting TV (`/bed-meeting`), referrals (`/referrals`, `/referrals/new`), movements (`/movements`, `/movements/[movementId]`), transport officer (`/transport/officer`; `/transport` redirects there), Waiting (`/waiting`; `/delays` redirects with its filters; `/queue`, `/escalation` and `/exceptions` redirect here), discharges                                                                                                                                                                                                                                                          |
+| Beds and wards         | Bed board (`/board/[unitId]` with stranded prompts), ward view (`/ward/[unitId]`, `/ward/[unitId]/answer`), wards directory (`/wards`), capacity (with bed-meeting sheet and tomorrow's forecast), ready beds by road time (distance only, not suitability); retired `/network` and `/constellation` routes redirect to Home; coordinator placement panel, out-of-area                                                                                                                                                                                                                                                                                               |
+| Pressure and safety    | ED psychiatry directory (`/ed`), individual ED psychiatry hub (`/ed/[edId]`), alerts centre (`/alerts`), governance (`/governance`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| People and directories | Patient search (`/search` Floating Glass Command Horizon), unified Patient Now flight deck (`/people/[patientId]`), add patient (`/people/new`), community directory (`/community`, `/community/[teamId]`), on-call directory (`/on-call`)                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Records and reports    | Handover (`/handover` Command Horizon flight deck and print), legal forms (`/legal-forms`, using recorded due times, with no computed Act periods), patient chronology (`/reports/chronology`), downtime pack (`/reports/downtime`), **12 Statistics route files**, including the `/statistics/overview` bookmark redirect to Statistics home (labelled Network): `/statistics`, `/statistics/overview`, `/statistics/compare`, `/statistics/weekly`, `/statistics/wards`, `/statistics/ward/[unitId]`, `/statistics/eds`, `/statistics/ed/[edId]`, `/statistics/teams`, `/statistics/community/[teamId]`, `/statistics/services`, `/statistics/service/[serviceId]` |
+| Other                  | Settings (`/settings`), sign-in (`/ward-flow-sign-in`), digest (`/mockups/ward-flow-digest`), compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Dated work summary (27 September to 17 October; not a fresh verification claim):**
 
@@ -90,9 +96,12 @@ The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`doc
 and checks against stable task IDs. Confirmed source defects are fixed locally; publication, deployment and hosted validation remain separate.
 
 - **Shared synthetic operation hardening:** while opt-in shared state/event sync (`use-ward-supabase-shared.ts` via the configured backend's `/v1/workspace*` routes) is wired for synthetic demonstration, production-grade staff sign-in, trusted service/role membership, and multi-site clinical governance boundaries remain outside prototype scope.
-- **Persistence privacy:** D-18 stops automatic browser saving of submitted demo
-  state after a typed-text event, whether accepted or refused. D-67 separately
-  permits bounded sessionStorage recovery for opted-in synthetic referral and
+- **Persistence privacy:** D-72 item 1 permits automatic saving of a scrubbed
+  submitted-state device copy after a typed-text event, whether accepted or refused.
+  Typed values are replaced with “Typed text not kept on this device”. If a safe,
+  valid copy cannot be made, saving stops. D-18 continues to exclude the original
+  typed values from that copy. D-67 separately permits bounded sessionStorage
+  recovery for opted-in synthetic referral and
   legal form drafts, scoped to account, session, scenario and form subject.
   Restored drafts require human review and submission; referral attachments
   require reattachment. Successful submission clears the relevant draft;
@@ -100,8 +109,9 @@ and checks against stable task IDs. Confirmed source defects are fixed locally; 
   Browser session restoration may preserve sessionStorage across a restart, so
   browser-close deletion is not guaranteed. Explicit JSON scenario exports are
   separate from draft recovery and automatic shared persistence. They refuse
-  scenarios containing repatriation or support-notification records. Loaded
-  scenarios remain in memory and must be loaded again after refresh. No real
+  scenarios containing repatriation or support-notification records. Imported
+  scenarios use the same scrubbed device-copy path, subject to its safety and
+  restore-validation checks; refresh recovery is not guaranteed for every import. No real
   patient information is authorised by any of these paths.
 - **Incomplete secondary controls:** clinician referral assignment, intervention
   recording, safeguard previews and some shell/admin actions remain explicitly

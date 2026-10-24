@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cx } from "./cx";
 import { Icon } from "./icon";
@@ -63,11 +63,6 @@ export function CountCircle({
       {label ? <SrOnly>{label}</SrOnly> : null}
     </span>
   );
-}
-
-/** Recessed box on surface-2 with a hairline, for figures inside a card. */
-export function Inset({ className, ...rest }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cx(styles.inset, className)} {...rest} />;
 }
 
 /** Spinner for loading states. Decorative: pair it with `aria-busy` on the region or button. */

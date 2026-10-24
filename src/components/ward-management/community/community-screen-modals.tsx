@@ -7,7 +7,8 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { formatInstant, formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
@@ -132,6 +133,12 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
     caseloadRows,
     recordedCtoCount,
   } = view;
+  const flow = useOptionalWardFlowSelect("dayZero");
+  const stamp = Number.isFinite(now)
+    ? flow?.dayZero !== undefined && Number.isFinite(flow.dayZero.getTime())
+      ? formatSheetMoment(now, flow.dayZero, { includeYearAndZone: true })
+      : formatInstant(now)
+    : null;
   if (activeModalType === null) return null;
   return (
     <div
@@ -230,6 +237,10 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <p className={styles.footnote}>Catchment MDT summary print view for clinical huddle.</p>
               <div className={styles.mdtSummary}>
                 <b>{team.name} · Morning MDT Summary</b>
+                <p className={styles.mdtSummaryLine}>
+                  {stamp === null ? "As at — the moment shown is not recorded." : `As at ${stamp}`} · Synthetic figures,
+                  not a record of any real day.
+                </p>
                 <p className={styles.mdtSummaryLine}>
                   {caseloadRows.length} Active Caseload · {waitingReferrals.length} Waiting Referrals ·{" "}
                   {recordedCtoCount} recorded Form 5A/5B

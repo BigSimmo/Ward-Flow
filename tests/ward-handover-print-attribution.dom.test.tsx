@@ -6,7 +6,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "@/components/ward-management/handover/handover-print-sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, perthMidnight, type Instant } from "@/components/ward-management/ward-clock";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
@@ -17,7 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderSheet(initial: Instant | null) {
+function renderSheet(initial: Instant | null, dayZero?: Date) {
   function Sheet() {
     const [preparedAt, setPreparedAt] = useState<Instant | null>(initial);
     return (
@@ -34,6 +34,7 @@ function renderSheet(initial: Instant | null) {
         shiftLabel="Day"
         densityLabel="Standard"
         sheetDate="Friday"
+        dayZero={dayZero}
         options={DEFAULT_PRINT_OPTIONS}
         onOptionsChange={() => {}}
         controls={null}
@@ -121,4 +122,12 @@ it("prints the current desk and full place on every sheet, using the copy genera
   });
   fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
   expect(print).toHaveBeenCalledOnce();
+});
+
+it("keeps the prepared copy's full calendar date across midnight", () => {
+  const dayZero = perthMidnight(2026, 9, 24);
+  renderSheet(NOW_ANCHOR - 24 * 60, dayZero);
+  for (const page of screen.getAllByRole("article")) {
+    expect(page).toHaveTextContent("Prepared Fri, 23 Oct 2026, 10:42 AWST");
+  }
 });

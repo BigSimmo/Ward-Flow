@@ -1,8 +1,10 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -95,5 +97,27 @@ describe("seclusion, restraint and incidents view", () => {
     fireEvent.change(screen.getByTestId("seclusion-incident-time"), { target: { value: clock(30) } });
     fireEvent.click(screen.getByTestId("seclusion-incident-record"));
     expect(within(screen.getByTestId("seclusion-incidents")).getByText("Fall")).toBeInTheDocument();
+  });
+});
+
+describe("the site bed manager's seclusion view (D-80)", () => {
+  afterEach(() => {
+    cleanup();
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("keeps the view and the room status but offers no seclusion, restraint or incident record", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
+    });
+    renderScreen();
+    expect(screen.getByTestId("seclusion-room-available")).toBeInTheDocument();
+    expect(screen.queryByTestId("seclusion-start")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("seclusion-incident-record")).not.toBeInTheDocument();
+    expect(screen.getByTestId("seclusion-recorded-by-ward")).toHaveTextContent("Recorded by the ward.");
   });
 });

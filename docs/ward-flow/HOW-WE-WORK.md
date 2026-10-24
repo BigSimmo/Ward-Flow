@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-17 - narrow main-sync exception aligned with AGENTS.md; Documentation owns._
+_Updated 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -41,6 +41,10 @@ reducer so approval leads to direct integration, rather than an HTML-to-React re
 preview controls separate; shared HTML previews bundle the same React components. Honour an
 explicit request for another format. Verify only the affected behaviour and reuse valid evidence
 on unchanged code, following the [UI workflow](../agents/building-ui.md#building-ui) linked from `AGENTS.md`.
+
+D-75 requires screenshots and visual assessment of the running app at current `main` or
+the hosted site, identifying the commit used for the mockup. Under D-74, build from a
+mockup only after Josh explicitly approves that mockup. See the [recorded decisions](decisions.md).
 
 ## 2. Branches and worktrees
 
@@ -178,8 +182,10 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - **No typed text in browser storage** (called D-11 in helper briefs; owner ruling D-11 itself is the
   two-ledger rule). New events are classified in `ward-flow-persistence-classification.ts`, and any id
   or free-text field needs review. [D-67](decisions.md#d-67-recover-synthetic-form-drafts-within-the-browser-session-17-october-2026)
-  allows only the explicitly opted-in synthetic referral and legal form session drafts; it does not
-  remove the general typed-event state saving lock.
+  permits bounded recovery of explicitly opted-in synthetic referral and legal form session drafts
+  for human review. D-72 separately permits a scrubbed submitted-state device copy after typed
+  events. Original typed values remain excluded from that copy; if a safe, valid copy cannot be
+  made, saving stops. See [current persistence guidance](STATUS.md#remaining-work-and-local-remediation).
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
 - **Design tokens only, no hex.** In Ward Flow v9/v10 (`design/v9/design-system-v9.md`, owner ruling 9 Oct 2026: _"Check the 48px PsychSift knob. Ward is 44"_), standard rows use `--wf-row-default: 44px`, touch/phone rows use `--wf-row-touch: 52px`, and desktop buttons use `--wf-target: 28px`; legacy `--ward-*` surfaces retain `--ward-tap: 48px` (`var(--spacing-tap, 3rem)`).

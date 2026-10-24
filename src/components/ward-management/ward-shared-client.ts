@@ -38,6 +38,8 @@ export type SharedView = {
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
+  /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
+  unconfirmedSave?: boolean;
   eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
@@ -156,6 +158,21 @@ export class SharedWorkspaceClient {
   /** A started POST may have committed even when changing roles aborts its response. */
   private sentCommandId: string | null = null;
   private queue: QueuedCommand[] = [];
+  private unloadWarningActive = false;
+  private readonly warnBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (this.disposed || (!this.pending && !this.queue.length)) return;
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  /** Only commands need protection: an ordinary board refresh must not block leaving the page. */
+  private syncUnloadWarning() {
+    if (typeof window === "undefined") return;
+    const needed = !this.disposed && (this.pending !== null || this.queue.length > 0);
+    if (needed === this.unloadWarningActive) return;
+    if (needed) window.addEventListener("beforeunload", this.warnBeforeUnload);
+    else window.removeEventListener("beforeunload", this.warnBeforeUnload);
+    this.unloadWarningActive = needed;
+  }
   private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
   private roleLifetime = new AbortController();
   private settle(
@@ -179,6 +196,7 @@ export class SharedWorkspaceClient {
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
+    this.syncUnloadWarning();
   }
   private cancelAll(message: string) {
     if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
@@ -311,7 +329,8 @@ export class SharedWorkspaceClient {
   }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
-    this.view = { ...this.view, ...update };
+    this.syncUnloadWarning();
+    this.view = { ...this.view, ...update, unconfirmedSave: this.pending !== null || this.queue.length > 0 };
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
@@ -594,6 +613,8 @@ export class SharedWorkspaceClient {
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
     });
+    // A read may already be out, in which case drain waits. Protect this queued command at once.
+    this.publish({});
     void this.drain();
     return completion;
   }
@@ -643,6 +664,7 @@ export class SharedWorkspaceClient {
             // This command already has its definitive server answer. A permissions-only read
             // must neither retry it nor reclassify its completion when sign-in or roles change.
             this.pending = null;
+            this.publish({});
             this.settle(
               command.commandId,
               response.ok ? "accepted" : "refused",

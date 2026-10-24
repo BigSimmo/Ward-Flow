@@ -225,7 +225,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {population === "records"
             ? ` · ${identity === "all" ? "All records" : identity === "linked" ? "Linked patient" : "Missing or unavailable"}`
             : ""}
-          {" · "}As of {formatSheetMoment(now, dayZero)}
+          {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
         </p>
         <Hero
           className={pageStyles.phoneHero}
