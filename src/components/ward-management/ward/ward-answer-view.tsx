@@ -319,8 +319,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
   // Audit 24-1 D-01: a shown or linked request that leaves elsewhere keeps its place (no swap).
   const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
-  const linked = initialMovementId !== undefined && answerSelection.id === initialMovementId;
-  const selectionLeft = heldIndex < 0 && (answerSelection.name !== undefined || linked) && !answeredHere;
+  const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
+  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).displayName);
+  const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) =>
     setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
@@ -749,9 +750,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               </div>
             ) : selectionLeft && incoming.length > 0 ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
-                <p role="status">
-                  {answerSelection.name ?? "This patient"}&rsquo;s request was answered or withdrawn elsewhere.
-                </p>
+                <p role="status">{leftName}&rsquo;s request was answered or withdrawn elsewhere.</p>
                 <button
                   type="button"
                   className={buttonClass({ variant: "sec", size: "sm" })}

@@ -14,6 +14,7 @@ import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-vi
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => cleanup());
@@ -82,18 +83,35 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
   });
 
   it("does not open someone else when a linked request has already left", () => {
-    renderAnswer(UNIT, withSecond, "WF-AUDIT-GONE");
+    const left = seedWardFlowState().movements.find((movement) => movement.referredUnitIds.includes(UNIT))!.id;
+    const answered: Adjust = (movements) =>
+      withSecond(movements).map((movement) => (movement.id === left ? { ...movement, referredUnitIds: [] } : movement));
+    renderAnswer(UNIT, answered, left);
     expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(
-      "This patient’s request was answered or withdrawn elsewhere.",
+      `${nameOf(left)}’s request was answered or withdrawn elsewhere.`,
     );
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
+  });
+
+  it("still lands on the oldest when a link names no record", () => {
+    renderAnswer(UNIT, withSecond, "not-a-record");
+    expect(screen.queryByTestId("ward-answer-selection-left")).not.toBeInTheDocument();
+    expect(screen.getByTestId(/^ward-incoming-/)).toBeInTheDocument();
   });
 
   it("names the linked person when their request leaves elsewhere", () => {
     renderAnswer(UNIT, withSecond, "WF-AUDIT-NEXT");
     expect(shownId()).toBe("WF-AUDIT-NEXT");
-    act(() => setAdjust((movements) => withSecond(movements).filter((movement) => movement.id !== "WF-AUDIT-NEXT")));
-    expect(screen.getByTestId("ward-answer-selection-left")).toBeInTheDocument();
+    const name = nameOf("WF-AUDIT-NEXT");
+    // Answered at another desk: still on record, no longer waiting here.
+    act(() =>
+      setAdjust((movements) =>
+        withSecond(movements).map((movement) =>
+          movement.id === "WF-AUDIT-NEXT" ? { ...movement, referredUnitIds: [] } : movement,
+        ),
+      ),
+    );
+    expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(`${name}’s request`);
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
   });
 
