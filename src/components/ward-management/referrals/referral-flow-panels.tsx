@@ -2,7 +2,7 @@
 
 import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { Button, StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
 import { useWardDataMode } from "../ward-shared-access";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
@@ -36,6 +36,42 @@ export function clearanceError(draft: DocumentationDraft): string | null {
   return null;
 }
 
+/**
+ * Every missing documentation answer, in the order the panel shows them, for the step's error
+ * summary. `idBase` is the one given to `DocumentationPanel`. `documentationError` stays the gate.
+ */
+export function documentationProblems(
+  draft: DocumentationDraft,
+  idBase: string,
+  clearanceOnly = false,
+): ErrorSummaryItem[] {
+  const problems: ErrorSummaryItem[] = [];
+  const add = (when: boolean, id: string, text: string) => {
+    if (when) problems.push({ id: `${idBase}-${id}`, text });
+  };
+  add(!draft.medical, "medical", "Answer whether the patient has been medically cleared");
+  if (draft.medical === "no") {
+    add(!draft.expectedAt, "expected", "Enter the expected clearance time");
+    add(!draft.contactName.trim(), "contact", "Enter a contact name");
+    add(!draft.contactPhone.trim(), "phone", "Enter a contact phone number");
+  }
+  if (clearanceOnly) return problems;
+  add(!draft.triage, "triage", "Answer whether triage and RAMP are completed");
+  add(!draft.charts.some((chart) => chart.kind === "medication"), "medication-upload", "Attach the medication chart");
+  add(
+    !draft.charts.some((chart) => chart.kind === "observation"),
+    "observation-upload",
+    "Attach the observation chart",
+  );
+  add(!draft.additional, "additional", "Answer whether there is anything else to attach");
+  add(
+    draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"),
+    "other-upload",
+    "Attach the additional document or choose No",
+  );
+  return problems;
+}
+
 export function documentationError(draft: DocumentationDraft): string | null {
   const clearance = clearanceError(draft);
   if (clearance) return clearance;
@@ -51,7 +87,18 @@ export function documentationError(draft: DocumentationDraft): string | null {
   return null;
 }
 
-function YesNo({ label, value, onChange }: { label: string; value: string; onChange: (value: "yes" | "no") => void }) {
+function YesNo({
+  label,
+  value,
+  onChange,
+  firstId,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: "yes" | "no") => void;
+  /** Put on the Yes option, for an error summary link. */
+  firstId?: string;
+}) {
   const id = useId();
   return (
     <fieldset className={styles.answerGroup}>
@@ -59,7 +106,14 @@ function YesNo({ label, value, onChange }: { label: string; value: string; onCha
       <div className={styles.answerOptions}>
         {(["yes", "no"] as const).map((answer) => (
           <label key={answer} data-selected={answer === value}>
-            <input type="radio" name={id} value={answer} checked={answer === value} onChange={() => onChange(answer)} />
+            <input
+              id={answer === "yes" ? firstId : undefined}
+              type="radio"
+              name={id}
+              value={answer}
+              checked={answer === value}
+              onChange={() => onChange(answer)}
+            />
             {answer === "yes" ? "Yes" : "No"}
           </label>
         ))}
@@ -79,11 +133,14 @@ function ChartUpload({
   label,
   file,
   onChange,
+  buttonId,
 }: {
   kind: ReferralChart["kind"];
   label: string;
   file?: ReferralChart;
   onChange: (file?: ReferralChart) => void;
+  /** Put on the Upload button (the file input is hidden), for an error summary link. */
+  buttonId?: string;
 }) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -155,6 +212,7 @@ function ChartUpload({
         />
         <button
           type="button"
+          id={buttonId}
           className={styles.patientChipBtn}
           disabled={reading}
           onClick={() => inputRef.current?.click()}
@@ -214,13 +272,17 @@ export function DocumentationPanel({
   draft,
   onChange,
   clearanceOnly = false,
+  idBase,
 }: {
   draft: DocumentationDraft;
   onChange: Dispatch<SetStateAction<DocumentationDraft>>;
   /** D-77: the community short form asks clearance only, with no triage or charts. */
   clearanceOnly?: boolean;
+  /** Fixed field ids, so `documentationProblems` can link to them. Generated when omitted. */
+  idBase?: string;
 }) {
-  const id = useId();
+  const generatedId = useId();
+  const id = idBase ?? generatedId;
   // Audit F-01: the shared board keeps each file's name, type and size, never the file itself.
   const shared = useWardDataMode()?.shared === true;
   function changeChart(kind: ReferralChart["kind"], chart?: ReferralChart) {
@@ -247,6 +309,7 @@ export function DocumentationPanel({
         <div className={styles.cardBody}>
           <YesNo
             label="Has the patient been medically cleared?"
+            firstId={`${id}-medical`}
             value={draft.medical}
             onChange={(medical) => onChange({ ...draft, medical })}
           />
@@ -324,6 +387,7 @@ export function DocumentationPanel({
           <div className={styles.cardBody}>
             <YesNo
               label="Triage and RAMP completed"
+              firstId={`${id}-triage`}
               value={draft.triage}
               onChange={(triage) => onChange({ ...draft, triage })}
             />
@@ -332,6 +396,7 @@ export function DocumentationPanel({
                 key={`${id}-medication`}
                 kind="medication"
                 label="Medication chart"
+                buttonId={`${id}-medication-upload`}
                 file={draft.charts.find((file) => file.kind === "medication")}
                 onChange={(file) => changeChart("medication", file)}
               />
@@ -339,12 +404,14 @@ export function DocumentationPanel({
                 key={`${id}-observation`}
                 kind="observation"
                 label="Observation chart"
+                buttonId={`${id}-observation-upload`}
                 file={draft.charts.find((file) => file.kind === "observation")}
                 onChange={(file) => changeChart("observation", file)}
               />
             </div>
             <YesNo
               label="Anything else to attach?"
+              firstId={`${id}-additional`}
               value={draft.additional}
               onChange={(additional) =>
                 onChange({
@@ -359,6 +426,7 @@ export function DocumentationPanel({
                 <ChartUpload
                   kind="other"
                   label="Additional document"
+                  buttonId={`${id}-other-upload`}
                   file={draft.charts.find((file) => file.kind === "other")}
                   onChange={(file) => changeChart("other", file)}
                 />

@@ -188,7 +188,12 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 
     expect(origin()).toHaveAttribute("aria-invalid", "true");
     expect(origin()).toHaveAccessibleDescription("Choose the location of referral");
-    await waitFor(() => expect(origin()).toHaveFocus());
+    // Error summary (Josh approved 24 Oct 2026): focus lands on the step's summary; its link reaches the field.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
+    expect(origin()).toHaveFocus();
 
     fireEvent.change(origin(), { target: { value: "RPH" } });
     expect(origin()).not.toHaveAttribute("aria-invalid");
@@ -205,6 +210,10 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("Choose the location of referral");
     expect(origin()).toBeVisible();
-    await waitFor(() => expect(origin()).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
+    expect(origin()).toHaveFocus();
   });
 });
