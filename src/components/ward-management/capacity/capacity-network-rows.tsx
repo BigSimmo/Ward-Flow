@@ -3,6 +3,7 @@
 // The network table's ward rows and the per-service fold that groups them, split out of
 // `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import { useState } from "react";
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -369,10 +370,7 @@ function NetworkRow({
           {row.unit.authorised ? "Yes" : "No"}
         </span>
       </td>
-      <td
-        className={styles.confirmationCell}
-        title={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
-      >
+      <td className={styles.confirmationCell} title={capacityConfirmer(row.unit)}>
         {/*
           🔴 WHO CONFIRMED IT, RESTORED 2026-09-05 — MY FOLD DROPPED IT AND A GREEN TEST HID THAT.
           The old capacity view passed `confirmedByRole` and `derived`; this screen replaced it and
@@ -390,7 +388,7 @@ function NetworkRow({
         */}
         <WardFreshness
           confirmedAt={row.confirmedAt}
-          confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
+          confirmedByRole={capacityConfirmer(row.unit)}
           derived={row.unit.allocatable.source !== "ward"}
           now={now}
         />

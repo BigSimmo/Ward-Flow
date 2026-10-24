@@ -3,6 +3,7 @@
 // The ward screen's Home tab section. Split out of `ward-screen.tsx` (18 October 2026) to keep that
 // file under the line cap.
 
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import { Search } from "lucide-react";
 import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
@@ -352,7 +353,7 @@ export function WardScreenHomeSection({
               >
                 <WardFreshness
                   confirmedAt={unit.allocatable.confirmedAt}
-                  confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+                  confirmedByRole={capacityConfirmer(unit)}
                   now={now}
                   derived={unit.allocatable.source !== "ward"}
                 />
