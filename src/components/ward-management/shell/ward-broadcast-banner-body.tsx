@@ -39,6 +39,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import styles from "./ward-broadcast-banner.module.css";
 
 const TONE_GLYPH: Record<BannerTone, WfTone> = {
@@ -97,7 +98,10 @@ export function BannerBody({
   const isPhone = useIsPhone();
   const deskInScope = useDeskInScope();
   const isRed = tone === "act_now";
-  const actingRole = desk.role === "coordinator" ? "coordinator" : desk.role === "ed" ? "ed" : "ward";
+  // D-80: on one of its wards' pages a site bed manager answers for that ward in its own name.
+  const bedManager = useRouteRole() === "bed_manager";
+  const actingRole =
+    desk.role === "coordinator" ? "coordinator" : desk.role === "ed" ? "ed" : bedManager ? "bed_manager" : "ward";
 
   const reply = (
     answer: BroadcastAnswer,

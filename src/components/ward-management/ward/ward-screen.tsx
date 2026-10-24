@@ -205,7 +205,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "plannedAdmissions",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("ward");
+  // D-80: a site bed manager on its own ward's page confirms beds, moves releases and records
+  // blockers in its own name. Every other ward action stays gated to the ward.
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   const completeCommand = useWardCommandCompletion();
 
   // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
@@ -346,7 +349,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardToken, setBoardToken] = useState(0);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
-  const routeRole = useRouteRole();
   const raiseAsRouteRole = useWardRaise(routeRole);
   const setRole = useCallback(
     (nextRole: "ward") => {
@@ -355,7 +357,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     [pathname],
   );
   const wardRoleLockNote =
-    routeRole !== "ward" ? (
+    // A bed manager cannot switch desks, and each button it may not use says so itself.
+    routeRole !== "ward" && routeRole !== "bed_manager" ? (
       <span className="lockline" data-testid="ward-role-lockline">
         Viewing as {routeRole} desk (ward actions are read-only) &middot;{" "}
         <button
@@ -1088,6 +1091,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleAcknowledgeNotice(noticeId: string) {
     if (!unit) return;
+    // A notice sent to the ward is the ward's to acknowledge; the reducer refuses anyone else's.
+    if (routeRole === "bed_manager") {
+      setToastMessage("The ward acknowledges its own notices.");
+      return;
+    }
     raise("MARK_NOTICE_READ", {
       noticeId,
       actingPlaceId: unit.id,
@@ -1097,6 +1105,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function handleDismissBuzz(buzzKey: string) {
     setDismissedBuzzes((current) => (current.includes(buzzKey) ? current : [...current, buzzKey]));
   }
+
+  // A notice sent to the ward is the ward's to acknowledge, so a bed manager is not shown one it
+  // cannot clear (it would keep the badge lit until the ward reads it).
+  const wardNotices = routeRole === "bed_manager" ? [] : notices;
 
   const unreadAlertsCount = (() => {
     if (!unit) return 0;
@@ -1111,7 +1123,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     count += overdueArrivals.length;
     count += wardClearanceAlerts(movements, unit.id).count;
     // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
-    count += notices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
+    count += wardNotices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
     return count;
   })();
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
@@ -2244,7 +2256,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             wardRoleLockNote={wardRoleLockNote}
             notificationCenterOpen={notificationCenterOpen}
             movements={movements}
-            notices={notices}
+            notices={wardNotices}
             refreshRequests={refreshRequests}
             isRollupConfirmedToday={isRollupConfirmedToday}
             morningRollupDeadlinePassed={morningRollupDeadlinePassed}

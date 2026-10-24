@@ -60,7 +60,7 @@ describe("who may raise which event", () => {
     // ward — see EVENT_ROLE's own comment on this entry.
     ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
     ADVANCE_CLOCK: ["demo"],
-    BLOCK_BED_RELEASE: ["ward", "coordinator"],
+    BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     // CHANGED 2026-08-30 under TR-D6 (owner), and this row is a NARROWING plus a widening, not
     // a tidy-up. Was ["coordinator", "ward"]. The ruling: the team that BOOKED it and the
     // coordinator may cancel; the RECEIVING ward may not, because a booking cancelled by the
@@ -130,9 +130,9 @@ describe("who may raise which event", () => {
     CANCEL_TRANSPORT: ["coordinator", "ed", "ward", "community"],
     CHANGE_LEGAL_STATUS: ["coordinator", "ed"],
     CHANGE_URGENCY: ["coordinator", "ed"],
-    CLEAR_BED_RELEASE_BLOCK: ["ward", "coordinator"],
-    CONFIRM_BED_RELEASE: ["ward", "coordinator"],
-    CONFIRM_CAPACITY: ["ward", "coordinator"],
+    CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
+    CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+    CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
     // T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
     // who can say a receipt was recorded in error.
@@ -160,7 +160,7 @@ describe("who may raise which event", () => {
     // `tests/ward-referral-decision-scope.test.ts`.
     DECLINE_REFERRAL: ["ward", "coordinator", "ed", "community"],
     END_LEAVE_BED: ["ward", "coordinator"],
-    FLAG_BED_RELEASE: ["ward", "coordinator"],
+    FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     HANDOVER_READY: ["ed", "coordinator"],
     /* Widened from ["ward"] on 2026-09-01 by owner ruling: a pull is a person's act, from the ward
      * menu OR the coordinator. Named here deliberately rather than widened by accident, per this
@@ -285,13 +285,13 @@ describe("who may raise which event", () => {
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
     LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
     ASK_MORE_WARDS: ["coordinator"],
-    CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
-    REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
+    CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+    REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
-    COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
-    RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "bed_manager", "coordinator"],
-    RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "bed_manager", "coordinator"],
-    RECORD_WARD_INCIDENT: ["ward", "bed_manager", "coordinator"],
+    COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+    RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
+    RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
+    RECORD_WARD_INCIDENT: ["ward", "coordinator"],
     SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
     CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
@@ -315,10 +315,10 @@ describe("who may raise which event", () => {
     CLEAR_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
     RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
-    RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+    RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
     // Fix plan item 10 (21 Oct 2026): ED records the level at intake, the ward and coordinator after.
     RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
-    CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+    CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
     RELEASE_BED: ["ward", "coordinator"],
     // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.
     RELEASE_HELD_BED: ["coordinator", "ward", "ed"],
@@ -327,8 +327,8 @@ describe("who may raise which event", () => {
     RELEASE_PULL: ["coordinator", "ward"],
     REQUEST_CAPACITY_REFRESH: ["coordinator"],
     RESET_SCENARIO: ["demo"],
-    REVERT_BED_RELEASE: ["ward", "coordinator"],
-    SET_BED_PREPARATION: ["ward", "coordinator"],
+    REVERT_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+    SET_BED_PREPARATION: ["ward", "bed_manager", "coordinator"],
     SET_SCENARIO: ["demo"],
     TRANSPORT_ACCEPTED: ["officer", "coordinator"],
     TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
@@ -383,7 +383,7 @@ describe("who may raise which event", () => {
     // What the reducer writes for the newly-permitted roles, as this guard demands: `event.role`
     // into `Notice.readBy` — a ROLE, never a person, the same discipline every other `by`/actor
     // field in this model already has. Asserted directly in `tests/ward-notice-read.test.ts`.
-    MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community"],
+    MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community", "bed_manager"],
 
     /*
      * THE THREE INBOX WORK-STATE EVENTS, added 2026-09-06 with the coordinator's to-do panel.
@@ -465,7 +465,7 @@ describe("who may raise which event", () => {
     RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
     EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
-    CONFIRM_MORNING_ROLLUP: ["ward", "coordinator"],
+    CONFIRM_MORNING_ROLLUP: ["ward", "bed_manager", "coordinator"],
     SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
     // Recorded 2026-09-25 (test fixer) at the roles the engine already enforces. Added by unreviewed
     // 23-25 Sept commits (6eec76bd85, 65090c4db6, 5d7f438126) with no written ruling; pinned here so
@@ -478,7 +478,7 @@ describe("who may raise which event", () => {
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     RAISE_PULL_NOW: ["coordinator"],
-    REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
+    REPLY_BROADCAST_ALERT: ["ward", "bed_manager", "coordinator"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
     // Stream D planned admissions, 9 Oct 2026: booked and managed by the coordinator, bed manager
     // or the receiving ward; arrival recorded by the ward or coordinator.

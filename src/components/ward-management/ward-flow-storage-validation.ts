@@ -325,26 +325,40 @@ const unit = z
     // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
     restrictivePractice: z.optional(
       z.looseObject({
-        episodes: z.array(
-          z.looseObject({
-            id: text,
-            practice: z.enum(RESTRICTIVE_PRACTICE_IDS),
-            admissionId: id,
-            startedAt: finite,
-            endedAt: z.optional(finite),
-            recordedAt: finite,
-            recordedBy: text,
-          }),
-        ),
-        incidents: z.array(
-          z.looseObject({
-            id: text,
-            category: z.enum(WARD_INCIDENT_CATEGORY_IDS),
-            at: finite,
-            recordedAt: finite,
-            recordedBy: text,
-          }),
-        ),
+        episodes: z
+          .array(
+            z
+              .looseObject({
+                id: text,
+                practice: z.enum(RESTRICTIVE_PRACTICE_IDS),
+                admissionId: id,
+                startedAt: finite,
+                endedAt: z.optional(finite),
+                recordedAt: finite,
+                recordedBy: text,
+              })
+              .check(
+                z.refine(
+                  (episode) =>
+                    episode.startedAt <= episode.recordedAt &&
+                    (episode.endedAt === undefined || episode.endedAt >= episode.startedAt),
+                ),
+              ),
+          )
+          .check(z.refine(distinctIds)),
+        incidents: z
+          .array(
+            z
+              .looseObject({
+                id: text,
+                category: z.enum(WARD_INCIDENT_CATEGORY_IDS),
+                at: finite,
+                recordedAt: finite,
+                recordedBy: text,
+              })
+              .check(z.refine((incident) => incident.at <= incident.recordedAt)),
+          )
+          .check(z.refine(distinctIds)),
         seclusionRoom: z.optional(
           z.looseObject({
             status: z.enum(SECLUSION_ROOM_STATUS_IDS),
@@ -968,6 +982,9 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   const referralById = new Map(state.referrals.map((referral) => [referral.id, referral]));
 
   for (const unit of state.units) {
+    // Ward history remains here after a stay departs or moves elsewhere. Resolve the stay without
+    // requiring its current ward/state, or imposing today's time window on retained episodes.
+    if (unit.restrictivePractice?.episodes.some((episode) => !admissionIds.has(episode.admissionId))) return false;
     // A movement can later be re-pulled (including reusing its admission id), so current
     // placement/admission presence cannot invalidate a release conflict's history.
     const releasedMovementIds = new Set<string>();
