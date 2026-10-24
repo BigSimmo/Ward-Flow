@@ -240,8 +240,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                 data-recorded={contactRecord ? "true" : "false"}
               >
                 {contactRecord
-                  ? `Last confirmed contact as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
-                  : "Clinical contact is not recorded yet."}
+                  ? `Last confirmed contact in this session as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
+                  : "No contact has been confirmed in this session."}
               </p>
             </div>
           )}
