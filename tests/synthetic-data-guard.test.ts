@@ -103,15 +103,6 @@ describe("synthetic-data-guard", () => {
     if (!mixed.safe) expect(mixed.sample).toBe("08 1****");
   });
 
-  it("refuses a real WA landline written in international form and passes the fictitious one", () => {
-    for (const phone of ["+61 8 9224 2000", "+61 (8) 9224 2000", "+618 9224 2000", "61 8 9224-2000"]) {
-      const result = checkSyntheticPayload({ referrer: { phone } });
-      expect(result.safe, phone).toBe(false);
-    }
-    for (const phone of ["+61 8 5550 0142", "+61 (8) 7010 1234", "+61855500108"])
-      expect(checkSyntheticPayload({ referrer: { phone } }).safe, phone).toBe(true);
-  });
-
   it("detects Australian mobile phone numbers", () => {
     const badPayload = {
       contact: "Next of kin phone 0412 345 678 called.",

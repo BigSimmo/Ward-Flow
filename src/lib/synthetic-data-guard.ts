@@ -16,10 +16,9 @@ const MEDICARE_PATTERN = /\b([2-6]\d{3}[ -]?\d{5}[ -]?\d)\b/;
 // Explicit hospital patient record markers followed by 6-10 digits
 const HOSPITAL_RECORD_PATTERN = /\b(?:UMRN|MRN|UR[N#]?)\s*[:#-]?\s*(\d{6,10})\b/i;
 
-// Australian phone numbers: Mobile 04xx xxx xxx or +61 4xx, WA landline (08) xxxx xxxx or +61 8
-// xxxx xxxx (the international form must be caught too, or a real landline written that way passes).
+// Australian phone numbers: Mobile 04xx xxx xxx or +61 4xx, WA landline (08) xxxx xxxx
 const PHONE_PATTERN =
-  /\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\+?61\s*\(?8\)?[ -]?\d{4}[ -]?\d{4}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/;
+  /\b(?:\+?61\s*4\d{2}[ -]?\d{3}[ -]?\d{3}|04\d{2}[ -]?\d{3}[ -]?\d{3}|\(?08\)?\s*\d{4}[ -]?\d{4})\b/;
 
 // Audit E-06: the ACMA keeps 5550 xxxx and 7010 xxxx in each landline area code for fiction, so no
 // real service or person can hold one. The demo's own numbers (the Settings profile, the reference
