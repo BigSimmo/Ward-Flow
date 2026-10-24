@@ -279,6 +279,7 @@ const capacityFigure = z.looseObject({
   source: z.enum(["feed", "ward"]),
   revision: z.optional(counter),
   confirmations: z.optional(counter),
+  confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
 });
 const unit = z
   .looseObject({

@@ -849,6 +849,7 @@
   .page * {
     color: CanvasText !important;
     background-color: Canvas !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 
@@ -869,6 +870,12 @@
 
   .table tr {
     break-inside: avoid;
+  }
+
+  /* The weekly pilot's step and sample descriptions must stay complete on paper. */
+  .page [data-testid="ward-pilot-measures"] dt {
+    overflow: visible;
+    white-space: normal;
   }
 
   .page [data-print-hide] {

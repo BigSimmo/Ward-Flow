@@ -1856,12 +1856,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       ? `Bed held · absent without leave since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
       : `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
   }));
+  // The ward answers its own referrals: the site bed manager sees them but has no Accept (D-80).
+  const answerBlockedReason = routeRole === "bed_manager" ? `${unit.name} answers its own referrals.` : undefined;
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
     title: resolvePatientIdentity(movement).displayName,
-    onAccept: () => {
-      handleAcceptInPrinciple(movement.id, unit.id);
-    },
+    onAccept:
+      answerBlockedReason === undefined
+        ? () => {
+            handleAcceptInPrinciple(movement.id, unit.id);
+          }
+        : undefined,
   }));
   // The same count the Decisions cockpit heading and windows show.
   const decisionsDue = openDecisionCount({
@@ -2346,6 +2351,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           setBedQuery={setBedQuery}
           unit={unit}
           handleAcceptInPrinciple={handleAcceptInPrinciple}
+          answerBlockedReason={answerBlockedReason}
           units={units}
           capacity={capacity}
           accepted={accepted}
