@@ -226,6 +226,75 @@ const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
 };
 const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-phone-menu", "the phone Menu"];
 
+test.describe("@mockup phone navigation preparation", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+  });
+  for (const destination of [
+    { from: "dock", path: "/ward-flow/referrals", heading: /^Referrals$/ },
+    { from: "menu", path: "/ward-flow/capacity", heading: /^Capacity,/ },
+  ] as const) {
+    test(`phone ${destination.from} prepares the complete page before the tap`, async ({ page, request }) => {
+      const identity = await request.get("/api/local-project-id");
+      test.skip(
+        (await identity.json()).localServer.runtimeMode !== "production",
+        "Next prefetch runs in production only",
+      );
+      let pageCodeRequested = false;
+      page.on("request", (request) => {
+        if (new URL(request.url()).pathname.startsWith(`/_next/static/chunks/app${destination.path}/page-`))
+          pageCodeRequested = true;
+      });
+      await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+      await expect(page.locator("html")).toHaveAttribute("data-wf-bar-ready", "");
+      if (destination.from === "menu") {
+        await page.getByTestId("ward-bar-phone-menu").tap();
+        await expect(page.getByTestId("ward-phone-menu")).toBeVisible();
+      }
+      await expect
+        .poll(() => pageCodeRequested, {
+          timeout: 8_000,
+          message: "The visible phone link must prepare its page code before a tap",
+        })
+        .toBe(true);
+      await page.waitForLoadState("networkidle");
+      // A shell-only prefetch still needs a server round trip. Block both RSC and document
+      // requests: otherwise Next's hard-reload recovery would hide the incomplete prefetch.
+      let destinationRequests = 0;
+      await page.route(`**${destination.path}*`, (route) => {
+        destinationRequests += 1;
+        return route.abort();
+      });
+      let documentReloads = 0;
+      page.on("request", (request) => {
+        if (request.isNavigationRequest()) documentReloads += 1;
+      });
+      const started = Date.now();
+      await page.locator(`a[href="${destination.path}"]`).filter({ visible: true }).first().tap();
+      await expect(page.locator("main").getByRole("heading", { level: 1, name: destination.heading })).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`${destination.path}$`));
+      expect(documentReloads).toBe(0);
+      expect(destinationRequests).toBe(0);
+      await expect(page.getByTestId("ward-flow-loading")).toHaveCount(0);
+      await expect(page.getByTestId("ward-bar")).toBeVisible();
+      await test.info().attach("navigation", {
+        body: JSON.stringify({
+          path: destination.path,
+          tapToHeadingMs: Date.now() - started,
+          documentReloads,
+          destinationRequests,
+        }),
+        contentType: "application/json",
+      });
+      await page.screenshot({ path: test.info().outputPath(`prepared-${destination.from}.png`) });
+    });
+  }
+});
+
 function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
   return width <= PHONE_BAR_MAX_WIDTH
     ? [
