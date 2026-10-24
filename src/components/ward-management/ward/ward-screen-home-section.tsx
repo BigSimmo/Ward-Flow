@@ -3,6 +3,7 @@
 // The ward screen's Home tab section. Split out of `ward-screen.tsx` (18 October 2026) to keep that
 // file under the line cap.
 
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import { Search } from "lucide-react";
 import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
@@ -10,7 +11,7 @@ import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-managemen
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
-import type { Rejection } from "@/components/ward-management/ward-model";
+import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
 import type { WaitingReferral } from "./ward-bed-board";
@@ -51,6 +52,7 @@ type WardScreenHomeSectionProps = {
   setBedQuery: Dispatch<SetStateAction<string>>;
   unit: Unit;
   handleAcceptInPrinciple: (movementId: string, unitId: string) => void;
+  answerBlockedReason?: string;
   units: Unit[];
   capacity: ReturnType<typeof unitCapacity>;
   accepted: Movement[];
@@ -64,27 +66,8 @@ type WardScreenHomeSectionProps = {
   visibleIncoming: Movement[];
   declineOpenFor: string | undefined;
   toggleDecline: (movementId: string) => void;
-  declineReason:
-    | "sex_mix"
-    | "no_bed"
-    | "specialling_unavailable"
-    | "acuity_mix"
-    | "capability_mismatch"
-    | "bed_pulled_for_earlier_referral"
-    | "out_of_catchment"
-    | undefined;
-  setDeclineReason: Dispatch<
-    SetStateAction<
-      | "sex_mix"
-      | "no_bed"
-      | "specialling_unavailable"
-      | "acuity_mix"
-      | "capability_mismatch"
-      | "bed_pulled_for_earlier_referral"
-      | "out_of_catchment"
-      | undefined
-    >
-  >;
+  declineReason: DeclineReason | undefined;
+  setDeclineReason: Dispatch<SetStateAction<DeclineReason | undefined>>;
   submitDecline: (event: FormEvent<HTMLFormElement>, movementId: string) => void;
   priorRejectionCountRef: RefObject<number>;
   rejections: Rejection[];
@@ -95,15 +78,7 @@ type WardScreenHomeSectionProps = {
     movementId: string;
     outcome: "Accepted" | "Declined";
     at?: number | undefined;
-    reason?:
-      | "sex_mix"
-      | "no_bed"
-      | "specialling_unavailable"
-      | "acuity_mix"
-      | "capability_mismatch"
-      | "bed_pulled_for_earlier_referral"
-      | "out_of_catchment"
-      | undefined;
+    reason?: DeclineReason | undefined;
   }[];
   breakdown: CapacityBreakdown;
   capacityConfirmationForm: () => ReactElement;
@@ -160,6 +135,7 @@ export function WardScreenHomeSection({
   setBedQuery,
   unit,
   handleAcceptInPrinciple,
+  answerBlockedReason,
   units,
   capacity,
   accepted,
@@ -272,6 +248,7 @@ export function WardScreenHomeSection({
         }
         unit={unit}
         onAcceptInPrinciple={handleAcceptInPrinciple}
+        answerBlockedReason={answerBlockedReason}
         units={units}
         capacity={capacity}
         accepted={accepted}
@@ -376,7 +353,7 @@ export function WardScreenHomeSection({
               >
                 <WardFreshness
                   confirmedAt={unit.allocatable.confirmedAt}
-                  confirmedByRole={unit.allocatable.source === "ward" ? `NUM ${unit.name}` : undefined}
+                  confirmedByRole={capacityConfirmer(unit)}
                   now={now}
                   derived={unit.allocatable.source !== "ward"}
                 />

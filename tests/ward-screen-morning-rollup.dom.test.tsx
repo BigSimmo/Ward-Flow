@@ -120,15 +120,14 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     expect(toggleBtn).toBeInTheDocument();
 
     // Notification center initially closed
-    expect(screen.queryByTestId("ward-notification-center-wrap")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
 
     // Click to open
     fireEvent.click(toggleBtn);
-    expect(screen.getByTestId("ward-notification-center-wrap")).toBeInTheDocument();
     expect(screen.getByTestId("ward-notification-center")).toBeInTheDocument();
 
     // Click again to close
     fireEvent.click(toggleBtn);
-    expect(screen.queryByTestId("ward-notification-center-wrap")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
   });
 });

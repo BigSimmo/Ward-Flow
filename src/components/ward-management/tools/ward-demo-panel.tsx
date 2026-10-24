@@ -21,8 +21,12 @@ import styles from "./ward-tools-sheet.module.css";
  * scenario file are changed. It replaces the Shift desk "Scenario controls" menu and the footer clock
  * popover, which repeated the same controls, and holds the one tap Demo reset (`demo-reset` flag). Every event is
  * raised with `role: "demo"` exactly as before, and every string says demo, never clinical.
+ *
+ * `oneList` (change 8, D-77, 21 Oct 2026): the desktop Demo menu under the Synthetic pill shows all
+ * seven scenarios as one list, so the separate Demo reset block and its three choices go there.
+ * Phone Tools keeps both until a phone mock-up is approved.
  */
-export function WardDemoPanel() {
+export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
   const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration, shared } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
@@ -48,14 +52,14 @@ export function WardDemoPanel() {
   const reach = demoDataReach(shared?.enabled === true);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
-  const resetOn = useWardFeatureFlag("demo-reset");
+  const resetOn = useWardFeatureFlag("demo-reset") && !oneList;
   const resetScenarios: readonly string[] = DEMO_RESET_SCENARIOS;
   const pickable = resetOn ? WARD_SCENARIOS.filter((candidate) => !resetScenarios.includes(candidate)) : WARD_SCENARIOS;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function saveToFile() {
+  async function saveToFile() {
     if (!saveScenarioFile) return;
-    const built = saveScenarioFile();
+    const built = await saveScenarioFile();
     if (!built.ok) {
       setMessage(built.reason);
       return;
@@ -121,10 +125,10 @@ export function WardDemoPanel() {
       setMessage("That file could not be read, so nothing was loaded.");
       return;
     }
-    const result = loadScenarioFile(text);
+    const result = await loadScenarioFile(text);
     setMessage(
       result.ok
-        ? "Scenario loaded. It is kept in this tab only, so load the file again after a refresh."
+        ? "Scenario loaded. A refresh keeps it, except its typed text, unless device saving is paused."
         : result.reason,
     );
   }
@@ -226,7 +230,9 @@ export function WardDemoPanel() {
         }}
         secondary={[{ label: "Cancel", onAction: () => setConfirming(null) }]}
       />
-      <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
+      {oneList ? null : (
+        <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
+      )}
       <WardPracticeMode className={styles.resetBlock} headingClassName={styles.resetHeading} />
       <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       <p className={styles.liveNote} role="status">

@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { childProcessExitCode } from "./child-process-result.mjs";
+import { selectRelatedTests } from "./ward-flow/related-test-selection.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const unsafeSelectionPattern =
@@ -60,13 +61,17 @@ if (filesIndex >= 0) {
 }
 const forwarded = args.filter((argument, index) => !selectionArgs.has(index) && argument !== "--dry-run");
 console.log(`Focused test inputs: ${selection.files.join(", ")}`);
+const { selected, note } = selectRelatedTests({ root: projectRoot, changed: selection.files });
+if (selected.length === 0) failClosed("no import or declared source-reading contract covers the selected inputs");
+console.log(`Focused selection: ${note}`);
 if (args.includes("--dry-run")) {
-  console.log("Command: vitest related --run <changed files>");
+  console.log("Command: vitest run <selected tests>");
+  for (const file of selected) console.log(`  ${file}`);
   process.exit(0);
 }
 
 const runnerPath = path.join(projectRoot, "scripts", "run-vitest.mjs");
-const result = spawnSync(process.execPath, [runnerPath, "related", "--run", ...selection.files, ...forwarded], {
+const result = spawnSync(process.execPath, [runnerPath, "run", ...selected, ...forwarded], {
   cwd: projectRoot,
   stdio: "inherit",
 });

@@ -41,7 +41,7 @@ describe("the ED board marks a wait that reaches the access target, not only one
     if (!waiting) throw new Error("fixture no longer has an open movement waiting in an ED");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Harness edId={waiting.originEdId} />
+        <Harness edId={waiting.originEdId!} />
       </WardFlowProvider>,
     );
     const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-minutes-in-department]"));

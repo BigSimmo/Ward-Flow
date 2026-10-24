@@ -13,6 +13,7 @@ import {
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { ED_ACCESS_TARGET_MINUTES, type Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = 10_000;
 
@@ -26,7 +27,7 @@ function movement(overrides: Partial<Movement> & Pick<Movement, "id" | "originEd
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -166,7 +167,7 @@ describe("edHomeSummaries", () => {
       ED_ACCESS_TARGET_MINUTES,
     ).find((s) => s.ed.id === edA.id);
     const withDeclinesAndNoReferral = edHomeSummaries(
-      [movement({ ...base, referredUnitIds: [], declines: [{ unitId: "u1", at: 0, reason: "no_bed" }] })],
+      [movement({ ...base, referredUnitIds: [], declines: [{ unitId: "u1", at: 0, reason: "no_suitable_bed" }] })],
       NOW,
       ED_ACCESS_TARGET_MINUTES,
     ).find((s) => s.ed.id === edA.id);

@@ -50,16 +50,18 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    */
   RECORD_TRANSPORT_NEED: ["ed", "ward", "community", "coordinator"],
   /*
-   * `ed` ALONE: the department physically holding the form is who can mark it received. Widened
-   * codes (1A, 3A, 3C, 3D, 6A, 6B, 6C, 5A, 5B) do not widen the role.
+   * The place physically holding the form is who can mark it received. Widened codes (1A, 3A, 3C,
+   * 3D, 6A, 6B, 6C, 5A, 5B) do not widen the role. On a ward transfer or a community journey (D-76)
+   * that place is the sending ward or team, so D-80 adds both, for journeys they sent only (the
+   * reducer checks the kind, the server's scope check which ward or team).
    */
-  RECORD_LEGAL_FORM_RECEIVED: ["ed", "coordinator"],
+  RECORD_LEGAL_FORM_RECEIVED: ["ed", "ward", "community", "coordinator"],
   /*
    * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
-   * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the department physically
-   * holding the form is who can say a receipt was recorded in error.
+   * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the place physically holding
+   * the form is who can say a receipt was recorded in error, with the same D-80 sender check.
    */
-  CORRECT_LEGAL_FORM_RECEIPT: ["ed", "coordinator"],
+  CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
   /*
    * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
@@ -84,12 +86,15 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * reducer refuses it against a bed that is not ready whichever role raises it. */
   PULL_PATIENT: ["ward", "coordinator"],
   DECLINE: ["ward", "coordinator"],
-  HANDOVER_READY: ["ed", "coordinator"],
+  // D-80 follow-up to #611: a community team readies the handover of a journey it sent, as an ED
+  // does for its own. The reducer and the server check it is the team's own journey.
+  HANDOVER_READY: ["ed", "community", "coordinator"],
   TRANSPORT_ACCEPTED: ["officer", "coordinator"],
   TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
   PATIENT_COLLECTED: ["officer", "coordinator"],
   PATIENT_ARRIVED: ["officer", "ward", "coordinator"],
-  CONFIRM_CAPACITY: ["ward", "coordinator"],
+  // Role access plan v2 (D-80): the site's bed manager for its own wards, which the scope check enforces.
+  CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
   RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
@@ -99,8 +104,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_SCENARIO: ["demo"],
   // Task 3 of the audit-wiring plan: only a coordinator may save the settings-screen draft.
   SET_CONFIGURATION: ["coordinator"],
-  CHANGE_URGENCY: ["coordinator", "ed"],
-  CHANGE_LEGAL_STATUS: ["coordinator", "ed"],
+  // D-80: the referrer changes its own referral's urgency or legal status, whether an ED, a ward
+  // or a team, on journeys it sent only (reducer and server sender checks).
+  CHANGE_URGENCY: ["coordinator", "ed", "ward", "community"],
+  CHANGE_LEGAL_STATUS: ["coordinator", "ed", "ward", "community"],
   RELEASE_PULL: ["coordinator", "ward"],
   // TR-D6 (owner, 2026-08-30): the team that BOOKED it, and the coordinator. The sending team
   // owns the job (TR-D5) and every movement originates at an emergency department
@@ -179,15 +186,17 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RELEASE_DIVERTED_BED: ["coordinator", "ward", "ed"],
   REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
   RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
-  FLAG_BED_RELEASE: ["ward", "coordinator"],
-  CONFIRM_BED_RELEASE: ["ward", "coordinator"],
+  // D-80: the site's bed manager may move, block and prepare a release for its own wards too.
+  // Chasing releases is its main job.
+  FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
   // Bed-model rework (2026-08-28). All three are `ward`-only for the same reason the four above
   // are: only the ward moves a bed between stages, flags it stuck or unstuck, or says it is being
   // made ready. A coordinator sees every one of them and changes none of them.
-  REVERT_BED_RELEASE: ["ward", "coordinator"],
-  BLOCK_BED_RELEASE: ["ward", "coordinator"],
-  CLEAR_BED_RELEASE_BLOCK: ["ward", "coordinator"],
-  SET_BED_PREPARATION: ["ward", "coordinator"],
+  REVERT_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
+  CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
+  SET_BED_PREPARATION: ["ward", "bed_manager", "coordinator"],
   RELEASE_BED: ["ward", "coordinator"],
   RECORD_LEAVE_BED: ["ward", "coordinator"],
   END_LEAVE_BED: ["ward", "coordinator"],
@@ -216,8 +225,12 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   // A stay-level discharge blocker is the ward's to record, exactly like the release-level one.
-  RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
-  CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "coordinator"],
+  // D-80: and the site's bed manager. The discharge date and the discharge itself stay with the ward.
+  RECORD_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
+  CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
+  // Fix plan item 10: the ED records the level at intake and may change it while the patient waits,
+  // the ward changes it for its own beds, and the coordinator for either.
+  RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
   /*
    * Mirrors `WITHDRAW_REFERRAL` below exactly, and for the same reason: whoever may raise a
    * movement may say what is holding it up, plus the coordinator. The four are not
@@ -266,7 +279,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // can retract.
   CLEAR_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
   /*
-   * ⚠️ MIRRORS `CHANGE_URGENCY` EXACTLY, AND THAT IS THE ARGUMENT RATHER THAN A CONVENIENCE.
+   * ⚠️ NEVER WIDER THAN `CHANGE_URGENCY`, AND THAT IS THE ARGUMENT RATHER THAN A CONVENIENCE.
+   * D-80 gave sending wards and teams `CHANGE_URGENCY` on their own journeys; the flag stays with
+   * the two roles below, which is stricter and so still safe.
    * `queueOrder` puts this flag ABOVE all three urgency tiers, so it MUST NOT be easier to raise
    * than the tier it outranks: a control available to more roles than `CHANGE_URGENCY` would let
    * somebody who may not move a patient from tier 3 to tier 1 put them above every tier 1 instead.
@@ -289,13 +304,28 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // information is the ward's (or the coordinator's for it); the referrer side ticks items off.
   MARK_REFERRAL_OPENED: ["ward", "coordinator"],
   REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
-  MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
-  // Smart features idea 7: the ward for itself (reducer checks the acting unit), or the coordinator.
-  CLOSE_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
-  REOPEN_WARD_TO_ADMISSIONS: ["ward", "coordinator"],
-  // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair completes.
+  // D-80: a sending ward ticks off what the receiving ward asked it for, on referrals it sent only.
+  MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "ward", "coordinator"],
+  // Fix plan item 4 (21 Oct 2026): the coordinator assigns a referral to any listed desk, and an
+  // ED or community desk takes one for itself (the reducer checks which). The same desks log calls.
+  ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
+  LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+  ASK_MORE_WARDS: ["coordinator"],
+  // Smart features idea 7: the ward for itself (reducer checks the acting unit), its site's bed
+  // manager (D-80), or the coordinator.
+  CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair
+  // completes. D-80: the site's bed manager may complete an action owned by one of its wards.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
-  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
+  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  // D-72: the ward for itself (reducer checks the acting unit), or the coordinator. A record about
+  // one patient on one ward is made by the ward that is present, so the site's bed manager keeps the
+  // view and the room status only (D-80).
+  RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
+  RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
+  RECORD_WARD_INCIDENT: ["ward", "coordinator"],
+  SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*
@@ -337,7 +367,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // `ed` to `ed_medical`, so a ward cannot file a referral under another source.
   RECEIVE_REFERRAL: ["community", "ed", "ward", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
-  ADD_PATIENT: ["ed", "community", "coordinator"],
+  // A ward adds one in its own name from Add patient and its New referral sheet (role access plan
+  // v2, D-80), registered to its own ward, rather than borrowing the ED or community role.
+  ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
   /**
    * Owner ruling FD-25: a WARD answers a referral addressed to it. The coordinator keeps the role
    * too — it overrides, and an override nobody can exercise is not an override.
@@ -419,11 +451,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_REFERRER_WITHDRAWAL: ["coordinator", "community", "ed", "ward"],
   /**
    * RB7, build plan item 27 (2026-09-17): the three parties who could plausibly need to correct a
-   * referral after the fact — the referrer's own team (`community` or `ed`, whichever raised it),
-   * and the coordinator who may be handling it. `ward` is excluded: a ward answers a referral, it
-   * does not author or amend the referrer's own account of it.
+   * referral after the fact — the referrer's own desk (`community`, `ed` or, since wards send
+   * referrals too (FD-25), the sending `ward`), and the coordinator who may be handling it. The
+   * server's sender check keeps a ward to the referrals it sent, never one it is answering (D-80).
    */
-  ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+  ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
   /**
    * F1 (Task 5, 2026-09-04): only the coordinator may raise either event. This table entry is the
    * ENTIRE enforcement — the generic role check in `wardFlowReducer`'s switch preamble rejects any
@@ -444,7 +476,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * whose `to.placeId` matches its own claim. Widening this list costs nothing a role could not
    * already be refused for by that check.
    */
-  MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community"],
+  MARK_NOTICE_READ: ["coordinator", "ed", "ward", "officer", "community", "bed_manager"],
   /*
    * COORDINATOR-ONLY, ALL THREE — read from where the row is OBSERVED, not assumed. `buildActionInbox`
    * (`ward-derivations.ts`) is rendered by exactly one screen in this codebase today:
@@ -474,6 +506,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNSNOOZE_INBOX_ITEM: ["coordinator"],
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
+  // FD-10: the ward's own assessment. The coordinator may act for a ward (Josh, 10 Oct 2026).
+  RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
@@ -488,24 +522,28 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
   EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
-  CONFIRM_MORNING_ROLLUP: ["ward", "coordinator"],
-  SEND_WARD_BUZZ: ["coordinator", "bed_manager", "executive"],
+  CONFIRM_MORNING_ROLLUP: ["ward", "bed_manager", "coordinator"],
+  SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
-  // The handover sheet is signed by whoever is handing over — coordinator or the ward.
+  // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
+  // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
-  // Statewide broadcast directives — coordinators, bed managers, and executives dispatch; all roles may acknowledge for their unit.
-  DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-  ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
-  STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
-  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  // Statewide broadcast directives: coordinators and bed managers dispatch, and every desk that
+  // receives one acknowledges it. The executive changes nothing and is sent none (role access plan
+  // v2, D-80; the server already refused it).
+  DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+  ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
+  STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+  EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
   RAISE_PULL_NOW: ["coordinator"],
-  REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
+  // D-80: the site's bed manager answers a bed call for one of its own wards.
+  REPLY_BROADCAST_ALERT: ["ward", "bed_manager", "coordinator"],
   // Planned admissions (stream D): booked and managed by the coordinator, bed manager or the
   // receiving ward; the ward or coordinator records the arrival.
   BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
@@ -515,6 +553,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+  RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the
   // coordinator, who may undo anyone's.

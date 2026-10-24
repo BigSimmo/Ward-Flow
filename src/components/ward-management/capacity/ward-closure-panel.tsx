@@ -26,7 +26,7 @@ import styles from "./ward-closure-panel.module.css";
 const STATUS_WORDS: Record<Extract<WaitingOnClosedWard, { kind: "bed_request" }>["status"], string> = {
   asked: "asked this ward",
   accepted: "accepted here",
-  bed_held: "bed held here",
+  bed_held: "bed pulled here",
 };
 
 /**

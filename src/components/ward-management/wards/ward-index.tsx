@@ -41,7 +41,7 @@ import {
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -477,7 +477,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const totalBeds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
   const totalOccupied = rows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
   const readyNow = rows.reduce((sum, row) => sum + row.ready, 0);
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   const freeingByShiftEnd = bedReleases.filter(
     (release) =>
       release.state !== "discharged" &&
@@ -1105,7 +1105,7 @@ function WardProfileBody({
           <dd>{unit.lockedBeds}</dd>
         </div>
         <div>
-          <dt>1:1</dt>
+          <dt>Observation staff in use</dt>
           <dd>{row.specialling}</dd>
         </div>
       </dl>
@@ -1149,7 +1149,7 @@ function WardProfileBody({
             href={`/ward-flow/board/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
-            Bed board
+            Stays and discharges
           </Link>
         )}
         {inSheet ? null : (
@@ -1291,7 +1291,7 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
-      secondary={{ label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
+      secondary={{ label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
       primary={{ label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }}
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"

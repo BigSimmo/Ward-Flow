@@ -66,6 +66,11 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* A card's explanation under its figures, on the figures' own gutter. */
+.cardFootNote {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+
 .tableWrap {
   min-width: 0;
   overflow-x: auto;
@@ -339,6 +344,14 @@
 .page .packTable .edCell,
 .page .packTable tbody th[scope="row"] {
   white-space: nowrap;
+}
+
+/* Desktop up to 1440px with the rail open: the patient name wraps under its UMRN so the ED queue
+   keeps Accepted by in view instead of cutting it (UX audit 21 Oct 2026). */
+@media (min-width: 62.5625rem) and (max-width: 90rem) {
+  .page .packTable tbody th[scope="row"] {
+    white-space: normal;
+  }
 }
 
 /* Tablet portrait: Accepted by is the first column to go at 820px. */
@@ -792,10 +805,9 @@
   width: 100%;
 }
 
+/* Phone notes wrap: the keep-a-copy instruction was cut mid-sentence (UX audit 21 Oct 2026). */
 .phonePage .phoneNote {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .phoneNote {
@@ -837,6 +849,7 @@
   .page * {
     color: CanvasText !important;
     background-color: Canvas !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 
@@ -857,6 +870,12 @@
 
   .table tr {
     break-inside: avoid;
+  }
+
+  /* The weekly pilot's step and sample descriptions must stay complete on paper. */
+  .page [data-testid="ward-pilot-measures"] dt {
+    overflow: visible;
+    white-space: normal;
   }
 
   .page [data-print-hide] {
@@ -901,6 +920,16 @@
 
 .printOnly {
   display: none;
+}
+
+.printOnlyInline {
+  display: none;
+}
+
+@media print {
+  .printOnlyInline {
+    display: inline;
+  }
 }
 
 .printMeta {
@@ -955,6 +984,17 @@
 
 .phonePage .gated {
   display: flex;
+}
+
+/* Visual desk, 22 Oct 2026: offline, the New snapshot reason ran over Print on the phone hero, so the
+   reason sits under its button and wraps. */
+.downtimePhoneHero .gated {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.downtimePhoneHero .reasonOnHero {
+  white-space: normal;
 }
 
 .phoneGroupHead,

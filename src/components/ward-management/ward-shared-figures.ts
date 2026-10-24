@@ -24,7 +24,8 @@ import {
 
 /**
  * WAITING — people physically in an emergency department awaiting a bed (`isWaitingInEd`), by the
- * health service that runs the department. The noun is "waiting". Home's hero ("62 waiting in ED"),
+ * health service that runs the department. The noun is "waiting". Transit, recorded
+ * departures/outcomes and ward-origin transfers are excluded. Home's hero ("62 waiting in ED"),
  * the menu's Waiting badge, Waiting's own title, the header's service picker ("All services 62
  * waiting"), every ED tile and Network's ready-against-waiting rows all read this, so each service's
  * figure is the same everywhere and the services add up to the total: a person waits in exactly one
@@ -74,7 +75,7 @@ const NOT_WAITING_WORDS: Record<NotWaitingReason, string> = {
   in_transit: "in transit",
   ward_transfer: "moving between wards",
   for_discharge: "for discharge",
-  for_follow_up: "for community follow-up",
+  for_follow_up: "for community follow-up or assessment",
   withdrawn: "withdrawn",
 };
 

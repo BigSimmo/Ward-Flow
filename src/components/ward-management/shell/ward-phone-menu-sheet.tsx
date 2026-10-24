@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ComponentProps, type ComponentType, type ReactNode, type RefObject } from "react";
-import { BedSingle, Inbox, Clock3, Plus, Search, Settings, Truck, UserPlus, Wrench } from "lucide-react";
+import { BedSingle, CircleHelp, Inbox, Clock3, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -17,12 +17,15 @@ import { preloadWhenIdle } from "../preload-when-idle";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "../ward-shared-access";
-import { officerHref, settingsHref, unitHref } from "./ward-facade";
+import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useCanOpenHref } from "./ward-access";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
+import { WardMyWards } from "./ward-my-wards";
+import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
@@ -36,7 +39,8 @@ import actNowStyles from "./ward-phone-menu-act-now.module.css";
  * shell-5 (13 Oct 2026): the Create items match the + button's name. Add patient joins (transport stays
  * out until a phone booking entry exists, per A4-10);
  * a delay is logged on its patient, so the row says it starts by choosing them. `href` names a page
- * that is not a Menu entry.
+ * that is not a Menu entry. UX audit (21 Oct 2026): "Transport jobs" left, as it is a page to look at,
+ * not something to start, and the menu already lists Transport.
  */
 const CREATE_LINKS: readonly {
   id: string;
@@ -44,7 +48,6 @@ const CREATE_LINKS: readonly {
   meta: string;
   icon: LucideIcon;
   href?: string;
-  asButton?: boolean;
 }[] = [
   { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
@@ -54,16 +57,6 @@ const CREATE_LINKS: readonly {
     meta: "New record with a UMRN",
     icon: UserPlus,
     href: WARD_ADD_PERSON_HREF,
-  },
-  {
-    // The officer page lists existing transport jobs; booking one starts from the placement panel or the
-    // community desk, so this row is a way to see the jobs, not to book.
-    id: "transport-jobs",
-    label: "Transport jobs",
-    meta: "See booked transport and its status",
-    icon: Truck,
-    href: officerHref(),
-    asButton: true,
   },
 ];
 
@@ -224,6 +217,7 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
             <Chevron />
           </Link>
         </li>
+        <HelpRow onClose={onClose} />
         <DataModeRow onClose={onClose} />
       </ul>
       <p className={styles.note}>
@@ -231,6 +225,28 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
         Synthetic prototype, not approved for clinical use
       </p>
     </section>
+  );
+}
+
+/** Help: says "New" until this desk's tour is seen, and opens the tour until then. */
+function HelpRow({ onClose }: { onClose: () => void }) {
+  const help = useWardHelpRow();
+  return (
+    <li>
+      <button
+        type="button"
+        className={styles.row}
+        aria-label={help.label}
+        data-testid="ward-phone-menu-help"
+        onClick={() => {
+          onClose();
+          help.open();
+        }}
+      >
+        <RowBody icon={CircleHelp} label="Help" meta={help.isNew ? "New" : undefined} />
+        <Chevron />
+      </button>
+    </li>
   );
 }
 
@@ -313,9 +329,34 @@ function CreateSheet({
   // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
   const gate = useRoleGate();
   const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
-  const router = useRouter();
+  // Add patient is not a Menu entry, so it asks the same access table and the route's own gate
+  // itself: a desk that cannot add a patient is not offered a page that refuses it (D-80).
+  const canOpen = useCanOpenHref();
+  const canAddPatient = canOpen(WARD_ADD_PERSON_HREF) && gate("ADD_PATIENT").allowed;
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
+  const rows = CREATE_LINKS.flatMap((item) => {
+    if (item.id === "add-patient" && !canAddPatient) return [];
+    const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
+    return entry
+      ? [
+          <li key={item.id}>
+            <Link
+              href={
+                item.id === "wards" && currentUnitId !== undefined
+                  ? unitHref(decodeURIComponent(currentUnitId))
+                  : entry.href
+              }
+              className={styles.row}
+              onClick={onClose}
+            >
+              <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+              <Chevron />
+            </Link>
+          </li>,
+        ]
+      : [];
+  });
   return (
     <Sheet
       id="ward-phone-create"
@@ -345,45 +386,12 @@ function CreateSheet({
           New referral
         </button>
       ) : null}
-      <ul className={`${styles.list} ${styles.rich}`}>
-        {CREATE_LINKS.flatMap((item) => {
-          const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
-          return entry
-            ? [
-                <li key={item.id}>
-                  {item.asButton ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      data-testid={`ward-phone-create-${item.id}`}
-                      onClick={() => {
-                        onClose();
-                        router.push(entry.href);
-                        announceToWardShell(`${item.label}: ${item.meta}.`);
-                      }}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </button>
-                  ) : (
-                    <Link
-                      href={
-                        item.id === "wards" && currentUnitId !== undefined
-                          ? unitHref(decodeURIComponent(currentUnitId))
-                          : entry.href
-                      }
-                      className={styles.row}
-                      onClick={onClose}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </Link>
-                  )}
-                </li>,
-              ]
-            : [];
-        })}
-      </ul>
+      {rows.length > 0 ? (
+        <ul className={`${styles.list} ${styles.rich}`}>{rows}</ul>
+      ) : canRefer ? null : (
+        // An officer or executive desk has nothing to start, so the sheet says so rather than open empty.
+        <p className={styles.empty}>Nothing to start from this desk.</p>
+      )}
     </Sheet>
   );
 }
@@ -484,7 +492,8 @@ function MenuPages({
   }
   return (
     <>
-      <Section label="Needs you" rich>
+      {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds. */}
+      <Section label="Act now and overdue" rich>
         {needs.length === 0 ? (
           <li className={styles.empty}>Nothing is act-now or overdue.</li>
         ) : (
@@ -498,6 +507,7 @@ function MenuPages({
           )}
         </Section>
       ))}
+      <WardMyWards variant="sheet" onNavigate={onClose} />
       <MoreSection onDrawer={onDrawer} onClose={onClose} />
     </>
   );

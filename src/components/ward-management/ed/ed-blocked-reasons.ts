@@ -9,6 +9,8 @@ import type {
   ReferralGender,
   Security,
 } from "@/components/ward-management/ward-model";
+import type { ObservationLevel } from "@/components/ward-management/ward-observation";
+import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 
 /**
  * THE ED SCREEN'S BLOCKED-REASON RULES — why a control on the ED screen is unavailable, or why an
@@ -42,7 +44,10 @@ export type ReferralDraftAnswers = {
   gender: ReferralGender | "not_recorded" | undefined;
   legalStatus: LegalStatus | undefined;
   urgency: 1 | 2 | 3 | undefined;
-  specialling: boolean | undefined;
+  /** Fix plan item 10: the observation level, unanswered until a person chooses one. */
+  observation: ObservationLevel | undefined;
+  /** The typed next review time, `HH:MM`. Blank is a complete answer (none recorded). */
+  observationReviewTime?: string;
   highAcuity: boolean | undefined;
   legalFormDueAtDate: string;
   legalFormDueAtTime: string;
@@ -92,8 +97,8 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
   if (draft.urgency === undefined) {
     return "Choose an urgency tier before raising this referral. None is chosen for you: an urgency tier nobody picked would be filed as this patient's own record.";
   }
-  if (draft.specialling === undefined) {
-    return 'State whether one-to-one nursing is required before raising this referral. None is chosen for you: an unanswered box would be filed as "not required", and the reducer only checks a ward\'s one-to-one capacity when the patient is recorded as needing it.';
+  if (draft.observation === undefined) {
+    return "Choose an observation level before raising this referral. None is chosen for you: a level nobody picked would be filed as this patient's own, and the pull only checks a ward's observation staff when the level needs them.";
   }
   if (draft.highAcuity === undefined) {
     return "State whether high-acuity nursing is required before raising this referral. None is chosen for you: an unanswered box would be filed as “not required”, and the acuity gate only checks a ward’s high-acuity staffing when the patient is recorded as needing it.";
@@ -107,7 +112,16 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
   if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
     return "Enter both the date and the time written on the form, or leave both blank.";
   }
+  if (observationReviewTimeUnreadable(draft)) {
+    return "Type the observation review time as a clock time, for example 14:30, or leave it blank.";
+  }
   return undefined;
+}
+
+/** A typed review time that is not a readable 24 hour time. Blank is fine: none recorded. */
+function observationReviewTimeUnreadable(draft: ReferralDraftAnswers): boolean {
+  const typed = draft.observationReviewTime?.trim() ?? "";
+  return typed !== "" && minuteOfDayFromClockText(typed) === undefined;
 }
 
 /** A question on the ED "Raise into a movement" form that can still be unanswered. */
@@ -119,7 +133,8 @@ export type ReferralDraftField =
   | "gender"
   | "legalStatus"
   | "urgency"
-  | "specialling"
+  | "observation"
+  | "observationReviewTime"
   | "highAcuity"
   | "legalFormDueAtDate"
   | "legalFormDueAtTime";
@@ -139,11 +154,12 @@ export function referralDraftMissingFields(draft: ReferralDraftAnswers): Referra
   if (draft.gender === undefined) missing.push("gender");
   if (draft.legalStatus === undefined) missing.push("legalStatus");
   if (draft.urgency === undefined) missing.push("urgency");
-  if (draft.specialling === undefined) missing.push("specialling");
+  if (draft.observation === undefined) missing.push("observation");
   if (draft.highAcuity === undefined) missing.push("highAcuity");
   if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
     missing.push(draft.legalFormDueAtDate === "" ? "legalFormDueAtDate" : "legalFormDueAtTime");
   }
+  if (observationReviewTimeUnreadable(draft)) missing.push("observationReviewTime");
   return missing;
 }
 

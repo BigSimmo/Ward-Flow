@@ -4,7 +4,17 @@ import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
-import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
+import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+
+// The shared state schema loads with the first request rather than with every phone page (Josh,
+// 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
+let isValidSharedState: ((value: unknown) => boolean) | undefined;
+function loadSharedStateCheck(): Promise<void> {
+  if (isValidSharedState) return Promise.resolve();
+  return import("./ward-shared-state-validation").then((module) => {
+    isValidSharedState = module.isValidSharedWardFlowState;
+  });
+}
 
 export type SharedSnapshot = {
   dataMode: "prototype";
@@ -28,6 +38,8 @@ export type SharedView = {
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
+  /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
+  unconfirmedSave?: boolean;
   eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
@@ -69,6 +81,9 @@ export type SharedChangeResult = string | null;
 export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
+  /** This command's definitive answer, including after an uncertain response and same-ID Retry.
+   * Memory only: scoped forms need no access to another command's event history. */
+  confirmation?: Promise<WardCommandOutcome>;
   message?: string;
   /**
    * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
@@ -146,7 +161,23 @@ export class SharedWorkspaceClient {
   /** A started POST may have committed even when changing roles aborts its response. */
   private sentCommandId: string | null = null;
   private queue: QueuedCommand[] = [];
+  private unloadWarningActive = false;
+  private readonly warnBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (this.disposed || (!this.pending && !this.queue.length)) return;
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  /** Only commands need protection: an ordinary board refresh must not block leaving the page. */
+  private syncUnloadWarning() {
+    if (typeof window === "undefined") return;
+    const needed = !this.disposed && (this.pending !== null || this.queue.length > 0);
+    if (needed === this.unloadWarningActive) return;
+    if (needed) window.addEventListener("beforeunload", this.warnBeforeUnload);
+    else window.removeEventListener("beforeunload", this.warnBeforeUnload);
+    this.unloadWarningActive = needed;
+  }
   private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
+  private confirmations = new Map<string, (outcome: WardCommandOutcome) => void>();
   private roleLifetime = new AbortController();
   private settle(
     commandId: string,
@@ -156,19 +187,25 @@ export class SharedWorkspaceClient {
     metadata?: WardCommandMetadata,
     partly?: string,
   ) {
-    this.completions.get(commandId)?.({
+    const outcome: WardCommandOutcome = {
       commandId,
       status,
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
       ...(partly ? { partly } : {}),
-    });
+    };
+    this.completions.get(commandId)?.(outcome);
     this.completions.delete(commandId);
+    if (status !== "failed") {
+      this.confirmations.get(commandId)?.(outcome);
+      this.confirmations.delete(commandId);
+    }
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
+    this.syncUnloadWarning();
   }
   private cancelAll(message: string) {
     if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
@@ -177,6 +214,8 @@ export class SharedWorkspaceClient {
     this.cancelQueued(message);
   }
   private cancelForRoleChange() {
+    // Fence outgoing drawers before their unmount cleanup can autosave into the next desk.
+    if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
       this.settle(
         this.pending.commandId,
@@ -241,6 +280,8 @@ export class SharedWorkspaceClient {
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
+      /** False for detached sign-out cleanup: it never owns the current board's drafts. */
+      manageDrafts?: boolean;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
@@ -297,7 +338,8 @@ export class SharedWorkspaceClient {
   }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
-    this.view = { ...this.view, ...update };
+    this.syncUnloadWarning();
+    this.view = { ...this.view, ...update, unconfirmedSave: this.pending !== null || this.queue.length > 0 };
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
@@ -310,7 +352,7 @@ export class SharedWorkspaceClient {
       (snapshot.accessContext !== undefined &&
         (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
       snapshot.payload?.version !== 1 ||
-      !isValidSharedWardFlowState(snapshot.payload.state) ||
+      !isValidSharedState?.(snapshot.payload.state) ||
       !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
@@ -324,6 +366,8 @@ export class SharedWorkspaceClient {
         snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
           ? held.payload
           : snapshot.payload;
+      if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
+        bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
       this.noteOpenSheets();
     }
@@ -337,6 +381,7 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
+    await loadSharedStateCheck();
     let token: string;
     try {
       token = await this.options.token();
@@ -556,17 +601,23 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
+      const worldEpoch = this.worldEpoch;
+      return {
+        ...outcome,
+        isCurrent: () =>
+          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+        canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+      };
+    };
+    const confirmation = new Promise<WardCommandOutcome>((resolve) =>
+      this.confirmations.set(commandId, (outcome) => resolve(currentOutcome(outcome))),
+    );
     const completion = new Promise<WardCommandOutcome>((resolve) =>
       this.completions.set(commandId, (outcome) => {
-        const worldEpoch = this.worldEpoch;
         resolve({
-          ...outcome,
-          isCurrent: () =>
-            !this.disposed &&
-            !roleSignal.aborted &&
-            generation === this.viewGeneration &&
-            this.worldEpoch === worldEpoch,
-          canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+          ...currentOutcome(outcome),
+          confirmation,
         });
       }),
     );
@@ -577,6 +628,8 @@ export class SharedWorkspaceClient {
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
     });
+    // A read may already be out, in which case drain waits. Protect this queued command at once.
+    this.publish({});
     void this.drain();
     return completion;
   }
@@ -626,6 +679,7 @@ export class SharedWorkspaceClient {
             // This command already has its definitive server answer. A permissions-only read
             // must neither retry it nor reclassify its completion when sign-in or roles change.
             this.pending = null;
+            this.publish({});
             this.settle(
               command.commandId,
               response.ok ? "accepted" : "refused",

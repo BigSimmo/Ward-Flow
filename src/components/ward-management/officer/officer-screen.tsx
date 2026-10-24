@@ -3,11 +3,10 @@
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Badge,
@@ -46,7 +45,8 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import {
   changeReasonLabels,
@@ -89,6 +89,7 @@ import {
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -223,9 +224,9 @@ export function OfficerScreen() {
       : "No accepted destination recorded";
   const originLabelFor = (movement: Movement) => {
     const originEd = edById(movement.originEdId);
-    return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
+    return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
   };
-  const originShortFor = (movement: Movement) => edById(movement.originEdId)?.siteCode ?? originLabelFor(movement);
+  const originShortFor = (movement: Movement) => originSiteCode(movement) ?? originLabelFor(movement);
 
   // Highlights (Josh, 9 Oct 2026, page A): a pill, chip, provider or search lights rows up. Nothing
   // here hides a job, so the officer never loses a job behind a filter they forgot was on.
@@ -595,7 +596,7 @@ export function OfficerScreen() {
       const eta = expected
         ? `${expected.booked ? "est." : "ward ETA"} ${formatSheetMoment(expected.at, dayZero)}${late(movement) ? ", late" : ""}`
         : "no ETA";
-      return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
+      return `${officerPatientName(movement)}: ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
     });
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = [
@@ -603,12 +604,7 @@ export function OfficerScreen() {
       `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
       ...lines,
     ].join("\n");
-    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
-    if (!clipboard) {
-      showToast("Copying is not available in this browser.");
-      return;
-    }
-    clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => showToast(`Handover copied, ${jobs.length} open jobs.`),
       () => showToast("Copying is not available in this browser."),
     );
@@ -742,7 +738,7 @@ export function OfficerScreen() {
         "forms",
         formsOutstanding,
         "Jobs need forms",
-        "Need forms",
+        "Forms",
         isPhone && formsOutstanding > 0 ? "warning" : "neutral",
       )}
     </>
@@ -785,7 +781,6 @@ export function OfficerScreen() {
           Arrivals <span className={styles.phArrivalsCount}>{upcoming}</span>
         </Button>
       ) : null}
-      <NotWiredButton variant="onHero" size="sm" icon={Truck} label="Log booking" wrapClassName={styles.deskOnly} />
     </div>
   );
 

@@ -11,7 +11,7 @@ import {
   type InboxItemKind,
   STAGE_TRANSITION_BLOCKERS,
 } from "@/components/ward-management/ward-flow-reducer";
-import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
+import { DECLINE_REASON_LABELS, isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
 
 import {
@@ -87,6 +87,7 @@ export {
   blockingGate,
   eligibleCandidatesAmong,
 } from "./ward-derivations-shortlist";
+import { plannedInitialsLabel } from "./ward-flow-demo-storage-constants";
 export type { ShortlistCandidate } from "./ward-derivations-shortlist";
 export { changeAudit, MINIMUM_EFFECTIVENESS_SAMPLE, effectivenessNumbers } from "./ward-derivations-records";
 export type { ChangeAuditEntry } from "./ward-derivations-records";
@@ -128,7 +129,10 @@ export function movementTimeline(movement: Movement) {
     events.push({ at: change.at, label: `Legal status changed: ${change.from} → ${change.to} (${change.by})` });
   }
   for (const decline of movement.declines) {
-    events.push({ at: decline.at, label: `Declined by referral: ${decline.reason.replace(/_/g, " ")}` });
+    events.push({
+      at: decline.at,
+      label: `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`,
+    });
   }
   if (movement.transport?.acceptedAt !== undefined) {
     events.push({ at: movement.transport.acceptedAt, label: `Transport accepted by ${movement.transport.provider}` });
@@ -259,6 +263,9 @@ function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
  * adding one is Phase 2 model work, not a derivation this module can safely invent.
  */
 export function movementHealthService(movement: Movement): HealthService | undefined {
+  // D-76: a journey from a community team takes the service of the location its referral gave.
+  if (movement.originEdId === undefined)
+    return movement.originCommunity && siteByCode(movement.originCommunity.siteCode)?.service;
   return edServiceById.get(movement.originEdId);
 }
 
@@ -730,7 +737,7 @@ export function buildActionInbox(
       since: planned.expectedArrivalAt,
       // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
       href: "/ward-flow/capacity",
-      ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
+      ...(planned.initials !== null ? { personLabel: plannedInitialsLabel(planned.initials) } : {}),
     });
   }
 
@@ -1027,71 +1034,6 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
 }
 
 /**
- * Task 5 (spec item 4): the escalation board — one place showing every patient whose placement
- * has gone wrong. Two groups, computed independently, and a movement can genuinely appear in
- * both: `escalated` is a fact about the RECORD (a human already declared the network exhausted
- * and rang a contact); `nowhereEligible` is a fact about the LIVE network right now
- * (`eligibleCandidatesAmong`, evaluated against every unit so nothing is truncated). WF-009
- * satisfies both at once in the real fixture — it has a recorded escalation and, independently,
- * still has zero eligible wards — and that overlap is correct, not a bug: the two lists answer
- * different questions and neither implies or excludes the other.
- *
- * 🔴 SPEC D4's PROHIBITION IS WITHDRAWN (owner ruling R-2026-09-04-G). What follows DESCRIBES
- * what this function does today; it is no longer an instruction about what it may ever do.
- *
- * As written, this board records and shows. `nowhereEligible` names WHICH movements have nowhere
- * eligible; it does not name which ward almost fit, or what gate is closest to passing.
- * `escalated` resolves `triedUnitIds` to real `Unit` objects purely as a record of what was
- * already tried, not as live candidates.
- *
- * ⚠️ THAT IS A STATEMENT ABOUT THE CURRENT IMPLEMENTATION, NOT A RULE. D4 said "IT SUGGESTS
- * NOTHING — no least-bad options, no ranking of wards the patient does not fit, no near-miss
- * computation", in capitals, with reasoning. It was never an owner ruling: it was inferred, and
- * then obeyed by everyone who met it because it reads exactly like a safety principle. The owner
- * has since ruled the opposite — the board is to match patients to beds — with the boundary that
- * the software never decides, and the final acceptance comes from the users.
- *
- * Nothing here suggests anything YET because the matching work has not been designed, NOT because
- * it is forbidden. A reader must be able to tell those two apart, and D4's wording made that
- * impossible.
- *
- * Scoped to OPEN movements only (`isOpen`) — a closed movement's placement cannot still be
- * "going wrong" in a way this board exists to surface.
- */
-export type EscalationBoard = {
-  escalated: { movement: Movement; triedUnits: Unit[] }[];
-  nowhereEligible: Movement[];
-};
-
-export function escalationBoard(movements: Movement[], units: Unit[], now: Instant): EscalationBoard {
-  const open = movements.filter(isOpen);
-  const unitMap = getUnitByIdMap(units);
-
-  const escalated = open
-    .filter((movement) => movement.escalation !== undefined)
-    .map((movement) => {
-      const triedUnitIds = movement.escalation?.triedUnitIds ?? [];
-      const triedUnits = triedUnitIds
-        .map((unitId) => unitMap.get(unitId))
-        .filter((unit): unit is Unit => unit !== undefined);
-      return { movement, triedUnits };
-    });
-
-  // A large, explicit limit — never the default of 3 — so this counts every unit in the
-  // network rather than reading a truncated shortlist length as an eligibility count. That
-  // exact mistake (counting `eligibleCandidatesAmong(...).length` instead of filtering to
-  // `.verdict.eligible`) produced a false "nowhereEligible is empty on the standard night" claim
-  // in an earlier draft of this task's own brief — see tests/ward-scenarios.test.ts's comment.
-  const nowhereEligible = open.filter(
-    (movement) =>
-      eligibleCandidatesAmong(movement, units, now, units.length).filter((candidate) => candidate.verdict.eligible)
-        .length === 0,
-  );
-
-  return { escalated, nowhereEligible };
-}
-
-/**
  * Task 7 (spec item 5): patient search — a plain, pure, case-insensitive filter over the OPEN
  * caseload. Pure and synchronous: no clock read, no debounce, no fetch — the page component owns
  * the query state and calls this on every keystroke/select change.
@@ -1214,6 +1156,29 @@ function referralMatches(referral: Referral, needle: string): boolean {
  * who has picked a stage is asking a question referrals cannot answer, and returning them anyway
  * would be answering a different question.
  */
+/**
+ * An accepted referral with nothing yet built from it (audit A3-5). Accepting pulls no bed and
+ * creates no movement, so until the ward starts the placement the referral is the only record of
+ * that person. Linked by the referral's own id only (D-14: no patient link is read here). A
+ * finished journey keeps its movement or admission, so it never comes back as a waiting referral.
+ * Only a ward's acceptance waits for a bed: an ED psychiatry or community acceptance is complete
+ * without one (Codex review, #547). The Patients page shows these in its census as Bed found; the
+ * header search uses this.
+ */
+export function acceptedReferralAwaitingMovement(
+  referral: Referral,
+  movements: readonly Pick<Movement, "referralId">[],
+  admissions: readonly Pick<Admission, "referralId">[],
+): boolean {
+  if (referralState(referral) !== "accepted") return false;
+  const wardAccepted = referral.destinations.some(
+    (addressing) => addressing.state === "accepted" && addressing.destination.kind === "psychiatric_ward",
+  );
+  if (!wardAccepted) return false;
+  const linked = (record: { referralId?: string | null }) => record.referralId === referral.id;
+  return !movements.some(linked) && !admissions.some(linked);
+}
+
 export function searchPatients(
   movements: Movement[],
   referralList: Referral[],

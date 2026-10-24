@@ -875,19 +875,11 @@ describe("the movement workspace's withdraw-acceptance control", () => {
     expect(afterWithdrawal).not.toContain("Accepted, awaiting bed → Destination review");
   });
 
-  it("states why it is unavailable rather than hiding, on each of the three unavailable states", () => {
+  it("states why it is unavailable rather than hiding, on each unavailable state", () => {
     // No acceptance at all.
     renderWorkspace("WF-001");
     expect(
       within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/no ward has accepted this patient/i),
-    ).toBeInTheDocument();
-    cleanup();
-
-    // Accepted, but a bed is already pulled — the owner's narrow gate, stated as an outstanding
-    // decision rather than as a ruling that the act is wrong.
-    renderWorkspace("WF-004");
-    expect(
-      within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/a bed has already been pulled/i),
     ).toBeInTheDocument();
     cleanup();
 
@@ -897,6 +889,45 @@ describe("the movement workspace's withdraw-acceptance control", () => {
       within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/no longer running/i),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("ward-console-withdraw-acceptance")).not.toBeInTheDocument();
+  });
+});
+
+describe("withdrawing an acceptance while a bed is held (Q16)", () => {
+  it("fixture assumption: WF-004 is open and pulled, holding a bed with no transport job", () => {
+    const wf004 = movementById("WF-004");
+    expect(wf004?.closure).toBeUndefined();
+    expect(wf004?.stage).toBe("pulled");
+    expect(wf004?.admissionId).toBeDefined();
+    expect(wf004?.transport).toBeUndefined();
+  });
+
+  it("says the bed is released too, then withdraws and records both in the timeline", () => {
+    renderWorkspace("WF-004");
+    const panel = screen.getByTestId("ward-patient-withdraw-acceptance");
+    expect(within(panel).getByTestId("ward-console-withdraw-releases-bed")).toHaveTextContent(
+      /also releases that bed in the same step/i,
+    );
+    fireEvent.change(screen.getByTestId("ward-console-withdraw-reason"), { target: { value: "the_bed_was_lost" } });
+    fireEvent.click(screen.getByTestId("ward-console-withdraw-acceptance"));
+
+    expect(
+      within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/no ward has accepted this patient/i),
+    ).toBeInTheDocument();
+    const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
+    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+  });
+
+  it("lists a withdrawal from a stepped-back stage, which writes no stage entry, in the timeline", () => {
+    renderWorkspace("WF-004");
+    fireEvent.change(screen.getByTestId("ward-console-step-back-to"), { target: { value: "destination_review" } });
+    fireEvent.change(screen.getByTestId("ward-console-step-back-reason"), { target: { value: "recorded_in_error" } });
+    fireEvent.click(screen.getByTestId("ward-console-step-back-stage"));
+    expect(screen.getByTestId("ward-console-withdraw-releases-bed")).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId("ward-console-withdraw-reason"), { target: { value: "the_bed_was_lost" } });
+    fireEvent.click(screen.getByTestId("ward-console-withdraw-acceptance"));
+
+    const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
+    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
   });
 });
 
@@ -1253,7 +1284,9 @@ describe("the prompt that tells the sending team a bed is ready to book against"
     renderWorkspaceWithControls("WF-003");
     fireEvent.click(screen.getByTestId("test-pull-patient"));
     const rail = screen.getByTestId("ward-console-attention");
-    expect(within(rail).getByText(/has a bed held for this patient and no transport job exists/i)).toBeInTheDocument();
+    expect(
+      within(rail).getByText(/has a bed pulled for this patient and no transport job exists/i),
+    ).toBeInTheDocument();
     // The ward is named because "a bed is ready" without saying whose is not actionable.
     expect(within(rail).getByText(/Dabakarn/)).toBeInTheDocument();
     expect(within(rail).getByText(/Not booked/i)).toBeInTheDocument();

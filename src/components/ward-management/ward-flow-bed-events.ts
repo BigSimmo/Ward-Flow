@@ -16,6 +16,7 @@ import { leaveBedNeedsOpenWarning } from "@/components/ward-management/ward-lega
 import {
   BED_RELEASE_WAITING_ON,
   type BedRelease,
+  type CapacityConfirmer,
   type Movement,
   type Notice,
   type Unit,
@@ -303,8 +304,11 @@ export function reduceBedEvent(
           ...unit.allocatable,
           value: event.value,
           source: "ward",
+          // The role check above limits this to a desk `CONFIRM_CAPACITY` allows.
+          confirmedBy: event.role as CapacityConfirmer,
           confirmedAt: event.now,
           revision: (unit.allocatable.revision ?? 0) + 1,
+          confirmations: (unit.allocatable.confirmations ?? 0) + 1,
         },
       };
       return replaceUnit(state, unit.id, updatedUnit);
@@ -578,7 +582,9 @@ export function reduceBedEvent(
         // Clearing the flag clears the note with it — "being made ready, waiting on nothing" is
         // a state, "not being made ready, waiting on a clean" is a contradiction.
         preparationNote: event.preparing ? (event.note ?? null) : null,
-        confirmedAt: event.now,
+        // Audit 2 E-11: once the patient has left, `confirmedAt` is the departure time the
+        // Discharges board shows, so making the bed ready never rewrites it.
+        confirmedAt: release.state === "discharged" ? release.confirmedAt : event.now,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -682,6 +688,7 @@ export function reduceBedEvent(
             unitId: unit.id,
             at: event.now,
             byRole: event.role,
+            confirmations: unit.allocatable.confirmations ?? 0,
           },
           state.worldGeneration,
         ),

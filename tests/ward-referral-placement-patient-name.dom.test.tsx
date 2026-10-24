@@ -8,6 +8,7 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Live walkthrough, 25 September 2026: Command's "Referral placement" panel showed the raw record
@@ -21,6 +22,7 @@ function openReferral(referralId: string) {
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
+  showEveryoneWaiting();
   fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
   fireEvent.click(screen.getByTestId(`ward-referral-row-${referralId}`));
   return within(screen.getByLabelText("Referral placement")).getByTestId("ward-referral-placement-patient");

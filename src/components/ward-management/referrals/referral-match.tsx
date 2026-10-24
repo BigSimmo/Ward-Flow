@@ -18,7 +18,6 @@ import {
   ED_DECLINE_REASONS,
   REFERRAL_DECLINE_REASONS,
   genderReviewNeeded,
-  type BedRelease,
   type CommunityDeclineReason,
   type Referral,
   type ReferralDeclineReason,
@@ -27,7 +26,6 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatUmrn } from "@/components/ward-management/ward-patients";
 import { unitHasLockedBeds } from "@/components/ward-management/ward-bed-designation";
 import {
@@ -60,10 +58,10 @@ import {
   REJECTED_DECISION_LABELS,
 } from "./referral-match-model";
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
-import { BandGroup, MatchRow } from "./referral-match-rows";
+import { AskMoreWardsCard, AskMoreWardsFoot, useAskMoreWards } from "./referral-ask-more-wards";
+import { MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
-import { renderReferralMatchTiers } from "./referral-match-tiers";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -74,9 +72,6 @@ import {
 } from "@/components/ward-management/ward-turnaround-priority";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
-
-const NO_ADMISSIONS: readonly Admission[] = [];
-const NO_RELEASES: readonly BedRelease[] = [];
 
 type ReferralMatchViewProps = {
   referral: Referral;
@@ -97,9 +92,6 @@ type ReferralMatchViewProps = {
    * rendered under the lists. Same handlers, same dispatches as the desktop view.
    */
   phone?: ReactNode;
-  /** For the shared occupancy figure (`ward-occupancy.ts`): occupied plus pulled, over every bed. */
-  admissions?: readonly Admission[];
-  bedReleases?: readonly BedRelease[];
 };
 
 /** Moved to `./referral-history-corrections`; re-exported so imports keep working. */
@@ -127,11 +119,11 @@ export function ReferralMatchView({
   hideDossierHeader = false,
   onDecision,
   phone,
-  admissions = NO_ADMISSIONS,
-  bedReleases = NO_RELEASES,
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  // Fix plan item 16 (D-76): asking more wards about an open community referral.
+  const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
     "admissions",
     "patients",
@@ -142,6 +134,8 @@ export function ReferralMatchView({
   );
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
+  /* D-77: the ward whose Clinical override form is open. A new pick closes it. */
+  const [overrideUnitId, setOverrideUnitId] = useState<string | undefined>(undefined);
   const turnaroundRejection =
     turnaroundRejectionStart !== null && rejections.length > turnaroundRejectionStart
       ? rejections
@@ -157,13 +151,10 @@ export function ReferralMatchView({
           )
       : undefined;
   const {
-    bandGroupsOpenByDefault,
     declineReason,
     setDeclineReason,
     edDeclineReason,
     setEdDeclineReason,
-    expandedUnitGates,
-    setExpandedUnitGates,
     communityDeclineReason,
     setCommunityDeclineReason,
     communityWithdrawReason,
@@ -173,8 +164,6 @@ export function ReferralMatchView({
     lastRejection,
     priorRejectionCountRef,
     setCheckToken,
-    collapsedTiers,
-    setCollapsedTiers,
     phonePick,
     setPhonePick,
     phoneDeclining,
@@ -311,29 +300,6 @@ export function ReferralMatchView({
   );
   const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
 
-  const isTier1Expanded = collapsedTiers[1] !== true;
-  const isTier2Expanded = collapsedTiers[2] !== true;
-  const isTier3Expanded = collapsedTiers[3] !== true;
-
-  const toggleTier = (tier: number) => {
-    setCollapsedTiers((prev) => ({
-      ...prev,
-      [tier]: prev[tier] !== true,
-    }));
-  };
-
-  const toggleGates = (id: string) => {
-    setExpandedUnitGates((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   /**
    * T12 (item 9, owner answer 9, 17 September 2026), the front door's own half of the same check
    * `shortlist-panel.tsx`'s own `needsGenderPlacement` already applies on the movement path. Read
@@ -381,20 +347,6 @@ export function ReferralMatchView({
     });
     setCheckToken((token) => token + 1);
     onDecision?.(`Accepted at ${units.find((unit) => unit.id === unitId)?.name ?? "the ward"}`, completion);
-  }
-
-  /**
-   * The tier-1 card's own route into the same gender-placement form: a plain accept there would
-   * only meet `GENDER_PLACEMENT_REFUSAL` in the reducer. Opens the unit's travel-band group and
-   * moves focus to the form's reason, so the one form (and the one dispatch) stays in `MatchRow`.
-   */
-  function revealGenderPlacementForm(unitId: string) {
-    const reason = document.getElementById(`ward-referral-match-gender-placement-reason-${unitId}`);
-    if (!reason) return;
-    const group = reason.closest("details");
-    if (group && !group.open) group.open = true;
-    reason.scrollIntoView?.({ block: "center" });
-    reason.focus();
   }
 
   /*
@@ -595,6 +547,13 @@ export function ReferralMatchView({
                 "Accepted — unit not recorded."
             : referralAddressingStateLabel(ward)}
         </p>
+        {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}
+        <AskMoreWardsCard ask={askMore} />
+        {askMore.open ? (
+          <div className={ph.foot}>
+            <AskMoreWardsFoot ask={askMore} />
+          </div>
+        ) : null}
         {renderEdControls()}
         {communityArmLive ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls-community_team">
@@ -713,11 +672,6 @@ export function ReferralMatchView({
           >
             Decline referral
           </Button>
-          {communityDeclineReason === undefined ? (
-            <span id="ward-referral-match-decline-blocked-community_team" className="sr-only">
-              {DECLINE_REASON_UNCHOSEN_COMMUNITY}
-            </span>
-          ) : null}
         </div>
       </>
     ) : null;
@@ -820,11 +774,6 @@ export function ReferralMatchView({
               Decline referral
             </Button>
           </div>
-          {edDeclineReason === undefined ? (
-            <span id="ward-referral-match-decline-blocked-emergency_department" className="sr-only">
-              {DECLINE_REASON_UNCHOSEN_ED}
-            </span>
-          ) : null}
         </div>
       </>
     ) : null;
@@ -833,192 +782,329 @@ export function ReferralMatchView({
   const edControls = renderEdControls();
 
   /*
-   * v10 phone: the decision reads as ONE scrolling sheet — three candidate lists, the board's own
-   * extras under them, and Decline and Accept pinned at the bottom. Every dispatch below is one of
-   * this view's own handlers above; nothing here decides anything the desktop view does not.
+   * The decision reads as ONE list on every width (D-77, change 3, Josh 21 Oct 2026): three groups
+   * in the network's fixed order, one radio per ward, and Decline and Accept pinned at the bottom.
+   * Desktop used to add tier blocks, a second travel-band list of the same units and an Accept on
+   * every row; it now uses the phone's own list. Nothing is ranked or pre-selected (D-71). Every
+   * dispatch below is one of this view's own handlers above.
    */
-  if (phone !== undefined) {
-    const bandOf = new Map<string, string>();
-    bandGroups.forEach((group) =>
-      group.candidates.forEach((candidate) => bandOf.set(candidate.unit.id, travelBandGroupLabel(group.band))),
+  const bandOf = new Map<string, string>();
+  bandGroups.forEach((group) =>
+    group.candidates.forEach((candidate) => bandOf.set(candidate.unit.id, travelBandGroupLabel(group.band))),
+  );
+  // Audit 1, Josh 20 Oct (CS-03, WP-05): no ward starts picked. Accept waits for the coordinator's tap.
+  const pick = phonePick === undefined ? undefined : candidates.find((c) => c.unit.id === phonePick);
+  const acceptUnavailable = candidates.length === 0 ? "No unit to accept at in this network." : "Choose a ward first.";
+  const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
+  /* A ward that fits, or fails only its gender designation, and still needs the gender placement
+     check accepts through that one form (the same test `MatchRow` applies). */
+  const pickGenderForm =
+    pick !== undefined &&
+    needsGenderPlacement(pick.unit.id) &&
+    (candidateAccepts(pick) ||
+      (pick.verdict.gates.some((gate) => gate.gate === "gender_designation" && !gate.pass) &&
+        pick.verdict.gates.filter((gate) => !gate.pass).length === 1));
+  /* D-77: a ward that does not fit is accepted only through Clinical override, behind the one button. */
+  const pickNeedsOverride = pick !== undefined && !candidateAccepts(pick) && !pickGenderForm;
+  const overrideOpen = pickNeedsOverride && overrideUnitId === pick.unit.id;
+  const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
+  const FIT_CAP = 3;
+  const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
+  const fitsHidden = tier1Candidates.length - fitsShown.length;
+
+  const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
+    const failed = c.verdict.gates.find((gate) => !gate.pass);
+    // Capacity-pending candidates can lack any bed, a locked bed, or a current count: name the constraint.
+    const noBedGate = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
+    const noLockedBed = c.verdict.gates.some((gate) => gate.gate === "security" && !gate.pass);
+    const label =
+      kind === "yes"
+        ? "Fits"
+        : kind === "nobed"
+          ? noBedGate
+            ? "No bed now"
+            : noLockedBed
+              ? "No locked bed free now"
+              : "Count not current"
+          : failed
+            ? GATE_LABELS[failed.gate]
+            : "Review";
+    const tone = kind === "yes" ? "success" : kind === "nobed" ? "warning" : "neutral";
+    const checked = pick?.unit.id === c.unit.id;
+    return (
+      <button
+        key={c.unit.id}
+        type="button"
+        role="radio"
+        aria-checked={checked}
+        className={ph.cand}
+        data-kind={kind}
+        data-testid={`ward-referral-match-phone-cand-${c.unit.id}`}
+        onClick={() => setPhonePick(c.unit.id)}
+      >
+        <span className={checked ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+        <span className={ph.who}>
+          <span className={ph.nm}>{c.unit.name}</span>
+          <span className={ph.sub}>
+            {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} · {c.unit.allocatable.value} ready
+          </span>
+        </span>
+        <span className={ph.lab}>
+          <StatusGlyph tone={tone} size={9} />
+          {label}
+        </span>
+      </button>
     );
-    // Audit 1, Josh 20 Oct (CS-03, WP-05): no ward starts picked. Accept waits for the coordinator's tap.
-    const pick = phonePick === undefined ? undefined : candidates.find((c) => c.unit.id === phonePick);
-    const acceptUnavailable =
-      candidates.length === 0 ? "No unit to accept at in this network." : "Choose a ward first.";
-    const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
-    const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
-    const FIT_CAP = 3;
-    const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
-    const fitsHidden = tier1Candidates.length - fitsShown.length;
+  };
 
-    const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
-      const failed = c.verdict.gates.find((gate) => !gate.pass);
-      // Capacity-pending candidates can lack any bed, a locked bed, or a current count: name the constraint.
-      const noBed = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
-      const noLockedBed = c.verdict.gates.some((gate) => gate.gate === "security" && !gate.pass);
-      const label =
-        kind === "yes"
-          ? "Fits"
-          : kind === "nobed"
-            ? noBed
-              ? "No bed now"
-              : noLockedBed
-                ? "No locked bed free now"
-                : "Count not current"
-            : failed
-              ? GATE_LABELS[failed.gate]
-              : "Review";
-      const tone = kind === "yes" ? "success" : kind === "nobed" ? "warning" : "neutral";
-      const checked = pick?.unit.id === c.unit.id;
-      return (
-        <button
-          key={c.unit.id}
-          type="button"
-          role="radio"
-          aria-checked={checked}
-          className={ph.cand}
-          data-kind={kind}
-          data-testid={`ward-referral-match-phone-cand-${c.unit.id}`}
-          onClick={() => setPhonePick(c.unit.id)}
-        >
-          <span className={checked ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
-          <span className={ph.who}>
-            <span className={ph.nm}>{c.unit.name}</span>
-            <span className={ph.sub}>
-              {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} · {c.unit.allocatable.value} ready
-            </span>
-          </span>
-          <span className={ph.lab}>
-            <StatusGlyph tone={tone} size={9} />
-            {label}
-          </span>
-        </button>
-      );
-    };
+  const group = (title: string, list: ReferralCandidate[], kind: "yes" | "nobed" | "review") =>
+    list.length > 0 ? (
+      <>
+        <p className={ph.ch}>
+          {title} <span className={ph.k}>{list.length}</span>
+        </p>
+        <div className={ph.cands} role="radiogroup" aria-label={title}>
+          {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
+        </div>
+        {kind === "yes" && fitsHidden > 0 ? (
+          <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
+            Show {fitsHidden} more with a bed ready
+          </button>
+        ) : null}
+      </>
+    ) : null;
 
-    const group = (title: string, list: ReferralCandidate[], kind: "yes" | "nobed" | "review") =>
-      list.length > 0 ? (
-        <>
-          <p className={ph.ch}>
-            {title} <span className={ph.k}>{list.length}</span>
-          </p>
-          <div className={ph.cands} role="radiogroup" aria-label={title}>
-            {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
-          </div>
-          {kind === "yes" && fitsHidden > 0 ? (
-            <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
-              Show {fitsHidden} more with a bed ready
-            </button>
-          ) : null}
-        </>
-      ) : null;
-
-    /* A pick that needs a reason (an override, or a gender placement check) accepts through the one
-       form `MatchRow` already owns: Accept takes the coordinator to it rather than skipping it. */
-    const revealPickForm = () => {
-      if (!pick) return;
+  /* The one button on a pick that needs a reason opens the form `MatchRow` owns and moves focus to it. */
+  const revealPickForm = () => {
+    if (!pick) return;
+    if (pickNeedsOverride) setOverrideUnitId(pick.unit.id);
+    requestAnimationFrame(() => {
       const field =
         document.getElementById(`ward-referral-match-gender-placement-reason-${pick.unit.id}`) ??
         document.getElementById(`ward-referral-match-override-reason-${pick.unit.id}`);
       field?.scrollIntoView?.({ block: "center" });
       field?.focus();
-    };
+    });
+  };
 
-    return (
-      <section className={`${styles.matchPanel} ${ph.sheet}`} data-testid="ward-referral-match-panel" data-phone="true">
+  // Desk and phone both choose which asked ward to answer for, since Ask more wards (D-76) can leave several waiting.
+  const recipientSelect =
+    wardArms.length > 1 ? (
+      <label className={styles.fieldLabel}>
+        Review recipient ward
+        <select
+          className={styles.select}
+          value={ward?.destination.unitId ?? ""}
+          onChange={(event) => setReviewUnitId(event.target.value)}
+        >
+          {wardArms.map(
+            (arm) =>
+              arm.destination.kind === "psychiatric_ward" && (
+                <option key={arm.destination.unitId} value={arm.destination.unitId}>
+                  {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
+                  {arm.state}
+                </option>
+              ),
+          )}
+        </select>
+      </label>
+    ) : null;
+
+  return (
+    <section
+      className={`${styles.matchPanel} ${ph.sheet}`}
+      data-testid="ward-referral-match-panel"
+      data-phone={phone !== undefined ? "true" : undefined}
+    >
+      {phone === undefined ? (
+        <>
+          <ReferralIntakeSummary intake={referral.intake} />
+          {recipientSelect}
+          {!hideDossierHeader ? (
+            <div className={styles.matchDossierHeader}>
+              <div className={styles.matchDossierTop}>
+                <div className={styles.matchIdCluster}>
+                  <h2 className={styles.matchHeading}>
+                    {patientInfo ? (
+                      <>
+                        <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+                        <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+                      </>
+                    ) : (
+                      "This referral"
+                    )}
+                  </h2>
+                  <div className={styles.matchTierRow}>
+                    <span
+                      className={styles.priorityBadge}
+                      data-priority={getReferralPriority(referral, now)}
+                      data-testid="ward-referral-match-priority"
+                    >
+                      <PriorityGlyph priority={getReferralPriority(referral, now)} />
+                      <span className={styles.priorityText}>
+                        {referralPriorityLabel(getReferralPriority(referral, now))}
+                      </span>
+                    </span>
+                    <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+                      {urgencyTierLabel(referral.urgency)}
+                    </p>
+                  </div>
+                </div>
+                <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
+                  {referralWaitLine(referral, now)}
+                </p>
+              </div>
+
+              <div className={styles.matchDemographicsStrip}>
+                <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
+                  {referralPersonFacts(referral).join(" · ")}
+                </p>
+                <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
+                  {referral.suburb.kind === "named"
+                    ? `From ${referral.suburb.name}`
+                    : referralSuburbLabel(referral.suburb)}
+                </p>
+              </div>
+
+              {gpSourceNotice}
+            </div>
+          ) : (
+            <div className={styles.matchCompactNoticeWrap}>
+              <div className="sr-only">
+                <span>{patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"}</span>
+                <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+                  {urgencyTierLabel(referral.urgency)}
+                </span>
+                <span data-testid="ward-referral-match-wait">{referralWaitLine(referral, now)}</span>
+                <span data-testid="ward-referral-match-summary">{referralPersonFacts(referral).join(" · ")}</span>
+                <span data-testid="ward-referral-match-suburb">
+                  {referral.suburb.kind === "named"
+                    ? `From ${referral.suburb.name}`
+                    : referralSuburbLabel(referral.suburb)}
+                </span>
+              </div>
+              {gpSourceNotice}
+            </div>
+          )}
+        </>
+      ) : (
         <div className="sr-only">
           <span>{patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"}</span>
           <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
             {urgencyTierLabel(referral.urgency)}
           </span>
-          <span data-testid="ward-referral-match-accepting-count">
-            {accepting.length} of {candidates.length} units accept this referral right now.
-          </span>
         </div>
-        {lastRejection ? (
-          <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
-            {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
-            recorded: {lastRejection.reason}
-          </p>
-        ) : null}
+      )}
+      {/* I3: never "right now" beside a structural gap, where no bed could ever change it. */}
+      {hasCohort ? (
+        <span className="sr-only" data-testid="ward-referral-match-accepting-count">
+          {accepting.length} of {candidates.length} units accept this referral right now.
+        </span>
+      ) : null}
+      {lastRejection ? (
+        <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
+          {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
+          recorded: {lastRejection.reason}
+        </p>
+      ) : null}
 
-        {turnaroundRejection ? (
-          <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
-            Turnaround preference not recorded: {turnaroundRejection.reason}
+      {turnaroundRejection ? (
+        <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
+          Turnaround preference not recorded: {turnaroundRejection.reason}
+        </p>
+      ) : null}
+      {phoneDeclining ? (
+        <>
+          <p className={ph.ch}>Why decline?</p>
+          <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+            {REFERRAL_DECLINE_REASONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                role="radio"
+                aria-checked={declineReason === reason}
+                className={ph.cand}
+                data-testid={`ward-referral-match-phone-decline-${reason}`}
+                onClick={() => setDeclineReason(reason)}
+              >
+                <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
+                <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
+              </button>
+            ))}
+          </div>
+          <p className={ph.matchHint} id="ward-referral-match-decline-blocked">
+            {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
           </p>
-        ) : null}
-        {phoneDeclining ? (
-          <>
-            <p className={ph.ch}>Why decline?</p>
-            <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
-              {REFERRAL_DECLINE_REASONS.map((reason) => (
-                <button
-                  key={reason}
-                  type="button"
-                  role="radio"
-                  aria-checked={declineReason === reason}
-                  className={ph.cand}
-                  data-testid={`ward-referral-match-phone-decline-${reason}`}
-                  onClick={() => setDeclineReason(reason)}
-                >
-                  <span className={declineReason === reason ? `${ph.rad} ${ph.radOn}` : ph.rad} aria-hidden="true" />
-                  <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
-                </button>
-              ))}
+        </>
+      ) : (
+        <>
+          {phone !== undefined ? (
+            <>
+              {gpSourceNotice}
+              {recipientSelect}
+            </>
+          ) : null}
+          {!hasCohort ? (
+            <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
+              No {referral.ageBand.toLowerCase()} unit exists in this network.
+            </p>
+          ) : noBed ? (
+            <p className={ph.matchHint} role="alert" data-testid="ward-referral-match-no-bed">
+              {phone !== undefined
+                ? "No unit accepts this referral right now. Every unit is listed below with its reason."
+                : !aFreeBedCouldChangeThis(noBed)
+                  ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed. A bed becoming free will not on its own change this. Every reason is listed below.`
+                  : noBed.notSuitable === 0
+                    ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} have never confirmed a bed count`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} have never confirmed a count` : ""}, so this may change. Every reason is listed below.`
+                    : `No unit accepts this referral right now. ${noBed.notSuitable} of ${noBed.total} are ruled out for reasons a free bed alone will not change. The remaining ${noBed.total - noBed.notSuitable} turn on a bed. Every reason is listed below.`}
+            </p>
+          ) : null}
+          {phone === undefined && everyCandidateUnrecorded ? (
+            <p className={ph.matchHint} data-testid="ward-referral-match-all-not-recorded">
+              <strong>{NOT_RECORDED_LABEL}.</strong> This prototype holds no travel time between this person&apos;s home
+              region and these sites. That is a gap in the invented data, not a statement that these beds are far away.
+            </p>
+          ) : null}
+          {group("Fits, bed ready", tier1Candidates, "yes")}
+          {group("Fits, no bed now", tier2Candidates, "nobed")}
+          {group("Needs review", tier3Candidates, "review")}
+          <AskMoreWardsCard ask={askMore} />
+          {pick && pickTurnaround ? (
+            <div className={styles.unitActionStatusWrap}>
+              <Button
+                variant="sec"
+                size="md"
+                disabledReason={pickTurnaround.disabledReason}
+                onClick={() => handleFlagTurnaround(pick.unit.id)}
+              >
+                Flag Turnaround Priority
+              </Button>
+              <p className={ph.matchHint}>
+                {pickTurnaround.recordedSource
+                  ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                  : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
+              </p>
             </div>
-            <p className={ph.matchHint} id="ward-referral-match-decline-blocked">
-              {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
-            </p>
-          </>
-        ) : (
-          <>
-            {gpSourceNotice}
-            {!hasCohort ? (
-              <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
-                No {referral.ageBand.toLowerCase()} unit exists in this network.
-              </p>
-            ) : noBed ? (
-              <p className={ph.matchHint} role="alert" data-testid="ward-referral-match-no-bed">
-                No unit accepts this referral right now. Every unit is listed below with its reason.
-              </p>
-            ) : null}
-            {group("Fits, bed ready", tier1Candidates, "yes")}
-            {group("Fits, no bed now", tier2Candidates, "nobed")}
-            {group("Needs review", tier3Candidates, "review")}
-            {pick && pickTurnaround ? (
-              <div className={styles.unitActionStatusWrap}>
-                <Button
-                  variant="sec"
-                  size="md"
-                  disabledReason={pickTurnaround.disabledReason}
-                  onClick={() => handleFlagTurnaround(pick.unit.id)}
-                >
-                  Flag Turnaround Priority
-                </Button>
-                <p className={ph.matchHint}>
-                  {pickTurnaround.recordedSource
-                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
-                    : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
-                </p>
-              </div>
-            ) : null}
-            {pick && !pickPlain ? (
-              <ul className={`${styles.bandRows} ${ph.pickForm}`}>
-                <MatchRow
-                  key={pick.unit.id}
-                  candidate={pick}
-                  bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
-                  onAccept={handleAccept}
-                  needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
-                />
-              </ul>
-            ) : null}
-            <p className={ph.note} data-testid="ward-referral-match-governance">
-              Not approved for clinical use. Within each group, units follow the network&apos;s fixed order; a
-              coordinator decides each placement. {SYNTHETIC_TRAVEL_TIMES_NOTICE}
-            </p>
-            {phone}
+          ) : null}
+          {pick && (pickGenderForm || overrideOpen) ? (
+            <ul className={ph.pickForm}>
+              <MatchRow
+                key={pick.unit.id}
+                candidate={pick}
+                bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
+                onAccept={handleAccept}
+                needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
+              />
+            </ul>
+          ) : null}
+          <p className={ph.note} data-testid="ward-referral-match-governance">
+            <strong>Not approved for clinical use.</strong> Fixed network order in each group. This view places nobody:
+            a coordinator decides each placement, one at a time.{" "}
+            <span data-testid="ward-referral-match-synthetic-notice">{SYNTHETIC_TRAVEL_TIMES_NOTICE}</span>
+          </p>
+          {phone}
+          {/* Spec D8-6: absence renders as nothing at all. Only the offer, or the record once taken. */}
+          <div data-testid="ward-referral-match-local-bed">
             {referral.localBedSought ? (
               <p className={ph.matchHint} data-testid="ward-referral-match-local-bed-sought-record">
                 A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
@@ -1030,376 +1116,96 @@ export function ReferralMatchView({
                 data-testid="ward-referral-match-local-bed-sought"
                 onClick={handleLocalBedSought}
               >
-                Record a local bed was sought
+                {phone !== undefined
+                  ? "Record a local bed was sought"
+                  : "Record that a local bed was sought and none was suitable"}
               </button>
             )}
-            {communityControls}
-            {edControls}
-            {wholeWithdrawControl}
+          </div>
+          {communityControls}
+          {edControls}
+          {wholeWithdrawControl}
+        </>
+      )}
+
+      <div className={ph.foot}>
+        {askMore.open ? (
+          <AskMoreWardsFoot ask={askMore} />
+        ) : phoneDeclining ? (
+          <>
+            <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+              Back
+            </button>
+            <Button
+              variant="sec"
+              size="md"
+              data-placement-action="decline"
+              disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+              reasonDisplay="tooltip"
+              type="button"
+              data-tone="danger"
+              data-testid="ward-referral-match-decline"
+              onClick={
+                declineReason === undefined
+                  ? ignoreUnavailableActivation
+                  : () => {
+                      handleDecline("psychiatric_ward");
+                      setPhoneDeclining(false);
+                    }
+              }
+            >
+              <span className={ph.ell}>Decline referral</span>
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="sec"
+              size="md"
+              data-placement-action
+              type="button"
+              data-testid="ward-referral-match-decline-open"
+              onClick={() => setPhoneDeclining(true)}
+            >
+              Decline
+            </Button>
+            {/* D-77: the one button. A ward that fits accepts; one that needs the gender placement
+                check opens that form; one that does not fit opens Clinical override, which still
+                needs a recorded reason before it accepts. */}
+            <Button
+              variant={pickNeedsOverride ? "sec" : "pri"}
+              size="md"
+              data-placement-action
+              disabledReason={pick === undefined ? acceptUnavailable : undefined}
+              reasonDisplay="tooltip"
+              type="button"
+              data-testid="ward-referral-match-phone-accept"
+              onClick={
+                pick === undefined
+                  ? ignoreUnavailableActivation
+                  : pickPlain
+                    ? () => handleAccept(pick.unit.id)
+                    : revealPickForm
+              }
+            >
+              <span className={ph.ell}>
+                {pick === undefined
+                  ? candidates.length === 0
+                    ? "Accept"
+                    : "Choose a ward first"
+                  : pickNeedsOverride
+                    ? `Clinical override for ${pick.unit.name}`
+                    : pickGenderForm
+                      ? `Check placement at ${pick.unit.name}`
+                      : `Accept at ${pick.unit.name}`}
+              </span>
+            </Button>
           </>
         )}
-
-        <div className={ph.foot}>
-          {phoneDeclining ? (
-            <>
-              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
-                Back
-              </button>
-              <Button
-                variant="sec"
-                size="md"
-                data-placement-action="decline"
-                disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
-                reasonDisplay="tooltip"
-                type="button"
-                data-tone="danger"
-                data-testid="ward-referral-match-decline"
-                onClick={
-                  declineReason === undefined
-                    ? ignoreUnavailableActivation
-                    : () => {
-                        handleDecline("psychiatric_ward");
-                        setPhoneDeclining(false);
-                      }
-                }
-              >
-                <span className={ph.ell}>Decline referral</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="sec"
-                size="md"
-                data-placement-action
-                type="button"
-                onClick={() => setPhoneDeclining(true)}
-              >
-                Decline
-              </Button>
-              <Button
-                variant="pri"
-                size="md"
-                data-placement-action
-                disabledReason={pick === undefined ? acceptUnavailable : undefined}
-                reasonDisplay="tooltip"
-                type="button"
-                data-testid="ward-referral-match-phone-accept"
-                onClick={
-                  pick === undefined
-                    ? ignoreUnavailableActivation
-                    : pickPlain
-                      ? () => handleAccept(pick.unit.id)
-                      : revealPickForm
-                }
-              >
-                <span className={ph.ell}>
-                  {pick ? `Accept at ${pick.unit.name}` : candidates.length === 0 ? "Accept" : "Choose a ward first"}
-                </span>
-              </Button>
-            </>
-          )}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-      <ReferralIntakeSummary intake={referral.intake} />
-      {wardArms.length > 1 && (
-        <label className={styles.fieldLabel}>
-          Review recipient ward
-          <select
-            className={styles.select}
-            value={ward?.destination.unitId ?? ""}
-            onChange={(event) => setReviewUnitId(event.target.value)}
-          >
-            {wardArms.map(
-              (arm) =>
-                arm.destination.kind === "psychiatric_ward" && (
-                  <option key={arm.destination.unitId} value={arm.destination.unitId}>
-                    {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
-                    {arm.state}
-                  </option>
-                ),
-            )}
-          </select>
-        </label>
-      )}
-      {!hideDossierHeader ? (
-        <div className={styles.matchDossierHeader}>
-          <div className={styles.matchDossierTop}>
-            <div className={styles.matchIdCluster}>
-              <h2 className={styles.matchHeading}>
-                {patientInfo ? (
-                  <>
-                    <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
-                    <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-                  </>
-                ) : (
-                  "This referral"
-                )}
-              </h2>
-              <div className={styles.matchTierRow}>
-                <span
-                  className={styles.priorityBadge}
-                  data-priority={getReferralPriority(referral, now)}
-                  data-testid="ward-referral-match-priority"
-                >
-                  <PriorityGlyph priority={getReferralPriority(referral, now)} />
-                  <span className={styles.priorityText}>
-                    {referralPriorityLabel(getReferralPriority(referral, now))}
-                  </span>
-                </span>
-                <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
-                  {urgencyTierLabel(referral.urgency)}
-                </p>
-              </div>
-            </div>
-            <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
-              {referralWaitLine(referral, now)}
-            </p>
-          </div>
-
-          <div className={styles.matchDemographicsStrip}>
-            <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
-              {referralPersonFacts(referral).join(" · ")}
-            </p>
-            <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
-              {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
-            </p>
-          </div>
-
-          {gpSourceNotice}
-        </div>
-      ) : (
-        <div className={styles.matchCompactNoticeWrap}>
-          <div className="sr-only">
-            <span>{patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"}</span>
-            <span data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
-              {urgencyTierLabel(referral.urgency)}
-            </span>
-            <span data-testid="ward-referral-match-wait">{referralWaitLine(referral, now)}</span>
-            <span data-testid="ward-referral-match-summary">{referralPersonFacts(referral).join(" · ")}</span>
-            <span data-testid="ward-referral-match-suburb">
-              {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
-            </span>
-          </div>
-          {gpSourceNotice}
-        </div>
-      )}
-
-      {!hasCohort ? (
-        <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
-          No {referral.ageBand.toLowerCase()} unit exists in this network.
-        </p>
-      ) : noBed ? (
-        <p className={styles.noBedAccepts} role="alert" data-testid="ward-referral-match-no-bed">
-          {!aFreeBedCouldChangeThis(noBed)
-            ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed — a bed becoming free will not on its own change this. Every reason is listed below.`
-            : noBed.notSuitable === 0
-              ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} have never confirmed a bed count`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} have never confirmed a count` : ""}, so this may change. Every reason is listed below.`
-              : `No unit accepts this referral right now. ${noBed.notSuitable} of ${noBed.total} are ruled out for reasons a free bed alone will not change; the remaining ${noBed.total - noBed.notSuitable} turn on a bed. Every reason is listed below.`}
-        </p>
-      ) : null}
-
-      {hasCohort ? (
-        <div
-          className={`${styles.unifiedTriageBanner} ${accepting.length === 0 ? styles.unifiedTriageBannerZero : ""}`}
-        >
-          <div className={styles.triageSummaryRow}>
-            <div className={styles.triageLeadText}>
-              <span className={styles.triageLargeCount} data-testid="ward-referral-match-accepting-count">
-                {accepting.length} of {candidates.length} units accept this referral right now.
-              </span>
-            </div>
-            <div className={styles.triagePillGroup}>
-              <span className={`${styles.triageMiniPill} ${accepting.length > 0 ? styles.pillGood : styles.pillMuted}`}>
-                <span className={styles.triageGlyph}>●</span> {tier1Candidates.length} immediate{" "}
-                {tier1Candidates.length === 1 ? "vacancy" : "vacancies"}
-              </span>
-              <span
-                className={`${styles.triageMiniPill} ${tier2Candidates.length > 0 ? styles.pillWarn : styles.pillMuted}`}
-              >
-                <span className={styles.triageGlyph}>▲</span> {tier2Candidates.length} capacity unresolved
-              </span>
-              <span className={`${styles.triageMiniPill} ${styles.pillMuted}`}>
-                <span className={styles.triageGlyph}>✕</span> {tier3Candidates.length} excluded
-              </span>
-            </div>
-          </div>
-          <div className={styles.governanceDisclosure}>
-            <p className={styles.governanceNoticeText} data-testid="ward-referral-match-governance">
-              <svg
-                className={styles.infoIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                width="14"
-                height="14"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              <span>
-                <strong>Not approved for clinical use.</strong> Within each group, units follow fixed network order —
-                this view places nobody: a coordinator decides each placement, one at a time, and nothing is accepted
-                until recorded ·{" "}
-                <span className={styles.syntheticNoticeInline} data-testid="ward-referral-match-synthetic-notice">
-                  {SYNTHETIC_TRAVEL_TIMES_NOTICE}
-                </span>
-              </span>
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className={styles.matchCompactNoticeWrap}>
-          <p className={styles.matchGovernance} data-testid="ward-referral-match-governance">
-            <strong>Not approved for clinical use.</strong> Every unit below is listed in the network&apos;s own fixed
-            order. This view places nobody: a coordinator decides every placement, one at a time, and nothing is
-            accepted until they record it.
-          </p>
-          <p className={styles.syntheticNotice} data-testid="ward-referral-match-synthetic-notice">
-            {SYNTHETIC_TRAVEL_TIMES_NOTICE}
-          </p>
-        </div>
-      )}
-
-      {everyCandidateUnrecorded ? (
-        <p className={styles.allNotRecorded} data-testid="ward-referral-match-all-not-recorded">
-          <strong>{NOT_RECORDED_LABEL}</strong> — This prototype holds no travel time between this person&apos;s home
-          region and these sites. That is a gap in the invented data, not a statement that these beds are far away.
-        </p>
-      ) : null}
-
-      {/* TIER ACCORDION GROUP — cohesive container with zero white space between closed tabs */}
-      {turnaroundRejection ? (
-        <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
-          Turnaround preference not recorded: {turnaroundRejection.reason}
-        </p>
-      ) : null}
-      {renderReferralMatchTiers({
-        tier1Candidates,
-        tier2Candidates,
-        tier3Candidates,
-        isTier1Expanded,
-        isTier2Expanded,
-        isTier3Expanded,
-        toggleTier,
-        expandedUnitGates,
-        toggleGates,
-        needsGenderPlacement,
-        revealGenderPlacementForm,
-        handleAccept,
-        admissions,
-        bedReleases,
-        turnaroundForUnit,
-        handleFlagTurnaround,
-      })}
-
-      <section className={styles.geographySection}>
-        <div className={styles.geographyHeader}>
-          <span className={styles.geographyTitle}>Travel bands</span>
-          <span className={styles.geographyBadge}>{groupedUnitCount} units</span>
-        </div>
-        <div className={styles.matchList} data-testid="ward-referral-match-list">
-          {bandGroups.map((group, index) => (
-            <BandGroup
-              key={`${group.band}-${bandGroupsOpenByDefault}`}
-              group={group}
-              counts={bandGroupCounts[index]}
-              openByDefault={bandGroupsOpenByDefault}
-              onAccept={handleAccept}
-              needsGenderPlacement={needsGenderPlacement}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/*
-       * Rule 3 of the optional step, and the reason this branch has no `else` that renders
-       * anything: absence renders as NOTHING AT ALL. No "Not recorded", no empty checkbox, no grey
-       * placeholder, no warning icon, no amber row. A referral without the record must look exactly
-       * like a referral that never needed one, because it may be one — and no figure anywhere on
-       * this screen or any other counts how many referrals lack it.
-       */}
-      <div className={styles.localBed} data-testid="ward-referral-match-local-bed">
-        {referral.localBedSought ? (
-          <p className={styles.localBedRecord} data-testid="ward-referral-match-local-bed-sought-record">
-            A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
-          </p>
-        ) : (
-          <button
-            type="button"
-            className={styles.localBedButton}
-            data-testid="ward-referral-match-local-bed-sought"
-            onClick={handleLocalBedSought}
-          >
-            Record that a local bed was sought and none was suitable
-          </button>
-        )}
       </div>
-
-      <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls">
-        <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason">
-          Decline reason
-        </label>
-        <select
-          id="ward-referral-match-decline-reason"
-          data-testid="ward-referral-match-decline-reason"
-          className={styles.select}
-          value={declineReason ?? ""}
-          onChange={(event) => {
-            const chosen = event.target.value;
-            setDeclineReason(
-              REFERRAL_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
-                ? (chosen as ReferralDeclineReason)
-                : undefined,
-            );
-          }}
-        >
-          <option value="">Choose a reason…</option>
-          {REFERRAL_DECLINE_REASONS.map((reason) => (
-            <option key={reason} value={reason}>
-              {DECLINE_REASON_LABELS[reason] ?? reason}
-            </option>
-          ))}
-        </select>
-        <Button
-          variant="sec"
-          size="md"
-          data-placement-action="decline"
-          disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
-          reasonDisplay="tooltip"
-          type="button"
-          data-testid="ward-referral-match-decline"
-          onClick={declineReason === undefined ? ignoreUnavailableActivation : () => handleDecline("psychiatric_ward")}
-        >
-          Decline referral
-        </Button>
-        {declineReason === undefined ? (
-          <span id="ward-referral-match-decline-blocked" className="sr-only">
-            {DECLINE_REASON_UNCHOSEN}
-          </span>
-        ) : null}
-      </div>
-
-      {communityControls}
-      {edControls}
-
-      {wholeWithdrawControl}
-
-      {lastRejection ? (
-        <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
-          {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
-          recorded: {lastRejection.reason}
-        </p>
+      {phone === undefined && !hideDossierHeader ? (
+        <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
       ) : null}
-      {!hideDossierHeader ? <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} /> : null}
     </section>
   );
 }

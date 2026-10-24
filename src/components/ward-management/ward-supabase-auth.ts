@@ -1,16 +1,16 @@
 /** Thin adapter for the Supabase Auth REST contract: https://github.com/supabase/auth/blob/master/openapi.yaml. */
 const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
-export const WARD_AUTH_STORAGE_KEY = "ward-flow:auth:zakzoemeedfepxcstsou:v1";
-export class WardAuthError extends Error {
-  constructor(
-    public readonly kind: "credentials" | "session" | "unavailable" | "cancelled",
-    message: string,
-  ) {
-    super(message);
-  }
-}
-type User = { id: string };
-type Session = { access_token: string; refresh_token: string; expiresAt: number; recovery: boolean; user?: User };
+import {
+  WARD_AUTH_STORAGE_KEY,
+  WardAuthError,
+  consumeRecoveryFragment,
+  type WardAuthSession,
+  type WardAuthUser,
+} from "./ward-auth-link";
+
+export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryFragment };
+type User = WardAuthUser;
+type Session = WardAuthSession;
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 function isValidSession(parsed: unknown): parsed is Session {
   if (!parsed || typeof parsed !== "object") return false;
@@ -27,32 +27,6 @@ function isValidSession(parsed: unknown): parsed is Session {
     typeof row.recovery === "boolean" &&
     (!row.recovery ? typeof userId === "string" && userId.length > 0 : true)
   );
-}
-export function consumeRecoveryFragment(
-  location: Pick<Location, "hash" | "pathname" | "search">,
-  replace: (url: string) => void,
-): Session | null {
-  const parts = new URLSearchParams(location.hash.replace(/^#/, ""));
-  if (
-    !["access_token", "refresh_token", "error", "error_code", "error_description", "type"].some((key) => parts.has(key))
-  )
-    return null;
-  replace(location.pathname + location.search);
-  const failed = ["error", "error_code", "error_description"].some((key) => parts.has(key));
-  if (parts.get("type") === "signup" && !failed) return null;
-  const accessToken = parts.get("access_token");
-  const refreshToken = parts.get("refresh_token");
-  if (failed || parts.get("type") !== "recovery" || !accessToken || !refreshToken)
-    throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
-  const expires = Number(parts.get("expires_in"));
-  if (!Number.isFinite(expires) || expires <= 0)
-    throw new WardAuthError("session", "The recovery link is invalid or expired. Request a new link.");
-  return {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    expiresAt: Date.now() + expires * 1000,
-    recovery: true,
-  };
 }
 export type WardBrowserAuthAdapter = {
   readonly isRecovery: boolean;
@@ -117,8 +91,16 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     }
     this.session = null;
     this.email = null;
-    this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+    let removed: boolean;
+    try {
+      this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+      removed = true;
+    } catch {
+      // Browser storage is optional; it must never prevent memory or provider revocation.
+      removed = false;
+    }
     if (ended) this.options.onSessionEnded?.();
+    return removed;
   }
   private invalidate() {
     this.generation++;
@@ -128,7 +110,16 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   }
   private save(session: Session) {
     this.session = session;
-    this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(session));
+    try {
+      this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(session));
+    } catch {
+      // Keep rotated credentials in memory. Remove an older saved session when possible.
+      try {
+        this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+      } catch {
+        // A storage failure does not invalidate the verified in-memory session.
+      }
+    }
   }
   private async request(
     path: string,
@@ -244,7 +235,13 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       await this.verify(recovery);
       return;
     }
-    const saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
+    let saved: string | null | undefined;
+    try {
+      saved = this.options.storage?.getItem(WARD_AUTH_STORAGE_KEY);
+    } catch {
+      // No readable saved credentials: start signed out, as with memory-only auth.
+      return;
+    }
     if (!saved) return;
     try {
       const parsed: unknown = JSON.parse(saved);
@@ -360,8 +357,19 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   async signOut() {
     const token = this.session?.access_token;
     this.invalidate();
-    this.clear();
-    if (token) await this.request("/logout?scope=local", { method: "POST" }, token);
+    const removed = this.clear();
+    let logoutFailure: unknown;
+    try {
+      if (token) await this.request("/logout?scope=local", { method: "POST" }, token);
+    } catch (error) {
+      logoutFailure = error;
+    }
+    if (!removed)
+      throw new WardAuthError(
+        "unavailable",
+        "Signed out here, but this browser could not remove saved sign-in details. Clear this site's browser data before sharing the device.",
+      );
+    if (logoutFailure) throw logoutFailure;
   }
   dispose() {
     this.disposed = true;

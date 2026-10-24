@@ -1,0 +1,140 @@
+/**
+ * Which desks' first-run tours this device has seen, and the event that opens Help.
+ *
+ * The seen list lives under `TOUR_SEEN_STORAGE_KEY`, which carries the `ward_flow_choice_` prefix
+ * that `ward-browser-data.ts` keeps at sign-out: the next person at a ward computer has usually used
+ * it before, and a tour that reappeared at every sign-in would be noise. It holds desk role ids only,
+ * each checked against the known desks on read, so no typed text reaches storage (D-11, D-18). The
+ * step each tour was left at sits beside it under the same prefix, as role ids and step numbers.
+ */
+import { createBrowserStore } from "@/lib/client-store-factory";
+import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+
+/** A desk with its own tour: the chrome roles and the access admin. */
+export type WardTourRole = WardChromeRole | "admin";
+
+/** The desk whose tour applies: the shell's role, or the access admin, whom the chrome shows as executive. */
+export function useTourRole(): WardTourRole {
+  const role = useShellPersonaRole();
+  const access = useEffectiveWardAccess();
+  return access.role === "admin" ? "admin" : role;
+}
+
+export const TOUR_SEEN_STORAGE_KEY = "ward_flow_choice_tour_seen";
+const tourSeenChangeEvent = "ward-flow-tour-seen-change";
+
+let inMemoryFallback: string | undefined;
+
+function readRaw(): string {
+  if (inMemoryFallback !== undefined) return inMemoryFallback;
+  try {
+    return window.localStorage.getItem(TOUR_SEEN_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** The desks whose tour was seen or dismissed, from the stored comma-separated list. */
+export function parseTourSeen(raw: string): readonly WardTourRole[] {
+  const known = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
+  return raw.split(",").filter((id): id is WardTourRole => known.has(id));
+}
+
+function subscribeTourSeen(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(tourSeenChangeEvent, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(tourSeenChangeEvent, onChange);
+  };
+}
+
+// The raw string is the snapshot, so it keeps its identity between reads without a cache. The
+// server and hydration read `NOT_READ`, so the first client render matches the server's.
+const NOT_READ = "not-read";
+const useTourSeenRaw = createBrowserStore(subscribeTourSeen, readRaw, NOT_READ);
+
+/**
+ * Whether `role`'s tour has been seen on this device. Reads `true` on the server and before the
+ * browser store answers, so nothing flashes a "new" marker during hydration.
+ */
+export function useTourSeen(role: WardTourRole): boolean {
+  const raw = useTourSeenRaw();
+  return raw === NOT_READ || parseTourSeen(raw).includes(role);
+}
+
+/** Records that `role`'s tour was seen or dismissed. */
+export function markTourSeen(role: WardTourRole): void {
+  const seen = parseTourSeen(readRaw());
+  if (seen.includes(role)) return;
+  const next = [...seen, role].join(",");
+  try {
+    window.localStorage.setItem(TOUR_SEEN_STORAGE_KEY, next);
+    inMemoryFallback = undefined;
+  } catch {
+    inMemoryFallback = next;
+  }
+  window.dispatchEvent(new Event(tourSeenChangeEvent));
+}
+
+export const TOUR_STEP_STORAGE_KEY = "ward_flow_choice_tour_step";
+
+/**
+ * Where each desk's tour was left, so it picks up there: "role:step" pairs, a desk role id and a
+ * step number only. Read back through the known desks, so nothing else survives a read.
+ */
+export function parseTourSteps(raw: string): ReadonlyMap<WardTourRole, number> {
+  const known = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
+  const steps = new Map<WardTourRole, number>();
+  for (const pair of raw.split(",")) {
+    const [role, value] = pair.split(":");
+    const step = Number(value);
+    if (role && known.has(role) && Number.isInteger(step) && step >= 0) steps.set(role as WardTourRole, step);
+  }
+  return steps;
+}
+
+function readSteps(): ReadonlyMap<WardTourRole, number> {
+  try {
+    return parseTourSteps(window.localStorage.getItem(TOUR_STEP_STORAGE_KEY) ?? "");
+  } catch {
+    return new Map();
+  }
+}
+
+function writeSteps(steps: ReadonlyMap<WardTourRole, number>): void {
+  try {
+    if (steps.size === 0) window.localStorage.removeItem(TOUR_STEP_STORAGE_KEY);
+    else
+      window.localStorage.setItem(TOUR_STEP_STORAGE_KEY, [...steps].map(([role, step]) => `${role}:${step}`).join(","));
+  } catch {
+    // Without storage the tour starts from the beginning next time.
+  }
+}
+
+/** The step `role`'s tour was left at, or 0. */
+export function readTourStep(role: WardTourRole): number {
+  return readSteps().get(role) ?? 0;
+}
+
+/** Remembers the step `role`'s tour was left at; 0 forgets it. */
+export function saveTourStep(role: WardTourRole, step: number): void {
+  const steps = new Map(readSteps());
+  if (step > 0) steps.set(role, step);
+  else steps.delete(role);
+  writeSteps(steps);
+}
+
+/** Test-only reset. */
+export function resetTourSeenForTests(): void {
+  try {
+    window.localStorage.removeItem(TOUR_SEEN_STORAGE_KEY);
+    window.localStorage.removeItem(TOUR_STEP_STORAGE_KEY);
+  } catch {
+    // Nothing stored if storage is unreachable.
+  }
+  inMemoryFallback = undefined;
+  window.dispatchEvent(new Event(tourSeenChangeEvent));
+}

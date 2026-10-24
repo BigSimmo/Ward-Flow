@@ -6,18 +6,7 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useS
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { acceptedWardOf } from "./accepted-ward-referral";
-import {
-  Check,
-  ChevronRight,
-  ClipboardList,
-  Copy,
-  Hand,
-  ListOrdered,
-  Megaphone,
-  Search,
-  TriangleAlert,
-  X,
-} from "lucide-react";
+import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -63,9 +52,8 @@ import {
   durMinutes,
 } from "@/components/wf";
 
-import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { ReferralHistoryAndCorrections } from "./referral-history-corrections-lazy";
 import { ReferralMatchView } from "./referral-match-lazy";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { WardOffersSection } from "./ward-offers-section";
@@ -298,7 +286,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
   const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
-  const [umrnCopied, setUmrnCopied] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -306,7 +293,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     triggerRef.current = document.activeElement as HTMLElement | null;
     setSelectedReferralId(referralId);
     setInspectorTab("place");
-    setUmrnCopied(false);
   }, []);
 
   const closeDetail = useCallback(() => {
@@ -901,29 +887,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
                       <p className={a.panelMeta}>
-                        {umrnCopyable ? (
-                          <button
-                            type="button"
-                            className={a.umrn}
-                            title="Copy UMRN"
-                            aria-label={`Copy UMRN ${selectedUmrn}`}
-                            onClick={() => {
-                              void navigator.clipboard
-                                ?.writeText(selectedUmrn)
-                                .then(() => setUmrnCopied(true))
-                                .catch(() => setUmrnCopied(false));
-                            }}
-                          >
-                            <span className={a.mono}>{selectedUmrn}</span>
-                            {umrnCopied ? (
-                              <Check size={12} aria-hidden="true" />
-                            ) : (
-                              <Copy size={12} aria-hidden="true" />
-                            )}
-                          </button>
-                        ) : (
-                          <span>{selectedUmrn}</span>
-                        )}
+                        {/* Shown, never copied: no UMRN goes on the clipboard (D-71 item 7, 21 Oct 2026). */}
+                        <span className={umrnCopyable ? a.mono : undefined}>{selectedUmrn}</span>
                         <span aria-hidden="true">·</span>
                         <span className={a.truncate}>{demographicLabel(selectedReferral)}</span>
                       </p>
@@ -971,7 +936,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                               title={`Open ${targetWard?.name ?? "ward"} bed board`}
                               data-testid="ward-referral-hold-bed"
                             >
-                              Hold the bed
+                              Pull the bed
                             </Link>
                           )}
                           {selectedReferral.patientId && !isPhone ? (
@@ -986,16 +951,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </>
                       );
                     })()}
-                    {!isPhone ? (
-                      <NotWiredButton
-                        label="Claim"
-                        variant="sec"
-                        size="sm"
-                        icon={Hand}
-                        className={a.preview}
-                        data-testid="ward-referral-claim"
-                      />
-                    ) : null}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1078,19 +1033,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       patientInfo={selectedPatientInfo}
                       hideDossierHeader
                       onDecision={decide(selectedReferral)}
-                      admissions={admissions}
-                      bedReleases={bedReleases}
                       phone={
                         <>
-                          <span className={a.notWiredStart}>
-                            <NotWiredButton
-                              label="Claim this referral"
-                              variant="sec"
-                              icon={Hand}
-                              className={mph.tall}
-                              data-testid="ward-referral-phone-claim"
-                            />
-                          </span>
                           <button
                             type="button"
                             className={mph.more}
@@ -1122,15 +1066,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
                           ) : null}
                           <div className={mph.acts}>
-                            <span className={a.notWiredUp}>
-                              <NotWiredButton
-                                label="Escalate"
-                                variant="ghost"
-                                size="sm"
-                                icon={Megaphone}
-                                data-testid="ward-referral-phone-escalate"
-                              />
-                            </span>
                             <span className={a.spacer} />
                             <SummaryButton onClick={() => setSheet("summary")} />
                             <Button
@@ -1165,8 +1100,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         patientInfo={selectedPatientInfo}
                         hideDossierHeader
                         onDecision={decide(selectedReferral)}
-                        admissions={admissions}
-                        bedReleases={bedReleases}
                       />
                     ) : null}
                     {inspectorTab === "patient" ? (
@@ -1182,16 +1115,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
                 {!isPhone ? (
                   <div className={a.panelFoot}>
-                    <span className={a.notWiredUp}>
-                      <NotWiredButton
-                        label="Escalate"
-                        variant="ghost"
-                        size="sm"
-                        icon={Megaphone}
-                        className={a.preview}
-                        data-testid="ward-referral-escalate"
-                      />
-                    </span>
                     <span className={a.spacer} />
                     <SummaryButton onClick={() => setSheet("summary")} />
                     <Button

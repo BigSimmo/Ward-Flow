@@ -8,7 +8,13 @@ import { Printer } from "lucide-react";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
-import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowSelect,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
+import { HomeBedflow } from "@/components/ward-management/coordinator/home-bedflow";
+import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import {
   FilterChip,
   Hero,
@@ -25,7 +31,6 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFilters } from "@/components/ward-management/ward-controls";
 import { WardPanel } from "@/components/ward-management/ward-panel";
-import { MakeRoomPanel } from "./make-room-panel";
 import { StepDownBoard } from "./step-down-board";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
@@ -45,6 +50,10 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import { ForecastNetworkExtras } from "@/components/ward-management/forecast/forecast-network-extras";
+import { ForecastTomorrowFigure } from "@/components/ward-management/forecast/forecast-tomorrow-cell";
+import { ForecastWeekPanel } from "@/components/ward-management/forecast/forecast-week-panel";
 import { ShiftConfirmationsCard } from "./shift-confirmations-card";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import {
@@ -125,10 +134,17 @@ export function CapacityScreen() {
       "worldGeneration",
       "plannedAdmissions",
     );
+  const network = useWardNetwork();
+  // Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of this screen, unchanged.
+  // No patient is chosen here, so it reads beds only: a ward can be picked out, never offered.
+  const [bedflowUnitId, setBedflowUnitId] = useState<string | undefined>(undefined);
   const { now, paused, togglePause } = usePageLive();
+  const bedflowDischargesHeldUp = useMemo(
+    () => serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now).service.blockedToday,
+    [network.sites, units, bedReleases, leaveBeds, now],
+  );
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  const makeRoomOn = useWardFeatureFlag("make-room-chains");
   const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -219,6 +235,11 @@ export function CapacityScreen() {
 
   const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
+  // Forecasting build (Josh, 23 Oct 2026): tomorrow per bed type, beside the mismatch now.
+  const tomorrowByKind = useMemo(
+    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? []),
+    [units, bedReleases, admissions, movements, now, plannedAdmissions],
+  );
   // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
   // changes it.
   // Stream D: booked planned admissions due in each window count as beds needed.
@@ -550,6 +571,7 @@ export function CapacityScreen() {
             <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
           </div>
           <BedsForecastPanel forecast={forecast} />
+          {isPhone ? null : <ForecastNetworkExtras now={now} />}
           {isPhone ? null : <ShiftConfirmationsCard units={scopedUnits} now={now} />}
           <CapacityTabs
             id="capacity-network"
@@ -786,28 +808,27 @@ export function CapacityScreen() {
           aside={
             <>
               <PageLiveChip paused={paused} onTogglePause={togglePause} />
-              {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
+              {/* The A4 morning bed-meeting sheet: today's capacity, expected discharges, people
                *  waiting in ED and the top delays, scoped to the service chosen here. */}
-              {isPhone ? null : (
-                <BedMeetingSheetLauncher
-                  now={now}
-                  buttonClassName={buttonClass({ variant: "onHero" })}
-                  icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
-                  buildSheet={() =>
-                    bedMeetingSheet({
-                      units,
-                      movements,
-                      bedReleases,
-                      admissions,
-                      leaveBeds,
-                      now,
-                      thresholds,
-                      service,
-                      nameOf: (movement) => patientOf(movement).displayName,
-                    })
-                  }
-                />
-              )}
+              <BedMeetingSheetLauncher
+                hidden={isPhone}
+                now={now}
+                buttonClassName={buttonClass({ variant: "onHero" })}
+                icon={isPhone ? <Printer size={16} aria-hidden="true" /> : undefined}
+                buildSheet={() =>
+                  bedMeetingSheet({
+                    units,
+                    movements,
+                    bedReleases,
+                    admissions,
+                    leaveBeds,
+                    now,
+                    thresholds,
+                    service,
+                    nameOf: (movement) => patientOf(movement).displayName,
+                  })
+                }
+              />
               {/* The same figures on the meeting room screen, for this scope, behind the `bed-meeting-tv` flag. */}
               {!isPhone && bedMeetingTvOn ? (
                 <Link
@@ -925,7 +946,15 @@ export function CapacityScreen() {
            * Provenance badge removed as prototype is disclosed at page footer.
            */}
           {/* Audit A1-24: no header count; the hero already states waiting and beds that fit. */}
-          <WardPanel title="Where the mismatch is">
+          <WardPanel
+            title="Where the mismatch is"
+            blurb={
+              isPhone
+                ? undefined
+                : `Now, and likely by ${formatInstantWithDay(tomorrowByKind.until, now)} from recorded releases`
+            }
+            blurbInHeader
+          >
             <WardTable
               className={styles.gapTable}
               wrapperClassName={styles.gapBandWrap}
@@ -937,12 +966,18 @@ export function CapacityScreen() {
                   <th scope="col">Waiting</th>
                   <th scope="col">Beds of this kind</th>
                   <th scope="col">Gap</th>
+                  {isPhone ? null : <th scope="col">Tomorrow</th>}
                   <th scope="col">What that means</th>
                 </tr>
               </thead>
               <tbody>
                 {gapRows.map((row) => (
-                  <GapRow key={row.id} row={row} phone={isPhone} />
+                  <GapRow
+                    key={row.id}
+                    row={row}
+                    phone={isPhone}
+                    tomorrow={isPhone ? undefined : tomorrowByKind.kinds.find((kind) => kind.id === row.id)}
+                  />
                 ))}
               </tbody>
               <tfoot>
@@ -975,6 +1010,11 @@ export function CapacityScreen() {
                       />
                     </div>
                   </td>
+                  {isPhone ? null : (
+                    <td data-testid="ward-capacity-gap-tomorrow">
+                      <ForecastTomorrowFigure {...tomorrowByKind.total} />
+                    </td>
+                  )}
                   <td>{totalsSentence(gapTotals)}</td>
                 </tr>
               </tfoot>
@@ -993,6 +1033,7 @@ export function CapacityScreen() {
               Across the whole network, not only {service}.
             </p>
           ) : null}
+          {isPhone ? null : <ForecastWeekPanel now={now} />}
           {isPhone && phoneTab === "overview" ? (
             <CapacityPhoneOverview
               rows={networkRows}
@@ -1066,35 +1107,46 @@ export function CapacityScreen() {
           </div>
           {/* Top 25 item 8: desktop only, so the phone design is unchanged. */}
           {!isPhone ? <StepDownBoard now={now} /> : null}
-          {makeRoomOn && !isPhone ? <MakeRoomPanel now={now} service={service} /> : null}
+          {!isPhone ? (
+            <HomeBedflow
+              units={units}
+              movements={movements}
+              bedReleases={bedReleases}
+              leaveBeds={leaveBeds}
+              admissions={admissions}
+              now={now}
+              selectedUnitId={bedflowUnitId}
+              onSelectUnit={(unitId) => setBedflowUnitId((current) => (current === unitId ? undefined : unitId))}
+              dischargesHeldUp={bedflowDischargesHeldUp}
+              service={service}
+            />
+          ) : null}
         </div>
         {isPhone ? (
           <div className={styles.plannedWrap} data-phone-hidden={phoneTab !== "planned" ? "true" : undefined}>
             <PlannedAdmissionsPanel key={worldGeneration} now={now} />
           </div>
         ) : null}
-        {isPhone && phoneTab === "overview" ? (
-          // Option A: printing the bed meeting sheet is a desk task, so on a phone it leaves the hero
-          // for one quiet button at the foot of Overview.
-          <BedMeetingSheetLauncher
-            now={now}
-            buttonClassName={buttonClass({ variant: "sec" })}
-            icon={<Printer size={16} aria-hidden="true" />}
-            buildSheet={() =>
-              bedMeetingSheet({
-                units,
-                movements,
-                bedReleases,
-                admissions,
-                leaveBeds,
-                now,
-                thresholds,
-                service,
-                nameOf: (movement) => patientOf(movement).displayName,
-              })
-            }
-          />
-        ) : null}
+        {/* Keep both launchers mounted: print media can change the responsive query while a sheet is open. */}
+        <BedMeetingSheetLauncher
+          hidden={!isPhone || phoneTab !== "overview"}
+          now={now}
+          buttonClassName={buttonClass({ variant: "sec" })}
+          icon={<Printer size={16} aria-hidden="true" />}
+          buildSheet={() =>
+            bedMeetingSheet({
+              units,
+              movements,
+              bedReleases,
+              admissions,
+              leaveBeds,
+              now,
+              thresholds,
+              service,
+              nameOf: (movement) => patientOf(movement).displayName,
+            })
+          }
+        />
         <WardPrototypeFooter
           testId="ward-capacity-governance"
           note="Statewide bed capacity · Not approved for clinical use"

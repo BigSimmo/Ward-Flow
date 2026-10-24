@@ -1,12 +1,18 @@
 # Ward Flow code map — start here
 
-**Start with [Ward Flow's entry point](../README.md) and the repository's
-[AGENTS.md](../../../AGENTS.md).** This map is a file-by-file snapshot written on 25 September 2026
-against the former Database ward line at `ace8e9ee8d`. Ward Flow now has its own repository,
-[`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow), with `main` as its current base.
-Check the code in your checkout before relying on a count, route, or setup claim below. Historical
-Database paths and PsychSift references in linked map pages describe the extraction source; they are
-not instructions for current work.
+**Start with the [current architecture orientation](../../codebase-index.md), [Ward Flow's product entry](../README.md)
+and [AGENTS.md](../../../AGENTS.md).** This index routes builders to the relevant subsystem without
+requiring them to treat its September census as a current specification.
+
+**Audience:** builders. **Status:** maintained navigation over dated subsystem records. **Owner:** Documentation.
+_Updated 2026-10-23 - D-72 saving summary checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+The clock and transport-route corrections were checked from source at
+`fc30c90c9cdae9a208786ade6e885750f770a7ea` on 21 October 2026; this is not a new verification of every map entry.
+
+The detailed parts began as a 25 September 2026 snapshot of the former Database ward line at `ace8e9ee8d`.
+Later dated updates describe their own scope. Use current source and tests for the affected contract;
+the original counts, line numbers and extraction topology remain history. Ward Flow's current base is
+`main` in [`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow).
 
 This map describes code. It does not rule on product questions. Where it repeats another document's
 verdict it names that document.
@@ -18,7 +24,7 @@ verdict it names that document.
 | [Overview](overview.md)                              | The whole thing on one page: sizes, how the pieces fit, known gaps (the original 25 Sept map)                                                                                                                                                                                   |
 | [Engine](engine.md)                                  | Reducer, every event type, state shape, entities, persistence, the clock, adding an event                                                                                                                                                                                       |
 | [Data and rules](data-and-rules.md)                  | Seeds, reference data, eligibility, referrals, catchment, legal clocks, capacity, all selectors                                                                                                                                                                                 |
-| [Routes, shell and shared UI](shell-and-shared.md)   | All <!-- fact:ward-route-count -->52<!-- /fact --> routes under `/ward-flow/*` (<!-- fact:app-route-count -->54<!-- /fact --> total including sign-in and digest, plus `/` redirect), the layout chain, rail, top bar, navigation, shared UI pieces, and `src/components/wf/**` |
+| [Routes, shell and shared UI](shell-and-shared.md)   | All <!-- fact:ward-route-count -->53<!-- /fact --> routes under `/ward-flow/*` (<!-- fact:app-route-count -->55<!-- /fact --> total including sign-in and digest, plus `/` redirect), the layout chain, rail, top bar, navigation, shared UI pieces, and `src/components/wf/**` |
 | [Screens A](screens-a.md)                            | Coordinator (`/` and `/command`), ED (`/ed`, `/ed/[edId]`), ward, referrals, community, search, statistics (12 routes), reports (`/reports/chronology`, `/reports/downtime`)                                                                                                    |
 | [Screens B](screens-b.md)                            | Board, capacity, movements, delays, handover, patients, alerts and the rest                                                                                                                                                                                                     |
 | [Tests](tests.md)                                    | Every ward test file, how the suites run, which tests to run for a change                                                                                                                                                                                                       |
@@ -30,9 +36,9 @@ verdict it names that document.
 
 1. **Ward Flow has its own repository.** This bed-coordination prototype for WA mental health services
    is developed in `BigSimmo/Ward-Flow`. PsychSift belongs to the former Database repository.
-2. **This map predates shared database work.** Its browser-state, API, login and migration descriptions
-   are historical. Inspect the current implementation and [AGENTS.md](../../../AGENTS.md) before
-   changing data flow. Keep prototype patients synthetic.
+2. **The September census predates shared database work.** Later scoped updates do not refresh the
+   entire census. Use the [current architecture orientation](../../codebase-index.md) and affected
+   implementation before changing data flow. Keep prototype patients synthetic.
 3. **One reducer is the engine.** Screens call `dispatch(event)`; `wardFlowReducer` checks the role,
    the payload, that the screen's view is not stale, and the domain rules, then either changes state
    or records a refusal. See [Engine](engine.md).
@@ -42,10 +48,13 @@ verdict it names that document.
    previews. Shared mode authenticates an account and scopes its records and commands to the
    authorised role/place; `EVENT_ROLE` remains the engine's event permission table. A reachable
    screen must not borrow coordinator authority for another desk.
-6. **Time is synthetic.** `ward-clock.ts` is the only file that reads the real clock; the demo clock
-   only moves through `ADVANCE_CLOCK`. Tests share one instant unless they advance it.
-7. **Demo state saves stop once anything typed happens.** D-67 separately permits bounded
-   synthetic referral/legal form session drafts; submitted state retains the typed-event privacy lock.
+6. **Prototype data and clock control are separate.** `WardFlowProvider` uses wall-clock timing and
+   schedules 30-second ticks. Supplying `initialNow` pins deterministic test/render time and stops
+   those ticks. Read the [provider](../../../src/components/ward-management/ward-flow-provider.tsx),
+   rather than applying the older census's clock description.
+7. **D-72 permits a scrubbed device copy after typed events.** Original typed values are excluded;
+   saving stops if a safe, valid copy cannot be made. D-67 separately permits bounded synthetic
+   referral/legal form session drafts for human review. See [current persistence guidance](../STATUS.md#remaining-work-and-local-remediation).
 8. **The rendered app is the current design authority; the engine is the behaviour authority.** The
    drawings in `design/third-edition-mockups/` are background. See [Ward Flow's entry point](../README.md).
 9. **The current base is public Ward Flow `main`.** Verify the checkout and `origin` before any remote
@@ -121,6 +130,7 @@ apply the former Database ward-line fold procedure to this repository.
 
 ## Keeping this map current
 
-Update the part that covers any file you add, rename or retire, in the same commit. If a part goes
-stale beyond a quick fix, say so at the top of that part with the date rather than leaving it silently
-wrong.
+Update the affected maintained summary or dated correction alongside source changes. Identify its
+source revision and scope; preserve the original census as history. Do not silently refresh old
+counts, line numbers or verification dates. If a part has no maintained summary for the affected
+contract, link the current source and state that limitation before its historical body.

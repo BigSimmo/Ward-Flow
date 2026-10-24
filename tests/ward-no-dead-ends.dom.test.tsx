@@ -85,10 +85,11 @@ import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
-import { PersonScreen } from "@/components/ward-management/patients/person-screen";
+import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
+import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
@@ -143,6 +144,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/ward-flow/waiting", { concrete: "/ward-flow/waiting", render: () => <DelaysScreen /> }],
   ["/ward-flow/discharges", { concrete: "/ward-flow/discharges", render: () => <DischargeBoard /> }],
   ["/ward-flow/on-call", { concrete: "/ward-flow/on-call", render: () => <OnCallScreen /> }],
+  ["/ward-flow/seclusion", { concrete: "/ward-flow/seclusion", render: () => <SeclusionScreen /> }],
   ["/ward-flow/ed", { concrete: "/ward-flow/ed", render: () => <EdIndex /> }],
   ["/ward-flow/ed/[edId]", { concrete: `/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> }],
   [
@@ -163,7 +165,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/ward-flow/out-of-area", { concrete: "/ward-flow/out-of-area", render: () => <OutOfAreaBoard /> }],
   [
     "/ward-flow/people/[patientId]",
-    { concrete: `/ward-flow/people/${patient.id}`, render: () => <PersonScreen patientId={patient.id} /> },
+    { concrete: `/ward-flow/people/${patient.id}`, render: () => <PatientNowScreen patientId={patient.id} /> },
   ],
   ["/ward-flow/people/new", { concrete: "/ward-flow/people/new", render: () => <AddPatientForm /> }],
   ["/ward-flow/referrals", { concrete: "/ward-flow/referrals", render: () => <ReferralBoard /> }],

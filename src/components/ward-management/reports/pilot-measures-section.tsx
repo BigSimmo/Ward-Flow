@@ -19,12 +19,17 @@ import styles from "./reports.module.css";
 type Figure = { id: string; label: string; value: ReactNode; note?: string; testId?: string };
 
 /** A typical time, or why there is none, always with its sample (owner ruling, 30 Aug 2026). */
-function durationFigures(summary: DurationSummary, what: string): { typical: Figure; slow: Figure } {
+function durationFigures(
+  summary: DurationSummary,
+  what: string,
+  empty = `No ${what} this week`,
+): { typical: Figure; slow: Figure } {
   const sample = `from ${summary.sampleSize} of ${summary.population} ${what}`;
   if (summary.median === undefined || summary.p90 === undefined) {
-    const reason = summary.population === 0 ? "none in this week" : "not enough data to publish";
+    // "from 0 of 0 beds held" read as a broken figure, so an empty week says so plainly.
+    const note = summary.population === 0 ? empty : `${sample}, not enough data to publish`;
     return {
-      typical: { id: "typical", label: "Typical", value: "—", note: `${sample}, ${reason}` },
+      typical: { id: "typical", label: "Typical", value: "—", note },
       slow: { id: "slow", label: "Slowest 1 in 10", value: "—" },
     };
   }
@@ -134,7 +139,7 @@ export function PilotMeasuresSection({
       key="held"
       isPhone={isPhone}
       icon={Clock}
-      title="Request to bed held"
+      title="Request to bed pulled"
       meta="Measure 1"
       testId="ward-pilot-held"
       figures={[{ ...held.typical, testId: "ward-pilot-held-typical" }, held.slow]}
@@ -225,7 +230,7 @@ export function PilotMeasuresSection({
   ];
 
   const stepRows = measures.steps.map((step) => {
-    const figures = durationFigures(step.summary, "finished");
+    const figures = durationFigures(step.summary, "finished", "None finished this week");
     return { id: step.id, label: step.label, typical: figures.typical.value, note: figures.typical.note };
   });
 

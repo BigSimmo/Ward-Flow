@@ -9,6 +9,8 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
  * DOWNTIME PACK — a frozen, printable snapshot of the network for when the system is unavailable:
@@ -40,6 +42,7 @@ type DowntimeEdLine = {
   legalStatus: string;
   stage: string;
   acceptedWard: string;
+  observation: string;
 };
 
 type DowntimeMoveLine = {
@@ -50,6 +53,7 @@ type DowntimeMoveLine = {
   stage: string;
   plannedAt: Instant | null;
   transportEta: Instant | null;
+  observation: string;
 };
 
 type DowntimeLegalLine = {
@@ -69,11 +73,19 @@ export type DowntimePack = {
   edQueue: DowntimeEdLine[];
   pendingMoves: DowntimeMoveLine[];
   legalForms: DowntimeLegalLine[];
+  /** The shift change this pack was retaken for, when it is the handover copy (downtime-pack-schedule.ts). */
+  shiftChangeAt?: Instant;
   /**
    * Open movements that have left their ED (moving to a ward). The ED queue counts only people still
    * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.
    */
   leftEd: number;
+  /**
+   * Set when the pack was taken while the browser was offline (owner, 22 Oct 2026): the records
+   * may be stale, so the pack is labelled "taken offline" with the last sync time instead of reading
+   * as fresh. `lastSyncAt` is null when this tab has not been online since it opened.
+   */
+  offline?: { lastSyncAt: Instant | null };
 };
 
 export type DowntimePackInput = {
@@ -87,9 +99,10 @@ export type DowntimePackInput = {
 };
 
 /** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
-function edLabel(id: string): string {
-  const ed = edById(id);
-  return edShortName(ed) || ed?.name || id;
+function originLabel(movement: Movement): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  const ed = edById(movement.originEdId);
+  return edShortName(ed) || ed?.name || movement.originEdId;
 }
 
 function finiteOrNull(value: Instant | undefined): Instant | null {
@@ -129,19 +142,24 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   );
 
   const open = movements.filter(isOpen);
-  const stillInEd = open.filter((movement) => movement.stage !== "moving" && movement.leftDepartmentAt === undefined);
+  // D-76: a journey from a community team was never in an ED.
+  const stillInEd = open.filter(
+    (movement) =>
+      movement.originEdId !== undefined && movement.stage !== "moving" && movement.leftDepartmentAt === undefined,
+  );
 
   const edQueue = stillInEd
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      ed: edLabel(movement.originEdId),
+      ed: originLabel(movement),
       openedAt: movement.openedAt,
       waitedMinutes: Math.max(0, now - movement.openedAt),
       urgency: movement.urgency,
       legalStatus: movement.legalStatus,
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       acceptedWard: unitName(movement.acceptedUnitId),
+      observation: observationSummary(movement.observation),
     }))
     .sort((a, b) => a.ed.localeCompare(b.ed) || b.waitedMinutes - a.waitedMinutes);
 
@@ -150,11 +168,12 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      from: edLabel(movement.originEdId),
+      from: originLabel(movement),
       to: unitName(movement.acceptedUnitId),
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       plannedAt: finiteOrNull(movement.plannedMoveAt),
       transportEta: finiteOrNull(movement.transport?.estimatedAt),
+      observation: observationSummary(movement.observation),
     }))
     .sort((a, b) => (a.plannedAt ?? Infinity) - (b.plannedAt ?? Infinity) || a.to.localeCompare(b.to));
 
@@ -189,6 +208,11 @@ let packGeneration: number | null = null;
 /** An opaque, in-memory session/access boundary. Revoked owners cannot write late snapshots. */
 export type DowntimePackOwner = { active: boolean; ready?: boolean };
 let packOwner: DowntimePackOwner | null = null;
+/**
+ * The pack whose print window was last opened, or whose "ready" prompt was put aside. Compared by
+ * identity, so a new pack prompts again. Memory only, like the pack (D-18).
+ */
+let handledPack: DowntimePack | null = null;
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -202,10 +226,30 @@ export function rememberDowntimePack(
 ): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
   if (owner?.active === false || owner?.ready === false) return;
+  // A pack taken online is kept: an offline one never replaces it (owner, 22 Oct 2026).
+  const held = lastDowntimePack(owner, worldGeneration ?? undefined);
+  if (pack.offline && held !== null && held.offline === undefined) return;
+  if (lastPack !== pack) handledPack = null;
   lastPack = pack;
   packGeneration = worldGeneration;
   packOwner = owner;
   notify();
+}
+
+/**
+ * When this tab last saw the browser online, in world time, and in which world generation. Memory
+ * only (D-18). Codex on #551: a sync belongs to its world and session, so a reset or scenario switch
+ * (new generation) or a forgotten pack (session end, restore) leaves it unrecorded rather than
+ * carrying an older, or after a clock reset a future, time onto the next offline pack.
+ */
+let lastSync: { at: Instant; worldGeneration: number | null } | null = null;
+export function noteDowntimeSync(now: Instant, worldGeneration: number | null = null): void {
+  lastSync = { at: now, worldGeneration };
+}
+export function lastDowntimeSyncAt(worldGeneration: number | null = null, now?: Instant): Instant | null {
+  if (lastSync === null || lastSync.worldGeneration !== worldGeneration) return null;
+  if (now !== undefined && lastSync.at > now) return null;
+  return lastSync.at;
 }
 
 /** True when the remembered pack was taken in another world generation (a reset or scenario switch). */
@@ -218,6 +262,20 @@ export function lastDowntimePack(owner?: DowntimePackOwner | null, worldGenerati
   if (owner !== undefined && owner !== packOwner) return null;
   if (worldGeneration !== undefined && downtimePackIsStale(worldGeneration)) return null;
   return lastPack;
+}
+
+/**
+ * The print window was opened for this pack (to print it or save it as a PDF), or its prompt was
+ * put aside, so the shell stops offering it until the next pack. Ignored for a pack no longer held.
+ */
+export function markDowntimePackHandled(pack: DowntimePack): void {
+  if (pack !== lastPack || handledPack === pack) return;
+  handledPack = pack;
+  notify();
+}
+
+export function downtimePackHandled(pack: DowntimePack): boolean {
+  return handledPack === pack;
 }
 
 /** For `useSyncExternalStore`: the screen re-renders when a pack is remembered or forgotten. */
@@ -238,6 +296,9 @@ export function forgetDowntimePack(owner?: DowntimePackOwner | null): void {
   lastPack = null;
   packGeneration = null;
   packOwner = null;
+  handledPack = null;
+  // A session end or restore replaces the records, so their last sync no longer describes them.
+  if (owner === undefined) lastSync = null;
   notify();
 }
 // The pack lists one account's patients, so a session ending forgets it (Codex review on PR #487).

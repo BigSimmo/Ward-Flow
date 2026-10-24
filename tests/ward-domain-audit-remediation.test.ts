@@ -5,6 +5,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { bedMapWards } from "@/components/ward-management/capacity/bed-map";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
 // The provider deliberately omits rejections from its persistence projection (D-18).
 const valid = (state: WardFlowState) =>
@@ -35,7 +36,7 @@ function journey(atsCategory?: number) {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,
@@ -57,7 +58,7 @@ function journey(atsCategory?: number) {
     unitId,
     movementId,
     arrive() {
-      send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId, needed: false });
+      send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId, needed: false });
       send({ type: "PATIENT_ARRIVED", role: "ward", movementId, actingUnitId: unitId });
     },
     book() {
@@ -67,7 +68,7 @@ function journey(atsCategory?: number) {
         movementId,
         provider: "Ambulance service",
         escortRequired: false,
-        cadNumber: "SYN-CAD",
+        cadNumber: "SYN-CAD-1",
         transportLegalStatus: "voluntary",
         estimatedAt: 700,
       });
@@ -110,7 +111,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
         role: "ed",
         provider: "Ambulance service",
         escortRequired: false,
-        cadNumber: "SYN-RETRY",
+        cadNumber: "SYN-RETRY-2",
         transportLegalStatus: "voluntary",
         estimatedAt: 700,
       },
@@ -170,7 +171,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(corrupted)).toBe(false);
     const ready = wardFlowReducer(corrupted, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,
@@ -239,7 +240,7 @@ describe("audit domain regressions — valid producers and complete recovery", (
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,
@@ -370,7 +371,7 @@ describe("medical clearance and recorded category boundaries", () => {
           security: "Open",
           sex: "Female",
           gender: "Female",
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           highAcuity: false,
           legalStatus: "Voluntary",
           urgency: 2,
@@ -393,7 +394,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(held.unitId).toBe(movement.acceptedUnitId);
     const ready = wardFlowReducer(state, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: movement.id,
       needed: false,
@@ -423,7 +424,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(valid(full)).toBe(true);
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: movement.id,
       needed: false,
@@ -485,7 +486,7 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     };
     const ready = wardFlowReducer(full, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "ward",
+      role: "coordinator",
       now,
       movementId: f.movementId,
       needed: false,

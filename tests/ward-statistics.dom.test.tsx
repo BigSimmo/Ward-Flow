@@ -27,6 +27,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { DECLINE_REASONS, PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN, ON THE SCREEN.
@@ -62,7 +63,7 @@ function admission(overrides: Partial<Admission>): Admission {
   return {
     id: "AD-TEST-01",
     unitId: "unit-under-test",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,
@@ -613,7 +614,7 @@ function movement(overrides: Partial<Movement>): Movement {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -720,7 +721,11 @@ describe("referrals where every ward asked so far has refused", () => {
       referrals: [],
       bedReleases: [],
       movements: [
-        movement({ id: "WF-A", referredUnitIds: [], declines: [{ unitId: "unit-1", at: 0, reason: "no_bed" }] }),
+        movement({
+          id: "WF-A",
+          referredUnitIds: [],
+          declines: [{ unitId: "unit-1", at: 0, reason: "no_suitable_bed" }],
+        }),
         movement({ id: "WF-B", referredUnitIds: ["unit-2"], declines: [] }),
       ],
     });
@@ -805,7 +810,7 @@ describe("referrals where every ward asked so far has refused", () => {
         movement({
           id: "WF-C",
           referredUnitIds: [],
-          declines: [{ unitId: "unit-1", at: 0, reason: "no_bed" }],
+          declines: [{ unitId: "unit-1", at: 0, reason: "no_suitable_bed" }],
           escalation: { at: 0, triedUnitIds: ["unit-1"], contact: "State bed coordination" },
         }),
       ],

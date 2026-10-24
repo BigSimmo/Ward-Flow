@@ -15,6 +15,7 @@ import {
   legalShort,
   nextStep,
   obsLong,
+  obsShort,
   STAGE_LABEL,
   type HandoverRow,
 } from "./handover-model";
@@ -74,7 +75,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "st",
     header: "Status",
-    width: 140,
+    width: 180,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <span className={styles.glyphText}>
@@ -91,12 +92,17 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "wait",
     header: "Waiting",
-    width: 84,
+    width: 110,
     mono: true,
     cell: (row, ctx) => (
       <span className={styles.two}>
         <b className={styles.mono}>{durMinutes(ctx.now - row.openedAt)}</b>
-        <span className={`${styles.sub} ${styles.mono}`}>{formatInstantWithDay(row.openedAt, ctx.now)}</span>
+        <span
+          className={`${styles.sub} ${styles.mono} ${styles.trunc}`}
+          title={formatInstantWithDay(row.openedAt, ctx.now)}
+        >
+          {formatInstantWithDay(row.openedAt, ctx.now)}
+        </span>
       </span>
     ),
     paper: (row, ctx) => durMinutes(ctx.now - row.openedAt),
@@ -108,10 +114,10 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     cell: (row) => (
       <span className={styles.two}>
         {/* DA-17: hospital codes carry their full name (`ward-abbreviations.tsx`). */}
-        <span className={styles.trunc}>
+        <span className={styles.trunc} title={row.edShort}>
           <SpelledCodes text={row.edShort} />
         </span>
-        <span className={`${styles.sub} ${styles.trunc}`}>
+        <span className={`${styles.sub} ${styles.trunc}`} title={destinationText(row)}>
           <SpelledCodes text={destinationText(row)} />
         </span>
       </span>
@@ -126,7 +132,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       <span className={styles.two}>
         <span className={styles.trunc}>{legalShort(row)}</span>
         {row.obs === "Standard" ? (
-          <span className={styles.sub}>Standard obs</span>
+          <span className={styles.sub}>{obsLong(row)}</span>
         ) : (
           <span className={`${styles.sub} ${styles.glyphText}`}>
             <StatusGlyph tone={row.obs === "Urgent" ? "danger" : "warning"} size={8} />
@@ -150,14 +156,14 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 92,
     cell: (row) =>
       row.obs === "Standard" ? (
-        <span className={styles.sub}>Standard</span>
+        <span className={styles.sub}>{obsShort(row)}</span>
       ) : (
         <span className={styles.glyphText}>
           <StatusGlyph tone={row.obs === "Urgent" ? "danger" : "warning"} size={8} />
-          {row.obs === "Urgent" ? "Urgent" : "1:1"}
+          {obsShort(row)}
         </span>
       ),
-    paper: (row) => (row.obs === "Standard" ? "Standard" : row.obs === "Urgent" ? "Urgent" : "1:1"),
+    paper: (row) => obsShort(row),
   },
   {
     id: "due",
@@ -190,7 +196,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     // and Patient, Status and From and to give way (names truncate first).
     id: "next",
     header: "Next step",
-    width: 300,
+    width: 270,
     cell: (row, ctx) => {
       const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
       return (

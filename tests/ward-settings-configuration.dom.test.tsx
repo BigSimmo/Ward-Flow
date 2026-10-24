@@ -195,7 +195,10 @@ describe("settings screen configuration draft", () => {
       fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
       fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-      const payload = JSON.parse(writeText.mock.calls[0][0]);
+      // D-71 item 7: the synthetic line first, then the JSON payload.
+      const [first, ...json] = writeText.mock.calls[0][0].split("\n");
+      expect(first).toBe("Synthetic prototype.");
+      const payload = JSON.parse(json.join("\n"));
       expect(payload.configuration.edAccessTargetMinutes).toBe(savedTarget);
     } finally {
       writeText.mockRestore();

@@ -1,5 +1,7 @@
 # Scripts, generators, hooks and tooling
 
+_Updated 2026-10-23 - distinguish ruling-index navigation from decision authority; Documentation owns._
+
 > **Retired 18 October 2026:** the receipt store and gate arbiter (`gate-receipts.mjs`, `gate-arbiter.mjs`),
 > the fold-gate and READY tooling (`ready-check.mjs`, `select-fold-gate.mjs`, `select-journeys.mjs`,
 > `test-batch.mjs`, `run-slot.mjs`, `review-server.mjs`), mutation runs (`mutate.mjs`, `mutation-run.mjs`),
@@ -23,8 +25,10 @@ advisory. Missing/unreadable selected files fail. A pass does not establish sema
 
 > Updated tooling contracts, 2 October 2026: both selectors default to the local `origin/main`
 > ref, retain explicit `--base`, never fetch and fail when refs cannot be compared. Owner-rulings
-> indexing includes `decisions.md` with source-qualified IDs and distinguishes decisions from
-> questions/proposals. The rules index reads only the versioned historical lessons copy; foreign
+> indexing includes `decisions.md` with source-qualified IDs and source-file labels. It locates
+> items; it cannot establish that each is approved or current. Open the source and read its
+> surrounding decisions and later corrections, as [OWNER-RULINGS.md](../OWNER-RULINGS.md) warns.
+> The rules index reads only the versioned historical lessons copy; foreign
 > branch/provider/model instructions remain historical. Screen verification records optional full
 > checked revisions and bounded folder/page hashes, excluding shared shell, globals and transitive
 > imports. Neither drawing freshness nor structural checks prove current app appearance.
@@ -337,8 +341,8 @@ line.
   Flow's public main branch (the pre-split `BigSimmo/Database` Guard 0 rule that treated Ward Flow
   as local-disk-only is historical). Run directly, `guard-push.mjs` verifies the `BigSimmo/Ward-Flow`
   remote identity and blocks a push while a required CI run is active on the branch (bypass per push
-  with `SKIP_IN_FLIGHT_CI_GUARD=1`; the installed `.githooks/pre-push` exports that bypass by default
-  for fast iteration unless `PREPUSH_CI_STRICT=1` is set).
+  with `SKIP_IN_FLIGHT_CI_GUARD=1`; the installed `.githooks/pre-push` keeps the check on by default;
+  only an explicit `SKIP_IN_FLIGHT_CI_GUARD=1` or `GUARD_PUSH_DISABLE=1` skips it).
 - **`scripts/ci-change-scope.mjs`** (1,543 lines total) — Repo-wide CI scope classifier
   (`check:ci-scope`), not Ward-owned, but its advisory-mockup arm has a dedicated, commented Ward
   section: `wardAdvisorySpecs` (~lines 111–156) derives the `ui-ward-*.spec.ts` alternation from

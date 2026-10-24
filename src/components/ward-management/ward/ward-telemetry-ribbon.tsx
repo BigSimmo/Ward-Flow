@@ -2,7 +2,7 @@
 
 import { HeroStat, SrOnly, durMinutes } from "@/components/wf";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -55,7 +55,7 @@ export function WardTelemetryRibbon({
 }: WardTelemetryRibbonProps) {
   const { bedReleases } = useWardFlowSelect("bedReleases");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  const shiftEnd = dayShiftEndInstant(now);
+  const shiftEnd = shiftEndInstant(now);
   const freeingByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const confirmedByWard = unit.allocatable.source === "ward";
 
@@ -69,7 +69,7 @@ export function WardTelemetryRibbon({
           value={
             <span data-testid="ward-hero-ready">
               {capacity.available}
-              <SrOnly>, {pendingPreparation} being made ready</SrOnly>
+              {pendingPreparation > 0 ? <SrOnly>, {pendingPreparation} being made ready</SrOnly> : null}
             </span>
           }
           label="Ready now"
@@ -82,7 +82,7 @@ export function WardTelemetryRibbon({
         {onActNow ? (
           <HeroStat
             value={actNow}
-            label="Tasks due now"
+            label="Due now"
             tone={actNow > 0 ? "danger" : "success"}
             command
             onToggle={onActNow}
@@ -107,7 +107,7 @@ export function WardTelemetryRibbon({
     };
     return (
       <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
-        <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+        {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
         <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
           <HeroStat
             inline
@@ -149,7 +149,8 @@ export function WardTelemetryRibbon({
           />
         ) : null}
         <span className={styles.srOnly}>
-          {staffedSpecialling} on 1:1 specialling. {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}{" "}
+          {staffedSpecialling} staff on constant observation.{" "}
+          {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}{" "}
           {confirmedByWard ? "since confirmed" : "since last figure"}.
         </span>
       </div>
@@ -158,7 +159,7 @@ export function WardTelemetryRibbon({
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
-      <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+      {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
       <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
         <HeroStat
           value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
@@ -167,7 +168,7 @@ export function WardTelemetryRibbon({
         />
       </div>
       <HeroStat value={capacity.occupied} label="Occupied" />
-      <HeroStat value={staffedSpecialling} label="1:1 specialling" />
+      <HeroStat value={staffedSpecialling} label="Constant obs staff" />
       <HeroStat
         value={capacity.available + freeingByShiftEnd}
         label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}

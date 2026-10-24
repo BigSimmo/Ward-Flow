@@ -36,6 +36,17 @@ export function wardClosedLine(unit: Unit): string | null {
     : "Closed to admissions";
 }
 
+/**
+ * The refusal for a new admission step at a closed ward (Audit 2 E-02, Josh 20 Oct 2026): a closed
+ * ward takes no new referral, acceptance or planned booking until a person reopens it. Closure is not
+ * fullness: it is decided by `isClosed` alone, whatever the bed counts. Existing holds stand.
+ */
+export function closedToAdmissionsRefusal(unit: Unit): string | null {
+  if (!unit.isClosed) return null;
+  const reason = unit.admissionsClosure ? ` (${wardClosureReasonLabel(unit.admissionsClosure.reason)})` : "";
+  return `${unit.name} is closed to admissions${reason} until a person reopens it`;
+}
+
 /** The expected reopening time has come. A prompt for a person, never a reopening. */
 export function wardReopeningDue(unit: Unit, now: Instant): boolean {
   const until = unit.admissionsClosure?.until;
@@ -63,7 +74,17 @@ export function pointedAtWard(
     .map((movement): WaitingOnClosedWard => ({
       kind: "bed_request",
       id: movement.id,
-      status: movement.acceptedUnitId !== unitId ? "asked" : movement.stage === "pulled" ? "bed_held" : "accepted",
+      status:
+        movement.acceptedUnitId !== unitId
+          ? "asked"
+          : // Q25: held by stage or by a kept admission, as `movementHoldsBedByStage` (inlined, as above):
+            // a patient stepped back to "accepted" still holds the bed, and so do the later stages.
+            movement.admissionId !== undefined ||
+              movement.stage === "pulled" ||
+              movement.stage === "handover_ready" ||
+              movement.stage === "moving"
+            ? "bed_held"
+            : "accepted",
     }));
   const waitingReferrals = referrals
     .filter((referral) =>

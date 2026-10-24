@@ -81,6 +81,9 @@
 }
 
 .searchForm > div > div:first-of-type:focus-within {
+  /* A solid ring contrasts with the hero's painted gradient in both themes. */
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
   border-color: var(--wf-hero-ink);
   box-shadow:
     0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent),
@@ -105,7 +108,7 @@
 }
 
 .searchForm input::placeholder {
-  color: color-mix(in srgb, var(--wf-hero-2) 55%, transparent);
+  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
   font-weight: 400;
 }
 
@@ -984,41 +987,6 @@ table.censusTable {
   text-transform: uppercase;
 }
 
-.previewRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
-.previewButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 12px;
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-ctl);
-  background: transparent;
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.previewTag {
-  padding: 2px 8px;
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-tag);
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / 14px var(--wf-font);
-}
-
-.previewNote {
-  flex-basis: 100%;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
 .actions {
   display: flex;
   align-items: center;
@@ -1270,15 +1238,13 @@ table.censusTable {
    vertically to 48px; width is untouched so neighbouring pills never overlap. */
 .dobToggle,
 .searchForm > div > div:first-of-type > button:last-child:not(.dobToggle),
-.flow,
-.previewButton {
+.flow {
   position: relative;
 }
 
 .dobToggle::after,
 .searchForm > div > div:first-of-type > button:last-child:not(.dobToggle)::after,
-.flow::after,
-.previewButton::after {
+.flow::after {
   content: "";
   position: absolute;
   top: 50%;

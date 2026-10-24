@@ -751,6 +751,10 @@ export function defaultRunsFetch(branch, exec = execFileSync) {
         branch,
         "--workflow",
         "ward-flow.yml",
+        // Only pull_request runs share the cancel-in-progress concurrency group; manual or
+        // other-event runs get a unique group and are never cancelled by a push.
+        "--event",
+        "pull_request",
         "--limit",
         "100",
         "--json",
@@ -778,9 +782,17 @@ export function inFlightCiGuard(
   // product regression and is not one.
   { prViewer = defaultPrView, runFetcher = defaultRunsFetch, ghAvailable = ghIsAvailable } = {},
 ) {
-  void _ranges;
   if (process.env.SKIP_IN_FLIGHT_CI_GUARD === "1") {
     return { name: "in-flight-ci", ok: true, skipped: "SKIP_IN_FLIGHT_CI_GUARD=1" };
+  }
+  // A push whose refs are all non-branch (e.g. `git push --tags`) cannot move a PR head or
+  // cancel its CI, so the checked-out-branch fallback must not make it look like a branch push.
+  if (
+    Array.isArray(_ranges) &&
+    _ranges.length > 0 &&
+    !_ranges.some((range) => (range.remoteRef || range.localRef || "").startsWith("refs/heads/"))
+  ) {
+    return { name: "in-flight-ci", ok: true, note: "no branch refs pushed — in-flight CI check not applicable" };
   }
   if (!ghAvailable()) {
     return { name: "in-flight-ci", ok: true, note: "gh not available — in-flight CI check skipped (fail-open)" };
@@ -1257,6 +1269,33 @@ const STATIC_GUARD_ESLINT_CACHE = "node_modules/.cache/eslint-guard-push/";
 /** Short wait via run-heavy; busy coordinator fails open rather than stalling a push. */
 const STATIC_GUARD_LOCK_WAIT_MS = 30_000;
 
+/** Files per eslint invocation; matches the prettier step's batch size. */
+const LINT_BATCH_SIZE = 200;
+/**
+ * Path characters per eslint invocation. On Windows npm runs the script through cmd.exe, whose
+ * limit is 8,191 characters for the whole command, so this leaves room for the wrapper and flags.
+ */
+const LINT_BATCH_MAX_CHARS = 6_000;
+
+/** Exported for tests: split lintable files into batches bounded by count and by command length. */
+export function lintBatches(files, maxFiles = LINT_BATCH_SIZE, maxChars = LINT_BATCH_MAX_CHARS) {
+  const batches = [];
+  let batch = [];
+  let chars = 0;
+  for (const file of files) {
+    const cost = file.length + 3; // the separating space and quotes
+    if (batch.length > 0 && (batch.length >= maxFiles || chars + cost > maxChars)) {
+      batches.push(batch);
+      batch = [];
+      chars = 0;
+    }
+    batch.push(file);
+    chars += cost;
+  }
+  if (batch.length > 0) batches.push(batch);
+  return batches;
+}
+
 /** Exported for tests: which changed paths eslint would actually cover. */
 export function lintableFiles(changedFiles) {
   return changedFiles
@@ -1480,32 +1519,41 @@ export function staticGuard(changedFiles, options = {}) {
   const present = toLint.filter((f) => existsSync(path.join(PROJECT_ROOT, f)));
 
   if (repoWide || present.length > 0) {
-    const result = repoWide
-      ? runStaticCheck(PROJECT_ROOT, "lint:internal", [], "lint")
-      : runStaticCheck(
-          PROJECT_ROOT,
-          "lint:changed:internal",
-          [
-            ...present,
-            "--max-warnings",
-            "0",
-            "--no-error-on-unmatched-pattern",
-            "--cache",
-            "--cache-location",
-            STATIC_GUARD_ESLINT_CACHE,
-          ],
-          "lint",
-        );
-    if (result.busy) {
-      return {
-        name: "static",
-        ok: true,
-        note:
-          `run coordinator busy — lint and typecheck NOT run (${result.output}). ` +
-          `CI still enforces both; retry the push once the other heavy run finishes.`,
-      };
+    // Changed files are linted in batches, like the prettier step, so a very
+    // large push cannot exceed the Windows command-line limit.
+    const batches = repoWide ? [null] : lintBatches(present);
+    for (const batch of batches) {
+      const result =
+        batch === null
+          ? runStaticCheck(PROJECT_ROOT, "lint:internal", [], "lint")
+          : runStaticCheck(
+              PROJECT_ROOT,
+              "lint:changed:internal",
+              [
+                ...batch,
+                "--max-warnings",
+                "0",
+                "--no-error-on-unmatched-pattern",
+                "--cache",
+                "--cache-location",
+                STATIC_GUARD_ESLINT_CACHE,
+              ],
+              "lint",
+            );
+      if (result.busy) {
+        return {
+          name: "static",
+          ok: true,
+          note:
+            `run coordinator busy — lint and typecheck NOT run (${result.output}). ` +
+            `CI still enforces both; retry the push once the other heavy run finishes.`,
+        };
+      }
+      if (!result.ok) {
+        failures.push(result);
+        break;
+      }
     }
-    if (!result.ok) failures.push(result);
   }
 
   if (wantTypecheck) {

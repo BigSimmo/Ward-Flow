@@ -1,4 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { isOfflineUnitTestFile } from "../unit-test-population.mjs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,41 +63,160 @@ export class UnitDurationSequencer extends BaseSequencer {
  * reports, in seconds rounded to tenths, keyed by repository-relative path: the unit-durations.json
  * record. Blobs are serialised with flatted, Vitest's own dependency.
  */
-export function durationsFromBlobs(blobFiles, root) {
+export function measurementsFromBlobs(blobFiles, root) {
   const { parse } = createRequire(createRequire(import.meta.url).resolve("vitest/package.json"))("flatted");
   const seconds = {};
+  const phasesMilliseconds = {};
+  const versions = new Set();
+  const shards = [];
   for (const blob of blobFiles) {
-    const [, files] = parse(readFileSync(blob, "utf8"));
+    const [version, files, errors, , executionTime] = parse(readFileSync(blob, "utf8"));
+    if (typeof version !== "string" || !Array.isArray(files)) throw new Error(`Invalid Vitest blob: ${blob}`);
+    versions.add(version);
+    shards.push({
+      blob: path.basename(blob),
+      executionMilliseconds: executionTime,
+      files: files.length,
+      errors: errors?.length ?? 0,
+    });
     for (const file of files) {
-      const milliseconds =
-        (file.environmentLoad ?? 0) +
-        (file.prepareDuration ?? 0) +
-        (file.collectDuration ?? 0) +
-        (file.setupDuration ?? 0) +
-        (file.result?.duration ?? 0);
-      seconds[path.relative(root, file.filepath).split(path.sep).join("/")] = Math.round(milliseconds / 100) / 10;
+      const relative = path.relative(root, file.filepath).split(path.sep).join("/");
+      if (!isOfflineUnitTestFile(relative)) throw new Error(`Blob file outside the offline population: ${relative}`);
+      if (Object.hasOwn(seconds, relative)) throw new Error(`Repeated duration measurement: ${relative}`);
+      const phase = {
+        environment: file.environmentLoad ?? 0,
+        prepare: file.prepareDuration ?? 0,
+        collect: file.collectDuration ?? 0,
+        setup: file.setupDuration ?? 0,
+        tests: file.result?.duration ?? 0,
+      };
+      if (Object.values(phase).some((value) => !Number.isFinite(value) || value < 0))
+        throw new Error(`Invalid duration measurement: ${relative}`);
+      const milliseconds = Object.values(phase).reduce((sum, value) => sum + value, 0);
+      seconds[relative] = Math.round(milliseconds / 100) / 10;
+      phasesMilliseconds[relative] = phase;
     }
   }
-  return Object.fromEntries(Object.entries(seconds).sort(([a], [b]) => (a < b ? -1 : 1)));
+  const sorted = (record) => Object.fromEntries(Object.entries(record).sort(([a], [b]) => a.localeCompare(b)));
+  return {
+    seconds: sorted(seconds),
+    phasesMilliseconds: sorted(phasesMilliseconds),
+    versions: [...versions].sort(),
+    shards,
+  };
 }
 
-// `node scripts/ward-flow/unit-durations.mjs --from-blobs <dir>` prints the measured record from the CI
-// unit shards' blob reports (the coverage job runs it), so the record can be refreshed from a real run.
+export function durationsFromBlobs(blobFiles, root) {
+  return measurementsFromBlobs(blobFiles, root).seconds;
+}
+
+/** Missing and changed records stay visible; unknown files retain the sequencer's median fallback. */
+export function durationFreshness(population, record, sourceHashes = {}) {
+  const present = new Set(population);
+  const seconds = record.seconds ?? {};
+  const measured = (file) => Number.isFinite(seconds[file]) && seconds[file] >= 0;
+  const missing = population.filter((file) => !measured(file)).sort();
+  return {
+    recordedAt: record.metadata?.measuredAt ?? null,
+    recordedSource: record.source ?? null,
+    populationCount: population.length,
+    measuredCount: population.length - missing.length,
+    unmeasuredFraction: population.length ? missing.length / population.length : 0,
+    missing,
+    obsolete: Object.keys(seconds)
+      .filter((file) => !present.has(file))
+      .sort(),
+    sourceChanged: population
+      .filter(
+        (file) =>
+          measured(file) &&
+          record.sourceHashes?.[file] &&
+          sourceHashes[file] &&
+          record.sourceHashes[file] !== sourceHashes[file],
+      )
+      .sort(),
+    sourceIdentityUnknown: population
+      .filter((file) => measured(file) && (!record.sourceHashes?.[file] || !sourceHashes[file]))
+      .sort(),
+  };
+}
+
+function currentPopulation(root) {
+  const walk = (directory) =>
+    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const absolute = path.join(directory, entry.name);
+      return entry.isDirectory() ? walk(absolute) : [path.relative(root, absolute).split(path.sep).join("/")];
+    });
+  return walk(path.join(root, "tests")).filter(isOfflineUnitTestFile).sort();
+}
+
+export function unitTimingReport(blobFiles, root, previous = { seconds: readUnitDurations() }) {
+  const measurements = measurementsFromBlobs(blobFiles, root);
+  const population = currentPopulation(root);
+  const hash = (file) =>
+    createHash("sha256")
+      .update(readFileSync(path.join(root, file)))
+      .digest("hex");
+  const sourceHashes = Object.fromEntries(population.map((file) => [file, hash(file)]));
+  return {
+    schemaVersion: 1,
+    ...measurements,
+    sourceHashes,
+    freshness: durationFreshness(population, previous, sourceHashes),
+    measurementCompleteness: durationFreshness(
+      population,
+      { seconds: measurements.seconds, sourceHashes },
+      sourceHashes,
+    ),
+    metadata: {
+      measuredAt: new Date().toISOString(),
+      commit: process.env.GITHUB_SHA ?? null,
+      node: process.version,
+      packageLockSha256: hash("package-lock.json"),
+      coverageInventorySha256: hash("scripts/coverage-contract.mjs"),
+      configurationSha256: hash("vitest.config.mts"),
+      note: "Observed worker phase durations; not hosted savings. File hashes identify test source only; dependent code changes require a representative refresh. Refresh balancing weights only from a complete run.",
+    },
+  };
+}
+
+// Report-only extraction from the normal shard run; this never launches more tests.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const index = process.argv.indexOf("--from-blobs");
-  if (index < 0 || !process.argv[index + 1]) {
-    console.error("usage: node scripts/ward-flow/unit-durations.mjs --from-blobs <blob directory>");
+  const outputIndex = process.argv.indexOf("--output");
+  if (index < 0 || !process.argv[index + 1] || (outputIndex >= 0 && !process.argv[outputIndex + 1])) {
+    console.error("usage: node scripts/ward-flow/unit-durations.mjs --from-blobs <directory> [--output <json path>]");
     process.exit(2);
   }
-  // Report only: a reading problem is printed, never a failed job.
   try {
     const directory = process.argv[index + 1];
     const blobs = readdirSync(directory)
       .filter((name) => name.endsWith(".json"))
+      .sort()
       .map((name) => path.join(directory, name));
+    if (!blobs.length) throw new Error("No unit timing blobs found");
     const root = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
-    console.log(JSON.stringify({ seconds: durationsFromBlobs(blobs, root) }, null, 2));
+    const report = unitTimingReport(blobs, root, JSON.parse(readFileSync(UNIT_DURATIONS, "utf8")));
+    const json = `${JSON.stringify(report, null, 2)}\n`;
+    if (outputIndex >= 0) {
+      const output = path.resolve(process.argv[outputIndex + 1]);
+      mkdirSync(path.dirname(output), { recursive: true });
+      writeFileSync(output, json);
+    }
+    console.log(json);
+    console.error(
+      `[unit-timing] ${report.freshness.missing.length}/${report.freshness.populationCount} (${(100 * report.freshness.unmeasuredFraction).toFixed(1)}%) files lack balancing measurements; ${report.freshness.sourceIdentityUnknown.length} recorded files lack verified source identity.`,
+    );
   } catch (error) {
-    console.log(`Could not read the unit test costs: ${error instanceof Error ? error.message : error}`);
+    const message = error instanceof Error ? error.message : String(error);
+    if (outputIndex >= 0) {
+      const output = path.resolve(process.argv[outputIndex + 1]);
+      mkdirSync(path.dirname(output), { recursive: true });
+      writeFileSync(
+        output,
+        `${JSON.stringify({ schemaVersion: 1, status: "unavailable", error: message }, null, 2)}\n`,
+      );
+    }
+    console.log(`Could not read the unit test costs: ${message}`);
   }
 }

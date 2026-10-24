@@ -36,6 +36,7 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const DEPARTMENTS = allEmergencyDepartments();
 const DEPARTMENT = DEPARTMENTS[0];
@@ -57,7 +58,7 @@ function movement(overrides: Partial<Movement> & Pick<Movement, "id" | "originEd
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -106,13 +107,13 @@ describe("the elapsed-wait chart and its named longest waits", () => {
   });
 
   // Owner, 13 Oct 2026: Statistics shows AD- admission numbers only, no patient name or UMRN, and
-  // D-39 never shows a WF- journey id. An ED wait has no admission yet, so it reads "not yet
-  // admitted"; the row links to the live page, which still shows the name.
-  it("labels the longest wait not yet admitted, never a name or WF id, and formats it through splitDuration, never as raw minutes", () => {
+  // D-39 never shows a WF- journey id. An ED wait has no admission yet, so it reads by its urgency
+  // tier (UX audit 21 Oct 2026); the row links to the live page, which still shows the name.
+  it("labels the longest wait by urgency tier, never a name or WF id, and formats it through splitDuration, never as raw minutes", () => {
     renderEd([under, past24, past48, distractor]);
 
     const longest = screen.getByTestId("ward-stat-ed-longest-wait").textContent ?? "";
-    expect(longest).toContain("not yet admitted");
+    expect(longest).toMatch(/tier [123] · /u);
     expect(longest).not.toMatch(/WF-/u);
     expect(longest).not.toContain("Name not recorded");
     expect(longest).toContain("2d 2h");
@@ -154,7 +155,8 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(rowPast24.textContent).toContain("1d 1h");
     expect(rowPast48.textContent).toContain("2d 2h");
     // AD- numbers only on Statistics (Owner, 13 Oct 2026) and never a WF- id (D-39): no name, no UMRN.
-    expect(rowPast48.textContent).toContain("Not yet admitted");
+    // UX audit 21 Oct 2026: the row names the recorded urgency tier, not "Not yet admitted" on every row.
+    expect(rowPast48.textContent).toMatch(/Tier [123] · /u);
     expect(table.textContent).not.toMatch(/WF-/u);
     expect(table.textContent).not.toContain("Name not recorded");
 
@@ -184,7 +186,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
   const noFreeBedDecline = movement({
     id: "WF-declined-no-bed",
     originEdId: DEPARTMENT.id,
-    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_bed" }],
+    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
   });
   // Closed (arrived, admitted) but its declines must still be counted — a decline is a historical
   // fact that outlives the movement it was made against, per `declinesByReason`'s own contract.
@@ -194,7 +196,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
     stage: "arrived",
     closure: { at: NOW_ANCHOR - 5, outcome: "arrived", reason: "Admitted" },
     declines: [
-      { unitId: "unit-b", at: NOW_ANCHOR - 20, reason: "sex_mix" },
+      { unitId: "unit-b", at: NOW_ANCHOR - 20, reason: "sex_designation_unavailable" },
       { unitId: "unit-c", at: NOW_ANCHOR - 15, reason: "acuity_mix" },
     ],
   });
@@ -202,7 +204,7 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
   const distractorDecline = movement({
     id: "WF-declined-distractor",
     originEdId: OTHER_DEPARTMENT.id,
-    declines: [{ unitId: "unit-d", at: NOW_ANCHOR - 5, reason: "no_bed" }],
+    declines: [{ unitId: "unit-d", at: NOW_ANCHOR - 5, reason: "no_suitable_bed" }],
   });
 
   it("keeps the two counts separate and attributes only this department's movements", () => {
@@ -212,13 +214,14 @@ describe("declines: no free bed vs not suitable, never summed, counted past clos
     expect(screen.getByTestId("ward-stat-ed-declined-not-suitable").textContent).toContain("2");
   });
 
-  it('never uses the retired wording "no bed free", only the correct "no free bed"', () => {
+  // D-78: a no_suitable_bed decline can mean a free but unsuitable bed, so it reads "no suitable bed".
+  it('never uses the retired wording "no bed free", only "no suitable bed"', () => {
     renderEd([noFreeBedDecline, notSuitableClosedDecline]);
 
     const panel = screen.getByTestId("ward-statistics-ed-declines");
     const text = (panel.textContent ?? "").toLowerCase();
     expect(text).not.toContain("no bed free");
-    expect(text).toContain("no free bed");
+    expect(text).toContain("no suitable bed");
   });
 });
 

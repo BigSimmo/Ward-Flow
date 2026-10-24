@@ -3,6 +3,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function journey() {
   let state = seedWardFlowState();
@@ -30,7 +31,7 @@ function journey() {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,
@@ -81,7 +82,13 @@ describe("patient and movement routes share lifecycle truth", () => {
   it("both report departure after an actual arrival and discharge", () => {
     const f = journey();
     f.accept();
-    f.send({ type: "RECORD_TRANSPORT_NEED", role: "ward", now: NOW_ANCHOR, movementId: f.movement.id, needed: false });
+    f.send({
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: f.movement.id,
+      needed: false,
+    });
     f.send({
       type: "PATIENT_ARRIVED",
       role: "ward",

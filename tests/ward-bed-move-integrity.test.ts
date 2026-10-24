@@ -11,6 +11,7 @@ import {
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fsh-adult-secure";
@@ -316,7 +317,7 @@ describe("numbered bed designation integrity", () => {
       transportNeed: { needed: false, at: NOW },
       closure: undefined,
       highAcuity: false,
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       overrides: [],
       gender: "Male" as const,
       sex: "Male" as const,
@@ -401,7 +402,7 @@ describe("numbered bed designation integrity", () => {
         sex: "Male",
         gender: "Male",
         legalStatus: "Voluntary",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         urgency: 2,
         legalFormCode: null,
@@ -426,7 +427,12 @@ describe("numbered bed designation integrity", () => {
     } as WardFlowEvent);
     expect(next.admissions.at(-1)?.bedKind).toBe("locked");
     expect(next.units.find((row) => row.id === UNIT)?.allocatableLocked).toBe(unit.allocatableLocked - 1);
-    next = send(next, { type: "RECORD_TRANSPORT_NEED", role: "ward", movementId, needed: false } as WardFlowEvent);
+    next = send(next, {
+      type: "RECORD_TRANSPORT_NEED",
+      role: "coordinator",
+      movementId,
+      needed: false,
+    } as WardFlowEvent);
     next = send(next, { type: "PATIENT_ARRIVED", role: "ward", movementId, actingUnitId: UNIT } as WardFlowEvent);
     expect(next.admissions.at(-1)).toMatchObject({ bedKind: "locked", bedNumber: heldBed, state: "occupied" });
   });

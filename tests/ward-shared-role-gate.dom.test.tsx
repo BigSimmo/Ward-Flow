@@ -105,9 +105,10 @@ describe("shared workspace role gate (role access plan, later pass)", () => {
     expect(screen.getByRole("alert")).not.toHaveTextContent("Nothing was sent");
   });
 
-  it("says asking is not wired when the server takes no requests", () => {
+  it("points to the access admin, with no not-wired note, when the server takes no requests", () => {
     render(<WardAskForAccess canRequest={false} api={null} onRetry={vi.fn()} onSignOut={vi.fn()} />);
-    expect(screen.getByText(/^Not wired in this prototype\./u)).toBeInTheDocument();
+    expect(screen.getByText("Ask your access admin directly.")).toBeInTheDocument();
+    expect(screen.queryByText(/Not wired in this prototype/u)).toBeNull();
     expect(screen.queryByRole("button", { name: "Ask for access" })).toBeNull();
   });
 

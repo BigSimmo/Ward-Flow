@@ -76,7 +76,7 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push";
+import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
 import {
   Avatar,
   Badge,
@@ -120,7 +120,7 @@ import {
 } from "./settings-panes";
 import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
-import { NOT_WIRED, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
+import { RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import { publishedThresholds } from "./settings-thresholds";
@@ -154,9 +154,7 @@ export { copySettingsDiagnostics, maskDiagnosticMovement, maskDiagnosticPatient 
  *
  * Wired: the six coordination rules (draft, then `SET_CONFIGURATION`, each save audited), theme,
  * sidebar, reduce motion, high contrast, buzz sound, export, import, clear session and restore.
- * Everything marked Preview is shown for review only. Site review (12 Oct 2026): such a control
- * works like any other and, when pressed, says "<name> is not wired in this prototype." (D4, D-16);
- * it is never greyed. Row density is wired (`row-density.tsx`).
+ * Row density is wired (`row-density.tsx`). Settings nothing reads yet are not shown (D-72).
  *
  * ⚠️ **NO DEMONSTRATION CONTROL BELONGS ON THIS SCREEN.** Owner ruling Q-7 puts the clock, the
  * scenario and Reset in the Tools drawer; the Data tab says so in words.
@@ -183,6 +181,7 @@ export function SettingsScreen() {
     patients,
     shared,
   } = useWardFlowSelect("movements", "configuration", "eventLog", "readAuditEvents", "patients", "shared");
+  const { resetDemoState } = useWardFlowSelect("resetDemoState");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
@@ -280,11 +279,6 @@ export function SettingsScreen() {
       const label = THEME_CHOICES.find((choice) => choice.id === next)?.label ?? "Auto";
       showToast(`Theme set to ${label}.`);
     },
-    [showToast],
-  );
-  // D-16: "<name> is not wired in this prototype." No colon outside a clock time.
-  const onPreview = useCallback(
-    (name: string) => showToast(`${name} is ${NOT_WIRED.charAt(0).toLowerCase()}${NOT_WIRED.slice(1)}`),
     [showToast],
   );
   const chooseRowDensity = useCallback(
@@ -558,7 +552,9 @@ export function SettingsScreen() {
         }
       }
       keys.forEach((key) => window.sessionStorage.removeItem(key));
-      showToast("Session data for this tab cleared.");
+      // A2-7: the provider re-saves the day it shows after each change, so the local demo resets too.
+      if (!shared?.enabled) resetDemoState();
+      showToast(`Session data for this tab cleared.${shared?.enabled ? "" : " The demonstration has restarted."}`);
     } catch {
       showToast("Session data could not be cleared.");
     }
@@ -885,15 +881,6 @@ export function SettingsScreen() {
               onReset={() => setRule({ morningRollupDeadlineMinutes: saved.morning })}
               usedBy="Wards, Ward alerts"
             />
-            <SettingRow setting="surge-ends" title="Surge ends" sub="Back to Standard on its own" preview>
-              <Segmented
-                className={styles.pillSeg}
-                label="Surge ends"
-                items={["Manual", "8h", "12h", "Shift end"].map((item) => ({ id: item, label: item }))}
-                value="12h"
-                onChange={() => onPreview("Surge ends")}
-              />
-            </SettingRow>
           </Card>
 
           <Card aria-labelledby="warnings-title">
@@ -984,7 +971,6 @@ export function SettingsScreen() {
           rules={rules}
           saved={saved}
           setRule={setRule}
-          onPreview={onPreview}
           ruleChanges={ruleChanges}
           now={now}
           unavailableReason={configurationBlockReason}
@@ -1043,7 +1029,6 @@ export function SettingsScreen() {
           playSyntheticUrgentChime();
           showToast("Test buzz played.");
         }}
-        onPreview={onPreview}
       />
     </>
   );
@@ -1074,14 +1059,13 @@ export function SettingsScreen() {
         onCharacterShortcutsChange={setCharacterShortcuts}
         discreetNames={discreetNames}
         onDiscreetNamesChange={chooseDiscreetNames}
-        onPreview={onPreview}
       />
     </>
   );
 
   const profileContent = (
     <>
-      <ProfilePane onPreview={onPreview} onGoToDesk={() => setIsOperatorModalOpen(true)} />
+      <ProfilePane onGoToDesk={() => setIsOperatorModalOpen(true)} />
     </>
   );
 
@@ -1158,11 +1142,7 @@ export function SettingsScreen() {
         pending={saving}
       />
       {isOperatorModalOpen ? (
-        <OperatorSwitcherModal
-          isOpen={isOperatorModalOpen}
-          onClose={() => setIsOperatorModalOpen(false)}
-          onPreview={onPreview}
-        />
+        <OperatorSwitcherModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} />
       ) : null}
       <WardPrototypeFooter
         testId="ward-settings-governance"

@@ -21,7 +21,7 @@ describe("audit metrics boundary regressions", () => {
     expect(deriveBedCapacityTone(beds, free)).toMatchObject({ code, occupancyPercent: displayed });
   });
 
-  it.each(["no_bed", "bed_pulled_for_earlier_referral"] as const)(
+  it.each(["no_suitable_bed", "bed_pulled_for_earlier_referral"] as const)(
     "R09 excludes the %s waitlist alias from decline totals and movement counts",
     (reason) => {
       const waitlisted = movement({
@@ -40,8 +40,8 @@ describe("audit metrics boundary regressions", () => {
     const result = declinesByReason([
       movement({
         declines: [
-          { unitId: "ward-a", at: 1, reason: "no_bed" },
-          { unitId: "ward-a", at: 2, reason: "no_bed" },
+          { unitId: "ward-a", at: 1, reason: "no_suitable_bed" },
+          { unitId: "ward-a", at: 2, reason: "no_suitable_bed" },
         ],
         referralAnswerHistory: [
           { unitId: "ward-a", at: 1, answer: "declined" },
@@ -56,7 +56,7 @@ describe("audit metrics boundary regressions", () => {
 
 it("R09 preserves ambiguous legacy no-bed records and genuine refusals", () => {
   const result = declinesByReason([
-    movement({ declines: [{ unitId: "ward-a", at: 1, reason: "no_bed" }], referralAnswerHistory: undefined }),
+    movement({ declines: [{ unitId: "ward-a", at: 1, reason: "no_suitable_bed" }], referralAnswerHistory: undefined }),
     movement({
       declines: [{ unitId: "ward-b", at: 2, reason: "capability_mismatch" }],
       referralAnswerHistory: [{ unitId: "ward-b", at: 2, answer: "declined" }],

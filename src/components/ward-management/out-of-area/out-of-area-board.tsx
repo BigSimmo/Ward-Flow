@@ -1,13 +1,11 @@
 "use client";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { downloadBlob } from "@/components/ward-management/ward-download";
 
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search, X } from "lucide-react";
 
 import {
   Button,
@@ -31,7 +29,12 @@ import {
   DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -42,7 +45,7 @@ import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-manageme
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 
 import {
@@ -76,6 +79,7 @@ import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -534,7 +538,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
       ...sorted.map((entry) => {
         const info = patientOf(entry);
-        return `${info.displayName} (${info.umrn}), ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
+        return `${info.displayName}, ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
       }),
       "Synthetic demonstration figures. Not approved for clinical use.",
     ];
@@ -542,7 +546,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   };
   async function copySummary() {
     try {
-      await navigator.clipboard.writeText(summaryText());
+      await copyTextToClipboard(summaryText());
       setToolNote("Bed meeting summary copied");
     } catch {
       setToolNote("Copy is not available in this browser");
@@ -567,10 +571,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ]);
     }
     try {
-      downloadBlob(
-        new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-        "ward-flow-synthetic-out-of-area.csv",
-      );
+      downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope:
+          "Out-of-area admissions; the complete current ledger, regardless of search, highlights or the selected tab",
+      });
     } catch {
       setToolNote("Export is not available in this browser");
     }
@@ -840,7 +845,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 title="Export list as CSV"
                 onClick={exportList}
               />
-              <NotWiredButton variant="onHero" size="sm" iconOnly icon={Printer} label="Print handover list" />
             </span>
           }
           foot={
@@ -1010,7 +1014,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               <span className={styles.two}>
                                 <b title={info.displayName}>{info.displayName}</b>
                                 <span className={styles.legalUmrn}>
-                                  {legalOf(entry) ? <span>{legalOf(entry)} · </span> : null}
+                                  {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
+                                      so the gap shows before a return trip is planned. The no-break space
+                                      keeps the dot with the legal text when the line wraps. */}
+                                  <span>
+                                    {legalOf(entry) ?? "Legal not recorded"}
+                                    {" ·"}{" "}
+                                  </span>
                                   {href ? (
                                     <Link
                                       href={href}

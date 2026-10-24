@@ -17,6 +17,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WF_PHONE_QUERY } from "@/components/wf";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Executive Statistics on one ED (role access plan, Josh's yes 15 Oct 2026): counts only. A small
@@ -36,7 +37,7 @@ function movement(overrides: Partial<Movement> & Pick<Movement, "id" | "originEd
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -60,7 +61,7 @@ const MOVEMENTS: Movement[] = [
   movement({
     id: "WF-x1",
     originEdId: HERE.id,
-    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_bed" }],
+    declines: [{ unitId: "unit-a", at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
   }),
   movement({ id: "WF-x2", originEdId: HERE.id }),
   ...Array.from({ length: 6 }, (_, index) =>
@@ -121,7 +122,9 @@ describe("one ED on the executive desk, counts only", () => {
     expect(text("ward-statistics-ed-band-count-4-to-8-hours")).toBe("not shown");
     expect(text("ward-statistics-ed-band-count-8-to-12-hours")).toBe("none");
 
-    expect(text("ward-stat-ed-declined-no-free-bed")).toBe("fewer than 5 declines name a ward that had no free bed.");
+    expect(text("ward-stat-ed-declined-no-free-bed")).toBe(
+      "fewer than 5 declines name a ward that had no suitable bed.",
+    );
   });
 
   it("replaces the wait table, next to cross and the swarm with the note", () => {
@@ -136,7 +139,7 @@ describe("one ED on the executive desk, counts only", () => {
     expect(screen.getByTestId("ward-statistics-ed-next-not-listed")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ed-everyone-not-listed")).toBeTruthy();
     expect(
-      within(screen.getByTestId("ward-statistics-ed-everyone")).queryByRole("link", { name: /Not yet admitted/u }),
+      within(screen.getByTestId("ward-statistics-ed-everyone")).queryByRole("link", { name: /Tier [123]/u }),
     ).toBeNull();
   });
 
@@ -171,7 +174,7 @@ describe.each([
     expect(text(`ward-stat-ed-comparison-over24h-${OTHER.id}`)).toBe("1");
     expect(text("ward-statistics-ed-band-count-under-4-hours")).toBe("2");
     expect(text("ward-statistics-ed-band-count-4-to-8-hours")).toBe("6");
-    expect(text("ward-stat-ed-declined-no-free-bed")).toBe("1 decline names a ward that had no free bed.");
+    expect(text("ward-stat-ed-declined-no-free-bed")).toBe("1 decline names a ward that had no suitable bed.");
     expect(screen.getByTestId("ward-stat-ed-wait-table")).toBeTruthy();
     expect(screen.getByTestId("ward-stat-ed-wait-row-WF-x1")).toBeTruthy();
     expect(screen.queryByTestId("ward-statistics-people-not-listed")).toBeNull();

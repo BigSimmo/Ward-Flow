@@ -11,10 +11,11 @@ import { describe, expect, it } from "vitest";
  * Anything downstream that turns that session date into a printed CALENDAR DATE drifts with the
  * real calendar even inside a test that thought it had pinned time.
  *
- * The community route (`src/components/ward-management/community/`) is immune: it renders
+ * The community route (`src/components/ward-management/community/`) is immune (bar the deliberate,
+ * exact-count stamps in `DELIBERATE_DATE_STAMPS` below): it renders
  * DURATIONS — "3 days", "day 4 of this demonstration" — and never a calendar date. Verified here:
  * `ward-clock.ts` exports exactly two calendar-date-producing functions, `calendarDateOf` and
- * `formatSheetMoment`, and `handover-page.tsx` genuinely calls `formatSheetMoment` to print one
+ * `formatSheetMoment`, and `handover-print-sheet.tsx` genuinely calls `formatSheetMoment` to print one
  * (this file's positive control). No file under `community/` references either function, or any
  * of the raw `Date` APIs that could print one directly.
  *
@@ -33,6 +34,22 @@ import { describe, expect, it } from "vitest";
  */
 
 const COMMUNITY_DIR = "src/components/ward-management/community";
+
+/**
+ * The deliberate exceptions: a community file that prints ONE dated capture stamp on paper or in an
+ * export, with the exact number of calendar-date constructs it is allowed to contain. The count is
+ * exact, not a ceiling, so a second use in the same file fails here. A file not listed must still
+ * contain none. Add an entry only for an owner-approved stamp, with the reason beside it.
+ */
+const DELIBERATE_DATE_STAMPS: Readonly<Record<string, number>> = {
+  // Community team list CSV (Josh approved the CSV preamble, PR #634): the generation time is
+  // stamped from the device clock with `new Date().toLocaleString`, because a directory is
+  // reference data rather than a held ward snapshot.
+  [`${COMMUNITY_DIR}/community-index.tsx`]: 2,
+  // Catchment MDT summary print (Josh approved the saved-output stamps, PR #632): the "As at"
+  // line uses formatSheetMoment, imported once and called once.
+  [`${COMMUNITY_DIR}/community-screen-modals.tsx`]: 2,
+};
 
 /** Calendar-date-producing identifiers: the two named exports from `ward-clock.ts`, plus the
  *  standard library members and constructor that could print a calendar date directly without
@@ -108,15 +125,15 @@ describe("the community route prints durations, never calendar dates", () => {
   });
 
   it.each(communitySourceFiles())("executes no calendar-date construct in %s", (path) => {
-    expect(dateConstructCount(readFileSync(path, "utf8"), path)).toBe(0);
+    expect(dateConstructCount(readFileSync(path, "utf8"), path)).toBe(DELIBERATE_DATE_STAMPS[path] ?? 0);
   });
 
   describe("controls — a guard nobody has watched fail is not known to be a guard", () => {
     it("reports MORE THAN ZERO against a file that genuinely prints a calendar date (positive control)", () => {
-      // handover-page.tsx imports and calls formatSheetMoment to print a real calendar date on
-      // the printed handover sheet — the strongest control available, because it proves the
+      // handover-print-sheet.tsx imports and calls formatSheetMoment to print a real calendar date
+      // on the printed handover sheet — the strongest control available, because it proves the
       // detector distinguishes the community route from a file that really does the thing.
-      const path = "src/components/ward-management/handover/handover-page.tsx";
+      const path = "src/components/ward-management/handover/handover-print-sheet.tsx";
 
       expect(dateConstructCount(readFileSync(path, "utf8"), path)).toBeGreaterThan(0);
     });

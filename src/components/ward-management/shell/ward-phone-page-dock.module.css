@@ -45,8 +45,10 @@
   /* While a sheet or dialog is open the dock steps out of view (Josh, 12 Oct 2026, iPhone: the dock
      showed under the Broadcast sheet's footer). Some dialogs paint inside the page's own stacking
      layers, below the dock, so hiding it is the one rule that works for all of them. The Menu and
-     Create sheets are the dock's own and already cover it, so they leave it as it was. */
-  :global(body:has([aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create))) .pageDock.pageDock {
+     Create sheets are the dock's own and already cover it, so they leave it as it was, and the tour
+     points at the dock, so it stays too. */
+  :global(body:has([aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create, #ward-tour-card)))
+    .pageDock.pageDock {
     visibility: hidden;
   }
 

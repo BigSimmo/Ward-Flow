@@ -23,7 +23,6 @@ import {
   type ShortlistCandidate,
 } from "@/components/ward-management/ward-derivations";
 import { candidateReason } from "@/components/ward-management/ward-eligibility";
-import { edById } from "@/components/ward-management/ward-sites";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import {
   DELAY_CAUSE_ORDER,
@@ -39,6 +38,7 @@ import {
 import { overTwelveHoursMinutes, type CatchmentOrigin } from "./delays-view-model";
 import type { WaitingViewId } from "./waiting-href";
 import { inWaitingView, isForHandover, isFormDue } from "./waiting-views";
+import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 
 export const OVER_8H = ED_SEVERE_PRESSURE_WAIT_MINUTES;
 export const OVER_12H = overTwelveHoursMinutes;
@@ -307,7 +307,9 @@ function rowMatchesFilters(
     (binIds === null || binIds.has(row.movement.id)) &&
     (needle === "" ||
       nameOf(row.movement).toLowerCase().includes(needle) ||
-      (edById(row.movement.originEdId)?.name ?? row.movement.originEdId).toLowerCase().includes(needle))
+      (originName(row.movement) ?? row.movement.originEdId ?? communityOriginLabel(row.movement.originCommunity))
+        .toLowerCase()
+        .includes(needle))
   );
 }
 
@@ -410,7 +412,7 @@ export function wardLines(row: BoardRow, units: readonly Unit[]): WardLine[] {
       tone: row.cause === "bed_pull_expired" ? "warning" : "success",
       text:
         row.cause === "bed_pull_expired"
-          ? "Bed held, reserved time passed"
+          ? "Pull expired, bed still pulled"
           : row.cause === "awaiting_bed_ready"
             ? "Accepted, bed not ready"
             : "Accepted",
@@ -514,7 +516,7 @@ export type RowEvent = {
 export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): RowEvent[] {
   const { movement } = row;
   const opened = movement.openedAt;
-  const edName = edById(movement.originEdId)?.name ?? "the department";
+  const edName = originName(movement) ?? "the department";
   const events: { at: Instant; what: string; tone: RowEvent["tone"] }[] = [
     { at: opened, what: `Arrived, ${edName}`, tone: "neutral" },
   ];

@@ -62,9 +62,10 @@ describe("referral slide-out, option B", () => {
     expect(steps().getByRole("button", { name: "Clearance" })).toBeInTheDocument();
     expect(steps().getByRole("button", { name: "Wards" })).toBeInTheDocument();
 
+    // D-77 short form: a community referral has three steps and no Documents step.
     fireEvent.click(referTo().getByRole("button", { name: "Community" }));
-    expect(steps().getByRole("button", { name: "Documents" })).toBeInTheDocument();
-    expect(steps().getByRole("button", { name: "Teams" })).toBeInTheDocument();
+    expect(steps().queryByRole("button", { name: "Documents" })).not.toBeInTheDocument();
+    expect(steps().getByRole("button", { name: "Team" })).toBeInTheDocument();
 
     fireEvent.click(referTo().getByRole("button", { name: "ED" }));
     expect(steps().getByRole("button", { name: "EDs" })).toBeInTheDocument();
@@ -89,9 +90,10 @@ describe("referral slide-out, option B", () => {
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(within(rail).getByRole("heading", { name: "Ready to send" })).toBeInTheDocument();
     expect(within(rail).getByText("Refer to")).toBeInTheDocument();
-    // L1 (review 12 Oct 2026): one count. The summary's items left are the steps' needed items.
-    const [, ready, total] = /(\d+) of (\d+) ready/u.exec(rail.textContent ?? "") ?? [];
-    expect(ready).toBeDefined();
+    // L1 (review 12 Oct 2026): one count. UX audit 21 Oct 2026: the footer carries it, and its items
+    // left are the steps' needed items.
+    const [, left] = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "") ?? [];
+    expect(left).toBeDefined();
     // Each step's "N needed", read once from the steps group (the step buttons share one parent).
     const stepNeeds = [
       ...(screen.getByRole("group", { name: "Referral sections" }).textContent ?? "").matchAll(/(\d+) needed/gu),
@@ -101,7 +103,7 @@ describe("referral slide-out, option B", () => {
     expect(stepNeeds).toBeGreaterThan(0);
     // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
     const contactNeeds = Number(/(\d+) to fill at Send/u.exec(rail.textContent ?? "")?.[1] ?? 0);
-    expect(Number(total) - Number(ready)).toBe(stepNeeds + contactNeeds);
+    expect(Number(left)).toBe(stepNeeds + contactNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {
@@ -231,17 +233,17 @@ describe("one ready count (audit A2-9)", () => {
   it("counts the contact details asked at Send, so nothing reads ready while Send would refuse", () => {
     // Opened plainly: from an entry point (option B) the referrer's profile fills the contact in.
     renderDrawer({ initialCategory: "ward" });
-    const ready = screen.getByTestId("ward-referral-phone-ready").textContent ?? "";
-    const match = /(\d+) of (\d+)/u.exec(ready);
+    // UX audit 21 Oct 2026: the footer carries the one count; the rail no longer repeats it.
+    const match = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "");
     expect(match).not.toBeNull();
-    const [readyCount, total] = [Number(match![1]), Number(match![2])];
-    // The rail's own fraction and the step footer say the same count.
+    const [left, total] = [Number(match![1]), Number(match![2])];
     const rail = screen.getByTestId("ward-referral-summary-rail");
-    expect(rail).toHaveTextContent(`${readyCount} of ${total} ready`);
-    expect(document.body.textContent).toContain(`${total - readyCount} of ${total} items still needed`);
+    expect(rail).not.toHaveTextContent(/\d+ of \d+ ready/u);
     // The five empty contact fields are among the items still needed, named on their row.
     expect(rail).toHaveTextContent("5 to fill at Send");
-    expect(total - readyCount).toBeGreaterThanOrEqual(5);
+    expect(rail).toHaveTextContent("Your contact details are asked at Send.");
+    expect(left).toBeGreaterThanOrEqual(5);
+    expect(total).toBeGreaterThanOrEqual(left);
   });
 
   it("marks the clearance checklist optional, because its six items are not in the count", () => {
@@ -272,7 +274,8 @@ describe("needs cards and the clearance checklist", () => {
     renderDrawer({ initialDestination: "community" });
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     const needs = screen.getByTestId("ward-referral-needs");
-    expect(needs).toHaveTextContent("Follow-up needs");
+    expect(needs).toHaveTextContent("Follow-up");
+    expect(needs).toHaveTextContent("First contact required");
     fireEvent.click(
       within(within(needs).getByRole("group", { name: "First contact within" })).getByLabelText("72 hours"),
     );
@@ -282,6 +285,59 @@ describe("needs cards and the clearance checklist", () => {
     expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
       "Needs: First contact within 72 hours, Interpreter needed",
     );
+  });
+
+  it("asks whether a community referral is for follow-up or to assess for admission (D-74)", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const purpose = within(screen.getByTestId("ward-referral-community-purpose")).getByRole("group", {
+      name: "What is this referral for?",
+    });
+    expect(within(purpose).getByLabelText("Community follow-up")).not.toBeChecked();
+    fireEvent.click(within(purpose).getByLabelText("Assess for admission"));
+    expect(within(purpose).getByLabelText("Assess for admission")).toBeChecked();
+  });
+
+  // D-77 short form (mock-up approved 21 Oct 2026, clearance and urgency choices 23 Oct 2026).
+  it("asks a short community form: purpose and first contact first, one clearance question, no bed or urgency", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const panel = document.getElementById(screen.getByTestId("ward-referral-needs").closest("[id]")!.id)!;
+    const titles = [...panel.querySelectorAll("h3")].map((heading) => heading.textContent);
+    expect(titles.slice(0, 5)).toEqual(["Purpose", "Follow-up", "From", "Legal status", "Medical clearance"]);
+    expect(within(panel).getByRole("group", { name: "Has the patient been medically cleared?" })).toBeInTheDocument();
+    expect(within(panel).queryByRole("group", { name: "Triage and RAMP completed" })).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Bed security")).not.toBeInTheDocument();
+    expect(within(panel).queryByRole("radio", { name: /Tier 1/u })).not.toBeInTheDocument();
+    expect(within(panel).queryByLabelText("ATS category (optional)")).not.toBeInTheDocument();
+  });
+
+  it("sets a community referral's urgency from its first contact time", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const rail = screen.getByTestId("ward-referral-summary-rail");
+    expect(rail).toHaveTextContent("Choose within");
+    const firstContact = within(screen.getByTestId("ward-referral-needs")).getByRole("group", {
+      name: "First contact within",
+    });
+    fireEvent.click(within(firstContact).getByLabelText("24 hours"));
+    expect(rail).toHaveTextContent("24 hours");
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent("Urgency: Tier 1");
+  });
+
+  it("searches the community teams by team or suburb, showing six until asked for all", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Team" }));
+    const teams = () =>
+      within(screen.getByRole("radiogroup", { name: "Community team to refer to" })).getAllByRole("radio");
+    expect(teams()).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ teams$/u }));
+    expect(teams().length).toBeGreaterThan(6);
+    fireEvent.change(screen.getByLabelText("Search community teams"), { target: { value: "Albany" } });
+    expect(teams().map((radio) => radio.getAttribute("value"))).toContain("Albany");
+    fireEvent.change(screen.getByLabelText("Search community teams"), { target: { value: "zzzz" } });
+    expect(screen.getByText("No team or suburb matches the search.")).toBeInTheDocument();
   });
 
   it("asks how the person reaches an ED", () => {

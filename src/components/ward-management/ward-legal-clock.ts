@@ -61,15 +61,16 @@ export { EXPECT_FLAG_INVOLUNTARY_MINUTES, EXPECT_FLAG_VOLUNTARY_MINUTES };
 
 /**
  * Decline reason that must never end a referral — gender designation only filters which bed can
- * be offered. Matches `DECLINE_REASONS` member `sex_mix`.
+ * be offered. Matches `DECLINE_REASONS` member `sex_designation_unavailable` (the old `sex_mix`,
+ * D-78).
  */
-export const GENDER_MISMATCH_DECLINE_REASON = "sex_mix" as const;
+export const GENDER_MISMATCH_DECLINE_REASON = "sex_designation_unavailable" as const;
 
 /**
  * Decline reasons that waitlist at the ward instead of ending the referral.
  * Cap is `PARALLEL_REFERRAL_CAP` (three). First pull drops the others.
  */
-export const WAITLIST_INSTEAD_OF_DECLINE_REASONS = ["no_bed", "bed_pulled_for_earlier_referral"] as const;
+export const WAITLIST_INSTEAD_OF_DECLINE_REASONS = ["no_suitable_bed", "bed_pulled_for_earlier_referral"] as const;
 
 /** Legal form codes the engine recognises. */
 export const LEGAL_CLOCK_FORM_CODES = ["1A", "3A", "3C", "3D", "5A", "5B", "6A", "6B", "6C"] as const;

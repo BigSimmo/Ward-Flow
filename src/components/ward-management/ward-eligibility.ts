@@ -21,6 +21,7 @@ import type {
 import type { OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { genderReviewNeeded, type GenderPlacement } from "@/components/ward-management/ward-model";
+import { observationStaff, observationSummary, type Observation } from "@/components/ward-management/ward-observation";
 
 /**
  * ⚠️ **EVERY GATE NAME EITHER ELIGIBILITY FUNCTION CAN EMIT — the single source of truth, and it
@@ -139,18 +140,17 @@ export function requiresAuthorisedDestination(status: LegalStatus | undefined) {
  * Whether accepting this ward request needs an involuntary-capable bed (audit F-03, follow-up to
  * PR #475). Re-derived from the referral's CURRENT recorded legal status through the one rule
  * above, so acceptance never trusts a stored `involuntaryBedNeeded: false` that the legal status
- * does not support. The stored answer can only add the need, never clear it. A referral with no
- * intake (seeded or older records) carries no legal status field to re-derive from, so its stored
- * answer stands.
+ * does not support. The stored answer can only add the need, never clear it.
+ *
+ * Audit 2 E-04 (Josh, 20 Oct 2026): a referral with no intake (seeded or older records) has no
+ * recorded legal status, and an unknown status fails safe the same way `involuntaryBedNeededForLegalStatus`
+ * does: it needs an authorised bed. A person can still accept elsewhere with a recorded reason.
  */
 export function wardRequestNeedsInvoluntaryBed(
   referral: Pick<Referral, "intake">,
   ward: Pick<WardReferralDestination, "involuntaryBedNeeded">,
 ): boolean {
-  return (
-    ward.involuntaryBedNeeded ||
-    (referral.intake !== undefined && involuntaryBedNeededForLegalStatus(referral.intake.legalStatus))
-  );
+  return ward.involuntaryBedNeeded || involuntaryBedNeededForLegalStatus(referral.intake?.legalStatus);
 }
 
 /**
@@ -300,7 +300,7 @@ function freshnessGate(unit: Unit, now: Instant): GateResult {
   return {
     gate: "capacity_freshness",
     pass: fresh,
-    detail: fresh ? `Confirmed ${age} min ago` : `Last confirmed ${age} min ago — stale`,
+    detail: fresh ? `Confirmed ${age} min ago` : `Last confirmed ${age} min ago, stale`,
   };
 }
 
@@ -330,26 +330,29 @@ function acuityGate(requested: boolean, unit: Unit, noun: string): GateResult {
 }
 
 /**
- * Specialling (one-to-one nursing), the same kind of staffing fact as acuity, and information only
- * for the same reason. `unit.speciallingCapacity` is the authored total, never decremented, so this
- * says what is staffed and where current use is decided, never how many slots are free (see
- * `tests/ward-specialling-detail-claims-no-headroom.test.ts`). A referral records no specialling
- * need, so the referral path says so.
+ * Specialling (constant observation staff), the same kind of staffing fact as acuity, and information
+ * only for the same reason. Since fix plan item 10 (21 Oct 2026) the movement carries an observation
+ * level, and only the constant levels need staff: one for a one-to-one level, two for two staff
+ * constant. `unit.speciallingCapacity` is the authored staff total, never decremented, so this says
+ * what is staffed and where current use is decided, never how many staff are free (see
+ * `tests/ward-specialling-detail-claims-no-headroom.test.ts`). A referral records no observation
+ * level, so the referral path says so.
  */
-function speciallingGate(requested: boolean | undefined, unit: Unit): GateResult {
+function speciallingGate(observation: Observation | undefined, unit: Unit): GateResult {
   const places = unit.speciallingCapacity;
+  const needed = observation === undefined ? 0 : observationStaff(observation.level);
   return {
     gate: "specialling",
     pass: true,
     info: true,
     detail:
-      requested === undefined
-        ? "Specialling need is not recorded on a referral"
-        : !requested
-          ? "No specialling required"
+      observation === undefined
+        ? "Observation level is not recorded on a referral"
+        : needed === 0
+          ? `${observationSummary(observation)}: no specialling staff needed`
           : places > 0
-            ? `Staffed for ${places} one-to-one — current use is checked at placement`
-            : "Specialling (one-to-one nursing) requested; ward is not staffed for one-to-one nursing. Information only: additional shift staffing required upon admission.",
+            ? `${observationSummary(observation)} needs ${needed} specialling staff; ward is staffed for ${places}, current use is checked at placement`
+            : `${observationSummary(observation)} requested; ward is not staffed for specialling (one-to-one or two staff constant nursing). Information only: additional shift staffing required upon admission.`,
   };
 }
 
@@ -360,7 +363,7 @@ function speciallingGate(requested: boolean | undefined, unit: Unit): GateResult
  */
 export type EligibilitySubject = Pick<
   Movement,
-  "declines" | "gender" | "sex" | "genderPlacements" | "cohort" | "security" | "highAcuity" | "specialling"
+  "declines" | "gender" | "sex" | "genderPlacements" | "cohort" | "security" | "highAcuity" | "observation"
 > & {
   /** Not recorded is `undefined`, which the authorisation gate treats as needing an authorised ward. */
   legalStatus: Movement["legalStatus"] | undefined;
@@ -388,8 +391,8 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
        * — a freeness test inside a suitability gate. That duplicated `allocatable_bed` and broke
        * the leniency it deliberately carries: the movement path passes on raw `allocatable`, the
        * referral path on `min(allocatable, empty)`, and the guard that makes either safe is
-       * `PATIENT_ARRIVED` refusing when `empty.value <= 0`, three events downstream in a different
-       * case block. The symptom was the last-bed reducer test: a second acceptance failed HERE, on
+       * `PULL_PATIENT` refusing when Ready (`min(allocatable, empty)`) is 0 (Audit 2 E-08, Josh
+       * 20 Oct 2026), in a different case block. The symptom was the last-bed reducer test: a second acceptance failed HERE, on
        * capacity, instead of reaching the pull guard that answers `bed_pulled_for_earlier_referral`.
        * Two other sessions warned about precisely this before it was written.
        *
@@ -432,7 +435,7 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
     forensicGate(unit),
     sexMixGate(movement.gender, movement.sex, unit),
     acuityGate(movement.highAcuity, unit, "movement"),
-    speciallingGate(movement.specialling, unit),
+    speciallingGate(movement.observation, unit),
     {
       gate: "prior_decline",
       pass: !declined,
@@ -442,11 +445,11 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
     {
       /*
        * ⚠️ **THE LENIENT FIGURE, AND WHAT MAKES THAT SAFE IS NOT IN THIS FILE.** This passes on
-       * `allocatable` alone, so a ward with three allocatable and no empty bed is eligible here —
-       * and `PULL_PATIENT` bounds the same lenient figure, so the pull succeeds too. **Neither is
-       * the guard.** The guard is `PATIENT_ARRIVED` in `ward-flow-reducer.ts`, which refuses on
-       * `unit.empty.value <= 0` with `(no_bed)`, pinned by *"refuses an arrival once the unit's
-       * physically empty beds are exhausted"* in `tests/ward-flow-reducer.test.ts`.
+       * `allocatable` alone, so a ward with three allocatable and no empty bed is eligible here.
+       * **The guard is `PULL_PATIENT`** (`ward-flow-placement-events.ts`), which refuses when Ready,
+       * `min(allocatable, empty)`, is 0 (Audit 2 E-08, Josh 20 Oct 2026). `PATIENT_ARRIVED` is NOT a
+       * guard: an arrival is always recorded, and one into a ward with no empty bed is kept as an
+       * arrival capacity conflict ("Arrived — Bed Turnaround").
        *
        * **A pull is a reservation; an arrival is the physical act.** The leniency is what lets a
        * ward accept in principle today and receive tomorrow, which is the whole of the
@@ -713,8 +716,8 @@ export function referralEligibility(
       // ⚠️ **THE MOVEMENT PATH'S GATE OF THIS NAME IS DELIBERATELY LOOSER, AND IT IS NOT A DRIFT.**
       // `eligibility()` above passes on `allocatable` alone because a movement is asking whether
       // the ward can accept in principle; a referral is asking whether this person can come now.
-      // The safety of that looser gate rests on `PATIENT_ARRIVED` in `ward-flow-reducer.ts` — read
-      // the comment at its site before assuming either gate is wrong.
+      // The safety of that looser gate rests on the `PULL_PATIENT` Ready-bed refusal — read the
+      // comment on `eligibility()`'s gate before assuming either gate is wrong.
       //
       // **One name, two pass conditions, on purpose.** Nobody had noticed until a 2026-09-04
       // census; the risk is the shared NAME inviting the assumption that they are one test.
@@ -732,10 +735,10 @@ export function referralEligibility(
 
 /**
  * A binary, non-ordinal description of a verdict: eligible, or the specific gate that failed.
- * Eligibility gates are not commensurable (failing `authorisation` is a legal hard stop;
- * failing `capacity_freshness` is a staleness warning), so this deliberately never collapses
- * them into a "N of M passed" fraction — that shape reads as a score, and higher/lower
- * comparisons across two verdicts are not meaningful.
+ * Eligibility gates are not commensurable (failing `authorisation` is a legal gate that can be
+ * overridden only with a recorded reason; failing `capacity_freshness` is a staleness warning),
+ * so this deliberately never collapses them into a "N of M passed" fraction — that shape reads
+ * as a score, and higher/lower comparisons across two verdicts are not meaningful.
  *
  * Fix round C (F1, review finding C1): this lives HERE rather than in `ward-derivations.ts`,
  * where it was originally written, and `ward-derivations.ts` re-exports it so its six existing

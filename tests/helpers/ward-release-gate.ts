@@ -38,14 +38,8 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
     const blocking = results.violations.filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ""));
     return { results, blocking };
   };
-  let { results, blocking } = await scan();
-  // A screen still settling after a client-side move (a sheet closing, a header repainting for the
-  // new desk) can measure a colour against a background that is not there a moment later. Scan once
-  // more after it settles; a real violation is still there and fails.
-  if (blocking.length > 0) {
-    await page.waitForTimeout(1_000);
-    ({ results, blocking } = await scan());
-  }
+  await waitForAccessibleReadiness(page);
+  const { results, blocking } = await scan();
   // For a contrast failure, record what the browser itself reports for each flagged element and its
   // ancestors, so a red run on a slower CI runner can be diagnosed without reproducing it.
   const contrastTargets = blocking
@@ -95,6 +89,86 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   expect(blocking, `serious or critical accessibility violations at "${step}":\n${summary}`).toEqual([]);
 }
 
+/** Wait for fonts, finite motion and three equal layout frames before measuring accessibility. */
+export async function waitForAccessibleReadiness(page: Page) {
+  await page.evaluate(async () => {
+    // The settle budget starts at the browser's first rendering opportunity. A cold WebKit (the
+    // first phone test of a run) can go seconds after load without producing a frame; until it
+    // does, neither requestAnimationFrame nor CSS transitions advance (every transition reads
+    // localTime 0), so that start-up time is not motion and must not consume the budget. The
+    // test's own timeout still bounds a browser that never renders.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    let cancelled = false;
+    let phase = "fonts";
+    let timer: ReturnType<typeof setTimeout>;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        const animations = document.getAnimations().map((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return {
+            name: (animation as CSSAnimation).animationName,
+            state: animation.playState,
+            timing: animation.effect?.getComputedTiming(),
+            tag: target instanceof Element ? target.tagName : null,
+            undoBar: target instanceof Element && target.hasAttribute("data-undo-bar"),
+            undo: target instanceof Element ? target.closest("[data-undo]")?.getAttribute("data-undo") : null,
+          };
+        });
+        reject(
+          new Error(
+            `Accessibility layout did not settle within five seconds: ${JSON.stringify({ phase, animations })}`,
+          ),
+        );
+      }, 5_000);
+    });
+    const settled = async () => {
+      await document.fonts?.ready;
+      const motionIsRunning = () =>
+        document.getAnimations().some((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          // The Undo hairline measures its availability window, not screen readiness.
+          // Scan while Undo is still available; keep waiting for the toast's entry motion.
+          if (
+            target instanceof Element &&
+            target.matches('[data-undo-bar][aria-hidden="true"]') &&
+            target.closest('[data-undo="running"]')
+          )
+            return false;
+          const timing = animation.effect?.getComputedTiming();
+          return animation.playState === "running" && timing && Number.isFinite(Number(timing.endTime));
+        });
+      phase = "geometry";
+      let previous = "";
+      let equalFrames = 0;
+      while (!cancelled && equalFrames < 3) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        // CSS transitions can disappear without settling a previously captured `finished`
+        // promise. Observe the current animations so removed motion cannot strand readiness.
+        if (motionIsRunning()) {
+          phase = "animations";
+          equalFrames = 0;
+          continue;
+        }
+        phase = "geometry";
+        const geometry = JSON.stringify(
+          Array.from(document.querySelectorAll("header, [role=dialog], [data-wf-scroller], main")).map((element) => {
+            const rect = element.getBoundingClientRect();
+            return [rect.x, rect.y, rect.width, rect.height, element.scrollTop];
+          }),
+        );
+        equalFrames = geometry === previous ? equalFrames + 1 : 0;
+        previous = geometry;
+      }
+    };
+    try {
+      await Promise.race([settled(), deadline]);
+    } finally {
+      cancelled = true;
+      clearTimeout(timer!);
+    }
+  });
+}
+
 /**
  * Runs `action` with the window and the work column (`[data-wf-scroller]`, which scrolls on a
  * phone) at the top, then puts both back where they were.
@@ -108,7 +182,7 @@ async function atScrollTop<T>(page: Page, action: () => Promise<T>): Promise<T> 
     return before;
   });
   // The phone header condenses on scroll; let it settle back to its full face first.
-  await page.waitForTimeout(300);
+  await waitForAccessibleReadiness(page);
   try {
     return await action();
   } finally {
@@ -168,6 +242,14 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
   const dockLink = page.getByTestId("ward-phone-dock").locator(`a[href="${href}"]`);
   // B1 (19 Oct 2026): the rail shows the desk's own menu; every other page is under More.
   const railMore = rail.locator('[data-testid="ward-rail-more"], [data-testid="ward-rail-tablet-more"]').first();
+  // Straight after a desk switch the phone dock can draw a beat late (seen on WebKit), and the Menu
+  // sheet need not list a dock page, so give the direct links a moment before falling back to it.
+  await railLink
+    .or(railMore)
+    .or(dockLink)
+    .first()
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .catch(() => undefined);
   if (await railLink.isVisible()) {
     await railLink.click();
   } else if (await railMore.isVisible()) {
@@ -303,9 +385,11 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
     const state = figure === "occupied" ? "occupied" : "available";
     return Number((await grid.locator(`[data-state="${state}"] strong`).first().innerText()).trim());
   }
+  // Desktop's header carries the same figures as chips ("14 Occupied"), so a grid that has not
+  // painted yet after a tab switch still reads the right number here.
   const region = wardScreen.getByRole("region", { name: "This ward", exact: true });
   if (figure === "occupied") {
-    const match = /(\d+) occupied/u.exec(await region.innerText());
+    const match = /(\d+)\s*occupied/iu.exec(await region.innerText());
     expect(match, "the phone ward header must state how many beds are occupied").not.toBeNull();
     return Number(match![1]);
   }

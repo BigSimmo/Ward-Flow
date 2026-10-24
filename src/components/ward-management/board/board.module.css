@@ -2664,7 +2664,11 @@
   transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.wardSwitch > summary span {
+.wardSwitchIcon {
+  display: none;
+}
+
+.wardSwitch > summary .wardSwitchCount {
   font-family: var(--mono);
   font-size: var(--t-1);
   font-weight: 500;
@@ -2843,9 +2847,8 @@
   line-height: 1.25;
   text-transform: uppercase;
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wraps rather than clipping "Confirmed today and tomorrow" at 1280 (UX audit, 21 Oct 2026). */
+  overflow-wrap: break-word;
 }
 
 .triageValue {
@@ -3554,6 +3557,18 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.bedName {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bedState {
@@ -4405,14 +4420,6 @@
   color: var(--ink);
 }
 
-.catchmentFootnote {
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.35;
-  margin: 0.25rem 0 0;
-  font-style: italic;
-}
-
 .personLine,
 .personExpected,
 .personWho {
@@ -4773,7 +4780,7 @@
     color: var(--wf-hero-ink);
   }
 
-  .wardSwitch > summary span {
+  .wardSwitch > summary .wardSwitchCount {
     color: var(--wf-hero-ink-2);
   }
 
@@ -5544,7 +5551,6 @@
     display: none;
   }
 
-  .screen .gridColumn,
   .screen .detail,
   .screen .zonesOpen .detail {
     display: none;
@@ -5625,12 +5631,18 @@
     margin-top: var(--wf-s-1);
   }
 
+  /* The screen tabs sit on the page below the band, as the light segmented track and square
+   * icon button that Ward home and Discharges use on a phone (Josh, 22 Oct 2026). */
   .screen .wardTools {
+    --wf-focus-ring: var(--wf-accent);
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     gap: var(--wf-s-2);
-    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+    margin: 0;
+    padding: var(--wf-s-3) 0;
+    border: 0;
+    background: transparent;
   }
 
   .screen .wardToolsLeft {
@@ -5643,27 +5655,70 @@
   }
 
   .screen .wardScreenNav {
+    display: flex;
     width: 100%;
     box-sizing: border-box;
+    gap: 2px;
+    padding: var(--wf-s-1);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-track);
+    background: var(--wf-track);
+    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
   }
 
   .screen .wardScreenNav a,
   .screen .wardScreenNav span {
+    flex: 1 1 auto;
+    justify-content: center;
     min-width: 0;
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-radius: var(--wf-r-seg-item);
+    background: transparent;
+    box-shadow: none;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+    font-weight: 500;
     white-space: nowrap;
+  }
+
+  .screen .wardScreenNav span[aria-current="page"] {
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font-weight: 600;
+    box-shadow: var(--wf-e-sel);
   }
 
   .screen .wardSwitch > summary {
-    width: auto;
+    justify-content: center;
+    width: var(--spacing-tap, 3rem);
     min-height: var(--spacing-tap, 3rem);
+    padding: 0;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-ctl);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+  }
+
+  .screen .wardSwitch > summary::after {
+    display: none;
+  }
+
+  .screen .wardSwitch .wardSwitchIcon {
+    display: block;
+  }
+
+  /* Still the button's name for a screen reader, just not drawn. */
+  .screen .wardSwitch .wardSwitchLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
   }
 
-  .screen .wardSwitch > summary span {
+  .screen .wardSwitch .wardSwitchCount {
     display: none;
   }
 
@@ -5695,12 +5750,11 @@
     line-height: var(--wf-lh-16);
   }
 
+  /* Labels and the Going out toggle wrap instead of clipping on a phone (UX audit, 21 Oct 2026). */
   .screen .triageFigures > .triageFigure > .triageLabel {
     flex: 1 1 0;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: break-word;
   }
 
   .screen .triageFigures > .triageFigure > .triageLedNote {
@@ -5721,9 +5775,8 @@
     min-width: 0;
     min-height: var(--spacing-tap, 3rem);
     margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-align: center;
+    overflow-wrap: break-word;
   }
 
   .screen .destinations {
@@ -5847,11 +5900,6 @@
 @media screen and (max-width: 48rem) {
   .screen .header {
     margin: -12px -12px 0;
-    border-radius: 0;
-  }
-
-  .screen .wardTools {
-    margin-inline: -12px;
     border-radius: 0;
   }
 
@@ -6106,4 +6154,147 @@
   font-size: 0.95rem;
   color: var(--ink-soft);
   line-height: 1.5;
+}
+
+/* Change 10 (D-77, 21 Oct 2026): every bed on the phone, above the day figures, two to a row.
+ * The colour legend is left off, because the day count on each tile carries the meaning. A tapped
+ * bed opens its record in a sheet (`.detailSheetBody`). */
+@media screen and (max-width: 48rem) {
+  .screen .phoneBeds {
+    min-width: 0;
+    margin: 0 0 var(--wf-s-3);
+  }
+
+  .screen .phoneBeds .gridColumn {
+    display: block;
+    min-width: 0;
+  }
+
+  /* Option B (Josh, 22 Oct 2026): the heading and count stay for screen readers but are not drawn,
+   * and the filters and order fold into one row: a Show drop-down that carries the chosen
+   * filter's count, and the order select drawn as a square sort button. */
+  .screen .phoneBeds .sectionHeading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .screen .phoneBeds .phoneFilterRow {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+  }
+
+  .screen .phoneBeds .phoneFilterSelect,
+  .screen .phoneBeds .phoneSort select {
+    min-height: 2.75rem;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-ctl);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-13);
+  }
+
+  .screen .phoneBeds .phoneFilterSelect {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+    padding: 0 2rem 0 0.75rem;
+    font-weight: 600;
+  }
+
+  .screen .phoneBeds .phoneSort {
+    position: relative;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--wf-ink-1);
+  }
+
+  .screen .phoneBeds .phoneSort select {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background-image: none;
+    color: transparent;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .screen .phoneBeds .phoneSort option {
+    color: var(--wf-ink-1);
+  }
+
+  .screen .phoneBeds .phoneSort svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .screen .phoneBeds .beds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .screen .phoneBeds .legend {
+    display: none;
+  }
+
+  .screen .phoneBeds .bedFigureRow {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .screen .phoneBeds .bedWho {
+    flex-basis: 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}
+
+/* The bed's record inside the phone sheet. The sheet carries the title and Close, so the panel's
+ * own bar is hidden there. The sheet is portalled to <body>, outside `.screen`, so it takes the
+ * Ward tokens itself; without them the action buttons drew with no border or fill. */
+.detailSheetBody {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  /* The two board-local tokens the record's controls read, as set on `.screen`. */
+  --wb-control-radius: 0.5rem;
+  --wb-control-edge: var(--muted);
+}
+
+.detailSheetBody .detail {
+  display: block;
+  position: static;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.detailSheetBody .detailBar {
+  display: none;
+}
+
+/* The sheet already pads its body, so the record drops its own inset and top rule there;
+ * otherwise its cards sit a step in from the sheet title with a stray line above. */
+.detailSheetBody .detail > :not(.detailBar) {
+  padding-inline: 0;
+}
+
+.detailSheetBody .person {
+  border-top: 0;
+  padding-top: 0;
 }

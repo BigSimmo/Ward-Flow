@@ -3,6 +3,7 @@
 // The side panel for one ward on the capacity screen, with its tabs and discharge record facts.
 // Split out of `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
@@ -20,6 +21,7 @@ import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-
 import styles from "./capacity.module.css";
 import { WardClosurePanel } from "./ward-closure-panel";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
+import { capacityRequestIsOpen } from "../ward/ward-buzz-keys";
 
 export function CapacityTabs({
   id,
@@ -96,7 +98,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
   const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
   const request = refreshRequests
-    .filter((entry) => entry.unitId === row.unit.id && entry.at >= row.unit.allocatable.confirmedAt)
+    .filter((entry) => entry.unitId === row.unit.id && capacityRequestIsOpen(entry, row.unit.allocatable))
     .at(-1);
   function closeRecord() {
     setOpened(null);
@@ -228,7 +230,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
               <h3>Confirmed beds</h3>
               <WardFreshness
                 confirmedAt={row.confirmedAt}
-                confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
+                confirmedByRole={capacityConfirmer(row.unit)}
                 derived={row.unit.allocatable.source !== "ward"}
                 now={now}
               />

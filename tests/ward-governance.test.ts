@@ -304,7 +304,7 @@ describe("effectivenessNumbers", () => {
     const threeUnits = movementFrom({
       id: "WF-UC-2",
       referredUnitIds: [],
-      declines: [{ unitId: "unit-b", at: 10, reason: "no_bed" }],
+      declines: [{ unitId: "unit-b", at: 10, reason: "no_suitable_bed" }],
       withdrawnReferrals: [{ unitId: "unit-c", at: 20, reason: "another_unit_accepted" }],
       acceptedUnitId: "unit-d",
     });
@@ -320,7 +320,7 @@ describe("effectivenessNumbers", () => {
     const movement = movementFrom({
       id: "WF-UC-DEDUP",
       referredUnitIds: ["unit-x"],
-      declines: [{ unitId: "unit-x", at: 10, reason: "no_bed" }],
+      declines: [{ unitId: "unit-x", at: 10, reason: "no_suitable_bed" }],
       withdrawnReferrals: [],
       acceptedUnitId: undefined,
     });

@@ -1,20 +1,26 @@
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { useEffect, useMemo, useState } from "react";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
+import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
+import type { FixtureWorlds } from "./ward-flow-typed-text-scrub";
 import {
-  isValidStoredWardFlowState,
-  migrateStoredWardFlowState,
+  RESTORED_NOTICE_PREFIX,
+  STORAGE_UNAVAILABLE,
+  WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_STORED_STATE_VERSION,
-  withInboxStreamADefaults,
-} from "./ward-flow-storage-validation";
+} from "./ward-flow-demo-storage-constants";
+
+export { RESTORED_NOTICE_PREFIX, STORAGE_UNAVAILABLE, WARD_FLOW_DEMO_STORAGE_KEY };
 
 /**
  * The demonstration's one saved session in `sessionStorage`: its shape, its version, and the guarded
- * read and write. Kept apart from `WardFlowProvider` so the provider stays under its line cap.
+ * write. Kept apart from `WardFlowProvider` so the provider stays under its line cap. The guarded
+ * read (`tryReadDemoState`) lives in `ward-flow-demo-restore.ts` and loads on demand through
+ * `readDemoStateLater`: it carries the stored-state schema, which every phone page would otherwise
+ * download up front (Josh, 21 Oct 2026: no script budget raises).
  */
-
-export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 
 /**
  * ⚠️ **BUMP THIS WHENEVER THE STORED SHAPE CHANGES**, not only the key. Audit finding ISSUE-P1-83
@@ -49,7 +55,7 @@ export const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_STORED_STATE_VERSION;
  * touches the reducer — see `tryReadDemoState`'s own comment for why a mismatch here means discard,
  * never a silent timestamp shift.
  */
-type WardFlowDemoPayload = {
+export type WardFlowDemoPayload = {
   version: number;
   /** `dayZero.getTime()` at save — a calendar day, not a duration; compared for exact equality. */
   dayZero: number;
@@ -61,77 +67,101 @@ type WardFlowDemoPayload = {
   state: WardFlowState;
 };
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
+
+let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
+
+/** Loads the restore module once; afterwards a mount reads its save in the same render as before. */
+export function loadDemoRestore(): Promise<typeof import("./ward-flow-demo-restore")> {
+  return import("./ward-flow-demo-restore").then((module) => (demoRestore = module));
 }
 
-function isValidDemoPayload(value: unknown): value is WardFlowDemoPayload {
-  if (!isPlainObject(value)) return false;
-  if (typeof value.version !== "number") return false;
-  if (typeof value.dayZero !== "number") return false;
-  if (typeof value.worldGeneration !== "number") return false;
-  if (!Number.isFinite(value.now) || !Number.isFinite(value.savedAtAbsolute)) return false;
-  return isValidStoredWardFlowState(value.state);
+/** `tryReadDemoState`, loaded on first use. A failed load counts as unavailable storage, so the save
+ *  is neither restored nor overwritten while the page keeps working in memory. */
+export function readDemoStateLater(dayZero: Date, mountedAtAbsolute: number, rawOverride?: string): Promise<DemoRead> {
+  return loadDemoRestore().then(
+    ({ tryReadDemoState }) => tryReadDemoState(dayZero, mountedAtAbsolute, rawOverride),
+    () => ({ recoveryNotice: STORAGE_UNAVAILABLE }),
+  );
 }
+
+let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
 
 /**
- * The opening words of the routine "your last save came back" notice. The shell shows that notice
- * once per tab and lets it fade (simplification A3, 19 Oct 2026); the two failure notices stay.
+ * The device copy of a session holding typed text (`ward-flow-typed-text-scrub.ts`) loads on demand,
+ * like the saved-session read: it carries the restore fence and the typed-text reader
+ * (`ward-flow-typed-text-ledger.ts`), which the first screen does not need.
  */
-export const RESTORED_NOTICE_PREFIX = "Restored the last successful save from";
-
-export const STORAGE_UNAVAILABLE =
-  "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
-const SAVE_REJECTED =
-  "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
-
-type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
-
-/** A parsed save brought to this build's version when a migration exists (v6 only); any other
- *  version is returned unchanged, so the version check below still refuses it. */
-function upgradeDemoPayload(value: unknown): unknown {
-  if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
-  const state = migrateStoredWardFlowState(value.state, value.version);
-  return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
+export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
+  return import("./ward-flow-typed-text-scrub").then((module) => (typedTextScrub = module));
 }
 
-/** Same-day reload includes time away. A different day or backward clock starts a fresh demo;
- * no saved event or entered time is shifted or reconstructed. Storage access is entirely guarded. */
-export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOverride?: string): DemoRead {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = rawOverride ?? window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
-    if (!raw) return {};
-    let stored: unknown;
-    try {
-      stored = JSON.parse(raw);
-    } catch {
-      return { recoveryNotice: SAVE_REJECTED };
-    }
-    const parsed = upgradeDemoPayload(stored);
-    if (
-      !isValidDemoPayload(parsed) ||
-      parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
-      parsed.dayZero !== dayZero.getTime() ||
-      parsed.worldGeneration !== parsed.state.worldGeneration ||
-      parsed.savedAtAbsolute > mountedAtAbsolute ||
-      parsed.now < NOW_ANCHOR + parsed.state.clockOffsetMinutes ||
-      parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
-    )
-      return { recoveryNotice: SAVE_REJECTED };
-    // DA-27 (overall review, 20 Oct 2026): the notice names the save by the board's own clock, the
-    // time shown beside it in the header, never the device's real time, which read as a different
-    // day and hour next to a demo clock. The board resumes at the save plus the real minutes since,
-    // so a save from the board's previous day says so.
-    const resumedAt = parsed.now + (mountedAtAbsolute - parsed.savedAtAbsolute);
-    return {
-      saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock. Later changes may not have been saved.`,
+type TypedTextHeld = {
+  typedTextSeen: boolean;
+  typedTextEvents?: readonly WardFlowEvent[];
+  typedTextFromFile?: boolean;
+};
+
+/**
+ * What may be written to this device: the world itself while it holds no typed text, otherwise its
+ * copy with every typed value replaced (D-18, Josh 21 Oct 2026). `null` means nothing may be written
+ * (`locked`, or no safe copy could be made), and `undefined` that the copy's code has not loaded yet.
+ */
+export function deviceCopyOf(
+  state: WardFlowState,
+  held: TypedTextHeld,
+  locked: boolean,
+  fixtureWorlds: FixtureWorlds,
+): WardFlowState | null | undefined {
+  if (!held.typedTextSeen) return state;
+  if (locked) return null;
+  return typedTextScrub?.deviceCopyFromEvents(state, held.typedTextEvents ?? [], fixtureWorlds, held.typedTextFromFile);
+}
+
+const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";
+
+/** The saved session for this mount, read once it has loaded; undefined until then and whenever
+ *  saving on this device does not apply. The provider adopts it (`sessionAdopted`) when it arrives. */
+export function useDemoStateRead(
+  enabled: boolean,
+  dayZero: Date,
+  mountedAtAbsolute: number | null,
+): DemoRead | undefined {
+  const [held, setHeld] = useState<{ dayZero: Date; mountedAtAbsolute: number; read: DemoRead }>();
+  // Once loaded (a later mount, or tests that preload it), the read is synchronous, as it always was.
+  const loadedRead = useMemo(
+    () =>
+      enabled && mountedAtAbsolute !== null ? demoRestore?.tryReadDemoState(dayZero, mountedAtAbsolute) : undefined,
+    [enabled, dayZero, mountedAtAbsolute],
+  );
+  useEffect(() => {
+    if (!enabled || mountedAtAbsolute === null || loadedRead) return;
+    let live = true;
+    void readDemoStateLater(dayZero, mountedAtAbsolute).then((read) => {
+      if (live) setHeld({ dayZero, mountedAtAbsolute, read });
+    });
+    return () => {
+      live = false;
     };
-  } catch {
-    // Do not repeat stored content or an exception message in the recovery notice.
-    return { recoveryNotice: STORAGE_UNAVAILABLE };
-  }
+  }, [enabled, dayZero, mountedAtAbsolute, loadedRead]);
+  if (loadedRead) return loadedRead;
+  return enabled && held?.dayZero === dayZero && held.mountedAtAbsolute === mountedAtAbsolute ? held.read : undefined;
+}
+
+/** `buildScenarioFile` and `readScenarioFile` at this build's state version, loaded on first use for
+ *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. */
+export function buildScenarioFileLater(state: WardFlowState, now: Instant): Promise<ScenarioFileBuild> {
+  return import("./ward-flow-scenario-file").then(
+    ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
+  );
+}
+
+export function readScenarioFileLater(text: string): Promise<ScenarioFileRead> {
+  return import("./ward-flow-scenario-file").then(
+    ({ readScenarioFile }) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
+    () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
+  );
 }
 
 export function tryWriteDemoState(

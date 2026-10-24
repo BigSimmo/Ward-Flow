@@ -495,7 +495,7 @@
 
 .declineFieldset {
   display: grid;
-  gap: var(--ward-space-6);
+  gap: 0;
   margin: 0;
   border: 0;
   padding: 0;
@@ -520,7 +520,8 @@
 
 .declineOption {
   display: flex;
-  min-height: var(--ward-tap);
+  /* 44px (v9 rows): stacked radio rows at the 48px floor left wide gaps on the answer card. */
+  min-height: var(--wf-touch, 2.75rem);
   align-items: center;
   gap: var(--ward-space-8);
   overflow-wrap: anywhere;
@@ -3145,42 +3146,6 @@
   line-height: 1;
 }
 
-.notificationCenterContainer {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: min(520px, calc(100vw - 32px));
-  z-index: 100;
-  box-shadow: var(--float);
-  border-radius: 12px;
-  animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes popoverIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .notificationCenterContainer {
-    left: 0;
-    width: calc(100vw - 32px);
-    max-width: 480px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .notificationCenterContainer {
-    animation: none;
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════
    TAB 5: DECISIONS & CENSUS — PERFECTED THIRD EDITION STYLES
    Tokens only · Anti-cheap-look · Hairline borders · Responsive · Zero raw hex
@@ -3556,11 +3521,6 @@
     font-family: var(--wf-mono);
     font-size: var(--wf-fs-11);
   }
-
-  .notificationCenterContainer {
-    right: 0;
-    left: auto;
-  }
 }
 
 @media (max-width: 40rem) {
@@ -3924,6 +3884,7 @@
 
   .subViewBar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--wf-s-2);
     min-width: 0;
@@ -4323,4 +4284,36 @@
   font-family: var(--mono, monospace);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+}
+
+/* Start placement for an accepted referral: one question per row, label above its control. */
+.placementForm {
+  display: grid;
+  gap: var(--wf-s-2);
+  max-width: 420px;
+  margin-top: var(--wf-s-2);
+}
+
+.placementForm label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--wf-fs-13);
+}
+
+.placementForm select {
+  min-height: 44px;
+  width: 100%;
+}
+
+.placementActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* Phone: the hero foot line wraps, so the bed list link and the roster note are never cut off. */
+@media (max-width: 48rem) {
+  .heroMeta {
+    white-space: normal;
+  }
 }

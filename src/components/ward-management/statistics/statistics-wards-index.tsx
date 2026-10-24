@@ -217,9 +217,10 @@ export function StatisticsWardsIndexScreen() {
   const chipItems: Array<{ id: WardChip; label: string; count: number; tone?: "warning" }> = [
     { id: "over", label: `At or over ${BED_ALERT_THRESHOLD_PERCENT}%`, count: overLine, tone: "warning" },
     { id: "none-ready", label: "None ready", count: noneReady },
-    { id: "pending", label: BED_STATE_LABELS.beingMadeReady, count: count((row) => row.pending > 0) },
-    { id: "pulled", label: "Pulled, not arrived", count: count((row) => row.pulled > 0) },
-    { id: "blocked", label: "Blocked discharge", count: count((row) => row.blocked > 0) },
+    // These count wards, so they say so: the hero's "Pulled, not arrived" counts beds (UX audit 21 Oct 2026).
+    { id: "pending", label: "With a bed being made ready", count: count((row) => row.pending > 0) },
+    { id: "pulled", label: "With a pulled bed", count: count((row) => row.pulled > 0) },
+    { id: "blocked", label: "With a blocked discharge", count: count((row) => row.blocked > 0) },
   ];
 
   return (

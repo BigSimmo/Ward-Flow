@@ -8,8 +8,6 @@
  */
 
 "use client";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 
@@ -108,6 +106,7 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
@@ -243,7 +242,7 @@ export function MovementWorkspaceCockpit({
           },
         ]
       : []),
-    ...patient.stageChanges.map((change) => {
+    ...patient.stageChanges.flatMap((change) => {
       const reasonLabel = change.reason === undefined ? undefined : stageChangeReasonLabel(change.reason);
       const suffix = reasonLabel ? ` · ${reasonLabel}` : "";
       const unwind = patient.unwinds.find(
@@ -252,22 +251,44 @@ export function MovementWorkspaceCockpit({
           candidate.by === change.by &&
           (candidate.kind === "acceptance_withdrawn" || candidate.kind === "stage_corrected"),
       );
-      if (unwind?.kind === "acceptance_withdrawn") {
-        const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
-        return { at: change.at, label: `Acceptance by ${ward} withdrawn, by ${change.by}${suffix}` };
-      }
+      // A withdrawal is listed once, from its unwind below.
+      if (unwind?.kind === "acceptance_withdrawn") return [];
       if (unwind?.kind === "stage_corrected") {
-        return {
-          at: change.at,
-          label:
-            `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
-            `no bed released, no transport cancelled, no acceptance undone`,
-        };
+        return [
+          {
+            at: change.at,
+            label:
+              `Stage record corrected to ${stageCopy[change.to].label}, by ${change.by}${suffix} — ` +
+              `no bed released, no transport cancelled, no acceptance undone`,
+          },
+        ];
       }
-      return {
-        at: change.at,
-        label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
-      };
+      return [
+        {
+          at: change.at,
+          label: `Stage ${change.from ? `${stageCopy[change.from].label} → ` : ""}${stageCopy[change.to].label}, by ${change.by}${suffix}`,
+        },
+      ];
+    }),
+    // Q16: listed from the unwind so a withdrawal that kept a stepped-back stage, writing no stage
+    // entry, still shows. A release written immediately before it with the same instant, role and
+    // reason was the same act (a separate `RELEASE_PULL` carries a different reason list).
+    ...patient.unwinds.flatMap((unwind, index) => {
+      if (unwind.kind !== "acceptance_withdrawn") return [];
+      const previous = patient.unwinds[index - 1];
+      const bedReleased =
+        previous?.kind === "pull_released" &&
+        previous.at === unwind.at &&
+        previous.by === unwind.by &&
+        previous.reason === unwind.reason;
+      const ward = unwind.unitId === undefined ? "a ward the record does not name" : unitName(unwind.unitId);
+      const reasonLabel = stageChangeReasonLabel(unwind.reason);
+      return [
+        {
+          at: unwind.at,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
+        },
+      ];
     }),
     ...patient.statusChanges.map((change) => ({
       at: change.at,
@@ -505,7 +526,9 @@ export function MovementWorkspaceCockpit({
                   {open ? "Flagged urgent" : "Was flagged urgent"}
                 </WardChip>
               ) : null}
-              {patient.specialling ? <WardChip level="routine">Specialling</WardChip> : null}
+              {isConstantObservation(patient.observation) ? (
+                <WardChip level="routine">{observationSummary(patient.observation)}</WardChip>
+              ) : null}
             </div>
           </div>
 
@@ -915,7 +938,7 @@ export function MovementWorkspaceCockpit({
                     <dt className={styles.factLabel}>Setting</dt>
                     <dd className={styles.factValue}>
                       {patient.cohort} · {patient.security} · {patient.sex}
-                      {patient.specialling ? " · specialling required" : ""}
+                      {` · ${observationSummary(patient.observation)}`}
                     </dd>
                   </div>
                 </dl>
@@ -1307,23 +1330,10 @@ export function MovementWorkspaceCockpit({
               )}
             </section>
 
-            {/* 3. CONFIRM A DESTINATION. Audit 7 NA-03: its control renders nothing outside development,
-                so the heading and note that point at it show only there too. */}
-            <UnwiredPreview>
-              <section className={styles.actionSection}>
-                <h3 className={styles.actionSectionTitle}>Confirm a destination</h3>
-                <p className={styles.actionSay}>
-                  Not built yet. Which record a confirmation writes, and in whose name, is a decision the owner still
-                  holds — so this control says it is not wired rather than being hidden or greyed (D-16).
-                </p>
-                <NotWiredButton label="Review and confirm" name="Confirm a destination" />
-              </section>
-            </UnwiredPreview>
-
             {/* 4. ORPHANED TRANSPORT JOB */}
             {orphanedJob ? (
               <section className={styles.actionSection} data-testid="ward-patient-orphaned-transport">
-                <h3 className={styles.actionSectionTitle}>Transport booked with no bed held</h3>
+                <h3 className={styles.actionSectionTitle}>Transport booked with no bed pulled</h3>
                 <p className={styles.actionSay}>
                   {orphanedJob.kind === "pull_released"
                     ? `The bed this job was booked against has been given back to the ward. ${orphanedJob.provider} is still recorded as collecting this patient, and nothing has told them otherwise. A replacement cannot be booked until this job is cancelled.`
@@ -1522,7 +1532,7 @@ export function MovementWorkspaceCockpit({
             {/* 6. RELEASE HELD BED (AFTER STOP TRANSPORT) */}
             {isStoppedTransportAwaitingRelease(movement) ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
-                <h3 className={styles.actionSectionTitle}>Release the held bed</h3>
+                <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
                   Transport for this patient was stopped and the bed is still held. Releasing it gives the bed back to
                   the ward.
@@ -1538,7 +1548,7 @@ export function MovementWorkspaceCockpit({
                     })
                   }
                 >
-                  Release the held bed
+                  Release the pulled bed
                 </button>
               </section>
             ) : null}
@@ -1648,7 +1658,7 @@ export function MovementWorkspaceCockpit({
             {/* 8. RELEASE DIVERTED BED */}
             {movement.transport?.diversion !== undefined && movement.admissionId !== undefined ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-diverted-bed">
-                <h3 className={styles.actionSectionTitle}>Release the held bed</h3>
+                <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
                   This patient was diverted and the bed is still held. Releasing it gives the bed back to the ward and
                   ends the journey.
@@ -1664,7 +1674,7 @@ export function MovementWorkspaceCockpit({
                     })
                   }
                 >
-                  Release the held bed
+                  Release the pulled bed
                 </button>
               </section>
             ) : null}
@@ -1682,18 +1692,18 @@ export function MovementWorkspaceCockpit({
                   No ward has accepted this patient, so there is no acceptance to withdraw. If a ward said yes and this
                   page does not show it, that is a missing record rather than something to undo here.
                 </p>
-              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") ? (
+              ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") &&
+                movement.admissionId === undefined ? (
                 <p className={styles.actionSay}>
                   {destination ? destination.name : "A ward"} accepted this patient and this page still says so, but the
                   recorded stage has been corrected back to {stageCopy[movement.stage].label}. Withdrawing is only
                   offered while the record says Accepted, awaiting bed — put the stage back to that first, or ring the
                   ward.
                 </p>
-              ) : movement.stage !== "accepted_awaiting_bed" ? (
+              ) : acceptedStageIndex > MOVEMENT_STAGES.indexOf("pulled") ? (
                 <p className={styles.actionSay}>
-                  A bed has already been pulled for this patient, and withdrawing an acceptance past that point is not
-                  built. It is a larger act — a ward is physically holding a bed, and further along a patient may
-                  already be moving — and the owner is still deciding what it should do. Ring the ward.
+                  This patient is past the point where a bed is only held. Handover is being prepared or the patient may
+                  already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
                 </p>
               ) : (
                 <>
@@ -1703,6 +1713,12 @@ export function MovementWorkspaceCockpit({
                     It does not re-refer the patient to them — if you want them to consider this patient again, refer
                     again.
                   </p>
+                  {movement.stage === "pulled" || movement.admissionId !== undefined ? (
+                    <p className={styles.actionSay} data-testid="ward-console-withdraw-releases-bed">
+                      A bed is pulled for this patient. Withdrawing also releases that bed in the same step, and the
+                      referring emergency department is told.
+                    </p>
+                  ) : null}
                   <div className={styles.controlRow}>
                     <label className="sr-only" htmlFor="ward-console-withdraw-reason">
                       Why is the acceptance being withdrawn?
@@ -1784,7 +1800,7 @@ export function MovementWorkspaceCockpit({
                   </p>
                   {movement.admissionId !== undefined ? (
                     <p className={styles.actionSay} data-testid="ward-console-step-back-still-holding">
-                      This movement is still holding a ward bed. Correcting the stage leaves that bed held — use{" "}
+                      This movement is still holding a ward bed. Correcting the stage leaves that bed pulled — use{" "}
                       <strong>Release the pulled bed</strong> if the ward should have it back.
                     </p>
                   ) : null}

@@ -1,5 +1,5 @@
 /* The morning bed-meeting sheet (`bed-meeting-sheet.tsx`), v6.
- * On screen it is a dialog over Capacity; on paper it is one A4 page and nothing else. The dialog
+ * On screen it is a dialog over Capacity; on paper it is the A4 sheet and nothing else. The dialog
  * is portalled to <body>, outside the screen's own token scope, so it composes the shell tokens
  * itself (their print block sends light colours to the printer in dark mode). Screen styles use
  * the global v6 tokens. */
@@ -334,4 +334,9 @@
   .section {
     border-color: var(--ink);
   }
+}
+
+/* Author button classes set display; keep the hidden launcher out of every screen layout. */
+.launcherHidden {
+  display: none !important;
 }

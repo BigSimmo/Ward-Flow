@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
-import { MakeRoomPanel } from "@/components/ward-management/capacity/make-room-panel";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { recentTellSubjects } from "@/components/ward-management/legal-forms/legal-forms-view";
@@ -11,7 +10,6 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import type { HealthService } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -74,28 +72,6 @@ it("keeps the shared prototype footer on the Handover phone branch (WF-030)", ()
   expect(footer).toHaveTextContent("not for clinical use");
 });
 
-it("updates Make room cards and counts as the service changes (WF-077/079)", () => {
-  const view = (service: HealthService | null) => (
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <MakeRoomPanel now={NOW_ANCHOR} service={service} />
-    </WardFlowProvider>
-  );
-  const { rerender } = render(view(null));
-  const plans = () => screen.getAllByText(/^A bed can be freed on /);
-  expect(plans()).toHaveLength(2);
-  rerender(view("North Metro"));
-  expect(plans()).toHaveLength(1);
-  expect(screen.getByTestId("make-room")).toHaveTextContent("1 plan");
-  rerender(view("East Metro"));
-  expect(plans()).toHaveLength(1);
-  rerender(view("South Metro"));
-  expect(screen.queryByText(/^A bed can be freed on /)).not.toBeInTheDocument();
-  expect(screen.getByText("No eligible make-room plans available.")).toBeVisible();
-  expect(screen.queryByText("No waiting referral needs room made right now.")).not.toBeInTheDocument();
-  rerender(view(null));
-  expect(plans()).toHaveLength(2);
-});
-
 type TellControl = { accept?: () => void; calls: WardFlowEvent[] };
 function TellHarness({ deferred, control }: { deferred: boolean; control: TellControl }) {
   const flow = useWardFlow();
@@ -148,6 +124,18 @@ function TellHarness({ deferred, control }: { deferred: boolean; control: TellCo
 
 describe("final Tell command feedback survives its outstanding-queue removal (WF-028)", () => {
   it.each([false, true])("keeps exact success and usable Undo, deferred shared save=%s", async (deferred) => {
+    // D-77 change 5: Tell next lives in the phone's Record and tell sheet; desktop no longer shows the strip.
+    const phone = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: query === WF_PHONE_QUERY,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: () => true,
+    }));
+    onTestFinished(() => phone.mockRestore());
     const control: TellControl = { calls: [] };
     render(
       <ToastProvider>
@@ -156,6 +144,7 @@ describe("final Tell command feedback survives its outstanding-queue removal (WF
         </WardFlowProvider>
       </ToastProvider>,
     );
+    fireEvent.click(screen.getByRole("button", { name: /^Record and tell/ }));
     fireEvent.click(screen.getAllByRole("button", { name: "Tell next" })[0]!);
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const form = screen.getByRole("form", { name: "Record Carer" });

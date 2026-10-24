@@ -12,7 +12,7 @@ import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
-import { communityScopedReferrals, type CommunityScopedReferral } from "./ward-referral-visibility";
+import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
 
 import {
   type Context,
@@ -62,11 +62,15 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   clearWardFlowDemoState,
+  buildScenarioFileLater,
+  deviceCopyOf,
+  loadTypedTextScrub,
+  readDemoStateLater,
+  readScenarioFileLater,
   STORAGE_UNAVAILABLE,
-  tryReadDemoState,
   tryWriteDemoState,
+  useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
-  WARD_FLOW_DEMO_STORAGE_VERSION,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -93,6 +97,7 @@ import { activeWardNetwork, NOW_ANCHOR, type WardNetwork } from "@/components/wa
 import {
   activateScenarioNetwork,
   scenarioWardNetwork,
+  WARD_SCENARIOS,
   type WardScenario,
 } from "@/components/ward-management/ward-scenarios";
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
@@ -104,11 +109,7 @@ import {
   type AssertNever,
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
-import {
-  buildScenarioFile,
-  readScenarioFile,
-  type ScenarioFileBuild,
-} from "@/components/ward-management/ward-flow-scenario-file";
+import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import {
   broadcastDispatchEvent,
@@ -228,8 +229,8 @@ type WardFlowContextValue = {
   /** Demo scenario files (`ward-flow-scenario-file.ts`): the whole synthetic world as a file the
    *  presenter downloads, and a loader that replaces this world with one read back from a file.
    *  Optional so hand-built test contexts need not supply them. */
-  saveScenarioFile?: () => ScenarioFileBuild;
-  loadScenarioFile?: (text: string) => { ok: true } | { ok: false; reason: string };
+  saveScenarioFile?: () => Promise<ScenarioFileBuild>;
+  loadScenarioFile?: (text: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
   /** Shared workspace connection status and error for forms that must await shared save completion. */
@@ -421,8 +422,14 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  */
 type WardFlowContainer = {
   sharedRevision?: number;
+  sharedAccessContext?: string; // Adopted with the world before remounting desk forms.
   world: WardFlowState;
   typedTextSeen: boolean;
+  /** The typed-text events dispatched this session (memory only; their values are read when the
+   *  device copy is made), and whether the world came from a scenario file, whose typed values this
+   *  session never saw. */
+  typedTextEvents?: readonly WardFlowEvent[];
+  typedTextFromFile?: boolean;
   restoredElapsed: number;
   recoveryNotice?: string;
   /** Event log, step 1: every dispatch this session, in memory only (see `ward-event-log.ts`).
@@ -470,13 +477,14 @@ function wardFlowContainerReducer(
   }
   if (action.type === "LOAD_SCENARIO_FILE_INTERNAL") {
     syncWorldGlobals(action.world);
-    // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
-    // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
-    // It also counts as adopted, so a late browser restore can never replace it.
+    // A loaded world may hold typed text, so it is treated as a session that has typed: the device
+    // copy replaces every typed field (D-18, `ward-flow-typed-text-scrub.ts`), so it survives a
+    // refresh. It also counts as adopted, so a late browser restore can never replace it.
     return {
       ...container,
       world: action.world,
       typedTextSeen: true,
+      typedTextFromFile: true,
       restoredElapsed: action.restoredElapsed,
       eventLog: [],
       recoveryNotice: undefined,
@@ -500,61 +508,28 @@ function wardFlowContainerReducer(
 
 /**
  * Wraps the real reducer to also track whether this session has DISPATCHED — not merely had
- * accepted — an event whose type carries human-typed text. (Until 25 Sept 2026 it ALSO locked on ANY
- * refused dispatch; see rule 2, now superseded.)
+ * accepted — an event carrying human-typed text, and which typed values it carried.
  *
- * 🔴 **REDESIGNED 2026-09-17, controller decision, Opus adversarial review P2 findings 4–6.**
- * The previous version locked only once a TYPED-TEXT event was genuinely ACCEPTED (read off
- * `rejections.length` not growing). That is gone in two steps:
+ * 1. **On DISPATCH, accepted or refused** (Opus review, 2026-09-17, P2 findings 4–6): a rejection can
+ *    quote its payload back. A text-safe refusal does not count (D-18, 25 Sept 2026): `rejections` are
+ *    never stored, and the restore fence refuses any.
+ * 2. **Default deny.** Any type not on `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` counts, so a third,
+ *    unclassified type is never trusted.
+ * 3. **Since 21 Oct 2026 (Josh, fix plan item 2, option A)** saving continues: the typed events are
+ *    kept in memory and the persistence effect saves a copy with their values replaced
+ *    (`ward-flow-typed-text-scrub.ts`). An unreadable typed event stops saving, as before.
  *
- * 1. **Locking fires on DISPATCH alone, accepted or refused, for a typed-text event type.** A
- *    rejection record can quote its own payload back (`makeRejection` in `ward-flow-reducer.ts`
- *    stores `attempted`/`reason`, and some reasons interpolate the offending value), so a refused
- *    typed-text dispatch is not nothing to protect.
- * 2. **SUPERSEDED 25 Sept 2026 — Josh, D-18, "Only for typed text".** A refusal no longer locks:
- *    it silently stopped saving for the rest of the session, including the designed "refused, then
- *    give a reason" step, so a reload lost the day. The risk named below — a caller-supplied id
- *    echoed into `Rejection.reason`/`id` — is instead closed at the WRITE: `tryWriteDemoState`
- *    never stores `rejections` (it saves `[]`), and `isValidStoredWardFlowState` still refuses any
- *    stored rejection as a second fence. The original rule, kept for history: **Locking ALSO
- *    fires on ANY rejection at all — including a SAFE-listed event's own** (P2
- *    finding 1, second review round). Confirmed by reading the reducer: `` `no movement found for id
- *    ${event.movementId}` ``, `` `no unit found for id ${event.unitId}` `` and similar reject-branch
- *    messages quote a caller-supplied ID straight into `Rejection.reason`, and NOTHING on the
- *    safe-event list stops a caller passing marker text (or any other string) as `movementId`,
- *    `unitId`, or any other id-shaped field and having it echoed into a SAVED rejection the moment
- *    it fails to resolve to a real record. `WARD_FLOW_TEXT_SAFE_EVENT_TYPES`'s own comment used to
- *    say these ids are "never rendered back as prose" — that claim was wrong, and this is the fix,
- *    not a softened version of it.
+ * ⚠️ **ALL OF THIS LIVES INSIDE `WardFlowContainer`, NEVER IN A REF THIS FUNCTION MUTATES** (P2
+ * finding 5): React can call a reducer and discard the result, so a ref could read `true` for a
+ * dispatch never committed. The persistence effect reads the container exactly as it reads `state`.
  *
- * The combined rule is now genuinely DEFAULT-DENY rather than a denylist: `event.type` not being on
- * `WARD_FLOW_TEXT_SAFE_EVENT_TYPES` locks (never the narrower "is it on the typed-text list", which
- * would silently trust a THIRD, unclassified event type as safe — the union-coverage guard makes a
- * third state impossible today, but the runtime check no longer depends on that guard alone to stay
- * safe). (A growing `rejections` array no longer locks — rule 2 above.)
- *
- * ⚠️ **THE LOCK LIVES INSIDE `WardFlowContainer`, THE VALUE `useReducer` ITSELF RETURNS — NEVER IN A
- * REF THIS FUNCTION MUTATES** (P2 finding 5, the race). A plain `useRef` written from inside a
- * reducer function is written on every CALL of that function, including a call whose resulting state
- * React computes and then discards without ever committing it — React's Strict Mode double-invokes
- * reducers precisely to surface functions with exactly this kind of side effect, and any interrupted
- * concurrent render is the general case the same trap belongs to. A ref set that way could read
- * `true` for a dispatch that, from the committed tree's perspective, never happened. `typedTextSeen`
- * instead travels inside the SAME object `useReducer` returns as `world`, so React can only ever
- * expose a value that was actually committed — `WardFlowWorld`'s persistence effect below reads
- * `container.typedTextSeen` the same way it reads `state` itself, never a separately-mutated ref.
- *
- * A genuine world reseed (`RESET_SCENARIO`/`SET_SCENARIO`, the only two writers of `worldGeneration`
- * — see `wardFlowReducer`'s own case, and `case "SET_SCENARIO"`'s own comment for why that case's
- * condition also checks `next.movements !== state.movements` rather than role alone since this
- * round) replaces the whole world with fresh fixture data carrying no runtime-typed text at all, so
- * it is the only thing that clears the lock — matching "a demo reset re-enables saving" regardless
- * of which of the two call sites raised it (the context's own `resetDemoState()`, or the
- * demo-controls menu's direct `dispatch({ type: "RESET_SCENARIO", … })`, which does not go through
- * `resetDemoState()` at all). A REJECTED reset attempt (wrong role, or now also an invalid
- * `SET_SCENARIO` scenario) leaves `worldGeneration` unchanged, so it leaves the lock as it was.
+ * A genuine reseed (`RESET_SCENARIO`/`SET_SCENARIO`, the only writers of `worldGeneration`) brings
+ * fixture data with no typed text, so it alone clears the flag and the typed events. A REJECTED reset
+ * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
+/** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
+const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
@@ -569,6 +544,8 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
       ...container,
       world: nextWorld,
       typedTextSeen: false,
+      typedTextEvents: undefined,
+      typedTextFromFile: false,
       eventLog: [{ ...logged, sequence: 0 }],
       earlyOutcomes,
       recoveryNotice: undefined,
@@ -579,9 +556,15 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     previousLog.length >= MAX_CLIENT_EVENT_LOG_ENTRIES
       ? [...previousLog.slice(-(MAX_CLIENT_EVENT_LOG_ENTRIES - 1)), logged]
       : [...previousLog, logged];
-  const typedTextSeen =
-    container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
-  return { ...container, world: nextWorld, typedTextSeen, eventLog, earlyOutcomes };
+  const typedNow = !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
+  return {
+    ...container,
+    world: nextWorld,
+    typedTextSeen: container.typedTextSeen || typedNow,
+    typedTextEvents: typedNow ? [...(container.typedTextEvents ?? []), event] : container.typedTextEvents,
+    eventLog,
+    earlyOutcomes,
+  };
 }
 
 /**
@@ -926,6 +909,7 @@ function WardFlowWorld({
                 ...current,
                 world: seedWardFlowStateAt(anchorOffsetMinutes),
                 sharedRevision: undefined,
+                sharedAccessContext: undefined,
                 eventLog: [],
                 sessionAdopted: true,
                 sessionRestored: false,
@@ -944,12 +928,15 @@ function WardFlowWorld({
       [ADOPT_SESSION]: (current) =>
         // Grants and cover change the scoped payload without changing the clinical revision.
         // A clock-only poll preserves the state reference, so it still skips adoption.
-        current.sharedRevision === snapshot.revision && current.world === snapshot.payload.state
+        current.sharedRevision === snapshot.revision &&
+        current.world === snapshot.payload.state &&
+        current.sharedAccessContext === snapshot.accessContext
           ? current
           : {
               ...current,
               world: snapshot.payload.state,
               sharedRevision: snapshot.revision,
+              sharedAccessContext: snapshot.accessContext,
               sessionAdopted: true,
               sessionRestored: true,
               typedTextSeen: true,
@@ -994,6 +981,8 @@ function WardFlowWorld({
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
     const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
+    // A read settling after cleanup or after a newer broadcast's read must not adopt (stale closure).
+    const reads = { live: true, latest: 0 };
     try {
       const channel = new BroadcastChannel("ward-flow-sync");
       channel.onmessage = (messageEvent) => {
@@ -1011,8 +1000,9 @@ function WardFlowWorld({
           if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
             const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
             const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
-            const { saved } = tryReadDemoState(dayZero, referenceAbsolute, rawPayload);
-            if (saved) {
+            const read = ++reads.latest;
+            void readDemoStateLater(dayZero, referenceAbsolute, rawPayload).then(({ saved }) => {
+              if (!reads.live || read !== reads.latest || !saved || localEditsSinceBroadcastRef.current) return;
               openRequestSequence.current = Math.max(
                 openRequestSequence.current,
                 nextOpenRequestSequence(saved.state.auditEvents),
@@ -1043,12 +1033,13 @@ function WardFlowWorld({
                   };
                 },
               });
-            }
+            });
           }
           setTick((tick) => tick + 1);
         }
       };
       return () => {
+        reads.live = false;
         channel.close();
       };
     } catch {
@@ -1056,41 +1047,43 @@ function WardFlowWorld({
     }
   }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
-  // Local saving runs only in the unpinned local demonstration, until typed text is dispatched or
-  // storage fails. Shared mode does not save actions on this device.
-  const savingOnDevice = !shared.enabled && initialNow === undefined && !container.typedTextSeen && !storageUnavailable;
+  // The world generation whose typed-text copy could not be made safely, or "loaded" to re-run the
+  // save once the copy's code arrives.
+  const [deviceCopyCheck, setDeviceCopyCheck] = useState<number | "loaded" | null>(null);
+  const typedTextLocked = container.typedTextSeen && deviceCopyCheck === state.worldGeneration;
+  // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
+  // copy cannot be made safely. Shared mode does not save actions on this device.
+  const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
   useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     savesOnDeviceRef.current = savingOnDevice;
   }, [savingOnDevice, state]);
 
-  // Item #17 (D-18 privacy lock protection): when savingOnDevice === false because free text triggered
-  // the D-18 device-storage privacy lock, warn before an accidental browser refresh loses walkthrough state.
+  // Item #17: when typed text is held and nothing is saving on this device (a refused copy or failed
+  // storage), warn before a refresh loses the day.
   useEffect(() => {
     if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
-    if (typeof window === "undefined") return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+    const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-    };
-  }, [savingOnDevice, container.typedTextSeen, shared.enabled]);
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
    * `mountedAtAbsolute`. The restored state arrives through the reducer. The screens are re-keyed
    * (remounted) once only when the restored day differs from the seed — see the `Fragment` key in
    * the render below; a first visit or an unchanged reload keeps every node. Runs once per mount;
-   * `sessionAdopted` gates the storage write below until it has run.
+   * `sessionAdopted` gates the storage write below until it has run. The read loads on demand.
    */
+  const demoRead = useDemoStateRead(!shared.enabled && initialNow === undefined, dayZero, mountedAtAbsolute);
   useEffect(() => {
     if (shared.enabled) return;
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
-    const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
+    const { saved, recoveryNotice } = demoRead;
     if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
@@ -1139,30 +1132,35 @@ function WardFlowWorld({
     // downtime screen is told and takes a fresh pack from the restored world, whether or not the
     // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
     if (saved) forgetDowntimePack();
-  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled]);
+  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled, demoRead]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
-    // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
-    // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
-    // cleared immediately and never written to again until a genuine reseed re-enables it — checked
-    // every render this effect runs, not only the render the flag first flips, so a later dispatch
-    // cannot slip a write in underneath it. `container.typedTextSeen` is read here exactly as
-    // `state` is: both come from the same COMMITTED `useReducer` value, never a ref
-    // (`trackWardFlowTypedTextDispatch`'s own comment has the race this closes).
-    if (container.typedTextSeen) {
+    if (storageUnavailable) return;
+    // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
+    // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
+    // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
+    const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
+    if (deviceCopy === undefined) {
+      void loadTypedTextScrub().then(
+        () => setDeviceCopyCheck("loaded"),
+        () => setDeviceCopyCheck(state.worldGeneration),
+      );
+      return;
+    }
+    if (!deviceCopy) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
+      setDeviceCopyCheck(state.worldGeneration);
       if (!clearWardFlowDemoState()) setStorageUnavailable(true);
       return;
     }
-    if (storageUnavailable) return;
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
     if (
       !tryWriteDemoState(
-        state,
+        deviceCopy,
         dayZero,
         nowRef.current,
         mountedAtAbsolute + Math.max(0, elapsedRef.current),
@@ -1175,8 +1173,9 @@ function WardFlowWorld({
     }
   }, [
     state,
-    container.typedTextSeen,
-    container.sessionAdopted,
+    container,
+    typedTextLocked,
+    deviceCopyCheck,
     initialNow,
     mountedAtAbsolute,
     dayZero,
@@ -1193,20 +1192,17 @@ function WardFlowWorld({
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, shared.enabled]);
 
-  const saveScenarioFile = useCallback(
-    () => buildScenarioFile(state, nowRef.current, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
-    [state],
-  );
+  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 
   const loadScenarioFile = useCallback(
-    (text: string): { ok: true } | { ok: false; reason: string } => {
+    async (text: string): Promise<{ ok: true } | { ok: false; reason: string }> => {
       if (shared.enabled)
         return {
           ok: false,
           reason:
             "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
         };
-      const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
+      const read = await readScenarioFileLater(text);
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
@@ -1219,7 +1215,7 @@ function WardFlowWorld({
       // selections that belonged to the world being replaced.
       const world: WardFlowState = {
         ...read.state,
-        worldGeneration: Math.max(state.worldGeneration, read.state.worldGeneration) + 1,
+        worldGeneration: Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration) + 1,
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
@@ -1232,7 +1228,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
@@ -1361,7 +1357,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
-      savingOnDevice: initialNow !== undefined ? !container.typedTextSeen && !storageUnavailable : savingOnDevice,
+      savingOnDevice: initialNow !== undefined ? !typedTextLocked && !storageUnavailable : savingOnDevice,
       shared: sharedStatus,
       demoControlsAvailable,
     }),
@@ -1378,7 +1374,7 @@ function WardFlowWorld({
       state,
       stateBound,
       container.sessionAdopted,
-      container.typedTextSeen,
+      typedTextLocked,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
       shared.enabled,
@@ -1398,6 +1394,8 @@ function WardFlowWorld({
     ],
   );
 
+  const screenKey =
+    (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (
     <WardFlowOverride value={value}>
       <WardClockContext.Provider value={now}>
@@ -1411,19 +1409,13 @@ function WardFlowWorld({
           }
         >
           <WardDemoNotSavedContext.Provider
-            value={!shared.enabled && initialNow === undefined && container.typedTextSeen}
+            value={shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice}
           >
             <ToastDeviceSaveContext.Provider value={savesOnDevice}>
               <WardFlowClockContext.Provider value={now}>
-                {/*
-                 * Remounts the screens once, and only when a saved day that differs from the seed was
-                 * restored: screens initialise drafts and selections from provider data once
-                 * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
-                 * must start again from the restored world rather than keep the seed's. A first visit, or a
-                 * reload with nothing changed, never takes this path, so its tree is never rebuilt.
-                 */}
+                {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
                 <WardSharedAccess connection={sharedConnection}>
-                  <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+                  <Fragment key={screenKey}>{children}</Fragment>
                 </WardSharedAccess>
               </WardFlowClockContext.Provider>
             </ToastDeviceSaveContext.Provider>
@@ -1453,6 +1445,12 @@ export function useWardFlow(): WardFlowContextValue {
 export function useCommunityScopedReferrals(): CommunityScopedReferral[] {
   const { referrals } = useWardFlowSelect("referrals");
   return useMemo(() => communityScopedReferrals(referrals), [referrals]);
+}
+
+/** Fix plan item 17 (D-74): referrals as the community team that sent them sees them, never the record. */
+export function useCommunitySentReferrals(): ReturnType<typeof communitySentView> {
+  const { referrals } = useWardFlowSelect("referrals");
+  return useMemo(() => communitySentView(referrals), [referrals]);
 }
 
 /**

@@ -64,7 +64,7 @@ import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
 import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
 import styles from "./on-call.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 export type Highlight = "now" | "soon" | "email" | "due";
 
@@ -201,7 +201,7 @@ export function OnCallScreen() {
   const copy = useCallback(
     async (text: string, label: string) => {
       try {
-        await navigator.clipboard.writeText(text);
+        await copyTextToClipboard(text);
         say(label);
       } catch {
         say("Copy is unavailable in this browser. Select the text instead.");
@@ -244,11 +244,6 @@ export function OnCallScreen() {
     onPick: pick,
     onToggleFavourite: toggleFavourite,
     onCopy: (text, label) => void copy(text, label),
-    onCall: (entry) => {
-      const number = numberAt(entry, minute);
-      if (!number) return;
-      void copy(number, `Number copied. Calling is not wired in this prototype.`);
-    },
   };
 
   const answering = entries.filter((entry) => isAnswering(entry, minute));
@@ -743,7 +738,7 @@ export function OnCallScreen() {
         {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
-          note={`Not approved for clinical use. Synthetic records, mock numbers.${showsUnwiredPreviews() ? " Calling and email are not wired." : ""}`}
+          note="Not approved for clinical use. Synthetic records, mock numbers."
         />
       </main>
       {downtimeCard}

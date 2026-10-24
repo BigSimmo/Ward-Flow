@@ -18,7 +18,7 @@ is the single record for the open `braces` advisory, its dependency path, mitiga
 next review. The original audit identifiers R43 and QF-10 refer to that same finding. The five
 affected npm package records do not represent five independent advisories.
 
-The next review is **22 October 2026**, or sooner on the triggers in that record. Review the
+The next review is **5 November 2026**, or sooner on the triggers in that record. Review the
 nightly full-audit warning in the meantime. Do not use `npm audit fix --force`, an unsupported
 Next lint downgrade, a fabricated patched version or an advisory suppression to obtain green.
 

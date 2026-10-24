@@ -67,7 +67,7 @@ function renderWard(
   return {
     record,
     occupied: beds.find((bed) => !/free|closed|pulled/.test(bed.getAttribute("aria-label") ?? ""))!,
-    free: beds.find((bed) => /, free$/.test(bed.getAttribute("aria-label") ?? ""))!,
+    free: beds.find((bed) => /, ready$/.test(bed.getAttribute("aria-label") ?? ""))!,
   };
 }
 
@@ -237,6 +237,7 @@ describe("ward command feedback follows its own completion", () => {
     expect(screen.getByRole("button", { name: "Confirm and start placement" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Voluntary" } });
     fireEvent.change(screen.getByLabelText("Legal form"), { target: { value: "none" } });
+    fireEvent.change(screen.getByLabelText("Observation level"), { target: { value: "general" } });
     const start = screen.getByRole("button", { name: "Confirm and start placement" });
     fireEvent.click(start);
     fireEvent.click(start);
@@ -275,6 +276,7 @@ describe("ward command feedback follows its own completion", () => {
     expect(warning).toHaveTextContent(/a voluntary bed/);
     expect(warning).toHaveTextContent(/Involuntary inpatient/);
     fireEvent.change(screen.getByLabelText("Legal form"), { target: { value: "none" } });
+    fireEvent.change(screen.getByLabelText("Observation level"), { target: { value: "general" } });
     const start = screen.getByRole("button", { name: "Confirm and start placement" });
     expect(start).toBeEnabled();
     fireEvent.click(start);

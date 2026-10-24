@@ -55,7 +55,8 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
       {
         id: referral.id,
         patientId: referral.patientId,
-        raisedAt: referral.raisedAt,
+        // A ward asked later (Ask more wards, D-76) waits from when it was asked, not from the referral.
+        raisedAt: arm.addedBy !== undefined && arm.referredAt !== undefined ? arm.referredAt : referral.raisedAt,
         urgency: referral.urgency,
         ageBand: referral.ageBand,
         originSiteCode: referral.originSiteCode,

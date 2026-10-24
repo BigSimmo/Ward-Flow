@@ -11,6 +11,7 @@ import {
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import type { CareChange } from "@/components/ward-management/ward-care-journey";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * ⚠️ **TWO FILES, AND THE SECOND ONE IS WHY THIS GUARD WAS WORTHLESS FOR MONTHS.** It scanned
@@ -126,6 +127,41 @@ describe("re-anchoring moves every instant and nothing else", () => {
     ).toEqual([...INSTANT_FIELDS].sort());
   });
 
+  it("keeps the old and corrected paper expiry aligned when a saved synthetic scenario moves to another day", () => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((candidate) => !candidate.closure)!;
+    movement.legalForm = { code: "1A", dueAt: 700 };
+    movement.legalClock = undefined;
+    movement.formedAt = 400;
+    const corrected = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "coordinator",
+      now: 540,
+      movementId: movement.id,
+      dueAt: 650,
+      correction: {
+        expectedFormCode: "1A",
+        expectedFormWrittenAt: 400,
+        expectedDueAt: 700,
+        reason: "transcription_error",
+      },
+    });
+    expect(corrected.rejections).toHaveLength(state.rejections.length);
+    const shifted = shiftInstants(corrected, 60);
+    const shiftedMovement = shifted.movements.find((candidate) => candidate.id === movement.id)!;
+    expect(shiftedMovement.legalForm?.dueAt).toBe(710);
+    expect(shiftedMovement.legalFormExpiryCorrections?.at(-1)).toMatchObject({
+      at: 600,
+      formWrittenAt: 460,
+      previousDueAt: 760,
+      dueAt: 710,
+    });
+    expect(shifted.auditEvents.at(-1)).toMatchObject({
+      at: 600,
+      details: { previousDueAt: 760, dueAt: 710 },
+    });
+  });
+
   it("moves both D-34 pause and producer-recorded re-clearance times while preserving their interval", () => {
     let state = seedWardFlowState();
     state = wardFlowReducer(state, {
@@ -138,7 +174,7 @@ describe("re-anchoring moves every instant and nothing else", () => {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,

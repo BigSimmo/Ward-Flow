@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-19 - added the existing hosting approval’s supersession pointer at D-2; Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-23 - added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -388,7 +388,7 @@ is inferred.
   1. **Floating Dynamic Island HUD (0 Clicks, 0 Layout Shift):** The Standing Figures rule is modernized. Alarms remain 0-clicks away in a persistent header HUD that dynamically expands and pulses on active alerts, replacing the bulky accordion dropdown panel that shoved page content down.
   2. **Visual Priority Triage, No Runtime Crash:** The fatal runtime throw in `WardFigureStrip` (`flagged > 2`) is eliminated. Multiple alerts are handled gracefully with visual triage (highlighting primary breach + aggregate counter); the application never crashes on clinical alert surges.
   3. **Accessible Smart Badges:** Compact icon + number pills are authorized, paired with full screen-reader accessibility labels (`aria-label`) and progressive disclosure tooltips rather than forcing verbose sentences onto button faces.
-  4. **Micro-Typography Exemption (10px–11px):** A scoped exemption to D-3's 12px floor is granted for uppercase, letter-spaced, high-contrast auxiliary metadata and telemetry tags (e.g. `HDU`, `OVERRIDES`, `CH 1`), keeping patient data and numbers >= 12px.
+  4. **Micro-Typography Exemption (10px–11px):** **Replaced by [D-42](#d-42-12px-typography-floor-with-no-uppercase-exception-reaffirmed-in-design-system-v9-910-october-2026); original decision retained below.** A scoped exemption to D-3's 12px floor is granted for uppercase, letter-spaced, high-contrast auxiliary metadata and telemetry tags (e.g. `HDU`, `OVERRIDES`, `CH 1`), keeping patient data and numbers >= 12px.
   5. **Subtle 2px Left Hairlines & Status Pips:** Fine left-border accent lines and status pips are authorized for clinical urgency indicators, removing the need to wrap metrics in heavy, full-bordered card boxes.
   6. **Anti-Box Modernization Authorized:** Rule R4 is amended with an official owner authorization: design modernization to replace outdated rectangular card boxes with dynamic HUDs, natural language statements, and clean Swiss layouts is approved across Ward Flow.
   7. **Fluid Inline Strips & Narrative Stacks:** Rigid 2/3/5-column metric grids (`.figureStrip`) may be replaced with flexible horizontal strips, natural language executive sentences, and adaptive inline pills.
@@ -754,6 +754,7 @@ is inferred.
 - **Subsequent note (17 October 2026):** Josh chose to keep the self-ticked "Set by the treating psychiatrist" box for typed criteria in the prototype. His answer, verbatim, on the decision card in the clinical sign-off sheet thread at 05:14 UTC: "Keep tick box", to the question "Keep the psychiatrist tick box for typed discharge criteria in the prototype?" The app cannot check who ticked it. The fixed D-60 criteria use the same tick box. Before any real use, setting, changing or reviewing any criteria, fixed or typed, needs a real psychiatrist sign in, not the tick box.
 - **Subsequent note (17 October 2026):** Josh, verbatim, in the clinical sign-off sheet thread at 05:29 UTC: "Go ahead with all recommendations and I give full permission for sign off". For the prototype this signs off the D-64 "patient told" wording, the typed criteria rules above, and community teams seeing numbered placeholders instead of the typed wording (task ledger 7.82 item 1). It does not close D-54. Real patient use still needs clinical governance sign-off by a health service.
 - **Subsequent note (17 October 2026):** Josh, verbatim, in the clinical sign-off sheet thread at 06:55 UTC: "Go ahead with your recommendations", to the recommendation to build the ISM-0428 12 hour session limit only. The signed-in shared site now refuses any request from a sign-in more than 12 hours old (`sessionLimit` in the clinical values module), reads included, and the app signs the person out with the reason. It counts from the first sign-in factor, which a token refresh or a later factor never moves, so only a fresh password sign-in resets it. A sign-in with no recorded time is refused. Asking for every sign-in factor to unlock the screen lock is not built. The screen lock stays a local privacy screen.
+- **Subsequent note (21 October 2026):** Correction from a source check. The line above and the ISM item in the decision understate what is built. In the signed-in shared workspace the idle lock (`WardIdleLock` in [`shell/ward-access.tsx`](../../src/components/ward-management/shell/ward-access.tsx)) signs the person out, here and on the server, so carrying on needs a full fresh sign-in. The ISM-0428 unlock requirement is therefore met in signed-in mode. Only the local demo, which has no sign-in, keeps the lock as a privacy screen.
 - **Subsequent note (20 October 2026):** Josh switched every finished feature on for the prototype on 20 October 2026 (overall review project thread; relayed to this change by the coordinating session, not quoted here). That includes `awol-bed-hold-review`, so the absent without leave bed hold review warning described above as paused and "off everywhere" is no longer paused; it uses the signed `awolBedHoldWarning` figure. The flag change itself is in PR #487. The same day Josh chose to keep demo reset off on the live site.
 
 ## D-66. Granted roles work without a second approval (17 October 2026)
@@ -762,6 +763,7 @@ is inferred.
 - **Decision:** Remove the second approval requirement for coordinator and access-admin role grants in the synthetic Ward Flow prototype. An authorised grant works immediately. Existing unexpired, unrevoked and recently used grants with null approval fields also work; their history is preserved rather than recording an approval that did not happen. The compatibility `/approve` endpoint refuses an unnecessary approval without changing the record.
 - **Still required:** Sign-in, an authorised granter, no self grants, a valid place within the granter's scope, a future end date, automatic switch off when unused, revocation, recent sign-in for access changes, and the existing audit trail. This decision does not authorise real patient data.
 - **Why:** The only bootstrap coordinator could grant the synthetic test admin a role but could not also provide its second approval. Josh chose to remove that prototype requirement. This replaces the second approval part of the role access plan; it is a policy change, not evidence of independent approval.
+- **Before real data:** D-80 item 17 brings the second approver back at pilot. Until then this decision stands.
 
 ## D-67. Recover synthetic form drafts within the browser session (17 October 2026)
 
@@ -773,7 +775,7 @@ is inferred.
 ## D-68. Bed meeting TV content and access (19 October 2026)
 
 - **Date:** 19 October 2026 (`2026-10-19`). **Decided by:** Josh in the project chat, answering the design audit questions: "yes to all recommendations".
-- **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The audit also recommended showing the referral number on the ward's accept card. That is not built: it conflicts with D-39 (no record numbers printed on screens, Josh, 15 October 2026), which the recommendation missed. The card stays as it is, with no name, UMRN or record number until the ward accepts (D-14, FD-23), until Josh decides between the two.
+- **Decision:** (1) For synthetic demonstrations the bed meeting TV may keep showing initials, sex and day of stay. (2) Ward desks may open the bed meeting TV view, because they attend the meeting; ED desks may not. (3) The audit also recommended showing the referral number on the ward's accept card. That is not built: it conflicts with D-39 (no record numbers printed on screens, Josh, 15 October 2026), which the recommendation missed. The card stays as it is, with no name, UMRN or record number until the ward accepts (D-14, FD-23), until Josh decides between the two. **Replaced by D-79** for the name and UMRN: the ward sees both before it answers. No record number shows, as before.
 - **Boundary:** Before any real patient data, the TV content needs a privacy review: a wall screen in a shared room shows initials, sex and day of stay to anyone who walks past. This decision does not authorise real data.
 - **Why:** The design audit found that ward staff at the bed meeting could not open its view (decision questions), and that the accept card gives the ward nothing to quote when phoning the coordinator (DA-34).
 
@@ -802,3 +804,130 @@ is inferred.
   6. Road time "nearest ready beds" stays, captioned "Distance only, not suitability". Make-room chains stay switched off outside local builds. Candidate wards use a fixed order within each fit group, not catchment or free-bed tiers.
   7. Every copy to the clipboard starts with the synthetic line. Whether real names may appear in copied text is decided before any real data.
 - **Why:** The standing never-build rule (19 October 2026) excludes best-match ward suggestions, automatic placement, re-sorting the ED queue and risk scores, and the audit found these built before the rule. Findings and evidence: `/mnt/project-files/audits/2026-10-20-clinical-safety-audit/`.
+
+## D-72. Seven product decisions for the 21 October fix plan (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the "App backlog and recommendations" project thread at 6:59 PM AWST: "Yes to all", to the session's seven recommendations on the fix plan for the 14 big product issues.
+- **Decision:**
+  1. **Work lost on refresh.** After a typed-text event the browser keeps saving every change that holds no typed text, and typed fields are saved as "Typed text not kept on this device". The live site moves to shared mode by default later, once shared boards are reliable. D-18's rule that typed text never reaches the device is unchanged.
+  2. **Outage copy.** The downtime pack regenerates hourly and at each shift change as a print or a saved file only. No board data is kept in the browser cache.
+  3. **Supabase Realtime and a history table.** Approved in principle for shared live updates and occupancy and wait history, expected to sit inside the plan's included allowances. Enabling either on the Ward Flow project is still a provider change that needs Josh's confirmation at the time, after the live plan and price are checked, and any charge needs his spending approval.
+  4. **Six core coordinator screens.** Home ("Needs you now", with Alerts as its drawer), Referrals (Queue, Waiting and Delays merged), Beds (Board, Capacity, Wards and Network merged), Movements (Transport and Out of area merged), Discharges, and Handover (with the bed meeting and TV view). Statistics, the directories, Search, Legal forms and Settings stay as secondary screens. Command, Hub, Constellation, Exceptions and Escalation fold into the six. The layout is tried as a mockup first (`design/third-edition-mockups/coordinator-six-screens-mockup.html`) before any app change.
+  5. **Observation levels.** General (hourly), Intermittent (interval typed, 15 or 30 minutes), Constant within sight (1:1), Constant within arm's length (1:1) and Two staff constant (2:1). Each 1:1 counts as one staff member against a ward's observation capacity and 2:1 as two; General and Intermittent count as none. The labels stay editable in the clinical values, because names vary by health service. Nothing is scored or suggested from a level (D-71).
+  6. **Seclusion and restraint.** An operational view only: what is in use now and seclusion room availability, typed times, no computed limits (D-70). The legal register stays in the health service's own system.
+  7. **Unfinished controls hidden by Audit 7.** Build the answer view's bed hold field (wired to the existing hold event) and its nurse unit manager field (wired to the existing high-acuity override tick). Delete the referral Call button and replace it with "Log a call" from the new call log. Delete the Add patient "After adding" card and go straight to the patient's page. Delete the cockpit's "Confirm a destination" section, which leans toward suggesting a ward (D-71). Build Assign referral with the call log.
+- **Boundary:** Synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
+- **Why:** A source review of 21 October 2026 found 14 product issues; these were the decisions the fix plan needed from the owner before building. Plan: `/mnt/project-files/plan/ward-flow-fix-plan-2026-10-21.md` (project files, outside the repository).
+
+## D-73. Batch merge safeguards (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project's health check thread at 7:46 PM AWST: "yes to all", to that session's seven recommendations.
+- **Decision:**
+  1. The Work loss, Observation levels and Phase 0 threads may push their branches and open PRs.
+  2. The Referral owner and Observation levels threads share engine files by section: each edits only its own lines, and the second PR to merge resolves any conflict.
+  3. An old record with `specialling: true` is read as Within sight 1:1, and `false` as General.
+  4. The Node 24 install lives in the cloud environment's setup script. The repository ships no `.claude` folder.
+  5. The merge queue is used for this batch. Josh switches it on himself.
+  6. A read-only check of the Supabase plan and Realtime quota is allowed before fix plan items 1 (shared boards) or 6 (history) start.
+  7. Issues #430 (CAD number validation) and #431 (seeded surname check) join Phase 2 of the fix plan. Issues #314, #315 and #374 to #376 are closed once each is verified as fixed in the source.
+- **Boundary:** Synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
+- **Why:** Several threads were building fix plan items in parallel, and the batch needed agreed rules for publishing, shared files and merge order.
+- **Subsequent note (21 October 2026):** Item 5 cannot be applied as approved: GitHub's merge queue is unavailable for a personally owned repository. Josh accepted a lighter substitute in the health check thread at 7:51 PM AWST, in his words "yes but this slows things down", then "yes ok", to that session's proposal as relayed by the coordinating session: "Require branches to be up to date before merging" stays off; only the three riskier PRs (Work loss, Referral owner and Observation levels) merge `main` in and re-run CI just before they are marked ready; the smaller PRs merge as they are.
+
+## D-74. Owner answers to the 21 October open questions (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 8:02 PM AWST: "please go ahead with all recommendations... EXCEPT... ANYTHING YOU ARE BUILDING A MOCKUP FOR", to the coordinating session's 17 recommendations.
+- **Decision:**
+  1. **Shared boards Realtime** is closed. The 3-second refresh is accepted for the prototype. This supersedes D-72 item 3 for live updates; the history table stays as D-72 left it.
+  2. **Community workflow gaps** join Phase 2 of the fix plan: an accepted community referral can be moved, transported and arrived; the coordinator can ask more wards; a community team sees the referrals it sent and whether a ward accepted.
+  3. **Community referral purpose (Q9).** A new community team referral needs a purpose, "Community follow-up" or "Assess for admission". Older records read as "Community follow-up".
+  4. **Six-screen mockup rejected and build cancelled.** Josh, in the project chat at 8:04 PM AWST: "CAN THAT 6 CORE SCREENS BUILD!!!! THE MOCKUP LOOKS TERRIBLE!!!". The mockup was removed before merge, and D-72 item 4 is withdrawn: the current coordinator screens stay as they are.
+  5. **D-39** is kept: no referral number shows on the accept card until the ward accepts.
+  6. **Copied text** carries no real names.
+  7. **OA-58** (internal patient codes) stays parked until the privacy review.
+  8. **Pilot** runs beside the ward whiteboard first.
+  9. **D-57 wording** items left over are closed as covered by D-63 and D-65.
+  10. **Assign referral** records the community desk only, with no clinician names.
+  11. **R19** (costed ward questions) stays parked until a pilot ward is chosen.
+  12. **Hosted checks.** The hosted save and conflict test and the hosted fresh browser check are approved, with synthetic data only.
+- **Standing rule:** Josh, in the project chat at 8:02 PM AWST: "DO NOT EVER GO AHEAD UNTIL I APPROVE THE MOCKUP". Nothing is built from any mockup until Josh explicitly approves that mockup.
+- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
+- **Why:** The parallel threads had raised open questions that needed owner answers before Phase 2 and the hosted checks could go ahead.
+
+## D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the project chat at 9:58 PM AWST, answering five recommendations: "yes to these."
+- **Decision:**
+  1. **UX simplification audit.** The small fixes the audit found go to the fix threads now: the top 10 to the audit thread and the rest to the area threads. The 10 bigger changes go to a mock-up first, under the D-74 standing rule.
+  2. **PERF-03.** Pages keep the per-request security (CSP) nonce, and HTML is not cached at the edge. Every page stays dynamic: that is the accepted cost, because a cached page would replay one nonce to every visitor. The `src/proxy.ts` header comment (PR #541) carries the same ruling, and it closes TASK-L4-11.
+  3. **Community workflow gaps** (fix plan items 15 to 17, D-74 item 2) start in their own thread after the current merges. The Q9 purpose is already in the trends work.
+  4. **Seclusion view** may claim the two screen-map files their previous owner released.
+  5. **Extra-travel bed hold.** A bed hold for a person with extra travel adds 60 minutes to the hold set in Settings.
+- **Mock-up evidence rule:** Josh, in the project chat at 8:40 PM AWST: "Disregard any mockups that did not utilise up to date live or local site and visual assessment". A mock-up counts only when it was made from screenshots of the running app at current `main` or the hosted site, and it says which commit.
+- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
+- **Why:** The audit and the fix threads needed owner answers before the quick wins, caching work, community gaps and bed hold timing could go ahead.
+
+## D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)
+
+- **Date:** 21 October 2026 (`2026-10-21`). **Decided by:** Josh, in the Community referral gaps thread at 10:05 PM AWST: "Go ahead with all recommendations", on the scope in `community-gaps-scope-2026-10-21.md`.
+- **Decision:**
+  1. **Fix plan item 15.** An accepted community referral is built as the full journey: it can be moved, transported and arrived, and it shows on the Movements and Transport boards. The journey records a community origin by team name, with no address. This updates owner ruling 8 of 1 September 2026, which said a journey never starts at a community team, for an accepted community referral. The smaller option, where the ward records "arrived from community" against the held bed with no movement, is not taken.
+  2. **Fix plan item 16.** The coordinator can ask more wards about an open community referral. Each ward added is recorded with who added it and when. No more than 3 wards may be waiting at once (`PARALLEL_REFERRAL_CAP`), and wards that declined do not count. Wards are listed alphabetically and are never ranked or suggested (D-71).
+- **Boundary:** Synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
+- **Why:** D-74 item 2 put the community gaps into Phase 2, and the scope showed that only the full journey puts community transport on the boards that coordinators and transport officers already use.
+
+## D-77. The ten bigger UX changes approved for build (22 October 2026)
+
+- **Date:** 22 October 2026 (`2026-10-22`), 12:52 AM AWST. **Decided by:** Josh, on the decision card in the Bigger UX changes mock-ups thread, choosing "Build all ten, as recommended", after "Ok go ahead and build this for me now". The mock-ups were made from the running app at `main` 1459fb5, as D-75 requires, and the D-74 approval rule is met.
+- **Decision:** build these ten changes and the desktop top bar fix:
+  1. **Short community referral form.** Purpose is asked only on referrals to a community team, and purpose and first contact are required. There is no Documents step. The form has team search and a Sent tab.
+  2. **ED board** shows where its referral stands, using the words "Bed held".
+  3. **Desktop decision pane** uses the phone list, with Clinical override behind one button.
+  4. **Ask wards** is a checkbox list of up to 3 wards (D-76 item 2).
+  5. **Legal forms** loses the strip and side panels. Board now and Check a form time are dropped, and Form times stays in Tools.
+  6. **Add a patient** asks for identity only. Aboriginal status stays an optional field.
+  7. **Alerts drawer** gives one action per alert.
+  8. **Demo menu** sits under the Synthetic pill, and all 7 scenarios are kept.
+  9. **Statistics.** Summary and Overview become one Network page with no duplicate figures.
+  10. **Phone Bed board** shows every bed, above the day figures, with no legend on the phone.
+  11. **Top bar** at 1280 px is fixed.
+- **Not decided:** the "Not legally checked" notice stays on the live Legal forms screen, and D-70 is unchanged, until Josh answers that question. The card's recommendation to remove it is not acted on.
+- **Process:** one pull request per group, each from current `main`, with a visual check. Nothing merges without Josh.
+- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending.
+- **Why:** Josh reviewed the ten mock-ups, made from the current app, and approved them with the recommended answers to their open questions.
+
+## D-78. One decline list for wards and coordinators (22 October 2026)
+
+- **Date:** 22 October 2026 (`2026-10-22`). **Decided by:** Josh, on two decision cards. At 12:04 AM AWST on 22 October (16:04 UTC on 21 October) he chose to merge the ward and coordinator decline lists. At 4:39 PM AWST on 22 October, in the Decline reasons merge thread, he chose "Keep it as a ward-only reason" for Capability mismatch.
+- **Decision:**
+  1. **One list.** A ward declining a movement and a coordinator declining a referral pick from one decline list, in the coordinator's wording.
+  2. **Ward-only reasons stay.** Four clinically distinct reasons are kept for ward declines only: Specialling unavailable, Acuity mix, Bed pulled for earlier referral and Capability mismatch. Capability mismatch is kept because neither Age band not provided here nor Secure bed unavailable fully covers it, for example a ward with no ECT or eating disorder capability.
+  3. **Retired ward values map across.** No bed becomes No suitable bed, Sex mix becomes Sex designation unavailable and Out of catchment becomes Belongs to another service. Old saves are converted when they load, so no recorded decline is lost.
+  4. **Limits kept.** A ward refusing a movement is still not offered Sex designation unavailable (T10), and an ED decline gets none of the ward-only reasons.
+- **Boundary:** Synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
+- **Why:** two lists with different words for the same reason made decline records hard to compare across the network. Keeping the ward-only reasons and converting old values keeps what earlier records meant.
+
+## D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)
+
+- **Date:** 23 October 2026 (`2026-10-23`), 1:52 AM AWST (17:52 UTC on 22 October). **Decided by:** Josh, on the decision card in the Ward referral detail view thread, choosing "Approve and build" over "Approve, but no identity yet". This followed his messages in that thread at 7:04 PM AWST on 22 October: "they need to see all the details and documents attached", "There should be a way to click on the patient and the full referral details are visible" and "the wards should not see where the patient is referred. But they need to see all the other information." The mock-up was made from the running app at `main` a9c7763, as D-75 requires, and the D-74 approval rule is met.
+- **Decision:**
+  1. **Full referral before answering.** A ward reviewing a referral sees the whole submitted referral, including the patient's name and UMRN, before it accepts or declines. Tapping the patient's name on the incoming card opens it, and attached documents open in an in-app viewer.
+  2. **Never other destinations.** The ward never sees which other wards or teams the patient was referred to (FD-23, and D-17 in `archive/dated-notes/owner-decisions-2026-09-1x.md`, not the D-17 in this log).
+  3. **Fit lines split.** The card shows the patient's checks on one line and the ward's own state, such as a stale bed count or no free bed, on another, so a ward problem no longer reads as the patient failing.
+- **What it replaces:** Josh's 26 September 2026 rule that a ward sees no identity before it accepts, and the part of D-68 item 3 that kept the name and UMRN off the accept card until acceptance. D-39 and D-74 item 5 stand: no `WF-...` journey number or referral number shows on the card.
+- **Boundary:** Synthetic data only, with synthetic referral forms and documents for the seeded journeys. Showing identity before acceptance needs the privacy review before any real patient data. Being built in PR #588, still a draft when this was recorded. This authorises no deployment, provider configuration change or spending.
+- **Why:** A ward cannot make a safe decision on a referral it cannot read. The engine already held about half the fields, and community teams already saw them.
+
+## D-80. Role access plan version 2: all 17 recommendations (23 October 2026)
+
+- **Date:** 23 October 2026 (`2026-10-23`), 9:02 PM AWST (13:02 UTC). **Decided by:** Josh, on the decision card in the Role access plan thread, choosing "Approve all recommendations" over "Leak and bug fixes only" and "I'll answer item by item". The plan is the version 2 role access review, read from `main` a41ddee.
+- **Decision:** build in this order.
+  1. **PR 1, the FD-23 journey leak (#600).** A ward's and a bed manager's copy of a journey no longer carries other wards that declined, withdrawn or overridden requests, the number of wards tried or the accepting ward, in the browser or on the server. This enforces FD-23 and needs no new rule.
+  2. **PR 2, bugs that change no rules.** Bed manager discharge records, the phone Add patient check, the access admin label, the executive taken out of broadcast entries, demo controls per desk, and the same break glass reply for any id.
+  3. **PR 3, items 1 to 4 (bed manager).** Site bed-flow actions: confirm beds, bed releases, discharge blockers, close or reopen a ward, handover sign-off, bed meeting actions, replying to a bed call, marking notices read and its own tasks. A read-only Referrals list for its site. Seclusion and restraint view and room status only, with recording back to the ward. Capacity shows its own site in detail and other sites as counts. Acceptance, placement and discharge stay with the ward.
+  4. **PR 4, items 5, 6, 8 and 16.** Ward and community referrers get the sender tools for their own referrals only: correct, mark information supplied, change urgency and legal status. The sending ward or team may mark a legal form received for its own journey. Cover goes only to accounts that already hold a ward or ED role. Role grants have a 12 month ceiling.
+  5. **PR 5, items 7, 9 to 13 and 15.** Transport officers see their own service's jobs only, with the referral's risk categories as flags. Wards, EDs and community teams get own-place Statistics as counts. Community teams get a Movements screen for their own journeys. Phone alerts go to officers for new or changed jobs, and to community teams when a referral is answered or a catchment client is admitted or discharged. The ward sees the readmission flag once it has accepted, which changes Josh's 9 October 2026 ruling. The ED sees the wards asked, their state and the accepting ward, but not other wards' decline reasons. Opening the full referral detail is logged as a record view.
+- **Mock-ups first (item 14):** a review screen for break glass openings and record views, read from the server, for statewide and service coordinators, and an Access log in Settings for the access admin. Both are made from the running app at current `main` and built only after Josh approves them (D-74).
+- **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands.
+- **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
+- **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.

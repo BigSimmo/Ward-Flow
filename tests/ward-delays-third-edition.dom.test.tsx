@@ -12,6 +12,7 @@ import { delayGroups } from "@/components/ward-management/delays/delays-derivati
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * TASK D1 — the Delays screen's panel names must read exactly as the approved Delays page mockup
  * (October 2026) draws them (it superseded `design/third-edition-mockups/delays-third-edition.html`, which
@@ -62,7 +63,7 @@ const DANGLING_MOVEMENT: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],

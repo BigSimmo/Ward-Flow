@@ -7,13 +7,15 @@ import { TIER_TARGETS_NOTE } from "../src/components/ward-management/coordinator
 import { BED_ALERT_THRESHOLD_PERCENT } from "../src/components/ward-management/shell/ward-service-bed-alerts";
 import {
   CLINICAL_VALUES,
-  CLINICAL_VALUE_LIST,
   clinicalValueStatusText,
-  clinicalValuesMarkdownTable,
   formatClinicalFigure,
   allClinicalValuesSigned,
-  unsignedClinicalValueCount,
 } from "../src/components/ward-management/ward-clinical-values";
+import {
+  CLINICAL_VALUE_LIST,
+  clinicalValuesMarkdownTable,
+  unsignedClinicalValueCount,
+} from "../src/components/ward-management/ward-clinical-value-notes";
 import { ED_ACCESS_TARGET_MINUTES, PULL_HOLD_MINUTES } from "../src/components/ward-management/ward-model";
 import {
   DUE_SOON_MINUTES,
@@ -83,6 +85,7 @@ describe("clinical values file", () => {
       pullNowAnswer: 15,
       pullNowLive: 240,
       pullHold: 240,
+      extraTravelHold: 60,
       bedHoldReview: 120,
       bedCountFresh: 60,
       downtimePackStale: 60,
@@ -119,6 +122,11 @@ describe("clinical values file", () => {
       stepUpWindow: 10,
       accessExpiringSoon: 14,
       accessUnused: 45,
+      // Role access plan v2 (Josh, 23 Oct 2026, D-80): the longest a role may be granted for.
+      accessMaxTerm: 365,
+      // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
+      observationIntermittentShort: 15,
+      observationIntermittentLong: 30,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,
@@ -215,6 +223,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-model.ts", name: "PULL_HOLD_MINUTES", why: "legal figure guard provenance; listed as pullHold" },
   {
     file: "ward-model.ts",
+    name: "EXTRA_TRAVEL_HOLD_MINUTES",
+    why: "legal figure guard provenance; listed as extraTravelHold",
+  },
+  {
+    file: "ward-model.ts",
     name: "ED_ACCESS_TARGET_MINUTES",
     why: "legal figure guard provenance; listed as edAccessTarget",
   },
@@ -264,6 +277,12 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-bed-availability.ts", name: "MIDDAY_MINUTES", why: "a day-part bin" },
   { file: "ward-bed-availability.ts", name: "LATE_AFTERNOON_MINUTES", why: "a day-part bin" },
   { file: "ward-board-derivations.ts", name: "ARROW_HORIZON_DAYS", why: "how far ahead the board draws" },
+  { file: "forecast/ed-access-risk.ts", name: "RELEASE_LOOKAHEAD_DAYS", why: "how far ahead the ED risk card looks" },
+  {
+    file: "ward-operational-defaults.ts",
+    name: "FORECAST_ED_RISK_LEAD_MINUTES",
+    why: "forecast alert lead time, set in Settings",
+  },
 ];
 
 /** Synthetic fixtures build made-up records; their times are data, not thresholds. */

@@ -34,6 +34,7 @@ import {
   isForcePushRange,
   isRequiredCiWorkflow,
   isTypecheckExcludedPath,
+  lintBatches,
   lintableFiles,
   needsRepoWideLint,
   needsTypecheck,
@@ -385,6 +386,27 @@ describe("static guard scope selection", () => {
     expect(lintableFiles(["public/demo/x.js"])).toEqual([]);
   });
 
+  it("splits a very long changed-file list into command-line-sized lint batches", () => {
+    const files = Array.from(
+      { length: 450 },
+      (_, index) => `src/${String(index).padStart(3, "0")}-${"x".repeat(96)}.ts`,
+    );
+    expect(files.join(" ").length).toBeGreaterThan(32_767);
+    const batches = lintBatches(files);
+    expect(batches.length).toBeGreaterThan(1);
+    for (const batch of batches) expect(batch.length).toBeLessThanOrEqual(200);
+    expect(lintBatches(files.map((_, index) => `s/${index}.ts`)).map((batch) => batch.length)).toEqual([200, 200, 50]);
+    expect(batches.flat()).toEqual(files);
+    for (const batch of batches) expect(batch.join(" ").length).toBeLessThan(6_000);
+    expect(lintBatches(["src/a.ts"])).toEqual([["src/a.ts"]]);
+    const longPaths = Array.from({ length: 200 }, (_, index) => `src/${"nested/".repeat(22)}${index}.ts`);
+    expect(longPaths.join(" ").length).toBeGreaterThan(32_767);
+    const longBatches = lintBatches(longPaths);
+    expect(longBatches.length).toBeGreaterThan(1);
+    expect(longBatches.flat()).toEqual(longPaths);
+    for (const batch of longBatches) expect(batch.join(" ").length).toBeLessThan(6_000);
+  });
+
   it("normalizes backslash paths before filtering", () => {
     expect(lintableFiles(["src\\components\\a.tsx"])).toEqual(["src/components/a.tsx"]);
   });
@@ -549,11 +571,20 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(line).toBeDefined();
     expect(line).toContain("is a blocking check, not an advisory one");
     expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
-    expect(line).toContain("PREPUSH_CI_STRICT=1");
+    expect(line).not.toContain("PREPUSH_CI_STRICT");
     expect(line).not.toMatch(/is advisory during interactive work/);
-    // The guard itself still blocks, and the hook's default skip is a visible, separate choice.
+    // The guard itself still blocks, and the hook keeps it on by default: the only skip is an explicit opt-out.
     expect(readFileSync(join(process.cwd(), "scripts", "guard-push.mjs"), "utf8")).toContain("SKIP_IN_FLIGHT_CI_GUARD");
-    expect(readFileSync(join(process.cwd(), ".githooks", "pre-push"), "utf8")).toContain("PREPUSH_CI_STRICT");
+    const hookCode = readFileSync(join(process.cwd(), ".githooks", "pre-push"), "utf8")
+      .split("\n")
+      .filter((entry) => !entry.trimStart().startsWith("#"))
+      .join("\n");
+    expect(hookCode).not.toMatch(/SKIP_IN_FLIGHT_CI_GUARD:-1/);
+    expect(hookCode).not.toContain("PREPUSH_CI_STRICT");
+    // The only assignment of the bypass is inside the explicit GUARD_PUSH_DISABLE=1 block.
+    const disableBlock = hookCode.match(/if \[ "\$\{GUARD_PUSH_DISABLE:-\}" = "1" \]; then[\s\S]*?\nfi/)?.[0] ?? "";
+    expect(disableBlock).toMatch(/export SKIP_IN_FLIGHT_CI_GUARD=1/);
+    expect(hookCode.replace(disableBlock, "")).not.toMatch(/SKIP_IN_FLIGHT_CI_GUARD\s*=/);
   });
 
   it("allows push when CI has completed or no runs are in-flight", () => {
@@ -634,6 +665,15 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(result.note).toContain("gh not available");
   });
 
+  it("inFlightCiGuard ignores tag-only pushes even when the checked-out branch has CI in flight", () => {
+    const result = inFlightCiGuard(["claude/my-fix"], [{ localRef: "refs/tags/v1", remoteRef: "refs/tags/v1" }], {
+      ghAvailable: () => true,
+      prViewer: () => ({ state: "OPEN", number: 1 }),
+      runFetcher: () => [{ databaseId: 1, name: "Ward Flow CI", status: "in_progress", conclusion: null }],
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it("inFlightCiGuard skips when SKIP_IN_FLIGHT_CI_GUARD=1 is set", () => {
     const previous = process.env.SKIP_IN_FLIGHT_CI_GUARD;
     process.env.SKIP_IN_FLIGHT_CI_GUARD = "1";
@@ -675,6 +715,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(capturedArgs).toContain("claude/my-fix");
     expect(capturedArgs).toContain("--workflow");
     expect(capturedArgs).toContain("ward-flow.yml");
+    expect(capturedArgs[capturedArgs.indexOf("--event") + 1]).toBe("pull_request");
     const limitIndex = capturedArgs.indexOf("--limit");
     expect(limitIndex).not.toBe(-1);
     expect(Number(capturedArgs[limitIndex + 1])).toBeGreaterThan(10);

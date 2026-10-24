@@ -13,6 +13,11 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import {
+  GENERAL_OBSERVATION,
+  isConstantObservation,
+  observationAt,
+} from "../src/components/ward-management/ward-observation";
 
 /**
  * A WARD THAT CAN WATCH ONE PERSON ONE-TO-ONE ACCEPTED AN UNLIMITED NUMBER.
@@ -24,7 +29,8 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
  * if something had tried: a count built first would have been a number with nothing to count.
  *
  * Owner ruling 2026-09-01, ruling 1 of fourteen: one-to-one nursing is recorded as THE WARD'S
- * STAFFING OF THE BED, not as a fact about the patient. `Admission.specialling` is that record.
+ * STAFFING OF THE BED, not as a fact about the patient. `Admission.specialling` was that record; since
+ * fix plan item 10 (21 Oct 2026) it is `Admission.observation`, and a one-to-one level counts one staff.
  *
  * **Every test here drives the REDUCER, not a screen.** A test asserting that a ward's page shows a
  * specialling gate passes against a build in which the refusal was never written — the gate in
@@ -109,7 +115,7 @@ function stagedForPull(source: Movement, id: Movement["id"], specialling: boolea
     // Each capacity probe names a fresh patient, not a seeded person already holding another bed.
     patientId: `PT-${id}`,
     referralId: undefined,
-    specialling,
+    observation: specialling ? observationAt("within_sight") : GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
     referredUnitIds: [],
@@ -381,7 +387,10 @@ describe("specialling capacity — the pull", () => {
     // PULL_PATIENT wrote the flag. Without this the derivation counts nothing and the refusal below
     // can never fire — a green suite over a field nothing writes.
     expect(occupantsOf(state)).toHaveLength(1);
-    expect(occupantsOf(state)[0].specialling, "the pull must record the ward's one-to-one commitment").toBe(true);
+    expect(
+      isConstantObservation(occupantsOf(state)[0].observation),
+      "the pull must record the ward's one-to-one commitment",
+    ).toBe(true);
 
     expect(headroom(state), "one staffable slot, one taken").toBe(0);
   });
@@ -392,7 +401,7 @@ describe("specialling capacity — the pull", () => {
     expect(state.rejections).toHaveLength(1);
     const reason = state.rejections[0].reason;
 
-    expect(reason, "the refusal must name the constraint that actually applies").toMatch(/specialling/i);
+    expect(reason, "the refusal must name the constraint that actually applies").toMatch(/observation staff/i);
     // The two guards immediately above this one in `PULL_PATIENT`. A refusal reporting either would
     // send a coordinator hunting for a bed this ward has six of — which is exactly how the
     // pending-preparation guard was caught hijacking a different guard's case.
@@ -411,7 +420,7 @@ describe("specialling capacity — the pull", () => {
     expect(state.rejections, "a patient needing no one-to-one observation is unaffected").toEqual([]);
     expect(movementIn(state, ORDINARY).stage).toBe("pulled");
     expect(occupantsOf(state)).toHaveLength(2);
-    expect(occupantsOf(state).filter((admission) => admission.specialling)).toHaveLength(1);
+    expect(occupantsOf(state).filter((admission) => isConstantObservation(admission.observation))).toHaveLength(1);
 
     // And the ward is still full for one-to-one: an ordinary occupant consumes no nurse.
     expect(headroom(state)).toBe(0);
@@ -450,10 +459,12 @@ describe("specialling capacity — the clamps", () => {
     const overSubscribed: WardFlowState = {
       ...state,
       admissions: state.admissions.map((admission) =>
-        admission.unitId === UNIT_ID ? { ...admission, specialling: true } : admission,
+        admission.unitId === UNIT_ID ? { ...admission, observation: observationAt("within_sight") } : admission,
       ),
     };
-    expect(occupantsOf(overSubscribed).filter((admission) => admission.specialling)).toHaveLength(2);
+    expect(
+      occupantsOf(overSubscribed).filter((admission) => isConstantObservation(admission.observation)),
+    ).toHaveLength(2);
     expect(headroom(overSubscribed)).toBe(0);
   });
 });
@@ -496,7 +507,7 @@ describe("specialling capacity — giving the slot back", () => {
     const occupant: Admission = {
       id: "AD-1TO1",
       unitId: UNIT_ID,
-      specialling: true,
+      observation: observationAt("within_sight"),
       highAcuity: false,
       referralId: null,
       movementId: null,
@@ -547,7 +558,7 @@ describe("specialling capacity — no bed figure moves", () => {
     const seeded = seedWardFlowState();
 
     expect(
-      seeded.admissions.filter((admission) => admission.specialling),
+      seeded.admissions.filter((admission) => isConstantObservation(admission.observation)),
       "the seed authors no specialled occupant; if it starts to, this file's premise changes",
     ).toEqual([]);
 

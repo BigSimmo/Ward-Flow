@@ -267,6 +267,11 @@ describe("front-door contract — fixed lists", () => {
       "secure_bed_unavailable",
       "belongs_to_another_service",
       "referred_elsewhere",
+      // D-78 (Josh, 21 Oct 2026): the ward-only reasons joined when the two decline lists merged.
+      "specialling_unavailable",
+      "acuity_mix",
+      "capability_mismatch",
+      "bed_pulled_for_earlier_referral",
       "another_reason",
     ]);
   });
@@ -500,6 +505,12 @@ describe("front-door contract — an ED may close to all admissions, never refus
     MARK_REFERRAL_OPENED: false,
     REQUEST_REFERRAL_INFORMATION: false,
     MARK_REFERRAL_INFORMATION_MET: false,
+    // Fix plan item 4 (21 Oct 2026): naming the desk chasing a referral, and logging a call with a
+    // closed-list outcome. Neither answers the referral; a ward's "no" on the phone is still only
+    // recorded by DECLINE_REFERRAL on its own copy.
+    ASSIGN_REFERRAL: false,
+    LOG_REFERRAL_CONTACT: false,
+    ASK_MORE_WARDS: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
     RECORD_MOVEMENT_BLOCKER: false,
@@ -510,6 +521,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: false,
     // Records or clears a chosen discharge blocker on a stay. Refuses nobody.
     RECORD_STAY_DISCHARGE_BLOCKER: false,
+    // Fix plan item 10: changes how a held or occupied bed is staffed; refuses nobody.
+    RECORD_OBSERVATION_LEVEL: false,
     CLEAR_STAY_DISCHARGE_BLOCKER: false,
     RAISE_REFERRAL: false,
     RECORD_EXAMINATION: false,
@@ -550,6 +563,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Smart features idea 5: a task for a person about a record, never a refusal of it.
     RECORD_BED_MEETING_ACTION: false,
     COMPLETE_BED_MEETING_ACTION: false,
+    // D-72: operational records on a ward, never a refusal of a named referral or placement.
+    RECORD_RESTRICTIVE_PRACTICE_START: false,
+    RECORD_RESTRICTIVE_PRACTICE_END: false,
+    RECORD_WARD_INCIDENT: false,
+    SET_SECLUSION_ROOM_STATUS: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,
@@ -637,6 +655,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNSNOOZE_INBOX_ITEM: false,
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
+    // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
+    RECORD_WARD_DIAGNOSIS: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -677,6 +697,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CONVERT_PLANNED_ADMISSION: false,
     // Records that a carer, PSP or MHAS was told about a completed move. Not a refusal.
     RECORD_SUPPORT_NOTIFICATION: false,
+    SEND_RELEASE_SUPPORT_NOTICE: false,
+    RECORD_ARRIVAL_CHECK: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,
@@ -756,6 +778,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
       secure_bed_unavailable: "the network",
       belongs_to_another_service: "the request",
       referred_elsewhere: "the request",
+      // D-78: the ward-only reasons are each about the ward's own staffing, mix, skills or beds.
+      specialling_unavailable: "this department",
+      acuity_mix: "this department",
+      capability_mismatch: "this department",
+      bed_pulled_for_earlier_referral: "this department",
       // ⚠️ "this department", and the guard is right to have made me say so. A catch-all is the
       // easiest place in this list to smuggle a judgement about the person: "another reason" could
       // mean "this ward has a reason of its own" or it could mean "there is something about this
@@ -1175,7 +1202,15 @@ describe("Referral privacy — structural", () => {
     "genderPlacements",
     // Ward-to-ward stepdown transfer: originUnitId identifies the transferring ward.
     "originUnitId",
+    // Fix plan item 4 (Josh, 21 Oct 2026). Operational records about the referral, never the person:
+    // the desk chasing it, and the calls made about it, each a listed value, an id, a time and a
+    // role label. Nothing typed. Entry fields are pinned by ALLOWED_OWNER_ENTRY_FIELDS and
+    // ALLOWED_CONTACT_ENTRY_FIELDS below.
+    "ownerHistory",
+    "contactLog",
   ].sort();
+  const ALLOWED_OWNER_ENTRY_FIELDS = ["at", "by", "owner"];
+  const ALLOWED_CONTACT_ENTRY_FIELDS = ["at", "by", "contact", "outcome"];
 
   /**
    * The permitted fields on ONE correction entry (`Referral.corrections[number]`) — the same
@@ -1236,7 +1271,8 @@ describe("Referral privacy — structural", () => {
       "highAcuityNursingNeeded",
     ].sort(),
     emergency_department: ["kind", "edId", "purpose"].sort(),
-    community_team: ["kind", "teamName"].sort(),
+    // D-74: what the arm is for, follow-up or assess for admission. A fixed list, never typed.
+    community_team: ["kind", "teamName", "purpose"].sort(),
   };
 
   /**
@@ -1271,6 +1307,7 @@ describe("Referral privacy — structural", () => {
     const canonicalCommunity: Required<Extract<ReferralDestination, { kind: "community_team" }>> = {
       kind: "community_team",
       teamName: "Inner City Clinic",
+      purpose: "assess_for_admission",
     };
 
     for (const canonical of [canonicalWard, canonicalEd, canonicalCommunity]) {
@@ -1410,6 +1447,17 @@ describe("Referral privacy — structural", () => {
         },
       ],
       originUnitId: "rph-adult-secure",
+      // Fix plan item 4: present because `Required<Referral>` demands every optional field. On a
+      // real referral their absence means nobody has been assigned and no call has been logged.
+      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Flow coordinator" }],
+      contactLog: [
+        {
+          contact: { kind: "psychiatric_ward", unitId: "rph-adult-secure" },
+          outcome: "no_answer",
+          at: NOW_ANCHOR + 4,
+          by: "Flow coordinator",
+        },
+      ],
     };
     expect(Object.keys(canonical).sort()).toEqual(ALLOWED_REFERRAL_FIELDS);
     // Exact equality on the arm as well: `Required<Referral>` forces every OUTER field to be
@@ -1423,6 +1471,8 @@ describe("Referral privacy — structural", () => {
     // And one correction entry's own fields, the same one-level-down discipline as the two checks
     // above — an unguarded object behind `corrections` would otherwise let a stray key through.
     expect(Object.keys(canonical.corrections[0]).sort()).toEqual(ALLOWED_CORRECTION_FIELDS);
+    expect(Object.keys(canonical.ownerHistory[0]!).sort()).toEqual(ALLOWED_OWNER_ENTRY_FIELDS);
+    expect(Object.keys(canonical.contactLog[0]!).sort()).toEqual(ALLOWED_CONTACT_ENTRY_FIELDS);
   });
 
   it("gives every real referral in the fixture only keys drawn from that same allowed set", () => {

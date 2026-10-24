@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { useEffect } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
@@ -19,6 +20,10 @@ afterEach(cleanup);
  * A1-14 and S-8 (audit 13 Oct 2026): after Offer on Home the queue row gave no sign of the offer,
  * and the coordinator's sheet only offered Withdraw. The row now says where it was offered and for
  * how long, and the coordinator can accept for that ward.
+ *
+ * Home v7 (Josh, 22 Oct 2026): State bedflow and its Offer left Home, and Placement's Refer opens
+ * the referral sheet, so the offer is recorded through the engine (`REFER_TO_UNITS`, the event the
+ * old Offer sent) and the suite checks what Home shows of it.
  */
 function plainOffer() {
   const state = seedWardFlowState();
@@ -33,8 +38,13 @@ function plainOffer() {
   throw new Error("The fixture has no plain fit to offer");
 }
 
+const engine: { dispatch?: ReturnType<typeof useWardFlow>["dispatch"] } = {};
+
 function AcceptedProbe({ movementId }: { movementId: string }) {
-  const { movements } = useWardFlow();
+  const { movements, dispatch } = useWardFlow();
+  useEffect(() => {
+    engine.dispatch = dispatch;
+  }, [dispatch]);
   return <p data-testid="accepted-unit">{movements.find((m) => m.id === movementId)?.acceptedUnitId ?? "none"}</p>;
 }
 
@@ -52,8 +62,15 @@ function offerFromHome() {
   // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
   showWholeHomeQueue();
   fireEvent.click(screen.getByTestId(`ward-queue-row-${offer.movementId}`));
-  const bedflow = screen.getByRole("region", { name: "State Bedflow" });
-  fireEvent.click(within(bedflow).getByRole("button", { name: `Offer ${offer.unitName}` }));
+  act(() => {
+    engine.dispatch!({
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId: offer.movementId,
+      unitIds: [offer.unitId],
+    });
+  });
   return offer;
 }
 

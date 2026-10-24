@@ -26,6 +26,62 @@ function report({
 }
 
 describe("journeyRunVerdict", () => {
+  it("rejects a skipped required journey even when its project ran another passing test", () => {
+    const requiredCase = {
+      project: "release-gate-phone",
+      file: "release-gate-journeys.spec.ts",
+      title: "save and reload",
+    };
+    const partial = {
+      config: { projects: [{ name: requiredCase.project }] },
+      errors: [],
+      suites: [
+        {
+          file: requiredCase.file,
+          specs: [
+            { title: "smoke", tests: [{ status: "expected", projectName: requiredCase.project }] },
+            { title: requiredCase.title, tests: [{ status: "skipped", projectName: requiredCase.project }] },
+          ],
+        },
+      ],
+    };
+    const verdict = journeyRunVerdict([{ label: "The run", code: 0, report: partial }], [requiredCase.project], {
+      requiredCases: [requiredCase],
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.problems).toContain(
+      "required journey did not pass: release-gate-phone / release-gate-journeys.spec.ts / save and reload",
+    );
+  });
+
+  it("requires each case exactly once, passing rather than acknowledged as an expected failure", () => {
+    const requiredCase = {
+      project: "release-gate-desktop",
+      file: "release-gate-journeys.spec.ts",
+      title: "save and reload",
+    };
+    const makeReport = (tests: object[]) => ({
+      config: { projects: [{ name: requiredCase.project }] },
+      errors: [],
+      suites: [{ file: `/checkout/tests/${requiredCase.file}`, specs: [{ title: requiredCase.title, tests }] }],
+    });
+    const passed = {
+      status: "expected",
+      expectedStatus: "passed",
+      projectName: requiredCase.project,
+      results: [{ status: "passed" }],
+    };
+    const verdict = (tests: object[]) =>
+      journeyRunVerdict([{ label: "The run", code: 0, report: makeReport(tests) }], [requiredCase.project], {
+        requiredCases: [requiredCase],
+      });
+    expect(verdict([passed]).ok).toBe(true);
+    expect(verdict([]).ok).toBe(false);
+    expect(verdict([passed, passed]).ok).toBe(false);
+    expect(verdict([{ ...passed, expectedStatus: "failed", results: [{ status: "failed" }] }]).ok).toBe(false);
+    expect(verdict([{ ...passed, results: [{ status: "skipped" }] }]).ok).toBe(false);
+  });
+
   it("aggregates project execution across shards rather than requiring every project on each shard", () => {
     const verdict = journeyRunVerdict(
       [

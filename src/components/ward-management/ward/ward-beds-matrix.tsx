@@ -9,6 +9,7 @@ import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-ti
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { cx } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
+import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 
 export { bedGlyphTone, eddMovedBadge, type BedItem };
 
@@ -28,7 +29,7 @@ function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): strin
   if (bed.patientAlias) parts.push(bed.patientAlias);
   if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
   if (bed.pastDate) parts.push("Past expected discharge date");
-  if (bed.isSpecialling) parts.push("1 to 1 specialling active");
+  if (bed.isSpecialling && bed.observation) parts.push(`${observationSummary(bed.observation)} active`);
   if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
     parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
@@ -80,7 +81,7 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
     return `Out in ${bed.expectedDays}d`;
   }
   if (bed.blockReason) return BLOCKER_CHIP[bed.blockReason] ?? bed.blockReason;
-  if (bed.isSpecialling) return "1:1";
+  if (bed.isSpecialling && bed.observation) return observationRatio(bed.observation.level);
   if (bed.isHdu) return "HDU";
   return null;
 }
@@ -115,6 +116,7 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.awayAtEdHours === n.awayAtEdHours &&
     p.blockReason === n.blockReason &&
     p.isSpecialling === n.isSpecialling &&
+    p.observation === n.observation &&
     p.isHdu === n.isHdu &&
     p.age === n.age &&
     p.sex === n.sex &&
@@ -443,7 +445,7 @@ export function WardBedsMatrix({
                 <circle cx="8" cy="8" r="6" />
                 <path d="M8 4.5v3.5l2.5 1.5" />
               </svg>
-              Needs you this shift
+              Before handover
             </span>
             <span className={styles.shiftSubtitle}>
               {visibleShiftItems.length} of {shiftItems.length} before handover at {formatInstant(DAY_SHIFT_END_MINUTE)}

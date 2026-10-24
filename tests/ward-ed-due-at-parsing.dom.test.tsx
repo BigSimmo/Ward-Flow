@@ -104,7 +104,7 @@ function raiseTransportReferral(typed: { date: string; time: string } | undefine
   for (const field of REQUIRED) {
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
-  fireEvent.click(screen.getByTestId("ward-ed-referral-specialling-not-required"));
+  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
   fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
   if (typed !== undefined) {

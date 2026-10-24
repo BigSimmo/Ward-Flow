@@ -1,3 +1,5 @@
+import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { type AuditDecision } from "./ward-audit";
 import { uniqueRecord } from "./ward-discharge-records";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -15,6 +17,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { isObservation } from "@/components/ward-management/ward-observation";
 import {
   WARD_FLOW_ROLE_LABELS,
   type WardFlowEvent,
@@ -34,6 +37,8 @@ import {
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
+import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
 
 /**
  * Raising, sending, correcting and withdrawing a referral: `reduceClinicalEvent`'s cases for these
@@ -85,12 +90,22 @@ export function reduceReferralSendEvent(
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
+      if (!isObservation(event.draft.observation))
+        return reject(state, event, "RAISE_REFERRAL observation must be a recorded level with a valid interval.");
       if (event.draft.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.draft.atsCategory))
         return reject(state, event, "RAISE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
-      const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);
-      if (!department) {
+      // D-76: with no ED named, only an accepted community referral's journey may start (checked below).
+      const department =
+        event.edId === undefined ? undefined : allEmergencyDepartments().find((ed) => ed.id === event.edId);
+      if (event.edId !== undefined && !department) {
         return reject(state, event, `no emergency department found for id ${event.edId}`);
       }
+      if (!department && event.acceptedUnitId === undefined)
+        return reject(
+          state,
+          event,
+          "RAISE_REFERRAL needs an emergency department unless it starts an accepted community referral",
+        );
       const sequence = state.referralSequence + 1;
       // The clinician chooses the form; nothing derives one from `legalStatus` (product owner:
       // "avoid any hard rules now please"). `null` means the clinician chose no form, a real
@@ -144,8 +159,9 @@ export function reduceReferralSendEvent(
           if (
             (event.role !== "ward" && event.role !== "coordinator") ||
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
-            referral.source !== "ed_medical" ||
-            department.siteCode !== referral.originSiteCode ||
+            (department
+              ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
+              : referral.source !== "community" || referral.sendingTeamName === undefined) ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
@@ -178,7 +194,7 @@ export function reduceReferralSendEvent(
           return reject(
             state,
             event,
-            `referral ${referral.id} was never addressed to ${department.name}, so a journey raised there did not come from it`,
+            `referral ${referral.id} was never addressed to ${department?.name ?? "this ward"}, so a journey raised there did not come from it`,
           );
         }
         /**
@@ -200,7 +216,7 @@ export function reduceReferralSendEvent(
           return reject(
             state,
             event,
-            `${department.name} declined referral ${referral.id}, so no journey can be raised from it`,
+            `${department?.name ?? "This ward"} declined referral ${referral.id}, so no journey can be raised from it`,
           );
         }
         /**
@@ -248,7 +264,15 @@ export function reduceReferralSendEvent(
       }
       const created: Movement = {
         id: nextReferralId(sequence),
-        originEdId: event.edId,
+        ...(department
+          ? { originEdId: department.id }
+          : // D-76: the referring team and location, as the accepted community referral recorded them.
+            // The team's own transport answer carries over, so a carer-brought patient can arrive
+            // without a booking. A needed vehicle is booked on the journey as for any other.
+            {
+              originCommunity: { siteCode: raisedFrom!.originSiteCode, teamName: raisedFrom!.sendingTeamName },
+              ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
+            }),
         openedAt: event.now,
         patientId: event.patientId ?? raisedFrom?.patientId,
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
@@ -278,7 +302,7 @@ export function reduceReferralSendEvent(
         gender: event.draft.gender,
         // T15 (item 12): the ED's own choice replaces whatever the linked referral carried.
         tentativeDiagnosis: event.draft.tentativeDiagnosis ?? raisedFrom?.tentativeDiagnosis,
-        specialling: event.draft.specialling,
+        observation: { ...event.draft.observation },
         highAcuity: event.draft.highAcuity,
         legalStatus: event.draft.legalStatus,
         // Spread-copied, never aliased: `SELECTABLE_LEGAL_FORMS` entries must not become mutable
@@ -301,7 +325,7 @@ export function reduceReferralSendEvent(
         urgencyChanges: [],
         overrides: [],
         stage: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested",
-        owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department.name,
+        owner: continuedAcceptance ? findUnit(state, event.acceptedUnitId!)!.name : department!.name,
         // Acceptance empties the live requests, as ACCEPT_IN_PRINCIPLE does: the accepted ward lives
         // in `acceptedUnitId`, so WITHDRAW_WARD_REQUEST cannot take it back (review: CodeRabbit).
         referredUnitIds: [],
@@ -343,6 +367,10 @@ export function reduceReferralSendEvent(
     case "CORRECT_LEGAL_FORM_RECEIPT": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may correct its form receipt`);
+      }
       if (movement.closure) {
         return reject(
           state,
@@ -392,6 +420,9 @@ export function reduceReferralSendEvent(
       if (!communityTeamOptions().includes(event.team)) {
         return reject(state, event, `team "${event.team}" is not a valid community mental health team`);
       }
+      if (event.purpose !== undefined && !isCommunityReferralPurpose(event.purpose)) {
+        return reject(state, event, "REFER_TO_COMMUNITY_TEAM purpose must be chosen from COMMUNITY_REFERRAL_PURPOSES");
+      }
       // Refused once collected, as `WITHDRAW_REFERRAL` does: use `STOP_TRANSPORT`.
       if (movement.transport?.collectedAt !== undefined) {
         return reject(
@@ -431,6 +462,12 @@ export function reduceReferralSendEvent(
           addressing.withdrawnAt === undefined,
       );
 
+      // D-74: a reused arm keeps the purpose it was sent with unless this referral names one.
+      const reusedArmPurpose =
+        existingQueuedArm?.destination.kind === "community_team" ? existingQueuedArm.destination.purpose : undefined;
+      const purpose = communityPurposeOf({ purpose: event.purpose ?? reusedArmPurpose });
+      const purposeWords = purpose === "assess_for_admission" ? "assessment for admission" : "community follow-up";
+
       const sequence = existingQueuedArm
         ? withoutPulledBed.frontDoorReferralSequence
         : withoutPulledBed.frontDoorReferralSequence + 1;
@@ -456,7 +493,11 @@ export function reduceReferralSendEvent(
             ...(movement.atsCategory === undefined ? {} : { atsCategory: movement.atsCategory }),
             destinations: [
               {
-                destination: { kind: "community_team", teamName: event.team },
+                destination: {
+                  kind: "community_team",
+                  teamName: event.team,
+                  ...(event.purpose === undefined ? {} : { purpose: event.purpose }),
+                },
                 state: "queued",
                 referredAt: event.now,
               },
@@ -477,8 +518,8 @@ export function reduceReferralSendEvent(
         { role: "community", placeId: communityTeamSlug(event.team) },
         { movementId: movement.id, referralId },
         existingQueuedArm
-          ? `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up: reusing the existing queued referral rather than raising a second one to the same team.`
-          : `${originEd?.name ?? "Emergency Department"} referred a patient for community follow-up.`,
+          ? `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}: reusing the existing queued referral rather than raising a second one to the same team.`
+          : `${originEd?.name ?? "Emergency Department"} referred a patient for ${purposeWords}.`,
       );
 
       // F5: live ward requests are withdrawn (recorded with `ed_outcome_recorded`, since the
@@ -507,6 +548,7 @@ export function reduceReferralSendEvent(
           ...withdrawnLiveRequests.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
         ],
         edOutcome: "for_community_follow_up",
+        communityPurpose: purpose,
         transport:
           movement.transport && movement.transport.cancelledAt === undefined
             ? { ...movement.transport, cancelledAt: event.now }
@@ -521,10 +563,25 @@ export function reduceReferralSendEvent(
 
       const withMovement = replaceMovement(withoutPulledBed, movement.id, updated);
       // Finding 3: no `newReferral` at all when reusing an existing queued arm — the linked
-      // referral's own array is left exactly as it was, never a second arm appended beside it.
+      // referral's own array keeps its arms, never a second arm appended beside it. D-74: a purpose
+      // chosen now is written onto the reused arm, so the arm the team answers, the notice and the
+      // closed record all say the same thing.
+      const reusedArmToUpdate =
+        existingQueuedArm && linkedReferral && event.purpose !== undefined && event.purpose !== reusedArmPurpose
+          ? existingQueuedArm
+          : undefined;
       const withReferral: WardFlowState =
         newReferral === undefined
-          ? withMovement
+          ? reusedArmToUpdate && linkedReferral
+            ? replaceReferral(withMovement, linkedReferral.id, {
+                ...linkedReferral,
+                destinations: linkedReferral.destinations.map((arm) =>
+                  arm === reusedArmToUpdate && arm.destination.kind === "community_team"
+                    ? { ...arm, destination: { ...arm.destination, purpose } }
+                    : arm,
+                ),
+              })
+            : withMovement
           : {
               ...withMovement,
               referrals: [...withMovement.referrals, newReferral],
@@ -690,7 +747,12 @@ export function reduceReferralSendEvent(
           : { ...movement, genderPlacements: [...(movement.genderPlacements ?? []), genderPlacementAddition] };
       for (const unitId of newUnitIds) {
         const candidate = findUnit(state, unitId);
-        const refusal = candidate ? eligibilityRefusal(event, movementForEligibility, candidate, event.now) : null;
+        // Audit 2 E-02: a closed ward is held back like any unsuitable ward, and no override
+        // reason reopens it; only reopening the ward does.
+        const refusal = candidate
+          ? (closedToAdmissionsRefusal(candidate) ??
+            eligibilityRefusal(event, movementForEligibility, candidate, event.now))
+          : null;
         targets.push({
           unitId: uniqueRecord(state.units, unitId)?.id ?? null,
           outcome: refusal ? "denied" : "accepted",
@@ -1058,6 +1120,10 @@ export function reduceReferralSendEvent(
           );
         }
       }
+      // D-80: a ward corrects only what a ward sent, never a referral it is answering.
+      if (event.role === "ward" && referral.source !== "psychiatric_ward") {
+        return reject(state, event, `only the desk that sent referral ${referral.id} may add corrections`);
+      }
       if (event.role === "community" && event.actingPlaceId !== undefined) {
         if (
           referral.sendingTeamName === undefined ||
@@ -1097,6 +1163,10 @@ export function reduceReferralSendEvent(
     case "CHANGE_URGENCY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may change its urgency`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot change urgency for a closed movement (${movement.closure.reason})`);
       }
@@ -1127,6 +1197,10 @@ export function reduceReferralSendEvent(
     case "CHANGE_LEGAL_STATUS": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may change its legal status`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot change legal status for a closed movement (${movement.closure.reason})`);
       }

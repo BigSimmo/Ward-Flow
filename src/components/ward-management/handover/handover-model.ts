@@ -37,6 +37,8 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /* ------------------------------------------------------------------ shifts */
 
@@ -123,7 +125,8 @@ const OWNER_SHORT: Record<string, string> = {
 /** The coordinator using this page. Owner names are role labels in this model. */
 export const HANDOVER_ME = "Flow coordinator";
 
-export type HandoverObs = "Standard" | "Urgent" | "1:1 specialling";
+/** Urgent first; otherwise "Constant" for a level that takes observation staff (fix plan item 10). */
+export type HandoverObs = "Standard" | "Urgent" | "Constant";
 
 export type HandoverRow = {
   movement: Movement;
@@ -183,7 +186,8 @@ export function toHandoverRow(
   referrals: Referral[],
 ): HandoverRow {
   const identity = resolveSubjectPatient(movement, { patients, referrals });
-  const ed = edNames(movement.originEdId);
+  const community = movement.originEdId === undefined ? communityOriginLabel(movement.originCommunity) : undefined;
+  const ed = community ? { short: community, full: community } : edNames(movement.originEdId!);
   const accepted = movement.acceptedUnitId;
   const leg = transportLeg(movement.transport);
   const toUnit = accepted === undefined ? undefined : units.find((unit) => unit.id === accepted);
@@ -204,7 +208,7 @@ export function toHandoverRow(
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
     formDueAt: movement.legalForm?.dueAt,
-    obs: movement.flaggedUrgent ? "Urgent" : movement.specialling ? "1:1 specialling" : "Standard",
+    obs: movement.flaggedUrgent ? "Urgent" : isConstantObservation(movement.observation) ? "Constant" : "Standard",
     riskFlags:
       movement.referralId === undefined
         ? undefined
@@ -344,8 +348,15 @@ export function legalLong(row: HandoverRow): string {
   return row.formCode ? `${row.legalStatus}, Form ${row.formCode}` : row.legalStatus;
 }
 
+/** The recorded observation level, with the urgent flag first when set: "Flagged urgent, General, hourly". */
 export function obsLong(row: HandoverRow): string {
-  return row.obs === "Standard" ? "Standard obs" : row.obs === "Urgent" ? "Flagged urgent" : "1:1 specialling";
+  const level = observationSummary(row.movement.observation);
+  return row.obs === "Urgent" ? `Flagged urgent, ${level}` : level;
+}
+
+/** The separate Obs column preserves the recorded level, interval/ratio and urgent flag. */
+export function obsShort(row: HandoverRow): string {
+  return obsLong(row);
 }
 
 export function destinationText(row: HandoverRow): string {
@@ -484,7 +495,7 @@ export function situationState(row: HandoverRow, now: Instant): string {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now
       ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
-      : `Bed held at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
+      : `Bed pulled at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
   if (row.stage === "placement_requested" || row.stage === "destination_review") return destinationText(row);
   if (row.stage === "accepted_awaiting_bed") return `Accepted by ${to}, awaiting a bed`;
@@ -551,7 +562,7 @@ export type HandoverChip = "spec" | "form" | "dec" | "day" | "mine" | "esc";
 
 export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: HandoverRow, now: Instant) => boolean }[] =
   [
-    { id: "spec", label: "1:1", test: (row) => row.movement.specialling },
+    { id: "spec", label: "Constant obs", test: (row) => isConstantObservation(row.movement.observation) },
     { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
     { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
     { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= MINUTES_PER_DAY },

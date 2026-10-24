@@ -19,6 +19,16 @@
  * Paint the rail's full track with the Ward surface. The sticky rail stays viewport-height;
  * longer route content must not expose the host application's background below it.
  */
+/* Carried by every portalled sheet, dialog and toast (OverlayScope in layout.tsx), which render
+ * under <body> and so cannot inherit what the page around them declares: the shell tokens from
+ * `.shellRow`, the fixed palette from WardGround and the second-edition tokens most screens compose.
+ * `--lift-sm` is the one screen-level alias the board, ED and ward screens each declare alike. */
+.overlayScope {
+  composes: wardTokens from "../../components/ward-management/ward-tokens.module.css";
+  composes: wardShellTokens wardFixedPalette from "../ward-flow-shell-tokens.module.css";
+  --lift-sm: var(--wf-e1);
+}
+
 .shellRow {
   composes: wardShellTokens from "../ward-flow-shell-tokens.module.css";
   display: flex;
@@ -69,14 +79,9 @@
   scroll-padding-top: var(--wf-header-height);
 }
 
-/* F-13: the offline banner's pinned holder keeps its full height. As a shrinkable item of this
-   fixed-height column it was squeezed when the page ran long, and the banner spilled over the page
-   heading (the header bar's own flex-shrink note). A heading scrolled or focused into view also
-   stops below the banner, not under it: 5rem holds its three lines at the narrowest phone. */
-.shellContent > :has(> [data-testid="ward-offline-banner"]) {
-  flex-shrink: 0;
-}
-
+/* F-13: a heading scrolled or focused into view stops below the offline banner, not under it: 5rem
+   holds its three lines at the narrowest phone. The pinned holder's own height is kept by
+   .bannerHolder below. */
 .shellContent:has([data-testid="ward-offline-banner"]) {
   scroll-padding-top: calc(var(--wf-header-height) + 5rem);
 }
@@ -299,10 +304,23 @@
   z-index: 25;
   contain: layout style;
   min-height: 0;
+  /* F-13: every pinned banner keeps its full height. As a shrinkable item of the fixed-height
+     .shellContent column the holder was squeezed when the page ran long, and its banner (the
+     offline banner, then the downtime pack line) spilled over the page heading. */
+  flex-shrink: 0;
 }
 
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
 @media print {
+  /* The document's dark colour scheme also paints the paper canvas outside the routed content.
+     Pin it to paper appearance; resetting only the nested shell backgrounds leaves dark margins. */
+  :global(html):has(.shellRow),
+  :global(body):has(.shellRow) {
+    color-scheme: light !important;
+    color: CanvasText;
+    background: Canvas !important;
+  }
+
   .shellRow,
   .shellContent {
     display: block;
@@ -312,6 +330,11 @@
     max-height: none;
     overflow: visible;
     background: transparent;
+  }
+
+  /* The phone dock is hidden on paper, so its reserved clearance must not create a blank page. */
+  .shellContent {
+    padding-bottom: 0 !important;
   }
 
   .bannerHolder {

@@ -24,6 +24,7 @@ import { communityDischargeCriteria } from "./ward-discharge-criteria";
  */
 import { directiveDesks } from "@/components/ward-management/alerts/global-alert-view";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -40,6 +41,7 @@ import {
   type WardAccess,
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
 /** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
@@ -92,12 +94,43 @@ function movementUnitIds(movement: Movement): string[] {
 
 /**
  * Only the desk's own wards in a movement's list of wards asked, so a ward never learns which other
- * wards the person was sent to (review on PR #330). The accepted ward stays: it is where the person
- * is going, and the stage reads from it.
+ * wards the person was sent to (review on PR #330). A desk that sent the movement keeps the ward it
+ * was accepted for: it is where its own person is going, and the stage reads from it.
+ *
+ * A desk that only received the movement learns nothing about any other ward either (FD-23, D-80):
+ * no other ward's decline, withdrawn request, answer, waitlist, override, gender placement or
+ * escalation attempt, and no other ward's acceptance or bed. The stage itself stays, so the journey
+ * still reads in order.
  */
-function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean): Movement {
-  const own = movement.referredUnitIds.filter(unitIn);
-  return own.length === movement.referredUnitIds.length ? movement : { ...movement, referredUnitIds: own };
+function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean, sent: boolean): Movement {
+  const copy = { ...movement, referredUnitIds: movement.referredUnitIds.filter(unitIn) };
+  if (sent) return copy;
+  // Records naming one ward keep only this desk's own; records naming several keep only its own ids.
+  for (const key of ["declines", "withdrawnReferrals", "unwinds", "referralAnswerHistory"] as const) {
+    const items: { unitId?: string }[] | undefined = movement[key];
+    if (items) Object.assign(copy, { [key]: items.filter((item) => item.unitId === undefined || unitIn(item.unitId)) });
+  }
+  for (const key of ["overrides", "genderPlacements"] as const) {
+    const items: { unitIds: string[] }[] | undefined = movement[key];
+    if (items)
+      Object.assign(copy, {
+        [key]: items.flatMap((item) => {
+          const unitIds = item.unitIds.filter(unitIn);
+          return unitIds.length || !item.unitIds.length ? [{ ...item, unitIds }] : [];
+        }),
+      });
+  }
+  if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
+  if (movement.escalation)
+    copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
+  if (movement.acceptedUnitId && !unitIn(movement.acceptedUnitId)) {
+    delete copy.acceptedUnitId;
+    delete copy.heldBedNumber;
+    delete copy.allocatedBed;
+  }
+  // The legal mismatch names the accepting ward too, so it goes with that ward's acceptance.
+  if (movement.legalMismatch && !unitIn(movement.legalMismatch.unitId)) delete copy.legalMismatch;
+  return copy;
 }
 
 /** Has this movement finished, and when. `undefined` while it is still open. */
@@ -142,14 +175,35 @@ function withinHandoffWindow(closedAt: Instant, now: Instant, window: number): b
   return now - closedAt <= window;
 }
 
-/** Keep only the destination lines a predicate allows. A referral left with none is not this role's. */
+/**
+ * Keep only the destination lines a predicate allows. A referral left with none is not this role's.
+ * Its call log (fix plan item 4) is trimmed with it: a call names the ward or team rung, so a
+ * trimmed copy keeps only calls to the referrer and to the places on the lines it kept, or it would
+ * say where else the person was referred (FD-23).
+ */
 function trimReferral(
   referral: Referral,
   keep: (addressing: Referral["destinations"][number]) => boolean,
 ): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
-  return destinations.length === referral.destinations.length ? referral : { ...referral, destinations };
+  if (destinations.length === referral.destinations.length) return referral;
+  const trimmed: Referral = { ...referral, destinations };
+  if (referral.contactLog === undefined) return trimmed;
+  const keptUnits = new Set(referralDestinationUnitIds(trimmed));
+  const keptTeams = new Set(
+    destinations.flatMap((line) =>
+      line.destination.kind === "community_team" ? [communityTeamSlug(line.destination.teamName)] : [],
+    ),
+  );
+  const contactLog = referral.contactLog.filter(({ contact }) =>
+    contact.kind === "psychiatric_ward"
+      ? keptUnits.has(contact.unitId)
+      : contact.kind === "community_team"
+        ? keptTeams.has(contact.teamId)
+        : true,
+  );
+  return { ...trimmed, contactLog };
 }
 
 /**
@@ -204,7 +258,7 @@ function collectionMovement(movement: Movement): Movement {
     cohort: movement.cohort,
     security: movement.security,
     sex: movement.sex,
-    specialling: movement.specialling,
+    observation: movement.observation,
     highAcuity: movement.highAcuity,
     legalStatus: movement.legalStatus,
     stage: movement.stage,
@@ -249,7 +303,7 @@ function countsOnlyMovement(movement: Movement): Movement {
       "sex",
       "homeRegion",
       "gender",
-      "specialling",
+      "observation",
       "highAcuity",
       "legalStatus",
       "stage",
@@ -402,7 +456,7 @@ function countsOnlyAdmission(admission: Admission): Admission {
       "patientId",
       "referralId",
       "movementId",
-      "specialling",
+      "observation",
       "highAcuity",
       "sex",
       "gender",
@@ -466,7 +520,7 @@ export function countsOnlyLeaveBed(leave: LeaveBed): LeaveBed {
  * One key for a community team's spellings, so a desk named "Midland" finds patients whose
  * catchment team is "Midland Community Team" (review on PR #330). An empty name matches nothing.
  */
-function communityTeamKey(name: string | undefined): string {
+export function communityTeamKey(name: string | undefined): string {
   return (name ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/gu, " ")
@@ -523,7 +577,7 @@ function datesOnlyAdmission(admission: Admission): Admission {
     dischargeConfirmedAt: admission.dischargeConfirmedAt,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,
@@ -578,7 +632,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   const scope = access.scope;
   const unitIn = (unitId: string) => unitInScope(scope, unitId, places);
-  const edIn = (edId: string) => edInScope(scope, edId, places);
+  // D-76: a journey from a community team is in no ED's scope.
+  const edIn = (edId: string | undefined) => edId !== undefined && edInScope(scope, edId, places);
   const siteCodesInScope = new Set<string>();
   for (const unit of workspace.units) if (unitIn(unit.id)) siteCodesInScope.add(unit.siteCode);
   for (const ed of workspace.edDepartments ?? []) if (edIn(ed.id)) siteCodesInScope.add(ed.siteCode);
@@ -661,7 +716,15 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
             (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
         )
-        .map((movement) => ownReferredUnits(movement, unitIn));
+        .map((movement) =>
+          ownReferredUnits(
+            movement,
+            unitIn,
+            edIn(movement.originEdId) ||
+              (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+              (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
+          ),
+        );
       const referralIds = new Set(movements.map((movement) => movement.referralId).filter(Boolean));
       referrals = workspace.referrals.flatMap((referral) => {
         if (
@@ -704,7 +767,14 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         const ended = movementEndedAt(movement);
         return ended === undefined || now - ended <= wardWindow;
       });
-      movements = movements.map((movement) => ownReferredUnits(movement, unitIn));
+      movements = movements.map((movement) =>
+        ownReferredUnits(
+          movement,
+          unitIn,
+          (movement.sourceAdmissionId !== undefined && ownAdmissionIds.has(movement.sourceAdmissionId)) ||
+            (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
+        ),
+      );
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),

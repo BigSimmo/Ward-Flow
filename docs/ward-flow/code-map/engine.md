@@ -1,5 +1,27 @@
 # Engine: reducer, events, state and persistence
 
+_Updated 2026-10-23 - current saving and sign-in pointers checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+
+## Current persistence boundary — 23 October 2026
+
+D-72 item 1 replaces the blanket submitted-state saving stop described in earlier
+entries below. `ward-flow-provider.tsx` saves a device copy made by
+`ward-flow-typed-text-scrub.ts`, replacing typed values with “Typed text not kept on this
+device”. If no safe, valid copy can be made, saving stops. Imported scenarios use the
+same scrubbed-copy path. D-67 remains a separate, bounded synthetic form-draft exception
+for human review. See [current persistence guidance](../STATUS.md#remaining-work-and-local-remediation).
+The earlier dates, counts and run receipts below remain historical evidence. This
+source comparison establishes no fresh runtime, hosted CI or deployment verdict.
+
+## Audit repair boundaries — 20 October 2026
+
+`ward-access-state.ts` authorises global configuration, full broadcast audiences, ED origins and
+stored sender ownership at the shared command boundary. `backend/ward-flow/postgres.mjs` serialises
+record-opening checks and inserts per workspace/account. New shared worlds use the Perth calendar
+helper; existing stored origins retain their meaning. Draft recovery follows the confirmed effective
+access context, and the provider remounts forms only after adopting that context's world. Browser
+sign-out handles storage failures and independently stops confirmed-owned phone subscriptions.
+
 ## Bed and shared-save integrity — 19 October 2026
 
 `ward-bed-designation.ts` supplies the numbered bed's kind to bed moves and numbered
@@ -51,7 +73,8 @@ provider/auth cleanup imports only that small module. `referral-draft-cache.ts` 
 projections through `referral-draft-validation.ts`, while `referral-draft-hooks.ts` owns recovery
 and autosave. The existing `referral-draft-store.ts` entry point retains current caller APIs. The referral draft store remains its form's single autosave owner and omits chart
 bytes from recovery. Provider world adoption, reset and local auth cleanup invalidate outgoing
-writes without removing the general typed-event state privacy lock. Legal form saves clear a
+writes while preserving the exclusion of original typed values from submitted-state saves.
+D-72 later permits a scrubbed submitted-state copy, as described above. Legal form saves clear a
 draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,
 `tests/ward-draft-recovery.dom.test.tsx` and existing guard, drawer, auth and provider privacy suites.
 
@@ -77,6 +100,11 @@ bed. Focused coverage lives in `tests/ward-cld-turnaround-priority.test.ts` and 
 event-permission, referral-model and reanchor tests.
 
 ## Shared coordinator implementation — 7 October 2026
+
+**Later provider change (D-55, 15 October 2026):** the sign-in description below is
+historical. Current shared sign-in uses Supabase Auth; [DATABASE.md](../DATABASE.md)
+is the maintained provider authority. `ward-shared-access.tsx` selects only that shipped
+provider. This is a source statement, not a hosted sign-in verification.
 
 The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)
 through `ward-shared-client.ts` (polling, pending commands, conflict and retry state). Shared mode
@@ -109,7 +137,8 @@ sweep picks up anything left pending. Migration 3 adds `push_subscriptions`, `pu
 `push_deliveries`. On the client, `ward-shared-client.ts` gains the four
 push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provides
 `PhonePushAccessContext` and releases the device's alerts before sign-out, `shell/ward-phone-push.ts`
-holds the per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
+holds the sign-out release and ownership receipts, `shell/ward-phone-push-switch.ts` holds the
+Settings-only per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
 when unavailable). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
@@ -207,13 +236,19 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   now forwards selected `RECORD_*` cases to `ward-flow-record-events.ts`, `UNDO_*` cases to
   `ward-flow-undo-events.ts`, and whole groups to `ward-flow-referral-send-events.ts`,
   `ward-flow-referral-answer-events.ts`, `ward-flow-placement-events.ts`,
-  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`.
-  Each takes `(state, event, decision, helpers)`; the reducer passes its shared helpers in, and a
-  slice imports only types from the reducer, so there is no runtime import cycle.
+  `ward-flow-transport-events.ts` and `ward-flow-bed-events.ts`. `ward-flow-diagnosis-events.ts`
+  (FD-10, 21 Oct 2026) holds `reduceWardDiagnosis`, the guard and effect for
+  `RECORD_WARD_DIAGNOSIS`: the ward's own diagnosis block, kept beside the referrer's.
+  `ward-flow-protected-record-events.ts` (22 Oct 2026) holds `reduceProtectedRecordEvent`, the
+  wrapper's protected record path (open a discharge record, review an audit event or undo that
+  review, record a discharge, a follow-up or admission care) and `UNLINKED_CARE_REFUSAL`; it takes
+  `(state, event, helpers)`, since that path makes its own audit decision.
+  The other slice files take `(state, event, decision, helpers)`. The reducer passes its shared
+  helpers in, and each slice imports only types from the reducer, so there is no runtime import cycle.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
-  first. Also declares `ReferralDraft` (the intake form's shape) and re-exports `WardFlowRole`/
+  first. Also re-exports `ReferralDraft` (the intake form's shape, from `ward-referral-draft.ts` since 22 Oct 2026) and `WardFlowRole`/
   `WARD_FLOW_ROLE_LABELS` from `ward-flow-roles.ts`. Heavily commented — most of the file is
   provenance for individual fields and role decisions, not code.
 - **`ward-model.ts`** (3,040 lines) — every domain entity type and closed vocabulary: `Movement`,
@@ -307,15 +342,17 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   — build and append `Notice` rows; `appendNotices` is where a `demo`-addressed notice is refused.
 - **`departAdmission`** (`:1478`) — the shared admission-closing helper (`RECORD_LEAVING`,
   `RECORD_PATIENT_DISCHARGE`).
-- **`protectedRefusal`** (`:1521`), **`reduceRecordEvent`** (`:1546`) — the separate path for the
-  three "protected" events (`OPEN_DISCHARGE_RECORD`, `REVIEW_AUDIT_EVENT`,
-  `RECORD_PATIENT_DISCHARGE`): role → payload sanity → generation-staleness → event-specific
-  checks, entirely outside the big `reduceClinicalEvent` switch.
+- **`PROTECTED_RECORD_EVENT_HELPERS`** — the helpers passed to `reduceProtectedRecordEvent` in
+  `ward-flow-protected-record-events.ts` (moved out on 22 Oct 2026 with its refusal helper), the
+  separate path for the six "protected" events (`OPEN_DISCHARGE_RECORD`, `REVIEW_AUDIT_EVENT`,
+  `UNDO_AUDIT_REVIEW`, `RECORD_PATIENT_DISCHARGE`, `RECORD_ADMISSION_FOLLOW_UP`,
+  `RECORD_ADMISSION_CARE`): role → payload sanity → generation-staleness → event-specific checks,
+  entirely outside the big `reduceClinicalEvent` switch.
 - **`advanceResourceRevisions`** (`:1668`) — bumps `unit.allocatable.revision` for any unit whose
   `allocatable` value changed this dispatch, so `CONFIRM_CAPACITY`'s optimistic-concurrency check
   (`expectedRevision`) can detect a stale capacity draft.
 - **`wardFlowReducer(state, event)`** (`:1682`, exported) — the public entry point. Routes
-  protected events to `reduceRecordEvent`; otherwise refuses on counter exhaustion, then calls
+  protected events to `reduceProtectedRecordEvent`; otherwise refuses on counter exhaustion, then calls
   `reduceClinicalEvent`, then (for `RESET_SCENARIO`/`SET_SCENARIO`) bumps `worldGeneration` only
   if the world actually changed reference (guards against a rejected reset silently incrementing
   generation), then always calls `appendAudit`.
@@ -346,12 +383,12 @@ terminal); "open" means no closure yet.
 
 - **`RECORD_PATIENT_DISCHARGE`** — roles: `ward`. Effect: ends the admission via
   `departAdmission` (sets `admission.state` `departed`, `leftAt`/destination, adjusts
-  `unit.empty`/`sexMix`). Guards: handled outside the main switch, in `reduceRecordEvent`
+  `unit.empty`/`sexMix`). Guards: handled outside the main switch, in `reduceProtectedRecordEvent`
   (`:1546`) — admission/unit exist and match, patient identity matches, discharge revision
   matches `expectedRevision`, destination is a member of `LEAVING_DESTINATIONS`, admission is
   `occupied`, involuntary/detained patients cannot discharge to community or "left against
   advice", and a patient still in transit cannot be discharged. Case at `:1746` (no-op stub; real
-  logic is in `reduceRecordEvent`).
+  logic is in `reduceProtectedRecordEvent`).
 - **`UPDATE_EXPECTED_DISCHARGE`** — roles: `ward`, `coordinator`. Effect: sets
   `admission.expectedDischargeAt`, bumps `dischargeDateMoves` if the date changed, stamps
   `dischargeDateSetAt`/`By`. Guards: admission exists; not `departed`; `actingUnitId` (if a
@@ -359,11 +396,11 @@ terminal); "open" means no closure yet.
   `:1751`.
 - **`OPEN_DISCHARGE_RECORD`** — roles: `coordinator`, `ward`. Effect: records an audit
   "record-access" entry; returns state unchanged otherwise (a read, not a write). Guards: handled
-  in `reduceRecordEvent`; the record is resolvable to the caller (`selectDischargeRecord`), and a
+  in `reduceProtectedRecordEvent`; the record is resolvable to the caller (`selectDischargeRecord`), and a
   repeated request with the same `requestId` replays the earlier read rather than re-auditing.
   Case at `:1747` (no-op stub in the main switch).
 - **`REVIEW_AUDIT_EVENT`** — roles: `coordinator`. Effect: appends an `AuditReview` (decision:
-  `reviewed`/`follow-up-required`) to `state.auditReviews`. Guards: handled in `reduceRecordEvent`
+  `reviewed`/`follow-up-required`) to `state.auditReviews`. Guards: handled in `reduceProtectedRecordEvent`
   — the audit entry exists, is not itself a review, generation matches, and `expectedReviewCount`
   matches the current review count for that entry (optimistic concurrency). Case at `:1748` (no-op
   stub).
@@ -496,7 +533,9 @@ terminal); "open" means no closure yet.
   the unit to `waitlistedUnitIds` without changing stage). Guards: movement/no closure; stage
   `destination_review`; unit holds a live referral; a gender-mismatch reason is refused outright;
   `reason` must be in `DECLINE_REASONS` (a waitlist reason is checked against
-  `parallelReferralCap` instead). Case at `:4073`.
+  `parallelReferralCap` instead). A retired value (`no_bed`, `sex_mix`, `out_of_catchment`) is read
+  through `LEGACY_DECLINE_REASONS` first (D-78: one decline list, shared with `DECLINE_REFERRAL`;
+  old saves convert on load in `ward-decline-legacy.ts`). Case at `:4073`.
 - **`HANDOVER_READY`** — roles: `ed`. Effect: sets stage `handover_ready`. Guards: movement/no
   closure; stage `pulled`; a transport must already be booked unless `transportNeed` explicitly
   marks `needed: false`; re-runs `heldUnitGenderRefusal`. Case at `:4189`.
@@ -528,8 +567,11 @@ terminal); "open" means no closure yet.
   `STEP_BACK_REASONS`. Case at `:7674`.
 - **`WITHDRAW_ACCEPTANCE`** — roles: `coordinator`. Effect: clears `acceptedUnitId`/`acceptedAt`,
   stage back to `destination_review` (never re-adds to `referredUnitIds`). Guards: movement
-  exists, open, currently `accepted_awaiting_bed`; `reason` in `STEP_BACK_REASONS`; refused if the
-  movement still holds a bed/admission (release the pull first). Case at `:7727`.
+  exists, open, currently `accepted_awaiting_bed` or `pulled`, or stepped back earlier while
+  still holding a bed (keeps that stage); `reason` in `STEP_BACK_REASONS`. A
+  held bed (at `pulled`, or stepped back holding one) is released in the same act, recording
+  `pull_released` and `acceptance_withdrawn` unwinds and telling the ward and the ED (Q16);
+  refused while a transport job is booked or collected. Case at `:7727`.
 - **`WITHDRAW_WARD_REQUEST`** — roles: `coordinator`. Effect: removes one unit from
   `referredUnitIds`, appends a `coordinator_withdrew` entry. Guards: movement exists, open; unit
   in `referredUnitIds`; `reason` in `WARD_REQUEST_WITHDRAWAL_REASONS`. Case at `:3531`.
@@ -941,8 +983,8 @@ guard.test.ts` is what proves that check can actually fail.
   conflate them when reading or writing either.
 - **`STEP_BACK_STAGE` does not release a held bed.** It only rewinds `movement.stage`; a movement
   stepped back from `pulled` still holds the phantom admission and consumes ward capacity until a
-  separate release event runs. The same asymmetry applies to `WITHDRAW_ACCEPTANCE`, which refuses
-  outright if a bed is still held rather than releasing it implicitly.
+  separate release event runs. `WITHDRAW_ACCEPTANCE` is the exception (Q16): it releases a held
+  bed explicitly in the same act and records the release.
 - **`Referral.history` is the one genuine free-text field on a `Referral`**, and it (along with 11
   other event types' typed fields) never reaches `sessionStorage` once typed in a session — do
   not assume a restored session's referral history is the same object identity, or that a typed

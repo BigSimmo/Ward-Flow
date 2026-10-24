@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -6,12 +6,15 @@ import {
   type WardNotificationCenterProps,
 } from "@/components/ward-management/ward/ward-notification-center";
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import {
   getAudioBuzzPreference,
   setAudioBuzzPreference,
   playSyntheticUrgentChime,
   triggerUrgentBuzzAlert,
 } from "@/components/ward-management/shell/ward-sound-store";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const BASE_MOVEMENT: Movement = {
   id: "WF-001",
@@ -22,7 +25,7 @@ const BASE_MOVEMENT: Movement = {
   cohort: "Adult",
   security: "Open",
   sex: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   statusChanges: [],
@@ -98,9 +101,10 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Capacity refresh requested")).toBeInTheDocument();
     // Role displayed as State Bed Flow Coordinator
     expect(screen.getAllByText("State Bed Flow Coordinator")).toHaveLength(2);
-    // Urgent badge rendered on the urgent buzz, not only on the Urgent tab
-    const urgentBuzz = screen.getByText("Please review pending discharges immediately").parentElement?.parentElement;
-    expect(urgentBuzz).toHaveTextContent("Urgent");
+    // Urgent is said on the urgent buzz's own row, and that row comes first
+    const rows = screen.getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("Please review pending discharges immediately");
+    expect(rows[0]).toHaveTextContent("Urgent buzz");
     // Time formatted
     expect(screen.getByText("09:00")).toBeInTheDocument();
     expect(screen.getByText("09:30")).toBeInTheDocument();
@@ -109,7 +113,7 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.queryByText("Bed review for Beta")).not.toBeInTheDocument();
 
     // Click acknowledge button on first buzz
-    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge Buzz" });
+    const acknowledgeButtons = screen.getAllByRole("button", { name: "Acknowledge" });
     expect(acknowledgeButtons).toHaveLength(2);
 
     fireEvent.click(acknowledgeButtons[0]);
@@ -154,17 +158,22 @@ describe("WardNotificationCenter DOM Component", () => {
       />,
     );
     expect(screen.getAllByTestId("ward-buzz-group")).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Acknowledge Buzz" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Acknowledge" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Acknowledge all 2" }));
     expect(onDismissBuzz).toHaveBeenCalledTimes(2);
     expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:540:coordinator:Same buzz:false#0");
     expect(onDismissBuzz).toHaveBeenCalledWith("ward-alpha:550:coordinator:Same buzz:false#0");
   });
 
-  it("lists urgent before buzzes, and leaves the title and close to a sheet", () => {
+  it("orders the filter Act now before Coordinator, and leaves the title and close to a sheet", () => {
     render(<WardNotificationCenter {...defaultProps} inSheet onClose={vi.fn()} />);
-    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent ?? "");
-    expect(tabs.findIndex((t) => t.startsWith("Urgent"))).toBeLessThan(tabs.findIndex((t) => t.startsWith("Buzzes")));
+    const filters = screen
+      .getAllByRole("button", { pressed: false })
+      .concat(screen.getAllByRole("button", { pressed: true }))
+      .map((button) => button.textContent ?? "");
+    expect(filters.findIndex((t) => t.startsWith("Act now"))).toBeLessThan(
+      filters.findIndex((t) => t.startsWith("Coordinator")),
+    );
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-notification-close-btn")).not.toBeInTheDocument();
   });
@@ -181,12 +190,14 @@ describe("WardNotificationCenter DOM Component", () => {
       />,
     );
 
-    // Banner is rendered with exact text
-    expect(
-      screen.getByText("09:30 Morning Census Overdue — Confirm discharges and allocatable beds"),
-    ).toBeInTheDocument();
+    // Notices option A: a short title, the due time and how late, one action
+    const row = screen.getByTestId("ward-census-overdue");
+    expect(row).toHaveTextContent("Morning numbers not confirmed");
+    expect(row).toHaveTextContent("Due 09:30");
+    expect(row).toHaveTextContent("2h 10m"); // 11:40 less 09:30
+    expect(row).toHaveTextContent("Overdue");
 
-    const confirmButton = screen.getByRole("button", { name: "Confirm Now" });
+    const confirmButton = screen.getByRole("button", { name: "Confirm numbers" });
     expect(confirmButton).toBeInTheDocument();
 
     fireEvent.click(confirmButton);
@@ -201,9 +212,7 @@ describe("WardNotificationCenter DOM Component", () => {
         onConfirmMorningRollup={onConfirmMorningRollup}
       />,
     );
-    expect(
-      screen.queryByText("09:30 Morning Census Overdue — Confirm discharges and allocatable beds"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-census-overdue")).not.toBeInTheDocument();
   });
 
   it("renders overdue inbound arrival alerts", () => {
@@ -249,12 +258,15 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} now={now} movements={movements} />);
 
-    // Displays exact format: "Overdue Inbound Arrival: {patientName} (ETA was {ETA}, >60m overdue)"
-    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
+    const overdue = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Arrival overdue"));
+    expect(overdue).toHaveLength(1);
+    expect(overdue[0]).toHaveTextContent("Jane Doe");
+    expect(overdue[0]).toHaveTextContent("ETA 10:00");
+    expect(overdue[0]).toHaveTextContent("More than 60 minutes late.");
 
     // Does not display alert for non-overdue or other ward
     // John Connor is still listed under "Medical clearance not recorded" (CS-14), just not as overdue.
-    expect(screen.queryByText(/Overdue Inbound Arrival: John Connor/)).not.toBeInTheDocument();
+    expect(overdue[0]).not.toHaveTextContent("John Connor");
     expect(screen.queryByText(/Sarah Connor/)).not.toBeInTheDocument();
   });
 
@@ -276,7 +288,8 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} movements={movements} />);
 
-    expect(screen.getByText("Pending Medical Clearance: Transfer cannot proceed until signed off")).toBeInTheDocument();
+    expect(screen.getByText("Medical clearance not given")).toBeInTheDocument();
+    expect(screen.getByText("The transfer cannot go ahead until it is signed off.")).toBeInTheDocument();
     expect(screen.getByText(/Thomas Anderson/)).toBeInTheDocument();
 
     // Agent Smith was cleared, so no clearance alert
@@ -306,12 +319,36 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} movements={movements} />);
 
-    const card = screen.getByTestId("ward-clearance-not-recorded");
-    expect(card).toHaveTextContent("No medical clearance is recorded on the transfer for 1 incoming patient.");
-    expect(card).toHaveTextContent("Synthetic Unrecorded");
-    expect(card).not.toHaveTextContent("Synthetic Cleared");
-    expect(card).not.toHaveTextContent("Synthetic Closed");
-    expect(screen.queryByText("No urgent tasks recorded.")).not.toBeInTheDocument();
+    const row = screen.getByTestId("ward-clearance-not-recorded");
+    expect(row).toHaveTextContent("Medical clearance not recorded");
+    expect(row).toHaveTextContent("Synthetic Unrecorded");
+    expect(row).toHaveTextContent("Before arrival");
+    expect(row).not.toHaveTextContent("Synthetic Cleared");
+    expect(row).not.toHaveTextContent("Synthetic Closed");
+    expect(screen.queryByText(/Nothing needs attention/)).not.toBeInTheDocument();
+    // Option A: the row has an action. Accepted here, so it opens the transfer.
+    expect(screen.getByRole("link", { name: "Open transfer" })).toHaveAttribute("href", movementHref("WF-020"));
+    // The row counts, so the heading never reads zero beside it.
+    expect(screen.getByTestId("ward-notification-count")).toHaveTextContent("1 open");
+  });
+
+  it("opens the request this ward is answering when clearance is missing before acceptance", () => {
+    const onClose = vi.fn();
+    const movements = [
+      makeMovement({
+        id: "WF-030" as Movement["id"],
+        stage: "placement_requested",
+        referredUnitIds: ["ward-alpha"],
+        patientName: "Synthetic Waiting",
+      }),
+    ];
+    render(<WardNotificationCenter {...defaultProps} movements={movements} onClose={onClose} />);
+    const link = screen.getByRole("link", { name: "Open request" });
+    // The link names the request, so the Answer view opens on this patient (Codex P1 on #585).
+    expect(link).toHaveAttribute("href", `/ward-flow/ward/ward-alpha/answer?movement=${encodeRecordAddress("WF-030")}`);
+    expect(screen.getByTestId("ward-clearance-not-recorded")).toHaveTextContent("before you accept");
+    fireEvent.click(link);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("renders direct ward notices and allows acknowledging unread notices", () => {
@@ -349,12 +386,12 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.getByText("Read")).toBeInTheDocument();
 
     // Unread notice displays acknowledge button
-    const ackButton = screen.getByRole("button", { name: "Acknowledge Notice" });
+    const ackButton = screen.getByRole("button", { name: "Acknowledge" });
     fireEvent.click(ackButton);
     expect(onAcknowledgeNotice).toHaveBeenCalledWith("NT-001");
   });
 
-  it("filters correctly between tabs", () => {
+  it("filters between Act now, Check and Coordinator", () => {
     const refreshRequests = [
       {
         unitId: "ward-alpha",
@@ -369,12 +406,18 @@ describe("WardNotificationCenter DOM Component", () => {
         id: "WF-001" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "Jane Doe",
+        medicalClearance: { cleared: true, at: 500 },
         arrivalDetails: {
           estimatedArrivalAt: 600,
           recordedAt: 500,
           mode: "mental_health_transport",
           recordedBy: "coordinator",
         },
+      }),
+      makeMovement({
+        id: "WF-002" as Movement["id"],
+        acceptedUnitId: "ward-alpha",
+        patientName: "Synthetic Unrecorded",
       }),
     ];
 
@@ -397,66 +440,57 @@ describe("WardNotificationCenter DOM Component", () => {
       />,
     );
 
-    // "All" tab is active by default: all 3 sections are rendered
+    const filter = (name: RegExp) => screen.getByRole("button", { name });
+    // "All" is pressed by default and everything shows; its count is every row (2 + 1 + 1)
+    expect(filter(/^All 4/)).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
+    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
+    expect(screen.getByText("Medical clearance not recorded")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
 
-    // Switch to Buzzes tab
-    const buzzTab = screen.getByRole("tab", { name: /^Buzzes/i });
-    fireEvent.click(buzzTab);
-    expect(buzzTab).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(filter(/^Coordinator/));
+    expect(filter(/^Coordinator/)).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(screen.queryByText(/Overdue Inbound Arrival/)).not.toBeInTheDocument();
+    expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
+    expect(screen.queryByText("Arrival overdue")).not.toBeInTheDocument();
+
+    fireEvent.click(filter(/^Act now/));
+    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
+    expect(screen.queryByText("Medical clearance not recorded")).not.toBeInTheDocument();
+    expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();
+
+    fireEvent.click(filter(/^Check/));
+    expect(screen.getByText("Medical clearance not recorded")).toBeInTheDocument();
+    expect(screen.queryByText("Arrival overdue")).not.toBeInTheDocument();
     expect(screen.queryByText("Direct ward notice message")).not.toBeInTheDocument();
 
-    // Switch to Urgent tab
-    const urgentTab = screen.getByRole("tab", { name: /^Urgent/i });
-    fireEvent.click(urgentTab);
-    expect(urgentTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();
-    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
-    expect(screen.queryByText("Direct ward notice message")).not.toBeInTheDocument();
-
-    // Switch to Notices tab
-    const noticeTab = screen.getByRole("tab", { name: /notices/i });
-    fireEvent.click(noticeTab);
-    expect(noticeTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Overdue Inbound Arrival/)).not.toBeInTheDocument();
-    expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
-
-    // Switch back to All tab
-    const allTab = screen.getByRole("tab", { name: /^all/i });
-    fireEvent.click(allTab);
-    expect(allTab).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(filter(/^All/));
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
-    expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
+    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
   });
 
-  it("meets accessibility requirements: role=region, one polite summary live region, and tabpanel semantics", () => {
+  it("says nothing needs attention in one line rather than empty boxes", () => {
+    render(<WardNotificationCenter {...defaultProps} />);
+    expect(screen.getByText("Nothing needs attention on Ward Alpha.")).toBeInTheDocument();
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  it("meets accessibility requirements: role=region, one polite summary live region, and a pressed filter group", () => {
     render(
       <WardNotificationCenter {...defaultProps} morningRollupDeadlinePassed={true} morningRollupConfirmed={false} />,
     );
 
     const region = screen.getByRole("region", {
-      name: "Ward notification and buzzer centre for Ward Alpha",
+      name: "Notices for Ward Alpha",
     });
     expect(region).toBeInTheDocument();
     // Only the atomic summary announces; the panel itself is not a live region.
     expect(region).not.toHaveAttribute("aria-live");
     expect(screen.getByTestId("ward-notification-live-summary")).toHaveAttribute("aria-live", "polite");
 
-    const tablist = screen.getByRole("tablist", { name: "Notification filters" });
-    expect(tablist).toBeInTheDocument();
-
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(4);
-
-    const tabpanel = screen.getByRole("tabpanel");
-    expect(tabpanel).toBeInTheDocument();
-    expect(tabpanel).toHaveAttribute("tabindex", "0");
+    const group = screen.getByRole("group", { name: "Filter notices" });
+    expect(within(group).getAllByRole("button")).toHaveLength(4);
+    expect(within(group).getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("marks the panel with data-urgent-buzz='true' when urgent buzz is present", () => {
@@ -523,16 +557,18 @@ describe("WardNotificationCenter DOM Component", () => {
 
     const toggleBtn = screen.getByTestId("ward-buzz-audio-toggle");
     expect(toggleBtn).toBeInTheDocument();
-    expect(toggleBtn).toHaveAttribute("aria-label", "Mute urgent buzzer audio");
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "true");
+    expect(toggleBtn).toHaveTextContent("Buzz sound on");
 
     // Click to mute
     fireEvent.click(toggleBtn);
-    expect(toggleBtn).toHaveAttribute("aria-label", "Enable urgent buzzer audio");
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "false");
+    expect(toggleBtn).toHaveTextContent("Buzz sound off");
     expect(getAudioBuzzPreference()).toBe(false);
 
     // Click to unmute
     fireEvent.click(toggleBtn);
-    expect(toggleBtn).toHaveAttribute("aria-label", "Mute urgent buzzer audio");
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "true");
     expect(getAudioBuzzPreference()).toBe(true);
   });
 
@@ -577,7 +613,8 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} now={700} movements={movements} patients={patients} />);
 
-    expect(screen.getByText(/Overdue Inbound Arrival: John Doe/)).toBeInTheDocument();
+    expect(screen.getAllByText("John Doe").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("UM100001").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Name not recorded/)).not.toBeInTheDocument();
   });
 });

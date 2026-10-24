@@ -23,6 +23,7 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { OccupancyFigure } from "@/components/ward-management/ward-occupancy";
 import type { WardScreenBed } from "./ward-screen-derivations";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The Confirm capacity figures dialog, drawn from the ward screen's own state. */
 type WardScreenCapacityModalProps = {
@@ -315,6 +316,19 @@ export function WardScreenBedDrawer({
                       blocker === null ? "Discharge blocker cleared." : `Discharge blocker recorded: ${blocker}`,
                     );
                   }
+                : undefined
+            }
+            onSetObservation={
+              !pathname || routeRole === "ward" || routeRole === "coordinator"
+                ? (admissionId, observation) =>
+                    recordFeedback(
+                      () =>
+                        raise("RECORD_OBSERVATION_LEVEL", {
+                          target: { kind: "admission", admissionId, actingUnitId: unitId },
+                          observation,
+                        }),
+                      `Observation level recorded: ${observationSummary(observation)}.`,
+                    )
                 : undefined
             }
             onMarkAtEd={(bedNum) => {

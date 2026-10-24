@@ -1,6 +1,6 @@
 "use client";
 
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
@@ -17,13 +17,11 @@ import {
   Scale,
   Search,
   Users,
-  Wrench,
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
-import { edById } from "../ward-sites";
 import { calendarDateOf } from "../ward-clock";
 import { legalFormName } from "../ward-legal-forms";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
@@ -31,14 +29,15 @@ import { formTimeLeft } from "../legal-forms/legal-form-time-left";
 import { standingWord } from "../legal-forms/legal-forms-view";
 import { useDueSoonThresholds } from "../ward-flow-provider";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import legacy from "./patient-dossier-tabs.module.css";
 import styles from "./patient-record-tabs.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
- * Community, Details and Documents hold everything else. Every value comes from the record: a
- * field the record cannot hold yet is a dashed Preview card that says so, never a guess.
+ * Community, Details and Documents hold everything else. Every value comes from the record, and a
+ * field the record cannot hold yet is left out, never guessed.
  */
 
 function CopyFact({ value, label }: { value: string; label: string }) {
@@ -50,8 +49,7 @@ function CopyFact({ value, label }: { value: string; label: string }) {
         icon={Clipboard}
         onClick={async () => {
           try {
-            if (!navigator.clipboard) throw new Error("Clipboard unavailable");
-            await navigator.clipboard.writeText(value);
+            await copyTextToClipboard(value);
             setMessage("Copied to clipboard");
           } catch {
             setMessage("Clipboard is unavailable in this browser");
@@ -81,7 +79,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     {
       at: movement.openedAt,
       tone: "neutral",
-      text: `Opened at ${edById(movement.originEdId)?.name ?? "an origin not recorded"}`,
+      text: `Opened at ${originName(movement) ?? "an origin not recorded"}`,
     },
   ];
   if (movement.examination)
@@ -118,6 +116,13 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
       tone: "info",
       text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
+  // Q16: a withdrawal that also released a held bed records both, so both are listed.
+  for (const unwind of movement.unwinds) {
+    if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
+    const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);
+    const fact = unwind.kind === "pull_released" ? "Held bed released" : "Acceptance withdrawn";
+    events.push({ at: unwind.at, tone: "closed", text: `${fact}${ward ? `, ${ward}` : ""}, by ${unwind.by}` });
+  }
   const job = movement.transport;
   if (job?.acceptedAt !== undefined) events.push({ at: job.acceptedAt, tone: "info", text: "Transport accepted" });
   if (job?.enRouteAt !== undefined) events.push({ at: job.enRouteAt, tone: "info", text: "Transport en route" });
@@ -424,10 +429,11 @@ export function PatientHistoryTab({
 }
 
 /** Each ward stay the record links: where, when, and how it ended. Only recorded values. */
-/** One label per admission state: a waitlisted person has no bed yet, a pulled bed is held for them. */
+/** One label per admission state: a waitlisted person has no bed yet, a pulled bed is kept for them
+ * ("Bed pulled", the one bed vocabulary; "hold" is for a leave bed only). */
 const STAY_CHIP: Record<Admission["state"], string> = {
   waitlisted: "Waitlisted",
-  pulled: "Bed held",
+  pulled: "Bed pulled",
   occupied: "Current",
   departed: "Closed",
 };
@@ -530,27 +536,6 @@ export function PatientCommunityTab({
               A recorded catchment does not confirm current case management or an active appointment.
             </p>
           </Card>
-          <UnwiredPreview>
-            <Card className={styles.dashed}>
-              <CardHead
-                level={2}
-                icon={Users}
-                title="Family and carers"
-                aside={<span className={styles.preview}>Preview, not in the record yet</span>}
-              />
-              <div className={styles.rows}>
-                <Row k="Next of kin">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-                <Row k="Carer">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-                <Row k="Guardian">
-                  <span className={styles.nr}>Needs a record field</span>
-                </Row>
-              </div>
-            </Card>
-          </UnwiredPreview>
         </div>
         <div className={styles.col}>
           <Card>
@@ -622,7 +607,7 @@ export function PatientCommunityTab({
             <Card>
               <CardHead level={2} icon={Phone} title="Transfer coordination contacts" meta="Service roles" />
               <div className={styles.rows}>
-                <Row k="Sending location">{edById(movement.originEdId)?.name ?? notRecorded}</Row>
+                <Row k="Sending location">{originName(movement) ?? notRecorded}</Row>
                 <Row k="Receiving ward">
                   {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
                 </Row>
@@ -649,6 +634,14 @@ export function PatientDetailsTab({
   preferredName?: string;
 }) {
   const [missingOnly, setMissingOnly] = useState(false);
+  // UX audit (21 Oct 2026): a fact the movement and the patient record share shows once. The
+  // placement copy and the patient's own legal status appear only when they differ, so a reader
+  // compares two values only when there is something to compare.
+  const sexDiffers = movement !== undefined && movement.sex !== patient?.sex;
+  const genderDiffers = movement !== undefined && movement.gender !== patient?.gender;
+  // One side recorded and the other not is a difference too, so a patient added without a legal
+  // status still shows "Patient legal status" as not recorded.
+  const legalDiffers = movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
   // Interpreter language and Aboriginal status sit in different groups, never side by side (the
   // placement rule in person-screen.tsx).
   const groups: { title: string; facts: Fact[] }[] = [
@@ -658,7 +651,7 @@ export function PatientDetailsTab({
         ["Name", displayName],
         ["Preferred name", preferredName],
         ["Record number", patient?.umrn],
-        ["Date of birth", patient?.dateOfBirth],
+        ["Date of birth", patient?.dateOfBirth ? formatDateOfBirth(patient.dateOfBirth) : undefined],
         ["Sex", patient?.sex],
         ["Gender", patient?.gender],
       ],
@@ -677,16 +670,16 @@ export function PatientDetailsTab({
       title: "Transfer context",
       facts: [
         ["Age band", movement?.cohort],
-        ["Placement sex", movement?.sex],
-        ["Placement gender", movement?.gender],
-        ["Movement legal status", movement?.legalStatus],
+        ...(sexDiffers ? ([["Placement sex", movement?.sex]] satisfies Fact[]) : []),
+        ...(genderDiffers ? ([["Placement gender", movement?.gender]] satisfies Fact[]) : []),
+        [legalDiffers ? "Movement legal status" : "Legal status", movement?.legalStatus ?? patient?.legalStatus],
         ["Owner", movement?.owner?.trim() || undefined],
       ],
     },
     {
       title: "Recorded identity context",
       facts: [
-        ["Patient legal status", patient?.legalStatus],
+        ...(legalDiffers ? ([["Patient legal status", patient?.legalStatus]] satisfies Fact[]) : []),
         ["Aboriginal or Torres Strait Islander status", patient?.aboriginalOrTorresStraitIslanderStatus],
       ],
     },
@@ -709,7 +702,7 @@ export function PatientDetailsTab({
           aside={
             <span className={styles.chip}>
               <StatusGlyph tone={missing > 0 ? "neutral" : "success"} size={10} />
-              {missing} not recorded
+              {missing > 0 ? `${missing} not recorded` : "All recorded"}
             </span>
           }
         />
@@ -723,19 +716,18 @@ export function PatientDetailsTab({
               value={all.length - missing}
               aria-label="Recorded patient and placement fields"
             />
-            <Button
-              size="sm"
-              aria-pressed={missingOnly}
-              onClick={() => {
-                setMissingOnly(!missingOnly);
-              }}
-            >
-              Missing information
-            </Button>
-            <CopyFact
-              label="Copy patient identifiers"
-              value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
-            />
+            {missing > 0 ? (
+              <Button
+                size="sm"
+                aria-pressed={missingOnly}
+                onClick={() => {
+                  setMissingOnly(!missingOnly);
+                }}
+              >
+                Missing information
+              </Button>
+            ) : null}
+            {/* No "Copy patient identifiers": UMRN and date of birth stay off the clipboard (D-71 item 7). */}
           </span>
         </div>
       </Card>
@@ -763,24 +755,6 @@ export function PatientDetailsTab({
             )}
           </Card>
         ))}
-        <Card className={styles.dashed}>
-          <CardHead
-            level={2}
-            icon={Wrench}
-            title="Not in the record yet"
-            aside={<span className={styles.preview}>Preview</span>}
-          />
-          <dl className={styles.fields}>
-            {["Next of kin", "Carer", "Guardian", "Advance health directive", "NDIS participant", "Alerts"].map(
-              (label) => (
-                <div className={styles.detailField} key={label}>
-                  <dt>{label}</dt>
-                  <dd data-missing="true">Needs a record field</dd>
-                </div>
-              ),
-            )}
-          </dl>
-        </Card>
       </div>
       <p className={legacy.note}>
         Record completeness describes available fields; it is not a clinical safety assessment.

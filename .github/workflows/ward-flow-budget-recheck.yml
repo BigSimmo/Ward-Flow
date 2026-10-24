@@ -1,0 +1,45 @@
+name: Ward Flow budget recheck
+
+# Main has no merge queue and its ruleset does not require branches to be up to date, so a pull
+# request's phone script budget can have been measured against an older main. On every push to
+# main this re-runs "Ward Flow production build" (which merges the current main before measuring)
+# on each open pull request with auto-merge armed; GitHub re-runs the dependent "Ward Flow required"
+# check too, so the PR waits until the budget holds against the main it would land on. When a PR
+# arms auto-merge after main moved, it is rechecked then too. It runs main's own script only (a
+# sparse checkout of the base branch, never pull-request code) and never changes auto-merge state.
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [auto_merge_enabled]
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+
+# A newer push to main supersedes an older recheck: the new run re-measures every armed PR against
+# the newest main, so the older run is cancelled rather than queued behind it.
+concurrency:
+  group: ${{ github.event_name == 'push' && 'ward-flow-budget-recheck' || format('ward-flow-budget-recheck-pr-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+jobs:
+  recheck:
+    name: Ward Flow budget recheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out main's recheck script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ward-ci-public/budget-recheck.mjs
+          sparse-checkout-cone-mode: false
+          ref: main
+      - name: Re-run armed pull requests' production build against the new main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/ward-ci-public/budget-recheck.mjs

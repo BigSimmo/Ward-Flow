@@ -9,6 +9,7 @@ import {
   wardEnvironment,
   wardSafeguardsLocked,
 } from "@/components/ward-management/ward-feature-flags";
+import { WARD_FEATURE_FLAG_NOTES } from "@/components/ward-management/ward-feature-flag-notes";
 import { WARD_NAV } from "@/components/ward-management/ward-nav";
 
 const flag = (resolved: ReturnType<typeof resolveWardFeatureFlags>, name: string) =>
@@ -18,12 +19,14 @@ describe("the feature flag registry", () => {
   it("gives every flag an owner, a date, a description, a removal note and a default per environment", () => {
     for (const name of WARD_FEATURE_FLAG_NAMES) {
       const definition = WARD_FEATURE_FLAGS[name];
-      expect(definition.owner, name).not.toBe("");
-      expect(definition.added, name).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(definition.description.length, name).toBeGreaterThan(10);
-      expect(definition.removeWhen.length, name).toBeGreaterThan(10);
+      const note = WARD_FEATURE_FLAG_NOTES[name];
+      expect(note.owner, name).not.toBe("");
+      expect(note.added, name).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(note.description.length, name).toBeGreaterThan(10);
+      expect(note.removeWhen.length, name).toBeGreaterThan(10);
       expect(Object.keys(definition.defaults).sort(), name).toEqual(["demo", "development", "production"]);
     }
+    expect(Object.keys(WARD_FEATURE_FLAG_NOTES).sort()).toEqual([...WARD_FEATURE_FLAG_NAMES].sort());
   });
 
   it("only names registered flags on navigation entries", () => {
@@ -63,19 +66,6 @@ describe("parsing overrides", () => {
 });
 
 describe("resolveWardFeatureFlags", () => {
-  it("keeps the make-room mockup to local builds, whatever a device or the server says (Audit 1, D-71)", () => {
-    for (const environment of ["demo", "production"] as const) {
-      const resolved = resolveWardFeatureFlags({
-        environment,
-        server: { "make-room-chains": true },
-        device: { "make-room-chains": true },
-      });
-      expect(flag(resolved, "make-room-chains")).toMatchObject({ on: false, deviceCanChange: false });
-    }
-    const local = resolveWardFeatureFlags({ environment: "development", server: {}, device: {} });
-    expect(flag(local, "make-room-chains").on).toBe(true);
-  });
-
   it("turns every finished feature on in all environments (Josh, 20 Oct 2026), leaving only the held-back flags off", () => {
     const allOn = [
       "bed-meeting-tv",
@@ -98,10 +88,7 @@ describe("resolveWardFeatureFlags", () => {
     ).toBe(false);
     expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "role-access").on).toBe(true);
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
-    expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual([
-      "demo-reset",
-      "make-room-chains",
-    ]);
+    expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual(["demo-reset"]);
   });
 
   it("keeps demo reset off on the live site, which runs as demo, and on for a local build (Josh, 20 Oct 2026)", () => {
@@ -110,10 +97,6 @@ describe("resolveWardFeatureFlags", () => {
     expect(at("development")).toBe(true);
     expect(at("demo")).toBe(false);
     expect(at("production")).toBe(false);
-    // Make room plans stay a local-build mockup.
-    const makeRoom = (environment: "development" | "demo" | "production") =>
-      flag(resolveWardFeatureFlags({ environment, server: {}, device: {} }), "make-room-chains").on;
-    expect([makeRoom("development"), makeRoom("demo"), makeRoom("production")]).toEqual([true, false, false]);
   });
 
   it("keeps role access on in production whatever the server setting says (review item 14)", () => {

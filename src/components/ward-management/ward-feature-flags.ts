@@ -2,9 +2,10 @@
  * FEATURE FLAGS — unfinished work ships inside the real screens, switched off where it is not ready,
  * instead of on a hidden page of its own (Josh, 15 Oct 2026, item 7 of the review list).
  *
- * Every flag is registered here once, with an owner, a default for each environment, what it does
- * and when it should be removed. Nothing else in the app may invent a flag name: the type below is
- * derived from this registry, so an unknown name does not build.
+ * Every flag is registered here once, with a default for each environment. What it does, its owner
+ * and when it should be removed are in `ward-feature-flag-notes.ts`, which only Settings loads.
+ * Nothing else in the app may invent a flag name: the type below is derived from this registry, so
+ * an unknown name does not build.
  *
  * How a flag's value is decided, first match wins:
  *   1. This device's choice (Settings, Data and about, Feature flags), or a demo link such as
@@ -23,15 +24,7 @@ export type WardEnvironment = "development" | "demo" | "production";
 export type WardFeatureFlagDefinition = {
   /** The name shown in Settings. */
   label: string;
-  /** What switching it on adds, in one sentence. */
-  description: string;
-  /** Who decides when it is finished. */
-  owner: string;
-  /** The date it was added, so a stale flag is easy to spot. */
-  added: string;
   defaults: Record<WardEnvironment, boolean>;
-  /** What has to happen before the flag and its off path are deleted. */
-  removeWhen: string;
   /**
    * A safeguard is on in production whatever the server setting or a device says, so an access
    * control fails closed: a typo or a stray setting cannot switch it off.
@@ -47,133 +40,67 @@ export type WardFeatureFlagDefinition = {
 export const WARD_FEATURE_FLAGS = {
   "bed-meeting-tv": {
     label: "TV views",
-    description:
-      "Read only, large type screens for the bed meeting, one ward or one ED, linked from the menu, Tools, Capacity, each ward and each ED.",
-    owner: "Josh",
-    added: "2026-10-15",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh signs off the TV views after a real bed meeting, ward and ED trial.",
   },
   "demo-reset": {
     label: "One tap demo reset",
-    description: "Quiet day, winter surge and ED crisis buttons in Tools that reload the whole synthetic network.",
-    owner: "Josh",
-    added: "2026-10-15",
     // Josh 20 Oct 2026: off on the live site (runs as demo), on for local builds.
     defaults: { development: true, demo: false, production: false },
-    removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
   "role-access": {
     label: "Role access",
-    description:
-      "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
-    owner: "Josh",
-    added: "2026-10-15",
     // Readiness review item 14 (18 Oct 2026): on by default in demo and production builds, and a
     // safeguard, so production cannot switch it off. The server already scopes shared reads and
     // saves to each account's role; this switch is the browser half.
     defaults: { development: false, demo: true, production: true },
     safeguard: true,
-    removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
   },
   "top25-criteria-led-discharge": {
     label: "Criteria led discharge",
-    description:
-      "For a voluntary patient, the treating psychiatrist sets discharge criteria and the ward can confirm the discharge once all are met.",
-    owner: "Josh",
-    added: "2026-10-15",
     // D-65 (17 Oct 2026): Josh switched it on in production for the prototype.
     defaults: { development: true, demo: true, production: true },
-    removeWhen:
-      "Josh signs off the item in the real screens after review, and clinical governance agrees the criteria list.",
   },
   "awol-bed-hold-review": {
     label: "Absent without leave bed hold review",
-    description:
-      "The absent without leave tracker asks for a review of the held bed once the person has been away past the set time.",
-    owner: "Josh",
-    added: "2026-10-17",
     // D-65 (17 Oct 2026) paused it until Josh reviewed the hold time against local procedure.
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh reviews the bed hold time against local procedure, then keeps or removes the review.",
-  },
-  "make-room-chains": {
-    label: "Make room plans",
-    description:
-      "Mockups only: a waiting referral whose ward is full shows how stepping down patients already marked for step down could free a bed, in two or three moves.",
-    owner: "Josh",
-    added: "2026-10-17",
-    // Mockup stage with preview data, so on only for a local build until Josh picks a design.
-    defaults: { development: true, demo: false, production: false },
-    localOnly: true,
-    removeWhen: "Josh picks a mockup and the chosen plan is built into the real screens.",
   },
   "referral-opened-receipts": {
     label: "Opened by the ward",
-    description: "The referrer sees when a ward first opened a referral.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the receipt with ward and ED leads.",
   },
   "referral-information-needs": {
     label: "What we still need",
-    description: "A ward can ask the referrer for listed items before deciding.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the list of items with ward and ED leads.",
   },
   "ward-closure-mode": {
     label: "Ward closure",
-    description: "Close a whole ward to admissions with a reason, then reopen it.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
   "shift-confirmations": {
     label: "Confirmed this shift",
-    description:
-      "On Capacity, how many wards have confirmed their bed numbers since the shift began, and which have not.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
   },
   "bed-meeting-actions": {
     label: "Bed meeting agenda",
-    description:
-      "A bed meeting agenda built from fixed rules, and an action log with an owner and a due time, linked from Capacity.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the action list and owners with the coordinators after a bed meeting trial.",
   },
   "pilot-measures": {
     label: "Pilot measures",
-    description: "The weekly report adds the pilot's agreed measures.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
   },
   "missed-requests-check": {
     label: "Daily missed request check",
-    description: "Waiting shows coordinators a daily check for missed or doubled bed requests.",
-    owner: "Josh",
-    added: "2026-10-19",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
-    removeWhen: "Josh agrees the window and the rules with the pilot sponsor.",
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 

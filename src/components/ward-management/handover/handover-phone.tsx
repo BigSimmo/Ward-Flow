@@ -38,6 +38,7 @@ import {
   handoverShift,
   isActOrUrgent,
   isbarLines,
+  obsLong,
   nextStep,
   wardIsStale,
   type HandoverPill,
@@ -307,7 +308,7 @@ function IsbarSheet({
             { id: "from", label: "From", value: row.edShort },
             { id: "to", label: "To", value: destinationText(row) },
             { id: "owner", label: "Owner", value: row.ownerShort },
-            { id: "obs", label: "Obs", value: row.obs === "Standard" ? "Standard obs" : row.obs },
+            { id: "obs", label: "Obs", value: obsLong(row) },
           ]}
         />
         <h3 className={styles.isbarHead}>ISBAR</h3>

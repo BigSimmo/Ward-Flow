@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
@@ -9,6 +10,7 @@ import { unitById, wardSites } from "@/components/ward-management/ward-sites";
  * first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
   const showAll = queue.getByTestId("ward-queue-show-all");
   if (
@@ -341,7 +343,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await page.getByTestId("ward-ed-referral-gender").selectOption("Male");
     await page.getByTestId("ward-ed-referral-legal-status").selectOption("Voluntary");
     await page.getByTestId("ward-ed-referral-urgency").selectOption("3");
-    await page.getByTestId("ward-ed-referral-specialling-not-required").click();
+    await page.getByTestId("ward-ed-referral-observation").selectOption("general");
     await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
     await page.getByTestId("ward-ed-referral-submit").click();
 

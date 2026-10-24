@@ -25,8 +25,10 @@ import {
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 export type WardActivityEventTone = "info" | "warning" | "danger";
 
@@ -75,7 +77,10 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const events: ActivityEvent[] = [];
 
   for (const movement of movements) {
-    const department = departmentNames.get(movement.originEdId) ?? movement.originEdId;
+    const department =
+      movement.originEdId === undefined
+        ? communityOriginLabel(movement.originCommunity)
+        : (departmentNames.get(movement.originEdId) ?? movement.originEdId);
     // The opening tier is whatever the FIRST recorded urgency change moved it FROM. An empty
     // `urgencyChanges` means the tier never changed, so the current tier was also the opening
     // one (ward-model.ts). Using `movement.urgency` here would print today's tier on an event
@@ -114,7 +119,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: decline.at,
         id: `decline:${movement.id}:${decline.unitId}:${decline.at}:${index}`,
-        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${decline.reason.replaceAll("_", " ")}.`,
+        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}.`,
         tone: "warning",
         category: "decline",
       });

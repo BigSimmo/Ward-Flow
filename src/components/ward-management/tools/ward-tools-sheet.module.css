@@ -143,13 +143,16 @@
   font-weight: 600;
 }
 
+/* Two lines before it is cut, so a longer line such as the Hospital feed's still reads at 390. */
 .rowText em {
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: var(--wf-fs-12);
   font-style: normal;
   color: var(--wf-ink-3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .rowChevron,
@@ -767,5 +770,11 @@
   .chip[aria-pressed="true"] .chipCount,
   .scenarioCard[aria-checked="true"] em {
     color: HighlightText;
+  }
+}
+
+@media (max-width: 48rem) {
+  .search {
+    min-height: var(--wf-touch);
   }
 }

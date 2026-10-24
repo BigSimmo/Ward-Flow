@@ -1,6 +1,6 @@
 # Ward Flow
 
-_Updated 2026-10-19 - describe scope-selected PR checks; Documentation owns._
+_Updated 2026-10-21 - link the documentation portal; Documentation owns._
 
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
@@ -56,6 +56,7 @@ npm ci --prefix backend/ward-flow
 
 ## Where to read next
 
+- [Documentation by task](docs/README.md): user guides, engineering, operations and historical records.
 - [Ward Flow documentation](docs/ward-flow/README.md): the product, accepted design and working behaviour.
 - [AGENTS.md](AGENTS.md) and [how we work](docs/ward-flow/HOW-WE-WORK.md): rules for contributors and coding agents.
 - [Decisions](docs/ward-flow/decisions.md) and [current facts](docs/FACTS.md).

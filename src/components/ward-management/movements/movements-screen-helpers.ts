@@ -8,7 +8,8 @@ import { isOpen, transportLeg, transportNeedState } from "@/components/ward-mana
 import { type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { edById } from "@/components/ward-management/ward-sites";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import type { HealthService, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -84,7 +85,7 @@ export const CAUSES: CauseDefinition[] = [
   {
     key: "bed_pull_expired",
     rank: 5,
-    title: "Reserved time has passed, bed still held",
+    title: "Pull expired, bed still pulled",
     note: "Release the bed or set a new reserved time",
   },
   {
@@ -268,7 +269,7 @@ export function movementSearchText(movement: Movement, patients: readonly Patien
     person.displayName,
     person.umrn,
     ed ? `${ed.siteCode} ED` : "",
-    departmentLabel(movement.originEdId, ed?.name),
+    movementOriginLabel(movement, ed?.name),
   ]
     .join(" ")
     .toLowerCase();
@@ -314,7 +315,7 @@ export function transportRouteLabels(movement: Movement, units: Unit[]) {
     ? units.find((unit) => unit.id === movement.acceptedUnitId)
     : undefined;
   return {
-    originLabel: departmentLabel(movement.originEdId, originEd?.name),
+    originLabel: movementOriginLabel(movement, originEd?.name),
     destinationLabel: movement.acceptedUnitId
       ? wardLabel(movement.acceptedUnitId, destinationUnit?.name)
       : "No accepted destination recorded",

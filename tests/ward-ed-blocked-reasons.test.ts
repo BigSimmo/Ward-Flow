@@ -53,7 +53,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: "general",
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -102,7 +102,7 @@ describe("referralDraftBlockedReason", () => {
     gender: "not_recorded",
     legalStatus: "Voluntary",
     urgency: 2,
-    specialling: false,
+    observation: "general",
     highAcuity: false,
     legalFormDueAtDate: "",
     legalFormDueAtTime: "",
@@ -134,8 +134,8 @@ describe("referralDraftBlockedReason", () => {
       "Choose an urgency tier before raising this referral. None is chosen for you: an urgency tier nobody picked would be filed as this patient's own record.",
     ],
     [
-      { specialling: undefined },
-      'State whether one-to-one nursing is required before raising this referral. None is chosen for you: an unanswered box would be filed as "not required", and the reducer only checks a ward\'s one-to-one capacity when the patient is recorded as needing it.',
+      { observation: undefined },
+      "Choose an observation level before raising this referral. None is chosen for you: a level nobody picked would be filed as this patient's own, and the pull only checks a ward's observation staff when the level needs them.",
     ],
     [
       { highAcuity: undefined },
@@ -144,6 +144,10 @@ describe("referralDraftBlockedReason", () => {
     [
       { legalFormDueAtDate: "2026-10-15" },
       "Enter both the date and the time written on the form, or leave both blank.",
+    ],
+    [
+      { observationReviewTime: "143" },
+      "Type the observation review time as a clock time, for example 14:30, or leave it blank.",
     ],
   ])("blocks %o with the exact text", (change, reason) => {
     expect(referralDraftBlockedReason({ ...complete, ...change })).toBe(reason);
@@ -163,7 +167,7 @@ describe("referralDraftMissingFields", () => {
     gender: "not_recorded",
     legalStatus: "Voluntary",
     urgency: 2,
-    specialling: false,
+    observation: "general",
     highAcuity: false,
     legalFormDueAtDate: "",
     legalFormDueAtTime: "",
@@ -182,7 +186,7 @@ describe("referralDraftMissingFields", () => {
       gender: undefined,
       legalStatus: undefined,
       urgency: undefined,
-      specialling: undefined,
+      observation: undefined,
       highAcuity: undefined,
       legalFormDueAtTime: "09:00",
     };
@@ -194,7 +198,7 @@ describe("referralDraftMissingFields", () => {
       "gender",
       "legalStatus",
       "urgency",
-      "specialling",
+      "observation",
       "highAcuity",
       "legalFormDueAtDate",
     ]);

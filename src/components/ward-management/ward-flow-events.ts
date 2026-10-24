@@ -9,9 +9,16 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type {
+  ReferralContactOutcome,
+  ReferralContactTarget,
+  ReferralOwnerDesk,
+} from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   SupportNotificationOccasion,
   SupportNotificationOutcome,
@@ -59,7 +66,6 @@ import type {
   ReferralGender,
   ReferralSource,
   ReferralSuburb,
-  Security,
   RecordedSex,
   StepBackReason,
   TransportExceptionGap,
@@ -88,93 +94,19 @@ export type TransportExceptionInput = { gaps: TransportExceptionGap[]; reason: T
 export type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
+import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+import type {
+  ArrivalCheckEvent,
+  ReleaseNoticeEvent,
+} from "@/components/ward-management/ward-flow-release-notice-events";
+import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 
-/** The short form an ED fills in to raise a brand-new referral. */
-export type ReferralDraft = {
-  cohort: Cohort;
-  security: Security;
-  /** Recorded sex (R7, 25 September 2026) — see `RECORDED_SEXES`. */
-  sex: RecordedSex;
-  /**
-   * T10, item 8 (owner answer, 17 September 2026): the gender recorded at referral — see
-   * `Movement.gender`'s doc comment (`ward-model.ts`) for why this is a separate, wider fact from
-   * `sex` above. Optional, and absent means not yet recorded — the same convention `sex`'s
-   * neighbours on this draft hold to; T11's intake screen is what requires an active choice
-   * (including an explicit "Not yet recorded") before a referral can be raised, which is a
-   * screen-level rule and not one this type can express.
-   */
-  gender?: ReferralGender;
-  /**
-   * T15 (item 12): the ED's own choice at intake, which REPLACES whatever a linked referral
-   * carried (the 29 Aug ruling: "easy to continually adjust and refine along the way"). Optional
-   * — most journeys are raised with no referral to inherit from and no ED choice either, and
-   * absent leaves `Movement.tentativeDiagnosis` unset rather than forcing a guess.
-   */
-  tentativeDiagnosis?: TentativeDiagnosisBlock;
-  specialling: boolean;
-  /**
-   * Whether high-acuity nursing is requested. **The referring clinician marks it — owner ruling,
-   * 2026-09-10**, chosen over the system working it out, which would have been the first thing
-   * Ward Flow ever did that assessed a patient.
-   *
-   * A plain `boolean` with `false` as the ordinary state, exactly like `specialling` above. It is
-   * never inferred from `urgency`, `security` or `legalStatus` on this same draft.
-   */
-  highAcuity: boolean;
-  legalStatus: LegalStatus;
-  urgency: 1 | 2 | 3;
-  /** Category supplied by the referring clinician, never inferred from urgency. */
-  atsCategory?: AtsCategory;
-  /**
-   * The legal form the clinician selected, as a code from `SELECTABLE_LEGAL_FORMS`, or `null`
-   * for no form at all. Explicitly nullable rather than optional or an empty string so that
-   * "this patient is on no form" is a first-class choice the clinician made, indistinguishable
-   * from neither a field the caller forgot to fill in nor a blank that could be read as a
-   * default. Nothing derives this from `legalStatus` any more (product owner, 2026-08-24).
-   */
-  legalFormCode: string | null;
-  /**
-   * The expiry written on the legal form, **as typed by the clinician raising this referral** —
-   * minutes since midnight, like every other `Instant`. May be supplied beside ANY
-   * `legalFormCode`, not only a transport or transfer order — see the correction below.
-   *
-   * 🔴 **CAPTURED, NEVER COMPUTED, AND THAT IS THE WHOLE DESIGN OF THIS FIELD.** The product
-   * owner was asked on 2026-09-07, in one sentence — *"when a coordinator raises a transport (4A)
-   * or transfer (4C) order, should the screen ask them to type the due time?"* — and answered
-   * **"Yes"**. That answer authorises ASKING. It does not authorise deriving a deadline from a
-   * statutory interval, which he declined separately on **2026-08-23**: *"please can you leave the
-   * legal part and just start a clock once the patient arrives to ED. Keep it simple for now."*
-   *
-   * ⚠️ **So nothing may ever populate this from a duration.** A prototype that computes a
-   * statutory deadline is making a claim about the Mental Health Act on a clinician's screen, and
-   * `ward-model.ts`'s `LegalForm` records that this model once carried exactly such a figure on a
-   * Form 1A *"on the strength of an unverified figure an earlier agent wrote into this file from
-   * its own recollection"*. It was removed. Do not reintroduce it in this direction either.
-   *
-   * ⚠️ **AND DO NOT TAKE A DEFAULT FROM THE FIXTURE.** `ward-movements.ts` seeds four deadlines —
-   * 4A at `NOW_ANCHOR + 60` and `+ 90`, 4C at `+ 300` and `+ 340`. **They disagree with each
-   * other, so they cannot be intervals: a statute does not give two answers for one form.** They
-   * are illustrative figures for the demonstration corpus. Anyone reading them to recover "the"
-   * interval gets two, and the one they pick will look authoritative on screen.
-   *
-   * 🔴 **CORRECTED 2026-09-17, T2 — "ONLY 4A AND 4C MAY CARRY ONE" IS NOW FALSE.** Until this date
-   * the reducer dropped this value for every code but `transport`/`transfer` kinds, and
-   * `tests/ward-legal-figure-guard.test.ts` held an allowlist that made that binding. Owner answer
-   * 1, 2026-09-17: the clinician types the expiry written on whichever form they hold — 1A, 3B,
-   * 3D, 4A or 4C alike. The reducer now captures this value for any selected code; the guard's
-   * allowlist was replaced by a provenance property (every `dueAt` the guard's sweep ever produces
-   * must trace to a value the test itself supplied or an authored fixture value, never a computed
-   * one) — see that file's own header for the current shape of the check.
-   *
-   * **Optional, and it stays optional.** A required due time would block the intake form, which is
-   * a larger behaviour change than the owner authorised, and `ward-model.ts`'s `LegalForm` comment
-   * is emphatic that an absent `dueAt` must be rendered as absent — never as "clear" and never as
-   * "not yet due".
-   */
-  legalFormDueAt?: Instant;
-};
+// The ED's intake form type lives in its own file (line cap, 22 Oct 2026), re-exported here.
+import type { ReferralDraft } from "@/components/ward-management/ward-referral-draft";
+export type { ReferralDraft };
 
 /**
  * One variant per row of spec §6. Every event carries `role` (checked against `EVENT_ROLE`
@@ -253,7 +185,11 @@ export type WardFlowEvent =
       type: "RAISE_REFERRAL";
       role: WardFlowRole;
       now: Instant;
-      edId: string;
+      /**
+       * The ED the journey starts at. D-76: absent only when an accepting ward or the coordinator
+       * starts the journey of an accepted community referral, which starts at the referring team.
+       */
+      edId?: string;
       draft: ReferralDraft;
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */
@@ -467,6 +403,8 @@ export type WardFlowEvent =
        * bed a current stay or another accepted movement on the unit already holds.
        */
       bedNumber?: number;
+      /** D-72: the extra-travel bed hold, stored as `Movement.extendedHoldAt`. `true` or absent. */
+      extendedHold?: true;
       /** B1: a ward answering names itself; refused when it answers for another ward. The
        *  coordinator acts for any ward and sends none. */
       actingUnitId?: string;
@@ -595,6 +533,13 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       dueAt: Instant;
+      /** Explicit transcription correction; ordinary expiry entries remain later-only extensions. */
+      correction?: {
+        expectedFormCode: string;
+        expectedFormWrittenAt: Instant | null;
+        expectedDueAt: Instant;
+        reason: LegalFormExpiryCorrectionReason;
+      };
     }
   | {
       /**
@@ -778,6 +723,35 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Fix plan item 4 (Josh, 21 Oct 2026): assign a front-door referral to the desk chasing it.
+       * Appends to `Referral.ownerHistory`; the last entry is the owner. A desk, never a person.
+       * The coordinator assigns to any desk in `REFERRAL_OWNER_DESKS`; an ED or community desk
+       * takes a referral only for itself. Not a lock: anyone can still act on the referral.
+       */
+      type: "ASSIGN_REFERRAL";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      owner: ReferralOwnerDesk;
+    }
+  | {
+      /**
+       * Fix plan item 4: log a call made about a referral. Records who was rung (a ward, a community
+       * team or the referrer), what they said from a closed list, the time and the calling desk.
+       * Never typed. A call never answers the referral or stops its decision clock; a ward's answer
+       * is still `ACCEPT_REFERRAL` or `DECLINE_REFERRAL`. Replaces the unwired "Call" button.
+       * `contact` names the place rung, not a place the sender acts from, so it sits in its own
+       * object rather than a top-level `unitId`.
+       */
+      type: "LOG_REFERRAL_CONTACT";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      contact: ReferralContactTarget;
+      outcome: ReferralContactOutcome;
+    }
+  | {
+      /**
        * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets
        * `Unit.isClosed` and `Unit.admissionsClosure`. `reason` is chosen from `WARD_CLOSURE_REASONS`,
        * never typed; `until` is an expected reopening that only prompts. Existing holds and
@@ -829,6 +803,8 @@ export type WardFlowEvent =
       action: BedMeetingActionKind;
       actingUnitId?: string;
     }
+  // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
+  | RestrictivePracticeWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;
@@ -1011,6 +987,8 @@ export type WardFlowEvent =
       movementId: string;
       team: string;
       reason?: string;
+      /** D-74: follow-up or assess for admission. The ED form always sends it; absent reads as follow-up. */
+      purpose?: CommunityReferralPurpose;
     }
   | {
       /**
@@ -1920,12 +1898,13 @@ export type WardFlowEvent =
        * (`kind: "acceptance_withdrawn"`, carrying the withdrawn unit's id — see `UnwindRecord`'s
        * own doc comment).
        *
-       * ⚠️ **GATED TO `movement.stage === "accepted_awaiting_bed"` ONLY** (owner ruling 2 of
-       * 2026-09-04, deliberately narrow: a withdrawal from `pulled` or later is a bigger act with
-       * different consequences — a bed is physically held and, past `handover_ready`, a patient
-       * may be moving — and the owner recorded this as an OPEN QUESTION for himself, not a settled
-       * boundary: "the bed was lost" is exactly the reason that would arise at `pulled`, so the
-       * narrow gate probably excludes a real case. Widening it later is his call, not this build's).
+       * ⚠️ **GATED TO `accepted_awaiting_bed` AND `pulled`, PLUS ANY EARLIER STAGE A MOVEMENT WAS
+       * STEPPED BACK TO WHILE STILL HOLDING ITS BED** (owner answer Q16, 2026-09-16, widening ruling
+       * 2 of 2026-09-04; such a movement keeps its stage). When a bed is held, the same act releases
+       * the bed (as `RELEASE_PULL` does) and records both a
+       * `pull_released` and an `acceptance_withdrawn` unwind; the referring ED is told as well as
+       * the ward. Still refused from `handover_ready` on, where a patient may be moving, and while a
+       * transport job is booked or the patient has been collected.
        *
        * ⚠️ **DOES NOT RE-ADD THE WITHDRAWN UNIT TO `referredUnitIds`** (owner ruling 3 of
        * 2026-09-04): withdrawing an acceptance is not the same act as re-referring, and reviving a
@@ -2497,8 +2476,7 @@ export type WardFlowEvent =
        * Advisory checklist (9 Oct 2026): records that a carer, personal support person or the
        * Mental Health Advocacy Service was told about an involuntary patient's admission, transfer
        * or discharge, or that it does not apply. A record of what a person says happened; nothing
-       * here decides whether a notice is legally required or when. See
-       * `ward-support-notifications.ts`.
+       * here decides whether a notice is legally required or when. See `ward-support-notifications.ts`.
        *
        * 🔴 `who` and `reason` are typed text, so this event is on the typed-text persistence list.
        */
@@ -2519,6 +2497,12 @@ export type WardFlowEvent =
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
     }
+  // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
+  | ReleaseNoticeEvent
+  | ArrivalCheckEvent
+  | ObservationLevelEvent
+  | RecordWardDiagnosisEvent
+  | import("./ward-flow-referral-ask-events").ReferralAskEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

@@ -1,8 +1,10 @@
+import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import { referralIntakeError } from "./referrals/referral-submission";
 import { type AuditDecision } from "./ward-audit";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import {
   WARD_FLOW_ROLE_LABELS,
@@ -13,6 +15,7 @@ import {
   GENDER_MISMATCH_DECLINE_REASON,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
 } from "@/components/ward-management/ward-legal-clock";
+import { LEGACY_DECLINE_REASONS } from "@/components/ward-management/ward-decline-legacy";
 import {
   COHORTS,
   COMMUNITY_DECLINE_REASONS,
@@ -31,6 +34,7 @@ import {
   genderReviewNeeded,
   type ClinicalReassessmentEntry,
   type CommunityDeclineReason,
+  type DeclineReason,
   type Movement,
   type Notice,
   type Referral,
@@ -89,11 +93,13 @@ export function reduceReferralAnswerEvent(
     referralAcceptanceRefusal,
     referralReferrer,
     reject,
+    releasePulledBedAndAdmission,
     replaceMovement,
     replaceReferral,
     unitName,
     wardActingMovementRefusal,
     wardActingUnitRefusal,
+    withoutReferralBedHold,
   } = helpers;
   switch (event.type) {
     case "ACCEPT_IN_PRINCIPLE": {
@@ -125,6 +131,8 @@ export function reduceReferralAnswerEvent(
       }
       const acceptedUnit = findUnit(state, event.unitId);
       if (!acceptedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
+      const closedRefusal = closedToAdmissionsRefusal(acceptedUnit);
+      if (closedRefusal) return reject(state, event, closedRefusal);
 
       // T12: `ACCEPT_IN_PRINCIPLE` never writes a gender-placement record (only `REFER_TO_UNITS`
       // does); it refuses when nothing on the movement names this unit. See `GenderPlacement`
@@ -189,6 +197,8 @@ export function reduceReferralAnswerEvent(
             : movement.overrides,
         // The instant this acceptance happened. See `Movement.acceptedAt`.
         acceptedAt: event.now,
+        // D-72: the extra-travel bed hold belongs to this acceptance only. See `Movement.extendedHoldAt`.
+        extendedHoldAt: event.extendedHold === true ? event.now : undefined,
         stage: "accepted_awaiting_bed",
         referredUnitIds: [],
         withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawn],
@@ -224,6 +234,8 @@ export function reduceReferralAnswerEvent(
     }
 
     case "DECLINE": {
+      // D-78: a retired ward value ("no_bed") still reads, as the merged reason it maps to.
+      const reason: DeclineReason = LEGACY_DECLINE_REASONS[event.reason] ?? event.reason;
       const actingRefusal = wardActingMovementRefusal(event);
       if (actingRefusal) return reject(state, event, actingRefusal);
       const movement = findMovement(state, event.movementId);
@@ -241,14 +253,14 @@ export function reduceReferralAnswerEvent(
       if (!movement.referredUnitIds.includes(event.unitId)) {
         return reject(state, event, `${event.unitId} does not hold a live referral for movement ${movement.id}`);
       }
-      if (event.reason === GENDER_MISMATCH_DECLINE_REASON || (event.reason as string) === "sex_mix") {
+      if (reason === GENDER_MISMATCH_DECLINE_REASON) {
         return reject(
           state,
           event,
           `Gender mismatch does not decline a referral; it only filters which bed can be offered`,
         );
       }
-      if ((WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(event.reason)) {
+      if ((WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(reason)) {
         const waitlistedUnitIds = [...(movement.waitlistedUnitIds ?? [])];
         if (!waitlistedUnitIds.includes(event.unitId)) {
           if (waitlistedUnitIds.length >= state.configuration.parallelReferralCap) {
@@ -263,7 +275,7 @@ export function reduceReferralAnswerEvent(
         const updated: Movement = {
           ...movement,
           waitlistedUnitIds,
-          declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+          declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }],
           referralAnswerHistory: [
             ...(movement.referralAnswerHistory ?? []),
             { unitId: event.unitId, at: event.now, answer: "waitlisted" },
@@ -281,16 +293,14 @@ export function reduceReferralAnswerEvent(
           ),
         ]);
       }
-      if (!DECLINE_REASONS.includes(event.reason)) {
+      if (!DECLINE_REASONS.includes(event.reason) && !Object.hasOwn(LEGACY_DECLINE_REASONS, event.reason)) {
         /**
          * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
          * no `tsc` involved.
          *
-         * `DECLINE_REASONS`, not `REFERRAL_DECLINE_REASONS`: `DECLINE` refuses a movement,
-         * `DECLINE_REFERRAL` a referral, and swapping the lists would look like a working check.
-         * `tests/ward-reason-checks-use-their-own-list.test.ts` guards the pairing. The timeline
-         * reads `declineReasonLabels[...]` with no fallback, so an off-list value would print
-         * "undefined".
+         * `DECLINE_REASONS` is the one list for both decline events since D-78; this check is the
+         * movement side of it. The timeline reads `declineReasonLabels[...]` with no fallback, so an
+         * off-list value would print "undefined".
          */
         return reject(state, event, `DECLINE reason must be chosen from DECLINE_REASONS`);
       }
@@ -298,7 +308,7 @@ export function reduceReferralAnswerEvent(
       const updated: Movement = {
         ...movement,
         referredUnitIds: remainingReferredUnitIds,
-        declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason: event.reason }],
+        declines: [...movement.declines, { unitId: event.unitId, at: event.now, reason }],
         stage: "destination_review",
         referralAnswerHistory: [
           ...(movement.referralAnswerHistory ?? []),
@@ -309,7 +319,7 @@ export function reduceReferralAnswerEvent(
         // exactly one entry.
         stageChanges: [
           ...movement.stageChanges,
-          { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason: event.reason },
+          { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason },
         ],
         // "Awaiting destination response" is only true while a live request stands; declining the
         // last one switches to `wardRequestWithdrawn`, as `WITHDRAW_WARD_REQUEST` does.
@@ -328,7 +338,7 @@ export function reduceReferralAnswerEvent(
           "referral_declined",
           { role: "ed", placeId: movement.originEdId },
           { movementId: movement.id, unitId: event.unitId },
-          `${unitName(state, event.unitId)} declined ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
+          `${unitName(state, event.unitId)} declined ${movement.id} (${reason.replace(/_/g, " ")}).`,
         ),
       ]);
     }
@@ -401,11 +411,26 @@ export function reduceReferralAnswerEvent(
           return reject(state, event, `RECEIVE_REFERRAL purpose must be chosen from REFERRAL_PURPOSES`);
         }
       }
+      // D-74: a community arm's purpose, when sent, is one of the two listed. Absent reads as
+      // follow-up, as on arms saved before D-74.
+      if (
+        event.destinations.some(
+          (destination) =>
+            destination.kind === "community_team" &&
+            destination.purpose !== undefined &&
+            !isCommunityReferralPurpose(destination.purpose),
+        )
+      ) {
+        return reject(state, event, "RECEIVE_REFERRAL community purpose is not listed");
+      }
       for (const wardDestination of event.destinations) {
         if (wardDestination.kind !== "psychiatric_ward") continue;
-        if (wardDestination.unitId !== undefined && !findUnit(state, wardDestination.unitId)) {
+        const namedWard = wardDestination.unitId === undefined ? undefined : findUnit(state, wardDestination.unitId);
+        if (wardDestination.unitId !== undefined && !namedWard) {
           return reject(state, event, "RECEIVE_REFERRAL unitId must resolve to a real ward");
         }
+        const closedRefusal = namedWard ? closedToAdmissionsRefusal(namedWard) : null;
+        if (closedRefusal) return reject(state, event, closedRefusal);
         if (!RECORDED_SEXES.includes(wardDestination.sex))
           return reject(state, event, "RECEIVE_REFERRAL sex must be chosen from RECORDED_SEXES");
         if (wardDestination.gender !== undefined && !REFERRAL_GENDERS.includes(wardDestination.gender))
@@ -831,6 +856,8 @@ export function reduceReferralAnswerEvent(
         }
         const unit = findUnit(state, event.unitId);
         if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
+        const closedRefusal = closedToAdmissionsRefusal(unit);
+        if (closedRefusal) return reject(state, event, closedRefusal);
         if (event.bedNumber !== undefined) {
           const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, undefined);
           if (bedRefusal) return reject(state, event, bedRefusal);
@@ -1174,18 +1201,24 @@ export function reduceReferralAnswerEvent(
         return reject(state, event, `cannot withdraw an acceptance for a closed movement (${movement.closure.reason})`);
       }
       /**
-       * The message states the condition the guard tests, never a cause: five stages can reach it,
-       * and at the two earliest no bed exists. `arrived` cannot reach here, since arrival sets
-       * `closure`. Do not restore the removed wording, even quoted.
+       * The message states the condition the guard tests, never a cause. `arrived` cannot reach
+       * here, since arrival sets `closure`. Do not restore the removed wording, even quoted.
        *
        * `stageCopy`'s label is not used: importing `ward-derivations.ts` would be circular (and
        * pull in `lucide-react`). `.replace(/_/g, " ")` is this file's idiom.
+       *
+       * Q16 (owner, 16 Sept 2026): withdrawing is allowed at `pulled` too, and at any earlier stage
+       * a movement was stepped back to while still holding its bed, releasing the bed in the same
+       * act. It stays refused from `handover_ready` on, where a patient may be moving.
        */
-      if (movement.stage !== "accepted_awaiting_bed") {
+      const steppedBackHoldingBed =
+        movement.admissionId !== undefined &&
+        (movement.stage === "placement_requested" || movement.stage === "destination_review");
+      if (movement.stage !== "accepted_awaiting_bed" && movement.stage !== "pulled" && !steppedBackHoldingBed) {
         return reject(
           state,
           event,
-          `cannot withdraw an acceptance unless the movement is still awaiting a bed ` +
+          `cannot withdraw an acceptance unless the movement is awaiting a bed or has one pulled ` +
             `(movement ${movement.id} is at ${stageCopy[movement.stage].label})`,
         );
       }
@@ -1193,39 +1226,85 @@ export function reduceReferralAnswerEvent(
         return reject(state, event, `WITHDRAW_ACCEPTANCE reason must be chosen from STEP_BACK_REASONS`);
       }
       /**
-       * A movement stepped back from `pulled` is at this stage and still holds a bed. Refused,
-       * naming the existing route (restore the pull, release it, then withdraw); a bed-holding
-       * withdrawal is an open owner question (ruling 2).
+       * Q16: a bed is held at `pulled`, and also by a movement stepped back from `pulled` (it keeps
+       * its `admissionId`). Either way the bed is released in this one act and both facts are
+       * recorded: a `pull_released` unwind and an `acceptance_withdrawn` unwind. The transport
+       * guards are `RELEASE_PULL`'s: a collected patient is `STOP_TRANSPORT`, and a booked job is
+       * cancelled first so the officer and receiving ward are told.
        */
-      if (movement.admissionId !== undefined) {
+      const holdsBed = movement.stage === "pulled" || movement.admissionId !== undefined;
+      if (holdsBed && movement.transport?.collectedAt !== undefined) {
+        return reject(state, event, `movement ${movement.id}'s patient has been collected; use STOP_TRANSPORT`);
+      }
+      if (holdsBed && movement.transport !== undefined && movement.transport.cancelledAt === undefined) {
         return reject(
           state,
           event,
-          `cannot withdraw an acceptance while movement ${movement.id} still holds a bed (admission ${movement.admissionId}); pull it again to restore it, release the pull, then withdraw`,
+          `movement ${movement.id} has a transport job booked; cancel it (CANCEL_TRANSPORT) before withdrawing the acceptance`,
         );
       }
       // Read before clearing: `UnwindRecord.unitId` names which ward's acceptance this was.
       const withdrawnUnitId = movement.acceptedUnitId;
+      // The shared helper gives nothing back when the reservation does not match the movement. A
+      // release is never recorded unless one happened, so this is checked before the referral's
+      // bed number is stripped (that strip changes state on its own).
+      const bedReleased = holdsBed ? releasePulledBedAndAdmission(state, movement, event.now) : state;
+      if (holdsBed && bedReleased === state) {
+        return reject(state, event, `movement ${movement.id}'s held bed matches no releasable reservation`);
+      }
+      const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
+      const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
       const updatedMovement: Movement = {
         ...movement,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         heldBedNumber: undefined,
-        stage: "destination_review",
+        stage: withdrawnStage,
+        // The bed is given back, so the pull's fields go with it, as in `RELEASE_PULL`. A cancelled
+        // job is already in `unwinds`. The blocker is restated because a pulled movement's blocker
+        // can be a transport sentence, which is false once the bed is gone.
+        ...(holdsBed
+          ? {
+              admissionId: undefined,
+              allocatedBed: undefined,
+              pullExpiresAt: undefined,
+              transport: undefined,
+              blocker:
+                movement.referredUnitIds.length > 0
+                  ? STAGE_TRANSITION_BLOCKERS.referred
+                  : STAGE_TRANSITION_BLOCKERS.wardRequestWithdrawn,
+            }
+          : {}),
         // Not pushed back into `referredUnitIds` (owner ruling 3): withdrawing an acceptance is not
         // re-referring.
-        stageChanges: [
-          ...movement.stageChanges,
-          {
-            at: event.now,
-            from: "accepted_awaiting_bed",
-            to: "destination_review",
-            by: event.role,
-            reason: event.reason,
-          },
-        ],
+        // A movement already stepped back to Destination review or earlier stays where it is, so it
+        // gets no stage entry; the unwinds below still record the act.
+        stageChanges:
+          withdrawnStage === movement.stage
+            ? movement.stageChanges
+            : [
+                ...movement.stageChanges,
+                {
+                  at: event.now,
+                  from: movement.stage,
+                  to: withdrawnStage,
+                  by: event.role,
+                  reason: event.reason,
+                },
+              ],
         unwinds: [
           ...movement.unwinds,
+          ...(holdsBed
+            ? [
+                {
+                  at: event.now,
+                  kind: "pull_released" as const,
+                  by: event.role,
+                  reason: event.reason,
+                  unitId: withdrawnUnitId,
+                },
+              ]
+            : []),
           {
             at: event.now,
             kind: "acceptance_withdrawn",
@@ -1235,19 +1314,34 @@ export function reduceReferralAnswerEvent(
           },
         ],
       };
-      const next = replaceMovement(state, movement.id, updatedMovement);
+      const next = replaceMovement(released, movement.id, updatedMovement);
+      const reasonText = event.reason.replace(/_/g, " ");
       // Item 48, Q3 (owner): the ward whose acceptance was undone is told. `withdrawnUnitId` was
       // read before this handler cleared it.
-      return appendNotices(next, [
+      const notices = [
         makeNotice(
           event.now,
           state.notices.length,
           "acceptance_withdrawn_ward",
           { role: "ward", placeId: withdrawnUnitId },
           { movementId: movement.id, unitId: withdrawnUnitId },
-          `The coordinator withdrew this ward's acceptance of ${movement.id}. The patient is not coming unless this ward is asked again.`,
+          `The coordinator withdrew this ward's acceptance of ${movement.id}${holdsBed ? " and released the bed held for them" : ""}. The patient is not coming unless this ward is asked again.`,
         ),
-      ]);
+      ];
+      // Addendum §1.3, as in `RELEASE_PULL`: "a referrer not told goes on believing a bed is coming."
+      if (holdsBed) {
+        notices.push(
+          makeNotice(
+            event.now,
+            state.notices.length + 1,
+            "bed_pull_released",
+            { role: "ed", placeId: movement.originEdId },
+            { movementId: movement.id, unitId: withdrawnUnitId },
+            `The coordinator withdrew ${withdrawnUnitId === undefined ? "the ward" : unitName(state, withdrawnUnitId)}'s acceptance of ${movement.id} and released the bed held for them (${reasonText}).`,
+          ),
+        );
+      }
+      return appendNotices(next, notices);
     }
   }
 }

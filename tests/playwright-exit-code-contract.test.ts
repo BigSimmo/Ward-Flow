@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 import { childProcessExitCode } from "../scripts/child-process-result.mjs";
 import { journeyRunVerdict, requestedProjects } from "../scripts/ward-flow/journey-run-verdict.mjs";
+import { releaseGateCases } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 /**
  * `scripts/run-playwright.mjs` propagates failure through its exit status.
@@ -121,6 +122,8 @@ async function runPhase({
       childProcessExitCode,
       requestedProjects,
       journeyRunVerdict,
+      releaseGateCases,
+      requiredReleaseGate: false,
       readJsonReport: readReport,
       readFileSync: (file: string) => JSON.stringify(readReport(file)),
       keepJourneyFailures: () => null,

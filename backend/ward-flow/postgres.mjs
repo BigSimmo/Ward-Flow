@@ -117,8 +117,10 @@ export function createWorkspaceStore(
   };
   const snapshot = (row, at, view) => ({
     dataMode: row.data_mode,
-    // Whether the demonstration controls work here, so the screens can say when they do not.
-    demoControls: demoEvents,
+    // Whether the demonstration controls work here for this desk, so the screens can say when they
+    // do not. They are the statewide coordinator's alone (commandRefusal), so no other desk is told
+    // they work (role access plan v2, D-80).
+    demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
     revision: Number(row.revision),
     ...accessContext(at, view),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
@@ -126,6 +128,8 @@ export function createWorkspaceStore(
   });
   /** The cutoff before which a role not used since switches off (synthetic, clinical values). */
   const unusedBefore = (at) => new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000);
+  // D-80: a role's end date is at most 12 months away.
+  const tooLong = (expiresAt, at) => expiresAt.getTime() > at.getTime() + engine.ACCESS_MAX_TERM_MINUTES * 60_000;
   /**
    * The place each desk (a membership a phone was turned on from) works across, as the viewer
    * builds it: a nurse in charge's own ward plus any ward cover that account holds, so night cover
@@ -1154,6 +1158,7 @@ export function createWorkspaceStore(
       return transaction(async (client, at) => {
         const row = await lock(client, view.actorId, at, view);
         if (!(request.expiresAt > at)) return refused(400, "A role needs an end date in the future.");
+        if (tooLong(request.expiresAt, at)) return refused(400, engine.ACCESS_TOO_LONG);
         if (!engine.scopeExists(row.payload, access.scope)) return refused(422, "That place is not in the workspace.");
         if (!engine.scopeWithin(row.payload, access.scope, view.access.scope))
           return refused(403, "That role is wider than your own.");
@@ -1184,6 +1189,11 @@ export function createWorkspaceStore(
         const row = await lock(client, view.actorId, at, view);
         const giver = view.ownAccess === undefined ? view.access : view.ownAccess;
         if (!giver) return refused(403, "Cover cannot be passed on. Ask the ward's nurse in charge or a coordinator.");
+        // D-80: only a colleague who already holds a ward or ED role, still in use, may be given cover.
+        const { rows: held } = await client.query(
+          "SELECT role FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND kind='role' AND revoked_at IS NULL AND expires_at > $3 AND coalesce(last_used_at, granted_at) > $4 AND role IN ('ward','ed') LIMIT 1",
+          [workspaceId, request.actorId, at, unusedBefore(at)],
+        );
         const refusal = engine.coverRefusal(
           row.payload,
           giver,
@@ -1191,6 +1201,7 @@ export function createWorkspaceStore(
           request.actorId,
           cover.scope,
           request.minutes,
+          held.map((membership) => membership.role),
         );
         if (refusal) return refused(422, refusal);
         const expiresAt = new Date(at.getTime() + request.minutes * 60_000);
@@ -1297,6 +1308,7 @@ export function createWorkspaceStore(
         let membership = null;
         if (decision === "approved") {
           if (!(expiresAt > at)) return refused(400, "A role needs an end date in the future.");
+          if (tooLong(expiresAt, at)) return refused(400, engine.ACCESS_TOO_LONG);
           if (!engine.scopeExists(row.payload, access.scope))
             return refused(422, "That place is not in the workspace.");
           membership = await insertGrant(
@@ -1365,27 +1377,36 @@ export function createWorkspaceStore(
           ? state.patients.some((patient) => patient.id === patientId)
           : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
-      const { rowCount } = await pool
-        .query(
-          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
-          [
-            workspaceId,
-            view.actorId,
-            view.membershipId ?? null,
-            view.access.role,
-            view.access.scope,
-            patientId,
-            surface,
-            at,
-            new Date(at.getTime() - VIEW_REPEAT_MS),
-            VIEW_RATE_LIMIT,
-          ],
-        )
-        .catch((error) => {
-          forgetVersionOnMissing(error);
-          throw error;
-        });
-      return { status: 200, body: { logged: rowCount > 0 } };
+      return transaction(async (client, loggedAt) => {
+        // Serialize each account's check and insert. A separate lock statement gives the
+        // following INSERT a fresh snapshot after an earlier opening commits.
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':record-access'))", [
+          workspaceId,
+          view.actorId,
+        ]);
+        loggedAt.setTime(clock().getTime());
+        const { rowCount } = await client
+          .query(
+            "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
+            [
+              workspaceId,
+              view.actorId,
+              view.membershipId ?? null,
+              view.access.role,
+              view.access.scope,
+              patientId,
+              surface,
+              loggedAt,
+              new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
+              VIEW_RATE_LIMIT,
+            ],
+          )
+          .catch((error) => {
+            forgetVersionOnMissing(error);
+            throw error;
+          });
+        return { status: 200, body: { logged: rowCount > 0 } };
+      });
     },
     /**
      * The newest record openings, optionally for one patient. Only the statewide coordinator reads

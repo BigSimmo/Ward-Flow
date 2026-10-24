@@ -313,6 +313,46 @@ export const stepBackReasonLabels: Record<StepBackReason, string> = {
 export type LegalStatus =
   "Voluntary" | "Referred for psychiatric examination" | "Detained awaiting examination" | "Involuntary inpatient";
 
+/** Fixed reasons for correcting a transcribed paper expiry; no narrative is stored. */
+export const PAPER_EXPIRY_CORRECTION_REASONS = ["transcription_error", "paper_rechecked"] as const;
+export type LegalFormExpiryCorrectionReason = (typeof PAPER_EXPIRY_CORRECTION_REASONS)[number];
+
+/** Paper-expiry facts carried by a movement, kept here with the legal vocabulary. */
+export type LegalFormExpiryMetadata = {
+  /**
+   * EVERY TYPED EXPIRY EVER RECORDED AGAINST THIS MOVEMENT'S LEGAL FORM, OLDEST FIRST — added T2
+   * (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item 5
+   * (regional extensions): *"the clinician records the extension and the new expiry; the app
+   * never calculates one."*
+   *
+   * Referral capture, written-form capture, continuation and typed-expiry events append the
+   * supplied expiry. Replacement forms may have no expiry while this history remains intact;
+   * current authority is legalForm.dueAt, never the last historical entry. An extension of the
+   * current recorded form must be later than its entered expiry. A replacement form begins a new
+   * current value and does not erase the prior form's history.
+   *
+   * Absent on the six authored synthetic fixture expiries, which predate these writers. Never
+   * backfill an actor or typed record for those examples. Legacy calculated clocks are not paper
+   * evidence and cannot force a clinician's first actual entry to be treated as an extension.
+   */
+  legalFormExpiryHistory?: {
+    at: Instant;
+    by: WardFlowRole;
+    dueAt: Instant;
+    basis: "written_on_form" | "extension" | "correction";
+  }[];
+  /** Checked paper corrections preserve both recorded values separately from extensions. */
+  legalFormExpiryCorrections?: {
+    at: Instant;
+    by: WardFlowRole;
+    formCode: string;
+    formWrittenAt?: Instant;
+    previousDueAt: Instant;
+    dueAt: Instant;
+    reason: LegalFormExpiryCorrectionReason;
+  }[];
+};
+
 /**
  * The legal clock and the ED clock are different clocks (spec "Model changes this phase
  * requires", `Movement.formedAt`). `dueAt`, when present, is the legal clock — never computed by
@@ -412,6 +452,20 @@ export type LegalForm = {
     by: WardFlowRole;
     continuedFormDueAt?: Instant;
   };
+  /**
+   * Audit 2 E-15 (20 Oct 2026): earlier 5B continuations of the same 5A, oldest first, kept when a
+   * later 5B is recorded so no first-recorded time is overwritten. Typed facts only.
+   */
+  earlierContinuations?: ReadonlyArray<NonNullable<LegalForm["continuedBy"]>>;
+  /**
+   * Audit 2 E-16 (Josh, 20 Oct 2026): the forms this one replaced, oldest first, each as it was
+   * recorded, with when (`at`) and by whom it was replaced. `writtenAt` and `receivedAt` copy the
+   * movement's `formedAt` and `legalFormReceivedAt` for that form. History only: nothing reads an
+   * expiry from it and nothing is computed.
+   */
+  earlierForms?: ReadonlyArray<
+    Omit<LegalForm, "earlierForms"> & { writtenAt?: Instant; receivedAt?: Instant; at: Instant; by: WardFlowRole }
+  >;
 };
 
 /**
@@ -427,4 +481,14 @@ export type CapacityFigure = {
   confirmedAt: Instant;
   staleAfterMinutes: number;
   revision?: number;
+  /** DEC-L5-04: how many times the ward has confirmed it; only `CONFIRM_CAPACITY` moves it on. */
+  confirmations?: number;
+  /**
+   * Which desk confirmed a `ward` figure: the ward itself, the site bed manager or the coordinator
+   * (D-80). Absent on figures recorded before it existed, which were the ward's own.
+   */
+  confirmedBy?: CapacityConfirmer;
 };
+
+/** The desks that may confirm a ward's bed figure, as `EVENT_ROLE.CONFIRM_CAPACITY` allows. */
+export type CapacityConfirmer = "ward" | "bed_manager" | "coordinator";

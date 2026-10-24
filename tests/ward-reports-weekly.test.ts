@@ -294,9 +294,9 @@ describe("weeklyOperationsReport", () => {
     const movement = f.movement("WF-G", {
       openedAt: week.start,
       declines: [
-        { unitId: f.unit.id, at: week.start + 60, reason: "no_bed" },
-        { unitId: f.unit.id, at: week.start + 120, reason: "no_bed" },
-        { unitId: f.unit.id, at: week.end + 60, reason: "sex_mix" },
+        { unitId: f.unit.id, at: week.start + 60, reason: "no_suitable_bed" },
+        { unitId: f.unit.id, at: week.start + 120, reason: "no_suitable_bed" },
+        { unitId: f.unit.id, at: week.end + 60, reason: "sex_designation_unavailable" },
       ],
       overrides: [
         { at: week.start + 30, by: "coordinator", reason, unitIds: [f.unit.id] },
@@ -305,7 +305,7 @@ describe("weeklyOperationsReport", () => {
     });
     const report = weeklyOperationsReport(inputOf(f, { movements: [movement] }), week);
     expect(report.declines.placement).toBe(2);
-    expect(report.declines.byReason).toEqual([{ reason: "No bed available", count: 2 }]);
+    expect(report.declines.byReason).toEqual([{ reason: "No suitable bed", count: 2 }]);
     expect(report.overrides).toEqual({ placement: 1, referral: 0, byReason: [{ reason, count: 1 }] });
   });
 
@@ -314,7 +314,7 @@ describe("weeklyOperationsReport", () => {
     const movement = f.movement("WF-U", {
       openedAt: week.start,
       declines: [
-        { unitId: f.unit.id, at: week.start + 60, reason: "no_bed" },
+        { unitId: f.unit.id, at: week.start + 60, reason: "no_suitable_bed" },
         { unitId: f.unit.id, at: week.start + 90, reason: "retired_reason" as Movement["declines"][number]["reason"] },
       ],
     });
@@ -322,7 +322,7 @@ describe("weeklyOperationsReport", () => {
     expect(report.declines.placement).toBe(2);
     expect(report.declines.byReason).toEqual(
       expect.arrayContaining([
-        { reason: "No bed available", count: 1 },
+        { reason: "No suitable bed", count: 1 },
         { reason: UNKNOWN_DECLINE_REASON_LABEL, count: 1 },
       ]),
     );

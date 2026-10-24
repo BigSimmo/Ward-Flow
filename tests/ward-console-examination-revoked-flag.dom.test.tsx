@@ -16,6 +16,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE } from "@/components/ward-management/ward-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * T8 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`): the movement console's own
@@ -54,7 +55,7 @@ function ConsoleFlagHarness() {
               security: "Open",
               sex: "Female",
               gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-              specialling: false,
+              observation: GENERAL_OBSERVATION,
               highAcuity: false,
               legalStatus: "Detained awaiting examination",
               urgency: 2,

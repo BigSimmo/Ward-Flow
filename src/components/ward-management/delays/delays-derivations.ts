@@ -81,7 +81,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   // match a ruling, not a prohibition.
   {
     cause: "bed_pull_expired",
-    title: "Reserved time has passed, bed still held",
+    title: "Pull expired, bed still pulled",
     note: "Release the bed or set a new reserved time",
   },
   { cause: "awaiting_bed_ready", title: "Awaiting the bed itself", note: "each has a named bed" },
@@ -423,6 +423,11 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   if (movement.acceptedAt !== undefined) {
     // Same wording as the Delays board's own acceptance line, so the two never disagree.
     candidates.push({ at: movement.acceptedAt, what: "a ward accepted" });
+  }
+  // Audit A3-11: pulling a bed and readying the handover are recorded too, as stage changes.
+  for (const change of movement.stageChanges) {
+    if (change.to === "pulled") candidates.push({ at: change.at, what: "a bed was pulled" });
+    if (change.to === "handover_ready") candidates.push({ at: change.at, what: "the handover was marked ready" });
   }
   if (movement.referredAt !== undefined) {
     candidates.push({ at: movement.referredAt, what: "referral raised" });

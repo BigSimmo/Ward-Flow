@@ -20,7 +20,8 @@ const inventoryPattern =
 const inventoryMatchPattern =
   /Curated map of `scripts\/` \((?:~)?(\d+) files\) and the `package\.json` script surface \((?:~)?(\d+) entries\),/;
 
-export const INVENTORY_TOLERANCE = 5;
+// Preserve the exported contract while making the permitted drift explicitly zero.
+export const INVENTORY_TOLERANCE = 0;
 
 export function parseScriptsInventoryCounts(markdown) {
   const match = inventoryMatchPattern.exec(markdown);
@@ -31,11 +32,13 @@ export function parseScriptsInventoryCounts(markdown) {
   };
 }
 
-export function isInventoryWithinTolerance(currentCounts, expectedCounts, tolerance = INVENTORY_TOLERANCE) {
+/** Legacy export name retained for callers; the inventory now permits zero drift. */
+export function isInventoryWithinTolerance(currentCounts, expectedCounts) {
   if (!currentCounts || !expectedCounts) return false;
-  const fileDiff = Math.abs(currentCounts.scriptFileCount - expectedCounts.scriptFileCount);
-  const scriptDiff = Math.abs(currentCounts.npmScriptCount - expectedCounts.npmScriptCount);
-  return fileDiff <= tolerance && scriptDiff <= tolerance;
+  return (
+    currentCounts.scriptFileCount === expectedCounts.scriptFileCount &&
+    currentCounts.npmScriptCount === expectedCounts.npmScriptCount
+  );
 }
 
 export function renderScriptsInventorySummary(scriptFileCount, npmScriptCount) {
@@ -70,28 +73,8 @@ function main() {
   const { scriptFileCount, npmScriptCount } = collectRepositoryInventory();
   const currentCounts = parseScriptsInventoryCounts(current);
   const check = process.argv.includes("--check");
-  const force = process.argv.includes("--force");
-  const withinTolerance = isInventoryWithinTolerance(currentCounts, { scriptFileCount, npmScriptCount });
-
-  if (
-    currentCounts &&
-    currentCounts.scriptFileCount === scriptFileCount &&
-    currentCounts.npmScriptCount === npmScriptCount
-  ) {
+  if (isInventoryWithinTolerance(currentCounts, { scriptFileCount, npmScriptCount })) {
     console.log(`Docs inventory current: ${scriptFileCount} script files, ${npmScriptCount} npm scripts.`);
-    return;
-  }
-
-  if (withinTolerance && !force) {
-    if (check) {
-      console.log(
-        `Docs inventory within tolerance (current: ${currentCounts.scriptFileCount} files, ${currentCounts.npmScriptCount} scripts; expected: ${scriptFileCount} files, ${npmScriptCount} scripts).`,
-      );
-      return;
-    }
-    console.log(
-      `Docs inventory preserved within tolerance (current: ${currentCounts.scriptFileCount} files, ${currentCounts.npmScriptCount} scripts; expected: ${scriptFileCount} files, ${npmScriptCount} scripts; pass --force to rewrite).`,
-    );
     return;
   }
 

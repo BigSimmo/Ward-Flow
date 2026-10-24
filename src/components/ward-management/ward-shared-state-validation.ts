@@ -3,6 +3,8 @@ import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
 import { REPATRIATION_MODES, WARD_FLOW_ROLE_LABELS } from "./ward-flow-events";
 import { TRANSPORT_LEGAL_STATUSES, TRANSPORT_PROVIDERS } from "./ward-model";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
+import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -18,6 +20,12 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   const state = value as WardFlowState;
   if (!Array.isArray(state.repatriations) || !Array.isArray(state.admissions) || !Array.isArray(state.movements))
     return false;
+  // Fix plan item 10: a shared workspace saved before observation levels holds `specialling` flags.
+  // Every reader of a stored workspace (the server and the browser) comes through here first, so the
+  // old rows are read as levels in place, on the freshly parsed copy, and nothing is written back.
+  upgradeLegacyObservationRowsInPlace(state);
+  // D-78: the same in-place read for decline reasons saved before the one decline list.
+  state.movements = upgradeLegacyDeclineReasons(state).movements;
   const admissionIds = new Set<string>();
   for (const admission of state.admissions) {
     if (!admission || typeof admission !== "object" || typeof admission.id !== "string") return false;
@@ -118,4 +126,12 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
     repatriations: [],
     ...(state.supportNotifications === undefined ? {} : { supportNotifications: [] }),
   });
+}
+
+/** `upgradeLegacyObservationRows`, applied to the given parsed state's own arrays. */
+function upgradeLegacyObservationRowsInPlace(state: WardFlowState): void {
+  const upgraded = upgradeLegacyObservationRows(state);
+  if (upgraded === state) return;
+  state.movements = upgraded.movements;
+  state.admissions = upgraded.admissions;
 }

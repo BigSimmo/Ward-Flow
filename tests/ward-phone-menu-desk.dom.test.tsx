@@ -26,6 +26,8 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
@@ -93,6 +95,44 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     expect(within(sheet).getByRole("button", { name: /New referral/u })).toBeInTheDocument();
     expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toBeInTheDocument();
     expect(within(sheet).queryByRole("link", { name: /Book transport/u })).toBeNull();
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
+  });
+});
+
+describe("Create sheet asks the access check for Add patient (role access plan v2, D-80)", () => {
+  it("offers no Add patient on a desk whose role cannot add one", () => {
+    route.pathname = "/ward-flow/transport/officer";
+    openMenu();
+    fireEvent.click(screen.getByTestId("ward-phone-create"));
+    const sheet = screen.getByTestId("ward-phone-create-sheet");
+    expect(within(sheet).queryByRole("link", { name: /Add patient/u })).toBeNull();
+  });
+
+  it("says so, rather than open empty, on a signed-in officer desk with nothing to start", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "officer", scope: { kind: "jobs" } });
+    });
+    try {
+      route.pathname = "/ward-flow/transport/officer";
+      openMenu();
+      fireEvent.click(screen.getByTestId("ward-phone-create"));
+      const sheet = screen.getByTestId("ward-phone-create-sheet");
+      expect(within(sheet).queryAllByRole("link")).toHaveLength(0);
+      expect(within(sheet).getByText("Nothing to start from this desk.")).toBeInTheDocument();
+    } finally {
+      act(() => {
+        setWardFeatureFlagOnDevice("role-access", null);
+        resetWardAccessStoreForTests();
+      });
+    }
+  });
+
+  it("offers Add patient on a ward's own page, which now adds in the ward's name", () => {
+    route.pathname = unitHref(allUnits()[0].id);
+    openMenu();
+    fireEvent.click(screen.getByTestId("ward-phone-create"));
+    const sheet = screen.getByTestId("ward-phone-create-sheet");
     expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
   });
 });

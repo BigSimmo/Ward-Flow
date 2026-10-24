@@ -1,8 +1,12 @@
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useId, type ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
-import { Button, Card, CardHead, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
+import Link from "next/link";
+import { Button, Card, CardHead, StatusGlyph, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
+import { FORMS_HREF } from "@/components/ward-management/governance-shared";
+import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -12,6 +16,16 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+
+/**
+ * UX audit (21 Oct 2026): the patient record had no way to record a legal form. This opens Legal
+ * forms with this movement chosen and the Record a form sheet already open. The address carries only
+ * the synthetic movement id, never a name or typed text.
+ */
+function recordFormHref(movementId: string): string {
+  return `${FORMS_HREF}?movement=${encodeURIComponent(encodeRecordAddress(movementId))}&record=1`;
+}
 /**
  * The gate board's context cards for Now (9 Oct 2026). Now only ever shows what is true at this
  * moment: past presentations, closed records and superseded forms live in History and Documents.
@@ -56,7 +70,8 @@ export function PatientWhyCard({
       <div className={styles.rows}>
         {movement ? (
           <Row label="Needs">
-            {movement.security} {movement.cohort.toLowerCase()} bed{movement.specialling ? ", 1:1 specialling" : ""}
+            {movement.security} {movement.cohort.toLowerCase()} bed
+            {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
           </Row>
         ) : null}
         {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
@@ -158,7 +173,7 @@ export function PatientLegalNowCard({
         : "As recorded · no lapse time shown";
   const isPhone = useIsPhone();
   if (isPhone)
-    /* v10 Patient, phone: "Legal now" and "All forms" head the section; each row is the form and
+    /* v10 Patient, phone: "Legal now" and "Forms" head the section; each row is the form and
      * when it was recorded, never a lapse time. */
     return (
       <section
@@ -171,7 +186,7 @@ export function PatientLegalNowCard({
             Legal now
           </h2>
           <button type="button" className={styles.phLink} onClick={onAllForms}>
-            All forms
+            Forms
           </button>
         </div>
         <ul className={styles.phList}>
@@ -208,7 +223,11 @@ export function PatientLegalNowCard({
               <StatusGlyph tone="neutral" size={10} />
               <span className={styles.phItemText}>
                 <strong>No form recorded</strong>
-                <span>Record forms in Forms</span>
+                {isOpen(movement) ? (
+                  <Link className={styles.phLink} href={recordFormHref(movement.id)}>
+                    Record a form
+                  </Link>
+                ) : null}
               </span>
             </li>
           ) : null}
@@ -223,7 +242,7 @@ export function PatientLegalNowCard({
         title="Legal now"
         action={
           <Button size="sm" variant="ghost" onClick={onAllForms}>
-            All forms
+            Forms
           </Button>
         }
       />
@@ -250,8 +269,12 @@ export function PatientLegalNowCard({
             <StatusGlyph tone="neutral" size={10} />
             <span className={styles.itemText}>
               <strong>No form recorded</strong>
-              <span>Record forms in Documents</span>
             </span>
+            {isOpen(movement) ? (
+              <Link className={buttonClass({ size: "sm", variant: "ghost" })} href={recordFormHref(movement.id)}>
+                Record a form
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -47,7 +47,7 @@ function withHistory(state: WardFlowState): WardFlowState {
         ? {
             ...movement,
             overrides: [{ at: NOW_ANCHOR - 30, by: "coordinator", reason: OVERRIDE_REASONS[1], unitIds: [unitId] }],
-            declines: [{ unitId, at: NOW_ANCHOR - 90, reason: "no_bed" as const }],
+            declines: [{ unitId, at: NOW_ANCHOR - 90, reason: "no_suitable_bed" as const }],
           }
         : movement,
     ),
@@ -79,7 +79,7 @@ describe("PIR chronology: one person's records", () => {
     const override = chronology.rows.find((row) => row.action === "Placement override");
     expect(override).toMatchObject({ reason: OVERRIDE_REASONS[1], who: "Flow coordinator", source: "Record" });
     const decline = chronology.rows.find((row) => row.action === "Ward declined");
-    expect(decline?.reason).toBe(reasonLabel("no_bed"));
+    expect(decline?.reason).toBe(reasonLabel("no_suitable_bed"));
     // Sorted by occurrence: the decline (90 minutes ago) comes before the override (30 minutes ago).
     expect(actions.indexOf("Ward declined")).toBeLessThan(actions.indexOf("Placement override"));
     const times = chronology.rows.map((row) => row.occurredAt ?? row.recordedAt ?? Infinity);
@@ -119,6 +119,58 @@ describe("PIR chronology: one person's records", () => {
     const record = chronology.rows.find((row) => row.source === "Record" && row.action === "Legal status changed");
     expect(record).toMatchObject({ before: movement.legalStatus, after: event.legalStatus });
     expect(chronology.rows.filter((row) => row.source === "Session log")).toEqual([]);
+  });
+
+  it("shows a seclusion ending on the patient's chronology, though the end names only its episode", () => {
+    const seed = seedWardFlowState();
+    const stay = seed.admissions.find(
+      (admission) =>
+        admission.state === "occupied" &&
+        seed.patients.some((patient) =>
+          patientRecordIds(
+            patient.id,
+            seed.patients,
+            seed.movements,
+            seed.referrals,
+            seed.admissions,
+          ).admissions.includes(admission.id),
+        ),
+    )!;
+    const personId = seed.patients.find((patient) =>
+      patientRecordIds(patient.id, seed.patients, seed.movements, seed.referrals, seed.admissions).admissions.includes(
+        stay.id,
+      ),
+    )!.id;
+    const acting = { role: "ward", unitId: stay.unitId, actingUnitId: stay.unitId } as const;
+    const start: WardFlowEvent = {
+      type: "RECORD_RESTRICTIVE_PRACTICE_START",
+      ...acting,
+      now: NOW_ANCHOR + 5,
+      admissionId: stay.id,
+      practice: "seclusion",
+      startedAt: NOW_ANCHOR - 15,
+    };
+    const started = wardFlowReducer(seed, start);
+    const episodeId = started.units.find((unit) => unit.id === stay.unitId)!.restrictivePractice!.episodes[0]!.id;
+    const end: WardFlowEvent = {
+      type: "RECORD_RESTRICTIVE_PRACTICE_END",
+      ...acting,
+      now: NOW_ANCHOR + 10,
+      episodeId,
+      endedAt: NOW_ANCHOR,
+    };
+    const ended = wardFlowReducer(started, end);
+    expect(ended.rejections).toEqual(seed.rejections);
+
+    // The end names only its episode; the chronology reads the stay from the ward's record.
+    const endEntry = eventLogEntryFor(end, true);
+    expect(endEntry).toMatchObject({ episodeId, unitId: stay.unitId });
+    expect(endEntry.admissionId).toBeUndefined();
+
+    const eventLog = [eventLogEntryFor(start, true), endEntry];
+    const chronology = patientChronology(inputFor(ended, { personId, auditEvents: null, eventLog }));
+    const actions = chronology.rows.filter((row) => row.source === "Session log").map((row) => row.action);
+    expect(actions).toEqual(["Seclusion or restraint started", "Seclusion or restraint ended"]);
   });
 
   it("shows a refused session act, and drops the audit trail when the reader may not see it", () => {
@@ -278,7 +330,7 @@ describe("PIR chronology: one person's records", () => {
     };
     const row = patientChronology(inputFor(state)).rows.find((r) => r.action === "Form receipt time corrected");
     expect(row).toMatchObject({
-      before: formatSheetMoment(received, DAY_ZERO),
+      before: formatSheetMoment(received, DAY_ZERO, { includeYearAndZone: true }),
       after: "Cleared",
       who: "Flow coordinator",
       reason: legalFormReceiptCorrectionReasonLabels.recorded_in_error,
@@ -439,8 +491,12 @@ describe("PIR chronology CSV", () => {
     const csv = chronologyCsv(rows, DAY_ZERO, NOW_ANCHOR);
     const lines = csv.trimEnd().split("\r\n");
     expect(lines[0]).toMatch(/^"Synthetic demo data\. Not a clinical record\."/u);
-    expect(lines[1]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
-    expect(lines).toHaveLength(rows.length + 2);
+    expect(lines[0]).toContain("2026");
+    expect(lines[0]).toContain("AWST");
+    expect(lines[1]).toBe(`"Scope","Selected patient's retained chronology"`);
+    expect(lines[2]).toContain('"Period"');
+    expect(lines[3]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
+    expect(lines).toHaveLength(rows.length + 4);
     expect(csv).toContain(`"'=HYPERLINK(1)"`);
     expect(csv).toContain(OVERRIDE_REASONS[1]);
   });
@@ -449,6 +505,6 @@ describe("PIR chronology CSV", () => {
     const chronology = patientChronology(inputFor(seedWardFlowState()));
     const lines = chronologyCsv(chronology.rows, DAY_ZERO, NOW_ANCHOR, "Sample Person · 1000001").split("\r\n");
     expect(lines[1]).toBe(`"Patient","Sample Person · 1000001"`);
-    expect(lines[2]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
+    expect(lines[4]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
   });
 });

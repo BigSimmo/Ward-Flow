@@ -4,12 +4,12 @@
 > `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out
 > of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.
 
-Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **35 files**. The brief also asked about
+Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **36 files**. The brief also asked about
 `docs/ward-flow/*owner*ruling*.md`: that pattern matched **zero files beyond the first set** — every file it catches already starts with `owner-`.
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**552 rulings/items extracted, across 30 of 35 files.**
+**562 rulings/items extracted, across 31 of 36 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 326 distinct IDs
+## ID index — 335 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -234,12 +234,21 @@ safe global key across 30 files.
 | `D-63` | `decisions.md`:729 | D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026) |
 | `D-64` | `decisions.md`:737 | D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026) |
 | `D-65` | `decisions.md`:744 | D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026) |
-| `D-66` | `decisions.md`:759 | D-66. Granted roles work without a second approval (17 October 2026) |
-| `D-67` | `decisions.md`:766 | D-67. Recover synthetic form drafts within the browser session (17 October 2026) |
-| `D-68` | `decisions.md`:773 | D-68. Bed meeting TV content and access (19 October 2026) |
-| `D-69` | `decisions.md`:780 | D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026) |
-| `D-70` | `decisions.md`:787 | D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026) |
-| `D-71` | `decisions.md`:793 | D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026) |
+| `D-66` | `decisions.md`:760 | D-66. Granted roles work without a second approval (17 October 2026) |
+| `D-67` | `decisions.md`:768 | D-67. Recover synthetic form drafts within the browser session (17 October 2026) |
+| `D-68` | `decisions.md`:775 | D-68. Bed meeting TV content and access (19 October 2026) |
+| `D-69` | `decisions.md`:782 | D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026) |
+| `D-70` | `decisions.md`:789 | D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026) |
+| `D-71` | `decisions.md`:795 | D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026) |
+| `D-72` | `decisions.md`:808 | D-72. Seven product decisions for the 21 October fix plan (21 October 2026) |
+| `D-73` | `decisions.md`:822 | D-73. Batch merge safeguards (21 October 2026) |
+| `D-74` | `decisions.md`:837 | D-74. Owner answers to the 21 October open questions (21 October 2026) |
+| `D-75` | `decisions.md`:857 | D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026) |
+| `D-76` | `decisions.md`:870 | D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026) |
+| `D-77` | `decisions.md`:879 | D-77. The ten bigger UX changes approved for build (22 October 2026) |
+| `D-78` | `decisions.md`:899 | D-78. One decline list for wards and coordinators (22 October 2026) |
+| `D-79` | `decisions.md`:910 | D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026) |
+| `D-80` | `decisions.md`:921 | D-80. Role access plan version 2: all 17 recommendations (23 October 2026) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -506,15 +515,15 @@ safe global key across 30 files.
 
 ---
 
-## By file, newest first — 30 files
+## By file, newest first — 31 files
 
-### `decisions.md` (2026-09-07 – 2026-10-20 (mixed, see file))
+### `decisions.md` (2026-09-07 – 2026-10-23 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-71 item(s):
+80 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -581,12 +590,29 @@ safe global key across 30 files.
 - `D-63` — line 729, heading: "D-63. Josh signs the remaining clinical values and the criteria list, for the prototype (16 October 2026)"
 - `D-64` — line 737, heading: "D-64. Criteria led discharge shows on the boards and warns at departure (16 October 2026)"
 - `D-65` — line 744, heading: "D-65. Criteria led discharge on in production, typed patient specific criteria, and the AWOL bed hold review paused (17 October 2026)"
-- `D-66` — line 759, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
-- `D-67` — line 766, heading: "D-67. Recover synthetic form drafts within the browser session (17 October 2026)"
-- `D-68` — line 773, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
-- `D-69` — line 780, heading: "D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)"
-- `D-70` — line 787, heading: "D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)"
-- `D-71` — line 793, heading: "D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026)"
+- `D-66` — line 760, heading: "D-66. Granted roles work without a second approval (17 October 2026)"
+- `D-67` — line 768, heading: "D-67. Recover synthetic form drafts within the browser session (17 October 2026)"
+- `D-68` — line 775, heading: "D-68. Bed meeting TV content and access (19 October 2026)"
+- `D-69` — line 782, heading: "D-69. A referral with no legal status: "Needs an involuntary-capable bed until status is set." (20 October 2026)"
+- `D-70` — line 789, heading: "D-70. No computed Mental Health Act periods: show only the recorded due time (20 October 2026)"
+- `D-71` — line 795, heading: "D-71. Audit 1 clinical safety fixes: no suggested wards, wait-order queues, recorded facts only (20 October 2026)"
+- `D-72` — line 808, heading: "D-72. Seven product decisions for the 21 October fix plan (21 October 2026)"
+- `D-73` — line 822, heading: "D-73. Batch merge safeguards (21 October 2026)"
+- `D-74` — line 837, heading: "D-74. Owner answers to the 21 October open questions (21 October 2026)"
+- `D-75` — line 857, heading: "D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026)"
+- `D-76` — line 870, heading: "D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)"
+- `D-77` — line 879, heading: "D-77. The ten bigger UX changes approved for build (22 October 2026)"
+- `D-78` — line 899, heading: "D-78. One decline list for wards and coordinators (22 October 2026)"
+- `D-79` — line 910, heading: "D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)"
+- `D-80` — line 921, heading: "D-80. Role access plan version 2: all 17 recommendations (23 October 2026)"
+
+### `owner-answers-2026-10-21.md` (2026-10-21)
+
+**Title:** Owner answers — 21 October 2026
+
+1 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 5, heading: "1. Auto-merge on a held PR"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

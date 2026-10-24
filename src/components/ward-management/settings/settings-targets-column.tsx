@@ -1,22 +1,20 @@
 "use client";
 
-// Settings' second rules column: decision targets, more thresholds (preview) and recent rule
-// changes. Moved out of `settings-screen.tsx` to keep it under the line cap.
+// Settings' second rules column: decision targets and recent rule changes. Moved out of `settings-screen.tsx` to keep it under the line cap.
 import Link from "next/link";
-import { History, SlidersHorizontal, Timer } from "lucide-react";
+import { History, Telescope, Timer } from "lucide-react";
+import {
+  FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+  FORECAST_SHORT_ALERT_RANGE_BEDS,
+  FORECAST_WORSE_ALERT_RANGE_BEDS,
+} from "@/components/ward-management/ward-operational-defaults";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
-import {
-  DECISION_TARGET_RANGE_MINUTES,
-  OVERDUE_AFTER_MINUTES_BY_TIER,
-  SILENT_WARD_FIRST_REMINDER_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
-import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { DECISION_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
-import { UnwiredPreview } from "@/components/ward-management/unwired-previews";
 import { Card, CardHead, StatusGlyph, buttonClass } from "@/components/wf";
-import { PreviewTag, RuleRow } from "./settings-rows";
+import { RuleRow } from "./settings-rows";
 import styles from "./settings.module.css";
 import {
   CHANGE_OUTCOME_PREFIX,
@@ -31,7 +29,6 @@ export function SettingsTargetsColumn({
   rules,
   saved,
   setRule,
-  onPreview,
   ruleChanges,
   now,
   unavailableReason,
@@ -39,7 +36,6 @@ export function SettingsTargetsColumn({
   rules: ReturnType<typeof fullRules>;
   saved: ReturnType<typeof fullRules>;
   setRule: (patch: Partial<WardConfiguration>) => void;
-  onPreview: (name: string) => void;
   ruleChanges: ConfigurationAuditEvent[];
   now: Instant;
   /** Why the rules are read-only for this desk; unset when it may change them. */
@@ -99,73 +95,79 @@ export function SettingsTargetsColumn({
         })}
       </Card>
 
-      {/* Overall review, 20 Oct 2026: every threshold here is Preview, so the card shows only in a
-          local development build, not as an empty "Preview" card in demo or production. */}
-      <UnwiredPreview>
-        <Card aria-labelledby="more-title">
-          <CardHead iconPlain id="more-title" icon={SlidersHorizontal} title="More thresholds" aside={<PreviewTag />} />
-          <RuleRow
-            unavailableReason={unavailableReason}
-            setting="occupancy"
-            title="Occupancy alert"
-            sub="Bed alerts dot from"
-            value={BED_ALERT_THRESHOLD_PERCENT}
-            saved={BED_ALERT_THRESHOLD_PERCENT}
-            display={`${BED_ALERT_THRESHOLD_PERCENT}%`}
-            noun="occupancy alert"
-            range={{
-              min: 80,
-              max: 95,
-              step: 1,
-              minLabel: "80%",
-              maxLabel: "95%",
-            }}
-            onChange={() => onPreview("Occupancy alert")}
-            preview
-            previewTag={false}
-          />
-          <RuleRow
-            unavailableReason={unavailableReason}
-            setting="tier-one"
-            title="Tier 1 overdue after"
-            sub="Referral queue"
-            value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-            saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-            display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
-            noun="tier 1 overdue time"
-            range={{
-              min: 30,
-              max: 240,
-              step: 30,
-              minLabel: "30m",
-              maxLabel: "4h",
-            }}
-            onChange={() => onPreview("Tier 1 overdue after")}
-            preview
-            previewTag={false}
-          />
-          <RuleRow
-            unavailableReason={unavailableReason}
-            setting="ward-silent"
-            title="Ward not answering"
-            sub="First reminder after"
-            value={SILENT_WARD_FIRST_REMINDER_MINUTES}
-            saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
-            display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
-            noun="ward reminder time"
-            range={{
-              min: 30,
-              max: 240,
-              step: 30,
-              minLabel: "30m",
-              maxLabel: "4h",
-            }}
-            onChange={() => onPreview("Ward not answering")}
-            preview
-            previewTag={false}
-          />
-        </Card>
-      </UnwiredPreview>
+      {/* Forecasting build (Josh, 23 Oct 2026, screen 7): the three Forecast alert rules. */}
+      <Card aria-labelledby="forecast-alerts-title" data-setting="forecast-alerts">
+        <CardHead
+          iconPlain
+          id="forecast-alerts-title"
+          icon={Telescope}
+          title="Forecast alerts"
+          meta="Coordinators only. Your defaults"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-short"
+          testId="setting-forecast-short"
+          title="Bed type short tomorrow"
+          sub="Likely this many short"
+          value={rules.forecastShort}
+          saved={saved.forecastShort}
+          savedDisplay={bedsText(saved.forecastShort)}
+          display={bedsText(rules.forecastShort)}
+          noun="bed type short alert"
+          range={{
+            id: "setting-forecast-short-range",
+            ...FORECAST_SHORT_ALERT_RANGE_BEDS,
+            minLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.min),
+            maxLabel: bedsText(FORECAST_SHORT_ALERT_RANGE_BEDS.max),
+          }}
+          onChange={(beds) => setRule({ forecastShortBeds: beds })}
+          onReset={() => setRule({ forecastShortBeds: saved.forecastShort })}
+          usedBy="Alerts"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-ed-lead"
+          testId="setting-forecast-ed-lead"
+          title="ED access risk"
+          sub="Passes the ED target within"
+          value={rules.forecastEdLead}
+          saved={saved.forecastEdLead}
+          savedDisplay={shortDuration(saved.forecastEdLead)}
+          display={shortDuration(rules.forecastEdLead)}
+          noun="ED access risk alert"
+          range={{
+            id: "setting-forecast-ed-lead-range",
+            ...FORECAST_ED_RISK_LEAD_RANGE_MINUTES,
+            minLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.min),
+            maxLabel: shortDuration(FORECAST_ED_RISK_LEAD_RANGE_MINUTES.max),
+          }}
+          onChange={(minutes) => setRule({ forecastEdLeadMinutes: minutes })}
+          onReset={() => setRule({ forecastEdLeadMinutes: saved.forecastEdLead })}
+          usedBy="Alerts"
+        />
+        <RuleRow
+          unavailableReason={unavailableReason}
+          setting="forecast-worse"
+          testId="setting-forecast-worse"
+          title="Forecast got worse"
+          sub="Drop since you looked"
+          value={rules.forecastWorse}
+          saved={saved.forecastWorse}
+          savedDisplay={bedsText(saved.forecastWorse)}
+          display={bedsText(rules.forecastWorse)}
+          noun="forecast worse alert"
+          range={{
+            id: "setting-forecast-worse-range",
+            ...FORECAST_WORSE_ALERT_RANGE_BEDS,
+            minLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.min),
+            maxLabel: bedsText(FORECAST_WORSE_ALERT_RANGE_BEDS.max),
+          }}
+          onChange={(beds) => setRule({ forecastWorseBeds: beds })}
+          onReset={() => setRule({ forecastWorseBeds: saved.forecastWorse })}
+          usedBy="Alerts"
+        />
+      </Card>
 
       <Card aria-labelledby="changes-title" data-testid="ward-settings-recent-changes" data-setting="recent-changes">
         <CardHead
@@ -209,4 +211,8 @@ export function SettingsTargetsColumn({
       </Card>
     </div>
   );
+}
+
+function bedsText(beds: number): string {
+  return `${beds} ${beds === 1 ? "bed" : "beds"}`;
 }

@@ -40,6 +40,7 @@ import { allWardStatistics, wardStatistics, type WardStatistics } from "@/compon
 
 import { axisMax } from "./statistics-axis";
 import { downloadCsv } from "./statistics-csv";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool } from "./statistics-hero-tools";
@@ -89,6 +90,7 @@ export function StatisticsCompareScreen({
   const live = useStatisticsLive();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = live.state;
   const now = live.now;
+  const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true });
   const isPhone = useIsPhone();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
@@ -203,10 +205,10 @@ export function StatisticsCompareScreen({
           {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
           <FlushRow layout="lead2" className={compare.grid}>
             <Follow className={detail.followBody}>
-              <WardComparison rows={wardRows} />
+              <WardComparison rows={wardRows} asAt={asAt} />
             </Follow>
             <FlushStack>
-              <EdComparison rows={edRows} />
+              <EdComparison rows={edRows} asAt={asAt} />
               <PinnedWards rows={wardRows} />
             </FlushStack>
           </FlushRow>
@@ -231,7 +233,6 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
     return value === null ? [] : [value];
   });
   const wardMean = wardValues.length > 0 ? mean(wardValues) : null;
-  const wardLabels = shortWardLabels(wardRows.map((row) => row.unit));
   const flagAbove = wardMean === null ? null : wardMean + standardDeviation(wardValues);
   const wardSorted = sortRows(
     wardRows.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, wardMetric) })),
@@ -254,7 +255,10 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
   );
   const [pair, setPair] = useState<[string | null, string | null] | null>(null);
   const [wardA, wardB] = pair ?? [longestTwo[0] ?? null, longestTwo[1] ?? null];
-  const pairNames = [wardA, wardB].flatMap((id) => (id === null ? [] : [wardLabels.get(id) ?? id]));
+  // One recorded ward name on every device (UX audit 21 Oct 2026): a long name truncates, never renames.
+  const pairNames = [wardA, wardB].flatMap((id) =>
+    id === null ? [] : [wardRows.find((row) => row.unit.id === id)?.unit.name ?? id],
+  );
 
   return (
     <PhoneBody testId="ward-statistics-compare-phone">
@@ -291,14 +295,14 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               <BarList
                 rows={wardSorted.map(({ row, value }) => ({
                   id: row.unit.id,
-                  label: wardLabels.get(row.unit.id) ?? row.unit.name,
+                  label: unitLabel(row.unit.name, row.unit.siteCode),
                   labelText: row.unit.name,
                   value: value!,
                   display: wardMetric === "stay" ? value!.toFixed(1) : undefined,
                   flag: flagAbove !== null && value! > flagAbove ? "warning" : undefined,
                 }))}
                 mean={wardMean ?? undefined}
-                meanLabel="Mean"
+                meanLabel="Mean of wards"
                 track
                 max={axisMax(wardValues)}
                 label={WARD_METRICS[wardMetric].chart}
@@ -325,7 +329,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                 edMetric === "longest" && entry.longestMinutes > 0 ? durMinutes(entry.longestMinutes) : undefined,
             }))}
             mean={mean(edValues)}
-            meanLabel="Mean"
+            meanLabel="Mean of EDs"
             track
             max={axisMax(edValues)}
             label={ED_METRICS[edMetric].chart}
@@ -339,13 +343,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
         sub={pairNames.length > 0 ? `${pairNames.join(" and ")} against the network` : "Choose two wards"}
         testId="ward-statistics-compare-phone-pinned"
       >
-        <CompareTwoWards
-          rows={wardRows}
-          labels={wardLabels}
-          wardA={wardA}
-          wardB={wardB}
-          onChange={(a, b) => setPair([a, b])}
-        />
+        <CompareTwoWards rows={wardRows} wardA={wardA} wardB={wardB} onChange={(a, b) => setPair([a, b])} />
       </PhoneSheetRow>
     </PhoneBody>
   );
@@ -430,7 +428,7 @@ function wardMetricValue(statistics: WardStatistics, metric: WardMetric): number
   return statistics.longStays;
 }
 
-function WardComparison({ rows }: { rows: WardRow[] }) {
+function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<WardMetric>("stay");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -471,14 +469,18 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
   for (const key of Object.keys(GROUP_LABELS) as WardGroup[]) counts[key] = rows.filter((r) => r.group === key).length;
 
   function exportCsv() {
-    downloadCsv("ward-flow-synthetic-ward-comparison.csv", [
-      ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
-      ...shown.map((row) => [
-        row.unit.name,
-        row.unit.siteCode,
-        ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
-      ]),
-    ]);
+    downloadCsv(
+      "ward-flow-synthetic-ward-comparison.csv",
+      [
+        ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
+        ...shown.map((row) => [
+          row.unit.name,
+          row.unit.siteCode,
+          ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
+        ]),
+      ],
+      { asAt, scope: "Ward comparison; wards shown" },
+    );
   }
 
   return (
@@ -550,7 +552,7 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
             <BarList
               rows={barRows}
               mean={networkMean ?? undefined}
-              meanLabel="Mean"
+              meanLabel="Mean of wards"
               axis
               max={axisMax(networkValues)}
               label={WARD_METRICS[metric].chart}
@@ -603,45 +605,6 @@ const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
 
 type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
 
-/** The longest place name a phone chart label takes before it falls back to the site code. */
-const SHORT_PLACE_MAX = 13;
-
-/**
- * A site's short place name for a phone chart, from its own name in the site data (phone review
- * F-24): "Albany Health Campus" reads "Albany", "St John of God Subiaco Hospital" reads "SJOG
- * Subiaco". A name still too long for the label ("Sir Charles Gairdner") keeps its site code.
- */
-export function shortPlaceName(siteCode: string): string {
-  const name = siteByCode(siteCode)?.name;
-  if (!name) return siteCode;
-  const place = name
-    .replace(/^St John of God /u, "SJOG ")
-    .replace(/ (Public |General |Memorial )?(Hospital|Health Campus|Health Service)$/u, "");
-  return place.length <= SHORT_PLACE_MAX ? place : siteCode;
-}
-
-/**
- * A ward's chart label on a phone: short place name and cohort ("Graylands Secure", "Albany
- * Adult", "Royal Perth Older"), so no name is clipped at the label width (audit stats-13). Where
- * two wards would read the same, both keep their full name. The full name always stays in the
- * accessible list (`labelText`).
- */
-export function shortWardLabels(units: readonly Pick<Unit, "id" | "name" | "siteCode" | "cohort" | "lockedBeds">[]) {
-  const short = (unit: (typeof units)[number]) =>
-    `${shortPlaceName(unit.siteCode)} ${
-      unit.cohort === "Adult"
-        ? unit.lockedBeds > 0
-          ? "Secure"
-          : "Adult"
-        : unit.cohort === "Older adult"
-          ? "Older"
-          : unit.cohort
-    }`;
-  const counts = new Map<string, number>();
-  for (const unit of units) counts.set(short(unit), (counts.get(short(unit)) ?? 0) + 1);
-  return new Map(units.map((unit) => [unit.id, counts.get(short(unit)) === 1 ? short(unit) : unit.name]));
-}
-
 /** "Armadale Hospital Emergency Department" reads "Armadale ED" on the chart; the full name stays in the accessible list. */
 const shortDepartmentName = (name: string) =>
   name
@@ -655,7 +618,7 @@ function edMetricValue(entry: EdCompareRow, metric: EdMetric): number {
   return Math.round((entry.longestMinutes / 60) * 10) / 10;
 }
 
-function EdComparison({ rows }: { rows: EdCompareRow[] }) {
+function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<EdMetric>("open");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -674,15 +637,19 @@ function EdComparison({ rows }: { rows: EdCompareRow[] }) {
   }));
 
   function exportCsv() {
-    downloadCsv("ward-flow-synthetic-ed-comparison.csv", [
-      ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
-      ...rows.map((entry) => [
-        entry.department.name,
-        entry.department.siteCode,
-        ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
-        entry.longestMinutes,
-      ]),
-    ]);
+    downloadCsv(
+      "ward-flow-synthetic-ed-comparison.csv",
+      [
+        ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
+        ...rows.map((entry) => [
+          entry.department.name,
+          entry.department.siteCode,
+          ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
+          entry.longestMinutes,
+        ]),
+      ],
+      { asAt, scope: "ED comparison; all departments in this view" },
+    );
   }
 
   return (
@@ -719,7 +686,7 @@ function EdComparison({ rows }: { rows: EdCompareRow[] }) {
             <BarList
               rows={barRows}
               mean={mean(values)}
-              meanLabel="Mean"
+              meanLabel="Mean of EDs"
               axis
               max={axisMax(values)}
               label={ED_METRICS[metric].chart}
@@ -809,13 +776,11 @@ function networkText(measure: PinnedMeasure, reference: number): string {
  */
 function CompareTwoWards({
   rows,
-  labels,
   wardA,
   wardB,
   onChange,
 }: {
   rows: readonly WardRow[];
-  labels: ReadonlyMap<string, string>;
   wardA: string | null;
   wardB: string | null;
   onChange: (a: string | null, b: string | null) => void;
@@ -841,7 +806,7 @@ function CompareTwoWards({
       </Select>
     </Field>
   );
-  const heads = [...chosen.map((row) => (row ? (labels.get(row.unit.id) ?? row.unit.name) : "No ward")), "Network"];
+  const heads = [...chosen.map((row) => (row ? row.unit.name : "No ward")), "Network"];
   return (
     <div className={phone.pair} data-testid="ward-statistics-compare-pair">
       <div className={phone.pairPickers}>
@@ -897,17 +862,8 @@ function CompareTwoWards({
 
 /** Up to three wards set beside the network's per-ward figure. Opens on the three longest stays. */
 function PinnedWards({ rows }: { rows: WardRow[] }) {
-  const longest = useMemo(
-    () =>
-      [...rows]
-        .filter((row) => row.statistics.averageLengthOfStayDays !== null)
-        .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
-        .slice(0, PIN_LIMIT)
-        .map((row) => row.unit.id),
-    [rows],
-  );
-  const [chosen, setChosen] = useState<string[] | null>(null);
-  const pinnedIds = chosen ?? longest;
+  // Starts empty (UX audit 21 Oct 2026): three pinned wards nobody chose crowded the columns.
+  const [pinnedIds, setChosen] = useState<string[]>([]);
   const pinned = pinnedIds.flatMap((id) => rows.find((row) => row.unit.id === id) ?? []);
   const unpinned = rows.filter((row) => !pinnedIds.includes(row.unit.id));
 
@@ -930,7 +886,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
               if (event.target.value) setChosen([...pinnedIds, event.target.value]);
             }}
           >
-            <option value="">{pinned.length >= PIN_LIMIT ? "Three pinned" : "Pin a ward"}</option>
+            <option value="">{pinned.length >= PIN_LIMIT ? "Three pinned. Unpin one to add" : "Pin a ward"}</option>
             {unpinned.map((row) => (
               <option key={row.unit.id} value={row.unit.id}>
                 {row.unit.name}
@@ -944,7 +900,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
       }
     >
       {pinned.length === 0 ? (
-        <p className={styles.empty}>No ward pinned</p>
+        <p className={styles.empty}>Pick up to three wards to set beside the network.</p>
       ) : (
         <div className={styles.tableWrap}>
           <table className={`${tableClasses.table} ${styles.table} ${compare.pinTable}`}>

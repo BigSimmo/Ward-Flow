@@ -11,6 +11,7 @@ import {
 import { seedWardFlowStateAt, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
@@ -80,8 +81,10 @@ describe("conservative demo recovery", () => {
         ...unit.allocatable,
         value,
         source: "ward",
+        confirmedBy: "ward",
         confirmedAt: current.now,
         revision: (unit.allocatable.revision ?? 0) + 1,
+        confirmations: (unit.allocatable.confirmations ?? 0) + 1,
       });
       expect(accepted.empty).toEqual(unit.empty);
       expect(accepted.allocatableLocked).toBe(unit.allocatableLocked);
@@ -344,7 +347,7 @@ describe("conservative demo recovery", () => {
     expect(current.eventLog).toHaveLength(1);
     expect(saved().state.units.length).toBeGreaterThan(0);
   });
-  it("keeps the typed-text lock from an action taken before a changed saved day was adopted", () => {
+  it("keeps the typed-text ledger from an action taken before a changed saved day was adopted", () => {
     saveChangedDay();
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toBeNull();
     render(
@@ -360,7 +363,7 @@ describe("conservative demo recovery", () => {
             receivingWardAgreed: true,
             mode: "road",
             provider: "Ambulance service",
-            cadNumber: "Synthetic-private-CAD",
+            cadNumber: "SYN-PRIVATE-CAD-7731",
             transportLegalStatus: "voluntary",
             estimatedAt: value.now + 60,
           })}
@@ -368,7 +371,10 @@ describe("conservative demo recovery", () => {
       </WardFlowProvider>,
     );
     expect(current.eventLog).toHaveLength(1);
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    // D-72: the repatriation is kept with its CAD number as the placeholder, never the typed words.
+    const stored = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(stored).not.toContain("SYN-PRIVATE-CAD-7731");
+    expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
   });
   it("rejects a backward system clock", () => {
     const view = mount();
@@ -403,13 +409,17 @@ describe("unavailable browser storage", () => {
       throw new DOMException("denied", "SecurityError");
     });
     expect(() => mount()).not.toThrow();
+    // A typed date of birth is one of the typed values the device copy cannot hold (Josh, 21 Oct
+    // 2026), so the stored day is cleared, which is the path a throwing removeItem must not break.
     act(() =>
       current.dispatch({
-        type: "RECORD_MOVEMENT_BLOCKER",
+        type: "ADD_PATIENT",
         role: "coordinator",
         now: current.now,
-        movementId: current.movements[0].id,
-        blocker: "Synthetic private note",
+        umrn: "UMRN-SYNTHETIC-9",
+        givenName: "Synthetic",
+        familyName: "Private",
+        dateOfBirth: "1990-01-01",
       }),
     );
     expect(screen.getByRole("status")).toHaveTextContent("stay in memory");
@@ -475,13 +485,15 @@ describe("reviewed event privacy", () => {
         receivingWardAgreed: true,
         mode: "road",
         provider: "Ambulance service",
-        cadNumber: "Synthetic-private-CAD",
+        cadNumber: "SYN-PRIVATE-CAD-7731",
         transportLegalStatus: "voluntary",
         estimatedAt: current.now + 60,
       }),
     );
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("SYN-PRIVATE-CAD-7731");
+    expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
     act(() => current.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current.now, minutes: 5 }));
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("SYN-PRIVATE-CAD-7731");
+    expect(saved().state.repatriations.at(-1)?.cadNumber).toBe(TYPED_TEXT_NOT_KEPT);
   });
 });

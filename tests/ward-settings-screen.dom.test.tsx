@@ -20,7 +20,6 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
@@ -71,50 +70,15 @@ describe("the settings screen", () => {
   });
 
   /**
-   * 🔴 **THE ANTI-DRIFT TEST, AND IT IS THE ONE THAT EARNS THE HANDOVER PANEL.** The drawing lists
-   * the four sections that print, by name. **Typing those four names here would be a second copy of
-   * a list that lives in `handover-page.tsx`** — and the first rename would leave this screen
-   * confidently describing a sheet that no longer has those sections.
-   *
-   * ✅ **So the expectation is read out of the REAL Handover screen, rendered in this same test.**
-   * Neither side is a fixture. Rename a section on Handover and this reddens.
+   * D-72: the Handover card held only Preview rows (sheet sections, reminder, open at shift change)
+   * and showed in a development build only, so it was deleted with them. Handover stays one step
+   * away in the sidebar.
    */
-  it("names exactly the sections the real handover sheet prints, read from that screen", () => {
-    const handover = render(
-      <ToastProvider>
-        <WardFlowProvider>
-          <HandoverPage />
-        </WardFlowProvider>
-      </ToastProvider>,
-    );
-    // Refined Handover A (9 Oct 2026): the sheet's sections are its meeting-order groups. The due
-    // group carries the handover time ("Due by 15:00"), so its time is dropped before comparing.
-    const printedSections = ["act", "due", "bed", "acc", "mov"].map((id) => {
-      const header = within(handover.getByTestId(`ward-handover-group-${id}`)).getAllByRole("button")[0]!;
-      return (header.querySelector(":scope > span:not([class])")?.textContent ?? "").replace(/ \d\d:\d\d$/, "").trim();
-    });
-    handover.unmount();
-
-    expect(
-      printedSections.length,
-      "the handover screen rendered no sections, so this would be vacuous",
-    ).toBeGreaterThan(0);
-
-    renderSettings();
-    const panel = screen.getByTestId("ward-settings-handover");
-    for (const section of printedSections) {
-      expect(panel.textContent, `the settings screen does not name the printed section "${section}"`).toContain(
-        section,
-      );
-    }
-  });
-
-  it("links to the real handover route, not to a drawing", () => {
+  it("has no Handover settings card, since none of its rows was wired", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Profile and shift/ }));
-    const link = within(screen.getByTestId("ward-settings-handover")).getByRole("link", { name: /handover/i });
-    expect(link.getAttribute("href")).toBe("/ward-flow/handover");
-    expect(link.getAttribute("href")).not.toMatch(/\.html$/);
+    expect(screen.queryByTestId("ward-settings-handover")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-settings-default-service")).toBeInTheDocument();
   });
 
   /**
@@ -176,7 +140,7 @@ describe("the settings screen", () => {
   it("actually renders its panels, so the no-control assertions are not passing over an empty page", () => {
     renderSettings();
     expect(screen.getByTestId("ward-settings-default-service")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-settings-handover")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
     expect((screen.getByTestId("ward-settings-screen").textContent ?? "").length).toBeGreaterThan(200);
   });
 });

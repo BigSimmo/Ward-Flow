@@ -1,5 +1,20 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+_Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
+
+## ED examination save recovery — 23 October 2026
+
+The ED examination form delegates to `ed/use-ed-examination-save.ts`, on the network sweep's
+`8c2ff460` main base. The hook retains the selected outcome until acceptance, guards repeated
+submissions and uses the existing command completion and Undo feedback. An unconfirmed shared
+save disables a fresh submission while the existing Retry remains available in the active sheet.
+Shared Retry uses the command's private definitive completion, so acceptance remains confirmed
+when a replay carries a newer examination. Record, time and history matching is reserved for
+legacy local void dispatch. A refused Retry retains the draft and its own refusal. Undo follows
+the definitive answer while preserving the original command lifetime and its own step metadata.
+World, command lifetime, movement and selection checks stop old replies clearing a newer draft.
+`ward-ed-examination-save.dom.test.tsx` covers these save and recovery paths.
+
 ## Confirmed usability fixes — 19 October 2026
 
 Referral `Field` associates hints and errors with native controls, including controls inside
@@ -33,8 +48,8 @@ when necessary, and the trigger itself has a minimum 48px target.
 
 ## Handover improvements — 17 October 2026
 
-- `referrals/referral-match-tiers.tsx` renders the turnaround preference control; its parent
-  derives live CLD/departure eligibility and dispatches the referral or movement event. A clearing
+- `referrals/referral-match.tsx` renders the turnaround preference control (it moved there from
+  the retired `referral-match-tiers.tsx` under D-77) and derives live CLD/departure eligibility and dispatches the referral or movement event. A clearing
   locked bed may appear under capacity pending without enabling immediate placement. The queue's
   badges recheck the recorded source, including before a waiting referral has a movement.
 - `since-last-look-pill.tsx` and its CSS module mount independent Ward/ED 15-minute review sheets
@@ -136,7 +151,7 @@ Back to [the code map index](README.md).
   pitfalls) and `ed/ed-home-derivations.ts` (`edOpenSummaries`, for Home's ED pressure card).
 - **Tests:** 28 files under `tests/` reference this folder, including
   `ward-coordinator-screen.dom.test.tsx`, `ward-shortlist.dom.test.tsx` and four more
-  shortlist-specific specs, `ward-flow-diagram-status-truthfulness.test.ts`, `ward-override-register-render.dom.test.tsx`,
+  shortlist-specific specs, `ward-override-register-render.dom.test.tsx`,
   `ward-registers-drawer.dom.test.tsx`, `ward-nav.test.ts`, `ward-no-dead-ends.dom.test.tsx`.
 
 ### Files
@@ -149,10 +164,11 @@ Back to [the code map index](README.md).
   other component here imports it alongside its own smaller module.
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
-- **`flow-status.ts`** — `hubStatusText`, the hub's one-line status, used by `home-bedflow.tsx`.
-  The flow diagram it came from (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`)
-  were deleted on 20 Oct 2026 (Josh's yes); no route had drawn either since the v6 Home and the
-  Network screen's retirement.
+- **`home-bedflow.tsx`** — `HomeBedflow`, the State bedflow card drawn at the foot of Capacity: every
+  ward by health service with its bed states. Its patient mode (Offer, Fits first and the
+  patient strip) and the hub status line it read from `flow-status.ts` were removed on 23 Oct 2026
+  (Josh's yes), since no screen passed it a patient after Home v7. The flow diagram
+  (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`) were deleted on 20 Oct 2026.
 - **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the movement list in wait order
   (`ward-priority.ts`'s `queueOrder`; flags highlight, never move a row, D-71).
 - **`shortlist-panel.module.css`** (684 lines) — styles for `shortlist-panel.tsx` and reused by
@@ -357,7 +373,9 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   list 2.5) with no change to markup: `use-referral-match-state.tsx` (state and withdraw handling),
   `referral-match-model.ts`, `referral-history-corrections.tsx`, `referral-match-rows.tsx`,
   `referral-match-not-a-bed.tsx` and `referral-match-tiers.tsx`. The accept, decline, local bed and
-  community withdraw handlers stay in `referral-match.tsx`.
+  community withdraw handlers stay in `referral-match.tsx`. D-77 (21 Oct 2026) gave desktop the
+  phone decision list (radio rows grouped by fit, one Accept button, Clinical override behind it)
+  and retired `referral-match-tiers.tsx` with the travel-band groups.
 - **`referral-referrer.ts`** (42 lines) — `referralReferrerName`, `REFERRER_NOT_RECORDED` ("Not
   recorded" — D-12 ruling: never a personal name, never a source type standing in for one).
 - **`referral-sending-team.ts`** (60 lines) — `sendingTeamFragment`, `withSendingTeam`. One-place
@@ -581,6 +599,11 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   `isUnmeasured`, `figureText`. Its header states this folder found three different sentences
   sharing three words but meaning different things, which is why every figure must carry its own
   state rather than a shared "not a measurement" string.
+- **`statistics-session-trends.ts`** and **`statistics-session-trends-card.tsx`** (fix plan item 6,
+  session-only step, 21 Oct 2026) — `sessionTrends(log, now)` counts accepted referrals, decisions,
+  arrivals and departures hour by hour from this session's in-memory event log, and
+  `StatisticsSessionTrendsCard` shows them as "This session" at the foot of `/statistics`. Trends
+  across sessions wait for a shared history table. Tests: `ward-statistics-session-trends.test.ts`.
 - **`statistics-claims-register.ts`** (2,298 lines) — **the largest non-screen file in the folder.**
   `REGISTERED_SURFACES`, `FalsifyingEdit`/`ModelClaim` types, `MODEL_CLAIMS` (a large array pairing
   every claim a statistics screen makes with the source line that makes it true), `UnevidencedClaim`

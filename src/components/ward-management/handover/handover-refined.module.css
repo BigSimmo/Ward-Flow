@@ -486,11 +486,15 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The action wraps to a second line rather than cutting off; the full text is also on hover. The
+   table primitive sets nowrap on every cell, so this cell opts back in to wrapping. */
 .next {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 18px;
   font-weight: 500;
   color: var(--wf-ink-1);
 }
@@ -869,32 +873,6 @@
   white-space: nowrap;
 }
 
-.preview {
-  margin: 0 16px;
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-md);
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.previewTag {
-  margin-left: auto;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 8px;
-  border-radius: var(--wf-r-tag);
-  border: 1px dashed var(--wf-line-3);
-  font-size: var(--wf-fs-12);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
 .panelFoot {
   display: flex;
   gap: 8px;
@@ -959,24 +937,6 @@
   font-size: var(--wf-fs-12);
 }
 
-.roles {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.role {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--wf-r-md);
-  border: 1px dashed var(--wf-line-3);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-13);
-}
-
 .signed {
   display: flex;
   align-items: center;
@@ -1025,7 +985,9 @@
   padding: 8px;
 }
 
-@media (max-width: 75rem) {
+/* Beside the side rail, the table needs about 900px for its six columns, so the sign-off card
+ * moves under it below 1440px instead of squeezing every column to an ellipsis. */
+@media (max-width: 90rem) {
   .split {
     grid-template-columns: minmax(0, 1fr);
   }

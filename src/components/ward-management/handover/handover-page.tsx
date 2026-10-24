@@ -21,7 +21,7 @@ import {
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -116,6 +116,7 @@ import {
   recordHandoverSignOff,
   resolveAdmissionPatient,
 } from "./handover-scope-rules";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 export {
   handoverScopeLabel,
@@ -431,7 +432,7 @@ export function HandoverPage() {
       `Since previous handover at ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
       ...sinceItems.map((item) => `${item.value} ${item.word}${item.detail ? ` (${item.detail})` : ""}`),
     ].join("\n");
-    void navigator.clipboard?.writeText(text).then(
+    void copyTextToClipboard(text).then(
       () => announceToWardShell("Changes copied as handover text."),
       () => announceToWardShell("Copy was blocked by the browser."),
     );
@@ -451,7 +452,7 @@ export function HandoverPage() {
   // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
   // audit 11 Oct 2026). Full and custom columns keep their own set.
   const railBeside = useMediaQuery("(min-width: 75.0625rem)");
-  const fitted = railBeside && !present && customColumns === null && density === "std";
+  const fitted = railBeside && !present && !sheetOpen && customColumns === null && density === "std";
   const columnIds =
     customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);
@@ -540,7 +541,7 @@ export function HandoverPage() {
   const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstantWithDay(shiftAt, now)}`;
   const copySummary = useCallback(() => {
     const text = summaryText(groups, scopeLabel, shiftLine, now, now);
-    void navigator.clipboard?.writeText(text).then(
+    void copyTextToClipboard(text).then(
       () => {
         setCopied(true);
         announceToWardShell(`Summary copied, ${rows.length} synthetic patients.`);
@@ -550,7 +551,7 @@ export function HandoverPage() {
   }, [groups, scopeLabel, shiftLine, now, rows.length]);
   const copyIsbar = useCallback(
     (row: HandoverRow) => {
-      void navigator.clipboard?.writeText(isbarText(row, now, readyBeds)).then(
+      void copyTextToClipboard(isbarText(row, now, readyBeds)).then(
         () => announceToWardShell(`ISBAR for ${row.name} copied.`),
         () => announceToWardShell("Copy was blocked by the browser."),
       );
@@ -845,7 +846,7 @@ export function HandoverPage() {
           onCopySince={copySince}
           chips={HANDOVER_CHIPS.map((chip) => ({
             id: chip.id,
-            label: chip.id === "spec" ? "1:1 obs" : chip.label,
+            label: chip.label,
             count: rows.filter((row) => chip.test(row, now)).length,
             pressed: chips.has(chip.id),
             onToggle: () => toggleChip(chip.id),
@@ -1283,7 +1284,7 @@ export function HandoverPage() {
         scopeLabel={scopeLabel}
         shiftLabel={`${shiftInfo.label}, ${formatInstantWithDay(shiftAt, now)}`}
         densityLabel={customColumns === null ? DENSITY_LABEL[density] : "Chosen"}
-        sheetDate={formatSheetMoment(now, dayZero).split(",")[0] ?? ""}
+        dayZero={dayZero}
         options={printOptions}
         onOptionsChange={setPrintOptions}
         controls={

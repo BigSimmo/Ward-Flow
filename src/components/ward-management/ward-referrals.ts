@@ -17,11 +17,12 @@ import {
   BED_HOLD_EXPIRY_MINUTES,
   EXPECT_RECONSIDER_AFTER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   CommunityDeclineReason,
   Movement,
   Referral,
-  ReferralDeclineReason,
+  DeclineReason,
   ReferralDestination,
   ReferralDestinationKind,
   ReferralPurpose,
@@ -184,6 +185,18 @@ export function referralState(referral: Referral): ReferralState {
 }
 
 /**
+ * Audit 2 E-12: the referrer withdrew this referral and nothing on it is still awaiting an answer
+ * or accepted. `referralState` keeps such a referral "queued" (or "declined" when one arm had
+ * already declined), which is right for its counts but wrong as a description of it.
+ */
+export function referralWithdrawn(referral: Referral): boolean {
+  return (
+    referral.destinations.some((addressing) => addressing.withdrawnAt !== undefined) &&
+    !referral.destinations.some((addressing) => addressing.state === "accepted" || isAwaitingAnswer(addressing))
+  );
+}
+
+/**
  * ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that
@@ -281,7 +294,21 @@ export function referralDestinationLabel(destination: ReferralDestination): stri
     // two dashes carry different meanings and the reader has to guess which clause is which.
     return `${referralDestinationKindLabel(destination.kind)} (${referralPurposeLabel(destination.purpose)})`;
   }
+  // D-74: a community arm says what it is for too, so a follow-up is never read as an admission ask.
+  if (destination.kind === "community_team") {
+    return `${referralDestinationKindLabel(destination.kind)} (${communityReferralPurposeLabel(communityPurposeOf(destination))})`;
+  }
   return referralDestinationKindLabel(destination.kind);
+}
+
+/** D-74: a community arm's purpose; an arm saved before D-74 reads as follow-up. */
+export function communityPurposeOf(destination: { purpose?: CommunityReferralPurpose }): CommunityReferralPurpose {
+  return destination.purpose ?? "follow_up";
+}
+
+/** D-74: the words for each community purpose, the same on every screen. */
+export function communityReferralPurposeLabel(purpose: CommunityReferralPurpose): string {
+  return purpose === "assess_for_admission" ? "Assess for admission" : "Community follow-up";
 }
 
 /**
@@ -1056,13 +1083,18 @@ export function networkHasCohort(referral: Referral, units: Unit[]): boolean {
  * actually reads — not merely the enum keys — for a digit, and pins this map's key set to
  * `REFERRAL_DECLINE_REASONS` exactly.
  */
-export const DECLINE_REASON_LABELS: Record<ReferralDeclineReason, string> = {
+export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
   no_suitable_bed: "No suitable bed",
   age_band_not_provided_here: "Age band not provided here",
   sex_designation_unavailable: "Sex designation unavailable",
   secure_bed_unavailable: "Secure bed unavailable",
   belongs_to_another_service: "Belongs to another service",
   referred_elsewhere: "Referred elsewhere",
+  // D-78: the ward-only reasons, in the wording the ward screens already used.
+  specialling_unavailable: "Specialling unavailable",
+  acuity_mix: "Acuity mix",
+  capability_mismatch: "Capability mismatch",
+  bed_pulled_for_earlier_referral: "Bed pulled for earlier referral",
   /*
    * ⚠️ PLACEHOLDER WORDING. THE OWNER HAS NOT CHOSEN THIS SENTENCE.
    *
@@ -1327,25 +1359,6 @@ export function travelBandGroupLabel(band: TravelBandGroup["band"]): string {
   return band === "not_recorded" ? NOT_RECORDED_LABEL : TRAVEL_BAND_LABELS[band];
 }
 
-/**
- * The one spelling of the two figures a band group's heading carries.
- *
- * Two present facts about the beds in this band and nothing else. `accepting` is a subset of
- * `units` and is the only ratio these two ever form; neither counts what is missing, and neither
- * shares a denominator with any other figure on any screen.
- */
-export function travelBandGroupCountsSentence(counts: TravelBandGroupCounts): string {
-  return (
-    `${counts.units} ${counts.units === 1 ? "unit" : "units"} in this band · ` +
-    `${counts.accepting} ${counts.accepting === 1 ? "accepts" : "accept"} this referral`
-  );
-}
-
-/** What an empty group says under its heading. An empty group is still rendered, still carries its
- *  heading and still carries both counts — "there is nothing in this band" is an answer a
- *  coordinator came for, and a group that vanishes when it is empty cannot give it. */
-export const TRAVEL_BAND_GROUP_EMPTY_SENTENCE = "No unit in this band.";
-
 // The out-of-area ledger lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals-out-of-area";
 
@@ -1381,27 +1394,4 @@ export function isBedHoldExpired(
     return false;
   }
   return now - pulledAt >= thresholdMinutes;
-}
-
-export function bedHoldExpiryAlert(
-  movement: Movement,
-  now: Instant,
-  thresholdMinutes: number = BED_HOLD_EXPIRY_MINUTES,
-): { expired: boolean; minutesHeld: number; message?: string } {
-  const pulledAt = (movement as { pulledAt?: Instant }).pulledAt ?? movement.acceptedAt;
-  const minutesHeld =
-    pulledAt !== undefined && pulledAt !== null && Number.isFinite(pulledAt) ? Math.max(0, now - pulledAt) : 0;
-
-  if (isBedHoldExpired(movement, now, thresholdMinutes)) {
-    return {
-      expired: true,
-      minutesHeld,
-      message: `Bed hold exceeds ${thresholdMinutes} minutes without confirmed dispatch — clinical review required.`,
-    };
-  }
-
-  return {
-    expired: false,
-    minutesHeld,
-  };
 }

@@ -5,6 +5,7 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import type { LegalStatus } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,6 +26,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
+import { isConstantObservation, observationStaffOnWard } from "@/components/ward-management/ward-observation";
 import {
   bedsPendingPreparation,
   capacityBreakdown,
@@ -92,6 +94,8 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import styles from "./ward.module.css";
+import { wardClearanceAlerts } from "./ward-clearance-alerts";
+import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -101,7 +105,7 @@ import {
   pickedUpSay,
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
-import { buzzKeys } from "./ward-buzz-keys";
+import { buzzKeys, capacityRequestIsOpen, refreshRequestIsOpen } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import {
@@ -127,7 +131,7 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerView, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
@@ -149,7 +153,7 @@ type WardScreenProps = {
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
-    return <WardAnswerView unitId={unitId} />;
+    return <WardAnswerFromLink key={unitId} unitId={unitId} />;
   }
   return (
     <WardOverviewScreen
@@ -161,6 +165,7 @@ export function WardScreen({ unitId, presentation = "overview", departurePlannin
   );
 }
 function WardOverviewScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
+  const canOpenHref = useCanOpenHref();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -200,7 +205,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     "plannedAdmissions",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("ward");
+  // D-80: a site bed manager on its own ward's page confirms beds, moves releases and records
+  // blockers in its own name. Every other ward action stays gated to the ward.
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   const completeCommand = useWardCommandCompletion();
 
   // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
@@ -341,7 +349,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [boardToken, setBoardToken] = useState(0);
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
-  const routeRole = useRouteRole();
   const raiseAsRouteRole = useWardRaise(routeRole);
   const setRole = useCallback(
     (nextRole: "ward") => {
@@ -350,7 +357,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     [pathname],
   );
   const wardRoleLockNote =
-    routeRole !== "ward" ? (
+    // A bed manager cannot switch desks, and each button it may not use says so itself.
+    routeRole !== "ward" && routeRole !== "bed_manager" ? (
       <span className="lockline" data-testid="ward-role-lockline">
         Viewing as {routeRole} desk (ward actions are read-only) &middot;{" "}
         <button
@@ -434,7 +442,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
-  const notificationCenterRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
   function runBoardCommand(record: () => ReturnType<WardCommandDispatch>, check: BoardCheck, onAccepted?: () => void) {
@@ -715,16 +722,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     function handleKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented) return;
       if (e.key === "Escape") {
-        if (notificationCenterOpen) {
-          e.preventDefault();
-          e.stopPropagation();
-          setNotificationCenterOpen(false);
-          setTimeout(() => {
-            notificationTriggerRef.current?.focus({ preventScroll: true });
-          }, 0);
-          return;
-        }
-        if (e.defaultPrevented || hasOpenSheet()) return;
+        // The Notices drawer and sheet are Sheets (Notices option A), so they close themselves.
+        if (hasOpenSheet()) return;
         if (confirmNumbersOpen) {
           closeCapacityModal();
         } else if (dailySheetOpen) {
@@ -741,36 +740,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    selectedBed,
-    boardPick,
-    dailySheetOpen,
-    confirmNumbersOpen,
-    notificationCenterOpen,
-    closeBedDrawer,
-    closeCapacityModal,
-  ]);
-
-  // Click-outside listener for floating notification center
-  useEffect(() => {
-    if (!notificationCenterOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (
-        notificationCenterRef.current &&
-        !notificationCenterRef.current.contains(target) &&
-        // Phone and iPad portrait open it from the More menu, which has no trigger here.
-        !notificationTriggerRef.current?.contains(target)
-      ) {
-        setNotificationCenterOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [notificationCenterOpen]);
+  }, [selectedBed, boardPick, dailySheetOpen, confirmNumbersOpen, closeBedDrawer, closeCapacityModal]);
 
   // Focus moves to the first control whenever the drawer shows a bed, including a step to another bed.
   useEffect(() => {
@@ -844,7 +814,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setLastActionRejection(refused);
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      toast?.push({ tone: "success", title: "Bed pulled. It is held for this arrival." });
+      toast?.push({ tone: "success", title: "Bed pulled for this arrival." });
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
@@ -1083,12 +1053,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    */
   const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
 
-  // Task 5, spec D12: every REQUEST_CAPACITY_REFRESH raised against this unit, live from the
-  // provider. `refreshRequests` only ever grows (the reducer never removes an entry), so the last
-  // one in array order is always the most recent ask.
-  const unitRefreshRequests = refreshRequests.filter((request) => request.unitId === unit.id);
-  const latestRefreshRequest =
-    unitRefreshRequests.length > 0 ? unitRefreshRequests[unitRefreshRequests.length - 1] : undefined;
+  // Spec D12 and DEC-L5-04: this unit's latest capacity ask that the ward has not yet answered.
+  const latestRefreshRequest = refreshRequests
+    .filter((request) => request.unitId === unit.id && capacityRequestIsOpen(request, unit.allocatable))
+    .at(-1);
 
   const activeAnswerIndex = Math.min(answerIndex, Math.max(incoming.length - 1, 0));
   const visibleIncoming =
@@ -1123,6 +1091,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleAcknowledgeNotice(noticeId: string) {
     if (!unit) return;
+    // A notice sent to the ward is the ward's to acknowledge; the reducer refuses anyone else's.
+    if (routeRole === "bed_manager") {
+      setToastMessage("The ward acknowledges its own notices.");
+      return;
+    }
     raise("MARK_NOTICE_READ", {
       noticeId,
       actingPlaceId: unit.id,
@@ -1133,23 +1106,27 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setDismissedBuzzes((current) => (current.includes(buzzKey) ? current : [...current, buzzKey]));
   }
 
+  // A notice sent to the ward is the ward's to acknowledge, so a bed manager is not shown one it
+  // cannot clear (it would keep the badge lit until the ward reads it).
+  const wardNotices = routeRole === "bed_manager" ? [] : notices;
+
   const unreadAlertsCount = (() => {
     if (!unit) return 0;
     let count = 0;
     if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const requests = refreshRequests ?? [];
-    const keys = buzzKeys(requests);
-    const activeBuzzes = requests.filter(
-      (r, index) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[index] ?? ""),
+    const keys = buzzKeys(refreshRequests);
+    const undismissed = refreshRequests.filter(
+      (r, i) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[i] ?? ""),
     );
-    count += activeBuzzes.length;
+    count += undismissed.filter((r) => refreshRequestIsOpen(r, unit.allocatable)).length;
     const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
     count += overdueArrivals.length;
+    count += wardClearanceAlerts(movements, unit.id).count;
+    // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
+    count += wardNotices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
     return count;
   })();
-  const staffedSpecialling = (admissions ?? []).filter(
-    (admission) => admission.unitId === unit.id && admission.state === "occupied" && admission.specialling,
-  ).length;
+  const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
   const overdueLeaveBeds = unitLeaveBeds.filter(
     (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
   );
@@ -1228,9 +1205,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const recordedStatus = (stayMovement?.legalStatus ?? targetBed?.legalStatus) as LegalStatus | undefined;
     const involuntaryBedNeeded = requiresAuthorisedDestination(recordedStatus);
     const secureBedNeeded = Boolean(stayMovement ? stayMovement.security === "Secure" : false);
-    const highAcuityNursingNeeded = Boolean(
-      stayAdmission?.highAcuity || stayAdmission?.specialling || targetBed?.highAcuity || targetBed?.isSpecialling,
-    );
+    const constantObservation = isConstantObservation(stayAdmission?.observation) || targetBed?.isSpecialling;
+    const highAcuityNursingNeeded = Boolean(stayAdmission?.highAcuity || constantObservation || targetBed?.highAcuity);
     const derivedHomeRegion = stayMovement?.homeRegion ?? stayAdmission?.homeRegion ?? "Perth Metropolitan";
     const derivedSuburb =
       patientRecord?.suburb && referralSuburbIsKnown(patientRecord.suburb)
@@ -1880,12 +1856,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       ? `Bed held · absent without leave since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
       : `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
   }));
+  // The ward answers its own referrals: the site bed manager sees them but has no Accept (D-80).
+  const answerBlockedReason = routeRole === "bed_manager" ? `${unit.name} answers its own referrals.` : undefined;
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
     title: resolvePatientIdentity(movement).displayName,
-    onAccept: () => {
-      handleAcceptInPrinciple(movement.id, unit.id);
-    },
+    onAccept:
+      answerBlockedReason === undefined
+        ? () => {
+            handleAcceptInPrinciple(movement.id, unit.id);
+          }
+        : undefined,
   }));
   // The same count the Decisions cockpit heading and windows show.
   const decisionsDue = openDecisionCount({
@@ -1970,15 +1951,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
   // The ward switch lists the other wards on this site, or failing that in this health service.
-  const siteUnits = units.filter((candidate) => candidate.id !== unit.id && candidate.siteCode === unit.siteCode);
+  const accessibleUnits = units.filter((candidate) => candidate.id !== unit.id && canOpenHref(unitHref(candidate.id)));
+  const siteUnits = accessibleUnits.filter((candidate) => candidate.siteCode === unit.siteCode);
   const switchUnits =
     siteUnits.length > 0
       ? siteUnits
-      : units.filter(
-          (candidate) =>
-            candidate.id !== unit.id &&
-            unitHealthService(candidate) !== undefined &&
-            unitHealthService(candidate) === unitHealthService(unit),
+      : accessibleUnits.filter(
+          (c) => unitHealthService(c) !== undefined && unitHealthService(c) === unitHealthService(unit),
         );
 
   const phoneCardOpen = isPhone && phoneWalking && activeTab === "attn"; // Option B: a bed's card has the page
@@ -2058,7 +2037,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </Link>
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-        <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
+        <span>Roster not recorded</span> · {staffedSpecialling} staff on constant observation ·{" "}
         {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
         {(unit.intakeConstraints ?? []).length > 0
           ? ` · ${(unit.intakeConstraints ?? [])
@@ -2281,9 +2260,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             raiseReferralGate={raiseReferralGate}
             wardRoleLockNote={wardRoleLockNote}
             notificationCenterOpen={notificationCenterOpen}
-            notificationCenterRef={notificationCenterRef}
             movements={movements}
-            notices={notices}
+            notices={wardNotices}
             refreshRequests={refreshRequests}
             isRollupConfirmedToday={isRollupConfirmedToday}
             morningRollupDeadlinePassed={morningRollupDeadlinePassed}
@@ -2343,9 +2321,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               key={release.id}
               bedLabel={bed?.bedLabel ?? "this bed"}
               dueSoonHours={dueSoon ? Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60) : null}
-              onClose={() => {
-                setNoticesForRelease(null);
-              }}
+              recorded={{ release, actingUnitId: unitId, onFailure: setToastMessage }}
+              onClose={() => setNoticesForRelease(null)}
             />
           );
         })()}
@@ -2374,6 +2351,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           setBedQuery={setBedQuery}
           unit={unit}
           handleAcceptInPrinciple={handleAcceptInPrinciple}
+          answerBlockedReason={answerBlockedReason}
           units={units}
           capacity={capacity}
           accepted={accepted}

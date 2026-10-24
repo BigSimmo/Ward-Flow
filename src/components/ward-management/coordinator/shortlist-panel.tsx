@@ -83,7 +83,7 @@ import {
   type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { referralSuburbLabel } from "@/components/ward-management/ward-referrals";
+import { DECLINE_REASON_LABELS, referralSuburbLabel } from "@/components/ward-management/ward-referrals";
 import {
   useDueSoonThresholds,
   useOptionalWardFlowSelect,
@@ -1266,9 +1266,9 @@ export function ShortlistPanel({
         <h4 className={styles.shortlistSectionHeading}>Next step</h4>
         <p className={styles.shortlistCandidateCapacity}>
           {placementNextStep === "hold"
-            ? `${acceptedUnit.name} has accepted. Hold the bed so it is kept for this patient.`
+            ? `${acceptedUnit.name} has accepted. Pull the bed so it is kept for this patient.`
             : placementNextStep === "book"
-              ? `The bed at ${acceptedUnit.name} is held. Book transport to move the patient.`
+              ? `The bed at ${acceptedUnit.name} is pulled. Book transport to move the patient.`
               : placementNextStep === "release" && hold
                 ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
                 : `Transport is booked to ${acceptedUnit.name}.`}
@@ -1286,7 +1286,7 @@ export function ShortlistPanel({
             className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
           >
             {placementNextStep === "hold"
-              ? "Hold the bed"
+              ? "Pull the bed"
               : placementNextStep === "book"
                 ? "Book transport"
                 : placementNextStep === "release"
@@ -2323,7 +2323,7 @@ export function ShortlistPanel({
                     className={styles.shortlistDeclineRow}
                   >
                     <strong>{unit ? unit.name : "Unresolved unit"}</strong>
-                    <span>{decline.reason.replace(/_/g, " ")}</span>
+                    <span>{DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}</span>
                     <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
                   </li>
                 );

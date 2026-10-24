@@ -38,6 +38,7 @@ import {
   type StageChange,
 } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function movementIn(state: WardFlowState, id: string): Movement {
   const found = state.movements.find((candidate) => candidate.id === id);
@@ -122,6 +123,8 @@ const REDUCER_SLICE_PATHS = [
   "ward-flow-placement-events.ts",
   "ward-flow-transport-events.ts",
   "ward-flow-bed-events.ts",
+  // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.
+  "ward-flow-protected-record-events.ts",
 ].map((file) => path.join(process.cwd(), "src/components/ward-management", file));
 const reducerSource = [REDUCER_SOURCE_PATH, ...REDUCER_SLICE_PATHS]
   .map((file) => readFileSync(file, "utf8"))
@@ -274,7 +277,7 @@ function buildDrivenFixture() {
     role: "ed",
     now: t(60),
     movementId: MOVEMENT_ID,
-    actingPlaceId: movementIn(s5, MOVEMENT_ID).originEdId,
+    actingPlaceId: movementIn(s5, MOVEMENT_ID).originEdId!,
   });
   assertStepAccepted(s5, sDeteriorated, "RECORD_ED_MEDICAL_DETERIORATION");
 
@@ -417,7 +420,7 @@ function raiseNewReferral(state: WardFlowState, now: Instant) {
       cohort: "Adult",
       security: "Open",
       sex: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,

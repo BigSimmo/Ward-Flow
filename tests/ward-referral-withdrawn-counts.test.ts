@@ -8,6 +8,7 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * THE TWO FIGURES THAT COUNT A WITHDRAWN REFERRAL AS STILL OPEN.
  *
@@ -120,7 +121,7 @@ describe("A3-8 / A3-9: Referral Withdrawal vs Multi-Ward Decline", () => {
         security: "Secure",
         sex: "Male",
         gender: "Male",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -147,7 +148,7 @@ describe("A3-8 / A3-9: Referral Withdrawal vs Multi-Ward Decline", () => {
       now: NOW_ANCHOR + 2,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
 

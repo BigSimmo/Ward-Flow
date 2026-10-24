@@ -39,9 +39,8 @@ import { ToastProvider } from "@/components/wf";
  * other control and says it is not wired when pressed (D-16), so nothing reads as refused.
  *
  * Overall review, 20 Oct 2026 (Josh accepted): "hide every not-wired button in the pilot build, so
- * nothing on screen pretends to work." Preview controls now show only in a local development build.
- * Vitest builds read as development, so the cases above still see them; the last suite below
- * renders the screen as each build to prove both sides.
+ * nothing on screen pretends to work." D-72 then deleted the Preview settings outright; the last
+ * suite below renders the screen as each build to prove none of them comes back.
  */
 
 const NOT_WIRED = "Not wired in this prototype.";
@@ -82,54 +81,15 @@ describe("settings screen: every Preview control says it is not wired", () => {
     expect(greyed.map((control) => control.outerHTML.slice(0, 100))).toEqual([]);
   });
 
-  it("still marks Preview settings with the D4 sentence, so the suite above is not vacuous", () => {
+  // D-72 (build or delete each unfinished control, defaulting to delete): every Preview setting was
+  // deleted, so no tab carries a Preview tag or the D4 sentence, and the cases above check wired
+  // controls only.
+  it.each(TABS.map((name) => ({ name })))("$name: shows no Preview control and no D4 sentence", ({ name }) => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
-    const pane = screen.getByRole("main").querySelector("[data-pane]:not([hidden])")!;
-    expect(pane.textContent).toContain(NOT_WIRED);
-  });
-
-  it("pressing a Preview control says it is not wired and changes nothing", () => {
-    renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
-    const row = screen.getByText("Text size").closest<HTMLElement>("[data-setting]")!;
-    const option = within(row)
-      .getAllByRole("radio")
-      .find((radio) => radio.getAttribute("aria-checked") === "false")!;
-    expect(option).not.toHaveAttribute("aria-disabled");
-    fireEvent.click(option);
-    expect(option).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("status")).toHaveTextContent("Text size is not wired in this prototype.");
-  });
-
-  // Audit settings-14 (13 Oct 2026): a protection that is not running never reads as On.
-  it.each([
-    { tab: /^Display/, name: "Initials only on shared screens" },
-    { tab: /^Display/, name: "Clear session on close" },
-    { tab: /^Alerts/, name: "Flash on urgent" },
-    { tab: /^Alerts/, name: "Summary at shift start" },
-  ])("shows the Preview switch $name as Off", ({ tab, name }) => {
-    renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: tab }));
-    expect(screen.getByRole("switch", { name })).toHaveAttribute("aria-checked", "false");
-  });
-
-  // Audit settings-26: Snooze is not wired, so it carries the Preview tag.
-  it("tags Snooze 15m as Preview", () => {
-    renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
-    const snooze = screen.getByRole("main").querySelector<HTMLElement>('[data-setting="snooze"]')!;
-    expect(snooze).toHaveTextContent("Preview");
-  });
-
-  it("shows Lock after idle and Buzz again as Off while they are Preview", () => {
-    renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
-    const lock = screen.getByText("Lock after idle").closest<HTMLElement>("[data-setting]")!;
-    expect(within(lock).getByRole("radio", { name: "Off" })).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
-    const again = screen.getByText("Buzz again if not seen").closest<HTMLElement>("[data-setting]")!;
-    expect(within(again).getByRole("radio", { name: "Off" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name }));
+    const pane = screen.getByRole("main").querySelector<HTMLElement>("[data-pane]:not([hidden])")!;
+    expect(pane.textContent).not.toContain(NOT_WIRED);
+    expect(pane.textContent).not.toMatch(/\bPreview\b/u);
   });
 
   // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull hold. No second Preview timer.
@@ -210,20 +170,45 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
 });
 
 /**
- * Overall review, 20 Oct 2026 (Josh accepted): "hide every not-wired button in the pilot build, so
- * nothing on screen pretends to work." Each case renders the screen as a named build
- * (`NEXT_PUBLIC_WARD_ENVIRONMENT`). A demo or production build shows no Preview row, card, tag or
- * find result; a development build still shows every one, so the "absent" cases are not vacuous.
+ * D-72 (build or delete each unfinished control, defaulting to delete): the Preview settings that
+ * used to show only in a local development build were deleted. Each case renders the screen as a
+ * named build (`NEXT_PUBLIC_WARD_ENVIRONMENT`), a development build included, so none of them can
+ * come back behind the build switch.
  */
-describe("settings screen: Preview controls show only in a development build", () => {
+describe("settings screen: deleted Preview controls stay out of every build", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  // Every Preview row the find index names.
-  const PREVIEW_TARGETS = SETTINGS_SEARCH_ENTRIES.filter((entry) => entry.preview).map((e) => e.id);
-  // Cards whose every row is Preview: Live data and boards, Notifications, Privacy, Handover, More thresholds.
-  const PREVIEW_CARDS = ["live-title", "notify-title", "privacy-title", "handover-title", "more-title"];
+  // The Preview rows the find index used to name.
+  const DELETED_TARGETS = [
+    "surge-ends",
+    "occupancy",
+    "tier-one",
+    "ward-silent",
+    "flash",
+    "buzz-again",
+    "quiet-hours",
+    "shift-summary",
+    "snooze",
+    "notifications",
+    "live-lists",
+    "timer-seconds",
+    "wallboard",
+    "text-size",
+    "touch",
+    "initials",
+    "lock-idle",
+    "clear-on-close",
+    "opens-on",
+    "my-shift",
+    "covering",
+    "handover-sections",
+    "handover-reminder",
+    "handover-open",
+  ];
+  // Cards whose every row was Preview: Live data and boards, Notifications, Privacy, Handover, More thresholds.
+  const DELETED_CARDS = ["live-title", "notify-title", "privacy-title", "handover-title", "more-title"];
 
   function settingTargets(): Set<string> {
     const main = screen.getByRole("main");
@@ -232,16 +217,14 @@ describe("settings screen: Preview controls show only in a development build", (
     );
   }
 
-  it.each(["production", "demo"] as const)("a %s build renders no Preview row, card or tag", (build) => {
+  it.each(["production", "demo", "development"] as const)("a %s build renders no Preview row, card or tag", (build) => {
     vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", build);
     renderSettings();
     const main = screen.getByRole("main");
     const targets = settingTargets();
 
-    expect(PREVIEW_TARGETS.filter((id) => targets.has(id))).toEqual([]);
-    expect(PREVIEW_CARDS.filter((id) => main.querySelector(`#${id}`))).toEqual([]);
-    // Panes other than Rules are `hidden`, so look the Snooze holder up by its target, not its role.
-    expect(main.querySelector('[data-setting="snooze"]')).toBeNull();
+    expect(DELETED_TARGETS.filter((id) => targets.has(id))).toEqual([]);
+    expect(DELETED_CARDS.filter((id) => main.querySelector(`#${id}`))).toEqual([]);
     expect(main.textContent).not.toContain(NOT_WIRED);
     expect(main.textContent).not.toMatch(/\bPreview\b/);
 
@@ -251,20 +234,8 @@ describe("settings screen: Preview controls show only in a development build", (
     }
   });
 
-  it("a development build still renders every Preview row and card", () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "development");
-    renderSettings();
-    const main = screen.getByRole("main");
-    const targets = settingTargets();
-
-    expect(PREVIEW_TARGETS.filter((id) => !targets.has(id))).toEqual([]);
-    expect(PREVIEW_CARDS.filter((id) => !main.querySelector(`#${id}`))).toEqual([]);
-    expect(main.querySelector('[data-setting="snooze"]')).toHaveTextContent("Snooze 15m");
-    expect(main.textContent).toContain(NOT_WIRED);
-  });
-
-  it("find a setting offers no Preview row outside development, and every result it offers is on screen", () => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "production");
+  it("find a setting offers no deleted row, and every result it offers is on screen", () => {
+    expect(SETTINGS_SEARCH_ENTRIES.filter((entry) => DELETED_TARGETS.includes(entry.id))).toEqual([]);
     expect(findSettings("quiet hours")).toEqual([]);
     expect(findSettings("surge ends")).toEqual([]);
     expect(findSettings("handover").map((entry) => entry.id)).toEqual([]);
@@ -276,20 +247,17 @@ describe("settings screen: Preview controls show only in a development build", (
     );
     expect(offered.length).toBeGreaterThan(0);
     expect(offered.filter((entry) => !targets.has(entry.id)).map((entry) => entry.id)).toEqual([]);
-
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "development");
-    expect(findSettings("quiet hours").map((entry) => entry.id)).toEqual(["quiet-hours"]);
   });
 
-  it.each([
-    ["production", false],
-    ["development", true],
-  ] as const)("the desk drawer's desks with no screen yet follow the same rule (%s)", (build, shown) => {
-    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", build);
-    renderSettings();
-    fireEvent.click(screen.getByRole("button", { name: "Go to a desk" }));
-    const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
-    expect(within(drawer).queryByRole("button", { name: /Bed manager/ }) !== null).toBe(shown);
-    expect(within(drawer).queryByRole("button", { name: /Executive/ }) !== null).toBe(shown);
-  });
+  it.each(["production", "development"] as const)(
+    "the desk drawer offers no desk that has no screen yet (%s)",
+    (build) => {
+      vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", build);
+      renderSettings();
+      fireEvent.click(screen.getByRole("button", { name: "Go to a desk" }));
+      const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
+      expect(within(drawer).queryByRole("button", { name: /Bed manager/ })).toBeNull();
+      expect(within(drawer).queryByRole("button", { name: /Executive/ })).toBeNull();
+    },
+  );
 });

@@ -21,6 +21,7 @@ import {
   ALL_EVENT_TYPES,
   offendingFormsIn,
 } from "./helpers/ward-legal-figure-sweep";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * Guard against a fourth fabrication of a Mental Health Act duration in this prototype.
  *
@@ -261,6 +262,10 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   // hours. Replaces the carried-over literal (`event.now + 60`) that predated this constant, with
   // no clinician or owner attribution — see the constant's own doc comment in ward-model.ts.
   PULL_HOLD_MINUTES: "owner answer 35, 17 September 2026 (docs/ward-flow/owner-answers-2026-09-17.md): default 4 hours",
+
+  // D-75 item 5 bed hold (Josh, 21 Oct 2026): the extra-travel hold adds 60 minutes to the
+  // configured pull hold. A bed-management choice, not a Mental Health Act period.
+  EXTRA_TRAVEL_HOLD_MINUTES: "Josh, 21 October 2026, D-75 item 5: extra-travel bed hold adds 60 minutes",
 
   // Task 5-wiring, 2026-09-16: the slider range around PULL_HOLD_MINUTES above. Not a statutory or
   // clinical range — a coordinator-usable band around the carried-over default.
@@ -531,7 +536,7 @@ function collectLegalForms(): { source: string; movementId: string; form: LegalF
         security: "Open",
         sex: "Female",
         gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus,
         urgency: 2,
@@ -866,6 +871,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       "ward-flow-placement-events.ts",
       "ward-flow-transport-events.ts",
       "ward-flow-bed-events.ts",
+      "ward-flow-protected-record-events.ts",
     ].map((name) =>
       ts.createSourceFile(
         `${WARD_DIR}/${name}`,

@@ -8,6 +8,7 @@ import {
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import type { Movement } from "../src/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "rph-adult-secure";
@@ -81,7 +82,7 @@ function transferArrival() {
     security: "Open",
     legalStatus: "Voluntary",
     highAcuity: false,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     transport: undefined,
     examination: undefined,
     stage: "accepted_awaiting_bed",
@@ -99,7 +100,7 @@ function transferArrival() {
   });
   state = send(state, {
     type: "RECORD_TRANSPORT_NEED",
-    role: "ward",
+    role: "coordinator",
     now: NOW,
     movementId: movement.id,
     needed: false,
@@ -153,7 +154,7 @@ describe("departure Undo checks later bed ownership", () => {
           stage: "destination_review" as const,
           referredUnitIds: [UNIT],
           highAcuity: false,
-          specialling: false,
+          observation: GENERAL_OBSERVATION,
           legalStatus: "Voluntary" as const,
           security: "Open" as const,
           gender: "Male" as const,

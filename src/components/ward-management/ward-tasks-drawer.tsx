@@ -12,7 +12,6 @@ import {
   Filter,
   ListChecks,
   Phone,
-  PhoneCall,
   RotateCcw,
   Search,
   Send,
@@ -27,7 +26,7 @@ import { useEffect, useId, useRef, useState, type Dispatch } from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, buttonClass, durMinutes, useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -48,7 +47,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import type { WardConfiguration } from "./ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { decisionTargetReading } from "./ward-decision-targets";
-import { alertGroupOf } from "./alerts/alerts-model";
+import { alertActionFor, alertGroupOf, resolveAlertSubject } from "./alerts/alerts-model";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "./ward-due-sort";
 import { inboxItemIsActNow } from "./ward-inbox-reducer";
 import {
@@ -61,7 +60,7 @@ import {
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 
 import styles from "./ward-tasks-drawer.module.css";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
@@ -138,7 +137,7 @@ function escalationTargets(movement: Movement): CallTarget[] {
       kind: "consultant",
       name: "Duty consultant",
       role: "Consultant psychiatrist on call",
-      siteCode: edById(movement.originEdId)?.siteCode,
+      siteCode: originSiteCode(movement),
       service,
     },
     { kind: "bedFlow", name: "State bed desk", role: "Statewide bed flow", service: undefined },
@@ -302,7 +301,6 @@ export function WardTasksDrawer({
   const [escalating, setEscalating] = useState<string | null>(null);
   const [contacting, setContacting] = useState<string | null>(null);
   const [contact, setContact] = useState("");
-  const toast = useOptionalToast();
 
   const openerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -361,23 +359,7 @@ export function WardTasksDrawer({
     return () => drawer.removeEventListener("keydown", onKeyDown);
   }, [withBackdrop]);
 
-  /** Calling is not wired: the number is copied and the toast says so. */
-  function callNumber(row: CallRow) {
-    const number = row.number;
-    if (!number) return;
-    const failed = () =>
-      toast?.push({ tone: "warning", title: "Number not copied", body: `Copy it by hand: ${number}` });
-    // Says copied only once the clipboard has taken it.
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      failed();
-      return;
-    }
-    navigator.clipboard
-      .writeText(number)
-      .then(() => toast?.push({ tone: "info", title: "Number copied", body: "Not wired in this prototype." }), failed);
-  }
-
-  function renderCallRow(row: CallRow, onCall: (from: HTMLElement) => void) {
+  function renderCallRow(row: CallRow) {
     return (
       <li key={row.key} className={styles.callRow}>
         <span className={styles.callText}>
@@ -388,17 +370,6 @@ export function WardTasksDrawer({
           {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
           {row.hours ? <span>{row.hours}</span> : null}
         </span>
-        {/* Calling only copies the number shown beside it: local development builds only (overall review, 20 Oct 2026). */}
-        {row.number && showsUnwiredPreviews() ? (
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnIcon}`}
-            aria-label={`Call ${row.name}, ${row.number}`}
-            onClick={(event) => onCall(event.currentTarget)}
-          >
-            <PhoneCall aria-hidden="true" />
-          </button>
-        ) : null}
       </li>
     );
   }
@@ -452,6 +423,8 @@ export function WardTasksDrawer({
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
   const alertsQueue = words === ALERTS_WORDS;
+  // Change 7: the desktop Alerts drawer gives each row one action. Phone has its own Alerts screen.
+  const oneAction = alertsQueue && !isPhone;
   const filteredItems = items.filter((item) => {
     const group = alertsQueue ? alertGroupOf(item) : item.tone === "danger" ? "act" : "wait";
     if (taskFilter === "critical" && group !== "act") return false;
@@ -535,7 +508,7 @@ export function WardTasksDrawer({
     return (
       <div className={styles.escalationForm} data-testid={`ward-task-contacts-${item.id}`}>
         <ul className={styles.callList} aria-label="Who to call, mock numbers">
-          {rows.map((row) => renderCallRow(row, () => callNumber(row)))}
+          {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Mock numbers from On-call.</span>
@@ -608,15 +581,9 @@ export function WardTasksDrawer({
             </button>
           ))}
         </div>
-        {/* Ops-6: each pick's number, with Call. Calling only copies the number and fills in that
-            contact; nothing is recorded until Record escalation is pressed. */}
+        {/* Ops-6: each pick's number. Nothing is recorded until Record escalation is pressed. */}
         <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
-          {callRows(escalationTargets(movement), now).map((row) =>
-            renderCallRow(row, () => {
-              callNumber(row);
-              setContact(row.name);
-            }),
-          )}
+          {callRows(escalationTargets(movement), now).map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Records only. Sends nothing.</span>
@@ -635,6 +602,38 @@ export function WardTasksDrawer({
           </button>
         </div>
       </form>
+    );
+  }
+
+  /**
+   * Change 7 (D-77, 21 Oct 2026): on the bed coordinator's desktop the Alerts drawer is a short
+   * preview. Each row offers the one action that clears it, the same one the Alerts screen's row
+   * offers (`alertActionFor`), beside Open. Acknowledge, Take, Snooze, calls and Escalate stay on
+   * the Alerts screen. A bed release needs its reason, so Release bed opens that alert there.
+   */
+  function renderOneAction(item: InboxItem, movement: Movement | undefined) {
+    const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    const subject = resolveAlertSubject(
+      movement,
+      item.movementId,
+      records ?? {},
+      records?.units ?? [],
+      item.plannedAdmission ? { planned: item.plannedAdmission, personLabel: item.personLabel } : undefined,
+      admission,
+      item.personId,
+    );
+    const action = alertActionFor(item, subject);
+    return (
+      <Link
+        href={
+          action.kind === "release" ? `${WARD_ALERTS_HREF}?alert=${encodeURIComponent(item.id)}&release=1` : action.href
+        }
+        onClick={onClose}
+        data-testid={`ward-task-action-${item.id}`}
+        className={`${styles.btn} ${styles.btnPrimary}`}
+      >
+        {action.label}
+      </Link>
     );
   }
 
@@ -769,7 +768,7 @@ export function WardTasksDrawer({
                 <Clock aria-hidden="true" />
                 <span>{stageCopy[movement.stage].label}</span>
                 <span aria-hidden="true">·</span>
-                <span>{edById(movement.originEdId)?.name ?? "Origin not recorded"}</span>
+                <span>{originName(movement) ?? "Origin not recorded"}</span>
                 {movement.escalation ? (
                   <>
                     <span aria-hidden="true">·</span>
@@ -805,7 +804,9 @@ export function WardTasksDrawer({
             ) : null}
 
             <div className={styles.rowActions}>
-              {isFact ? (
+              {oneAction ? (
+                renderOneAction(item, movement)
+              ) : isFact ? (
                 <button
                   type="button"
                   className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
@@ -845,7 +846,7 @@ export function WardTasksDrawer({
               )}
               <button
                 type="button"
-                className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
+                className={`${styles.btn} ${!oneAction && isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
                 aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
                 onClick={() => {
                   openItem(item);
@@ -854,7 +855,8 @@ export function WardTasksDrawer({
                 <ArrowUpRight aria-hidden="true" />
                 Open
               </button>
-              {role === "coordinator" &&
+              {!oneAction &&
+              role === "coordinator" &&
               currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
                 <button
                   type="button"
@@ -868,7 +870,7 @@ export function WardTasksDrawer({
                   Take
                 </button>
               ) : null}
-              {role === "coordinator" && !done ? (
+              {!oneAction && role === "coordinator" && !done ? (
                 <InboxSnoozeControl
                   subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
                   actNow={inboxItemIsActNow(item.id)}
@@ -878,7 +880,7 @@ export function WardTasksDrawer({
                   }}
                 />
               ) : null}
-              {renderMovementActions(item, movement)}
+              {oneAction ? null : renderMovementActions(item, movement)}
             </div>
           </>
         )}
@@ -1010,38 +1012,42 @@ export function WardTasksDrawer({
                 </>
               )}
             </span>
-            <label className={styles.selectWrap}>
-              <Filter aria-hidden="true" />
-              <select
-                aria-label={`Filter ${words.plural.slice(0, -1)} state`}
-                value={ackFilter}
-                onChange={(event) => setAckFilter(event.target.value as AckFilter)}
-              >
-                {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" />
-            </label>
-            <label className={styles.selectWrap}>
-              <select
-                aria-label={`Sort ${words.plural}`}
-                data-testid="ward-tasks-sort"
-                value={sortMode}
-                onChange={(event) => {
-                  setSortMode(event.target.value as DueSortMode);
-                }}
-              >
-                {DUE_SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" />
-            </label>
+            {oneAction ? null : (
+              <>
+                <label className={styles.selectWrap}>
+                  <Filter aria-hidden="true" />
+                  <select
+                    aria-label={`Filter ${words.plural.slice(0, -1)} state`}
+                    value={ackFilter}
+                    onChange={(event) => setAckFilter(event.target.value as AckFilter)}
+                  >
+                    {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown aria-hidden="true" />
+                </label>
+                <label className={styles.selectWrap}>
+                  <select
+                    aria-label={`Sort ${words.plural}`}
+                    data-testid="ward-tasks-sort"
+                    value={sortMode}
+                    onChange={(event) => {
+                      setSortMode(event.target.value as DueSortMode);
+                    }}
+                  >
+                    {DUE_SORT_OPTIONS.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown aria-hidden="true" />
+                </label>
+              </>
+            )}
           </div>
         </div>
 
@@ -1199,57 +1205,71 @@ export function WardTasksDrawer({
           ) : null}
         </div>
 
-        <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
-          {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
+        {oneAction ? null : (
+          <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
+            {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
               broadcast and history. */}
-          {words === ALERTS_WORDS ? (
+            {words === ALERTS_WORDS ? (
+              <Link
+                href={WARD_ALERTS_HREF}
+                onClick={onClose}
+                data-testid="ward-tasks-open-alerts"
+                className={buttonClass({ variant: "pri", size: "sm" })}
+              >
+                Open the Alerts screen
+              </Link>
+            ) : null}
+            <Link
+              href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
+              onClick={onClose}
+              data-testid="ward-tasks-jump-delays"
+              className={styles.quickJump}
+            >
+              Waiting list →
+            </Link>
+            <span aria-hidden="true" className={styles.quickJumpSep}>
+              ·
+            </span>
+            {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
+              <>
+                <Link
+                  href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
+                  onClick={onClose}
+                  data-testid="ward-tasks-jump-alerts"
+                  className={styles.quickJump}
+                >
+                  Alerts &amp; watches →
+                </Link>
+                <span aria-hidden="true" className={styles.quickJumpSep}>
+                  ·
+                </span>
+              </>
+            )}
+            <Link
+              href={WARD_HOME_HREF}
+              onClick={onClose}
+              data-testid="ward-tasks-jump-coordinator"
+              className={styles.quickJump}
+            >
+              Home →
+            </Link>
+          </nav>
+        )}
+
+        <div className={styles.drawerFoot}>
+          {/* Change 7: the one way on from the preview is the Alerts screen itself. */}
+          {oneAction ? (
             <Link
               href={WARD_ALERTS_HREF}
               onClick={onClose}
               data-testid="ward-tasks-open-alerts"
               className={buttonClass({ variant: "pri", size: "sm" })}
             >
-              Open the Alerts screen
+              Open Alerts
             </Link>
-          ) : null}
-          <Link
-            href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
-            onClick={onClose}
-            data-testid="ward-tasks-jump-delays"
-            className={styles.quickJump}
-          >
-            Waiting list →
-          </Link>
-          <span aria-hidden="true" className={styles.quickJumpSep}>
-            ·
-          </span>
-          {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
-            <>
-              <Link
-                href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
-                onClick={onClose}
-                data-testid="ward-tasks-jump-alerts"
-                className={styles.quickJump}
-              >
-                Alerts &amp; watches →
-              </Link>
-              <span aria-hidden="true" className={styles.quickJumpSep}>
-                ·
-              </span>
-            </>
+          ) : (
+            <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
-          <Link
-            href={WARD_HOME_HREF}
-            onClick={onClose}
-            data-testid="ward-tasks-jump-coordinator"
-            className={styles.quickJump}
-          >
-            Coordinator workspace →
-          </Link>
-        </nav>
-
-        <div className={styles.drawerFoot}>
-          <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           {visibleUnacknowledged.length > 0 ? (
             <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
               <UserCheck aria-hidden="true" />

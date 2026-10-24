@@ -23,8 +23,11 @@ import { patientAgeYears, type Patient } from "@/components/ward-management/ward
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
+import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { type DocumentationDraft } from "./referral-flow-panels";
 import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * The referral slide-out's constants, types and pure helpers, moved unchanged from
@@ -295,7 +298,7 @@ export function sampleProfile(
       movementSexOrGender && movementSexOrGender !== "Not recorded" ? movementSexOrGender.charAt(0).toUpperCase() : "",
     umrn: info.umrn,
     dob: patient?.dateOfBirth ?? NOT_RECORDED,
-    origin: edById(movement.originEdId)?.name ?? NOT_RECORDED,
+    origin: originName(movement) ?? NOT_RECORDED,
     legalStatus: movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus,
     recordedExpiry: dueAt === undefined ? "not recorded" : `${formatInstantWithDay(dueAt, now)}, clinician-entered`,
     security: movement.security,
@@ -388,13 +391,21 @@ export const DESTINATIONS: Record<
     icon: Users,
     check: "Documents",
     place: "team",
-    places: "Teams",
+    // D-77 short form: a community referral goes to one team.
+    places: "Team",
     phrase: "a community team",
   },
   ed: { label: "ED", icon: Siren, check: "Documents", place: "ED", places: "EDs", phrase: "an emergency department" },
 };
 
-export const SECTION_IDS: readonly DrawerSection[] = ["patient", "referral", "documentation", "placement"];
+const SECTION_IDS: readonly DrawerSection[] = ["patient", "referral", "documentation", "placement"];
+
+const COMMUNITY_SECTION_IDS = SECTION_IDS.filter((id) => id !== "documentation");
+
+/** D-77 short form: a community referral has no Documents step. Its one clearance question is on Referral. */
+export function sectionIdsFor(destination: DrawerCategory): readonly DrawerSection[] {
+  return destination === "community" ? COMMUNITY_SECTION_IDS : SECTION_IDS;
+}
 
 export function sectionLabel(id: DrawerSection, destination: DrawerCategory): string {
   if (id === "patient") return "Patient";
@@ -469,6 +480,26 @@ export function contactFieldErrors(contact: ReferralContact): Partial<Record<key
   return errors;
 }
 
+/** D-74: a community team arm only once the referrer has said what it is for. */
+export function communityDestinations(team: string, purpose: CommunityReferralPurpose | "") {
+  return purpose ? [{ kind: "community_team" as const, teamName: team, purpose }] : [];
+}
+
+/** The one chosen community team or department, named; a team says what it is for once chosen (D-74). */
+export function singleRecipientLabel(
+  community: boolean,
+  recipient: string,
+  purpose: CommunityReferralPurpose | "",
+): string {
+  if (!community) return edById(recipient)?.name ?? recipient;
+  return purpose ? `${recipient} (${communityReferralPurposeLabel(purpose)})` : recipient;
+}
+
+/** Why nothing can be sent yet: a chosen community team still needs its purpose (D-74). */
+export function missingDestinationError(communityTeamChosen: boolean): string {
+  return communityTeamChosen ? "Choose what the community referral is for." : "Select at least one referral location.";
+}
+
 /** "To Moodjar and 1 more", or the single name. */
 export function recipientSummary(labels: string[]): string {
   if (!labels.length) return "No location chosen yet";
@@ -487,6 +518,8 @@ export type KeptDraft = {
   ageBand: Cohort | "";
   selectedUnitIds: string[];
   selectedRecipient: string;
+  /** D-74: what a community referral is for. Omitted until chosen. */
+  communityPurpose?: CommunityReferralPurpose;
   documentation: DocumentationDraft;
   contact: ReferralContact;
   catchmentSuburb: string;

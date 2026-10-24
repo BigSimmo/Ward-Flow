@@ -21,6 +21,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById, NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * MERGE 03 — the patient movement board (`MovementsView`) and the coordinator's live transport
@@ -221,7 +222,7 @@ describe("the Movements screen", () => {
     for (const movement of wardMovements) {
       const row = findRecordRow(board, movement.id);
       const originEd = edById(movement.originEdId);
-      const expected = departmentLabel(movement.originEdId, originEd?.name);
+      const expected = departmentLabel(movement.originEdId!, originEd?.name);
       // The short code is what the eye reads; the full name is the screen-reader text beside it
       // (a name on a plain span does not reach assistive technology, audit UI-1).
       const origin = within(row).getByTitle(expected, { exact: true });
@@ -251,7 +252,7 @@ describe("the Movements screen", () => {
       expect(row, `provider missing for ${leg.movement.id}`).toHaveTextContent(leg.provider);
 
       const originEd = edById(leg.movement.originEdId);
-      const originLabel = departmentLabel(leg.movement.originEdId, originEd?.name);
+      const originLabel = departmentLabel(leg.movement.originEdId!, originEd?.name);
       expect(row, `origin missing for ${leg.movement.id}`).toHaveTextContent(originLabel);
 
       const destinationUnit = leg.movement.acceptedUnitId
@@ -964,7 +965,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
       cohort: "Adult",
       security: "Open",
       sex: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       statusChanges: [],
@@ -1013,7 +1014,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
       id: "WF-TEST-DECLINED-ELSEWHERE-ELIGIBLE",
       originEdId: "rph-ed",
       referredUnitIds: [],
-      declines: [{ unitId: declinedUnitId, at: NOW_ANCHOR - 10, reason: "no_bed" }],
+      declines: [{ unitId: declinedUnitId, at: NOW_ANCHOR - 10, reason: "no_suitable_bed" }],
     });
     // Still genuinely eligible somewhere else — the OTHER real ward this probe found was never
     // referred to or declined by, so the network has not actually run out.

@@ -21,6 +21,7 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
+import { GENERAL_OBSERVATION, observationAt } from "../src/components/ward-management/ward-observation";
 
 /** 10:00 on the synthetic operating day. Fixtures are self-contained so no seed fixture change
  *  can silently move a boundary this file pins. */
@@ -59,7 +60,7 @@ function admission(overrides: Partial<Admission> = {}): Admission {
   return {
     id: "WA-T01",
     unitId: UNIT_ID,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: "WR-T01",
     movementId: null,
@@ -256,7 +257,7 @@ describe("constraintSentence", () => {
 
   it.each(["occupied", "pulled"] as const)("counts a %s one-to-one place as already staffed", (state) => {
     const unit = testUnit({ speciallingCapacity: 1 });
-    const admissions = [admission({ state, specialling: true })];
+    const admissions = [admission({ state, observation: observationAt("within_sight") })];
     expect(acceptingBedCounts(unit, admissions, [], [], NOW).specialled).toBe(0);
     expect(constraintSentence(unit, admissions, [], [], NOW)).toBe("None can be watched one-to-one.");
 
@@ -264,7 +265,10 @@ describe("constraintSentence", () => {
     expect(
       acceptingBedCounts(
         unit,
-        [admission({ state: "departed", specialling: true }), admission({ unitId: "OTHER", specialling: true })],
+        [
+          admission({ state: "departed", observation: observationAt("within_sight") }),
+          admission({ unitId: "OTHER", observation: observationAt("within_sight") }),
+        ],
         [],
         [],
         NOW,

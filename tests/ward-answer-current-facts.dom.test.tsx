@@ -21,7 +21,8 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { eligibility, wardFacingGateDetail } from "@/components/ward-management/ward-eligibility";
-import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { movementById } from "@/components/ward-management/ward-movements";
 import {
   allEmergencyDepartments,
@@ -76,7 +77,7 @@ describe("Ward answer current facts", () => {
       "Sex",
       // Owner answer 2026-09-25 (R7, Q2): gender identity beside sex, as its own fact.
       "Gender",
-      "Specialling",
+      "Observation level",
       "High-acuity nursing",
       "Legal status",
       "From",
@@ -127,16 +128,16 @@ describe("Ward answer current facts", () => {
     const choices = within(form).getAllByRole("radio");
     const submit = within(form).getByRole("button", { name: "Confirm decline" });
 
-    expect(choices).toHaveLength(DECLINE_REASONS.length);
+    expect(choices).toHaveLength(MOVEMENT_DECLINE_REASONS.length);
     expect(choices.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
     // Unavailable but still focusable, so its reason stays reachable (AUD-A11Y-02).
     expect(submit).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(submit);
     expect(screen.getByTestId("answer-decline-probe")).toHaveTextContent("none");
 
-    // Owner ruling 2026-09-25: DECLINE with reason no_bed now waitlists the patient instead of
+    // Owner ruling 2026-09-25: DECLINE with reason no_suitable_bed (was no_bed) now waitlists the patient instead of
     // declining; capability_mismatch still declines, so this reason keeps exercising a real decline.
-    fireEvent.click(within(form).getByRole("radio", { name: "capability mismatch" }));
+    fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
     expect(submit).not.toHaveAttribute("aria-disabled");
     fireEvent.click(submit);
 
@@ -235,7 +236,7 @@ describe("Ward answer current facts", () => {
     });
     declines.forEach(({ movementId, decline, declineIndex }) => {
       const row = within(history).getByTestId(`ward-answer-history-${movementId}-declined-${declineIndex}`);
-      expect(row).toHaveTextContent(decline.reason.replace(/_/g, " "));
+      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason]);
       expect(row).toHaveTextContent(formatInstant(decline.at));
     });
     expect(within(history).getAllByText("Time not recorded")).toHaveLength(
@@ -253,10 +254,10 @@ describe("Ward answer current facts", () => {
     // Decline the incoming movement so incoming is empty
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${MOVEMENT.id}`));
     const form = screen.getByTestId(`ward-decline-form-${MOVEMENT.id}`);
-    // Owner ruling 2026-09-25: DECLINE with reason no_bed now waitlists rather than declines, which
+    // Owner ruling 2026-09-25: DECLINE with reason no_suitable_bed (was no_bed) now waitlists rather than declines, which
     // would leave this movement's referredUnitIds untouched and "incoming" — capability_mismatch
     // still declines, which is what "incoming is empty" below needs.
-    fireEvent.click(within(form).getByRole("radio", { name: "capability mismatch" }));
+    fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
     fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
 
     // Empty state: the v6 card head reads "Bed request" with a quiet "none waiting" count

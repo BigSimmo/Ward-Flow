@@ -1,6 +1,6 @@
 "use client";
 
-// Phone (v10) Capacity Overview, under the mismatch list: "Needs you" (the wards whose bed count is
+// Phone (v10) Capacity Overview, under the mismatch list: "Wards to check" (the wards whose bed count is
 // stale, oldest first), then two rows that open the bed forecast and today's discharges as sheets.
 // Rendered only on phone; the larger screen keeps the network aside these rows stand in for.
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { PhoneSheet, StatusGlyph, durMinutes } from "@/components/wf";
 import type { NetworkWardRow } from "./capacity-derivations";
 import { forecastHeadline, type BedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { ForecastNetworkExtras } from "@/components/ward-management/forecast/forecast-network-extras";
 import styles from "./capacity.module.css";
 
 const NEEDS_YOU_LIMIT = 4;
@@ -55,7 +56,7 @@ export function CapacityPhoneOverview({
       </p>
       <section aria-labelledby="capacity-phone-needs-you">
         <h2 id="capacity-phone-needs-you" className={styles.phoneOverviewHead}>
-          <span>Needs you</span>
+          <span>Wards to check</span>
           <span className={styles.phoneOverviewCount}>
             {needsYou.length} of {needing.length}
           </span>
@@ -128,6 +129,7 @@ export function CapacityPhoneOverview({
         description="Whole network, estimate"
       >
         <BedsForecastPanel forecast={forecast} />
+        <ForecastNetworkExtras now={now} />
       </PhoneSheet>
 
       <PhoneSheet

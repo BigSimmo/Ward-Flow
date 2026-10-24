@@ -3,6 +3,7 @@
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
+import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { useMemo } from "react";
 import { Lock, Scale, Truck, Users } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -244,6 +245,12 @@ export function QueuedSection({
                           <StatusGlyph tone="warning" size={8} /> {GENDER_REVIEW_FLAG}
                         </span>
                       ) : null}
+                      {/* Fix plan item 4: who is chasing it and when it was last rung about. */}
+                      {referralFollowUpLine(referral, now) ? (
+                        <span className={a.rowNote} data-testid={`ward-referral-board-follow-up-${referral.id}`}>
+                          {referralFollowUpLine(referral, now)}
+                        </span>
+                      ) : null}
                     </td>
                     <td data-testid={`ward-referral-board-wait-${referral.id}`}>
                       <span className="sr-only">{referralWaitLine(referral, now)}</span>
@@ -266,29 +273,12 @@ export function QueuedSection({
                     </td>
                     <td>
                       <span className={a.arms}>
-                        {referral.destinations.map((arm, index) => {
-                          const open = arm.state === "queued" && arm.withdrawnAt === undefined;
-                          const refused = arm.state === "declined";
-                          if (!open && !refused) return null;
-                          const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
-                          const words = `${shortKind(arm.destination.kind)}${
-                            open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
-                          }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
-                          return (
-                            <span
-                              key={`${arm.destination.kind}-${index}`}
-                              className={cx(a.arm, refused && a.armNo)}
-                              title={
-                                refused
-                                  ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
-                                  : referralDestinationLabel(arm.destination)
-                              }
-                            >
-                              <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
-                              {words}
-                            </span>
-                          );
-                        })}
+                        {armChips(referral).map(({ words, refused, titles }) => (
+                          <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
+                            <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
+                            {words}
+                          </span>
+                        ))}
                       </span>
                       {refusals.length > 0 ? (
                         <span className="sr-only" data-testid={`ward-referral-board-refusals-${referral.id}`}>
@@ -416,6 +406,11 @@ export function QueuedSection({
                       {GENDER_REVIEW_FLAG}
                     </span>
                   ) : null}
+                  {referralFollowUpLine(referral, now) ? (
+                    <span className={a.cardNote} data-testid={`ward-referral-board-card-follow-up-${referral.id}`}>
+                      {referralFollowUpLine(referral, now)}
+                    </span>
+                  ) : null}
                 </li>
               );
             })}
@@ -431,6 +426,27 @@ const SHORT_KIND: Record<Referral["destinations"][number]["destination"]["kind"]
   emergency_department: "ED review",
   community_team: "Community",
 };
+
+/** One chip per distinct need, so three wards asked read "Ward bed" once, with each ward in the title. */
+function armChips(referral: Referral) {
+  const chips = new Map<string, { words: string; refused: boolean; titles: string[] }>();
+  for (const arm of referral.destinations) {
+    const open = arm.state === "queued" && arm.withdrawnAt === undefined;
+    const refused = arm.state === "declined";
+    if (!open && !refused) continue;
+    const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
+    const words = `${shortKind(arm.destination.kind)}${
+      open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
+    }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
+    const title = refused
+      ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
+      : referralDestinationLabel(arm.destination);
+    const chip = chips.get(words) ?? { words, refused, titles: [] };
+    chip.titles.push(title);
+    chips.set(words, chip);
+  }
+  return [...chips.values()];
+}
 
 function shortKind(kind: Referral["destinations"][number]["destination"]["kind"]): string {
   return SHORT_KIND[kind];

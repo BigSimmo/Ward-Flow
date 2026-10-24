@@ -14,9 +14,16 @@ import { isPatientRegistrationScope, registrationIsInScope } from "./ward-patien
  * Pure and browser free: the backend bundles this module through `build-engine.mjs`, so the server
  * and the screens use one rule.
  */
-import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "@/components/ward-management/alerts/ward-broadcast-model";
+import {
+  BROADCAST_TARGET_SCOPES,
+  COORDINATOR_DESK_ACKNOWLEDGER_ID,
+  broadcastKind,
+  pullNowWards,
+  type BroadcastTargetScope,
+} from "@/components/ward-management/alerts/ward-broadcast-model";
+import { directiveDesks, wardsInBroadcastScope } from "./alerts/global-alert-view";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
-import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementSourceAdmission, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
@@ -24,6 +31,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reduce
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
   bookingPersonShown,
+  communityTeamKey,
   countsOnlyBedRelease,
   countsOnlyLeaveBed,
   scopeBroadcastAlerts,
@@ -35,10 +43,13 @@ import {
 import {
   accessIsWholeNetwork,
   edInScope,
+  ROLE_SCREENS,
   unitInScope,
   type PlaceLookup,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
+import { siteByCode } from "./ward-sites";
+import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 
 type Context = {
   readonly state: WardFlowState;
@@ -103,7 +114,9 @@ function seededAuditIds(sent: Pick<WardFlowState, "movements" | "referrals" | "a
 /** Is this team id or name the community desk's own team. */
 function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boolean {
   const scope = access.scope;
-  return scope.kind === "team" && (teamId === scope.teamName || teamId === places.teamSlug(scope.teamName));
+  if (scope.kind !== "team") return false;
+  const ownTeam = communityTeamKey(scope.teamName);
+  return ownTeam !== "" && (communityTeamKey(teamId) === ownTeam || teamId === places.teamSlug(scope.teamName));
 }
 
 /**
@@ -165,7 +178,26 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   plannedAdmissionSequence: keep("plannedAdmissionSequence"),
   scenario: keep("scenario"),
   configuration: keep("configuration"),
-  units: keep("units"),
+  // D-72: a ward's seclusion and restraint record goes to the desks that open the Seclusion view and
+  // hold the ward, which still see an episode whose patient has left so they can record its end.
+  // Other such desks get only their own stays' episodes, and no other ward's room or incidents. A
+  // role without the view, such as an access admin or an executive, gets none of it.
+  units: (context) => {
+    const seesView = ROLE_SCREENS[context.access.role].seclusion !== undefined;
+    return context.state.units.map((unit) =>
+      !unit.restrictivePractice || (seesView && context.unitIn(unit.id))
+        ? unit
+        : {
+            ...unit,
+            restrictivePractice: {
+              incidents: [],
+              episodes: seesView
+                ? unit.restrictivePractice.episodes.filter((episode) => context.admissionIds.has(episode.admissionId))
+                : [],
+            },
+          },
+    );
+  },
   morningRollupConfirmations: keep("morningRollupConfirmations"),
   // Role and time only, no person.
   handoverSignOffs: keep("handoverSignOffs"),
@@ -476,10 +508,109 @@ export function commandScopeRefusal(
   if (accessIsWholeNetwork(access)) return null;
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
+  // Configuration is one workspace-wide object, even when no command field names a place.
+  if (command.type === "SET_CONFIGURATION") return "Only the statewide coordinator may change global settings.";
+  const scope = access.scope;
+  const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
+  // Resolve the recipients from the whole workspace before projecting it for the caller. Seeing
+  // one part of an alert permits a local answer, not extending or ending it for every recipient.
+  if (command.type === "DISPATCH_BROADCAST_ALERT") {
+    const targetScope = command.targetScope as BroadcastTargetScope;
+    if (!BROADCAST_TARGET_SCOPES.includes(targetScope)) return outside;
+    const recipients =
+      command.kind === "bed_call"
+        ? wardsInBroadcastScope(state.units, targetScope)
+        : directiveDesks({ targetScope } as Parameters<typeof directiveDesks>[0], state.units);
+    if (recipients.some((id) => !placeIn(id))) return outside;
+  }
+  if (command.type === "STAND_DOWN_BROADCAST_ALERT" || command.type === "EXTEND_BROADCAST_ALERT") {
+    const alert = state.broadcastAlerts.find((candidate) => candidate.id === command.alertId);
+    if (alert) {
+      const recipients =
+        broadcastKind(alert) === "directive"
+          ? directiveDesks(alert, state.units)
+          : (alert.targetUnitIds ?? wardsInBroadcastScope(state.units, alert.targetScope));
+      if (recipients.some((id) => !placeIn(id))) return outside;
+    }
+  }
+  if (command.type === "RAISE_PULL_NOW") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (
+      movement &&
+      pullNowWards(movement, (id) => state.units.some((unit) => unit.id === id)).some((id) => !placeIn(id))
+    )
+      return outside;
+  }
+  // Origin and sender identity come from membership plus the stored record, never the presence
+  // of an optional acting-place claim in a client command.
+  if (
+    command.type === "RECEIVE_REFERRAL" &&
+    (access.role === "ed" || (access.role === "coordinator" && command.source === "ed_medical"))
+  ) {
+    const origin =
+      typeof command.originSiteCode === "string"
+        ? siteByCode(command.originSiteCode)?.emergencyDepartment?.id
+        : undefined;
+    if (!origin || !edInScope(scope, origin, places)) return outside;
+  }
+  // The sender's own tools, for the desk that sent the referral only: a ward's or team's scope also
+  // takes in referrals sent to it (role access plan v2, D-80).
+  if (
+    command.type === "ADD_REFERRAL_CORRECTION" ||
+    command.type === "RECORD_REFERRER_WITHDRAWAL" ||
+    command.type === "MARK_REFERRAL_INFORMATION_MET"
+  ) {
+    const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
+    if (referral && !referralSentByDesk(referral, access, places)) return outside;
+  }
+  if (command.type === "RECORD_TRANSPORT_NEED") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (movement && access.role === "ward") {
+      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      // The stay a journey leaves names its sender before the referral does: a repatriation keeps the
+      // referral that brought the patient in (review on PR #617).
+      const sendingWard =
+        movementSourceAdmission(state, movement)?.unitId ??
+        referral?.originUnitId ??
+        (movement as { originUnitId?: string }).originUnitId;
+      if (!sendingWard || !unitInScope(scope, sendingWard, places)) return outside;
+    }
+    if (
+      movement &&
+      access.role === "ed" &&
+      (movement.originEdId === undefined || !edInScope(scope, movement.originEdId, places))
+    )
+      return outside;
+    if (movement && access.role === "community") {
+      const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+      if (
+        referral?.source !== "community" ||
+        referral.sendingTeamName === undefined ||
+        !teamIsOwn(access, referral.sendingTeamName, places)
+      )
+        return outside;
+    }
+  }
+  // A ward or team changes a journey's urgency, legal status or form receipt, and a team readies its
+  // handover, only on a journey it sent: the person's journey to it is the receiving ward's to
+  // answer, not to amend (D-80).
+  if (
+    ((access.role === "ward" || access.role === "community") &&
+      (command.type === "CHANGE_URGENCY" ||
+        command.type === "CHANGE_LEGAL_STATUS" ||
+        command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
+        command.type === "CORRECT_LEGAL_FORM_RECEIPT")) ||
+    (access.role === "community" && command.type === "HANDOVER_READY")
+  ) {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
+  }
+  // Every desk names its own place when it adds a patient, so the record it adds stays in its own
+  // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.
   if (
     command.type === "ADD_PATIENT" &&
-    command.registrationScope !== undefined &&
-    (!isPatientRegistrationScope(command.registrationScope, state.units) ||
+    (command.registrationScope === undefined ||
+      !isPatientRegistrationScope(command.registrationScope, state.units) ||
       !registrationIsInScope(command.registrationScope, access, places))
   )
     return outside;
@@ -520,8 +651,6 @@ export function commandScopeRefusal(
     const subject = category ? text.slice(category.idPrefix.length) : undefined;
     if (subject !== undefined && all.has(subject) && !writable.has(subject)) return outside;
   }
-  const scope = access.scope;
-  const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
   // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
   const actsFrom = (id: string) =>
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");

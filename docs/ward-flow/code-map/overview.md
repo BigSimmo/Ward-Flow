@@ -34,7 +34,7 @@ of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 | Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                         |
 | ------------------------------------------------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                            |
-| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->52<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->54<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->53<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->55<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
 | Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                   |
 | Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                      |
 | Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                           |
@@ -166,13 +166,14 @@ grouped:
 - **World (5):** `ADVANCE_CLOCK` (demo role only), `RESET_SCENARIO`, `SET_SCENARIO`,
   `SET_CONFIGURATION`, `REVIEW_AUDIT_EVENT`.
 
-**Guard order** for protected events (`ward-flow-reducer.ts`, via `reduceRecordEvent`; line numbers are in [Engine](engine.md)):
+**Guard order** for protected events (`ward-flow-protected-record-events.ts`, via `reduceProtectedRecordEvent`; line numbers are in [Engine](engine.md)):
 
 1. Role check first, against `EVENT_ROLE`.
 2. Payload sanity (finite times, safe counters).
 3. Stale-view check: `expectedGeneration` must equal `worldGeneration`.
-4. Domain guards: eligibility (12 calls), legal status, catchment answered, scenario,
-   configuration, record-actor rights.
+4. Event-specific guards: record scope, audit entry and review count, admission, unit and patient
+   identity, revision, legal status, receiving-ward eligibility on transfer arrival, and transit or
+   state checks.
 
 A refused event changes nothing except to record a `Rejection` (and, for protected events, an
 audit entry). Eligibility is "refuse unless a reason is recorded": the coordinator can override
@@ -200,6 +201,7 @@ monotonic id counters (never array length).
 6. Screens read through the provider and the pure derivation modules.
 
 Other browser storage: `shell/ward-service-store.ts` (chosen health service, sessionStorage),
+`shell/ward-my-wards-store.ts` (pinned ward ids, localStorage, cleared at sign-out),
 hub "recents" (localStorage via `createBrowserStore`).
 
 ### 2.5 Roles
@@ -234,7 +236,7 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (50 `page.tsx` under `src/app/ward-flow/`, 52 total including sign-in and digest)
+### 3.1 Routes (52 `page.tsx` under `src/app/ward-flow/`, 54 total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
@@ -242,11 +244,12 @@ Every page file is a server component that renders one client screen (or redirec
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/` (home) and `/command` (redirect alias)                                               | `CoordinatorScreen` (coordinator)                                         |
 | `/alerts`                                                                                | `AlertsScreen` (alerts)                                                   |
+| `/bed-meeting`                                                                           | `BedMeetingTvScreen` (bed-meeting) — flag `bed-meeting-tv`                |
+| `/bed-meeting/agenda`                                                                    | `BedMeetingAgendaScreen` (bed-meeting)                                    |
 | `/board/[unitId]`                                                                        | `WardBoard` (board)                                                       |
 | `/capacity`                                                                              | `CapacityScreen` (capacity)                                               |
 | `/community`                                                                             | `CommunityIndex` (community)                                              |
 | `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                             |
-| `/delays`                                                                                | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation          |
 | `/discharges`                                                                            | `DischargeBoard` (discharges)                                             |
 | `/ed`                                                                                    | `EdIndex` (`ed/ed-index.tsx`)                                             |
 | `/ed/[edId]`                                                                             | `EdScreen` (ed)                                                           |
@@ -258,23 +261,25 @@ Every page file is a server component that renders one client screen (or redirec
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |
 | `/on-call`                                                                               | `OnCallScreen` (on-call) — separate from PsychSift's on-call              |
 | `/out-of-area`                                                                           | `OutOfAreaBoard` (out-of-area)                                            |
-| `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                            |
+| `/people/[patientId]`                                                                    | `PatientNowScreen` (patients)                                             |
 | `/people/new`                                                                            | `AddPatientForm` (patients)                                               |
 | `/referrals`                                                                             | `ReferralBoard` (referrals)                                               |
 | `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                          |
 | `/reports/chronology`                                                                    | `PatientChronologyScreen` (`reports/patient-chronology-screen.tsx`)       |
 | `/reports/downtime`                                                                      | `DowntimePackScreen` (`reports/downtime-pack-screen.tsx`)                 |
 | `/search`                                                                                | `PatientSearchPage` (search)                                              |
+| `/seclusion`                                                                             | `SeclusionScreen` (restrictive-practice), operational view only (D-72)    |
 | `/settings`                                                                              | `SettingsScreen` (settings)                                               |
 | `/statistics`                                                                            | `StatisticsScreen` (statistics hub, **12 statistics routes total**)       |
 | `/statistics/overview`, `/compare`, `/weekly`                                            | overview, compare, and weekly report (`reports/weekly-report-screen.tsx`) |
 | `/statistics/wards`, `/eds`, `/teams`, `/services`                                       | directory indexes (`statistics-*-index.tsx`)                              |
 | `/statistics/ward/[unitId]`, `/ed/[edId]`, `/service/[serviceId]`, `/community/[teamId]` | per-place statistics screens                                              |
 | `/transport/officer`                                                                     | `OfficerScreen` (officer) — phone-first                                   |
+| `/waiting`                                                                               | `DelaysScreen` (delays) — absorbed queue, exceptions, escalation          |
 | `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
 | `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Seven redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/escalation`, `/exceptions`, `/queue` → `/delays?from=…`, `/transport` → `/movements`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
+**Eight redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/delays` (renamed Waiting, 19 Oct 2026) → `/waiting` with its query kept, `/escalation`, `/exceptions`, `/queue` → `/waiting` (no old-bookmark banner since 22 Oct 2026), `/transport` → `/transport/officer`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries

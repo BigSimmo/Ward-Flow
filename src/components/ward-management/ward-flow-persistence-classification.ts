@@ -98,8 +98,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
 ]);
 
 /**
- * Every OTHER event type in the union — 57 of 62 (RA1, item 18, added `WITHDRAW_WARD_REQUEST`
- * 2026-09-17). Each one is on this list because its payload,
+ * Every OTHER event type in the union (the count is left out because it went stale as events were
+ * added). Each one is on this list because its payload,
  * read field by field in `ward-flow-events.ts`, is built only from ids, a value the reducer
  * membership-checks against a named constant, a boolean, an `Instant`/number, or the caller's own
  * `role` — never a `string` typed by a person and stored as typed. Built by reading every field on
@@ -157,12 +157,19 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CHANGE_LEGAL_STATUS",
   "CHANGE_URGENCY",
   "CLEAR_BED_RELEASE_BLOCK",
+  "SEND_RELEASE_SUPPORT_NOTICE",
+  "RECORD_ARRIVAL_CHECK",
   "CLEAR_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
   "REOPEN_WARD_TO_ADMISSIONS",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
+  // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
+  "RECORD_RESTRICTIVE_PRACTICE_START",
+  "RECORD_RESTRICTIVE_PRACTICE_END",
+  "RECORD_WARD_INCIDENT",
+  "SET_SECLUSION_ROOM_STATUS",
   "COMPLETE_INBOX_ITEM",
   "CONFIRM_BED_RELEASE",
   "CONFIRM_CAPACITY",
@@ -181,6 +188,12 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "MARK_NOTICE_READ",
   "MARK_REFERRAL_INFORMATION_MET",
   "MARK_REFERRAL_OPENED",
+  // Fix plan item 4 (21 Oct 2026): a desk and a closed-list call outcome, with ward or team ids
+  // and instants only. Nothing typed.
+  "ASSIGN_REFERRAL",
+  "LOG_REFERRAL_CONTACT",
+  // Fix plan item 16 (D-76): ward ids and an instant only.
+  "ASK_MORE_WARDS",
   "OPEN_DISCHARGE_RECORD",
   "PATIENT_ARRIVED",
   "PATIENT_COLLECTED",
@@ -191,6 +204,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // An admission id, the caller's own role and one choice from the closed `BED_RELEASE_BLOCKERS` list. No typed text.
   "RECORD_STAY_DISCHARGE_BLOCKER",
   "CLEAR_STAY_DISCHARGE_BLOCKER",
+  // Fix plan item 10: an id, a level from `OBSERVATION_LEVELS`, an interval from a fixed list and a
+  // typed review time as a number. No typed text.
+  "RECORD_OBSERVATION_LEVEL",
   // RB3, item 19: `movementId` (an id), `outcome` (one of two fixed strings) and the caller's own
   // `role` — no human-typed field.
   "RECORD_ED_OUTCOME",
@@ -263,6 +279,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the same shape `DECLINE`'s `reason` already has on this same list.
   "WITHDRAW_WARD_REQUEST",
   "SET_STEP_DOWN_CANDIDATE",
+  // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
+  // the reducer. No typed text.
+  "RECORD_WARD_DIAGNOSIS",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
@@ -413,6 +432,8 @@ type WardFlowReviewedStringOrUnknownKey =
   | "referralId"
   | "releaseId"
   | "leaveBedId"
+  // D-72: RECORD_RESTRICTIVE_PRACTICE_END names an episode the reducer minted on the ward's record.
+  | "episodeId"
   // Own-team community scope, resolved against the fixed service directory and referral link.
   | "actingTeamId"
   | "actingUnitId"
@@ -529,7 +550,13 @@ export type AssertNever<T extends never> = T;
 
 type UnreviewedSafeEventPayloadKeys = {
   [T in (typeof WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE)[number]]: UnreviewedStringOrUnknownKeys<
-    Extract<WardFlowEvent, { type: T }>
+    // Only this command's expected token is reviewed: a canonical tuple of fixed observation
+    // values, record identity and a history count. Exact reducer comparison refuses arbitrary
+    // text; neither accepted nor refused tokens are copied into state or the session log.
+    // Keep the generic key guard unchanged: another event's expected:string still fails.
+    T extends "RECORD_OBSERVATION_LEVEL"
+      ? Omit<Extract<WardFlowEvent, { type: T }>, "expected">
+      : Extract<WardFlowEvent, { type: T }>
   >;
 }[(typeof WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE)[number]];
 

@@ -88,13 +88,13 @@ function BedMeetingAgenda() {
       <Card>
         <CardHead title="Actions" meta="From earlier meetings" level={2} />
         <CardBody>
+          {/* One line when nothing is waiting, not a row of zeros and a sentence saying the same (UX audit, 21 Oct 2026). */}
           <p className={styles.summary} data-testid="bed-meeting-action-summary">
-            {summary.doneLastDay} done in the last day · {summary.overdue.length} overdue · {summary.open.length} still
-            open
+            {summary.overdue.length + summary.open.length === 0
+              ? `No actions are waiting${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}.`
+              : `${summary.doneLastDay} done in the last day · ${summary.overdue.length} overdue · ${summary.open.length} still open`}
           </p>
-          {summary.overdue.length + summary.open.length === 0 ? (
-            <p className={styles.note}>No actions are waiting.</p>
-          ) : (
+          {summary.overdue.length + summary.open.length === 0 ? null : (
             <ul className={styles.list} data-testid="bed-meeting-action-list">
               {[...summary.overdue, ...summary.open].map((row) => (
                 <ActionRow

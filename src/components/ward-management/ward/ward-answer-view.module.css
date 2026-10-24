@@ -472,6 +472,18 @@
   flex-wrap: wrap;
 }
 
+/* D-75 item 5: the desk's bed hold choice beside Accept in principle. */
+.holdInline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.holdInline .formSelect {
+  width: auto;
+}
+
 /* Buttons */
 .btn {
   min-height: 36px;
@@ -577,6 +589,15 @@
   background: var(--danger-soft);
   color: var(--danger-ink);
   border: 1px solid var(--danger);
+}
+
+/* Visual desk, 22 Oct 2026: the gate notices are sentences, so they wrap inside the card instead of
+   running past its right edge at 1280. */
+.noticeBadge {
+  white-space: normal;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 
 .badge[data-tone="accent"] {
@@ -1076,7 +1097,8 @@
   }
 
   .declineOption {
-    min-height: var(--ward-tap, 48px);
+    /* 44px (v9 rows), as in ward.module.css: stacked radio rows at 48px left wide gaps. */
+    min-height: var(--wf-touch, 2.75rem);
   }
 
   .bedCell {

@@ -24,6 +24,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useOptionalSearchParams } from "@/components/ward-management/ward/ward-screen-helpers";
 import { usePageLive } from "@/components/ward-management/ward-page-live";
 import {
   enableActNowNotifications,
@@ -80,6 +81,7 @@ import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
 
+import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
 import styles from "./alerts.module.css";
 import {
   Button,
@@ -100,6 +102,7 @@ import {
   useIsTabletPortrait,
   useModalFocus,
 } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
@@ -123,6 +126,8 @@ type ArrangeBy = "urgency" | "lanes" | "owner";
 
 /** A request this screen sent, read back from the event log so a refused act never says it happened. */
 type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
+
+/** The address's query, read on the client only; the server draws the screen without it. */
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
@@ -234,7 +239,7 @@ function AlertsWorkspace() {
   const [phoneToday, setPhoneToday] = useState(false);
   // A request to focus the release reason once the panel or sheet has drawn it.
   const [releaseRequest, setReleaseRequest] = useState(0);
-  const releasePending = useRef(false);
+  const releaseHandled = useRef(0);
   const releaseRef = useRef<HTMLSelectElement | null>(null);
   const [notifyOn] = useActNowNotificationPreference();
 
@@ -495,18 +500,27 @@ function AlertsWorkspace() {
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
       if (slideOver) setSheetOpen(true);
-      if (options.release) {
-        releasePending.current = true;
-        setReleaseRequest((count) => count + 1);
-      }
+      if (options.release) setReleaseRequest((count) => count + 1);
     },
     [slideOver],
   );
 
+  // Change 7 (D-77): the Alerts drawer's Release bed opens here as `?alert=<id>&release=1`, so the
+  // alert is chosen and its release reason takes focus. Read from the router, so a client-side
+  // visit never sees the previous page's query, and each new address is used once, during render.
+  const address = useOptionalSearchParams()?.toString() ?? "";
+  const [addressUsed, setAddressUsed] = useState("");
+  if (address && address !== addressUsed) {
+    const query = new URLSearchParams(address);
+    const entry = allEntries.find((candidate) => candidate.item.id === query.get("alert"));
+    setAddressUsed(address);
+    if (entry) select(entry, { release: query.get("release") === "1" });
+  }
+
   useEffect(() => {
-    if (!releasePending.current || !releaseRef.current) return;
+    if (releaseRequest === releaseHandled.current || !releaseRef.current) return;
     releaseRef.current.focus();
-    releasePending.current = false;
+    releaseHandled.current = releaseRequest;
   }, [releaseRequest, selected, sheetOpen]);
 
   const handleNext = () => {
@@ -778,7 +792,7 @@ function AlertsWorkspace() {
     setBroadcastRequest(null);
     setActionRequest(null);
     const line = (entry: QueueEntry) =>
-      `- ${entry.item.title}. ${entry.subject.displayName} ${entry.subject.umrn}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
+      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
     const sections: [string, QueueEntry[]][] = [
       ["Act now", actEntries],
       ["Waiting", waitEntries],
@@ -793,11 +807,7 @@ function AlertsWorkspace() {
     ]
       .filter(Boolean)
       .join("\n");
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      setBroadcastSuccessNotice("Copy is not available in this browser.");
-      return;
-    }
-    navigator.clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),
       () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
     );
@@ -861,6 +871,13 @@ function AlertsWorkspace() {
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
         "None firing now. The conditions checked are named in the header.",
       )}
+      {access.role === "coordinator" ? (
+        <ForecastAlertsGroup
+          now={now}
+          className={styles.group}
+          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators only" />}
+        />
+      ) : null}
       {groupSection(
         "wait",
         "Waiting",

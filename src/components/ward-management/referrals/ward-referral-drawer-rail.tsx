@@ -6,8 +6,8 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
-import { DisabledReason, Frac, StatusGlyph } from "@/components/wf";
-import { SECTION_IDS, sectionLabel } from "./ward-referral-drawer-model";
+import { DisabledReason, StatusGlyph } from "@/components/wf";
+import { sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -24,8 +24,9 @@ export function ReferralPhoneChecklistToggle({ s }: { s: WardReferralDrawerState
       <ListChecks aria-hidden="true" />
       <span className={styles.phChecklistText}>
         <span className={styles.phChecklistTitle}>Send checklist</span>
+        {/* UX audit 21 Oct 2026: the footer carries the one count; this toggle names what it opens. */}
         <span className={styles.phChecklistMeta}>
-          <b>{itemsReady}</b> of {itemsTotal} items ready
+          {itemsReady === itemsTotal ? "Everything is in" : "Show what is still needed"}
         </span>
       </span>
       <ChevronDown aria-hidden="true" data-open={summaryOpen ? "true" : undefined} />
@@ -61,11 +62,13 @@ export function ReferralSummaryRail({
     itemsReady,
     readyRows,
     needed,
+    sectionIds,
+    destType,
+    communityNeeds,
   } = s;
   // Overall review (20 Oct 2026): "0 of 18" sat beside steps whose "needed" figures add to 13. The
-  // count is the same items; this line shows how it splits, so the two visibly agree: what the four
-  // steps still need, plus the contact details asked at Send.
-  const stepsLeft = SECTION_IDS.reduce((sum, id) => sum + needed[id], 0);
+  // difference is the contact details asked at Send, so the rail names them when any are still empty.
+  const stepsLeft = sectionIds.reduce((sum, id) => sum + needed[id], 0);
   const contactLeft = itemsLeft - stepsLeft;
   return (
     <aside
@@ -88,13 +91,6 @@ export function ReferralSummaryRail({
           <section className={styles.railCard}>
             <div className={styles.railHead}>
               <h3 className={styles.cardTitle}>Ready to send</h3>
-              <Frac
-                done={itemsReady}
-                total={itemsTotal}
-                label="items ready to send"
-                tone={itemsLeft === 0 ? "success" : undefined}
-                className={styles.railFrac}
-              />
               {kept || draftKeptAt !== null ? (
                 <button
                   type="button"
@@ -115,14 +111,11 @@ export function ReferralSummaryRail({
                 Draft kept · {referralDraftAgeText(draftKeptAt, draftNowMs)}
               </p>
             ) : null}
-            <p className={styles.railCount}>
-              <strong className={styles.mono}>{itemsReady}</strong> of {itemsTotal} ready
-            </p>
-            {itemsLeft > 0 ? (
+            {/* UX audit 21 Oct 2026: the drawer stated one count five ways. The footer keeps the count
+                and the stepper keeps each step's share; the rail only adds what neither shows. */}
+            {contactLeft > 0 ? (
               <p className={styles.railCount} data-testid="ward-referral-count-split">
-                {contactLeft > 0
-                  ? `${stepsLeft} still needed in the steps above, plus ${contactLeft} contact ${contactLeft === 1 ? "detail" : "details"} asked at Send`
-                  : `${stepsLeft} still needed in the steps above`}
+                Your contact {contactLeft === 1 ? "detail is" : "details are"} asked at Send.
               </p>
             ) : null}
             <span className={styles.railProgress} aria-hidden="true">
@@ -145,11 +138,20 @@ export function ReferralSummaryRail({
           </section>
           <section className={styles.railCard} data-layout="pair">
             {/* Audit 11 Oct 2026: the decision time appears once the referral is sent. */}
-            <div title={OPERATIONAL_DEFAULT_LABEL}>
-              <p className={styles.eyebrow}>Urgency</p>
-              <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
-              <small>Decision due shows after Send</small>
-            </div>
+            {destType === "community" ? (
+              // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
+              <div>
+                <p className={styles.eyebrow}>First contact</p>
+                <strong className={styles.mono}>{communityNeeds.firstContact ?? "Choose within"}</strong>
+                <small>Team sees it as the due time</small>
+              </div>
+            ) : (
+              <div title={OPERATIONAL_DEFAULT_LABEL}>
+                <p className={styles.eyebrow}>Urgency</p>
+                <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
+                <small>Decision due shows after Send</small>
+              </div>
+            )}
             <div>
               <p className={styles.eyebrow}>Already open</p>
               <strong>{alreadyOpen ? "Yes" : "None"}</strong>
@@ -214,6 +216,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
     phCloseSheet,
     phOpenStep,
     phStepIndex,
+    sectionIds,
   } = s;
   return (
     <div className={styles.sendReferralFoot}>
@@ -286,7 +289,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                   Send referral
                 </>
               ) : (
-                `Next, ${sectionLabel(SECTION_IDS[phStepIndex + 1]!, destType).toLowerCase()}`
+                `Next, ${sectionLabel(sectionIds[phStepIndex + 1]!, destType).toLowerCase()}`
               )}
             </button>
           </>
@@ -416,7 +419,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                     ? "Confirm and send"
                     : activeSection === "placement"
                       ? "Send referral"
-                      : `Next, ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
+                      : `Next, ${sectionLabel(sectionIds[sectionIds.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
               </button>
             )}
             {confirmationOpen && !sendGate.allowed

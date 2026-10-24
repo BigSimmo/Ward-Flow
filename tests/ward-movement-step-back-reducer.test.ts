@@ -83,7 +83,7 @@ function buildAcceptedFixture(): WardFlowState {
     now: t(20),
     movementId: MOVEMENT_ID,
     unitId: UNIT_DECLINED,
-    reason: "no_bed",
+    reason: "no_suitable_bed",
   });
   assertStepAccepted(s1, s2, "DECLINE");
 
@@ -596,7 +596,9 @@ describe("WITHDRAW_ACCEPTANCE — refusals", () => {
     expect(after.rejections[0].reason).toContain("officer");
   });
 
-  it("requires movement.stage === accepted_awaiting_bed, refusing a pulled movement (test 17)", () => {
+  // Q16 (owner, 16 Sept 2026): a pulled movement is now withdrawable, releasing its bed in the
+  // same act. The refusal from `handover_ready` on is pinned in ward-engine-defects.test.ts.
+  it("accepts a pulled movement and releases its bed in the same act (test 17)", () => {
     const pulled = buildPulledFixture();
     const movement = movementIn(pulled, MOVEMENT_ID);
     expect(movement.stage).toBe("pulled");
@@ -607,8 +609,11 @@ describe("WITHDRAW_ACCEPTANCE — refusals", () => {
       movementId: MOVEMENT_ID,
       reason: "recorded_in_error",
     });
-    expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("pulled");
+    expect(after.rejections).toEqual(pulled.rejections);
+    const withdrawn = movementIn(after, MOVEMENT_ID);
+    expect(withdrawn.stage).toBe("destination_review");
+    expect(withdrawn.admissionId).toBeUndefined();
+    expect(withdrawn.unwinds.slice(-2).map((unwind) => unwind.kind)).toEqual(["pull_released", "acceptance_withdrawn"]);
   });
 
   it("refuses withdrawing an acceptance for a closed movement (test 18)", () => {

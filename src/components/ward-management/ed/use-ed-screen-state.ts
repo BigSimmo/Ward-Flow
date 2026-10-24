@@ -3,17 +3,17 @@
 // The ED screen's own state, grouped by what it serves. Split out of `ed-screen.tsx` unchanged
 // (fix list 2.5 and 9.6, 15 Oct 2026). `EdScreen` calls these hooks in the order their state was
 // declared there, so every effect still runs in the same order.
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
   UrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
-import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { LegalStatus, ReferralGender } from "@/components/ward-management/ward-model";
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { edById } from "@/components/ward-management/ward-sites";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useModalFocus, type useOptionalToast } from "@/components/wf";
 import {
   BLANK_TRANSPORT_DRAFT,
@@ -23,6 +23,7 @@ import {
   type ReferralDraftState,
   type TransportDraftState,
 } from "./ed-screen-model";
+import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 
 /** The raise-into-a-movement form: whether it is open, its draft, and the referral it is raised from. */
 export function useEdReferralDraft() {
@@ -164,6 +165,8 @@ export function useEdRowPanels() {
   >(undefined);
   const [communityReferralOpenFor, setCommunityReferralOpenFor] = useState<string | undefined>(undefined);
   const [communityTeamChoice, setCommunityTeamChoice] = useState<string>("");
+  // D-74: what the community referral is for. Unset until the clinician chooses.
+  const [communityPurposeChoice, setCommunityPurposeChoice] = useState<CommunityReferralPurpose | "">("");
 
   function toggleExamination(movementId: string) {
     setExaminationOpenFor((current) => (current === movementId ? undefined : movementId));
@@ -249,6 +252,8 @@ export function useEdRowPanels() {
     setCommunityReferralOpenFor,
     communityTeamChoice,
     setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
     toggleExamination,
     toggleUrgencyChange,
     toggleLegalStatusChange,
@@ -361,9 +366,10 @@ export function useEdEscapeKey({
   }, [arrivalPlanOpenFor, transportOpenFor, selectedPatientId, fullscreenBoard]);
 }
 
-/** A2-1: announces a raised referral once its movement lands on this department's board. */
+/** Announce an accepted own command; shared board changes never identify its author. */
 export function useEdRaiseAnnouncement({
-  raisePendingRef,
+  accepted,
+  localBefore,
   movements,
   department,
   registryPatients,
@@ -371,31 +377,38 @@ export function useEdRaiseAnnouncement({
   toast,
   setSelectedPatientId,
 }: {
-  raisePendingRef: RefObject<Set<string> | null>;
-  movements: WardFlowContextValue["movements"];
-  department: ReturnType<typeof edById>;
-  registryPatients: WardFlowContextValue["patients"];
-  referrals: WardFlowContextValue["referrals"];
+  accepted: number;
+  localBefore?: ReadonlySet<string>;
+  movements?: WardFlowContextValue["movements"];
+  department?: ReturnType<typeof edById>;
+  registryPatients?: WardFlowContextValue["patients"];
+  referrals?: WardFlowContextValue["referrals"];
   toast: ReturnType<typeof useOptionalToast>;
-  setSelectedPatientId: (value: string | null) => void;
+  setSelectedPatientId?: (value: string | null) => void;
 }) {
+  const announced = useRef(0);
   useEffect(() => {
-    const before = raisePendingRef.current;
-    if (before === null) return;
-    const raised = movements.find((movement) => !before.has(movement.id) && movement.originEdId === department?.id);
-    if (!raised) return;
-    raisePendingRef.current = null;
-    const name = resolveSubjectPatient(raised, { patients: registryPatients, referrals, movements }).displayName;
-    toast?.push({
-      tone: "success",
-      title: "Referral raised",
-      body: `${name} is on this department's board.`,
-      action: {
-        label: "Open row",
-        onAction: () => setSelectedPatientId(raised.id),
-      },
-    });
-    announceToWardShell(`Referral raised for ${name}.`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs when a raise lands, nothing else.
-  }, [movements]);
+    if (accepted === 0 || accepted <= announced.current) return;
+    announced.current = accepted;
+    // The local demo has one synchronous writer. Shared snapshots can include other desks, so
+    // their confirmed success stays generic and can never open somebody else's new movement.
+    const candidates =
+      localBefore && movements && department
+        ? movements.filter((movement) => !localBefore.has(movement.id) && movement.originEdId === department.id)
+        : [];
+    const raised = candidates.length === 1 ? candidates[0] : undefined;
+    if (raised && movements && registryPatients && referrals && setSelectedPatientId) {
+      const name = resolveSubjectPatient(raised, { patients: registryPatients, referrals, movements }).displayName;
+      toast?.push({
+        tone: "success",
+        title: "Referral raised",
+        body: `${name} is on this department's board.`,
+        action: { label: "Open row", onAction: () => setSelectedPatientId(raised.id) },
+      });
+      announceToWardShell(`Referral raised for ${name}.`);
+    } else {
+      toast?.push({ tone: "success", title: "Referral raised" });
+      announceToWardShell("Referral raised.");
+    }
+  }, [accepted, localBefore, movements, department, registryPatients, referrals, toast, setSelectedPatientId]);
 }

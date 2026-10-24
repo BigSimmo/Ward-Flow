@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, type RefObject } from "react";
+import { modalFocusTargets } from "./focus-targets";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
+  overlayOpener,
   popSheet,
   pushSheet,
   startSheetOpenFocus,
@@ -52,31 +54,9 @@ export type UseModalFocusResult = {
   rootRef: (node: HTMLElement | null) => void;
 };
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
-
-/** The panel's Tab stops, in order: enabled, not hidden or inert, and laid out. */
-function modalFocusableIn(panel: HTMLElement | null) {
-  return Array.from(panel?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
-    (element) =>
-      !element.hasAttribute("disabled") &&
-      element.tabIndex >= 0 &&
-      !element.closest('[aria-hidden="true"], [inert]') &&
-      element.getClientRects().length > 0,
-  );
-}
-
 /** First control for opening focus. Layout is not required here, so a not-yet-measured panel still works. */
 function firstControlIn(panel: HTMLElement | null) {
-  return (
-    Array.from(panel?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).find(
-      (element) =>
-        !element.hasAttribute("disabled") &&
-        element.tabIndex >= 0 &&
-        !(element instanceof HTMLInputElement && element.type === "hidden") &&
-        !element.closest('[aria-hidden="true"], [inert], [hidden]'),
-    ) ?? null
-  );
+  return modalFocusTargets(panel, false, false)[0] ?? null;
 }
 
 /**
@@ -123,7 +103,7 @@ export function useModalFocus({
 
   useEffect(() => {
     if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const opener = overlayOpener();
     const openPanel = panelRef.current;
     const capture = keyPhase === "capture";
 
@@ -173,7 +153,7 @@ export function useModalFocus({
       }
       if (event.key !== "Tab") return;
       const panel = panelRef.current;
-      const focusable = modalFocusableIn(panel);
+      const focusable = modalFocusTargets(panel, true);
       // Move focus explicitly rather than trusting the platform's Tab order, which varies by
       // browser for programmatically focused buttons.
       event.preventDefault();

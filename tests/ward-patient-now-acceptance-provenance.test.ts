@@ -3,6 +3,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function acceptedJourney() {
   let state = seedWardFlowState();
@@ -31,7 +32,7 @@ function acceptedJourney() {
       security: "Open",
       sex: "Female",
       gender: "Female",
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Voluntary",
       urgency: 2,
@@ -81,7 +82,7 @@ describe("patient profile acceptance and actual bed commitments", () => {
     f.pull();
     const held = f.state.admissions.find((a) => a.movementId === f.movementId)!;
     expect(held.state).toBe("pulled");
-    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Bed Held");
+    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Bed Pulled");
     f.send({
       type: "STEP_BACK_STAGE",
       role: "coordinator",
@@ -92,8 +93,8 @@ describe("patient profile acceptance and actual bed commitments", () => {
     });
     expect(f.state.movements.at(-1)!.admissionId).toBe(held.id);
     for (const id of [f.movementId, f.patientId]) {
-      expect(f.resolve(id).verdict.short).toBe("Bed Held");
-      expect(f.resolve(id).verdict.title).toContain("Bed held at");
+      expect(f.resolve(id).verdict.short).toBe("Bed Pulled");
+      expect(f.resolve(id).verdict.title).toContain("Bed pulled at");
     }
   });
 

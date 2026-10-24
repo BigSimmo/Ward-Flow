@@ -9,7 +9,7 @@
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -308,6 +308,7 @@ export function DelaysBoard({
   const portrait = isTabletPortrait && !isPhone;
   const [railOpen, setRailOpen] = useState(false);
   const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
+  const sheetViewsLabelId = useId();
 
   const nameOf = useCallback(
     (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`,
@@ -667,7 +668,7 @@ export function DelaysBoard({
               <span className={styles.gTitle} title={group.title}>
                 {isPhone && group.cause === "bed_pull_expired" ? (
                   <>
-                    <span aria-hidden="true">Bed held past time</span>
+                    <span aria-hidden="true">Pull expired</span>
                     <span className="sr-only">{group.title}</span>
                   </>
                 ) : (
@@ -843,9 +844,9 @@ export function DelaysBoard({
     (filters.locked ? 1 : 0) +
     (filters.view !== null ? 1 : 0);
   /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
-  const filterRow = (inSheet: boolean) => (
-    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
-      {/* B4 saved views: each narrows the list and keeps its order. One view at a time. */}
+  /* B4 saved views: each narrows the list and keeps its order. One view at a time. */
+  const viewChips = (
+    <>
       {WAITING_VIEWS.map((view) => (
         <button
           key={view}
@@ -879,6 +880,24 @@ export function DelaysBoard({
       >
         Locked bed <span className={styles.k}>{rows.filter((row) => row.locked).length}</span>
       </button>
+    </>
+  );
+  const filterRow = (inSheet: boolean) => (
+    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
+      {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
+          a Views label in a two by two grid lined up with the sheet title, not a ragged wrap. */}
+      {inSheet ? (
+        <div className={styles.sheetViews}>
+          <p className={styles.sheetViewsLabel} id={sheetViewsLabelId}>
+            Views
+          </p>
+          <div className={styles.sheetViewGrid} role="group" aria-labelledby={sheetViewsLabelId}>
+            {viewChips}
+          </div>
+        </div>
+      ) : (
+        viewChips
+      )}
       {chips.map((chip) => (
         <button
           key={chip.key}

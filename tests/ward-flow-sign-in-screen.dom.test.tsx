@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SIGN_IN_ACTIONS, SIGN_IN_ROLES } from "@/components/ward-flow-sign-in/ward-flow-sign-in-data";
 import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-sign-in-screen";
@@ -119,12 +119,24 @@ describe("Ward Flow sign-in screen renders", () => {
     expect(checkLine).toHaveAttribute("data-ok", "true");
     expect(checkLine?.textContent).toMatch(/access is not enforced/);
 
-    // "Go in" is inert: pressing it announces what it would open and does not throw, navigate, or
-    // leave a credential-shaped control behind.
-    const goButton = screen.getByRole("button", { name: /^Preview as/ });
-    fireEvent.click(goButton);
-    expect(screen.getByRole("status")).toHaveTextContent(/Not wired in this prototype, so nothing has opened\./);
+    // No "Go in" control: the screen names what the role opens and leaves no credential-shaped
+    // control behind.
+    expect(screen.queryByRole("button", { name: /^Preview as/ })).toBeNull();
     expect(document.querySelectorAll("input")).toHaveLength(0);
+  });
+
+  it("has no not-wired Preview button even in a development build, so nothing says Not wired", () => {
+    // Unfinished features cleanup (23 Oct 2026): the development-only preview was removed.
+    vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", "development");
+    try {
+      render(<WardFlowSignInScreen />);
+      expect(screen.queryByRole("button", { name: /^Preview as/ })).toBeNull();
+      fireEvent.keyDown(window, { key: "Enter" });
+      expect(document.body).not.toHaveTextContent(/Not wired in this prototype/);
+      expect(screen.getByText(/access is not enforced/)).toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("never renders a claim that a role is enforced, only what the design system's screens index names it for", () => {

@@ -10,11 +10,9 @@ import {
   Segmented,
   StatusGlyph,
   TextInput,
-  TimeRail,
   Timeline,
   buttonClass,
   cx,
-  type TimeRailMark,
   type TimelineItem,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
@@ -23,12 +21,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
 import { formProgression } from "./legal-form-progression";
-import {
-  currentLegalDueAt,
-  formatReminderHours,
-  isLegalDeadlineBreached,
-  legalDeadlineText,
-} from "./legal-forms-derivations";
+import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
@@ -42,173 +35,13 @@ import {
   receiptEventAccepts,
   recordedFacts,
   standingWord,
-  type ClockStanding,
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
-/** The board's clock states, in the order the legend line names them. */
-export type RingState = "act" | "soon" | "running" | "unwritten";
-const RING_ORDER: RingState[] = ["act", "soon", "running", "unwritten"];
-const RING_TONE: Record<RingState, "danger" | "warning" | "neutral" | "closed"> = {
-  act: "danger",
-  soon: "warning",
-  running: "neutral",
-  unwritten: "closed",
-};
-
-function ringStateOf(standing: ClockStanding): RingState {
-  if (standing === "passed" || standing === "urgent") return "act";
-  if (standing === "soon") return "soon";
-  if (standing === "later") return "running";
-  return "unwritten";
-}
-
 function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): TimelineItem[] {
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
-}
-
-const RING_LABEL: Record<RingState, string> = {
-  act: "Act now",
-  soon: "Within window",
-  running: "Later",
-  unwritten: "Time not written",
-};
-
-/**
- * The clock rail, on the shared v10 TimeRail: a Passed bay above, then every typed expiry in the
- * next twelve hours on one line. D5: only an expiry a person typed (`legalForm.dueAt`) is a mark;
- * nothing here works out a Mental Health Act time. Each mark opens the first form it holds.
- */
-function ClockRail({
-  movements,
-  now,
-  onSelect,
-}: {
-  movements: Movement[];
-  now: Instant;
-  onSelect: (movement: Movement) => void;
-}) {
-  const thresholds = useDueSoonThresholds();
-  const marks: TimeRailMark[] = movements
-    .flatMap((movement) => {
-      const at = currentLegalDueAt(movement);
-      return at === undefined ? [] : [{ movement, at }];
-    })
-    .map(({ movement, at }) => ({
-      id: movement.id,
-      at,
-      code: movement.legalForm!.code,
-      name: `Form ${movement.legalForm!.code}`,
-      tone: STANDING_TONE[clockStanding(movement, now, thresholds)],
-      onSelect: () => onSelect(movement),
-    }));
-  return (
-    <TimeRail
-      marks={marks}
-      now={now}
-      formatTime={(at) => formatInstantWithDay(at, now)}
-      verbs={{ passed: "expired", upcoming: "expires" }}
-      laterText={(later) =>
-        later > 0
-          ? `${later} more ${later === 1 ? "expires" : "expire"} after the rail`
-          : "Nothing typed beyond the rail"
-      }
-      testId="ward-legal-clock-rail"
-    />
-  );
-}
-
-/**
- * The warning windows as one threshold bar: the first window, the second, then the rest of the
- * twelve hours. The edges are the coordinator's own settings, not legal limits.
- */
-function ThresholdBar({ urgentHours, soonHours }: { urgentHours: number; soonHours: number }) {
-  const span = 12;
-  const urgent = Math.min(urgentHours, span);
-  const soon = Math.min(Math.max(soonHours, urgent), span);
-  return (
-    <div className={styles.threshold}>
-      <div
-        className={styles.thresholdBar}
-        role="img"
-        aria-label={`First window ${formatReminderHours(urgentHours)}, second window ${formatReminderHours(soonHours)}`}
-      >
-        <span data-tone="danger" style={{ width: `${(urgent / span) * 100}%` }} />
-        <span data-tone="warning" style={{ width: `${((soon - urgent) / span) * 100}%` }} />
-        <span data-tone="rest" />
-      </div>
-      <div className={styles.windows}>
-        <span className={styles.windowChip}>
-          <StatusGlyph tone="danger" size={9} />
-          First <strong>{formatReminderHours(urgentHours)}</strong>
-        </span>
-        <span className={styles.windowChip}>
-          <StatusGlyph tone="warning" size={9} />
-          Second <strong>{formatReminderHours(soonHours)}</strong>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * SUMMARY (Board now). The side panel when nobody is selected: the clock rail with its Passed bay,
- * the board's clock states as one counted line (no ring: v10 keeps rings in the hero only), the
- * next typed expiries, and the warning windows as one threshold bar.
- */
-export function SummaryPanel({
-  rows,
-  now,
-  soonHours,
-  urgentHours,
-  onSelect,
-}: {
-  rows: Movement[];
-  now: Instant;
-  soonHours: number;
-  urgentHours: number;
-  onSelect: (movement: Movement) => void;
-}) {
-  const thresholds = useDueSoonThresholds();
-  const counts: Record<RingState, number> = { act: 0, soon: 0, running: 0, unwritten: 0 };
-  for (const movement of rows) counts[ringStateOf(clockStanding(movement, now, thresholds))] += 1;
-  const label = { ...RING_LABEL, soon: `Within ${formatReminderHours(soonHours)}` };
-  return (
-    <section className={styles.panel} aria-label="Forms summary" data-testid="ward-legal-summary">
-      <div className={styles.panelBlock}>
-        <div className={styles.panelEyebrowLine}>
-          <h2 className={styles.panelHeadTitle}>Board now</h2>
-          <span className={styles.mono}>{formatInstantWithDay(now, now)}</span>
-        </div>
-        <h3 className={styles.eyebrow}>Typed expiries ahead</h3>
-        <ClockRail movements={rows} now={now} onSelect={onSelect} />
-        <ul className={styles.legend} aria-label={`${rows.length} on open moves, by clock state`}>
-          {RING_ORDER.filter((state) => counts[state] > 0 || state === "act").map((state) => (
-            <li key={state}>
-              <StatusGlyph tone={RING_TONE[state]} size={9} />
-              <span>{label[state]}</span>
-              <span className={styles.legendValue}>{counts[state]}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className={styles.panelBlock} data-testid="ward-legal-expiry-reminder">
-        <div className={styles.panelEyebrowLine}>
-          <h3 className={styles.eyebrow}>Warning windows</h3>
-          <Link href="/ward-flow/settings" className={styles.textLink}>
-            Settings
-          </Link>
-        </div>
-        <ThresholdBar urgentHours={urgentHours} soonHours={soonHours} />
-        <p className={styles.footnote}>Your defaults, not legal limits</p>
-      </div>
-
-      <p className={styles.panelHint}>Press a patient to open their form here</p>
-    </section>
-  );
 }
 
 // "not_recorded" until someone picks a band: a default of Adult would record an age band nobody chose.
@@ -435,7 +268,7 @@ export function FocusPanel({
                     Mark Form {legalForm?.code} received
                   </Button>
                 ) : null}
-                {fact.gap === "examination" && fact.at === undefined ? (
+                {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
                   <Link
                     ref={examRef}
                     href={edHref(movement.originEdId)}

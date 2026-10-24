@@ -15,7 +15,8 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-model";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
-import { CLINICAL_VALUE_LIST, clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
+import { clinicalValueStatusText } from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUE_LIST } from "@/components/ward-management/ward-clinical-value-notes";
 
 /** The summary line the screen shows, from the list itself: a synthetic value is named, never signed off here. */
 function signedSummary(): string {

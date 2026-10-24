@@ -10,8 +10,10 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
+import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
-import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
@@ -21,11 +23,12 @@ import type { absentOnOrder } from "@/components/ward-management/ward-absence-ta
 import {
   deriveAfternoonDischarges,
   restrictionNotice,
-  eligibilityWarning,
   stageCopy,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
-import { checkedGates, eligibility } from "@/components/ward-management/ward-eligibility";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { referralFit, wardStateLine } from "./ward-referral-fit";
+import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
@@ -50,7 +53,6 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
-import { edById } from "@/components/ward-management/ward-sites";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -65,6 +67,8 @@ import {
   type WalkRoundMark,
 } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
+import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -76,6 +80,11 @@ export function canSubmitOverride(
   numConsulted: boolean,
 ): boolean {
   return Boolean(overrideReason && (!isAcuityRefusal || numConsulted));
+}
+
+/** A recorded decline reason in the one list's wording (D-78); an unknown value shows as written. */
+function declineReasonText(reason: string): string {
+  return (DECLINE_REASON_LABELS as Record<string, string>)[reason] ?? reason.replace(/_/g, " ");
 }
 
 export function canSubmitDecline(declineReason: DeclineReason | "" | undefined): declineReason is DeclineReason {
@@ -134,10 +143,6 @@ export function wardActNowCount({
   );
 }
 
-function wardSafeRejectionReason(reason: string): string {
-  return reason;
-}
-
 interface WardHomeTabProps {
   unit: Unit;
   units: Unit[];
@@ -171,6 +176,8 @@ interface WardHomeTabProps {
   lastActionRejection: Rejection | null | undefined;
   overrideReasonForm: (movementId: string) => React.ReactNode;
   onAcceptInPrinciple?: (movementId: string, unitId: string) => void;
+  /** Why this desk may not answer the ward's referrals at all, such as the site bed manager (D-80). */
+  answerBlockedReason?: string;
   liveFormAlerts: Array<{
     key: string;
     title: string;
@@ -267,6 +274,7 @@ export function WardHomeTab({
   lastActionRejection,
   overrideReasonForm,
   onAcceptInPrinciple,
+  answerBlockedReason,
   liveFormAlerts,
   morningRollupConfirmed = false,
   morningRollupTimeLabel = "09:30",
@@ -327,6 +335,17 @@ export function WardHomeTab({
     setLocalChecks((current) => ({ ...current, [id]: current[id] === null ? now : null }));
   }
 
+  const [referralDetailFor, setReferralDetailFor] = useState<string | null>(null);
+
+  function acceptIncoming(movementId: string) {
+    if (onAcceptInPrinciple) {
+      onAcceptInPrinciple(movementId, unit.id);
+    } else {
+      priorRejectionCountRef.current = rejections.length;
+      setCheckToken((token) => token + 1);
+    }
+  }
+
   const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
   const flowTab = flowTabProp ?? innerFlowTab;
   const setFlowTab = (next: WardFlowTab) => {
@@ -370,14 +389,9 @@ export function WardHomeTab({
   // Done only when the figures were confirmed during this shift; an older confirmation is not.
   const capacityConfirmedThisShift = capacityConfirmed && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
   const referralsClear = incoming.length === 0;
-  const shiftChecks = [
-    capacityConfirmedThisShift,
-    morningRollupConfirmed,
-    referralsClear,
-    localChecks.drugs !== null,
-    localChecks.seclusion !== null,
-    localChecks.afternoon !== null,
-  ];
+  // UX audit 21 Oct 2026: the three local ticks are reminders kept on this screen only, so they are
+  // not counted as shift checks done. Only recorded facts count.
+  const shiftChecks = [capacityConfirmedThisShift, morningRollupConfirmed, referralsClear];
   const checksDone = shiftChecks.filter(Boolean).length;
 
   type LogRow = {
@@ -506,12 +520,12 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Discharge confirmed"
                   : "Expected out today"
-                : bed.isSpecialling
-                  ? "1:1 specialling"
+                : bed.isSpecialling && bed.observation
+                  ? observationSummary(bed.observation)
                   : bed.criteriaLedChip && bed.status === "occupied"
                     ? bed.criteriaLedChip.label
                     : free
-                      ? "Free to offer"
+                      ? "Ready"
                       : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
@@ -530,14 +544,16 @@ export function WardHomeTab({
                 ? bed.dischargeConfirmed
                   ? "Confirmed out"
                   : "Due out"
-                : note;
+                : bed.isSpecialling && bed.observation
+                  ? `Constant ${observationRatio(bed.observation.level)}`
+                  : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
     // D-64: when a higher note takes the tile (Past date, Due out), the CLD state still shows as a tag.
     const criteriaTag = bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip : null;
     const number = String(bed.bedNumber).padStart(2, "0");
-    const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
+    const name = free ? "Ready" : (bed.patientAlias ?? stateWord);
     // The occupant's name is shown on the tile, so a screen reader hears it too.
     const accessibleName = [
       bed.bedLabel,
@@ -630,6 +646,7 @@ export function WardHomeTab({
       row.bed.dischargeDateMoves,
       row.bed.awayAtEdHours != null,
       row.bed.isSpecialling,
+      row.bed.observation?.level,
       row.bed.preparing,
     ].join("|"),
     glyph: row.glyph,
@@ -691,7 +708,7 @@ export function WardHomeTab({
                   </span>
                 </span>
                 <span className={styles.phoneRowDays} aria-hidden="true">
-                  {row.days || (row.free ? "Free" : "")}
+                  {row.days || (row.free ? "Ready" : "")}
                   {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
                 </span>
                 <WalkRoundTick mark={marks} />
@@ -1035,9 +1052,10 @@ export function WardHomeTab({
   ] as const) {
     const row: TodoRow = {
       key: id,
-      title: label,
-      detail: at === null ? `${hint} On this screen only. Not sent.` : "Ticked on this screen only. Not sent.",
-      meta: at === null ? "Due" : formatInstantWithDay(at, now),
+      title: `${label} (reminder)`,
+      detail:
+        at === null ? `Reminder only, not saved or sent. ${hint}` : "Reminder ticked here only, not saved or sent.",
+      meta: at === null ? "Not saved" : formatInstantWithDay(at, now),
       tone: at === null ? "neutral" : "success",
       tick: id,
     };
@@ -1130,45 +1148,53 @@ export function WardHomeTab({
         ) : (
           <ul className={styles.todoList}>
             {rows.map((row) => (
-              <li key={row.key} className={styles.todoRow}>
-                <StatusGlyph tone={row.tone} size={9} />
-                {row.tick ? (
-                  <label className={styles.todoMain}>
-                    <input
-                      type="checkbox"
-                      className={styles.todoTick}
-                      checked={localChecks[row.tick] !== null}
-                      onChange={() => {
-                        if (row.tick) toggleLocalCheck(row.tick);
-                      }}
-                      aria-label={row.title}
-                    />
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail}>{row.detail}</span>
-                  </label>
-                ) : (
-                  <span className={styles.todoMain}>
-                    <span className={styles.todoTitle}>{row.title}</span>
-                    <span className={styles.todoDetail} title={row.detail}>
-                      {row.detail}
+              <li key={row.key} className={styles.todoItem}>
+                <div className={styles.todoRow}>
+                  <StatusGlyph tone={row.tone} size={9} />
+                  {row.tick ? (
+                    <label className={styles.todoMain}>
+                      <input
+                        type="checkbox"
+                        className={styles.todoTick}
+                        checked={localChecks[row.tick] !== null}
+                        onChange={() => {
+                          if (row.tick) toggleLocalCheck(row.tick);
+                        }}
+                        aria-label={row.title}
+                      />
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail}>{row.detail}</span>
+                    </label>
+                  ) : (
+                    <span className={styles.todoMain}>
+                      <span className={styles.todoTitle}>{row.title}</span>
+                      <span className={styles.todoDetail} title={row.detail}>
+                        {row.detail}
+                      </span>
                     </span>
-                  </span>
-                )}
-                {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
-                {row.action ? (
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                    onClick={row.action.run}
-                  >
-                    {row.action.label}
-                    <SrOnly> {row.title}</SrOnly>
-                  </button>
-                ) : null}
+                  )}
+                  {row.meta ? (
+                    <span
+                      className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}
+                    >
+                      {row.meta}
+                    </span>
+                  ) : null}
+                  {row.action ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={row.action.run}
+                    >
+                      {row.action.label}
+                      <SrOnly> {row.title}</SrOnly>
+                    </button>
+                  ) : null}
+                </div>
                 {row.secondaryAction ? (
                   <button
                     type="button"
-                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
                     onClick={row.secondaryAction.run}
                   >
                     {row.secondaryAction.label}
@@ -1208,7 +1234,7 @@ export function WardHomeTab({
         </span>
         <span>
           <StatusGlyph tone="success" size={9} />
-          Free
+          Ready
         </span>
       </span>
       {/* Audit 11 Oct 2026: the four bed counts sit once, in Ward figures, right now, just below. */}
@@ -1270,42 +1296,20 @@ export function WardHomeTab({
               ) : (
                 <ul className={styles.awaitingList}>
                   {visibleIncoming.map((movement) => {
-                    const blocked = referralAnswerBlocked(movement, unit);
+                    const blocked = answerBlockedReason ?? referralAnswerBlocked(movement, unit);
                     const notice = restrictionNotice(movement, unit);
-                    const eligibilityIssue = eligibilityWarning(movement, unit, now);
+                    const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
+                    const wardLine = wardStateLine(fit, now, unit);
                     const declineOpen = declineOpenFor === movement.id;
 
                     return (
                       <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
-                        <div className={styles.awaitingIdentity}>
-                          <span className={styles.awaitingTier} aria-hidden="true">
-                            {movement.urgency}
-                          </span>
-                          <span className={styles.awaitingName}>Incoming patient</span>
-                          <span className={styles.awaitingMeta}>
-                            {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                            {movement.legalStatus}
-                          </span>
-                          {/* A1-8 (audit round 2): the wait, origin and gate result the Ward answer
-                              view shows, in one line, so an accept from this list is not blind. */}
-                          <span
-                            className={`${styles.awaitingMeta} ${styles.awaitingSummary}`}
-                            data-testid={`ward-incoming-summary-${movement.id}`}
-                          >
-                            {(() => {
-                              const verdict = eligibility(movement, unit, now);
-                              const checked = checkedGates(verdict.gates);
-                              const pass = checked.filter((gate) => gate.pass).length;
-                              return [
-                                `Waiting ${durMinutes(Math.max(0, now - movement.openedAt))}`,
-                                edById(movement.originEdId) ? `Now at ${edById(movement.originEdId)?.name}` : undefined,
-                                `${pass} of ${checked.length} gates pass`,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ");
-                            })()}
-                          </span>
-                        </div>
+                        <AwaitingIdentity
+                          movement={movement}
+                          person={resolvePatientIdentity(movement)}
+                          now={now}
+                          onOpen={() => setReferralDetailFor(movement.id)}
+                        />
 
                         {notice ? (
                           <span
@@ -1317,15 +1321,12 @@ export function WardHomeTab({
                           </span>
                         ) : null}
 
-                        {eligibilityIssue ? (
-                          <span
-                            className={styles.noticeProminent}
-                            data-testid={`ward-eligibility-warning-${movement.id}`}
-                            data-level={eligibilityIssue.level}
-                          >
-                            {eligibilityIssue.text}
-                          </span>
-                        ) : null}
+                        <AwaitingFitLines
+                          movementId={movement.id}
+                          fit={fit}
+                          wardLine={wardLine}
+                          onUpdateBeds={onOpenConfirmNumbers}
+                        />
 
                         <div className={styles.awaitingActions}>
                           <Button
@@ -1355,18 +1356,7 @@ export function WardHomeTab({
                             reasonDisplay="tooltip"
                             type="button"
                             data-testid={`ward-accept-${movement.id}`}
-                            onClick={
-                              blocked
-                                ? ignoreUnavailableActivation
-                                : () => {
-                                    if (onAcceptInPrinciple) {
-                                      onAcceptInPrinciple(movement.id, unit.id);
-                                    } else {
-                                      priorRejectionCountRef.current = rejections.length;
-                                      setCheckToken((token) => token + 1);
-                                    }
-                                  }
-                            }
+                            onClick={blocked ? ignoreUnavailableActivation : () => acceptIncoming(movement.id)}
                           >
                             Accept in principle
                           </Button>
@@ -1407,7 +1397,7 @@ export function WardHomeTab({
                           >
                             <fieldset className={styles.declineFieldset}>
                               <legend>Decline reason for this patient</legend>
-                              {DECLINE_REASONS.map((reason) => (
+                              {MOVEMENT_DECLINE_REASONS.map((reason) => (
                                 <label key={reason}>
                                   <input
                                     type="radio"
@@ -1418,7 +1408,7 @@ export function WardHomeTab({
                                       setDeclineReason(reason);
                                     }}
                                   />{" "}
-                                  {reason.replace(/_/g, " ")}
+                                  {DECLINE_REASON_LABELS[reason]}
                                 </label>
                               ))}
                             </fieldset>
@@ -1472,7 +1462,7 @@ export function WardHomeTab({
                             declined referral was never this ward's patient, so it stays anonymous. */}
                         <span className={styles.flowDetail}>
                           {answer.reason
-                            ? answer.reason.replace(/_/g, " ")
+                            ? declineReasonText(answer.reason)
                             : `UMRN ${resolvePatientIdentity({ movementId: answer.movementId }).umrn}`}
                         </span>
                       </span>
@@ -1702,7 +1692,8 @@ export function WardHomeTab({
 
   return (
     <div className={styles.homeWrap}>
-      <span className="sr-only">{pendingPreparation} being made ready</span>
+      {/* Visual desk, 22 Oct 2026: an absence is silence, never "0 being made ready". */}
+      {pendingPreparation > 0 ? <span className="sr-only">{pendingPreparation} being made ready</span> : null}
 
       {phoneSheets && !bedArea && !walkingOnPhone ? (
         <section className={styles.phoneSection} aria-labelledby="ward-phone-needs">
@@ -1719,7 +1710,7 @@ export function WardHomeTab({
                   <StatusGlyph tone="success" size={12} />
                   Awaiting your answer: all clear
                   <span className={styles.phoneClearText}>
-                    · Answered {recentAnswers.length}
+                    <span className={styles.phoneClearSep}>· </span>Answered {recentAnswers.length}
                     {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
                   </span>
                 </p>
@@ -1731,7 +1722,7 @@ export function WardHomeTab({
                   <Count n={incoming.length} />
                 </h3>
                 <ul className={styles.phoneAwaitList}>
-                  {incoming.map((movement, index) => (
+                  {incoming.map((movement) => (
                     <li key={movement.id}>
                       <button
                         type="button"
@@ -1743,12 +1734,17 @@ export function WardHomeTab({
                         }}
                       >
                         <span className={styles.phoneAwaitText}>
-                          {/* A ward sees no identity before it accepts (as the answer view's "Request n of N"). */}
+                          {/* D-79: a ward sees who is coming before it answers, never where else they were referred. */}
                           <span className={styles.phoneAwaitName}>
-                            Request {index + 1} · {movement.cohort}
+                            {resolvePatientIdentity(movement).displayName} · {movement.cohort}
                           </span>
                           <span className={styles.phoneAwaitMeta}>
-                            {[movement.sex, movement.legalStatus, edById(movement.originEdId)?.name]
+                            {[
+                              resolvePatientIdentity(movement).umrn,
+                              movement.sex,
+                              movement.legalStatus,
+                              originName(movement),
+                            ]
                               .filter(Boolean)
                               .join(" · ")}
                           </span>
@@ -1798,8 +1794,10 @@ export function WardHomeTab({
               <span className={styles.needsText}>
                 <b>Ward flow</b>
                 <span>
-                  {incoming.length} referrals · {expectedRows.length + leaveRows.length} admissions · {outRows.length}{" "}
-                  discharges
+                  {incoming.length} {incoming.length === 1 ? "referral" : "referrals"} ·{" "}
+                  {expectedRows.length + leaveRows.length}{" "}
+                  {expectedRows.length + leaveRows.length === 1 ? "admission" : "admissions"} · {outRows.length}{" "}
+                  {outRows.length === 1 ? "discharge" : "discharges"}
                 </span>
               </span>
               <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
@@ -1841,7 +1839,7 @@ export function WardHomeTab({
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
                       { id: "leaving", label: "Due out", count: bedRows.filter((row) => row.leaving).length },
-                      { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
+                      { id: "free", label: "Ready", count: bedRows.filter((row) => row.free).length },
                       // The hero's Occupied and Ready by pills set filters this group does not list,
                       // so the active one joins it while on and a radio is always checked.
                       ...(bedFilter === "occupied"
@@ -2070,6 +2068,30 @@ export function WardHomeTab({
         renderShiftCard()
       )}
 
+      {(() => {
+        const detailMovement = visibleIncoming.find((movement) => movement.id === referralDetailFor);
+        if (!detailMovement) return null;
+        return (
+          <WardReferralDetailDrawer
+            movement={detailMovement}
+            unit={unit}
+            now={now}
+            identity={resolvePatientIdentity(detailMovement)}
+            onClose={() => setReferralDetailFor(null)}
+            onUpdateBeds={onOpenConfirmNumbers}
+            blocked={answerBlockedReason ?? referralAnswerBlocked(detailMovement, unit)}
+            onDecline={() => {
+              setReferralDetailFor(null);
+              if (declineOpenFor !== detailMovement.id) toggleDecline(detailMovement.id);
+            }}
+            onAccept={() => {
+              setReferralDetailFor(null);
+              acceptIncoming(detailMovement.id);
+            }}
+          />
+        );
+      })()}
+
       {/* Preserved test contracts for withdrawn referrals, overrides and answer history. */}
       <div className={styles.visuallyHidden}>
         <section aria-labelledby="ward-withdrawn-heading">
@@ -2108,7 +2130,7 @@ export function WardHomeTab({
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
                   <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
                   <span>{answer.outcome}</span>
-                  <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
+                  <span>{answer.reason ? declineReasonText(answer.reason) : "Accepted by this ward"}</span>
                   {answer.at === undefined ? (
                     <span>Time not recorded</span>
                   ) : (

@@ -15,7 +15,12 @@
   overflow-x: clip;
   min-width: 0;
   width: 100%;
+}
 
+/* The screen's token names, shared with the transport dialog, which is portalled to the body and so
+ * sits outside `.screen`. Without them its fields lost their borders (var() of an unset token). */
+.screen,
+.modalBackdrop {
   --text: var(--ink);
   --text-heading: var(--ink);
   --text-muted: var(--muted);
@@ -791,7 +796,7 @@
   .tabBtn,
   .actionUnfoldToggle,
   .referralField select,
-  .referralField input,
+  .referralField input[type="text"],
   .capacityInput,
   .tableActionGroup button,
   .tableActionGroup select {
@@ -2430,6 +2435,15 @@
   font-weight: 400;
 }
 
+/* A radio or checkbox sits beside its own words, never above them. */
+.referralCheckbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--spacing-tap);
+  white-space: nowrap;
+}
+
 .capacityInput {
   padding: 6px 10px;
   border-radius: var(--r2);
@@ -3024,6 +3038,7 @@
 }
 
 .modalBackdrop {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -4842,13 +4857,13 @@
 .a2Table col[data-col="Review"] {
   width: 124px;
 }
-.a2Table col[data-col="Destination"] {
+.a2Table col[data-col="Referral"] {
   width: 17%;
 }
 .a2Table col[data-col="Next"] {
   width: 204px;
 }
-.a2Table[data-columns="priority"] col[data-col="Destination"] {
+.a2Table[data-columns="priority"] col[data-col="Referral"] {
   width: 22%;
 }
 
@@ -5026,6 +5041,86 @@
   gap: 6px;
   max-width: 100%;
   min-width: 0;
+}
+
+/* Change 2 (D-77): the Referral column, the ward on line one and where the referral is under it.
+ * Both lines wrap rather than truncate, so the status is never cut off. */
+.a2Referral {
+  display: block;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.a2ReferralTitle {
+  display: block;
+  font-weight: 600;
+}
+
+.a2ReferralLine {
+  display: block;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.a2ReferralLine[data-tone="good"] {
+  color: var(--wf-success-ink);
+}
+
+.a2ReferralLine[data-tone="warn"] {
+  color: var(--wf-warning-ink);
+}
+
+.a2ReferralLine[data-tone="danger"] {
+  color: var(--wf-danger-ink);
+}
+
+/* The row sheet's "Where the referral is": four steps, a tick on each one done. */
+.referralSteps {
+  display: grid;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.referralSteps > li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.referralStepMark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--wf-line-2);
+  border-radius: 50%;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.referralSteps > li[data-done="true"] .referralStepMark {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-success-ink) 14%, transparent);
+  color: var(--wf-success-ink);
+}
+
+.referralStepLabel {
+  display: block;
+  font-weight: 600;
+}
+
+.referralSteps > li[data-done="false"] .referralStepLabel,
+.referralStepDetail {
+  color: var(--wf-ink-2);
+}
+
+.referralStepDetail {
+  display: block;
+  font-size: var(--wf-fs-12);
 }
 
 /* The row's own facts (form expiry, transit, readmission): one quiet line each, never wrapping. */

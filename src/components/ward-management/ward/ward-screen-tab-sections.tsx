@@ -5,7 +5,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import type { FormEvent } from "react";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Rejection } from "@/components/ward-management/ward-model";
@@ -28,7 +28,7 @@ type WardScreenTabSectionsProps = {
   rollupConfirmation: { confirmedAt: number; confirmedByRole: string; expectedDischarges: number };
   releasesCountedToday: BedRelease[];
   handleConfirmMorningRollup: () => void;
-  intakeDecisions: { id: `WF-${string}`; title: string; onAccept: () => void }[];
+  intakeDecisions: { id: `WF-${string}`; title: string; onAccept?: () => void }[];
   departureDecisions: {
     id: string;
     title: string;
@@ -152,7 +152,7 @@ export function WardScreenTabSections({
           projection={{
             freeNow: capacity.available,
             freeBy: capacity.available + readyByShiftEnd,
-            byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
+            byLabel: formatInstantWithDay(shiftEndInstant(now), now),
           }}
         />
         {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
@@ -175,11 +175,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Incoming arrivals
-          </span>
           <h2 className={styles.subViewTitle}>All arrivals</h2>
           <button
             type="button"
@@ -230,11 +228,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Discharges &amp; leave
-          </span>
           <h2 className={styles.subViewTitle}>All discharges</h2>
           <button
             type="button"
@@ -276,11 +272,9 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />← Back to Ward overview
+            <ChevronLeft size={16} aria-hidden="true" />
+            Back to Ward overview
           </button>
-          <span className={styles.statusPillBadge} data-testid="ward-subview-pill">
-            Bed matrix
-          </span>
           <h2 className={styles.subViewTitle}>Full bed list</h2>
           <button
             type="button"

@@ -1,6 +1,6 @@
 # Ward Flow hosting and database decisions
 
-_Updated 2026-10-19 - drawer preview deleted, both shared services wait for CI; Documentation owns._
+_Updated 2026-10-21 - public feature-mode and backend build dependencies clarified from source; Documentation owns._
 
 Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
@@ -84,6 +84,10 @@ stays in local mode, because shared mode puts a sign-in screen in front of every
 Backend settings (Railway dashboard):
 
 - Build: `npm ci --prefix backend/ward-flow --include=dev && npm --prefix backend/ward-flow run build:engine`.
+- This backend build depends on Railpack's root locked install as well as the backend install:
+  `build-engine.mjs` uses the root `tsconfig.json` and bundles source from
+  `src/components/ward-management/` and `src/lib/`. Backend typechecking uses the root TypeScript
+  installation. The service can still run as a separate Node process.
 - Start: `sh -c 'printf "%s\n" "$WARD_SUPABASE_CA_PEM" > /tmp/supabase-ca.pem && exec node backend/ward-flow/server.mjs'`.
   The Supabase pooler certificate chains to the public Supabase Root 2021 CA, which Node does not
   trust by default. The start command writes it from a variable, so no certificate file is in the
@@ -97,6 +101,10 @@ Backend settings (Railway dashboard):
   workspace id is missing. Phone push is off (no VAPID keys).
   `WARD_SUPABASE_DATABASE_URL` is the restricted `wardflow_backend` session pooler login. Its
   password was set privately by the owner and lives only in Railway.
+  The recorded wildcard proxy setting is safe only while ingress overwrites forwarded client
+  headers and the backend cannot be reached directly. Reverify those conditions before relying on
+  per-address sign-in limits; prefer explicit proxy socket addresses, or no forwarded-header trust
+  when unverified. This document does not establish the current deployed ingress boundary.
 - Watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and `/src/lib/**`
   (the engine bundles both, including the synthetic-data guard), `/package.json`,
   `/package-lock.json` and `/tsconfig.json`. The list lives in
@@ -115,6 +123,16 @@ Supabase URL, `NEXT_PUBLIC_WARD_API_BASE_URL` set to the backend, and
 `NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY` as a Railway reference to the backend's
 `WARD_SUPABASE_PUBLISHABLE_KEY`, so the key is kept in one place. These are fixed at build time, so
 a change needs a rebuild.
+
+The frontend also reads the public build settings `NEXT_PUBLIC_WARD_ENVIRONMENT` and
+`NEXT_PUBLIC_WARD_FLAGS` (comma-separated registered `name=on` or `name=off` overrides). If the
+feature environment is unset, a non-production `NODE_ENV` uses development defaults and a
+`NODE_ENV=production` build uses demo defaults, whether local or hosted. An unnamed production build locks safeguard flags on;
+explicit `demo` leaves them switchable on a device. In an explicitly named `production` feature
+environment, device choices are ignored and safeguard flags stay on. These settings and their
+precedence are source contracts, not observations of current Railway values. Select a feature mode
+for each service deliberately, and rebuild to apply a change; the [public frontend template](../backend/ward-flow/infra/frontend.env.example)
+lists the settings without selecting a mode for an operator.
 
 Checked 17 October 2026 against the hosted services: the backend's authenticated `/readyz`
 answered 200 with the database ready, the coordinator test account signed in, a save moved the

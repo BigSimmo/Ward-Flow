@@ -6,6 +6,7 @@
 //
 // A booking holds no bed. Only `CONVERT_PLANNED_ADMISSION` moves a capacity figure, and it refuses
 // when the ward has no empty, allocatable bed: no booking creates a bed.
+import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import {
@@ -38,6 +39,7 @@ import {
   type Unit,
 } from "../ward-model";
 import { patientCohort } from "../ward-patients";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -79,7 +81,7 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
     ...(planned.gender === undefined ? {} : { gender: planned.gender }),
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: planned.legalStatus,
     statusChanges: [],
@@ -237,6 +239,10 @@ export function reducePlannedAdmissionEvent(
         return reject(state, event, "BOOK_PLANNED_ADMISSION expected arrival must not be in the past");
       const scope = wardScopeRefusal(event, [event.unitId]);
       if (scope) return reject(state, event, scope);
+      // Audit 2 E-02 (Josh, 20 Oct 2026): a closed ward takes no new booking until a person reopens it.
+      const bookedUnit = state.units.find((unit) => unit.id === event.unitId);
+      const closedRefusal = bookedUnit ? closedToAdmissionsRefusal(bookedUnit) : null;
+      if (closedRefusal) return reject(state, event, closedRefusal);
       if (!(RECORDED_SEXES as readonly string[]).includes(event.sex))
         return reject(state, event, "BOOK_PLANNED_ADMISSION sex must be chosen from the recorded sexes");
       if (!(COHORTS as readonly string[]).includes(event.ageBand))
@@ -313,6 +319,12 @@ export function reducePlannedAdmissionEvent(
       if (fields) return reject(state, event, fields);
       const scope = wardScopeRefusal(event, [planned.unitId, event.unitId]);
       if (scope) return reject(state, event, scope);
+      // Audit 2 E-02: moving a booking to a closed ward is a new admission there and is refused. A
+      // booking already at the ward when it closed stands, as existing holds do.
+      const changedUnit = state.units.find((unit) => unit.id === event.unitId);
+      const closedRefusal =
+        changedUnit && event.unitId !== planned.unitId ? closedToAdmissionsRefusal(changedUnit) : null;
+      if (closedRefusal) return reject(state, event, closedRefusal);
       // A new arrival time may not be in the past; an overdue booking keeps its own time while its
       // other fields are edited.
       if (event.expectedArrivalAt !== planned.expectedArrivalAt && event.expectedArrivalAt < event.now)
@@ -433,7 +445,7 @@ export function reducePlannedAdmissionEvent(
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,
         unitId: unit.id,
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         referralId: null,
         movementId: null,

@@ -22,6 +22,7 @@ import { LEGAL_STATUS_CHANGE_REASONS, OVERRIDE_REASONS } from "@/components/ward
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { TRANSPORT_PROVIDERS, type Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * THE BOOKING CONTROL ON THE ED SCREEN, AND THE ONE THING IT MUST NEVER DO.
@@ -95,7 +96,7 @@ function TransportProbe({ movementId }: { movementId: string }) {
 function renderEdFor(movement: Movement) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <EdScreen edId={movement.originEdId} />
+      <EdScreen edId={movement.originEdId!} />
       <TransportProbe movementId={movement.id} />
     </WardFlowProvider>,
   );
@@ -299,7 +300,7 @@ describe("booking transport from the sending emergency department", () => {
 
   it("does not offer a booking outside stage pulled, and names the stage it is at", () => {
     const held = heldBedMovement();
-    const other = notHeldMovementAtSameEd(held.originEdId);
+    const other = notHeldMovementAtSameEd(held.originEdId!);
     renderEdFor(other);
 
     const toggle = screen.getByTestId(`ward-ed-book-transport-toggle-${other.id}`);
@@ -390,7 +391,7 @@ describe("the no-4A-recorded notice beside the booking control", () => {
                 security: "Secure",
                 sex: "Female",
                 gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-                specialling: false,
+                observation: GENERAL_OBSERVATION,
                 highAcuity: false,
                 legalStatus: "Involuntary inpatient",
                 urgency: 2,

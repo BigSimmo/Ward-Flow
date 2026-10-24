@@ -15,8 +15,14 @@ import {
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import {
+  FORECAST_ED_RISK_LEAD_MINUTES,
+  FORECAST_SHORT_ALERT_BEDS,
+  FORECAST_WORSE_ALERT_BEDS,
+} from "@/components/ward-management/ward-operational-defaults";
 import { type WfTone } from "@/components/wf";
 import { SETTINGS_TABS, type SettingsTab } from "./settings-search-index";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** 24-hour clock time, `HH:MM`, for the morning count. */
 export function clock24(minutesFromMidnight: number): string {
@@ -65,6 +71,9 @@ export function fullRules(value: WardConfiguration) {
     referralTarget: value.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES,
     transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
+    forecastShort: value.forecastShortBeds ?? FORECAST_SHORT_ALERT_BEDS,
+    forecastEdLead: value.forecastEdLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES,
+    forecastWorse: value.forecastWorseBeds ?? FORECAST_WORSE_ALERT_BEDS,
   };
 }
 
@@ -91,6 +100,15 @@ export function ruleDiffs(before: WardConfiguration, after: WardConfiguration): 
   }
   if (a.transportTarget !== b.transportTarget) {
     parts.push(`Transport booked ${shortDuration(a.transportTarget)} to ${shortDuration(b.transportTarget)}`);
+  }
+  if (a.forecastShort !== b.forecastShort) {
+    parts.push(`Bed type short alert ${a.forecastShort} to ${b.forecastShort} beds`);
+  }
+  if (a.forecastEdLead !== b.forecastEdLead) {
+    parts.push(`ED access risk alert ${shortDuration(a.forecastEdLead)} to ${shortDuration(b.forecastEdLead)}`);
+  }
+  if (a.forecastWorse !== b.forecastWorse) {
+    parts.push(`Forecast worse alert ${a.forecastWorse} to ${b.forecastWorse} beds`);
   }
   return parts;
 }
@@ -211,9 +229,6 @@ export async function copySettingsDiagnostics(state: {
   };
 
   const text = JSON.stringify(payload, null, 2);
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    throw new Error("Clipboard is unavailable");
-  }
-  await navigator.clipboard.writeText(text);
+  await copyTextToClipboard(text);
   return text;
 }

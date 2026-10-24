@@ -1,5 +1,10 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
+import type {
+  ReferralContactOutcome,
+  ReferralContactTarget,
+  ReferralOwnerDesk,
+} from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
@@ -8,6 +13,7 @@ import type { PatientId } from "@/components/ward-management/ward-patients";
 // see that module's own doc comment for why the vocabulary lives there rather than here or on
 // `ward-admissions.ts`, where the fact it describes first gained a runtime writer.
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
+import type { Observation, ObservationChange } from "@/components/ward-management/ward-observation";
 /**
  * `WardFlowRole` now lives in its own module, `ward-flow-roles.ts` (Spec D15 restoration,
  * 2026-09-11). It used to be imported from `ward-flow-events.ts` — a TYPE-ONLY import, so it
@@ -39,6 +45,7 @@ import type {
   ExaminationOutcome,
   GenderPlacement,
   MovementId,
+  MovementOrigin,
   MovementReferralAbsence,
   MovementTransportNeed,
   Override,
@@ -52,6 +59,7 @@ import type {
 } from "@/components/ward-management/ward-model-movement-parts";
 import type {
   CommunityDeclineReason,
+  CommunityReferralPurpose,
   HomeRegion,
   ReferralAddressingState,
   ReferralCorrection,
@@ -59,12 +67,14 @@ import type {
   ReferralSource,
   ReferralSuburb,
 } from "@/components/ward-management/ward-model-referral-parts";
+import type { WardRestrictivePractice } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import type {
   AtsCategory,
   CapacityFigure,
   Cohort,
   HealthService,
   LegalForm,
+  LegalFormExpiryMetadata,
   LegalStatus,
   MovementArrivalDetails,
   MovementStage,
@@ -85,16 +95,34 @@ export * from "@/components/ward-management/ward-model-leave";
 export * from "@/components/ward-management/ward-model-referral-parts";
 export * from "@/components/ward-management/ward-model-notices";
 
+/** D-78 (Josh, 21 Oct 2026): ONE decline list, the coordinator's wording plus four ward-only reasons. */
 export const DECLINE_REASONS = [
-  "no_bed",
-  "sex_mix",
+  "no_suitable_bed",
+  "age_band_not_provided_here",
+  "sex_designation_unavailable",
+  "secure_bed_unavailable",
+  "belongs_to_another_service",
+  "referred_elsewhere",
   "specialling_unavailable",
   "acuity_mix",
   "capability_mismatch",
   "bed_pulled_for_earlier_referral",
-  "out_of_catchment",
+  "another_reason",
 ] as const;
 export type DeclineReason = (typeof DECLINE_REASONS)[number];
+
+/** The ward-only reasons: each one is about a ward's beds, staffing or mix, never asked of an ED. */
+export const WARD_ONLY_DECLINE_REASONS: readonly DeclineReason[] = [
+  "specialling_unavailable",
+  "acuity_mix",
+  "capability_mismatch",
+  "bed_pulled_for_earlier_referral",
+];
+
+/** A ward refusing a MOVEMENT: not the sex designation, which there only filters beds (T10). */
+export const MOVEMENT_DECLINE_REASONS: readonly DeclineReason[] = DECLINE_REASONS.filter(
+  (reason) => reason !== "sex_designation_unavailable",
+);
 
 /** Referring to more than three units at once spams wards and erodes trust between services. */
 export const PARALLEL_REFERRAL_CAP = 3;
@@ -115,6 +143,13 @@ export const PARALLEL_REFERRAL_CAP_RANGE = { min: 1, max: PARALLEL_REFERRAL_CAP,
  * with no clinician or product-owner attribution behind it.
  */
 export const PULL_HOLD_MINUTES = 240;
+
+/**
+ * D-75 item 5 (Josh, 21 Oct 2026): the extra minutes an accepting ward can ask for when the patient has
+ * further to travel, added to the configured pull hold. Josh chose 60 minutes on 21 Oct 2026 as a
+ * prototype value (listed as `extraTravelHold` in ward-clinical-values.ts), not a local policy.
+ */
+export const EXTRA_TRAVEL_HOLD_MINUTES = 60;
 
 /**
  * The slider bounds for `WardConfiguration.pullHoldMinutes` on the settings screen. Not a
@@ -284,6 +319,12 @@ export type Unit = {
    * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
    */
   admissionsClosure?: WardAdmissionsClosure;
+  /**
+   * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
+   * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.
+   * Written only by `ward-flow-restrictive-practice-events.ts`. Absent until the ward records one.
+   */
+  restrictivePractice?: WardRestrictivePractice;
   /** Physically empty beds, per the feed. */
   empty: CapacityFigure;
   /** Beds the ward says it can actually allocate. Never greater than `empty` in practice. */
@@ -312,7 +353,12 @@ export type Unit = {
   blocked: number;
   /** Current occupants by sex, which is what constrains who the next admission can be. */
   sexMix: Record<Sex, number>;
-  /** How many 1:1 observation patients this unit can staff beyond its current load. */
+  /**
+   * How many staff this unit can commit to constant observation (specialling) at once, the ward's
+   * authored total. Since fix plan item 10 (21 Oct 2026) it counts staff, not patients: a one-to-one
+   * level takes one and two staff constant takes two (`observationStaff`). Never decremented; what is
+   * left is `remainingSpeciallingCapacity(unit, admissions)`.
+   */
   speciallingCapacity: number;
   /**
    * How many HIGH-ACUITY places this unit is staffed to hold at once — the ward's authored total.
@@ -432,15 +478,15 @@ export type MovementClosure = {
   reason: string;
 };
 
-export type Movement = {
+type MovementBase = MovementOrigin & LegalFormExpiryMetadata;
+
+export type Movement = MovementBase & {
   turnaroundPriority?: TurnaroundPriority;
   id: MovementId;
   /**
    * The patient this movement is for. Links directly to a Person in state.patients.
    */
   patientId?: PatientId;
-  /** Where the patient physically is. Detention here is lawful even when unauthorised. */
-  originEdId: string;
   openedAt: Instant;
   /**
    * THE FRONT-DOOR REFERRAL THIS JOURNEY WAS RAISED FROM — the link that did not exist.
@@ -620,35 +666,27 @@ export type Movement = {
    * value.
    */
   genderPlacements?: GenderPlacement[];
-  specialling: boolean;
+  /**
+   * The observation level a person recorded at intake (fix plan item 10, Josh, 21 Oct 2026), which
+   * replaced the yes/no `specialling` flag. `PULL_PATIENT` copies it to `Admission.observation`, and
+   * its staff count (`observationStaff`) is what the observation capacity check refuses on. Changed
+   * afterwards only by `RECORD_OBSERVATION_LEVEL`, which appends to `observationChanges`. Never
+   * inferred from urgency, legal status, security or anything else.
+   */
+  observation: Observation;
+  /** Every change after intake, oldest first. Absent until the first `RECORD_OBSERVATION_LEVEL`. */
+  observationChanges?: ObservationChange[];
   /**
    * Whether high-acuity nursing was requested for this movement. **Carried from the referral's
    * `highAcuityNursingNeeded`, which the REFERRING CLINICIAN marks — owner ruling 2026-09-10.**
    *
-   * Never inferred: not from urgency, not from `specialling`, not from legal status, not from
+   * Never inferred: not from urgency, not from the observation level, not from legal status, not from
    * security. `false` is the ordinary state and means it was not requested — **it is not a finding
    * that high-acuity nursing was considered and ruled out.**
    */
   highAcuity: boolean;
   legalStatus: LegalStatus;
   legalForm?: LegalForm;
-  /**
-   * EVERY TYPED EXPIRY EVER RECORDED AGAINST THIS MOVEMENT'S LEGAL FORM, OLDEST FIRST — added T2
-   * (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answer 1 and item 5
-   * (regional extensions): *"the clinician records the extension and the new expiry; the app
-   * never calculates one."*
-   *
-   * Referral capture, written-form capture, continuation and typed-expiry events append the
-   * supplied expiry. Replacement forms may have no expiry while this history remains intact;
-   * current authority is legalForm.dueAt, never the last historical entry. An extension of the
-   * current recorded form must be later than its entered expiry. A replacement form begins a new
-   * current value and does not erase the prior form's history.
-   *
-   * Absent on the six authored synthetic fixture expiries, which predate these writers. Never
-   * backfill an actor or typed record for those examples. Legacy calculated clocks are not paper
-   * evidence and cannot force a clinician's first actual entry to be treated as an extension.
-   */
-  legalFormExpiryHistory?: { at: Instant; by: WardFlowRole; dueAt: Instant; basis: "written_on_form" | "extension" }[];
   statusChanges: StatusChange[];
   /** Urgency-tier changes, in the order they were made. Empty for a movement whose urgency has
    *  never changed since it was raised. */
@@ -760,6 +798,12 @@ export type Movement = {
   closure?: MovementClosure;
   /** Recorded outcome from the emergency department (Item 19, owner answers 2026-09-17). */
   edOutcome?: "for_discharge" | "for_community_follow_up";
+  /**
+   * D-74: what the community referral that closed this record is for, written only by
+   * `REFER_TO_COMMUNITY_TEAM`. Absent on records closed before D-74; read it through
+   * `communityPurposeOf`, which treats absent as follow-up.
+   */
+  communityPurpose?: CommunityReferralPurpose;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
@@ -798,6 +842,13 @@ export type Movement = {
   arrivalMode?: "self" | "ambulance" | "police";
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
+  /**
+   * D-72: the `acceptedAt` of the acceptance that asked for the extra-travel bed hold
+   * (`ACCEPT_IN_PRINCIPLE.extendedHold`). A pull applies it only while that same acceptance stands
+   * (`acceptedAt` and `acceptedUnitId` unchanged), so a withdrawn or replaced acceptance never
+   * carries it. `undefined` when the standard hold applies.
+   */
+  extendedHoldAt?: Instant;
   /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
   meetingActions?: BedMeetingAction[];
   /**
@@ -956,6 +1007,17 @@ export type Movement = {
   /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
   medicationChartDone?: boolean;
 };
+
+/** #398: the services a discharge support notice goes to (`SEND_RELEASE_SUPPORT_NOTICE`). */
+export const SUPPORT_SERVICE_TYPES = ["pharmacy", "transport", "cleaning"] as const;
+export type SupportServiceType = (typeof SUPPORT_SERVICE_TYPES)[number];
+
+/**
+ * D-72 (21 Oct 2026): the arrival checklist items the emergency department records with
+ * `RECORD_ARRIVAL_CHECK`, onto `Movement.contrabandSearchDone` and `Movement.medicationChartDone`.
+ */
+export const ARRIVAL_CHECKS = ["contraband_search", "medication_chart"] as const;
+export type ArrivalCheck = (typeof ARRIVAL_CHECKS)[number];
 
 /**
  * A bed release's lifecycle, in the order a bed moves through it. Hand-listed (never derived) for
@@ -1128,6 +1190,15 @@ export type BedRelease = {
     readonly reason?: DischargeDelayClearReason;
     readonly blocker?: BedReleaseBlocker | null;
   }>;
+  /**
+   * #398 (D-72): the support notices the ward sent for this confirmed release, one per service,
+   * oldest first (`SEND_RELEASE_SUPPORT_NOTICE`). About the bed only. Absent until the first.
+   */
+  supportNoticesSent?: ReadonlyArray<{
+    readonly service: SupportServiceType;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+  }>;
 };
 
 /**
@@ -1163,18 +1234,12 @@ export type BedRelease = {
  *
  * ⚠️ AND IT IS A DELIBERATE CHOICE, NOT AN ABSENCE. A ward picks this on purpose, which is a
  * different thing from the unchosen state the control starts in — that one refuses to submit.
- * This one says "none of the other six, ring me", which is a real answer a coordinator can act on.
+ * This one says "none of the others, ring me", which is a real answer a coordinator can act on.
  */
-export const REFERRAL_DECLINE_REASONS = [
-  "no_suitable_bed",
-  "age_band_not_provided_here",
-  "sex_designation_unavailable",
-  "secure_bed_unavailable",
-  "belongs_to_another_service",
-  "referred_elsewhere",
-  "another_reason",
-] as const;
-export type ReferralDeclineReason = (typeof REFERRAL_DECLINE_REASONS)[number];
+/** @deprecated D-78: the same list as `DECLINE_REASONS`, kept under its older name so importers are unchanged. */
+export const REFERRAL_DECLINE_REASONS = DECLINE_REASONS;
+/** @deprecated D-78: the same type as `DeclineReason`. */
+export type ReferralDeclineReason = DeclineReason;
 
 /**
  * ⚠️ **THE REASONS AN EMERGENCY-DEPARTMENT-ADDRESSED DECLINE MUST NOT OFFER, AND WHY EACH ONE IS
@@ -1219,7 +1284,7 @@ export const BED_SHAPED_DECLINE_REASONS: readonly ReferralDeclineReason[] = [
  * answered, never against `REFERRAL_DECLINE_REASONS` whole.
  */
 export const ED_DECLINE_REASONS: readonly ReferralDeclineReason[] = REFERRAL_DECLINE_REASONS.filter(
-  (reason) => !BED_SHAPED_DECLINE_REASONS.includes(reason),
+  (reason) => !BED_SHAPED_DECLINE_REASONS.includes(reason) && !WARD_ONLY_DECLINE_REASONS.includes(reason),
 );
 
 export type ReferralDestination =
@@ -1309,6 +1374,12 @@ export type ReferralDestination =
        * region-derived membership through the back door. Never read it here.
        */
       teamName: string;
+      /**
+       * D-74: follow-up or assess for admission, chosen by the referrer. Optional only because arms
+       * saved before D-74 lack it; read it through `communityPurposeOf`, which treats absent as
+       * follow-up. Every form that creates an arm asks for it.
+       */
+      purpose?: CommunityReferralPurpose;
     };
 
 export type ReferralAddressing = {
@@ -1387,6 +1458,9 @@ export type ReferralAddressing = {
    * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only.
    */
   informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>;
+  /** Fix plan item 16 (D-76): the ROLE that added this ward to an open referral with
+   *  `ASK_MORE_WARDS`. Absent on every destination the referrer chose when raising it. */
+  addedBy?: string;
 };
 
 /** One item a ward asked for on a referral. `by` and `metBy` are ROLES, never people. */
@@ -1396,6 +1470,29 @@ export type ReferralInformationNeedEntry = {
   by: string;
   metAt?: Instant;
   metBy?: string;
+};
+
+/**
+ * One assignment of a referral to a desk (`ASSIGN_REFERRAL`, fix plan item 4, 21 Oct 2026). The
+ * last entry is the current owner. `owner` and `by` are DESKS, never people; `by` is the role label
+ * of the desk that made the assignment.
+ */
+export type ReferralOwnerEntry = {
+  owner: ReferralOwnerDesk;
+  at: Instant;
+  by: string;
+};
+
+/**
+ * One call logged on a referral (`LOG_REFERRAL_CONTACT`, fix plan item 4): who was rung, what they
+ * said, when, and which desk rang (`by`, a role label, never a person). Chosen from closed lists and
+ * never typed. A call never answers the referral.
+ */
+export type ReferralContactEntry = {
+  contact: ReferralContactTarget;
+  outcome: ReferralContactOutcome;
+  at: Instant;
+  by: string;
 };
 
 /** The ward arm, named so signatures can require it. */
@@ -1416,6 +1513,10 @@ export type Referral = {
   /** Opaque submission correlation across JSON snapshots. */
   submissionId?: string;
   turnaroundPriority?: TurnaroundPriority;
+  /** Fix plan item 4 (21 Oct 2026): every assignment of this referral to a desk, oldest first. Append-only. */
+  ownerHistory?: ReadonlyArray<ReferralOwnerEntry>;
+  /** Fix plan item 4: every call logged about this referral, oldest first. Append-only. */
+  contactLog?: ReadonlyArray<ReferralContactEntry>;
   /** Confirmed drawer submission; typed text and chart bytes stay in memory under D-18. */
   intake?: import("./referrals/referral-submission").ReferralIntakeDetails;
   id: string;

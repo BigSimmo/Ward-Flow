@@ -13,6 +13,7 @@ import { DISCHARGE_BARRIERS } from "@/components/ward-management/ward-admissions
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { buildScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -48,7 +49,7 @@ const draft = {
   security: "Open",
   sex: "Female",
   gender: "Female",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   urgency: 2,
@@ -70,7 +71,7 @@ function admittedPatient(h: Harness, umrn: string, unitId = "scgh-adult-open") {
   h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: inbound.id, unitIds: [unitId] });
   h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: inbound.id, unitId });
   h.ok({ type: "PULL_PATIENT", role: "ward", movementId: inbound.id, unitId });
-  h.ok({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: inbound.id, needed: false });
+  h.ok({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId: inbound.id, needed: false });
   h.ok({ type: "PATIENT_ARRIVED", role: "ward", movementId: inbound.id, actingUnitId: unitId });
   const admission = h.state.admissions.find((a) => a.movementId === inbound.id)!;
   expect(admission.state).toBe("occupied");
@@ -87,7 +88,7 @@ function collectedRepatriation(h: Harness, admissionId: string, sendingUnitId: s
     receivingWardAgreed: true,
     mode: "road",
     provider: "Ambulance service",
-    cadNumber: "SYN-CAD-FIX",
+    cadNumber: "SYN-CAD-FIX-0001",
     transportLegalStatus: "voluntary",
     estimatedAt: 700,
   });

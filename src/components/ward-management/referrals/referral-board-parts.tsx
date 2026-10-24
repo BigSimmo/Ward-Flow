@@ -5,7 +5,7 @@ import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-man
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Copy, FileText, ListOrdered, Phone, TriangleAlert } from "lucide-react";
+import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
@@ -35,9 +35,13 @@ import {
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
+import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
+import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
+import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
+import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
 const REFERRAL_BEDS_HREF = "/ward-flow/hub";
@@ -75,7 +79,9 @@ export function wardArm(referral: Referral) {
 /** What the referral still asks for, in a few words ("Ward bed and ED review"). */
 export function askingForShort(referral: Referral): string {
   const open = openArms(referral);
-  return open.length > 0 ? open.map((arm) => KIND_SHORT[arm.destination.kind]).join(" and ") : "Nothing open";
+  // Several wards asked at once are still one need, so each kind is named once.
+  const kinds = [...new Set(open.map((arm) => KIND_SHORT[arm.destination.kind]))];
+  return kinds.length > 0 ? kinds.join(" and ") : "Nothing open";
 }
 
 /** The bed needs the referrer ticked, as words. Only what the record holds. */
@@ -89,11 +95,24 @@ export function needWords(referral: Referral): string[] {
   return words;
 }
 
-/** How many units accept the ward arm right now, or undefined when no ward bed is still asked for. */
+/**
+ * How many units accept a ward request still waiting right now, or undefined when no ward bed is
+ * still asked for. Ask more wards (D-76) can leave several named wards waiting, so a ward counts
+ * when any waiting request to it accepts, each ward once.
+ */
 export function readyUnitCount(referral: Referral, units: Unit[], now: Instant): number | undefined {
-  const ward = wardArm(referral);
-  if (!ward || ward.arm.state !== "queued" || ward.arm.withdrawnAt !== undefined) return undefined;
-  return referralCandidates(referral, ward.destination, units, now).filter(candidateAccepts).length;
+  const waiting = openArms(referral).flatMap((arm) =>
+    arm.destination.kind === "psychiatric_ward" ? [arm.destination] : [],
+  );
+  if (waiting.length === 0) return undefined;
+  const ready = new Set(
+    waiting.flatMap((ward) =>
+      referralCandidates(referral, ward, units, now)
+        .filter(candidateAccepts)
+        .map((candidate) => candidate.unit.id),
+    ),
+  );
+  return ready.size;
 }
 
 export function declineReasonWords(reason: string | undefined): string {
@@ -623,12 +642,10 @@ export function ReferralPatientTab({
                 icon={Copy}
                 iconOnly
                 aria-label="Copy the referrer's number"
-                onClick={() => void navigator.clipboard?.writeText(intake.referrer.phone).catch(() => undefined)}
+                onClick={() => void copyTextToClipboard(intake.referrer.phone).catch(() => undefined)}
               />
             </>
           ) : null}
-          {/* Audit 7 NA-03: calling is never wired, so no Call shows with or without a number. */}
-          {intake?.referrer.phone ? <NotWiredButton label="Call" variant="sec" size="sm" icon={Phone} /> : null}
         </div>
         <dl className={styles.pCells}>
           <div>
@@ -641,6 +658,11 @@ export function ReferralPatientTab({
           </div>
         </dl>
         {intake?.charts.length ? <ReferralDocumentLinks charts={intake.charts} /> : null}
+      </Section>
+
+      {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
+      <Section title="Owner and calls">
+        <ReferralOwnerAndCalls referral={referral} now={now} />
       </Section>
 
       <Section title="Recorded legal information" aside="For the receiving unit">
@@ -724,6 +746,22 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
   }
   for (const correction of referral.corrections ?? []) {
     entries.push({ at: correction.at, tone: "info", text: "Correction note added" });
+  }
+  // Fix plan item 4: assignments and calls. A call is never an answer, so it is never "success".
+  for (const assignment of referral.ownerHistory ?? []) {
+    entries.push({
+      at: assignment.at,
+      tone: "info",
+      text: `Assigned to ${referralOwnerLabel(assignment.owner)} by ${assignment.by}`,
+    });
+  }
+  const places = { units, teamName: (teamId: string) => communityTeamById(teamId)?.name };
+  for (const call of referral.contactLog ?? []) {
+    entries.push({
+      at: call.at,
+      tone: "neutral",
+      text: `${call.by} rang ${referralContactTargetLabel(call.contact, places)}: ${referralContactOutcomeLabel(call.outcome)}`,
+    });
   }
   return entries.sort((a, b) => a.at - b.at);
 }

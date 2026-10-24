@@ -20,6 +20,7 @@ import {
 } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { refusedAndNothingPending } from "../src/components/ward-management/statistics/statistics-derivations";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 const NOW = NOW_ANCHOR;
 
@@ -35,7 +36,7 @@ const DRAFT = {
   // referral can reach a single-gender ward — fsh-adult-secure is male-only. Matches `sex` above,
   // the same known-eligible combination this fixture already relies on.
   gender: "Male",
-  specialling: false,
+  observation: GENERAL_OBSERVATION,
   highAcuity: false,
   legalStatus: "Voluntary",
   urgency: 2,
@@ -86,7 +87,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
     expect(findMovement(state, movementId).referredUnitIds.sort()).toEqual(
@@ -147,7 +148,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
 
@@ -206,7 +207,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW + 3,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
 
@@ -244,7 +245,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
 
@@ -254,7 +255,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "fsh-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
 
@@ -298,7 +299,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "out_of_catchment",
+      reason: "belongs_to_another_service",
     });
     expect(state.rejections).toHaveLength(0);
     const movement = findMovement(state, movementId);
@@ -306,7 +307,7 @@ describe("declined-by-all precedence against acceptance", () => {
     expect(movement.blocker).toBe(STAGE_TRANSITION_BLOCKERS.referred);
   });
 
-  it("no_bed and bed_pulled_for_earlier_referral waitlist; they do not empty the referral", () => {
+  it("no_suitable_bed and bed_pulled_for_earlier_referral waitlist; they do not empty the referral", () => {
     const seeded = seedWardFlowState();
     const raised = raiseJourney(seeded);
     expect(raised.rejections).toHaveLength(0);
@@ -327,7 +328,7 @@ describe("declined-by-all precedence against acceptance", () => {
       now: NOW,
       movementId,
       unitId: "rph-adult-secure",
-      reason: "no_bed",
+      reason: "no_suitable_bed",
     });
     expect(state.rejections).toHaveLength(0);
     expect(findMovement(state, movementId).referredUnitIds).toContain("rph-adult-secure");

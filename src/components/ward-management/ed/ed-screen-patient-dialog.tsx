@@ -3,7 +3,7 @@
 // The patient record dialog opened from a list name, a Needs you item or "Open patient". Split out
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useId } from "react";
-import { elapsedLabel, stageCopy } from "@/components/ward-management/ward-derivations";
+import { elapsedLabel } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
@@ -17,8 +17,10 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import { JourneyStrip } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
+import { EdObservationControl } from "./ed-observation-control";
 import type { EdScreenContext } from "./ed-screen-context";
 import { formExpiryLine, movementMedicalClearance, outstandingItem } from "./ed-screen-model";
+import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
 export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext; selectedPatient: Movement }) {
@@ -33,6 +35,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     selectedPatientInfo,
     selectedPatientJourneyEvents,
     patientBay,
+    raise,
   } = ctx;
   const baseId = useId();
   return (
@@ -84,7 +87,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               stages={edJourneyStages(
                 selectedPatient,
                 movementMedicalClearance(selectedPatient, referrals),
-                stageCopy[selectedPatient.stage].label,
+                edStageLabel(selectedPatient.stage),
                 now,
               )}
               formatDuration={splitDuration}
@@ -156,7 +159,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               </div>
               <div className={styles.pair}>
                 <dt>Stage</dt>
-                <dd>{stageCopy[selectedPatient.stage].label}</dd>
+                <dd>{edStageLabel(selectedPatient.stage)}</dd>
               </div>
               <div className={styles.pair}>
                 <dt>Outstanding item</dt>
@@ -209,13 +212,28 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               </div>
             ) : null}
           </section>
+          {selectedPatient.closure ? null : (
+            <section className={styles.pxBlock} data-testid="ward-ed-observation">
+              <h3>Observation level</h3>
+              <EdObservationControl
+                observation={selectedPatient.observation}
+                now={now}
+                onSave={(observation) =>
+                  raise("RECORD_OBSERVATION_LEVEL", {
+                    target: { kind: "movement", movementId: selectedPatient.id },
+                    observation,
+                  })
+                }
+              />
+            </section>
+          )}
           <section className={styles.pxBlock}>
             <h3>Notes</h3>
             <p className={styles.pxP}>
               <b>Presenting:</b> {outstandingItem(selectedPatient).label} — {outstandingItem(selectedPatient).detail}
             </p>
             <p className={styles.pxP}>
-              <b>Plan:</b> {stageCopy[selectedPatient.stage].label}
+              <b>Plan:</b> {edStageLabel(selectedPatient.stage)}
             </p>
           </section>
           <section className={styles.pxBlock}>

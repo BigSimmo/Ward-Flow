@@ -6,7 +6,6 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
 
 export { openDecisionCount };
 
@@ -150,7 +149,7 @@ export function WardDecisionsCockpit({
   children,
 }: WardDecisionsCockpitProps) {
   // A screen that supplies the rollup action or the bed projection is wired, even on a quiet ward
-  // with nothing to decide yet; only a bare cockpit falls back to the placeholder.
+  // with nothing to decide yet.
   const live =
     demonstration ||
     children != null ||
@@ -159,19 +158,8 @@ export function WardDecisionsCockpit({
     intakes.length > 0 ||
     departures.length > 0 ||
     leaves.length > 0;
-  if (!live) {
-    // Overall review (20 Oct 2026): the illustrative cockpit shows only in a local development build.
-    if (!showsUnwiredPreviews()) return null;
-    return (
-      <section className={styles.container} aria-label="Ward decision controls">
-        <h2>Decision cockpit</h2>
-        <p>
-          Not wired in this prototype. This illustrative cockpit does not record clinical decisions or send messages.
-        </p>
-        <p>Use the ward overview, arrival and discharge controls for supported record updates.</p>
-      </section>
-    );
-  }
+  // A bare cockpit has nothing it can do, so it shows nothing (overall review, 20 Oct 2026).
+  if (!live) return null;
 
   return (
     <Queue
@@ -186,7 +174,6 @@ export function WardDecisionsCockpit({
       departures={departures}
       leaves={leaves}
       projection={projection}
-      wired={children != null}
     >
       {children}
     </Queue>
@@ -205,7 +192,6 @@ function Queue({
   departures,
   leaves,
   projection,
-  wired,
   children,
 }: {
   unitName: string;
@@ -219,7 +205,6 @@ function Queue({
   departures: DepartureDecision[];
   leaves: LeaveDecision[];
   projection?: DecisionBedProjection;
-  wired: boolean;
   children?: ReactNode;
 }) {
   const baseId = useId();
@@ -296,8 +281,6 @@ function Queue({
         >
           Confirm bed numbers
         </button>
-      ) : showsUnwiredPreviews() ? (
-        <span className={styles.unwired}>Not wired in this prototype.</span>
       ) : undefined,
     });
   } else if (!rollupConfirmed && onConfirmRollup) {
@@ -342,8 +325,6 @@ function Queue({
         >
           Accept
         </button>
-      ) : showsUnwiredPreviews() ? (
-        <span className={styles.unwired}>Not wired in this prototype.</span>
       ) : undefined,
     });
   }
@@ -730,9 +711,6 @@ function Queue({
                 </ul>
               ) : null}
               {children}
-              {!wired && !onConfirmRollup && showsUnwiredPreviews() ? (
-                <p className={styles.unwiredLine}>Not wired in this prototype.</p>
-              ) : null}
             </div>
           ) : null}
 

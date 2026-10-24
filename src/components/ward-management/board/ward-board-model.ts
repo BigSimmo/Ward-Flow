@@ -13,9 +13,14 @@ import {
   type StayBandId,
   type DischargeBarrier,
 } from "@/components/ward-management/ward-admissions";
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
+import { tentativeDiagnosisPhrase, type TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { minuteOfDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  minuteOfDay,
+  MINUTES_PER_DAY,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type {
   BedRelease,
@@ -264,6 +269,12 @@ export type Occupant = {
    */
   tentativeDiagnosis: string | null;
   /**
+   * FD-10: the ward's own tentative diagnosis, phrased the same way, with when it was recorded
+   * (`formatInstantWithDay`), or `null` while the ward has recorded none. Shown beside
+   * `tentativeDiagnosis`, never in place of it.
+   */
+  wardDiagnosis: { phrase: string; block: TentativeDiagnosisBlock; recordedAt: string; recordedBy: string } | null;
+  /**
    * Whole hours this person has been away at an emergency department, or `null` while they are on
    * the ward. Rounded down, and floored at zero so a clock nudged backwards cannot print "-1
    * hours".
@@ -358,6 +369,7 @@ export function buildOccupants(unit: Unit, admissions: readonly Admission[], now
       gender: admission.gender,
       homeRegion: admission.homeRegion,
       tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
+      wardDiagnosis: wardDiagnosisLine(admission, now),
       awayAtEdHours:
         admission.awayAtEmergencyDepartmentSince === null
           ? null
@@ -667,4 +679,20 @@ export function tileClassName(tile: Tile, selected: boolean): string {
       throw new Error(`Unhandled ward-board tile kind: ${JSON.stringify(unhandled)}`);
     }
   }
+}
+
+/** FD-10: the ward's own block, phrased, with its recorded time; `null` when the ward has none. */
+function wardDiagnosisLine(admission: Admission, now: Instant): Occupant["wardDiagnosis"] {
+  const recorded = admission.wardDiagnosis;
+  if (!recorded) return null;
+  const phrase = tentativeDiagnosisPhrase(recorded.block);
+  return phrase === null
+    ? null
+    : {
+        phrase,
+        block: recorded.block,
+        recordedAt: formatInstantWithDay(recorded.recordedAt, now),
+        // The coordinator may record for a ward, so the line names who actually did.
+        recordedBy: recorded.recordedBy === "coordinator" ? "the coordinator" : "the ward",
+      };
 }

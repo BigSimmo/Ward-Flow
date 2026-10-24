@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, useRef } from "react";
 import { describe, expect, it } from "vitest";
 
@@ -74,6 +74,11 @@ describe("ReferralMatchView: a forensic ward is named and never offered", () => 
     );
     const unit = allUnits().find((candidate) => candidate.id === FORENSIC_UNIT_ID);
     expect(unit?.forensic, "the made-up forensic ward is not in place, so this test proves nothing").toBe(true);
+    // D-77: the ward's row in the one list, then the one button, which opens Clinical override for
+    // a ward that does not fit. The reason is stated there, and there is still no plain accept.
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-cand-${FORENSIC_UNIT_ID}`));
+    expect(screen.queryByRole("button", { name: `Accept at ${unit!.name}` })).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-referral-match-phone-accept"));
     expect(screen.getByTestId(`ward-referral-match-reason-${FORENSIC_UNIT_ID}`)).toHaveTextContent(
       `${unit!.name} is a forensic ward and is never offered as a destination`,
     );

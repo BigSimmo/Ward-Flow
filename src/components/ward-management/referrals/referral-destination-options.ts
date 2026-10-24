@@ -156,7 +156,7 @@ export function suburbOptions(): readonly string[] {
  * measurement rather than taste: taking only case and whitespace leaves four pairs unmerged that
  * differ by a full stop alone.
  */
-function communityTeamKey(name: string): string {
+export function communityTeamKey(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")

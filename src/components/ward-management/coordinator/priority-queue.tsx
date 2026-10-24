@@ -56,6 +56,7 @@ import styles from "./home.module.css";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { TierKey } from "../tier-key";
+import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
@@ -298,7 +299,7 @@ export function PriorityQueue({
           shownRows.map((movement) => {
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
-            const originEd = edsById.get(movement.originEdId);
+            const originEd = movement.originEdId === undefined ? undefined : edsById.get(movement.originEdId);
             const factors = waitFactors(movement, now, dueSoonThresholds);
             const legalDueAt = currentLegalDueAt(movement);
             const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
@@ -370,7 +371,12 @@ export function PriorityQueue({
                     <span className={styles.queueSubText}>
                       {movement.flaggedUrgent ? "· " : ""}
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
-                      {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
+                      {originEd
+                        ? originEd.siteCode
+                        : movement.originEdId === undefined
+                          ? communityOriginLabel(movement.originCommunity)
+                          : "unknown ED"}{" "}
+                      · {who.umrn}
                     </span>
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
@@ -428,14 +434,14 @@ export function PriorityQueue({
                       ) : (
                         <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
                           <StatusGlyph tone="info" size={9} />
-                          In transit, bed held {holdLabel} · {arrivalMode}
+                          In transit, bed pulled for {holdLabel} · {arrivalMode}
                         </span>
                       )
                     ) : movement.stage === "pulled" ? (
                       <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
                         <StatusGlyph tone="warning" size={9} />
                         {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
-                        Bed held {holdLabel}
+                        Bed pulled for {holdLabel}
                       </span>
                     ) : null}
                   </span>

@@ -5,6 +5,7 @@ import type { CareChange } from "@/components/ward-management/ward-care-journey"
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
 import { buildScenarioFile, readScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 type TestEvent = WithoutNow<WardFlowEvent>;
@@ -33,7 +34,7 @@ function fixture() {
         security: "Open",
         sex: "Female",
         gender: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
@@ -51,7 +52,7 @@ function fixture() {
     for (const event of events) send(event);
   };
   const arrive = (id: string, unitId: string) => {
-    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: id, needed: false });
+    send({ type: "RECORD_TRANSPORT_NEED", role: "coordinator", movementId: id, needed: false });
     send({ type: "PATIENT_ARRIVED", role: "ward", movementId: id, actingUnitId: unitId });
   };
   const movement = raise();
@@ -78,7 +79,7 @@ function fixture() {
       receivingWardAgreed: true,
       mode: "road",
       provider: "Ambulance service",
-      cadNumber: "SYN-CAD-AUDIT",
+      cadNumber: "SYN-CAD-AUDIT-0001",
       transportLegalStatus: "voluntary",
       estimatedAt: 700,
     });

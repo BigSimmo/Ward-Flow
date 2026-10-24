@@ -2,7 +2,7 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-19 - distinguish staged generator checks, scoped CI and advisory freshness; Documentation owns._
+_Updated 2026-10-21 - align committed-document checks, reader metadata and safe organisation changes; Documentation owns._
 
 ## Principles
 
@@ -43,7 +43,7 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 | [`scripts-index.md`](scripts-index.md)                                                                  | `node scripts/update-docs-inventory.mjs`                                                                 | `npm run docs:check-inventory`                           |
 | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md)                                                    | `node scripts/ward-flow/screen-map.mjs --write`                                                          | `node scripts/ward-flow/screen-map.mjs --check`          |
 | [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                  | `node scripts/ward-flow/screen-verification.mjs --write`                                                 | `node scripts/ward-flow/screen-verification.mjs --check` |
-| [`ward-flow/mockups/MANIFEST.json`](../design/third-edition-mockups/MANIFEST.json)                      | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`     |
+| [`design/third-edition-mockups/MANIFEST.json`](../design/third-edition-mockups/MANIFEST.json)           | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`     |
 | [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md)                                              | `node scripts/ward-flow/owner-rulings-index.mjs --write`                                                 | `node scripts/ward-flow/owner-rulings-index.mjs --check` |
 | [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`         |
 | `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                            |
@@ -52,10 +52,10 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 
 1. **Maintained script references (`npm run docs:check-scripts`):** executes `node scripts/check-docs-script-refs.mjs` across `MAINTAINED_ROOT_DOCS`, `docs/`, and `.github/` outside paired historical markers to verify every `npm run <script>` exists in `package.json`.
 2. **Maintained local links & anchors (`npm run docs:check-links`):** executes `node scripts/check-maintained-doc-links.mjs` across all Git-tracked Markdown files (and `MAINTAINED_ROOT_DOCS`) outside historical markers.
-3. **Architecture & codebase index (`npm run docs:check-index`):** executes `node scripts/check-codebase-index-coverage.mjs` to verify `docs/codebase-index.md` matches current `src/` directories.
-4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to verify `docs/scripts-index.md` matches `scripts/` and `package.json`.
+3. **Architecture & codebase index (`npm run docs:check-index`):** executes `node scripts/check-codebase-index-coverage.mjs` to verify maintained index sections mention the required current source roots. This is directory coverage, not proof that architectural prose is true.
+4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to compare the exact tracked-script and package-command counts in `docs/scripts-index.md`. The rest of that catalogue is curated; count equality does not establish catalogue completeness or semantic freshness.
 5. **Ward Flow relative doc links, including history:** run `node scripts/ward-flow/check-doc-links.mjs` directly (no `--file`) to check `docs/ward-flow/` with archived sections. `npm run docs:check-links` excludes marked history sections.
-6. **Staged generator checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot, selecting generators from staged paths without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; the general site-map, inventory and codebase-index checks are advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. CI directly checks the reference pack and scope-selected owner-rulings, rules and organisation outputs; it does not run every generator check. Separately, `node scripts/check-stale-docs.mjs` reports documents that are both old and unreferenced. That report is advisory and does not detect generated-file drift.
+6. **Staged checks, committed-tree checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; general site-map, inventory and codebase-index checks remain advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. The local CI definition also checks the committed screen map, drawing manifest, screen-verification index, exact script counts and architecture directory coverage directly, including documentation-only scope. The site-map check runs after dependencies install; changes to its route, generator and root output inputs select that installation. Owner-rulings, rules and organisation retain their independent scope selection. This describes workflow wiring, not an observed hosted result. Separately, `node scripts/check-stale-docs.mjs` reports old, unreferenced documents; it is advisory and does not detect generated-file drift.
 7. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
 8. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
 
@@ -79,6 +79,24 @@ anyone remembering to update docs:
   deliberate historical mention elsewhere with the paired markers below.
 
 When a decision retires something, add its term to `retired-terms.json` in the same pull request.
+
+## Maintained page conventions
+
+For a new or substantially revised maintained page, make its audience, lifecycle status and owning role clear near the top. Identify the source revision or inputs supporting current claims, and distinguish an edit date from verified evidence. Name a replacement when the page is superseded. A compact prose header is sufficient; no new metadata registry is required.
+
+Use lower-kebab-case for new prose filenames and ISO dates for point-in-time records. Retain recognised filenames such as `README.md`, `AGENTS.md` and `SECURITY.md`. Do not rename legacy files or retrofit frozen evidence merely for consistency. Label current guidance, generated reference, proposals and historical records explicitly, and link each topic to its existing authoritative home.
+
+## Organisation changes and executable inputs
+
+Improve navigation before moving files. A domain extraction, test regrouping or stylesheet split needs a concrete consumer or ownership benefit, an exact owned scope and focused acceptance evidence. It is not required merely to match a preferred folder tree. Preserve current URLs, engine behaviour, accepted appearance and protected history.
+
+Before a source or test move, map imports, generator paths, test discovery/sharding, coverage and path-scoped guards. Account for the before/after file populations of offline, data, style and text safeguards, including intentional exceptions. During the authorised implementation, prove a synthetic forbidden specimen is still rejected at the new location; do not infer this from a passing build.
+
+Directory labels do not establish runtime inactivity. The digest route reads an HTML reference from `design/third-edition-mockups/`; the PWA connects worker registration, an offline page, manifest, icons, screenshots and cache headers. Keep those literal file/URL contracts intact or update their consumers and focused tests together. The organisation registry validates only its declared roots; an excluded file is not automatically misplaced or unneeded.
+
+Executable documentation under `ward-flow/journey/` has build/serve consumers even though it is outside the ordinary `src/` and `scripts/` coverage roots. Keep that distinction visible in the command map. Physical relocation requires its input/output paths and check boundary to be updated together.
+
+Backend engine changes also affect build inputs and the reviewed watch-path contract. Use the backend's existing watch-input checker; a local pass does not establish deployed settings. Actual provider configuration, deployment and target-specific recovery rehearsals retain their separate authority and evidence requirements.
 
 ## Agent rule files and references
 

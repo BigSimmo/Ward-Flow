@@ -13,11 +13,14 @@ import {
   buildScenarioFile,
   readScenarioFile,
 } from "@/components/ward-management/ward-flow-scenario-file";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-typed-text-ledger";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
  * Demo scenario files (Josh, 4 October 2026): Save writes the synthetic world to a downloaded file,
- * Load replaces the world from one. D-18 still holds — a loaded world never reaches browser storage.
+ * Load replaces the world from one. D-18 still holds: typed text never reaches browser storage. Since
+ * 21 Oct 2026 (Josh, fix plan item 2) a loaded world is saved with every typed field replaced, so it
+ * survives a refresh, unless it holds typed text the restore fence cannot hold as a placeholder.
  */
 describe("demo scenario save and load", () => {
   const FIXED_SYSTEM_TIME = new Date(2026, 8, 17, 10, 42, 0);
@@ -56,18 +59,22 @@ describe("demo scenario save and load", () => {
     vi.useRealTimers();
   });
 
-  it("round-trips typed work and the scenario clock, and keeps the loaded world out of browser storage", () => {
+  it("round-trips typed work and the scenario clock, and keeps a loaded typed patient out of browser storage", async () => {
     render(
       <WardFlowProvider>
         <Capture />
       </WardFlowProvider>,
     );
+    // The saved-session read loads on demand; browser saving starts once its answer is adopted.
+    await act(async () => {
+      await import("@/components/ward-management/ward-flow-demo-restore");
+    });
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 75 });
     });
     addTypedPatient();
     const savedNow = current!.now;
-    const built = current!.saveScenarioFile!();
+    const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
     expect(built.fileName).toMatch(/^ward-flow-scenario-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
 
@@ -77,9 +84,9 @@ describe("demo scenario save and load", () => {
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toBeNull();
     const generationBefore = current!.worldGeneration;
 
-    let result: ReturnType<NonNullable<typeof current>["loadScenarioFile"] & object> | undefined;
-    act(() => {
-      result = current!.loadScenarioFile!(built.json);
+    let result: Awaited<ReturnType<NonNullable<NonNullable<typeof current>["loadScenarioFile"]>>> | undefined;
+    await act(async () => {
+      result = await current!.loadScenarioFile!(built.json);
     });
     expect(result).toEqual({ ok: true });
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
@@ -87,11 +94,59 @@ describe("demo scenario save and load", () => {
     expect(current!.worldGeneration).toBeGreaterThan(generationBefore);
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
 
-    // A later safe event does not resurrect browser saving for the loaded world.
+    // A typed date of birth cannot become the placeholder and still pass the restore fence, so this
+    // loaded world stays unsaved, and a later safe event does not resurrect saving for it.
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
     });
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    expect(current!.savingOnDevice).toBe(false);
+  });
+
+  it("keeps a loaded scenario through a refresh, with its typed text replaced", async () => {
+    const TYPED = "Synthetic scenario blocker words 51ad";
+    const { unmount } = render(
+      <WardFlowProvider>
+        <Capture />
+      </WardFlowProvider>,
+    );
+    const movement = current!.movements.find((candidate) => !candidate.closure)!;
+    act(() => {
+      current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 75 });
+    });
+    act(() => {
+      current!.dispatch({
+        type: "RECORD_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: current!.now,
+        movementId: movement.id,
+        blocker: TYPED,
+      });
+    });
+    const savedNow = current!.now;
+    const built = await current!.saveScenarioFile!();
+    if (!built.ok) throw new Error(built.reason);
+    act(() => current!.resetDemoState());
+
+    await act(async () => {
+      await current!.loadScenarioFile!(built.json);
+    });
+    const loadedGeneration = current!.worldGeneration;
+    expect(current!.movements.find((candidate) => candidate.id === movement.id)?.blocker).toBe(TYPED);
+    const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(raw).not.toBeNull();
+    expect(raw).not.toContain(TYPED);
+    expect(current!.savingOnDevice).toBe(true);
+
+    unmount();
+    render(
+      <WardFlowProvider>
+        <Capture />
+      </WardFlowProvider>,
+    );
+    expect(current!.worldGeneration).toBe(loadedGeneration);
+    expect(current!.now).toBe(savedNow);
+    expect(current!.movements.find((candidate) => candidate.id === movement.id)?.blocker).toBe(TYPED_TEXT_NOT_KEPT);
   });
 
   it("never saves refusal records into the file", () => {
@@ -173,11 +228,13 @@ describe("demo scenario save and load", () => {
     );
     const message = () => container.querySelector('[data-testid="ward-tools-demo-panel"] > [role="status"]');
     addTypedPatient();
-    fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save to file" }));
+    });
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
     expect(message()).toHaveTextContent(/^Download requested: ward-flow-scenario-.*Check your browser downloads\.$/);
-    const built = current!.saveScenarioFile!();
+    const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
     // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.

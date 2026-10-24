@@ -26,8 +26,8 @@ describe("ward model constants", () => {
   });
 
   it("offers a fixed decline vocabulary rather than free text", () => {
-    expect(DECLINE_REASONS).toContain("no_bed");
-    expect(DECLINE_REASONS).toContain("sex_mix");
+    expect(DECLINE_REASONS).toContain("no_suitable_bed");
+    expect(DECLINE_REASONS).toContain("sex_designation_unavailable");
     expect(DECLINE_REASONS).toContain("specialling_unavailable");
     expect(DECLINE_REASONS).toContain("acuity_mix");
     expect(DECLINE_REASONS).toContain("capability_mismatch");

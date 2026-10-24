@@ -27,28 +27,40 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  formatSheetMoment,
+  perthCalendarDay,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 
 import {
-  downtimePack,
   lastDowntimePack,
-  rememberDowntimePack,
+  markDowntimePackHandled,
   subscribeDowntimePack,
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
+import { nextDowntimePackAt } from "./downtime-pack-schedule";
+import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
+const OFFLINE_LABEL = "taken offline";
 /** F-08 (phone review, Oct 2026): printed at the top of the pack, so paper is never mistaken for records. */
 const PRINT_NOTICE = "Prototype data, invented records. Not real patients and not for clinical use.";
 /** A pack older than this reads as stale, in words and with a glyph. Nothing turns red. */
 const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
+/** Item 9 (Josh, 21 Oct 2026): the pack leaves the tab only as paper or a PDF the person saves. */
+const KEEP_A_COPY =
+  "To keep a file, choose Save as PDF in the print window and save it to your service's approved downtime location. Ward Flow keeps no copy on this device.";
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
@@ -132,8 +144,10 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
 
 /**
  * DOWNTIME PACK — a frozen snapshot of beds, the ED queue, moves under way and legal forms, for
- * paper use while the system is unavailable. The pack does not update while open; "New snapshot"
- * takes another. The last one is kept in this tab's memory only (D-18), never in browser storage.
+ * paper use while the system is unavailable. The pack is frozen between takes: the shell retakes it
+ * every hour and at each shift change, and "New snapshot" takes another at once. The last one is
+ * kept in this tab's memory only (D-18), never in browser storage; a copy leaves the tab only as
+ * paper or a PDF the person saves from the print window.
  *
  * v10: one hero with the frozen time and the four totals as chips that jump to their table. After a
  * new snapshot each chip carries a delta twin: the change since the pack it replaced. Phone is its
@@ -141,37 +155,16 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
-  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
-    "dayZero",
-    "units",
-    "admissions",
-    "bedReleases",
-    "leaveBeds",
-    "movements",
-    "worldGeneration",
-  );
-  const patientOf = usePatientOf();
+  const { dayZero, worldGeneration } = useWardFlowSelect("dayZero", "worldGeneration");
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
-  const canSnapshot = role === "coordinator" && ready;
+  // UX audit 21 Oct 2026: offline, the shell takes no pack because the data may be stale, so this
+  // screen must not stamp a newer time on it either.
+  const online = useOnlineStatus();
+  const canSnapshot = role === "coordinator" && ready && online;
 
-  const take = useCallback((): void => {
-    if (!ready) return;
-    const pack = downtimePack({
-      units,
-      admissions,
-      bedReleases,
-      leaveBeds,
-      movements,
-      now,
-      identify: (movement) => {
-        const person = patientOf(movement);
-        return `${person.displayName} · ${person.umrn}`;
-      },
-    });
-    rememberDowntimePack(pack, worldGeneration, owner);
-  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready]);
+  const take = useTakeDowntimePack();
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
@@ -189,6 +182,9 @@ export function DowntimePackScreen() {
   // The totals of the pack a New snapshot replaced, for the delta twins. Held by this screen only:
   // twins appear after a snapshot the reader asked for, never on opening.
   const [before, setBefore] = useState<PackTotals | null>(null);
+  // The pack that New snapshot took. A scheduled retake replaces it, and then the twins would
+  // compare two packs that were never side by side, so they show only against this one.
+  const [twinFor, setTwinFor] = useState<DowntimePack | null>(null);
   const takingTimer = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -204,9 +200,18 @@ export function DowntimePackScreen() {
     takingTimer.current = window.setTimeout(() => {
       takingTimer.current = null;
       take();
+      setTwinFor(lastDowntimePack(owner, worldGeneration));
       setTaking(false);
     }, TAKING_MS);
   };
+
+  // A print started from the browser's own menu counts as well as the Print button.
+  useEffect(() => {
+    if (pack === null) return;
+    const handled = () => markDowntimePackHandled(pack);
+    window.addEventListener("afterprint", handled);
+    return () => window.removeEventListener("afterprint", handled);
+  }, [pack]);
 
   const [section, setSection] = useState<Section>("beds");
   const [sheet, setSheet] = useState<SheetRow | null>(null);
@@ -215,11 +220,19 @@ export function DowntimePackScreen() {
     setPreviousBoundary({ owner, worldGeneration });
     setTaking(false);
     setBefore(null);
+    setTwinFor(null);
     setSheet(null);
   }
   if (!ready && taking) setTaking(false);
 
-  const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : reportMoment(instant, dayZero));
+  const at = (instant: Instant | null) => {
+    if (instant === null) return NOT_RECORDED;
+    const year = (value: Instant) => perthCalendarDay(calendarDateOf(value, dayZero)).year;
+    // The provenance names the pack's year and zone. A row from another year must say its own year.
+    return year(instant) === year(pack?.generatedAt ?? now)
+      ? reportMoment(instant, dayZero)
+      : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
+  };
 
   if (pack === null) {
     return (
@@ -254,14 +267,22 @@ export function DowntimePackScreen() {
     );
   }
 
-  const ageMinutes = Math.max(0, now - pack.generatedAt);
+  // Owner, 22 Oct 2026: a pack taken offline reads "taken offline" with the last sync time, and its
+  // age runs from that sync, so it is never presented as freshly generated.
+  const syncedAt = pack.offline ? pack.offline.lastSyncAt : pack.generatedAt;
+  const provenance = pack.offline
+    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true })}`
+    : `Frozen ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })}`;
+  const ageMinutes = syncedAt === null ? Infinity : Math.max(0, now - syncedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
-  const frozenAt = formatInstantWithDay(pack.generatedAt, now);
+  const frozenAt = pack.offline
+    ? `${OFFLINE_LABEL} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatInstantWithDay(syncedAt, now)}`
+    : formatInstantWithDay(pack.generatedAt, now);
   const groups = serviceGroups(pack.wards);
 
   const totals = packTotals(pack);
   const twin = (key: keyof PackTotals) =>
-    before && !taking
+    before && !taking && twinFor === pack
       ? { twin: signed(totals[key] - before[key]), twinLabel: twinWords(totals[key] - before[key]) }
       : {};
 
@@ -289,13 +310,19 @@ export function DowntimePackScreen() {
       </Button>
       {canSnapshot ? null : (
         <span id="downtime-snapshot-reason" className={styles.reasonOnHero}>
-          {role === "coordinator" ? "Waiting for current workspace" : "Coordinator only"}
+          {role !== "coordinator"
+            ? "Coordinator only"
+            : online
+              ? "Waiting for current workspace"
+              : "Offline. Snapshot when the connection returns."}
         </span>
       )}
     </span>
   );
   const printPack = () => {
-    if (ready && lastDowntimePack(owner, worldGeneration) === pack) window.print();
+    if (!ready || lastDowntimePack(owner, worldGeneration) !== pack) return;
+    window.print();
+    markDowntimePackHandled(pack);
   };
   const printButton = (
     <Button
@@ -305,7 +332,7 @@ export function DowntimePackScreen() {
       aria-disabled={!ready || undefined}
       data-testid="ward-downtime-print"
     >
-      Print
+      Print or save PDF
     </Button>
   );
   const printButtonOnHero = (
@@ -326,13 +353,23 @@ export function DowntimePackScreen() {
   // The ED queue counts people still in the department; All EDs counts every open journey.
   const edPopulation =
     pack.leftEd > 0 ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.` : null;
+  // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
+  const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
-    <span data-testid="ward-downtime-generated">Taken {at(pack.generatedAt)} · does not update while open</span>
+    <span data-testid="ward-downtime-generated">
+      {pack.offline
+        ? `Taken offline · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
+        : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · next pack ${nextPackAt}`}
+    </span>
   );
   const staleLine = stale ? (
     <span className={styles.staleLine} data-testid="ward-downtime-stale">
       <StatusGlyph tone="warning" size={9} />
-      Stale · taken {durMinutes(ageMinutes)} ago
+      {!pack.offline
+        ? `Stale · taken ${durMinutes(ageMinutes)} ago`
+        : syncedAt === null
+          ? "Stale · no sync recorded"
+          : `Stale · synced ${durMinutes(ageMinutes)} ago`}
     </span>
   ) : null;
 
@@ -485,6 +522,7 @@ export function DowntimePackScreen() {
                       Accepted by
                     </th>
                   ) : null}
+                  <th scope="col">Recorded observations</th>
                 </tr>
               </thead>
               <tbody>
@@ -498,6 +536,7 @@ export function DowntimePackScreen() {
                     <td>{line.legalStatus}</td>
                     <td>{line.stage}</td>
                     {edAccepted ? <td className={styles.packAccepted}>{line.acceptedWard || NOT_RECORDED}</td> : null}
+                    <td>{line.observation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -535,6 +574,7 @@ export function DowntimePackScreen() {
                   <th scope="col">Stage</th>
                   <th scope="col">Planned move</th>
                   {movesEta ? <th scope="col">Transport ETA</th> : null}
+                  <th scope="col">Recorded observations</th>
                 </tr>
               </thead>
               <tbody>
@@ -546,6 +586,7 @@ export function DowntimePackScreen() {
                     <td>{line.stage}</td>
                     <td className={styles.time}>{at(line.plannedAt)}</td>
                     {movesEta ? <td className={styles.time}>{at(line.transportEta)}</td> : null}
+                    <td>{line.observation}</td>
                   </tr>
                 ))}
               </tbody>
@@ -615,8 +656,8 @@ export function DowntimePackScreen() {
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
               eyebrow="Downtime pack · synthetic data"
-              title={`Frozen at ${frozenAt}`}
-              sub={`${reportDay(pack.generatedAt, dayZero)} · does not update while open`}
+              title={pack.offline ? `Frozen, ${frozenAt}` : `Frozen at ${frozenAt}`}
+              sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${pack.offline ? "when online" : nextPackAt}`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
               // keeps the frozen time and the actions.
               actions={
@@ -628,6 +669,9 @@ export function DowntimePackScreen() {
               }
             />
             {staleLine ? <p className={styles.phoneNote}>{staleLine}</p> : null}
+            <p className={styles.phoneNote} data-testid="ward-downtime-keep-copy">
+              {KEEP_A_COPY}
+            </p>
             <Segmented<Section>
               className={cx(styles.phoneSeg, styles.phoneSegPinned)}
               size="md"
@@ -675,11 +719,18 @@ export function DowntimePackScreen() {
                               { id: "beds", label: "Beds", value: String(ward.beds) },
                               { id: "ready", label: BED_STATE_LABELS.ready, value: String(ward.counts.ready) },
                               { id: "occupied", label: BED_STATE_LABELS.occupied, value: String(ward.counts.occupied) },
-                              {
-                                id: "closed",
-                                label: `${BED_STATE_LABELS.pulled} or ${BED_STATE_LABELS.closed.toLowerCase()}`,
-                                value: String(ward.counts.pulled + ward.counts.closed),
-                              },
+                              // Separate, as the row states them (UX audit 21 Oct 2026).
+                              { id: "pulled", label: BED_STATE_LABELS.pulled, value: String(ward.counts.pulled) },
+                              { id: "closed", label: BED_STATE_LABELS.closed, value: String(ward.counts.closed) },
+                              ...(ward.pendingPreparation > 0
+                                ? [
+                                    {
+                                      id: "preparing",
+                                      label: "Being made ready",
+                                      value: String(ward.pendingPreparation),
+                                    },
+                                  ]
+                                : []),
                             ],
                           })
                         }
@@ -706,6 +757,7 @@ export function DowntimePackScreen() {
                           { id: "arrived", label: "Arrived", value: at(line.openedAt) },
                           { id: "legal", label: "Legal status", value: line.legalStatus },
                           { id: "accepted", label: "Accepted by", value: line.acceptedWard || NOT_RECORDED },
+                          { id: "observation", label: "Recorded observations", value: line.observation },
                         ],
                       })
                     }
@@ -732,6 +784,7 @@ export function DowntimePackScreen() {
                           { id: "stage", label: "Stage", value: line.stage },
                           { id: "planned", label: "Planned move", value: at(line.plannedAt) },
                           { id: "eta", label: "Transport ETA", value: at(line.transportEta) },
+                          { id: "observation", label: "Recorded observations", value: line.observation },
                         ],
                       })
                     }
@@ -772,9 +825,7 @@ export function DowntimePackScreen() {
             </PhoneSheet>
           </div>
           <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
-            <p className={styles.printMeta}>
-              Downtime pack · synthetic data · frozen {frozenAt}, {reportDay(pack.generatedAt, dayZero)}
-            </p>
+            <p className={styles.printMeta}>Downtime pack · synthetic data · {provenance}. All row times are AWST.</p>
             <p className={styles.printMeta} data-testid="ward-downtime-print-notice">
               {PRINT_NOTICE}
             </p>
@@ -796,7 +847,16 @@ export function DowntimePackScreen() {
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">
               <span className={styles.frozenDot} aria-hidden="true" />
-              Frozen <b>{frozenAt}</b>
+              {/* Visual desk, 22 Oct 2026: the full "taken offline · last sync" line pushed the title to
+                  "Dow…" at 1280, so the chip stays short and the taken line beside it says it in full. */}
+              {pack.offline ? "Offline · last sync " : "Frozen "}
+              <b>
+                {pack.offline && syncedAt !== null
+                  ? formatInstantWithDay(syncedAt, now)
+                  : pack.offline
+                    ? "not recorded"
+                    : frozenAt}
+              </b>
             </span>
           }
           aside={
@@ -830,24 +890,32 @@ export function DowntimePackScreen() {
           }
         />
 
+        <p className={styles.cardNote} data-print-hide data-testid="ward-downtime-keep-copy">
+          {KEEP_A_COPY}
+        </p>
+
         {/* Tablet and desktop: the pack runs to thousands of pixels, so a sticky jump row keeps each
-            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). */}
+            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). The
+            hero chips carry the totals, so the row names tables only (UX audit 21 Oct 2026). */}
         <nav className={styles.jumpRow} aria-label="Jump to a table" data-print-hide>
           {(
             [
-              ["beds", "Beds", totals.ready],
-              ["ed", "ED queue", totals.ed],
-              ["moves", "Pending moves", totals.moves],
-              ["forms", "Legal forms", totals.forms],
+              ["beds", "Beds"],
+              ["ed", "ED queue"],
+              ["moves", "Pending moves"],
+              ["forms", "Legal forms"],
             ] as const
-          ).map(([id, label, count]) => (
+          ).map(([id, label]) => (
             <button key={id} type="button" className={styles.jumpItem} onClick={() => jumpTo(id)}>
-              {label} <b>{count}</b>
+              {label}
             </button>
           ))}
         </nav>
 
         {/* F-08: the printout says it holds invented records before its first table. */}
+        <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">
+          Downtime pack · {provenance}. All row times are AWST.
+        </p>
         <p className={cx(styles.printOnly, styles.printMeta)}>{PRINT_NOTICE}</p>
         {packTables}
 

@@ -13,6 +13,13 @@ import { afterEach, beforeEach, vi } from "vitest";
 // component synchronously once it has resolved (the loading placeholder until then), so code-split
 // panes behave like static imports in jsdom tests.
 const pendingDynamicLoads: Promise<unknown>[] = [];
+
+// The demo save's read, and the typed-text copy it writes, load on demand in the browser (Josh,
+// 21 Oct 2026: no phone script budget raises). Preloaded here so a provider mount restores and saves
+// in the same render, as a later mount does.
+await import("@/components/ward-management/ward-flow-demo-storage").then((module) =>
+  Promise.all([module.loadDemoRestore(), module.loadTypedTextScrub()]),
+);
 let forceDynamicLoading = false;
 
 export function setForceDynamicLoading(force: boolean) {

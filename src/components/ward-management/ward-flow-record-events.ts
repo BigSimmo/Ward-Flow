@@ -1,4 +1,5 @@
 import { type AuditDecision, finiteInstant } from "./ward-audit";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import type {
   appendNotices,
   departAdmission,
@@ -230,25 +231,29 @@ export function reduceRecordedFactEvent(
           `cannot record a transport need for a closed movement (${movement.closure.reason})`,
         );
       }
-      if (event.role === "ward" && event.actingUnitId !== undefined) {
+      if (event.role === "ward") {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        // The stay a journey leaves names its sender first, as in the access check (review on PR #617).
         const sendingWard =
-          referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
           (movement as { originUnitId?: string }).originUnitId;
-        if (sendingWard) {
-          if (event.actingUnitId !== sendingWard) {
-            return reject(
-              state,
-              event,
-              `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
-            );
-          }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
+        // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
+        // transport need, named or not; the origin and coordinator do. With a sending ward, an
+        // unnamed ward desk is bound to it by its signed-in scope (commandRefusal), so only a named
+        // acting ward is checked here.
+        if (!sendingWard) {
           return reject(
             state,
             event,
-            `RECORD_TRANSPORT_NEED was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot record transport need`,
+            `RECORD_TRANSPORT_NEED was raised by ward ${event.actingUnitId ?? "(unnamed)"}, but this patient did not start on a ward`,
+          );
+        }
+        if (event.actingUnitId !== undefined && event.actingUnitId !== sendingWard) {
+          return reject(
+            state,
+            event,
+            `RECORD_TRANSPORT_NEED was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can record transport need`,
           );
         }
       }
@@ -257,7 +262,7 @@ export function reduceRecordedFactEvent(
         return reject(
           state,
           event,
-          `${event.type} was raised acting as ED ${actingPlaceId} but movement origin is ${movement.originEdId}; only the origin ED can book or record transport for its own movement`,
+          `${event.type} was raised acting as ED ${actingPlaceId} but movement origin is ${movement.originEdId ?? "a community team"}; only the origin ED can book or record transport for its own movement`,
         );
       }
       // Re-recording overwrites on purpose, as for medical clearance. "Not needed" is refused while
@@ -455,6 +460,10 @@ export function reduceRecordedFactEvent(
     case "RECORD_LEGAL_FORM_RECEIVED": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may mark its form received`);
+      }
       if (movement.closure) {
         return reject(
           state,

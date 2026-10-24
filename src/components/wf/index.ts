@@ -18,7 +18,7 @@ export {
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
-export { Button, DisabledReason, buttonClass, type ButtonVariant, type ButtonSize } from "./button";
+export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat } from "./hero";
@@ -43,7 +43,6 @@ export {
   rowDim,
   TimeRail,
   JourneyStrip,
-  type TimeRailMark,
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
@@ -64,6 +63,7 @@ export { Sheet, Drawer } from "./sheet";
 export { Menu, Popover, type MenuItem } from "./menu";
 export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
+export { OverlayPortal, OverlayScope } from "./overlay-root";
 export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";

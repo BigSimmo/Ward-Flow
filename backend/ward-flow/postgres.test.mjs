@@ -19,6 +19,157 @@ import { LATEST_MIGRATION } from "./migrations.mjs";
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
   throw new Error("Database tests require an isolated loopback PostgreSQL server");
+test(
+  "real PostgreSQL: record-access repeat and rate limits survive concurrent requests",
+  { skip: !url, timeout: 30_000 },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const application = `ward-record-access-${randomUUID()}`;
+    const pool = new Pool({ connectionString: url, max: 4, application_name: application });
+    const control = new Pool({ connectionString: url, max: 2 });
+    const gate = await control.connect();
+    const workspaceId = randomUUID();
+    const at = new Date("2026-10-20T10:00:00Z");
+    const barrier = 873210;
+    let held = false;
+    try {
+      await migrate(control);
+      const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+      const initial = await store.read(randomUUID());
+      const [first, second] = initial.payload.state.patients.map((patient) => patient.id);
+      // A BEFORE INSERT gate holds each qualifying statement after its WHERE decision. Before the
+      // fix both statements qualify and wait here. With serialization the second instead waits on
+      // the account lock, then rechecks after the first commits. Observe both waits before release.
+      await gate.query(`CREATE FUNCTION ward_flow.test_record_access_gate() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN IF NEW.workspace_id = '${workspaceId}'::uuid THEN
+        PERFORM pg_advisory_xact_lock(${barrier});
+      END IF; RETURN NEW; END $$`);
+      await gate.query(
+        "CREATE TRIGGER test_record_access_gate BEFORE INSERT ON ward_flow.record_access FOR EACH ROW EXECUTE FUNCTION ward_flow.test_record_access_gate()",
+      );
+      for (const cap of [false, true]) {
+        await t.test(
+          cap ? "only one concurrent request takes the sixtieth slot" : "the same record is logged only once",
+          async () => {
+            const actorId = randomUUID();
+            const view = await store.viewer(actorId, { bootstrap: true });
+            if (cap)
+              await gate.query(
+                "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator','{\"kind\":\"statewide\"}'::jsonb,'PT-SYN-CAP-' || n,'patient',$3 FROM generate_series(1,59) n",
+                [workspaceId, actorId, at],
+              );
+            await gate.query("SELECT pg_advisory_lock($1)", [barrier]);
+            held = true;
+            const pending = Promise.all([
+              store.logView(view, first, "patient"),
+              store.logView(view, cap ? second : first, "patient"),
+            ]);
+            try {
+              let waiting = 0;
+              for (let attempt = 0; attempt < 250 && waiting < 2; attempt++) {
+                const result = await gate.query(
+                  "SELECT count(*)::int AS count FROM pg_stat_activity WHERE application_name=$1 AND wait_event_type='Lock' AND wait_event='advisory'",
+                  [application],
+                );
+                waiting = result.rows[0].count;
+                if (waiting < 2) await new Promise((resolve) => setTimeout(resolve, 20));
+              }
+              assert.equal(waiting, 2, "both real database requests must overlap before the gate opens");
+            } finally {
+              await gate.query("SELECT pg_advisory_unlock($1)", [barrier]);
+              held = false;
+            }
+            const results = await pending;
+            assert.equal(results.filter((result) => result.body.logged).length, 1);
+            const count = await gate.query(
+              "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+              [workspaceId, actorId],
+            );
+            assert.equal(count.rows[0].count, cap ? 60 : 1);
+          },
+        );
+      }
+    } finally {
+      if (held) await gate.query("SELECT pg_advisory_unlock($1)", [barrier]);
+      await gate.query("DROP TRIGGER IF EXISTS test_record_access_gate ON ward_flow.record_access");
+      await gate.query("DROP FUNCTION IF EXISTS ward_flow.test_record_access_gate()");
+      gate.release();
+      await pool.end();
+      await control.end();
+    }
+  },
+);
+test(
+  "real PostgreSQL: concurrent record openings share the account limit and suppress duplicates",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 12 });
+    const workspaceId = randomUUID();
+    const at = new Date("2026-10-20T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+    const view = {
+      version: LATEST_MIGRATION,
+      actorId: randomUUID(),
+      membershipId: null,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    };
+    try {
+      await migrate(pool);
+      await store.ready();
+      const seed = await store.read(view.actorId);
+      const [patientId, otherPatientId] = seed.payload.state.patients.map((patient) => patient.id);
+      // Delay the first insert so ordinary concurrent callers overlap inside PostgreSQL.
+      // No application query or constraint is replaced by this scheduling fixture.
+      await pool.query(
+        "CREATE FUNCTION ward_flow.test_slow_record_opening() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.patient_id NOT LIKE 'PT-SYN-LIMIT-%' THEN PERFORM pg_sleep(0.2); END IF; RETURN NEW; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER test_slow_record_opening BEFORE INSERT ON ward_flow.record_access FOR EACH ROW EXECUTE FUNCTION ward_flow.test_slow_record_opening()",
+      );
+      await t.test("one opening is kept when the same account opens the same record concurrently", async () => {
+        const answers = await Promise.all(Array.from({ length: 8 }, () => store.logView(view, patientId, "patient")));
+        assert.equal(answers.filter((answer) => answer.body.logged).length, 1);
+        const kept = await pool.query(
+          "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+          [workspaceId, view.actorId],
+        );
+        assert.equal(kept.rows[0].count, 1);
+      });
+      await t.test("different records still share the last account slot", async () => {
+        view.actorId = randomUUID();
+        await pool.query(
+          "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3,'PT-SYN-LIMIT-' || n,'patient',$4 FROM generate_series(1,59) AS n",
+          [workspaceId, view.actorId, view.access.scope, at],
+        );
+        const answers = await Promise.all([
+          store.logView(view, patientId, "patient"),
+          store.logView(view, otherPatientId, "patient"),
+        ]);
+        assert.equal(answers.filter((answer) => answer.body.logged).length, 1);
+        const kept = await pool.query(
+          "SELECT count(*)::int AS count FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2",
+          [workspaceId, view.actorId],
+        );
+        assert.equal(kept.rows[0].count, 60);
+      });
+      await t.test(
+        "an account at its limit does not block a different account or invisible-record refusal",
+        async () => {
+          const colleague = { ...view, actorId: randomUUID() };
+          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: true });
+          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: false });
+          assert.equal((await store.logView(colleague, "PT-SYN-INVISIBLE", "patient")).status, 404);
+        },
+      );
+    } finally {
+      await pool.query("DROP TRIGGER IF EXISTS test_slow_record_opening ON ward_flow.record_access");
+      await pool.query("DROP FUNCTION IF EXISTS ward_flow.test_slow_record_opening()");
+      await pool.end();
+    }
+  },
+);
 test("real PostgreSQL: shared commands, last-bed contention, retry, audit and recovery", { skip: !url }, async (t) => {
   const engine = await import("./dist/engine.mjs");
   const pool = new Pool({ connectionString: url, max: 8 });
@@ -1314,6 +1465,21 @@ test(
   },
 );
 
+test("break glass answers an unknown id and a patient already in care alike (D-80)", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const unitId = world.state.units[0].id;
+  const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [unitId] });
+  const stay = world.state.admissions.find(
+    (admission) => admission.unitId === unitId && admission.state !== "departed" && admission.patientId,
+  );
+  const unknown = engine.breakGlassRefusal(world, ward, "synthetic-no-such-patient", at);
+  assert.equal(unknown, engine.BREAK_GLASS_NOT_OPENED);
+  assert.equal(engine.breakGlassRefusal(world, ward, stay.patientId, at), unknown);
+  assert.equal(engine.breakGlassRefusal(world, ward, 42, at), unknown);
+});
+
 test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-07T10:00:00Z");
@@ -1322,12 +1488,13 @@ test("a ward desk may send the events its screen sends under another role, and n
   const notYours = "This change is not part of your role.";
   const refusal = (event) => engine.commandRefusal(world, ward, event, at);
   // A ward raises referrals in its own name only, from Raise referral and from its New referral
-  // sheet (Josh, 15 Oct 2026). The sheet still adds a patient as ED, through its CROSS_ROLE_ALLOWED
-  // pair.
+  // sheet (Josh, 15 Oct 2026). It adds a patient in its own name too (role access plan v2, D-80), so
+  // it no longer borrows the ED role for that.
   assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
-  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
+  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ward" }), notYours);
+  assert.equal(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
   // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
   // still refused.
   assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
@@ -1419,16 +1586,15 @@ test(
       assert.equal((await store.revokeAccess(bView, given.body.membership.id)).status, 403);
       assert.equal((await store.revokeAccess(aView, given.body.membership.id)).status, 200);
       assert.deepEqual((await store.viewer(nurseB)).access, { role: "ward", scope: wardB });
-      // Held with no ward of their own, cover is the whole desk, and it is never given on.
+      // D-80: an account with no ward or ED role of its own is given no cover, so cover is never a
+      // way in for a new account.
       const relief = randomUUID();
-      const reliefCover = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      const refusedRelief = await store.giveCover(aView, { actorId: relief, scope: wardA, minutes: 60 });
+      assert.equal(refusedRelief.status, 422);
+      assert.equal(refusedRelief.body.error, engine.COVER_NEEDS_ROLE);
+      assert.deepEqual(await store.viewer(relief), { status: "none" });
+      const reliefCover = await store.giveCover(aView, { actorId: nurseB, scope: wardA, minutes: 60 });
       assert.equal(reliefCover.status, 200);
-      const reliefView = await store.viewer(relief);
-      assert.deepEqual(reliefView.access, { role: "ward", scope: wardA });
-      assert.equal(reliefView.ownAccess, null);
-      const passedOn = await store.giveCover(reliefView, { actorId: nurseB, scope: wardA, minutes: 60 });
-      assert.equal(passedOn.status, 403);
-      assert.match(passedOn.body.error, /cannot be passed on/);
       // A coordinator for the ward's own service sees that cover and may end it, though not its giver.
       const service = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"].find((name) =>
         engine.scopeWithin(before, wardA, { kind: "service", service: name }),

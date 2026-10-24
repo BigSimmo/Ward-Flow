@@ -120,7 +120,7 @@ export function DischargeDayChart({
         </div>
       </div>
       <footer className={styles.foot}>
-        <span>Click a day to highlight its people in the table.</span>
+        <span>Choose a day to highlight its people in the list.</span>
         {selected !== null ? (
           <Button size="sm" variant="ghost" onClick={onClear}>
             Clear day

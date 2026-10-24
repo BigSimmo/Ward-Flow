@@ -10,7 +10,6 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import type { StatisticsSection } from "./statistics-sections";
 
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
-import { StatisticsRange } from "./statistics-hero-tools";
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
 import styles from "./statistics-hero.module.css";
 import phoneStyles from "./statistics-phone.module.css";
@@ -197,7 +196,6 @@ export function StatisticsHero({
         <>
           {chips ? null : exportButton}
           {tools ? <span className={styles.heroTools}>{tools}</span> : null}
-          <StatisticsRange />
           <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={onTogglePause} />
           <span className={styles.divider} aria-hidden="true" />
           <StatisticsSamplesSwitch />

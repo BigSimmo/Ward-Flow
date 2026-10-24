@@ -20,6 +20,14 @@ governance sign-off before real patient use (D-54).
 - **Unknown legal status (D-69):** on 20 Oct 2026 (2:02 PM AWST) Josh ruled, in his own words:
   "Needs an involuntary-capable bed until status is set." A referral with no legal status recorded needs an involuntary-capable bed and
   never defaults to Voluntary. This is an allocation rule, not a threshold, so it is not in the table.
+- **Observation levels (fix plan item 10):** on 21 Oct 2026 Josh approved five levels, replacing
+  the yes/no specialling flag: General (hourly), Intermittent (every 15 or 30 minutes), Constant
+  within sight (1:1), Constant within arm's length (1:1) and Two staff constant (2:1), each with a
+  typed review time. A 1:1 level counts one staff against a ward's observation capacity, 2:1 counts
+  two, and General and Intermittent none. Level names vary by health service, so they live once in
+  `OBSERVATION_LEVEL_NAMES` in the same source file; change them there and every screen follows.
+  The staff counts and intervals are in the table below. Nothing scores, suggests or places from a
+  level (D-71).
 - Mental Health Act periods are not here, and Ward Flow holds none (D-70, which replaced D-29). The
   only form due time is the one a person records. Legal form titles come from the Chief Psychiatrist
   register, not from this list.
@@ -51,6 +59,7 @@ governance sign-off before real patient use (D-54).
 | Alerts and holds | Unanswered Pull now returns to the coordinator after | 15 minutes | Signed for the prototype by Josh (product owner), 2026-10-15 | Josh accepted, global alerts option A, 10 Oct 2026 | None recorded | `pullNowAnswer` |
 | Alerts and holds | Pull now stays live, if nobody pulls or stands it down, for | 4 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | Global alerts option A, 10 Oct 2026 | None recorded | `pullNowLive` |
 | Alerts and holds | Pull hold on an accepting bed lasts | 4 hours, default, changeable in Settings | Signed for the prototype by Josh (product owner), 2026-10-15 | Owner answer 35, 17 Sep 2026 (ward-model.ts provenance) | None recorded | `pullHold` |
+| Alerts and holds | Extra-travel bed hold adds | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-21 | Josh, 21 Oct 2026, D-75 item 5 (ward-model.ts provenance) | None recorded | `extraTravelHold` |
 | Alerts and holds | Bed hold without a confirmed dispatch flagged for review after | 2 hours | Signed for the prototype by Josh (product owner), 2026-10-15 | Josh, 26 Sep 2026, his default | None recorded | `bedHoldReview` |
 | Alerts and holds | Ward bed count named as not checked after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice, no external source | None recorded | `bedCountFresh` |
 | Alerts and holds | Downtime pack shown as stale after | 1 hour | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh | None recorded | `downtimePackStale` |
@@ -85,6 +94,9 @@ governance sign-off before real patient use (D-54).
 | Access and privacy | Granting access or opening a record outside your care needs a sign-in within the last | 10 minutes | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local security choice, stricter than NIST SP 800-63B | None recorded | `stepUpWindow` |
 | Access and privacy | Access review lists a role ending within | 14 days | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), local choice, two weeks to renew | None recorded | `accessExpiringSoon` |
 | Access and privacy | A role not used for this long is switched off by itself | 45 days | Signed for the prototype by Josh (product owner), 2026-10-16 | D-63 (16 Oct 2026), Australian Government ISM-1404 and ISM-1648: access disabled after 45 days of inactivity. Was 90 days. Checked against the September 2026 ISM on cyber.gov.au (D-65) | None recorded | `accessUnused` |
+| Access and privacy | A role is granted for at most | 365 days | Signed for the prototype by Josh (product owner), 2026-10-23 | D-80 (23 Oct 2026), a 12 month ceiling that fits the quarterly access review | None recorded | `accessMaxTerm` |
+| Observation levels | Intermittent observation, shorter interval | 15 minutes | Signed for the prototype by Josh (product owner), 2026-10-21 | Fix plan item 10 (21 Oct 2026) | None recorded | `observationIntermittentShort` |
+| Observation levels | Intermittent observation, longer interval | 30 minutes | Signed for the prototype by Josh (product owner), 2026-10-21 | Fix plan item 10 (21 Oct 2026) | None recorded | `observationIntermittentLong` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->

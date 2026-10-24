@@ -20,6 +20,7 @@ import {
 } from "@/components/ward-management/ward-legal-clock";
 import type { LeaveBed, Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 /** Real unit ids from `ward-sites.ts` — read as literals, not by walking the network. */
 const UNIT_ARM_ADULT_OPEN = "arm-adult-open";
@@ -69,7 +70,7 @@ function movement(
     | "declines"
     | "referredUnitIds"
     | "flaggedUrgent"
-    | "specialling"
+    | "observation"
     | "highAcuity"
   > & {
     statusChanges?: Movement["statusChanges"];
@@ -81,13 +82,13 @@ function movement(
     declines?: Movement["declines"];
     referredUnitIds?: Movement["referredUnitIds"];
     flaggedUrgent?: boolean;
-    specialling?: boolean;
+    observation?: Movement["observation"];
     highAcuity?: boolean;
   },
 ): Movement {
   return {
     flaggedUrgent: false,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     statusChanges: [],
     urgencyChanges: [],
@@ -105,7 +106,7 @@ function emptyAdmission(
   partial: Pick<Admission, "id" | "unitId" | "state" | "sex" | "pulledAt" | "arrivedAt"> & Partial<Admission>,
 ): Admission {
   return {
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

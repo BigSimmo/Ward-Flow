@@ -51,10 +51,11 @@ const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = 
   },
   {
     file: "ward-model.ts",
-    name: /^(?:ED_ACCESS_TARGET_MINUTES|PULL_HOLD_MINUTES|ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS)$/,
+    name: /^(?:ED_ACCESS_TARGET_MINUTES|PULL_HOLD_MINUTES|EXTRA_TRAVEL_HOLD_MINUTES|ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS)$/,
     ruling:
       "Owner-sourced, recorded in tests/ward-legal-figure-guard.test.ts MODEL_CONSTANT_PROVENANCE: ED access " +
-      "target (22 Aug), pull hold (answer 35, 17 Sept), ED medical bed-release threshold (FD-19, 30 Aug).",
+      "target (22 Aug), pull hold (answer 35, 17 Sept), extra-travel hold (D-72, 21 Oct), ED medical " +
+      "bed-release threshold (FD-19, 30 Aug).",
   },
   {
     file: "ward-operational-defaults.ts",
@@ -165,6 +166,18 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "Shared mode (audit F-04, 19 Oct 2026): how often a desk re-reads its whole part of the workspace between lean polls; network pacing, never shown, not a limit.",
     file: /^ward-shared-client\.ts$/,
     name: /^FULL_READ_EVERY_MS$/,
+  },
+  {
+    id: "tour-find-wait",
+    why: "The role tour (22 Oct 2026): how long it waits for a step's control to draw before showing the card in the middle, how often the spotlight re-measures, and how long auto-start waits for the desk's access to settle; never shown, not limits.",
+    file: /^help\/ward-tour(?:-auto-start)?\.tsx$/,
+    name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS|TOUR_SETTLE_MS)$/,
+  },
+  {
+    id: "desk-switch-wait",
+    why: "Go to a desk (23 Oct 2026): how long the page a switch leaves says the desk is opening before the closed screen returns; a UI wait, never shown, not a limit.",
+    file: /^settings\/operator-switcher-modal\.tsx$/,
+    name: /^DESK_SWITCH_WAIT_MS$/,
   },
 ];
 

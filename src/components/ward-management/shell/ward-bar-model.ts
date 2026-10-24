@@ -55,7 +55,8 @@ export const ACTIVITY_GLYPH: Record<WardActivityEventTone, WfTone> = {
 
 export const ACTIVITY_TONE_WORD: Record<WardActivityEventTone, string> = {
   danger: "Act now",
-  warning: "Needs you",
+  // UX audit (21 Oct 2026): "Needs you" is Home's one list, so a warning event says what it asks.
+  warning: "Check",
   info: "Update",
 };
 
@@ -242,7 +243,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
     (/^\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
     (/^\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
-    (/^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
+    (/^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
@@ -250,9 +251,9 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
-    (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
+    (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
-    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
+    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Stays and discharges") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
     (pathname === STATISTICS_OVERVIEW_HREF

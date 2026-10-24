@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
 import { type Admission } from "../src/components/ward-management/ward-admissions";
 import { wardStatistics } from "../src/components/ward-management/ward-statistics";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * EVERY PUBLISHED AVERAGE CARRIES ONLY THE PRECISION IT CLAIMS.
@@ -35,7 +36,7 @@ function anAdmission(overrides: Partial<Admission>): Admission {
   return {
     id: "ADM-1",
     unitId: UNIT,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     referralId: "REF-1",
     sex: "Female",

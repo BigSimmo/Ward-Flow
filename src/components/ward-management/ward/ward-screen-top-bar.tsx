@@ -8,8 +8,9 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { buttonClass, Hero, LiveChip, PhoneSheet, TextInput } from "@/components/wf";
+import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput } from "@/components/wf";
 import styles from "./ward.module.css";
+import noticesSheet from "./ward-notices-sheet.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardNotificationCenter } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
@@ -59,7 +60,6 @@ type WardScreenTopBarProps = {
   raiseReferralGate: RoleGate;
   wardRoleLockNote: ReactElement | null;
   notificationCenterOpen: boolean;
-  notificationCenterRef: RefObject<HTMLDivElement | null>;
   movements: Movement[];
   notices: Notice[];
   refreshRequests: CapacityRefreshRequest[];
@@ -106,7 +106,6 @@ export function WardScreenTopBar({
   raiseReferralGate,
   wardRoleLockNote,
   notificationCenterOpen,
-  notificationCenterRef,
   movements,
   notices,
   refreshRequests,
@@ -242,9 +241,7 @@ export function WardScreenTopBar({
             returnFocusRef={notificationTriggerRef}
             data-testid="ward-notifications-sheet"
           >
-            {/* No notificationCenterRef here: the ward screen's click-outside listener is for the desktop
-                popover, and the sheet's title and handle sit outside this div, so a press on them would
-                close it. The sheet closes from its own Close, scrim and Escape. */}
+            {/* The sheet closes from its own Close, scrim and Escape. */}
             <div data-testid="ward-notification-center-wrap">
               <WardNotificationCenter
                 inSheet
@@ -254,6 +251,7 @@ export function WardScreenTopBar({
                 movements={movements}
                 notices={notices}
                 refreshRequests={refreshRequests}
+                allocatable={unit.allocatable}
                 morningRollupConfirmed={isRollupConfirmedToday}
                 morningRollupDeadlinePassed={morningRollupDeadlinePassed}
                 morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
@@ -327,36 +325,39 @@ export function WardScreenTopBar({
                     </span>
                   ) : null}
                 </button>
-                {notificationCenterOpen ? (
-                  <div
-                    ref={notificationCenterRef}
-                    className={styles.notificationCenterContainer}
-                    data-testid="ward-notification-center-wrap"
-                  >
-                    <WardNotificationCenter
-                      unitId={unit.id}
-                      unitName={unit.name}
-                      now={now}
-                      movements={movements}
-                      notices={notices}
-                      refreshRequests={refreshRequests}
-                      morningRollupConfirmed={isRollupConfirmedToday}
-                      morningRollupDeadlinePassed={morningRollupDeadlinePassed}
-                      morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
-                      onConfirmMorningRollup={handleConfirmMorningRollup}
-                      onAcknowledgeNotice={handleAcknowledgeNotice}
-                      onDismissBuzz={handleDismissBuzz}
-                      onClose={() => {
-                        setNotificationCenterOpen(false);
-                        setTimeout(() => {
-                          notificationTriggerRef.current?.focus({
-                            preventScroll: true,
-                          });
-                        }, 0);
-                      }}
-                    />
-                  </div>
-                ) : null}
+                {/* Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as
+                    Alerts, rather than a popover over the bed board. The Sheet closes itself. */}
+                <Sheet
+                  open={notificationCenterOpen}
+                  onClose={() => setNotificationCenterOpen(false)}
+                  ariaLabel="Notices"
+                  headerHidden
+                  placement="right"
+                  returnFocusRef={notificationTriggerRef}
+                  contentClassName={noticesSheet.sheet}
+                  bodyClassName={noticesSheet.body}
+                >
+                  {notificationCenterOpen ? (
+                    <div>
+                      <WardNotificationCenter
+                        unitId={unit.id}
+                        unitName={unit.name}
+                        now={now}
+                        movements={movements}
+                        notices={notices}
+                        refreshRequests={refreshRequests}
+                        allocatable={unit.allocatable}
+                        morningRollupConfirmed={isRollupConfirmedToday}
+                        morningRollupDeadlinePassed={morningRollupDeadlinePassed}
+                        morningRollupDeadlineMinutes={morningRollupDeadlineMinutes}
+                        onConfirmMorningRollup={handleConfirmMorningRollup}
+                        onAcknowledgeNotice={handleAcknowledgeNotice}
+                        onDismissBuzz={handleDismissBuzz}
+                        onClose={() => setNotificationCenterOpen(false)}
+                      />
+                    </div>
+                  ) : null}
+                </Sheet>
               </div>
               <button
                 type="button"

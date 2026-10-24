@@ -1,5 +1,20 @@
 # Tests
 
+## Audit repair coverage — 20 October 2026
+
+- `tests/ward-audit-command-permissions.test.ts` checks statewide settings, complete broadcast
+  audiences, ED origin, sender-only corrections/withdrawals and transport assessment, with allowed
+  owner controls alongside denied commands that omit acting identity.
+- `tests/ward-shared-calendar-origin.test.ts` checks new shared worlds against Perth midnight,
+  date entry and formatting, while preserving existing stored calendar origins.
+- `tests/ward-draft-access-scope.test.ts` checks role/access changes, stale autosaves, unchanged
+  recovery, reloads and partial storage failures. The shared-provider DOM suite checks form remounts.
+- The phone-push and browser-auth suites cover offline cleanup, shared-device ownership and throwing
+  storage. `backend/ward-flow/postgres.test.mjs` exercises concurrent duplicate suppression and the
+  shared record-opening account limit against disposable loopback PostgreSQL.
+- `tests/public-signout-boundary.test.ts` checks anchored local-main ownership detection in offline
+  checkouts, including refusal controls for missing or foreign history and wrong remote destinations.
+
 ## Handover contract follow-up — 18 October 2026
 
 `helpers/ward-turnaround-fixture.ts` builds accepted movement and referral staging commands for
@@ -215,7 +230,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-ed-expects-derivation.test.ts`** (225 lines) — what counts as being in the department
 - **`tests/ward-ed-home-derivations.test.ts`** (311 lines) — isDetainedUnderTheAct
 - **`tests/ward-engine-defects.test.ts`** (542 lines) — PULL_PATIENT checks high-acuity places that are LEFT, not merely authored
-- **`tests/ward-escalation.test.ts`** (162 lines) — escalationBoard
 - **`tests/ward-event-permissions.test.ts`** (501 lines) — who may raise which event
 - **`tests/ward-facade-agrees-with-screens.test.ts`** (802 lines) — the shell facade agrees with the screens that own its figures
 - **`tests/ward-flow-chat-control.test.ts`** (2089 lines) — a Ward Verifier is given a criterion, not just a commit
@@ -553,15 +567,11 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-patient-link-default-deny.test.ts`** (376 lines) — D-14 default-deny: the patient link is read only where explicitly permitted
 - **`tests/ward-patient-model.test.ts`** (419 lines) — Patient identity is a ruling, not a drift
 - **`tests/ward-patient-now-screen.dom.test.tsx`** (331 lines) — the patient-now screen
-- **`tests/ward-patient-now.dom.test.tsx`** (119 lines) — the person now — identity absences (D-6)
-- **`tests/ward-patient-placement-fields.dom.test.tsx`** (155 lines) — the placement rule for the two sensitive fields (R-2026-09-04-A)
 - **`tests/ward-patient-search.dom.test.tsx`** (1111 lines) — PatientSearchPage
 - **`tests/ward-patient-search.test.ts`** (343 lines) — searchMovements
-- **`tests/ward-patient-sensitive-adjacency-css.test.ts`** (331 lines) — the two sensitive patient fields cannot become adjacent by reflow
 - **`tests/ward-patient-transport-section.dom.test.tsx`** (190 lines) — Patient Transport & Transfer Coordination section
 - **`tests/ward-patient-typeahead.dom.test.tsx`** (284 lines) — test fixtures
 - **`tests/ward-patient-typed-text-not-in-url.dom.test.tsx`** (229 lines) — Typed patient text never reaches a URL
-- **`tests/ward-person-screen.dom.test.tsx`** (581 lines) — a person's own screen
 - **`tests/ward-register-inpatient-form-codes.test.ts`** (102 lines) — ward register MHA authorities
 
 #### Movements (14 files)
@@ -588,9 +598,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-shortlist-ward-detail.dom.test.tsx`** (120 lines) — ShortlistPanel's ward detail block
 - **`tests/ward-shortlist.dom.test.tsx`** (413 lines) — ShortlistPanel escalation contact
 
-#### Delays (5 files)
+#### Delays (4 files)
 
-- **`tests/ward-delays-alias.test.ts`** (22 lines) — delays alias pedagogy (Wave 4 item 15)
 - **`tests/ward-delays-nobody-waiting.dom.test.tsx`** (143 lines) — the delays screen when nobody is waiting
 - **`tests/ward-delays-screen.dom.test.tsx`** (780 lines) — the Delays screen
 - **`tests/ward-delays-third-edition.dom.test.tsx`** (293 lines) — Delays — the drawing's panel names (task D1)
@@ -734,7 +743,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-announced-figures-carry-their-marker.test.ts`** (1037 lines) — the population this guard walks
 - **`tests/ward-bed-designation-fixture.test.ts`** (70 lines) — invented bed designations
 - **`tests/ward-empty-bed-exclusion-is-visible.dom.test.tsx`** (139 lines) — an impossible empty-bed record is excluded AND said out loud
-- **`tests/ward-flow-diagram-status-truthfulness.test.ts`** (146 lines) — the flow diagram's hub status line
 - **`tests/ward-freshness-count-wording.test.ts`** (113 lines) — the wards-confirmed count states coverage, never recency
 - **`tests/ward-handover-destination-truthfulness.test.ts`** (138 lines) — the handover page's Destination column
 - **`tests/ward-invented-figures.test.ts`** (131 lines) — an invented figure has to say so in its own sentence

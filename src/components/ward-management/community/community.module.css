@@ -1389,7 +1389,8 @@
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  z-index: var(--ward-z-sticky, 100);
+  /* The modal layer, so the phone screen's sticky tab strip cannot draw over the dialog. */
+  z-index: var(--z-modal, 100);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1455,11 +1456,6 @@
   padding: var(--ward-space-16);
   color: var(--ink);
   font-size: var(--t-1);
-}
-
-.modalProtNote {
-  margin: 0;
-  color: var(--warn);
 }
 
 .modalDetailsList {
@@ -3165,6 +3161,52 @@ button.searchBox:hover {
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* D-77 group A: the Sent tab's answer wraps in its cell, and each place's answer sits under it. */
+.statusPillBadge.sentAnswer {
+  white-space: normal;
+  justify-content: flex-start;
+  font-family: var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Four short columns fit the card, as mocked, so this table wraps rather than scrolls. */
+.table.sentTable {
+  --ward-table-min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.sentTable td,
+.sentTable th {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.sentTable th:nth-child(1) {
+  width: 27%;
+}
+
+.sentTable th:nth-child(2) {
+  width: 20%;
+}
+
+.sentTable th:nth-child(3) {
+  width: 19%;
+}
+
+.sentFootnote,
+.sentEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.sentPlaces {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 @media (max-width: 40rem) {
   .governanceSummary {
     min-height: var(--spacing-tap, 3rem);
@@ -3492,4 +3534,37 @@ button.searchBox:hover {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r2);
+}
+
+/* The existing MDT summary prints alone and flows naturally on A4. */
+@media print {
+  .main:has(:global(#handoverModal)) > :not(.modalOverlay) {
+    display: none !important;
+  }
+
+  .main:has(:global(#handoverModal)) .modalOverlay {
+    position: static;
+    inset: auto;
+    display: block;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .modalBox:global(#handoverModal) {
+    position: static;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .modalBox:global(#handoverModal) .modalCloseBtn,
+  .modalBox:global(#handoverModal) .modalFoot {
+    display: none !important;
+  }
 }

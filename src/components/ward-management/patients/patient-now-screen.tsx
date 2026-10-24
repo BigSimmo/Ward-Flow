@@ -37,13 +37,9 @@ import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-re
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
-import {
-  activeCommunityTreatmentOrder,
-  type Patient,
-  type PatientId,
-} from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { PersonScreen } from "./person-screen";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
@@ -120,6 +116,9 @@ import { renderArrivalSection } from "./patient-now-arrival-section";
 import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
 // and fence the completion so an old patient's save cannot dismiss another patient's form.
@@ -320,9 +319,10 @@ export function PatientNowScreen({
     setExpandedStageIndex(null);
   }
 
-  // If the ID is completely unknown to the system, render the governed missing state
+  // An id the system does not know gets the one not-found page, which never echoes the id. The
+  // older governed dossier that used to render here was retired (Josh, 21 Oct 2026).
   if (!resolved) {
-    return <PersonScreen patientId={(patientId ?? movementId ?? "") as PatientId} />;
+    return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
   }
 
   const record: PatientNowRecord = resolved.record;
@@ -402,20 +402,28 @@ export function PatientNowScreen({
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
-      navigator.clipboard?.writeText(text).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+      void copyTextToClipboard(text).then(
+        () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        },
+        // A refused copy leaves the button as it was, as before the shared helper.
+        () => undefined,
+      );
       return;
     }
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    void copyTextToClipboard(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      // A refused copy leaves the button as it was, as before the shared helper.
+      () => undefined,
+    );
   }
 
   // Keyboard navigation for tablist
@@ -492,7 +500,10 @@ export function PatientNowScreen({
     const cleanEta = transportEtaDraft.trim();
     const estimatedAt = etaFromDraft(cleanEta);
     const errors: typeof transportFormErrors = {};
+    // HAZ-03 (#430): the engine's own CAD rule, so a placeholder is named here rather than refused silently.
+    const cadProblem = cleanCad ? cadNumberProblem(cleanCad) : undefined;
     if (!cleanCad) errors.cad = "Enter the CAD number from the call";
+    else if (cadProblem) errors.cad = `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}`;
     if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
     else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
     if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
@@ -559,7 +570,7 @@ export function PatientNowScreen({
     declined: {},
   };
 
-  const originName = liveMovement ? (edById(liveMovement.originEdId)?.name ?? "Origin not recorded") : undefined;
+  const originName = liveMovement ? (movementOriginName(liveMovement) ?? "Origin not recorded") : undefined;
   const tierTone = urgencyTier === 1 ? "danger" : urgencyTier === 2 ? "warning" : "neutral";
   const documentCount = record.documents.length + uploadedForms.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
@@ -676,7 +687,7 @@ export function PatientNowScreen({
     ].join(" · "),
     onOrder: isOnOrder(stayLegalStatusNow),
   };
-  const heroStayOrigin = heroStayMovement ? edById(heroStayMovement.originEdId)?.name : undefined;
+  const heroStayOrigin = heroStayMovement ? movementOriginName(heroStayMovement) : undefined;
   const phoneStatusFoot =
     mode === "ward" && heroStay?.arrivedAt != null
       ? `Arrived ${dayLabel(heroStay.arrivedAt, dayZero).replace(",", "")}${heroStay.arrivedAt >= 0 ? ` ${clock(heroStay.arrivedAt)}` : ""}${heroStayOrigin ? ` from ${heroStayOrigin}` : ""}`
@@ -891,8 +902,11 @@ export function PatientNowScreen({
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
   const contacts: ContactRow[] = [];
+  // D-76: a journey from a community team has the team as its sender, not an ED.
+  const sender = liveMovement?.originEdId === undefined && liveMovement ? "Sending community team" : "Sending ED";
   if (mode === "find" || mode === "held") {
-    if (originName) contacts.push({ name: originName, role: "Sending ED, nurse in charge" });
+    if (originName)
+      contacts.push({ name: originName, role: sender === "Sending ED" ? "Sending ED, nurse in charge" : sender });
     if (acceptingUnit) contacts.push({ name: acceptingUnit.name, role: "Receiving ward" });
   } else if (mode === "transit") {
     if (acceptingUnit) contacts.push({ name: acceptingUnit.name, role: "Receiving ward" });
@@ -901,7 +915,7 @@ export function PatientNowScreen({
         name: liveMovement.transport.provider,
         role: displayCadNumber ? `Transport, CAD ${displayCadNumber}` : "Transport",
       });
-    if (originName) contacts.push({ name: originName, role: "Sending ED" });
+    if (originName) contacts.push({ name: originName, role: sender });
   } else if ((mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed") && (stayUnit ?? acceptingUnit)) {
     const wardUnit = stayUnit ?? acceptingUnit;
     if (wardUnit) contacts.push({ name: wardUnit.name, role: "Ward, nurse in charge" });
@@ -933,14 +947,11 @@ export function PatientNowScreen({
     { key: "documents", label: "Documents", count: documentCount },
   ];
   /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
-  /* v10 Movement, Phone: "Now, History, Details, Docs" while a movement is live. */
+  /* v10 Movement, Phone: "Now, History, Details, Documents" while a movement is live. The UX audit
+   * (21 Oct 2026) gave the phone the desktop's tab name, "Documents", so the two never disagree. */
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
   const phoneTabs = phoneMovement
-    ? tabs
-        .filter((tab) => tab.key !== "community" || phoneKeepsCommunity)
-        .map((tab) =>
-          tab.key === "documents" ? { ...tab, label: "Docs", count: undefined } : { ...tab, count: undefined },
-        )
+    ? tabs.filter((tab) => tab.key !== "community" || phoneKeepsCommunity).map((tab) => ({ ...tab, count: undefined }))
     : tabs
         .filter(
           (tab) =>

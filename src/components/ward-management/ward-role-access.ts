@@ -105,6 +105,7 @@ export type WardScreenId =
   | "governance"
   | "alerts"
   | "on-call"
+  | "seclusion"
   | "settings";
 
 export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
@@ -137,6 +138,7 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "governance",
   "alerts",
   "on-call",
+  "seclusion",
   "settings",
 ];
 
@@ -154,6 +156,7 @@ const EVERY_SCREEN_ALL: ScreenTable = Object.fromEntries(WARD_SCREEN_IDS.map((id
 export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
   coordinator: EVERY_SCREEN_ALL,
   bed_manager: {
+    // D-80: its own site in detail, and other sites as bed counts only (place information, no patient).
     capacity: "own",
     wards: "own",
     hub: "own",
@@ -170,6 +173,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     statistics: "counts",
     alerts: "own",
     "on-call": "all",
+    // D-72: the operational seclusion and restraint view, for the site's own wards.
+    seclusion: "own",
     settings: "own",
   },
   ward: {
@@ -190,6 +195,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     downtime: "own",
     alerts: "own",
     "on-call": "all",
+    // D-72: the ward's own seclusion room, restraint in use and incidents.
+    seclusion: "own",
     settings: "own",
   },
   ed: {
@@ -343,6 +350,7 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "governance":
     case "alerts":
     case "on-call":
+    case "seclusion":
     case "settings":
       return second === undefined ? { screen: first } : undefined;
     case "ward":

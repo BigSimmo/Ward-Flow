@@ -4,7 +4,7 @@ import { ChevronRight, Eye, Inbox, Send, X } from "lucide-react";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./ward-referral-drawer.module.css";
 import { StatusGlyph } from "@/components/wf";
-import { DESTINATIONS, SECTION_IDS, sectionLabel } from "./ward-referral-drawer-model";
+import { DESTINATIONS, sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: the hero over the steps, with the inbox chip, close and the headline figures. */
@@ -23,11 +23,9 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
     requestClose,
     currentPatient,
     recipientLabels,
-    itemsTotal,
     inboxCount,
     tier,
     itemsLeft,
-    itemsReady,
     destination,
     decisionDueAt,
   } = s;
@@ -66,7 +64,7 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
           ? `${inboxCount} waiting in ward inboxes`
           : sentReferralId
             ? "Referral sent"
-            : `${itemsReady} of ${itemsTotal} ready to send`}
+            : "Fill in and send"}
       </p>
       <p className={styles.phHeroSub}>
         {view === "inbox"
@@ -157,17 +155,15 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     handleTouchEnd,
     requestClose,
     needed,
-    itemsTotal,
     inboxWards,
     inboxCount,
     inboxWard,
-    itemsLeft,
-    itemsReady,
     originLabel,
     chooseDestination,
     selectSection,
     phStepHint,
     phOpenStep,
+    sectionIds,
   } = s;
   return (
     <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
@@ -212,18 +208,6 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
       {view === "new" ? (
         <>
           {sentReferralId ? null : (
-            /* v10 phone: a compact answer line, how many items are ready to send. Phone only. */
-            <p className={styles.phReady} data-testid="ward-referral-phone-ready">
-              <StatusGlyph tone={itemsLeft === 0 ? "success" : "neutral"} size={10} />
-              <span className={styles.phReadyText}>
-                <b>
-                  {itemsReady} of {itemsTotal}
-                </b>{" "}
-                ready to send
-              </span>
-            </p>
-          )}
-          {sentReferralId ? null : (
             <div className={styles.destRow}>
               <span className={styles.destLabel} id={`${sectionId}-refer-to`}>
                 Refer to
@@ -254,7 +238,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
             </div>
           )}
           <div className={styles.stepper} role="group" aria-label="Referral sections">
-            {SECTION_IDS.map((id, index) => {
+            {sectionIds.map((id, index) => {
               const label = sectionLabel(id, destType);
               const done = needed[id] === 0 || (id !== "placement" && !!sentReferralId);
               const active = activeSection === id && !confirmationOpen && !previewOpen && !sentReferralId;
@@ -327,8 +311,10 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
                   className={styles.fastTrackBtn}
                   data-testid="ward-referral-jump-clearance"
                   onClick={() => {
-                    if (isPhone) phOpenStep("documentation");
-                    else selectSection("documentation");
+                    // D-77: the community short form asks clearance on its Referral step.
+                    const clearanceStep = destType === "community" ? "referral" : "documentation";
+                    if (isPhone) phOpenStep(clearanceStep);
+                    else selectSection(clearanceStep);
                   }}
                 >
                   Jump to Clearance →
@@ -387,7 +373,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
 
 /** v10 phone: the tall sheet's own head, naming the open step, the letter or the check before Send. */
 export function ReferralDrawerPhoneSheetHead({ s }: { s: WardReferralDrawerState }) {
-  const { previewOpen, confirmationOpen, activeSection, destType, needed, phCloseSheet, phStepIndex } = s;
+  const { previewOpen, confirmationOpen, activeSection, destType, needed, phCloseSheet, phStepIndex, sectionIds } = s;
   return (
     <div className={styles.phSheetHead}>
       <span className={styles.phSheetGrip} aria-hidden="true" />
@@ -405,11 +391,11 @@ export function ReferralDrawerPhoneSheetHead({ s }: { s: WardReferralDrawerState
               ? "Read-only. Edit the steps to change it."
               : confirmationOpen
                 ? "Your contact details go on the letter."
-                : `${needed[activeSection] === 0 ? "Complete" : `${needed[activeSection]} needed`} · step ${phStepIndex + 1} of ${SECTION_IDS.length}`}
+                : `${needed[activeSection] === 0 ? "Complete" : `${needed[activeSection]} needed`} · step ${phStepIndex + 1} of ${sectionIds.length}`}
           </p>
           {previewOpen || confirmationOpen ? null : (
             <span className={styles.phSheetDots} aria-hidden="true">
-              {SECTION_IDS.map((id, index) => (
+              {sectionIds.map((id, index) => (
                 <i
                   key={id}
                   data-on={index === phStepIndex ? "true" : undefined}

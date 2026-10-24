@@ -1,6 +1,6 @@
 # Ward Flow database: the one source of truth
 
-_Updated 2026-10-19 - schema map extended to migration 11; Documentation owns._
+_Updated 2026-10-20 - align runtime compatibility with migration 12; Documentation owns._
 
 **Current database and sign-in: Supabase** (decision [D-55](decisions.md), 15 October 2026).
 
@@ -13,8 +13,11 @@ _Updated 2026-10-19 - schema map extended to migration 11; Documentation owns._
   `ward_flow.access_requests` table, and each phone alert device in `ward_flow.push_subscriptions`
   records the membership that turned it on.
 - Migration 11 adds append-only record access history and break glass protection, plus
-  server-side session sign-outs. The backend accepts schema versions 5 through 11; these
-  capabilities require 11 and its runtime grants. See the backend setup guides for rollback limits.
+  server-side session sign-outs. The backend accepts schema versions 5 through
+  <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->; these
+  capabilities require 11 and its runtime grants. Migration 12 adds foreign-key indexes without
+  changing runtime behaviour. The supported bounds come from `MINIMUM_RUNTIME_MIGRATION` and
+  `LATEST_MIGRATION` in the migration registry below. See the backend setup guides for rollback limits.
 - Plain PostgreSQL (`postgres`) is kept behind the same seam as a fallback. It shares the SQL,
   migrations and runtime-role checks that the Supabase adapter builds on. It is not in use.
 - **Azure is retired.** The Azure Functions host, Blob session vault, Azure PostgreSQL and Entra

@@ -62,8 +62,9 @@
 
 .line {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
 }
 
@@ -78,15 +79,20 @@
   white-space: nowrap;
 }
 
+/* Wraps rather than cutting off, dropping under the name when the row is narrow: a refreshed record
+   reads "Typed text not kept on this device" (D-72). */
 .value {
-  flex: 1 1 auto;
+  flex: 1 1 5rem;
   min-width: 0;
-  overflow: hidden;
+  overflow-wrap: break-word;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-2);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.line > button {
+  flex: none;
+  margin-left: auto;
 }
 
 .form {

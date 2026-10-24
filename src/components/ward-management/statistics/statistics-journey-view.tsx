@@ -56,8 +56,8 @@ const waitedPastADay = (movement: Movement, now: Instant) => now - movement.open
  * The patient journey right now, ED to discharge, as seven stages. Each figure is read from the
  * synthetic state with the rules the other statistics screens already use: open movements by stage
  * for the ED side, `bedStates` occupancy for the ward, and the ward page's "Due out, 7 days" and the
- * Summary's "Discharged today" for the way out. The four ED stages partition the open movements, so
- * they add up to the Summary's "Waiting in ED".
+ * Summary's "Discharged today" for the way out. The four upstream stages partition all open
+ * movements, including transit; physical "Waiting in ED" excludes people already collected.
  */
 export function journeyStages({
   units,

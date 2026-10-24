@@ -5,7 +5,6 @@ import Link from "next/link";
 import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { NotWiredButton } from "@/components/ward-management/not-wired-button";
 import { isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import {
@@ -38,7 +37,7 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, ChevronRight, Printer, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, ChevronRight, Search, ShieldCheck, Truck, X } from "lucide-react";
 import {
   Card,
   CardHead,
@@ -833,13 +832,6 @@ export function MovementsScreen() {
               <div className={flow.heroTools}>
                 {isPhone ? null : (
                   <>
-                    <NotWiredButton
-                      variant="onHero"
-                      size="sm"
-                      icon={Printer}
-                      label="Run sheet"
-                      wrapClassName={flow.previewTool}
-                    />
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
                       href="/ward-flow/transport/officer"
@@ -881,9 +873,9 @@ export function MovementsScreen() {
           {/* Phone (v10): the stage chips sit on the canvas under the band, number first. */}
           {isPhone ? stageTrack(flow.phStages, flow.phStage, flow.phStageCount) : null}
 
-          <div className={styles.needsYou} role="group" aria-label="Needs you" data-testid="movements-needs-you">
+          <div className={styles.needsYou} role="group" aria-label="Tier 1 now" data-testid="movements-needs-you">
             <div className={styles.needsYouHead}>
-              <h2 className={styles.needsYouTitle}>Needs you</h2>
+              <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
               {attentionCore.length > 0 ? (
                 <span className={styles.needsYouMeta}>
                   {attentionCore.length} of {tierOneOpen.length} Tier 1

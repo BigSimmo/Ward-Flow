@@ -22,7 +22,9 @@ export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
   initials: "SC",
   role: CHROME_ROLE_LABELS.coordinator,
   location: "Perth Central Desk",
-  phone: "08 5550 0142",
+  // Audit 2 E-06: the fictitious 08 5550 range in international form, which the synthetic-data
+  // guard (`src/lib/synthetic-data-guard.ts`) does not mistake for a real WA number.
+  phone: "+61 8 5550 0142",
   email: "s.chen@example.org",
 };
 

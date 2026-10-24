@@ -3,12 +3,12 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { installedTreeStampName, isGeneratedDependencyEntry } from "./dependency-inventory-policy.mjs";
 
 export const criticalInstalledPackages = ["next", "react", "react-dom", "eslint", "playwright", "typescript", "vitest"];
-export const installedTreeStampName = ".codex-installed-tree.json";
+export { installedTreeStampName };
 
 const STAMP_SCHEMA = 1;
-const VOLATILE_DIRECTORIES = new Set([".cache", ".tmp", ".vite", ".vite-temp"]);
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
@@ -136,8 +136,7 @@ export function installedTreeInventory(projectRoot) {
       left.name.localeCompare(right.name),
     );
     for (const entry of entries) {
-      const isVolatileDirectory = entry.isDirectory() && VOLATILE_DIRECTORIES.has(entry.name);
-      if (entry.name === installedTreeStampName || isVolatileDirectory) {
+      if (isGeneratedDependencyEntry(entry.name, entry)) {
         continue;
       }
       const relativePath = relativeDirectory ? `${relativeDirectory}/${entry.name}` : entry.name;

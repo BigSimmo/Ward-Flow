@@ -7,15 +7,57 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { formatInstant, formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
 import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
-import { showsUnwiredPreviews } from "@/components/ward-management/unwired-previews";
+import { useState } from "react";
+import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 
-/** Review or assign a referral: not wired in this prototype. */
+/**
+ * Assign (fix plan item 4, 21 Oct 2026): the team takes the referral for its own desk
+ * (`ASSIGN_REFERRAL`, owner `community`). It names the desk, never a clinician; clinician
+ * assignment is not built, because the record holds desks rather than people. This team page reads
+ * only its scoped referrals (FD-23), so it reports what the command's own outcome says rather than
+ * the owner history; the reducer refuses a repeat and the referral board shows the owner.
+ */
+function AssignToTeam({ referralId }: { referralId: string }) {
+  const raise = useWardRaise("community");
+  const [result, setResult] = useState<string | undefined>(undefined);
+  return (
+    <div className={styles.modalDetailsList} data-testid={`community-assign-${referralId}`}>
+      <button
+        type="button"
+        className={styles.modalDoneBtn}
+        onClick={() => {
+          setResult(undefined);
+          void Promise.resolve(confirmedWardCommand(raise("ASSIGN_REFERRAL", { referralId, owner: "community" })))
+            .then((outcome) =>
+              setResult(
+                outcome.status === "accepted"
+                  ? "Assigned to this team's desk."
+                  : outcome.status === "refused"
+                    ? "Not assigned. It may already be with this team's desk."
+                    : "Not assigned. The change was not saved.",
+              ),
+            )
+            .catch(() => setResult("Not assigned. The change was not saved."));
+        }}
+        data-testid={`community-assign-take-${referralId}`}
+      >
+        Take for this team
+      </button>
+      {result ? <p role="status">{result}</p> : null}
+      <p>This names the team&apos;s desk, not a clinician.</p>
+    </div>
+  );
+}
+
+/** Assign a referral to the team's desk. */
 export function CommunityScreenReferralModal({ view }: { view: CommunityScreenView }) {
   const { identityOf, activeModal, setActiveModal, referralModalRef, referralModalBackdropRef } = view;
   if (activeModal === null) return null;
@@ -37,7 +79,7 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
       >
         <div className={styles.modalHeader}>
           <h3 id="community-modal-title" className={styles.modalTitle}>
-            {activeModal.type === "review" ? "Review referral" : "Assign referral"}: {identityOf(activeModal.referral)}
+            Assign referral: {identityOf(activeModal.referral)}
           </h3>
           <button
             type="button"
@@ -49,9 +91,7 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
           </button>
         </div>
         <div className={styles.modalBody}>
-          <p className={styles.modalProtNote}>
-            <strong>Not wired in this prototype.</strong>
-          </p>
+          <AssignToTeam referralId={activeModal.referral.id} />
           <div className={styles.modalDetailsList}>
             <p>
               <strong>Patient:</strong> {identityOf(activeModal.referral)}
@@ -85,6 +125,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
     activeModalType,
     setActiveModalType,
     contactRecord,
+    contactSaveMessage,
+    contactSaveDisabled,
     handleSaveClinicalContact,
     noteModalRef,
     noteModalOverlayRef,
@@ -93,6 +135,12 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
     caseloadRows,
     recordedCtoCount,
   } = view;
+  const flow = useOptionalWardFlowSelect("dayZero");
+  const stamp = Number.isFinite(now)
+    ? flow?.dayZero !== undefined && Number.isFinite(flow.dayZero.getTime())
+      ? formatSheetMoment(now, flow.dayZero, { includeYearAndZone: true })
+      : formatInstant(now)
+    : null;
   if (activeModalType === null) return null;
   return (
     <div
@@ -167,21 +215,33 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   type="button"
                   className={styles.btnSmPrimary}
                   data-testid="ward-community-contact-save"
-                  aria-disabled={clinicalContactCanSave() ? undefined : "true"}
-                  title={clinicalContactCanSave() ? undefined : "Clinical contact is not recorded yet."}
-                  onClick={clinicalContactCanSave() ? handleSaveClinicalContact : ignoreUnavailableActivation}
+                  aria-disabled={clinicalContactCanSave() && !contactSaveDisabled ? undefined : "true"}
+                  aria-describedby={contactSaveMessage ? "ward-community-contact-message" : undefined}
+                  title={
+                    contactSaveDisabled ? "Wait for confirmation or use Retry before submitting again." : undefined
+                  }
+                  onClick={
+                    clinicalContactCanSave() && !contactSaveDisabled
+                      ? handleSaveClinicalContact
+                      : ignoreUnavailableActivation
+                  }
                 >
                   Save contact
                 </button>
               </div>
+              {contactSaveMessage ? (
+                <p role="status" id="ward-community-contact-message" className={styles.footnote}>
+                  {contactSaveMessage}
+                </p>
+              ) : null}
               <p
                 className={styles.footnote}
                 data-testid="ward-community-contact-save-status"
                 data-recorded={contactRecord ? "true" : "false"}
               >
                 {contactRecord
-                  ? `Contact recorded as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
-                  : "Clinical contact is not recorded yet."}
+                  ? `Last confirmed contact in this session as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
+                  : "No contact has been confirmed in this session."}
               </p>
             </div>
           )}
@@ -191,6 +251,10 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <p className={styles.footnote}>Catchment MDT summary print view for clinical huddle.</p>
               <div className={styles.mdtSummary}>
                 <b>{team.name} · Morning MDT Summary</b>
+                <p className={styles.mdtSummaryLine}>
+                  {stamp === null ? "As at — the moment shown is not recorded." : `As at ${stamp}`} · Synthetic figures,
+                  not a record of any real day.
+                </p>
                 <p className={styles.mdtSummaryLine}>
                   {caseloadRows.length} Active Caseload · {waitingReferrals.length} Waiting Referrals ·{" "}
                   {recordedCtoCount} recorded Form 5A/5B
@@ -241,7 +305,6 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <div className={styles.deploymentNote}>
                 <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
                 {teamConfig.campus} to catchment residence.
-                {showsUnwiredPreviews() ? " Duress beacon: not wired in this prototype." : null}
               </div>
 
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>

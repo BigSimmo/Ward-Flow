@@ -834,38 +834,9 @@
   white-space: nowrap;
 }
 
-.umrn {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--wf-s-1);
-  padding: 0 var(--wf-s-1);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-sm);
-  background: none;
-  color: var(--wf-ink-2);
-  font: inherit;
-  cursor: pointer;
-}
-
-.umrn:hover {
-  border-color: var(--wf-line-ctl);
-  color: var(--wf-ink-1);
-}
-
-.umrn:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 1px;
-}
-
 .panelTier {
   display: inline-flex;
   flex: 0 0 auto;
-}
-
-/* Preview controls read as dashed: shown for review, not connected (D4). */
-.preview {
-  border-style: dashed;
 }
 
 .alerts {
@@ -1483,7 +1454,6 @@
   }
 
   .cardButton,
-  .umrn,
   .rowSelect {
     min-height: 3rem;
   }
@@ -1924,28 +1894,4 @@
 .rowOn[data-overdue="true"],
 .cardOn[data-overdue="true"] {
   background: var(--wf-selected);
-}
-
-/* D-16 not-wired popovers (shared `NotWiredButton`). At the panel foot it opens upward so the
-   clipped panel never hides it; on the phone's full-width Claim it opens from the left edge. */
-.notWiredUp {
-  display: inline-flex;
-}
-
-.notWiredStart,
-.notWiredStart > span {
-  display: flex;
-  width: 100%;
-}
-
-.notWiredUp [role="group"] {
-  top: auto;
-  right: auto;
-  bottom: calc(100% + 4px);
-  left: 0;
-}
-
-.notWiredStart [role="group"] {
-  right: auto;
-  left: 0;
 }

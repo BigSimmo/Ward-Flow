@@ -89,7 +89,12 @@ function renderPull(available: boolean) {
 describe("canonical placement actions", () => {
   it("accepts only the candidate explicitly chosen by the coordinator", () => {
     const dispatch = renderReferral();
-    const accept = screen.getAllByRole("button", { name: /^Accept at / })[0]!;
+    // D-77: desktop uses the phone's one list. A ward is picked, then the one Accept names it.
+    const fit = document.querySelector<HTMLButtonElement>(
+      'button[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]',
+    )!;
+    fireEvent.click(fit);
+    const accept = screen.getByRole("button", { name: /^Accept at / });
     expectPlacement(accept, "pri");
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(accept);
@@ -99,6 +104,8 @@ describe("canonical placement actions", () => {
 
   it("keeps decline discoverable and dispatches only after a clinical reason is selected", () => {
     const dispatch = renderReferral();
+    // D-77: Decline opens the reasons as radio rows, on desktop as on the phone.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
     const decline = screen.getByTestId("ward-referral-match-decline");
     expectPlacement(decline, "sec");
     expect(decline).toHaveAttribute("aria-disabled", "true");
@@ -107,7 +114,7 @@ describe("canonical placement actions", () => {
     fireEvent.click(decline);
     expect(dispatch).not.toHaveBeenCalled();
     const reason = REFERRAL_DECLINE_REASONS[0]!;
-    fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason"), { target: { value: reason } });
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${reason}`));
     fireEvent.click(screen.getByTestId("ward-referral-match-decline"));
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "DECLINE_REFERRAL", reason });
@@ -249,7 +256,7 @@ describe("candidate placement documentation", () => {
   });
 });
 
-describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () => {
+describe("stopped transport: release pulled bed asks first (Audit 1, CS-07)", () => {
   it("names the person and UMRN, and records nothing on Cancel", () => {
     const state = seedWardFlowState();
     const movement = state.movements.find((m) => m.acceptedUnitId)!;
@@ -288,7 +295,7 @@ describe("stopped transport: release held bed asks first (Audit 1, CS-07)", () =
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release held bed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_HELD_BED", movementId: movement.id });
   });

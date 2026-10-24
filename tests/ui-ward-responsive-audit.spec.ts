@@ -2,6 +2,7 @@ import { expect, test, type Page } from "playwright/test";
 
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { movementPath } from "./helpers/ward-record-url";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 const routes = [
   ["ED overview", "/ed"],
@@ -251,6 +252,7 @@ test.describe("@mockup Ward responsive containment", () => {
 test("@mockup approved overdue queue treatment fits phone, tablet and desktop", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+  await showEveryoneWaitingOn(page);
   const overdueRows = page.locator('[data-testid^="ward-queue-row-"][data-overdue="true"]:visible');
   await expect(overdueRows.first()).toBeVisible();
 
@@ -584,6 +586,8 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       await page.goto(`/ward-flow${route}`, { waitUntil: "networkidle" });
       const bar = page.getByTestId("ward-bar");
       await expect(bar).toHaveAttribute("data-band", /ink|light/);
+      // Home v7 (Josh, 22 Oct 2026): Home opens on My list; its queue tools sit behind Everyone waiting.
+      if (label === "Home") await showEveryoneWaitingOn(page);
       const strip = page.locator(`[class*="${classPrefix}"]`);
       await expect(strip).toBeVisible();
       for (const offset of [0, 12, 80, 500]) {

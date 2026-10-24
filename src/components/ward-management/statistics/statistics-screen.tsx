@@ -42,6 +42,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   calendarDateOf,
+  formatSheetMoment,
   dayOf,
   formatInstant,
   splitDuration,
@@ -77,11 +78,16 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
+import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
+import { NetworkOverviewCards } from "./statistics-network-cards";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -208,6 +214,8 @@ export function StatisticsScreen({
   } = live.state;
   const now = live.now;
   const service = useServiceScope();
+  const { countsOnly } = useStatisticsCounts();
+  const isPhone = useIsPhone();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
   const sourceReferrals = referrals ?? liveReferrals;
@@ -321,6 +329,7 @@ export function StatisticsScreen({
   ).length;
 
   const filteredAndSortedWards = useMemo(() => {
+    if (isPhone) return [];
     let list = allPressureWards.slice();
     const q = wardSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
@@ -342,11 +351,12 @@ export function StatisticsScreen({
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
+    if (isPhone) return [];
     let list = emergencyDepts.slice();
     const q = edSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
@@ -370,7 +380,7 @@ export function StatisticsScreen({
       return a.site.localeCompare(b.site);
     });
     return list;
-  }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -397,6 +407,7 @@ export function StatisticsScreen({
 
   // Pull to arrival, banded. The same measured gaps `pullToArrival` averages.
   const arrivalBands = useMemo(() => {
+    if (isPhone) return [];
     const gaps = sourceAdmissions
       .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
       .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
@@ -407,63 +418,95 @@ export function StatisticsScreen({
       label: band.label,
       value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
     }));
-  }, [sourceAdmissions, configuration.pullHoldMinutes]);
+  }, [isPhone, sourceAdmissions, configuration.pullHoldMinutes]);
 
   const finderLists = useMemo(
-    () => ({
-      ward: units
-        .map((u) => ({
-          id: u.id,
-          name: u.name,
-          code: u.siteCode,
-          meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
-          ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
-        }))
-        .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
-      service: HEALTH_SERVICES.map((svc) => {
-        const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
-        return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
-      }),
-      team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-    }),
-    [units, sourceAdmissions, sourceBedReleases, emergencyDepts],
+    () =>
+      isPhone
+        ? { ward: [], ed: [], service: [], team: [] }
+        : {
+            ward: units
+              .map((u) => ({
+                id: u.id,
+                name: u.name,
+                code: u.siteCode,
+                meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
+                ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+              }))
+              .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
+            ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
+            service: HEALTH_SERVICES.map((svc) => {
+              const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
+              return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
+            }),
+            team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+          },
+    [isPhone, units, sourceAdmissions, sourceBedReleases, emergencyDepts],
   );
 
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
-  const isPhone = useIsPhone();
 
   if (isPhone) {
     return (
-      <StatisticsSummaryPhone
-        ready={availableNow}
-        beingMadeReady={pendingPreparation}
-        occupied={inUseCount}
-        occupiedPct={occupiedPct}
-        waitingInEd={waitingCount}
-        endedToday={dischargesCount}
-        wards={allPressureWards.map((ward) => ({
-          id: ward.id,
-          name: ward.name,
-          hospital: ward.hospital,
-          service: siteByCode(ward.site)?.service ?? "Service not recorded",
-          beds: ward.beds,
-          ready: ward.ready,
-          percent: Math.round(ward.occupancyRate * 100),
-        }))}
-        eds={emergencyDepts.map((ed) => ({
-          id: ed.id,
-          name: ed.name,
-          site: ed.site,
-          waiting: ed.waiting,
-          longest: ed.longest,
-        }))}
-        referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
-        wardCount={units.length}
-        paused={live.paused}
-        onTogglePause={live.togglePause}
-      />
+      <>
+        <StatisticsSummaryPhone
+          ready={availableNow}
+          beingMadeReady={pendingPreparation}
+          occupied={inUseCount}
+          occupiedPct={occupiedPct}
+          waitingInEd={waitingCount}
+          endedToday={dischargesCount}
+          wards={allPressureWards.map((ward) => ({
+            id: ward.id,
+            name: ward.name,
+            hospital: ward.hospital,
+            service: siteByCode(ward.site)?.service ?? "Service not recorded",
+            beds: ward.beds,
+            ready: ward.ready,
+            percent: Math.round(ward.occupancyRate * 100),
+          }))}
+          eds={emergencyDepts.map((ed) => ({
+            id: ed.id,
+            name: ed.name,
+            site: ed.site,
+            waiting: ed.waiting,
+            longest: ed.longest,
+          }))}
+          referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
+          moreFigures={{
+            blocked: {
+              total: blocked.totalCount,
+              admissions: blocked.admissionCount,
+              tallies: blocked.tallies.map((tally) => ({ id: tally.reason, label: tally.reason, count: tally.count })),
+            },
+            declines: declinesReadout.ok
+              ? {
+                  total: declinesReadout.value.totalCount,
+                  tallies: declinesReadout.value.tallies.map((tally) => ({
+                    id: tally.reason,
+                    label: sentenceCase(tally.reason),
+                    count: tally.count,
+                  })),
+                }
+              : { statement: declinesReadout.statement },
+            arrivals: {
+              measured: arrivals.measuredCount,
+              average: arrivals.averageMinutes,
+              shortest: arrivals.shortestMinutes,
+              longest: arrivals.longestMinutes,
+            },
+          }}
+          wardCount={units.length}
+          paused={live.paused}
+          onTogglePause={live.togglePause}
+        />
+        {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
+            hours and no total fit a phone's width without a sideways scroll. */}
+        <aside className={trendStyles.phoneSlot} aria-label="This session">
+          <StatisticsSessionTrendsCard now={now} hours={3} showTotal={false} />
+        </aside>
+      </>
     );
   }
 
@@ -547,6 +590,7 @@ export function StatisticsScreen({
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
                 <StatisticsCapacityChart
+                  asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                   units={units}
                   bedReleases={sourceBedReleases}
                   admissions={sourceAdmissions}
@@ -653,6 +697,14 @@ export function StatisticsScreen({
                 </StatCard>
               </Follow>
             </FlushRow>
+
+            {/* D-77 (change 9): Overview's figures that this page lacked, once each, above the pressure. */}
+            <NetworkOverviewCards
+              units={units}
+              admissions={sourceAdmissions}
+              bedReleases={sourceBedReleases}
+              leaveBeds={leaveBeds}
+            />
 
             <div className={styles.grid2}>
               <StatCard
@@ -1089,6 +1141,18 @@ export function StatisticsScreen({
                   </dl>
                 </CardBody>
               </StatCard>
+
+              <StatisticsSessionTrendsCard now={now} />
+
+              {/* Forecasting build (Josh, 23 Oct 2026, screen 8). Not on the count-only executive view. */}
+              {countsOnly ? null : (
+                <ForecastTrackRecordCard
+                  now={now}
+                  units={units}
+                  admissions={sourceAdmissions}
+                  movements={sourceMovements}
+                />
+              )}
             </div>
           </div>
         )}

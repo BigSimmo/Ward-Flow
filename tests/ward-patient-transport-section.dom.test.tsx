@@ -230,7 +230,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     const form = screen.getByTestId("ward-patient-transport-form");
     expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("");
     expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("");
-    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC" } });
+    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
     fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
     fireEvent.submit(form);
     expect(form).toHaveTextContent("Choose the provider from the call");
@@ -269,7 +269,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
       fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
       const form = screen.getByTestId("ward-patient-transport-form");
       answerBookingFacts(form);
-      fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC" } });
+      fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
       fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
       fireEvent.submit(form);
       fireEvent.submit(form);
@@ -284,7 +284,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
       });
       if (refuse) {
         expect(form).toBeInTheDocument();
-        expect(within(form).getByTestId("ward-patient-input-cad")).toHaveValue("CAD-SYNTHETIC");
+        expect(within(form).getByTestId("ward-patient-input-cad")).toHaveValue("CAD-SYNTHETIC-7");
         expect(within(form).getByTestId("ward-patient-input-eta")).toHaveValue("45m");
         expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("Patient transport service");
         expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("no");
@@ -292,7 +292,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).not.toBeDisabled();
       } else {
         expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
-        expect(screen.getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-SYNTHETIC");
+        expect(screen.getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-SYNTHETIC-7");
       }
     },
   );
@@ -372,7 +372,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     const gate = screen.getByTestId("ward-patient-gate-transport");
     expect(gate).toHaveTextContent("Not booked");
     expect(gate).toHaveTextContent("Needs an accepted bed");
-    const logBooking = within(gate).getByRole("button", { name: /^Log booking/ });
+    const logBooking = within(gate).getByRole("button", { name: /^Ask wards/ });
     expect(logBooking).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(logBooking);
     expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();

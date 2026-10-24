@@ -11,7 +11,7 @@ import {
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
-import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -30,6 +30,7 @@ import { releaseBand } from "@/components/ward-management/ward-bed-availability"
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./ward-daily-sheet.module.css";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
  * THE WARD'S DAILY SHEET — the page a charge nurse carries into the morning meeting.
@@ -167,51 +168,16 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
 }
 
 /**
- * The "as at" stamp, and it is the safeguard DB-10 and DB-11 traded the frozen view for.
- *
- * **It reads the instant handed to it — the same `now` every figure on the sheet reads (DB-12).**
- * It must never call `wallClockNow()`: this prototype's screens take their `now` from a shared
- * value that a demo control can move, so a stamp on the wall clock beside figures from a moved
- * clock would assert a moment that is not the moment being shown. A stamp that can lie is worse
- * than no stamp, because the freeze was removed on the strength of it.
- *
- * **There is still no DATE, and that is stated rather than silently dropped — but the SAFEGUARD
- * DB-10 wanted now works.** DB-10 requires date AND time, for a real reason: paper outlives its
- * day, and a sheet stamped `15:22` read the next morning distinguishes nothing from one stamped
- * `15:22` the morning before. Two sheets that are two moments must not look like two claims about
- * one.
- *
- * A calendar date is still not available and is still not invented. But `a3d199fa7` gave an
- * `Instant` a DAY (`dayOf`), so the sheet can now carry which day of the demonstration it was
- * taken on — and that is sufficient for the failure DB-10 actually names, without fabricating the
- * one element the decision made load-bearing. Two sheets from different days are now visibly two
- * moments.
- *
- * **The `+ 1` is presentation and lives only here.** `dayOf` returns 0 for the opening day, and
- * "day 0" reads as a defect to anybody not holding `ward-clock.ts` open. Nothing computes from
- * this string; it is read aloud and pinned to a wall.
- *
- * **THE CALENDAR ARRIVED, AND THE SHEET STILL DOES NOT PRINT A DATE. That is a choice now, not a
- * limitation.** `b1198cf6e` gave the clock a real date (`dayZero` on the provider,
- * `calendarDateOf`), so this sheet COULD say "30 August". It does not, for two reasons, and the
- * second is the one that matters:
- *
- *   1. A reader of a ward sheet is oriented to now, not to a calendar — which is why
- *      `formatInstantWithDay` prefers "yesterday" and "3 days ago" over dates.
- *   2. **A dated sheet invites the reader to believe the FIGURES are dated, and they are not.**
- *      Every number on this page is synthetic. A real date beside invented figures is the one
- *      combination that makes a prototype look like a record.
- *
- * So the old "this prototype holds no calendar date" clause was removed the moment it became
- * false — it was a true statement about a missing capability, and leaving it in place after the
- * capability arrived would have made the sheet lie about the system rather than about the day.
- * What replaced it says what is actually true: the figures are synthetic, whatever the clock knows.
- *
- * A non-finite instant yields no time rather than `NaN:NaN` — the conservative direction this
- * whole feature takes: a sheet that cannot say when it was taken must not appear to.
+ * Stamp the same synthetic instant as the figures. A provider origin allows a complete date,
+ * year and AWST on saved output. Standalone consumers retain the demonstration-day fallback
+ * when no valid calendar origin is available. Never substitute the wall clock for this instant.
  */
-export function asAtStamp(now: Instant): { time: string | null; dayNote: string } {
-  const time = Number.isFinite(now) ? formatInstant(now) : null;
+export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
+  const time = Number.isFinite(now)
+    ? dayZero !== undefined && Number.isFinite(dayZero.getTime())
+      ? formatSheetMoment(now, dayZero, { includeYearAndZone: true })
+      : formatInstant(now)
+    : null;
   // A non-finite instant yields no day either: `dayOf(NaN)` is `NaN`, and "day NaN" is exactly the
   // kind of stamp this function's own doc comment refuses. No time, no day, same branch.
   const day = time === null ? null : dayOf(now) + 1;
@@ -460,7 +426,7 @@ export function WardDailySheet({
     now !== undefined && Number.isFinite(now) ? now : Number.isFinite(clockNow) ? clockNow : WARD_ADMISSIONS_ANCHOR;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
-  const liveFlow = useOptionalWardFlowSelect("admissions", "bedReleases");
+  const liveFlow = useOptionalWardFlowSelect("admissions", "bedReleases", "dayZero");
   const liveAdmissions = liveFlow?.admissions;
   const liveBedReleases = liveFlow?.bedReleases;
   const admissionSource = liveAdmissions ?? wardAdmissions;
@@ -520,7 +486,7 @@ export function WardDailySheet({
   const groups = dailySheetGroups(resolvedPeople);
   const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;
 
-  const resolvedTimestamp = shiftTimestamp ?? (now !== undefined && asAtStamp(now).time ? asAtStamp(now).time : null);
+  const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero).time : null);
 
   return (
     <section
@@ -817,8 +783,8 @@ const clipboardAvailable = () =>
  * - Copy writes the brief's own rendered text to the clipboard. It is offered only where the
  *   clipboard API exists, and only on desktop (CSS hides it on a phone).
  * - Print is `window.print()`, the ward page's existing behaviour.
- * - The stamp reads the SAME instant the figures read (DB-12) and prints no calendar date
- *   (see `asAtStamp`): "day N of this demonstration", never a weekday or a month.
+ * - The stamp reads the same instant as the figures (DB-12), including its calendar origin when
+ *   available, and always identifies the figures as synthetic (see `asAtStamp`).
  */
 export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -827,9 +793,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   // Read on the client only; the server snapshot says no clipboard, so nothing is offered blind.
   const canCopy = useSyncExternalStore(subscribeNever, clipboardAvailable, () => false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const flow = useOptionalWardFlowSelect("dayZero");
   const wardName = sheetProps.unit?.name ?? null;
   const title = wardName === null ? "Shift brief" : `${wardName} shift brief`;
-  const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now) : null;
+  const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero) : null;
   const stampLine =
     stamp === null || stamp.time === null
       ? null
@@ -857,7 +824,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
       return;
     }
     const text = [title, stampLine, sheet.innerText.trim()].filter(Boolean).join("\n\n");
-    navigator.clipboard.writeText(text).then(
+    copyTextToClipboard(text).then(
       () => {
         setCopyState("copied");
       },

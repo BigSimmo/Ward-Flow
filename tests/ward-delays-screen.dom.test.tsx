@@ -28,10 +28,10 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 const seededMovements = seedWardFlowState().movements;
 const OPEN_COUNT = seededMovements.filter(isOpen).length;
 
-function renderScreen(aliasFrom?: "queue" | "exceptions" | "escalation" | null) {
+function renderScreen() {
   return renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <DelaysScreen aliasFrom={aliasFrom} />
+      <DelaysScreen />
     </WardFlowProvider>,
   );
 }
@@ -174,7 +174,7 @@ describe("the Delays screen", () => {
       text,
       "the Delays screen renders no lapsed-bed-pull group at all, so the vocabulary pin below has " +
         "nothing to stand over. Re-seed the fixture or retire this pair — do not leave it passing.",
-    ).toContain("Reserved time has passed, bed still held");
+    ).toContain("Pull expired, bed still pulled");
 
     expect(text, "a lapsed bed reservation is called a hold; the ward vocabulary rule is pull").not.toContain(
       "Bed hold expired",
@@ -703,24 +703,14 @@ describe("the Delays filters narrow the table, and always say how many they hide
   });
 });
 
-describe("Wave 4 item 15 — Delays alias pedagogy banners", () => {
-  it("names the Queue bookmark when aliasFrom is queue", () => {
-    renderScreen("queue");
-    const banner = screen.getByTestId("ward-delays-alias-banner");
-    expect(banner).toHaveAttribute("data-from", "queue");
-    expect(banner).toHaveTextContent("Opened from a Queue bookmark — that board is now Waiting.");
-  });
-
-  it("dismisses the alias banner without leaving the Delays board", () => {
-    renderScreen("exceptions");
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-    expect(screen.queryByTestId("ward-delays-alias-banner")).not.toBeInTheDocument();
+describe("an old Queue, Exceptions or Escalation bookmark", () => {
+  // UX audit (21 Oct 2026): the redirect is enough, so Waiting shows no old-bookmark banner.
+  it("lands on Waiting with no banner about the old board", () => {
+    window.history.replaceState(null, "", "/ward-flow/waiting?from=queue");
+    renderScreen();
     expect(screen.getByTestId("ward-delays-page")).toBeInTheDocument();
-  });
-
-  it("shows no alias banner on a direct Delays open", () => {
-    renderScreen(null);
-    expect(screen.queryByTestId("ward-delays-alias-banner")).not.toBeInTheDocument();
+    expect(screen.queryByText(/bookmark/i)).not.toBeInTheDocument();
+    window.history.replaceState(null, "", "/");
   });
 });
 

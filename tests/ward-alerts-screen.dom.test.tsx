@@ -33,6 +33,13 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
+// The router's query, as `useSearchParams` gives it. Empty unless a test sets it.
+const address = { query: "" };
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useSearchParams: () => new URLSearchParams(address.query),
+}));
+
 function renderScreen() {
   return render(
     <WardFlowProvider initialNow={NOW}>
@@ -76,6 +83,22 @@ function checkingList() {
 }
 
 describe("the Alerts screen reports on every condition it watches, firing or not", () => {
+  it("retains visible wording in acknowledged alert action names", () => {
+    renderScreen();
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
+    const more = screen.getByTestId("alerts-more-actions");
+    more.setAttribute("open", "");
+    const acknowledge = within(more).getByRole("button", { name: /^Acknowledge / });
+    fireEvent.click(acknowledge);
+    const seen = within(more).getByRole("button", { name: /^Seen: / });
+    expect(seen).toHaveTextContent("Seen");
+    expect(seen).toHaveAttribute("aria-disabled", "true");
+    const take = screen.queryByRole("button", { name: /^Take / });
+    if (take) fireEvent.click(take);
+    const yours = screen.getByRole("button", { name: /^Yours: / });
+    expect(yours).toHaveTextContent("Yours");
+  });
+
   it("renders every named condition, including the ones with nothing to show", () => {
     renderScreen();
     for (const condition of CONDITIONS) {
@@ -353,5 +376,30 @@ describe("Audit 1 (CS-15): the alert nobody chose says it is first in line", () 
     expect(screen.getByTestId("ward-alerts-first-in-line")).toHaveTextContent("First in line, not chosen yet");
     fireEvent.click(screen.getAllByTestId("ward-alerts-open").at(-1)!);
     expect(screen.queryByTestId("ward-alerts-first-in-line")).not.toBeInTheDocument();
+  });
+});
+
+describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
+  it("chooses the alert named in the address and puts focus on its release reason", async () => {
+    const inbox = buildActionInbox(wardMovements.filter(isOpen), NOW, allUnits());
+    const hold = inbox.find((item) => alertKindOf(item.id) === "hold");
+    if (!hold) throw new Error("fixture drifted: the seeded inbox has no expired bed hold");
+    // A client-side visit can first render with the previous page's query; it must not use up
+    // the address, so the release link that follows still works.
+    address.query = "view=list";
+    try {
+      const { rerender } = renderScreen();
+      expect(screen.queryByRole("combobox", { name: "Reason for release" })).not.toHaveFocus();
+      address.query = `alert=${encodeURIComponent(hold.id)}&release=1`;
+      rerender(
+        <WardFlowProvider initialNow={NOW}>
+          <AlertsScreen />
+        </WardFlowProvider>,
+      );
+      const reason = await screen.findByRole("combobox", { name: "Reason for release" });
+      await vi.waitFor(() => expect(reason).toHaveFocus());
+    } finally {
+      address.query = "";
+    }
   });
 });

@@ -13,9 +13,12 @@ import {
   BROADCAST_TARGET_SCOPES,
 } from "../../src/components/ward-management/alerts/ward-broadcast-model";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
+import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
 import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
-import { expect } from "vitest";
+import { afterAll, expect } from "vitest";
+import { createPreparationProfile } from "../../scripts/ward-flow/test-preparation-profile.mjs";
+
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -32,7 +35,7 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../../src/components/ward-management/ward-change-reasons";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
-import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
+import { ABSENCE_STEPS, SUPPORT_SERVICE_TYPES } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo";
 import {
@@ -55,6 +58,11 @@ import {
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
 import { allEmergencyDepartments, NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+import { GENERAL_OBSERVATION } from "../../src/components/ward-management/ward-observation";
+const preparationProfile = createPreparationProfile("legal-candidates");
+afterAll(() => {
+  preparationProfile.write();
+});
 
 /**
  * 🔴 **DELETED 2026-09-17, T2 — `DEADLINE_BEARING_FORM_PROVENANCE`, THE CODE ALLOWLIST.** It stood
@@ -233,8 +241,7 @@ export function candidateEvents(
   const role = EVENT_ROLE[type][0];
   const movementIds = state.movements.map((movement) => movement.id);
   const unitIds = state.units.map((unit) => unit.id);
-  // Only the five placement/mismatch candidates need the Cartesian product. Constructing it
-  // for all actions made the complete inventory sweep exceed its existing time limit.
+  // Exhaustive controls keep native eager arrays; only short-circuit consumers use the iterator.
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
 
   switch (type) {
@@ -267,6 +274,49 @@ export function candidateEvents(
         subject: { kind: "movement" as const, id },
         action: "book_transport" as const,
       }));
+    // D-72: each stay on its own ward, then every episode that opened; one ward for the others.
+    case "RECORD_RESTRICTIVE_PRACTICE_START":
+      return state.admissions.map((stay) => ({
+        type,
+        role,
+        now,
+        unitId: stay.unitId,
+        actingUnitId: stay.unitId,
+        admissionId: stay.id,
+        practice: "seclusion" as const,
+        startedAt: now - 30,
+      }));
+    case "RECORD_RESTRICTIVE_PRACTICE_END":
+      return state.units.flatMap((unit) =>
+        (unit.restrictivePractice?.episodes ?? []).map((episode) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          episodeId: episode.id,
+          endedAt: now,
+        })),
+      );
+    case "RECORD_WARD_INCIDENT":
+      return unitIds.slice(-1).map((unitId) => ({
+        type,
+        role,
+        now,
+        unitId,
+        actingUnitId: unitId,
+        category: "fall" as const,
+        at: now - 10,
+      }));
+    case "SET_SECLUSION_ROOM_STATUS":
+      return unitIds.slice(-1).map((unitId) => ({
+        type,
+        role,
+        now,
+        unitId,
+        actingUnitId: unitId,
+        status: "out_of_service" as const,
+      }));
     // Smart features ideas 3 and 4: every referral crossed with every ward; the reducer decides
     // which ward copy exists and is still waiting.
     case "MARK_REFERRAL_OPENED":
@@ -295,6 +345,31 @@ export function candidateEvents(
           wardUnitId,
           need: "drug_screen" as const,
         })),
+      );
+    // Fix plan item 4: every referral, assigned to the coordinator desk or with a call to each ward.
+    case "ASSIGN_REFERRAL":
+      return state.referrals.map((referral) => ({
+        type,
+        role,
+        now,
+        referralId: referral.id,
+        owner: "coordinator" as const,
+      }));
+    case "LOG_REFERRAL_CONTACT":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          contact: { kind: "psychiatric_ward" as const, unitId },
+          outcome: "no_answer" as const,
+        })),
+      );
+    // Fix plan item 16 (D-76): every referral, asking each ward on its own.
+    case "ASK_MORE_WARDS":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({ type, role, now, referralId: referral.id, unitIds: [unitId] })),
       );
     case "FLAG_REFERRAL_TURNAROUND_PRIORITY":
       return state.units
@@ -402,6 +477,18 @@ export function candidateEvents(
         movementId,
         cleared: true,
       }));
+    case "RECORD_ARRIVAL_CHECK":
+      // D-72: one candidate per movement crossed with each check, recorded as done.
+      return movementIds.flatMap((movementId) =>
+        (["contraband_search", "medication_chart"] as const).map((check) => ({
+          type,
+          role,
+          now,
+          movementId,
+          check,
+          done: true,
+        })),
+      );
     case "UPLOAD_PATIENT_FORM":
       return movementIds.map((movementId) => ({
         type,
@@ -422,6 +509,15 @@ export function candidateEvents(
         // ward-scoped guard now enforces.
         actingUnitId: admission.unitId,
         stepDownCandidate: true,
+      }));
+    case "RECORD_WARD_DIAGNOSIS":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        block: "F20–F29",
       }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
@@ -475,7 +571,7 @@ export function candidateEvents(
                 security: "Open" as const,
                 sex: "Female" as const,
                 gender: "Female" as const, // R7 (2026-09-25): record gender so the walk needs no coordinator review
-                specialling: false,
+                observation: GENERAL_OBSERVATION,
                 highAcuity: false,
                 legalStatus,
                 urgency: 2 as const,
@@ -590,7 +686,7 @@ export function candidateEvents(
         receivingWardAgreed: true,
         mode: "road",
         provider: TRANSPORT_PROVIDERS[0],
-        cadNumber: "SYNTHETIC-GUARD",
+        cadNumber: "SYNTHETIC-GUARD-0001",
         transportLegalStatus: "voluntary",
         estimatedAt: now + 30,
       }));
@@ -859,6 +955,19 @@ export function candidateEvents(
         releaseId: release.id,
         actingUnitId: release.unitId,
       }));
+    case "SEND_RELEASE_SUPPORT_NOTICE":
+      // #398 (D-72): one candidate per release crossed with every service, against the release's
+      // own unit, as CONFIRM_BED_RELEASE above. Only a confirmed release accepts it.
+      return state.bedReleases.flatMap((release) =>
+        SUPPORT_SERVICE_TYPES.map((service) => ({
+          type,
+          role,
+          now,
+          releaseId: release.id,
+          actingUnitId: release.unitId,
+          service,
+        })),
+      );
     case "REVERT_BED_RELEASE":
       // Bed-model rework (2026-08-28). One candidate per release crossed with every waiting-on
       // value — the same "one candidate per real domain value" precedent every list-valued event
@@ -983,7 +1092,7 @@ export function candidateEvents(
         role,
         now,
         movementId: movement.id,
-        actingPlaceId: movement.originEdId,
+        actingPlaceId: movement.originEdId!,
       }));
     case "RECORD_LEAVING":
       // One candidate per admission already in `state.admissions`, crossed with EVERY leaving
@@ -1020,7 +1129,7 @@ export function candidateEvents(
         role,
         now,
         movementId: movement.id,
-        actingPlaceId: movement.originEdId,
+        actingPlaceId: movement.originEdId!,
       }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
@@ -1089,6 +1198,18 @@ export function candidateEvents(
         admissionId: admission.id,
         actingUnitId: admission.unitId,
       }));
+    case "RECORD_OBSERVATION_LEVEL":
+      // One candidate per admission, crossed with every level. A level is a closed list and its
+      // review time is left unrecorded, so nothing here can carry a duration or statutory figure.
+      return state.admissions.flatMap((admission) =>
+        OBSERVATION_LEVELS.map((level) => ({
+          type,
+          role,
+          now,
+          target: { kind: "admission" as const, admissionId: admission.id, actingUnitId: admission.unitId },
+          observation: observationAt(level),
+        })),
+      );
     case "RECORD_STAY_DISCHARGE_BLOCKER":
       // One candidate per admission, crossed with every chosen blocker. The blocker is a closed list
       // of plain operational reasons, so nothing here can carry a duration or statutory figure.
@@ -1456,6 +1577,8 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   // path carries `admissionId`. Scoped like other subject-targeted events so the unscoped
   // coverage assertion does not demand it as a whole-state command.
   "RECORD_SUPPORT_NOTIFICATION",
+  // D-72 arrival checklist (21 Oct 2026): a movement-targeted fact with no legal figure.
+  "RECORD_ARRIVAL_CHECK",
 ]);
 
 /**
@@ -1527,7 +1650,7 @@ export function buildReferredMovementFor(
       security: "Open",
       sex: "Female",
       gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Referred for psychiatric examination",
       urgency: 2,
@@ -1584,7 +1707,7 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
       security: "Open",
       sex: "Female",
       gender: "Female", // R7 (2026-09-25): record gender so the walk needs no coordinator review
-      specialling: false,
+      observation: GENERAL_OBSERVATION,
       highAcuity: false,
       legalStatus: "Referred for psychiatric examination",
       urgency: 2,
@@ -1639,6 +1762,92 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
   return { state: held, movementId: movement.id };
 }
 
+/** These variants share the original movement-major, unit-minor Cartesian order. */
+const PAIR_EVENT_TYPES = new Set<WardFlowEvent["type"]>([
+  "FLAG_LEGAL_MISMATCH",
+  "REFER_TO_UNITS",
+  "ACCEPT_IN_PRINCIPLE",
+  "PULL_PATIENT",
+  "DECLINE",
+  "WITHDRAW_WARD_REQUEST",
+]);
+
+function* pairCandidates(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  matchesMovement: (id: string) => boolean = () => true,
+): Generator<WardFlowEvent> {
+  const role = EVENT_ROLE[type][0];
+  preparationProfile.count("pairCandidatesPotential", state.movements.length * state.units.length);
+  for (const movement of state.movements) {
+    if (!matchesMovement(movement.id)) {
+      preparationProfile.count("pairCandidatesFilteredBeforeConstruction", state.units.length);
+      continue;
+    }
+    for (const unit of state.units) {
+      const base = { type, role, now, movementId: movement.id };
+      preparationProfile.count("pairCandidatesConstructed");
+      switch (type) {
+        case "FLAG_LEGAL_MISMATCH":
+          yield { ...base, type, unitId: unit.id, kind: "involuntary_on_voluntary_ward" };
+          break;
+        case "REFER_TO_UNITS":
+          yield { ...base, type, unitIds: [unit.id] };
+          break;
+        case "ACCEPT_IN_PRINCIPLE":
+        case "PULL_PATIENT":
+          yield { ...base, type, unitId: unit.id };
+          break;
+        case "DECLINE":
+          yield { ...base, type, unitId: unit.id, reason: DECLINE_REASONS[0] };
+          break;
+        case "WITHDRAW_WARD_REQUEST":
+          yield { ...base, type, unitId: unit.id, reason: WARD_REQUEST_WITHDRAWAL_REASONS[0] };
+          break;
+        default:
+          throw new Error(`Not a Cartesian candidate type: ${type}`);
+      }
+    }
+  }
+}
+
+/**
+ * Consumer iterator: avoids constructing unused Cartesian candidates. Other variants keep their
+ * eager construction, including registration of every supplied-deadline sentinel. The public
+ * candidateEvents array API still enumerates every candidate for independent refusal controls.
+ */
+export function* iterateCandidateEvents(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  code?: string,
+  supplyDueAt = true,
+): Generator<WardFlowEvent> {
+  // Match the first occurrence of an id, exactly as the former Array.find restriction did.
+  const targetCodes = new Map<string, string | undefined>();
+  if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
+    for (const movement of state.movements) {
+      if (!targetCodes.has(movement.id)) targetCodes.set(movement.id, movement.legalForm?.code);
+    }
+  }
+  const matchesMovement = (id: string) =>
+    code === undefined || !MOVEMENT_TARGETED_EVENTS.has(type) || targetCodes.get(id) === code;
+  const candidates = PAIR_EVENT_TYPES.has(type)
+    ? pairCandidates(type, state, now, matchesMovement)
+    : preparationProfile.measure("eagerGeneration", () => candidateEvents(type, state, now, supplyDueAt));
+  if (Array.isArray(candidates)) preparationProfile.count("eagerCandidatesConstructed", candidates.length);
+  for (const event of candidates) {
+    if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
+      const movementId = targetMovementId(event);
+      if (movementId === undefined || !matchesMovement(movementId)) continue;
+    }
+    if (code !== undefined && event.type === "RAISE_REFERRAL" && event.draft.legalFormCode !== code) continue;
+    preparationProfile.count("candidatesYielded");
+    yield event;
+  }
+}
+
 /**
  * Applies the first candidate of this type that the reducer ACCEPTS, optionally restricted to
  * candidates acting on a movement whose legal form carries `code`.
@@ -1658,27 +1867,15 @@ export function applyFirstAccepted(
   code?: string,
   supplyDueAt = true,
 ): { applied: WardFlowState; event: WardFlowEvent } | undefined {
-  // Match the same first movement as Array.find, once per action rather than rescanning the
-  // growing state for every Cartesian candidate. Candidate order and coverage stay identical.
-  const targetCodes = new Map<string, string | undefined>();
-  if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
-    for (const movement of state.movements) {
-      if (!targetCodes.has(movement.id)) targetCodes.set(movement.id, movement.legalForm?.code);
+  for (const event of iterateCandidateEvents(type, state, now, code, supplyDueAt)) {
+    preparationProfile.count("reducerAttempts");
+    const next = preparationProfile.measure("reducer", () => wardFlowReducer(state, event));
+    if (next.rejections.length === state.rejections.length) {
+      preparationProfile.count("acceptedTransitions");
+      preparationProfile.count(`accepted.${code ?? "unrestricted"}.${supplyDueAt ? "supplied" : "absent"}.${type}`);
+      return { applied: next, event };
     }
-  }
-  for (const event of candidateEvents(type, state, now, supplyDueAt)) {
-    if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {
-      const movementId = targetMovementId(event);
-      if (movementId === undefined || targetCodes.get(movementId) !== code) continue;
-    }
-    // RAISE_REFERRAL is not movement-targeted, but since 2026-08-24 it is the ONLY reducer path
-    // that authors a form, so the sweep for a code has to raise referrals carrying that code.
-    // Without this the sweep would only ever create movements of whichever code sorts first,
-    // and — worse — could never hold a FRESH, un-examined movement of the other code to drive
-    // RECORD_EXAMINATION against, since every fixture 3B already carries an examination.
-    if (code !== undefined && event.type === "RAISE_REFERRAL" && event.draft.legalFormCode !== code) continue;
-    const next = wardFlowReducer(state, event);
-    if (next.rejections.length === state.rejections.length) return { applied: next, event };
+    preparationProfile.count("refusedTransitions");
   }
   return undefined;
 }
@@ -2103,7 +2300,7 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
       role: "ed",
       now: NOW_ANCHOR,
       movementId: forDeterioration.movementId,
-      actingPlaceId: beforeDeterioration.originEdId,
+      actingPlaceId: beforeDeterioration.originEdId!,
     });
     expect(deteriorated.rejections, `D-34 for Form ${code} was refused`).toEqual([]);
     const paused = deteriorated.movements.find((movement) => movement.id === forDeterioration.movementId)!;
@@ -2482,6 +2679,22 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
      * identical reason: a precondition the shared sweep cannot reliably reach for every code.
      */
     const forArrival = buildHeldMovementFor(code, NOW_ANCHOR);
+    // Audit 2 E-13: arrival details need a ward that has accepted, which the round-robin does not
+    // reliably reach for every code, so they are recorded here on the held movement.
+    const detailsRecorded = wardFlowReducer(forArrival.state, {
+      type: "SET_ARRIVAL_DETAILS",
+      role: EVENT_ROLE.SET_ARRIVAL_DETAILS[0],
+      now: NOW_ANCHOR,
+      movementId: forArrival.movementId,
+      arrivalMode: "mental_health_transport",
+      estimatedArrivalAt: NOW_ANCHOR + 120,
+    });
+    expect(
+      detailsRecorded.rejections,
+      `SET_ARRIVAL_DETAILS (arrival chain) for Form ${code} was refused: ${detailsRecorded.rejections.at(-1)?.reason}`,
+    ).toEqual([]);
+    accepted.add("SET_ARRIVAL_DETAILS");
+    offenders.push(...offendingFormsIn(detailsRecorded, `SET_ARRIVAL_DETAILS(${code})`));
     const arrivalBooked = wardFlowReducer(forArrival.state, {
       type: "BOOK_TRANSPORT",
       role: EVENT_ROLE.BOOK_TRANSPORT[0],
@@ -2675,6 +2888,11 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     // release RELEASE_BED can accept. Named, not "at most N", for the reason given above; its
     // refusal while occupied is pinned in tests/ward-bed-release-lifecycle.test.ts (4 and 13).
     const UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE = new Set(["RELEASE_BED"]);
+    // Fix plan item 16 (D-76): asking more wards needs an open community referral already sent to a
+    // NAMED ward, to copy its bed questions from. The seed has none open, and this sweep's only new
+    // referral is the broad RECEIVE_REFERRAL_CANDIDATE, which asks no named ward. Named, not "at most
+    // N"; its acceptance is pinned in tests/ward-referral-ask-more-wards.test.ts.
+    const NO_NAMED_WARD_REFERRAL_TO_ASK_FROM = new Set(["ASK_MORE_WARDS"]);
     const unscoped = ALL_EVENT_TYPES.filter(
       (type) =>
         !MOVEMENT_TARGETED_EVENTS.has(type) &&
@@ -2682,7 +2900,8 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
         type !== "SET_SCENARIO" &&
         type !== "RECORD_COUNTRY_EXTENSION" && // explicit unchanged-state refusal proof above
         !NO_COMMITMENT_ROW_TO_ACT_ON.has(type) &&
-        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type),
+        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type) &&
+        !NO_NAMED_WARD_REFERRAL_TO_ASK_FROM.has(type),
     );
     expect(
       unscoped.filter((type) => !accepted.has(type)),

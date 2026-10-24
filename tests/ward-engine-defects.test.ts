@@ -15,6 +15,7 @@ import {
 import type { Movement, Referral, Unit } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Three engine defects confirmed by the 2026-09-14 review of the 62-issue catalogue
@@ -82,7 +83,7 @@ function stagedForPull(source: Movement, id: Movement["id"], highAcuity: boolean
     patientId: `PT-${id}`,
     referralId: undefined,
     highAcuity,
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: ACUITY_UNIT,
     referredUnitIds: [],
@@ -326,9 +327,8 @@ describe("ACCEPT_REFERRAL refuses a destination the referrer withdrew", () => {
  *
  *   PULL_PATIENT          took a second bed and orphaned the first admission. Owner decision
  *                         2026-09-15: pulling again RESTORES the held pull instead.
- *   WITHDRAW_ACCEPTANCE   cleared the acceptance and left the admission and bed behind. Withdrawing
- *                         while a bed is held is the owner's own open question (ruling 2 of
- *                         2026-09-04), so it is REFUSED, not silently widened into a release.
+ *   WITHDRAW_ACCEPTANCE   cleared the acceptance and left the admission and bed behind. Owner
+ *                         answer Q16 (2026-09-16): it now releases the held bed in the same act.
  *   RECORD_EXAMINATION    a revoked examination gave back only beds at `pulled` or later.
  */
 const REPULL_MOVEMENT = "WF-012";
@@ -436,38 +436,130 @@ describe("PULL_PATIENT on a movement that already holds a bed restores the pull"
   });
 });
 
-describe("WITHDRAW_ACCEPTANCE refuses while the movement still holds a bed", () => {
-  function withdrawAcceptance(state: WardFlowState): WardFlowState {
+describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
+  function withdrawAcceptance(state: WardFlowState, now = NOW + 20): WardFlowState {
     return wardFlowReducer(state, {
       type: "WITHDRAW_ACCEPTANCE",
       role: "coordinator",
-      now: NOW + 20,
+      now,
       movementId: REPULL_MOVEMENT,
       reason: "the_bed_was_lost",
     });
   }
 
-  it("refuses, and leaves the acceptance, the admission and the bed exactly as they were", () => {
+  function expectReleasedAndWithdrawn(before: WardFlowState, after: WardFlowState, now: number) {
+    const held = movementIn(before, REPULL_MOVEMENT);
+    expect(after.rejections).toEqual([]);
+    const movement = movementIn(after, REPULL_MOVEMENT);
+    expect(movement.stage).toBe("destination_review");
+    expect(movement.acceptedUnitId).toBeUndefined();
+    expect(movement.admissionId).toBeUndefined();
+    expect(movement.pullExpiresAt).toBeUndefined();
+    expect(
+      after.admissions.some((admission) => admission.id === held.admissionId),
+      "no phantom occupant",
+    ).toBe(false);
+    expect(unitIn(after, REPULL_UNIT).allocatable.value, "the bed is given back").toBe(
+      unitIn(before, REPULL_UNIT).allocatable.value + 1,
+    );
+    // Both facts are recorded, at one instant, naming the ward.
+    expect(movement.unwinds.slice(-2)).toEqual([
+      { at: now, kind: "pull_released", by: "coordinator", reason: "the_bed_was_lost", unitId: REPULL_UNIT },
+      { at: now, kind: "acceptance_withdrawn", by: "coordinator", reason: "the_bed_was_lost", unitId: REPULL_UNIT },
+    ]);
+    expect(movement.stageChanges.at(-1)).toMatchObject({ from: held.stage, to: "destination_review", at: now });
+    // The ward and the referring ED are both told.
+    const told = after.notices.slice(before.notices.length);
+    expect(told.map((notice) => notice.kind)).toEqual(["acceptance_withdrawn_ward", "bed_pull_released"]);
+    expect(told[0].sentence).toMatch(/released the bed/);
+  }
+
+  it("at pulled: releases the bed and withdraws the acceptance together", () => {
+    const pulled = pulledWithRoom();
+    expectReleasedAndWithdrawn(pulled, withdrawAcceptance(pulled), NOW + 20);
+  });
+
+  it("stepped back holding a bed: releases the bed and withdraws the acceptance together", () => {
     const steppedBack = steppedBackHoldingBed();
+    expectReleasedAndWithdrawn(steppedBack, withdrawAcceptance(steppedBack), NOW + 20);
+  });
+
+  it("stepped back to Destination review holding a bed: releases it and stays at that stage", () => {
+    const pulled = pulledWithRoom();
+    const steppedBack = wardFlowReducer(pulled, {
+      type: "STEP_BACK_STAGE",
+      role: "coordinator",
+      now: NOW + 5,
+      movementId: REPULL_MOVEMENT,
+      to: "destination_review",
+      reason: "the_bed_was_lost",
+    });
+    expect(steppedBack.rejections, "the step back itself was refused").toEqual([]);
     const before = movementIn(steppedBack, REPULL_MOVEMENT);
-    const allocatableBefore = unitIn(steppedBack, REPULL_UNIT).allocatable.value;
+    expect(before.admissionId, "the premise: the stepped-back movement still holds its admission").toBeDefined();
 
     const after = withdrawAcceptance(steppedBack);
 
-    expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toMatch(/still holds a bed/);
+    expect(after.rejections).toEqual([]);
     const movement = movementIn(after, REPULL_MOVEMENT);
-    expect(movement.acceptedUnitId).toBe(before.acceptedUnitId);
-    expect(movement.admissionId).toBe(before.admissionId);
-    expect(after.admissions.some((admission) => admission.id === before.admissionId)).toBe(true);
-    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(allocatableBefore);
+    expect(movement.stage).toBe("destination_review");
+    expect(movement.acceptedUnitId).toBeUndefined();
+    expect(movement.admissionId).toBeUndefined();
+    expect(movement.stageChanges, "no same-stage entry is written").toEqual(before.stageChanges);
+    expect(movement.unwinds.slice(-2).map((unwind) => unwind.kind)).toEqual(["pull_released", "acceptance_withdrawn"]);
+    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(unitIn(steppedBack, REPULL_UNIT).allocatable.value + 1);
   });
 
-  /**
-   * The route the refusal names, walked end to end — and the positive control: once the bed is
-   * genuinely released, the withdrawal goes through and the ward is left with no phantom occupant.
-   */
-  it("goes through once the pull is restored and the bed released, leaving no admission behind", () => {
+  it("still refuses from handover_ready on, leaving the bed held", () => {
+    const pulled = pulledWithRoom();
+    const atHandover: WardFlowState = {
+      ...pulled,
+      movements: pulled.movements.map((movement) =>
+        movement.id === REPULL_MOVEMENT ? { ...movement, stage: "handover_ready" as const } : movement,
+      ),
+    };
+    const after = withdrawAcceptance(atHandover);
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toMatch(/awaiting a bed or has one pulled/);
+    expect(movementIn(after, REPULL_MOVEMENT).admissionId).toBe(movementIn(atHandover, REPULL_MOVEMENT).admissionId);
+    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(unitIn(atHandover, REPULL_UNIT).allocatable.value);
+  });
+
+  it("refuses while a transport job is booked, so the officer is told first", () => {
+    const pulled = pulledWithRoom();
+    const booked: WardFlowState = {
+      ...pulled,
+      movements: pulled.movements.map((movement) =>
+        movement.id === REPULL_MOVEMENT
+          ? // Only `transport` being set and uncancelled matters to the guard under test.
+            ({
+              ...movement,
+              transport: { id: "TJ-SYN-1", provider: "Synthetic provider", bookedAt: NOW },
+            } as unknown as Movement)
+          : movement,
+      ),
+    };
+    const after = withdrawAcceptance(booked);
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toMatch(/cancel it \(CANCEL_TRANSPORT\)/);
+    expect(movementIn(after, REPULL_MOVEMENT).acceptedUnitId).toBe(REPULL_UNIT);
+  });
+
+  it("refuses, recording no release, when the held bed matches no releasable reservation", () => {
+    const pulled = pulledWithRoom();
+    const admissionId = movementIn(pulled, REPULL_MOVEMENT).admissionId;
+    const mismatched: WardFlowState = {
+      ...pulled,
+      admissions: pulled.admissions.filter((admission) => admission.id !== admissionId),
+    };
+    const after = withdrawAcceptance(mismatched);
+    expect(after.rejections).toHaveLength(1);
+    expect(after.rejections[0].reason).toMatch(/matches no releasable reservation/);
+    expect(movementIn(after, REPULL_MOVEMENT).unwinds).toEqual(movementIn(mismatched, REPULL_MOVEMENT).unwinds);
+  });
+
+  /** Positive control: the old three-step route still works and leaves no admission behind. */
+  it("the three-step route (restore, release, withdraw) still goes through", () => {
     const steppedBack = steppedBackHoldingBed();
     const heldAdmission = movementIn(steppedBack, REPULL_MOVEMENT).admissionId;
     const restored = pullAgain(steppedBack);
@@ -487,6 +579,11 @@ describe("WITHDRAW_ACCEPTANCE refuses while the movement still holds a bed", () 
     const movement = movementIn(after, REPULL_MOVEMENT);
     expect(movement.stage).toBe("destination_review");
     expect(movement.acceptedUnitId).toBeUndefined();
+    expect(movement.unwinds.at(-1)?.kind).toBe("acceptance_withdrawn");
+    expect(
+      movement.unwinds.filter((unwind) => unwind.kind === "pull_released"),
+      "the withdrawal records no second release",
+    ).toHaveLength(1);
     expect(after.admissions.some((admission) => admission.id === heldAdmission)).toBe(false);
   });
 });

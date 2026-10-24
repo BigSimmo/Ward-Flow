@@ -139,6 +139,14 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/statistics/statistics-overview-screen.tsx",
+    why: "its route became a redirect on 21 Oct 2026 (D-77, change 9): Summary and Overview are one Network page, and Overview's unique cards moved to statistics-network-cards.tsx. Deleting the screen and its tests needs Josh's yes on the dead-code check",
+  },
+  {
+    module: "src/components/ward-management/statistics/hospital-capacity-matrix.tsx",
+    why: "Beds by ward, whose one route use was the Overview page; Network leaves it out because Where the pressure is already lists every ward (D-77, change 9, 21 Oct 2026). Goes with the Overview screen if Josh approves its deletion",
+  },
+  {
     module: "src/components/ward-management/coordinator/coordinator-cockpit.tsx",
     why: "added by #269 but unmounted on 13 Oct 2026: the coordinator page renders CoordinatorScreen; whether the cockpit returns (and forces the coordinator role) is an open owner question",
   },

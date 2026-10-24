@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
@@ -8,6 +9,7 @@ import { edById, unitById } from "@/components/ward-management/ward-sites";
  * first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
   const showAll = queue.getByTestId("ward-queue-show-all");
   if (
@@ -184,7 +186,8 @@ test.describe("@mockup Ward screen", () => {
     await expect(beds).toContainText("Ready");
     await expect(beds).toContainText("Occupied");
 
-    // A decline requires a reason from the fixed list, and out-of-catchment is offered.
+    // A decline requires a reason from the fixed list, and "Belongs to another service" is offered
+    // (the old out of catchment, D-78).
     // Unconditional: bty-adult-secure holds a live referral at seed (WF-017, verified against
     // the real fixture — see the task report), so this must not hide behind an `if (count())`
     // that can silently never run.
@@ -196,7 +199,7 @@ test.describe("@mockup Ward screen", () => {
       .getByRole("button", { name: /Decline/ })
       .click();
     const reasons = page.getByRole("group", { name: /Decline reason/ });
-    await expect(reasons).toContainText(/out of catchment/i);
+    await expect(reasons).toContainText(/Belongs to another service/i);
   });
 
   /**
@@ -252,18 +255,16 @@ test.describe("@mockup Ward screen", () => {
     await card.getByTestId("ward-pull-WF-003").click();
     await expect(card).toContainText("Bed pull 4h 00m left");
 
-    // The demo controls live in the one Demo panel at the foot of `WardBar`'s Tools sheet (Tools
-    // review, 15 Oct 2026), a layout-level sibling of `wardScreen` rather than a descendant of it, so
-    // `page`-scoped, and only present once the drawer is open. See `ensureToolsOpen`'s own header
-    // for why opening is conditional rather than an unconditional click.
-    await ensureToolsOpen(page);
+    // On a desktop the demo controls open from the header's Synthetic pill as the Demo menu
+    // (change 8, D-77, 21 Oct 2026), a layout-level sibling of `wardScreen` rather than a
+    // descendant of it, so `page`-scoped. A phone keeps them in Tools.
+    await page.getByRole("button", { name: /^Data mode: Synthetic prototype/ }).click();
 
-    // The panel must never be mistaken for a clinical action, checked in words, not merely by
-    // colour: its row and its opening notice both say so explicitly.
-    const toggle = page.getByTestId("ward-tools-toggle-demo");
-    await expect(toggle).toContainText(/synthetic data only/i);
-    await toggle.click();
-    const panel = page.getByTestId("ward-tools-demo-panel");
+    // The menu must never be mistaken for a clinical action, checked in words, not merely by
+    // colour: its heading row and its opening notice both say so explicitly.
+    const menu = page.getByRole("dialog", { name: "Demo" });
+    await expect(menu).toContainText(/synthetic data only/i);
+    const panel = menu.getByTestId("ward-tools-demo-panel");
     await expect(panel).toBeVisible();
     await expect(panel).toContainText(/change the synthetic data only, never a clinical record/i);
 
@@ -280,6 +281,23 @@ test.describe("@mockup Ward screen", () => {
     // expiring in seconds. 3 hours 45 minutes advanced against a 240-minute (4-hour) hold leaves 15.
     await expect(card).toContainText("Bed pull 15m left");
     await expect(card).not.toContainText("Bed pull 4h 00m left");
+  });
+
+  // Change 8 (D-77): the Demo menu sits under the header's Synthetic pill, below a sheet's modal
+  // layer. The Board time pill in the Tools sheet footer closes the sheet first, so the menu it
+  // opens is on top and holds focus rather than opening unreachable behind the sheet (Codex, #558).
+  test("the Tools sheet footer's Board time pill closes the sheet and opens the Demo menu on top", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/ward-flow/referrals", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("ward-bar-tools-trigger").click();
+    const sheet = page.getByTestId("ward-bar-tools-sheet");
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: /Open demo controls$/ }).click();
+
+    await expect(sheet).toBeHidden();
+    const menu = page.getByRole("dialog", { name: "Demo" });
+    await expect(menu.getByTestId("ward-tools-demo-panel")).toBeVisible();
+    await expect.poll(() => menu.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   });
 
   /**
@@ -1414,6 +1432,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await switchTo("Bed coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
+    await showEveryoneWaitingOn(page);
     await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
       0,
     );
@@ -1519,38 +1538,33 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    // --- Step 6: the reviewer's Proof 3. Select any open movement (the diagram renders every
-    // one of the 23 units' own capacity regardless of which movement is selected, so which
-    // movement is picked here does not matter to this proof), then select Dabakarn's
-    // own node in the statewide flow diagram. ---
-    // ⚠️ EXACT, NOT SUBSTRING — see `ui-ward-coordinator.spec.ts`'s own comment on the same
-    // ambiguity: the diagram's scroll container carries a second, more specific
-    // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
-    // visual upgrade (883ecfdfb4).
-    // 2026-10-07 re-point (v6 Home): Home's State bedflow card is a grouped ward list with no SVG
-    // arrows, so "the diagram has rendered" now waits on its first ward node instead of the old
-    // `svg path[marker-end]`. The nodes keep the old diagram's `ward-diagram-unit-<id>` ids.
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
-
-    await page
-      .getByRole("region", { name: "Priority queue" })
-      .locator('[data-testid^="ward-queue-row-"]')
-      .first()
-      .click();
-
-    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
-    // The diagram's own unit node reads the unit's live capacity directly (Critical 1 also named
+    // --- Step 6: the reviewer's Proof 3. Home v7 (Josh, 22 Oct 2026): State bedflow sits at the
+    // foot of Capacity, so the coordinator opens Capacity from the menu and reads Dabakarn's own
+    // node there. The node reads the unit's live capacity directly (Critical 1 also named
     // `flow-diagram.tsx`'s `serviceGroups`/`unplacedUnits`, which used to be grouped from the
-    // frozen `allUnits()` rather than the live `units` this diagram now receives as a prop).
+    // frozen `allUnits()` rather than the live `units` this card receives as a prop). ---
+    await page
+      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("link", { name: /^Capacity\b/u })
+      .click();
+    await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
+    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
     await expect(rphNode).toContainText("Ready 0");
-    await rphNode.click();
 
-    // --- Step 7: the shortlist's own explainable gate row for this exact unit — the reviewer's
-    // literal proof text: "Allocatable bed / Met / 1 allocatable" while the ward had just said
-    // zero. It must now read the opposite: Not met, 0 allocatable. `ward-eligibility.ts` is a
-    // protected surface — this is not a change to what the gate judges, only to which unit's
-    // live data it is judging. ---
+    // Back on Home, a patient whose Placement explains Dabakarn: WF-003, already accepted there,
+    // so its eligibility checks are Dabakarn's own.
+    await page
+      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("link", { name: /^My list\b/u })
+      .click();
+    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");
+    const placement = page.getByRole("complementary", { name: "Placement", exact: true });
+    // L3 (12 Oct 2026): an accepted patient's card keeps the bed list behind "Find another bed".
+    await placement.getByTestId("ward-shortlist-find-another-bed").click();
+    await expect(placement.getByText("Eligibility checks · Dabakarn")).toBeVisible();
+
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toContainText("Dabakarn");
     const allocatableGate = shortlist.getByTestId("ward-gate-allocatable_bed");

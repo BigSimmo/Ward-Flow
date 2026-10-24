@@ -1,17 +1,28 @@
 import { type AuditDecision } from "./ward-audit";
 import { emptyCareJourney } from "./ward-care-journey";
 import {
+  lacksObservationStaff,
   remainingHighAcuityCapacity,
   remainingSpeciallingCapacity,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
+import {
+  EXTRA_TRAVEL_HOLD_MINUTES,
+  MOVEMENT_STAGES,
+  STEP_BACK_REASONS,
+  type Movement,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { movementBedReservation } from "./ward-movement-bed-hold";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -131,13 +142,12 @@ export function reducePlacementEvent(
           event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
         if (
           !speciallingAnsweredRestore &&
-          movement.specialling &&
-          remainingSpeciallingCapacity(restoreUnit, admissionsExcludingOwn) <= 0
+          lacksObservationStaff(movement.observation, restoreUnit, admissionsExcludingOwn)
         ) {
           return reject(
             state,
             event,
-            `${restoreUnit.name} has no one-to-one specialling capacity left; this patient needs specialling and the ward cannot staff another`,
+            `${restoreUnit.name} has not enough observation staff left; this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it`,
           );
         }
         const acuityOverrideNeededRestore =
@@ -153,12 +163,17 @@ export function reducePlacementEvent(
             `${restoreUnit.name} ${HIGH_ACUITY_STAFFING_REFUSAL}. This placement ${OVERRIDE_REASON_REQUIRED} and the nurse unit manager consulted.`,
           );
         }
+        // Audit 2 E-03 (Josh, 20 Oct 2026): a legal status change since the bed was held can leave
+        // it at a ward not set up for involuntary admissions. Restoring the hold then needs a
+        // recorded reason, which `pullOverrides` keeps as an `authorisation` override.
+        const restoreLegalRefusal = speciallingAnsweredRestore ? null : heldUnitAuthorisationRefusal(state, movement);
+        if (restoreLegalRefusal) return reject(state, event, restoreLegalRefusal);
         const restored: Movement = {
           ...movement,
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
           stage: "pulled",
           waitlistedUnitIds: undefined,
-          pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+          pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
           allocatedBed: movement.allocatedBed ?? held.id,
           stageChanges: [
             ...movement.stageChanges,
@@ -175,17 +190,19 @@ export function reducePlacementEvent(
       if (unit.isClosed) {
         return reject(state, event, `${unit.name} is closed; a new bed cannot be reserved there`);
       }
-      if (unit.allocatable.value <= 0) {
+      const pullReady = boundedBedAvailability(unit).available;
+      if (pullReady <= 0) {
         /**
-         * Reports only the fact it read (`allocatable.value <= 0`), never a cause.
-         * `CONFIRM_CAPACITY` sets that value from a ward's self-report, and `allocatable.source`
-         * cannot tell a pull from a ward correction, so naming an earlier pull as the cause could
-         * be false.
+         * Audit 2 E-08 (Josh, 20 Oct 2026): a pull needs a Ready bed, `min(allocatable, empty)`,
+         * the same figure the ward shows, so it cannot reserve a bed when the ward shows 0 Ready.
+         * Reports only the two figures it read, never a cause: `CONFIRM_CAPACITY` sets allocatable
+         * from a ward's self-report and `allocatable.source` cannot tell a pull from a correction.
+         * An arrival is still always recorded (`PATIENT_ARRIVED`).
          */
         return reject(
           state,
           event,
-          `no allocatable bed remains at ${unit.name} (the ward's allocatable count is ${unit.allocatable.value})`,
+          `no Ready bed remains at ${unit.name} (allocatable ${unit.allocatable.value}, physically empty ${unit.empty.value})`,
         );
       }
       /**
@@ -220,11 +237,11 @@ export function reducePlacementEvent(
        * make the static question overridable instead of this one.
        */
       const speciallingAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
-      if (!speciallingAnswered && movement.specialling && remainingSpeciallingCapacity(unit, state.admissions) <= 0) {
+      if (!speciallingAnswered && lacksObservationStaff(movement.observation, unit, state.admissions)) {
         return reject(
           state,
           event,
-          `${unit.name} has no one-to-one specialling capacity left (${unit.speciallingCapacity} staffable, all in use); this patient needs specialling and the ward cannot staff another`,
+          `${unit.name} has not enough observation staff left (${remainingSpeciallingCapacity(unit, state.admissions)} of ${unit.speciallingCapacity} free); this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it`,
         );
       }
 
@@ -334,11 +351,11 @@ export function reducePlacementEvent(
       const admission: Admission = {
         id: `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}`,
         unitId: unit.id,
-        // The ward's commitment to staff this bed one-to-one, copied from the movement where a
-        // person ticked it at intake. The only runtime writer; see `Admission.specialling`.
-        specialling: movement.specialling,
+        // The observation level the ward is staffing this bed at, copied from the movement where a
+        // person recorded it at intake. See `Admission.observation`.
+        observation: movement.observation,
         // A high-acuity place, copied from the movement, where the referring clinician marked it
-        // (owner ruling). Never derived from `specialling`.
+        // (owner ruling). Never derived from the observation level.
         highAcuity: movement.highAcuity,
         referralId: resolvedReferral?.id ?? null,
         movementId: movement.id,
@@ -381,7 +398,7 @@ export function reducePlacementEvent(
         ...movement,
         stage: "pulled",
         waitlistedUnitIds: undefined,
-        pullExpiresAt: event.now + state.configuration.pullHoldMinutes,
+        pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
         allocatedBed: admission.id,
         // The join `RELEASE_PULL` needs to undo exactly this record, and `PATIENT_ARRIVED` needs to
         // mark exactly this one as having arrived. See `Movement.admissionId`.
@@ -493,7 +510,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           "bed_pull_released",
-          { role: "ed", placeId: movement.originEdId },
+          referrerOf(movement),
           { movementId: movement.id, unitId: unit.id },
           `${unit.name} released the bed it had pulled for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
         ),
@@ -664,6 +681,17 @@ export function reducePlacementEvent(
          */
         return reject(state, event, `STEP_BACK_STAGE reason must be chosen from STEP_BACK_REASONS`);
       }
+      // Q25: a seeded journey at "pulled" or later can hold its bed by its stage alone, with no
+      // `admissionId` (review finding S2-1). Stepped back before "pulled", nothing would record the
+      // hold any more, so every later ending would keep that bed out of the count. Refused instead.
+      const pulledIndex = MOVEMENT_STAGES.indexOf("pulled");
+      if (movement.admissionId === undefined && fromIndex >= pulledIndex && toIndex < pulledIndex) {
+        return reject(
+          state,
+          event,
+          `cannot step movement ${movement.id} back before ${stageCopy.pulled.label}: its bed is held by its stage alone, so the hold would be lost. Step back no further than ${stageCopy.pulled.label}, or release the bed`,
+        );
+      }
       // Touch nothing else (F3, ruling E: "does not release the bed / does not cancel the
       // transport"). Never write `acceptedUnitId`, `acceptedAt`, `pullExpiresAt`, `admissionId`,
       // `transport` or any `Unit.allocatable` field. The only side effects are the two appends
@@ -757,7 +785,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           heldBed ? "bed_pull_released" : "acceptance_withdrawn_referrer",
-          { role: "ed", placeId: movement.originEdId },
+          referrerOf(movement),
           { movementId: movement.id, unitId: releasedUnitId },
           heldBed
             ? `Bed released and search reopened for ${movement.id} (${reasonText}).`
@@ -781,4 +809,24 @@ export function reducePlacementEvent(
       return appendNotices(next, notices);
     }
   }
+}
+
+/**
+ * D-72: the configured pull hold, plus `EXTRA_TRAVEL_HOLD_MINUTES` when the acceptance that still
+ * stands at this ward asked for the extra-travel hold. See `Movement.extendedHoldAt`.
+ */
+function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: string): number {
+  const extended =
+    movement.extendedHoldAt !== undefined &&
+    movement.acceptedAt === movement.extendedHoldAt &&
+    movement.acceptedUnitId === unitId;
+  return state.configuration.pullHoldMinutes + (extended ? EXTRA_TRAVEL_HOLD_MINUTES : 0);
+}
+
+/** D-76: the referrer told about a released bed is the origin ED, or the referring community team. */
+function referrerOf(movement: Movement) {
+  const team = movement.originCommunity?.teamName;
+  return team === undefined
+    ? { role: "ed" as const, placeId: movement.originEdId }
+    : { role: "community" as const, placeId: communityTeamSlug(team) };
 }

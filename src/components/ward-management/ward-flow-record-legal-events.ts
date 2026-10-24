@@ -7,7 +7,10 @@ import type { RecordedFactEvent, RecordedFactEventHelpers } from "./ward-flow-re
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-events";
 import { form3CRefusedAfter3D, isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
+import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -56,19 +59,69 @@ export function reduceRecordedLegalEvent(
       // current entered values are; absence of an old actor-history record does not discard them.
       const legacyCalculatedExpiry =
         movement.legalClock !== undefined && currentDueAt === movement.legalClock.expiresAt;
+      const correction = event.correction;
+      if (correction !== undefined) {
+        if (
+          correction === null ||
+          typeof correction !== "object" ||
+          Array.isArray(correction) ||
+          Object.keys(correction).sort().join() !== "expectedDueAt,expectedFormCode,expectedFormWrittenAt,reason" ||
+          !PAPER_EXPIRY_CORRECTION_REASONS.includes(correction.reason) ||
+          !Number.isFinite(correction.expectedDueAt) ||
+          (correction.expectedFormWrittenAt !== null && !Number.isFinite(correction.expectedFormWrittenAt))
+        ) {
+          return reject(state, event, "Record the checked paper facts and a correction reason.");
+        }
+        if (
+          currentDueAt === undefined ||
+          legacyCalculatedExpiry ||
+          correction.expectedDueAt !== currentDueAt ||
+          correction.expectedFormCode !== movement.legalForm.code ||
+          correction.expectedFormWrittenAt !== (movement.formedAt ?? null)
+        ) {
+          return reject(
+            state,
+            event,
+            "The recorded paper facts changed. Check the current form before correcting its expiry.",
+          );
+        }
+        if (event.dueAt === currentDueAt) {
+          return reject(state, event, "The corrected expiry must differ from the expiry already recorded.");
+        }
+      }
       const isExtension = currentDueAt !== undefined && !legacyCalculatedExpiry;
       // An extension only ever moves an expiry later; the clinician types it, this only orders it
       // against what is recorded.
-      if (isExtension && event.dueAt <= currentDueAt) {
+      if (correction === undefined && isExtension && event.dueAt <= currentDueAt) {
         return reject(state, event, "An extension's new expiry must be later than the expiry already recorded.");
       }
-      const basis: "written_on_form" | "extension" = isExtension ? "extension" : "written_on_form";
+      const basis = correction
+        ? ("correction" as const)
+        : isExtension
+          ? ("extension" as const)
+          : ("written_on_form" as const);
       const historyEntry = { at: event.now, by: event.role, dueAt: event.dueAt, basis };
       const updated: Movement = {
         ...movement,
         legalForm: { ...movement.legalForm, dueAt: event.dueAt },
         legalClock: undefined,
         legalFormExpiryHistory: [...(movement.legalFormExpiryHistory ?? []), historyEntry],
+        ...(correction
+          ? {
+              legalFormExpiryCorrections: [
+                ...(movement.legalFormExpiryCorrections ?? []),
+                {
+                  at: event.now,
+                  by: event.role,
+                  formCode: movement.legalForm.code,
+                  ...(movement.formedAt === undefined ? {} : { formWrittenAt: movement.formedAt }),
+                  previousDueAt: correction.expectedDueAt,
+                  dueAt: event.dueAt,
+                  reason: correction.reason,
+                },
+              ],
+            }
+          : {}),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -192,6 +245,7 @@ export function reduceRecordedLegalEvent(
               ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
+          ...formHistoryAfter(movement, sameFormTimeEdit, event),
         },
         legalClock: undefined,
         legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
@@ -266,12 +320,26 @@ export function reduceRecordedLegalEvent(
       if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
         // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
         const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
+        // Audit 2 E-15: the very same 5B again (same start, no new end) is refused rather than
+        // rewriting its recorded times; a later or corrected 5B keeps the earlier one in
+        // `earlierContinuations`.
+        if (
+          earlier !== undefined &&
+          earlier.code === event.formCode &&
+          earlier.startedAt === event.startedAt &&
+          (event.paperExpiresAt ?? currentDueAt) === currentDueAt
+        ) {
+          return reject(state, event, "This 5B is already recorded with that start time.");
+        }
         const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;
         const continued: Movement = {
           ...movement,
           legalForm: {
             ...fiveA,
             ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
+            ...(earlier === undefined
+              ? {}
+              : { earlierContinuations: [...(fiveA.earlierContinuations ?? []), earlier] }),
             continuedBy: {
               code: event.formCode,
               startedAt: event.startedAt,
@@ -295,6 +363,7 @@ export function reduceRecordedLegalEvent(
           code: event.formCode,
           ...(event.region ? { region: event.region } : {}),
           ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
+          ...formHistoryAfter(movement, false, event),
         },
         legalClock: undefined,
         legalFormReceivedAt: undefined,
@@ -306,4 +375,31 @@ export function reduceRecordedLegalEvent(
     }
   }
   return state;
+}
+
+/**
+ * Audit 2 E-16 (Josh, 20 Oct 2026): a new form keeps the one it replaces as history, as the CTO and
+ * examinations already do. A time edit of the same form replaces nothing, so carries the list on.
+ */
+function formHistoryAfter(
+  movement: Movement,
+  sameFormTimeEdit: boolean,
+  event: { now: Instant; role: WardFlowRole },
+): Pick<LegalForm, "earlierForms"> {
+  const current = movement.legalForm;
+  if (current === undefined) return {};
+  const { earlierForms = [], ...replaced } = current;
+  if (sameFormTimeEdit) return earlierForms.length === 0 ? {} : { earlierForms };
+  return {
+    earlierForms: [
+      ...earlierForms,
+      {
+        ...replaced,
+        ...(movement.formedAt === undefined ? {} : { writtenAt: movement.formedAt }),
+        ...(movement.legalFormReceivedAt === undefined ? {} : { receivedAt: movement.legalFormReceivedAt }),
+        at: event.now,
+        by: event.role,
+      },
+    ],
+  };
 }

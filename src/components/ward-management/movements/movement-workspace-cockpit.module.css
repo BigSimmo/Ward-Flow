@@ -887,6 +887,18 @@
   }
 }
 
+/* Phone (visual check, 21 Oct 2026): inside the transit deck its "select { min-width: 44px }" rule
+   outranks .controlSelect, so at 390 px the stage and reason selects shrank to "Cl" and the blocker
+   placeholder was cut off. On a narrow screen each select and the blocker field take a full row. */
+@media (max-width: 48rem) {
+  .controlRow > .controlSelect,
+  .controlRow > .blockerInput {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 /* Attention List */
 .attentionList {
   display: flex;

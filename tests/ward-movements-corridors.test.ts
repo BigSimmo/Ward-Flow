@@ -14,6 +14,7 @@ import {
   type CorridorCount,
 } from "@/components/ward-management/movements/movements-derivations";
 import type { Movement, MovementId } from "@/components/ward-management/ward-model";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
  * Every field `Movement` requires, filled with an innocuous constant value that no test below
@@ -31,7 +32,7 @@ function buildMovement(id: MovementId, patch: Partial<Movement> = {}): Movement 
     cohort: "Adult",
     security: "Open",
     sex: "Female",
-    specialling: false,
+    observation: GENERAL_OBSERVATION,
     highAcuity: false,
     legalStatus: "Voluntary",
     statusChanges: [],
@@ -132,13 +133,13 @@ describe("refusedCorridorCounts", () => {
     const movement = buildMovement("WF-TEST-01", {
       originEdId: "ED-A",
       declines: [
-        { unitId: "WARD-1", at: 90, reason: "no_bed" },
+        { unitId: "WARD-1", at: 90, reason: "no_suitable_bed" },
         { unitId: "WARD-1", at: 110, reason: "acuity_mix" },
       ],
     });
 
     expect(refusedCorridorCounts([movement], 100)).toEqual([
-      { originEdId: "ED-A", unitId: "WARD-1", count: 1, reasons: ["no_bed"] },
+      { originEdId: "ED-A", unitId: "WARD-1", count: 1, reasons: ["no_suitable_bed"] },
     ]);
   });
 });

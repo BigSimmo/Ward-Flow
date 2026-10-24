@@ -18,10 +18,10 @@ import { stepBackReasonLabels, type Movement, type Referral, type Unit } from "@
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { COMMUNITY_DECLINE_REASON_LABELS, DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * PIR CHRONOLOGY (D-37): every recorded fact about one synthetic person, in time order, for a
@@ -234,7 +234,7 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Transport job closed": ["WITHDRAW_REFERRAL", "RECORD_EXAMINATION", "STOP_TRANSPORT", "RELEASE_DIVERTED_BED"],
     "Document recorded": ["UPLOAD_PATIENT_FORM"],
     "Referral withdrawn by referrer": ["RECORD_REFERRER_WITHDRAWAL"],
-    "Bed held": ["PULL_PATIENT"],
+    "Bed pulled": ["PULL_PATIENT"],
     "Arrived on ward": ["PATIENT_ARRIVED"],
     "Expected discharge date set": ["UPDATE_EXPECTED_DISCHARGE"],
     "Discharge confirmed": ["RECORD_PATIENT_DISCHARGE"],
@@ -253,7 +253,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
     recordedAt: finite(movement.openedAt),
     who: NOT_RECORDED,
     action: "Placement request opened",
-    after: edById(movement.originEdId)?.name ?? movement.originEdId,
+    after: originName(movement) ?? movement.originEdId,
   });
   if (finite(movement.referredAt) !== null && movement.referredUnitIds.length > 0) {
     add({
@@ -410,7 +410,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(expiry.at),
       who: whoLabel(expiry.by),
       action: expiry.basis === "extension" ? "Form extension recorded" : "Form expiry recorded",
-      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero)}`,
+      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero, { includeYearAndZone: true })}`,
     });
   }
   for (const correction of movement.legalFormReceiptCorrections ?? []) {
@@ -490,7 +490,10 @@ function transportRows(movement: Movement, record: string, dayZero: Date, wardNa
   const legal = job.transportLegalStatus
     ? `, ${job.transportLegalStatus === "involuntary" ? "Involuntary" : "Voluntary"}`
     : "";
-  const eta = finite(job.estimatedAt) !== null ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero)}` : "";
+  const eta =
+    finite(job.estimatedAt) !== null
+      ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero, { includeYearAndZone: true })}`
+      : "";
   rows.push({
     record,
     recordedAt: null,
@@ -592,7 +595,7 @@ function admissionRows(admission: Admission, units: readonly Unit[]): RowDraft[]
   const ward = units.find((unit) => unit.id === admission.unitId)?.name ?? admission.unitId;
   const rows: RowDraft[] = [];
   if (finite(admission.pulledAt) !== null) {
-    rows.push({ record, recordedAt: finite(admission.pulledAt), who: NOT_RECORDED, action: "Bed held", after: ward });
+    rows.push({ record, recordedAt: finite(admission.pulledAt), who: NOT_RECORDED, action: "Bed pulled", after: ward });
   }
   if (finite(admission.arrivedAt) !== null) {
     rows.push({
@@ -702,10 +705,19 @@ function auditRows(
   return rows;
 }
 
-function logRecord(entry: EventLogEntry, ids: PatientChronology["recordIds"]): string | null {
+function logRecord(entry: EventLogEntry, ids: PatientChronology["recordIds"], units: readonly Unit[]): string | null {
   if (entry.movementId && ids.movements.includes(entry.movementId)) return `Movement ${entry.movementId}`;
   if (entry.referralId && ids.referrals.includes(entry.referralId)) return `Referral ${entry.referralId}`;
-  if (entry.admissionId && ids.admissions.includes(entry.admissionId)) return `Admission ${entry.admissionId}`;
+  // D-72: an episode end names only its episode, so its stay is read from the ward's record. The
+  // command must not name the stay, since a ward ends an episode after the patient has left its scope.
+  const admissionId =
+    entry.admissionId ??
+    (entry.episodeId
+      ? units
+          .find((unit) => unit.id === entry.unitId)
+          ?.restrictivePractice?.episodes.find((episode) => episode.id === entry.episodeId)?.admissionId
+      : undefined);
+  if (admissionId && ids.admissions.includes(admissionId)) return `Admission ${admissionId}`;
   return null;
 }
 
@@ -751,7 +763,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     ),
   );
   for (const entry of input.eventLog) {
-    const record = logRecord(entry, recordIds);
+    const record = logRecord(entry, recordIds, units);
     const at = finite(entry.now);
     if (record === null) continue;
     if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
@@ -790,7 +802,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
 
 /** A time for paper or a spreadsheet: weekday, date and clock face, or "Not recorded". */
 export function chronologyTime(instant: Instant | null, dayZero: Date): string {
-  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero);
+  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
 }
 
 export const CHRONOLOGY_CSV_HEADER = [
@@ -822,9 +834,11 @@ export function chronologyCsv(
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
-      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero)}`),
+      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero, { includeYearAndZone: true })}`),
     ].join(","),
     ...(patient ? [[csvCell("Patient"), csvCell(patient)].join(",")] : []),
+    [csvCell("Scope"), csvCell("Selected patient's retained chronology")].join(","),
+    [csvCell("Period"), csvCell("Recorded events in the exported view; no date-range restriction")].join(","),
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
     ...rows.map((row) =>
       [

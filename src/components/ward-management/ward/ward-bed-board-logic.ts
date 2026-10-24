@@ -25,7 +25,7 @@ export function bedFits(bed: BoardBed, pick: BoardPick | null, isMixed: boolean)
 /** Why `bed` does not fit, as the end of "Bed 07 does not fit, …". */
 export function whyBedDoesNotFit(bed: BoardBed, pick: BoardPick, isMixed: boolean): string {
   if (bed.status === "closed") return "it is closed";
-  if (bed.heldFor !== undefined) return `it is held for ${bed.heldFor}`;
+  if (bed.heldFor !== undefined) return `it is pulled for ${bed.heldFor}`;
   if (bed.status !== "ready") return "it is taken";
   if (bed.preparing) return "it is still being made ready";
   if (pick.kind !== "stay" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked")

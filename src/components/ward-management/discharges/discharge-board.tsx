@@ -225,7 +225,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {population === "records"
             ? ` · ${identity === "all" ? "All records" : identity === "linked" ? "Linked patient" : "Missing or unavailable"}`
             : ""}
-          {" · "}As of {formatSheetMoment(now, dayZero)}
+          {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
         </p>
         <Hero
           className={pageStyles.phoneHero}
@@ -708,7 +708,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 </td>
                                 <td data-label="Stage / blocker">
                                   <div className={pageStyles.stageCluster}>
-                                    {badge(release.state === "discharged" ? "departed" : release.state)}
+                                    {/* A stuck release keeps its own stage word, so a blocked confirmation
+                                        still reads apart from a blocked prediction, but never with the
+                                        green tick beside its blocker (UX audit, 21 Oct 2026). */}
+                                    {release.state !== "discharged" && release.blocker !== null ? (
+                                      <span className={pageStyles.badge} data-status="blocked">
+                                        <StatusGlyph tone="danger" size={9} />
+                                        <span className="sr-only">Blocked: </span>
+                                        <span>{WORK_STATUS_LABELS[release.state]}</span>
+                                      </span>
+                                    ) : (
+                                      badge(release.state === "discharged" ? "departed" : release.state)
+                                    )}
                                     {release.blocker && <span className={pageStyles.blocker}>{release.blocker}</span>}
                                     {release.waitingOn && (
                                       <span className={pageStyles.secondary}>

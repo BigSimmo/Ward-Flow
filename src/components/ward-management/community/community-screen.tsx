@@ -5,7 +5,7 @@ import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-fo
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
@@ -16,6 +16,7 @@ import {
   communityHubLists,
   communityTeamById,
 } from "@/components/ward-management/community/community-derivations";
+import { referralsSentByTeam } from "@/components/ward-management/community/community-sent-referrals";
 import {
   ratifiedAliasesFor,
   ratifiedSameServiceNames,
@@ -31,9 +32,9 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
   useCommunityScopedReferrals,
+  useCommunitySentReferrals,
   useDanglingReferralIds,
   useWardFlowClock,
   useWardFlowSelect,
@@ -49,11 +50,11 @@ import {
 import type { CommunityDeclineReason } from "@/components/ward-management/ward-model";
 import { findPatients, type Patient } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
+import { useCommunityContactSave } from "./use-community-contact-save";
 import { CommunityAboutThisData, CommunityWorthAttention, type CommunityPhoneListId } from "./community-team-phone";
 import v6 from "./community-team-v6.module.css";
 import { DEMO_COMMUNITY_CASELOAD, DEMO_COMMUNITY_UMRNS, resolveCommunityTeamConfig } from "./community-demo-cohort";
 import {
-  clinicalContactCanSave,
   referralOriginLabel,
   caseloadStatutoryFormCode,
   caseloadRowsForTeam,
@@ -75,6 +76,7 @@ import {
 } from "./community-screen-panels";
 import { CommunityScreenPhone } from "./community-screen-phone";
 import { CommunityScreenDesktopHero, CommunityScreenSwitchDrawer } from "./community-screen-hero";
+import { CommunityScreenSentTab } from "./community-screen-sent-tab";
 import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
@@ -111,21 +113,6 @@ import { useCommunityScreenOverlayFocus, useCommunityScreenTransport } from "./u
  * "state a reason before declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
  */
 // Its blocked-reason sentence, and the cancel-transport one, live in `community-blocked-reasons.ts`.
-
-function recordClinicalContact(
-  dispatch: Dispatch<WardFlowEvent>,
-  now: Instant,
-  teamId: string,
-): { role: WardFlowRole; at: Instant; teamId: string } | null {
-  if (!clinicalContactCanSave()) return null;
-  const role: WardFlowRole = "community";
-  try {
-    dispatch({ type: "RECORD_CLINICAL_CONTACT", role, now, teamId });
-  } catch {
-    return null;
-  }
-  return { role, at: now, teamId };
-}
 
 /**
  * THE COMMUNITY HUB — one community team, and the part of the bed-flow circle it can actually see.
@@ -297,6 +284,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     openDischargeRecord,
     readDischargeRecord,
     dispatch,
+    shared,
+    worldGeneration,
   } = useWardFlowSelect(
     "admissions",
     "notices",
@@ -307,8 +296,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "openDischargeRecord",
     "readDischargeRecord",
     "dispatch",
+    "shared",
+    "worldGeneration",
   );
   const liveReferrals = useCommunityScopedReferrals();
+  const sentByAnyTeam = useCommunitySentReferrals();
   const now = useWardFlowClock();
   const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
@@ -334,10 +326,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
-  const [activeModal, setActiveModal] = useState<{
-    type: "review" | "assign";
-    referral: CommunityScopedReferral;
-  } | null>(null);
+  const [activeModal, setActiveModal] = useState<{ referral: CommunityScopedReferral } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
@@ -407,7 +396,19 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // tier and review date belonged to nobody's record.
   const searchResults = findPatients(patients, searchQuery);
   const selectedPatient: Patient | undefined = patients.find((patient) => patient.id === selectedPatientId);
-  const [contactRecord, setContactRecord] = useState<{ role: WardFlowRole; at: Instant; teamId: string } | null>(null);
+  const contactSave = useCommunityContactSave({
+    dispatch,
+    now,
+    teamId,
+    generation: worldGeneration,
+    shared,
+    onAccepted: (source) => {
+      if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
+      else setToastMessage("Team contact logged. This does not record patient or referral contact.");
+    },
+    onQuickMessage: setToastMessage,
+  });
+  const { contactRecord, contactSaveMessage, contactSaveDisabled } = contactSave;
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
   const [uiState, setUiState] = useState<"populated" | "skeleton" | "empty" | "error">("populated");
   const [inpatientFilter, setInpatientFilter] = useState<"all" | "secure" | "open" | "older">("all");
@@ -436,19 +437,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
 
   function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: CommunityScopedReferral) {
     if (action === "Contacted") {
-      const recorded = recordClinicalContact(dispatch, now, teamId);
-      if (recorded !== null) {
-        setContactRecord(recorded);
-        setToastMessage("Team contact logged. This does not record patient or referral contact.");
-      }
+      contactSave.saveContact("quick");
     } else if (action === "Review") {
       setSelectedReferralId(referral.id);
       setPendingAcceptance(null);
       setAcceptanceError(null);
       setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
-      setActiveModal({ type: "assign", referral });
-      setToastMessage("Assign referral: Not wired in this prototype.");
+      setActiveModal({ referral });
     }
   }
 
@@ -584,10 +580,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   });
 
   function handleSaveClinicalContact() {
-    const recorded = recordClinicalContact(dispatch, now, teamId);
-    if (recorded === null) return;
-    setContactRecord(recorded);
-    setActiveModalType(null);
+    contactSave.saveContact("modal");
   }
 
   // The shared modal contract for the drawer and dialogs, then the two transport dialogs. Hook order
@@ -636,6 +629,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
 
   // The page for an unknown team is the not-found body below, rendered by `CommunityScreen`.
   if (!team) return null;
+  // Fix plan item 17 and D-77 group A: what this team sent, for the Sent tab on desktop and phone.
+  const sentReferrals = {
+    sent: referralsSentByTeam(sentByAnyTeam.sent, team),
+    unattributed: sentByAnyTeam.unattributed,
+  };
 
   // Only a referral addressed to this team, or a ratified same-service name, opens in the drawer.
   const selectedReferral = sourceReferrals.find(
@@ -832,6 +830,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // Site review 12 Oct 2026: admissions matched to no team are a fact about the data, not about this
   // team, and they showed twice (main column and rail). The count stays in About this data only.
 
+  // Sent is left out of both lists on purpose: it is a record of what the team asked for, not work
+  // waiting on the team, so the page still opens on the first list that needs the team.
   const tabCounts: [ActiveTabType, number][] = [
     ["tab-triage", isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length],
     ["tab-inpatients", isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length],
@@ -852,19 +852,22 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   if (chosenTab === null) setChosenTab(firstListWithSomeone);
   const activeTab: ActiveTabType = chosenTab ?? firstListWithSomeone;
   const phoneListTab: Record<CommunityPhoneListId, ActiveTabType> = {
+    sent: "tab-sent",
     waiting: "tab-triage",
     inBed: "tab-inpatients",
     back: "tab-egress",
     ctos: "tab-caseload",
   };
   const phoneList: CommunityPhoneListId =
-    activeTab === "tab-inpatients"
-      ? "inBed"
-      : activeTab === "tab-egress" || activeTab === "tab-expected"
-        ? "back"
-        : activeTab === "tab-caseload"
-          ? "ctos"
-          : "waiting";
+    activeTab === "tab-sent"
+      ? "sent"
+      : activeTab === "tab-inpatients"
+        ? "inBed"
+        : activeTab === "tab-egress" || activeTab === "tab-expected"
+          ? "back"
+          : activeTab === "tab-caseload"
+            ? "ctos"
+            : "waiting";
   const phonePerson = (patientId: string | null | undefined) =>
     patientId ? patients.find((candidate) => candidate.id === patientId) : undefined;
   const phoneName = (patient: Patient | undefined, fallback: string) =>
@@ -984,7 +987,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     searchResults,
     selectedPatient,
     contactRecord,
-    setContactRecord,
+    contactSaveMessage,
+    contactSaveDisabled,
     dismissedTaskIds,
     setDismissedTaskIds,
     uiState,
@@ -1074,6 +1078,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     activeTab,
     phoneListTab,
     phoneList,
+    sentReferrals,
     phonePerson,
     phoneName,
     openDossier,
@@ -1129,6 +1134,9 @@ export function CommunityScreen(props: CommunityScreenProps) {
 
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
+            {/* ── Sent: the referrals this team made, each with its answer (D-77 group A) ── */}
+            <CommunityScreenSentTab view={view} />
+
             {/* ── Tab 1: Priority Referral Triage Queue ── */}
             <CommunityScreenWaitingTab view={view} />
 

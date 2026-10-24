@@ -1,5 +1,18 @@
 # Ward Flow — the task ledger
 
+**Current navigation:** the [task/receipt contract](task-receipts.md) identifies the canonical task
+source and Ward project view. This file keeps local task detail and dated evidence; it is not an
+exhaustive live backlog. Reuse the existing task identity and verify current scope before acting.
+New decisions belong in the [decision log](ward-flow/decisions.md); the
+[legacy register](ward-flow-ledger.md) preserves older decision and identity evidence.
+
+_Updated 2026-10-21 - clarify task and decision navigation; Documentation owns. Dated task evidence below is unchanged._
+
+<details>
+<summary>Historical introductory claims and navigation — August to October 2026</summary>
+
+<!-- docs-script-refs:historical-start -->
+
 > **Current task navigation — 16 October 2026.** The [task/receipt workflow](task-receipts.md) identifies the canonical task source and Ward project view. This file is a local task-detail/history index, not a competing canonical ledger. Read dated entries as observations of their stated revisions; earlier claims of newest/current/authoritative do not supersede the canonical source or newer evidence. The October 2026 entries (§7.70 through §7.81) record PRs landed on `origin/main` up through commit `5ddeb7d5` (PR #363), plus the 16 October adversarial audit remediation.
 
 **Every outstanding Ward Flow task, in one place. Merged 2026-08-30 from four documents.**
@@ -30,6 +43,10 @@ to read WHY), `ward-flow-hubs-and-patient-plan.md`, `ward-flow-roadmap.md`, the 
 `ward-flow-phase-9-decisions.md`. **Those keep their detail; this holds the list.**
 
 ---
+
+<!-- docs-script-refs:historical-end -->
+
+</details>
 
 ## Earlier history
 
@@ -99,10 +116,10 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Status**: Open.
    - **Requirement**: Physical iPhone Safari device inspection. Synthetic Chromium emulation cannot replicate dynamic URL bar collapsing, bottom safe-area insets (`env(safe-area-inset-bottom)`), or virtual keyboard interaction with the fixed bottom dock.
 4. **AUD-03 (Bed-Hold Countdown Arithmetic Unit Tests)**:
-   - **Status**: Open.
+   - **Status**: **Closed, already covered** (checked 21 Oct 2026). `tests/ward-bed-hold.test.ts` tests the lapsed, at-risk and held boundaries and `tests/ward-bed-hold-expiry-in-transit.test.ts` the review threshold (2 hours). There is no 15-minute rule.
    - **Requirement**: Unit test suite for `bedHoldExpiryAlert` hold countdown arithmetic, verifying boundary behavior at 0m, 15m, 60m, and expired transitions.
 5. **AUD-06 (Multi-Ward Rapid Click Reducer Serialization)**:
-   - **Status**: Open.
+   - **Status**: **Resolved** 21 Oct 2026. Every event names its own ward and React serialises dispatch, so the record was safe; the ward answer view now resets per ward like the overview (`tests/ward-switch-stale-action.dom.test.tsx`).
    - **Requirement**: Prevent stale reducer action overwrites when clinicians switch rapidly between wards in the UI under concurrent event dispatch.
 6. **Gender Placement Validation Gate**:
    - **Status**: **Resolved** (enforced in `ward-eligibility.ts` and `ward-flow-reducer.ts`, with shortlist gender-placement state reset verified in PR #281).
@@ -111,8 +128,8 @@ The following items are the prioritised open backlog as of this snapshot. This l
    - **Status**: **Resolved** (mandatory clinician reason selection enforced prior to unblocking discharge delays).
    - **Requirement**: Require clinician reason selection from fixed taxonomy prior to unblocking discharge delays.
 8. **CAP-REV (Capacity Request Revision Decoupling)**:
-   - **Status**: Open.
-   - **Requirement**: Record the allocatable revision on each Capacity request so request ordering and clearance do not rely on minute-level timestamps.
+   - **Status**: **Resolved** 21 Oct 2026 (branch `claude/project-thread-yu7210`). Each request records the ward's confirmation count (`allocatable.confirmations`, moved on only by `CONFIRM_CAPACITY`), and it reads as answered once the shared unit's count has moved past it, so it clears on every desk and the shared site, no other bed change answers it, and a confirmation from an older board does not clash with the ask. #290 had been credited with this but never built it.
+   - **Requirement**: Record a confirmation counter on each Capacity request so request ordering and clearance do not rely on minute-level timestamps. Implemented as `allocatable.confirmations`, because the general allocatable revision also moves on other bed changes.
 9. **Code-Map Route Audit Synchronization**:
    - **Status**: Open.
    - **Requirement**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points (including `/command`, Statistics sub-routes, and report entry points).
@@ -166,12 +183,12 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L4-03 (AUD-06 Multi-Ward Rapid Click Reducer Serialization)**: Reducer action serialization under rapid ward switching.
 - **TASK-L4-04 (S2-9 Gender Match Validation)**: Gender match & security classification validation on bed placements against ward mix policies (gender placement validation resolved; S2-9 security comparator alignment tracked in §7.79).
 - **TASK-L4-05 (Discharge Block Reason Selector)**: Mandatory clinician reason selection prior to discharge delay unblocking (Resolved).
-- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record allocatable revision counter on requests to avoid timestamp collisions.
+- **TASK-L4-06 (CAP-REV Capacity Request Revision Decoupling)**: Record the ward's confirmation count (`allocatable.confirmations`) on requests to avoid timestamp collisions (Resolved 21 Oct 2026, see item 8 above).
 - **TASK-L4-07 (Code-Map Route Audit Synchronization)**: Refresh `docs/ward-flow/code-map/shell-and-shared.md` to index 8 unmapped route entry points.
 - **TASK-L4-08 (Live Database Staging)**: Multi-user shared save/reload and conflict reconciliation verification on live PostgreSQL / Supabase instance.
 - **TASK-L4-09 (PERF-01 Retire 5 Orphaned Statistics CSS Files - 134.2 KB)**: Delete unimported legacy files in `src/components/ward-management/statistics/` (awaiting explicit approval).
 - **TASK-L4-10 (PERF-02 Design Token Consolidation)**: Deprecate `ward-flow-v6-tokens.css` in favor of consolidated `ward-flow-v9-tokens.css` (~90 KB uncompressed CSS reduction).
-- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching.
+- **TASK-L4-11 (PERF-03 Edge CDN Caching vs Origin Nonces)**: Security header strategy to enable Edge CDN caching (Closed 21 October 2026: Josh ruled to keep the per-request CSP nonce and not edge-cache HTML; see the `src/proxy.ts` header comment).
 - **TASK-L4-12 (PERF-04 Deep-Link Scroll Timing on Lazy Secondary Views)**: Explicit post-mount scroll event for hash links navigating to dynamically imported tabs.
 - **TASK-L4-13 (A2-14 Unused Standalone Clock Provider)**: Retire or align unused standalone `WardFlowClockProvider` in `ward-flow-provider.tsx`.
 
@@ -180,7 +197,7 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **DEC-L5-01 (S2-2)**: Revoked-examination hold release — **Ruled**: Refuse generic blocker edits on revoked-exam / stopped-transport holds; require explicit `RELEASE_HELD_BED`.
 - **DEC-L5-02 (A1-8, A1-10, S2-10, A1-13, A1-14)**: Ward unit authority — **Ruled**: Require matching `actingUnitId` for `ward` callers on arrival details, no-transport-needed, transport booking, and origin verification on referral corrections (coordinators unrestricted).
 - **DEC-L5-03 (A1-2)**: Referral withdrawal authority — **Ruled**: Only the originating referrer (matching ED/community `actingPlaceId` or originating inpatient ward `actingUnitId`) plus the `coordinator` may withdraw a referral.
-- **DEC-L5-04 (CAP-REV)**: Capacity request ordering — **Ruled**: Record an explicit `allocatableRevision` counter on capacity update requests so only an actual capacity confirmation clears the request.
+- **DEC-L5-04 (CAP-REV)**: Capacity request ordering — **Ruled**: Record an explicit `allocatableRevision` counter on capacity update requests so only an actual capacity confirmation clears the request. Implemented 21 Oct 2026 as `allocatable.confirmations`, a counter only `CONFIRM_CAPACITY` moves, since the general revision also moves on other bed changes.
 - **DEC-L5-05 (SPEC-005)**: Home queue ordering policy — **Ruled**: Keep D-32 ordering (actionable stage first, then longest wait) and render ATS + Flagged Urgent as distinct visual badges without overriding wait-time order.
 
 #### Category 6: Front-End, UX, Accessibility & Architecture Audit Backlog (October 2026)
@@ -288,7 +305,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 - **PR #287 (`b8fd53d1`)**: Automated documentation maintenance pipeline (`npm run docs:maintain`) and `manifest.ts` `background_color` (`R7`).
 - **PR #289 (`7debf591`) & PR #295 (`ef302b7e`)**: Cut `backend/ward-flow/` default primary store over to Supabase (`D-55`) and removed retired Azure runtime code.
-- **PR #290 (`950fcac7`)**: Completed Streams 1–5 audit remediations (25 defect fixes across `S1-5`, `S1-7`, `S1-8`, `S1-9..S1-11`, `S2-3`, `S2-9`, `AUD-12`, `AUD-13`, `AUD-14`, `AUD-URL`, `AUD-ESC`, `M-WARD-ANSWER`, `D2`, `D3`, `D7`, `M-TOKENS`, `A3-8/A3-9`, `A3-15`, `A2-11/A2-12`, `A1-15`, `A4-12`, `A4-13`, `A4-15`, `R09`, `R14`, `CAP-REV`, `SPEC-005`).
+- **PR #290 (`950fcac7`)**: Completed Streams 1–5 audit remediations (25 defect fixes across `S1-5`, `S1-7`, `S1-8`, `S1-9..S1-11`, `S2-3`, `S2-9`, `AUD-12`, `AUD-13`, `AUD-14`, `AUD-URL`, `AUD-ESC`, `M-WARD-ANSWER`, `D2`, `D3`, `D7`, `M-TOKENS`, `A3-8/A3-9`, `A3-15`, `A2-11/A2-12`, `A1-15`, `A4-12`, `A4-13`, `A4-15`, `R09`, `R14`, `SPEC-005`). Correction 21 Oct 2026: `CAP-REV` was listed here but #290 did not build it; requests cleared only on a local dismissal until branch `claude/project-thread-yu7210`.
 - **PR #291 (`dc3b2b49`)**: Audit usability, accessibility, and reliability fixes (mandatory discharge blocker reason, dirty-state navigation guards `TASK-L6-01`, `M-WARD-ANSWER`).
 - **PR #292 (`740446a2`)**: Top 25 clinical, operational, and UX improvements across Ward Flow screens.
 - **PR #294 (`e5979207`)**: Source-generated `docs/FACTS.md` markers (`npm run docs:facts`) and `docs/retired-terms.json` enforcement.

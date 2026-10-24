@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
+import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsServiceScreen } from "@/components/ward-management/statistics/statistics-service-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -68,14 +69,14 @@ describe("Overview on the executive desk, counts only", () => {
     renderScreen(<StatisticsOverviewScreen />);
 
     // Seed: one no-bed decline, from two of the movements, two escalated.
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("fewer than 5");
-    expect(text("ward-statistics-overview-decline-sex_mix")).toBe("none");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("fewer than 5");
+    expect(text("ward-statistics-overview-decline-sex_designation_unavailable")).toBe("none");
     expect(text("ward-statistics-overview-declines-total")).toBe("6");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("fewer than 5");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("fewer than 5");
     // A worded bar reads its words to a screen reader, not the number.
     const chart = within(screen.getByTestId("ward-statistics-overview-declines-table"));
-    expect(chart.getByText("No bed: fewer than 5")).toBeInTheDocument();
+    expect(chart.getByText("No suitable bed: fewer than 5")).toBeInTheDocument();
 
     // Bed figures stay exact: one bed pending preparation, 45 physically empty.
     expect(text("ward-statistics-overview-preparing-value")).toBe("1");
@@ -92,7 +93,7 @@ describe("Overview on the executive desk, counts only", () => {
   it("shows the coordinator the exact counts", () => {
     asDesk("coordinator", true);
     renderScreen(<StatisticsOverviewScreen />);
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("1");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("1");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
   });
@@ -100,11 +101,37 @@ describe("Overview on the executive desk, counts only", () => {
   it("shows the executive the exact counts while the flag is off", () => {
     asDesk("executive", false);
     renderScreen(<StatisticsOverviewScreen />);
-    expect(text("ward-statistics-overview-decline-no_bed")).toBe("1");
+    expect(text("ward-statistics-overview-decline-no_suitable_bed")).toBe("1");
     expect(text("ward-statistics-overview-declines-movements-with")).toBe("2");
     expect(text("ward-statistics-overview-refused-so-far-escalated")).toBe("2");
     expect(screen.queryByText("fewer than 5")).toBeNull();
     expect(screen.queryByText("not shown")).toBeNull();
+  });
+});
+
+describe("the phone More figures sheet on the executive desk, counts only (D-77 change 9)", () => {
+  function openMoreFigures() {
+    fireEvent.click(screen.getByTestId("ward-statistics-more-figures"));
+    return within(screen.getByRole("dialog"));
+  }
+
+  it("words a small decline the way the desktop does", () => {
+    asPhone();
+    asDesk("executive", true);
+    renderScreen(<StatisticsScreen />);
+    const declines = within(openMoreFigures().getByRole("list", { name: "Declines by reason" }));
+    // Seed: one no-bed decline.
+    expect(declines.getAllByText("fewer than 5").length).toBeGreaterThan(0);
+    for (const item of declines.getAllByRole("listitem")) expect(item.textContent).not.toMatch(/\D[1-4]$/u);
+  });
+
+  it("shows the coordinator the exact counts", () => {
+    asPhone();
+    asDesk("coordinator", true);
+    renderScreen(<StatisticsScreen />);
+    const sheet = openMoreFigures();
+    expect(sheet.queryByText("fewer than 5")).toBeNull();
+    expect(sheet.queryByText("not shown")).toBeNull();
   });
 });
 

@@ -1,8 +1,6 @@
 "use client";
 
-import { downloadBlob } from "@/components/ward-management/ward-download";
-
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, Search, X } from "lucide-react";
 
@@ -28,7 +26,7 @@ import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
 
@@ -75,6 +73,7 @@ export function StatisticsCapacityChart({
   leaveBeds = [],
   initialGroup = "hospital",
   scopeLabel = "across the network",
+  asAt = "Not recorded",
   title = "Where beds are available",
 }: {
   units: Unit[];
@@ -83,6 +82,7 @@ export function StatisticsCapacityChart({
   leaveBeds?: readonly LeaveBed[];
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
+  asAt?: string;
   title?: string;
 }) {
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
@@ -210,10 +210,10 @@ export function StatisticsCapacityChart({
         row.onLeave,
       ]),
     ];
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      "ward-flow-synthetic-capacity.csv",
-    );
+    downloadCsv("ward-flow-synthetic-capacity.csv", lines, {
+      asAt,
+      scope: `Capacity ${scopeLabel}; all matching rows; ${service === "all" ? "all services highlighted" : `${service} highlighted`}${overOnly ? `, only rows at or above the ${alertLine}% alert line` : ""}; grouped by ${groupBy}`,
+    });
   }
 
   const sortItems: MenuItem[] = (Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({
@@ -222,6 +222,60 @@ export function StatisticsCapacityChart({
     icon: sort === key ? Check : undefined,
     onSelect: () => setSort(key),
   }));
+
+  const details = selected ? (
+    <aside className={styles.inspector} aria-label="Selected capacity details" data-testid="capacity-details">
+      <div className={styles.inspectorHeading}>
+        <h3>{selected.name}</h3>
+        <span>{selected.context}</span>
+        <Button
+          size="sm"
+          variant="ghost"
+          iconOnly
+          icon={X}
+          aria-label="Close capacity details"
+          onClick={closeDetails}
+        />
+      </div>
+      <dl className={styles.detailsMetrics}>
+        <div>
+          <dt>{BED_STATE_LABELS.ready}</dt>
+          <dd>{selected.ready}</dd>
+        </div>
+        <div>
+          <dt>{BED_STATE_LABELS.pulled}</dt>
+          <dd>{selected.pulled}</dd>
+        </div>
+        <div>
+          <dt>{BED_STATE_LABELS.closed}</dt>
+          <dd>{selected.closed}</dd>
+        </div>
+        <div>
+          <dt>{BED_STATE_LABELS.occupied}</dt>
+          <dd>
+            {selected.occupied}
+            {selected.onLeave > 0 ? ` · ${selected.onLeave} on leave` : null}
+          </dd>
+        </div>
+        <div>
+          <dt>Total beds</dt>
+          <dd>{selected.beds}</dd>
+        </div>
+      </dl>
+      <div className={styles.wardList}>
+        {selected.units.map((unit) => {
+          const capacity = unitCapacity(unit, bedReleases);
+          return (
+            <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
+              <span>{unit.name}</span>
+              <strong>{capacity.available} ready</strong>
+              <Icon icon={ChevronRight} size={14} />
+            </Link>
+          );
+        })}
+      </div>
+    </aside>
+  ) : null;
 
   return (
     <StatCard
@@ -269,7 +323,7 @@ export function StatisticsCapacityChart({
           aria-label="Search capacity"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Find a hospital or ward"
+          placeholder={groupBy === "ward" ? "Find a ward" : "Find a hospital"}
         />
         {services.length > 1 ? (
           <Segmented
@@ -375,128 +429,78 @@ export function StatisticsCapacityChart({
                   ? `${row.context} · ${wards} ${wards === 1 ? "ward" : "wards"} · ${row.beds} beds`
                   : `${row.context} · ${row.beds} beds`;
               return (
-                <button
-                  key={row.id}
-                  ref={(node) => {
-                    if (node) rowButtons.current.set(row.id, node);
-                    else rowButtons.current.delete(row.id);
-                  }}
-                  title={`${row.ready} ready · ${row.pulled} pulled · ${row.closed} closed · ${row.occupied} occupied · ${row.beds} beds`}
-                  onKeyDown={(event) => {
-                    const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
-                    if (direction || event.key === "Home" || event.key === "End") {
-                      event.preventDefault();
-                      const nextIndex =
-                        event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? rows.length - 1
-                            : (index + direction + rows.length) % rows.length;
-                      rowButtons.current.get(rows[nextIndex].id)?.focus();
-                    }
-                  }}
-                  type="button"
-                  className={styles.row}
-                  data-dim={highlighting && !isLit(row) ? "true" : undefined}
-                  aria-pressed={selected?.id === row.id}
-                  aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
-                  onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
-                >
-                  <span className={styles.rowName}>
-                    <strong>{row.name}</strong>
-                    <small>{sub}</small>
-                  </span>
-                  <span className={styles.barArea} aria-hidden="true">
-                    {ticks.map((tick) => (
-                      <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
-                    ))}
-                    {scale === "share" ? <i className={styles.alertMark} style={{ left: `${alertLine}%` }} /> : null}
-                    <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
-                      {row.ready > 0 && (
-                        <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
-                      )}
-                      {row.pulled > 0 && (
-                        <span
-                          className={styles.pulled}
-                          data-bed-state="pulled"
-                          style={{ width: `${(row.pulled / (row.beds || 1)) * 100}%` }}
-                        />
-                      )}
-                      {row.closed > 0 && (
-                        <span className={styles.held} style={{ width: `${(row.closed / (row.beds || 1)) * 100}%` }} />
-                      )}
-                      {row.occupied > 0 && (
-                        <span
-                          className={styles.occupied}
-                          style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
-                        />
-                      )}
+                <Fragment key={row.id}>
+                  <button
+                    ref={(node) => {
+                      if (node) rowButtons.current.set(row.id, node);
+                      else rowButtons.current.delete(row.id);
+                    }}
+                    title={`${row.ready} ready · ${row.pulled} pulled · ${row.closed} closed · ${row.occupied} occupied · ${row.beds} beds`}
+                    onKeyDown={(event) => {
+                      const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+                      if (direction || event.key === "Home" || event.key === "End") {
+                        event.preventDefault();
+                        const nextIndex =
+                          event.key === "Home"
+                            ? 0
+                            : event.key === "End"
+                              ? rows.length - 1
+                              : (index + direction + rows.length) % rows.length;
+                        rowButtons.current.get(rows[nextIndex].id)?.focus();
+                      }
+                    }}
+                    type="button"
+                    className={styles.row}
+                    data-dim={highlighting && !isLit(row) ? "true" : undefined}
+                    aria-pressed={selected?.id === row.id}
+                    aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
+                    onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
+                  >
+                    <span className={styles.rowName}>
+                      <strong>{row.name}</strong>
+                      <small>{sub}</small>
                     </span>
-                  </span>
-                  <span className={styles.readyCount} data-empty={row.ready === 0}>
-                    {over ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {row.ready}
-                  </span>
-                  <Icon icon={ChevronRight} size={14} className={styles.chevron} />
-                </button>
+                    <span className={styles.barArea} aria-hidden="true">
+                      {ticks.map((tick) => (
+                        <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
+                      ))}
+                      {scale === "share" ? <i className={styles.alertMark} style={{ left: `${alertLine}%` }} /> : null}
+                      <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
+                        {row.ready > 0 && (
+                          <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
+                        )}
+                        {row.pulled > 0 && (
+                          <span
+                            className={styles.pulled}
+                            data-bed-state="pulled"
+                            style={{ width: `${(row.pulled / (row.beds || 1)) * 100}%` }}
+                          />
+                        )}
+                        {row.closed > 0 && (
+                          <span className={styles.held} style={{ width: `${(row.closed / (row.beds || 1)) * 100}%` }} />
+                        )}
+                        {row.occupied > 0 && (
+                          <span
+                            className={styles.occupied}
+                            style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
+                          />
+                        )}
+                      </span>
+                    </span>
+                    <span className={styles.readyCount} data-empty={row.ready === 0}>
+                      {over ? <StatusGlyph tone="warning" size={9} /> : null}
+                      {row.ready}
+                    </span>
+                    <Icon icon={ChevronRight} size={14} className={styles.chevron} />
+                  </button>
+                  {/* The details open under their own row, so the chart keeps its full width (UX audit
+                    21 Oct 2026): beside the chart they crushed the bars to about 20px. */}
+                  {selected?.id === row.id ? details : null}
+                </Fragment>
               );
             })
           )}
         </div>
-
-        {selected && (
-          <aside className={styles.inspector} aria-label="Selected capacity details" data-testid="capacity-details">
-            <div className={styles.inspectorHeading}>
-              <h3>{selected.name}</h3>
-              <span>{selected.context}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                iconOnly
-                icon={X}
-                aria-label="Close capacity details"
-                onClick={closeDetails}
-              />
-            </div>
-            <dl className={styles.detailsMetrics}>
-              <div>
-                <dt>{BED_STATE_LABELS.ready}</dt>
-                <dd>{selected.ready}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.pulled}</dt>
-                <dd>{selected.pulled}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.closed}</dt>
-                <dd>{selected.closed}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.occupied}</dt>
-                <dd>
-                  {selected.occupied}
-                  {selected.onLeave > 0 ? ` · ${selected.onLeave} on leave` : null}
-                </dd>
-              </div>
-              <div>
-                <dt>Total beds</dt>
-                <dd>{selected.beds}</dd>
-              </div>
-            </dl>
-            <div className={styles.wardList}>
-              {selected.units.map((unit) => {
-                const capacity = unitCapacity(unit, bedReleases);
-                return (
-                  <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
-                    <span>{unit.name}</span>
-                    <strong>{capacity.available} ready</strong>
-                    <Icon icon={ChevronRight} size={14} />
-                  </Link>
-                );
-              })}
-            </div>
-          </aside>
-        )}
       </CardBody>
       <CardFoot
         meta={

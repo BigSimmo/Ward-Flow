@@ -56,7 +56,7 @@ export function EdReferralPatientField({
           <option key={patient.id} value={referralPatientLabel(patient)} />
         ))}
       </datalist>
-      <label>
+      <label className={styles.referralCheckbox}>
         <input
           type="checkbox"
           data-testid="ward-ed-referral-unidentified"
@@ -65,7 +65,7 @@ export function EdReferralPatientField({
             setTyped("");
             onChange({ patientId: undefined, unidentified: event.target.checked });
           }}
-        />{" "}
+        />
         Not yet identified
       </label>
     </div>

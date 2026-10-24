@@ -221,6 +221,14 @@ describe("BOOK_TRANSPORT", () => {
       expect(state.rejections[0]!.reason).toContain("cadNumber");
     });
 
+    // HAZ-03 (#430): the engine refuses a placeholder too, not only a blank, so no form or script
+    // can log "TBC" as a dispatch number.
+    it.each(["TBC", "N/A", "pending", "CAD-0000", "9999"])("refuses the placeholder CAD number %s", (cadNumber) => {
+      const state = book({ cadNumber });
+      expect(state.rejections.length).toBe(1);
+      expect(state.rejections[0]!.reason).toContain("cadNumber refused");
+    });
+
     it("refuses a missing transportLegalStatus", () => {
       const state = book({ transportLegalStatus: undefined });
       expect(state.rejections.length).toBe(1);

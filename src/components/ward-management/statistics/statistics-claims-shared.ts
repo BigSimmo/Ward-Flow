@@ -59,6 +59,7 @@ export type ModelClaim = {
 };
 
 export const WARD_MODEL = "src/components/ward-management/ward-model.ts";
+export const WARD_MODEL_MOVEMENT_PARTS = "src/components/ward-management/ward-model-movement-parts.ts";
 export const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 export const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 export const WARD_RECORD_EVENTS = "src/components/ward-management/ward-flow-record-events.ts";
@@ -100,7 +101,7 @@ export const DESTINATION_OPTIONS = "src/components/ward-management/referrals/ref
  * blast radius, because a new unit field on this record falsifies all three of them together.
  */
 export const REFERRAL_ADDRESSING_BODY =
-  'export type ReferralAddressing = { /** Explicitly placed on a recipient waitlist; still awaiting an answer. */ waitlistedAt?: Instant; /** When this specific destination was referred. */ referredAt?: Instant; destination: ReferralDestination; state: ReferralAddressingState; /** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: Instant; /** A ROLE, never a person \u2014 see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ decidedBy?: string; /** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is * `psychiatric_ward` or `emergency_department` (the latter further narrowed to * `ED_DECLINE_REASONS` by convention, never enforced by this type); from * `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` \u2014 O-16.6, community- * decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two * vocabularies apart at runtime, since this field\'s own type cannot narrow per destination kind \u2014 * see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; /** * Only on an `accepted` addressing, and only from `OVERRIDE_REASONS` \u2014 the SAME vocabulary the * three placement events use, deliberately not a second one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused without one. * * \u26a0\ufe0f Its ABSENCE on an accepted addressing means the referral passed every gate \u2014 not that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing \u2014 the other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: string; /** FD-5 \u2014 when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back the REFERRAL, * not one ward\'s copy of it. A destination that already answered keeps its answer. The reasoning, * and the three same-shaped events it must not be confused with, are on * `RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: Instant; /** The ROLE that wrote it down \u2014 never the person who withdrew, who is the referrer and outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; /** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one * destination alone (`destinationKind: "community_team"`), never on a whole-referral withdrawal \u2014 * that act carries no reason at all (see that event\'s own doc comment, `ward-flow-events.ts`, for * why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for "why a person * took back one destination\'s own live request", rather than a second list for this narrower act. */ withdrawalReason?: WardRequestWithdrawalReason; /** * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`, * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward\'s act, not the person. */ heldBedNumber?: number; /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */ reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>; reassessmentNote?: string; /** * Smart features idea 3 (19 Oct 2026): when the addressed ward first opened this referral * (`MARK_REFERRAL_OPENED`). Shown to the sender as "Opened by <ward>". A receipt, never an answer: * it does not move `state` and does not stop the decision clock. Only on a `psychiatric_ward` * addressing, and only the first opening is kept. */ openedAt?: Instant; /** * Smart features idea 4 (19 Oct 2026): what the ward asked for before deciding * (`REQUEST_REFERRAL_INFORMATION`), each ticked off by the referrer or the coordinator * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only. */ informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>; };';
+  'export type ReferralAddressing = { /** Explicitly placed on a recipient waitlist; still awaiting an answer. */ waitlistedAt?: Instant; /** When this specific destination was referred. */ referredAt?: Instant; destination: ReferralDestination; state: ReferralAddressingState; /** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: Instant; /** A ROLE, never a person — see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ decidedBy?: string; /** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is * `psychiatric_ward` or `emergency_department` (the latter further narrowed to * `ED_DECLINE_REASONS` by convention, never enforced by this type); from * `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` — O-16.6, community- * decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two * vocabularies apart at runtime, since this field\'s own type cannot narrow per destination kind — * see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; /** * Only on an `accepted` addressing, and only from `OVERRIDE_REASONS` — the SAME vocabulary the * three placement events use, deliberately not a second one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused without one. * * ⚠️ Its ABSENCE on an accepted addressing means the referral passed every gate — not that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing — the other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: string; /** FD-5 — when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back the REFERRAL, * not one ward\'s copy of it. A destination that already answered keeps its answer. The reasoning, * and the three same-shaped events it must not be confused with, are on * `RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: Instant; /** The ROLE that wrote it down — never the person who withdrew, who is the referrer and outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; /** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one * destination alone (`destinationKind: "community_team"`), never on a whole-referral withdrawal — * that act carries no reason at all (see that event\'s own doc comment, `ward-flow-events.ts`, for * why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for "why a person * took back one destination\'s own live request", rather than a second list for this narrower act. */ withdrawalReason?: WardRequestWithdrawalReason; /** * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`, * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward\'s act, not the person. */ heldBedNumber?: number; /** Append-only log of evolving clinical reassessments recorded on this destination addressing. */ reassessmentHistory?: ReadonlyArray<ClinicalReassessmentEntry>; reassessmentNote?: string; /** * Smart features idea 3 (19 Oct 2026): when the addressed ward first opened this referral * (`MARK_REFERRAL_OPENED`). Shown to the sender as "Opened by <ward>". A receipt, never an answer: * it does not move `state` and does not stop the decision clock. Only on a `psychiatric_ward` * addressing, and only the first opening is kept. */ openedAt?: Instant; /** * Smart features idea 4 (19 Oct 2026): what the ward asked for before deciding * (`REQUEST_REFERRAL_INFORMATION`), each ticked off by the referrer or the coordinator * (`MARK_REFERRAL_INFORMATION_MET`). Chosen from a fixed list, never typed. Append-only. */ informationNeeds?: ReadonlyArray<ReferralInformationNeedEntry>; /** Fix plan item 16 (D-76): the ROLE that added this ward to an open referral with * `ASK_MORE_WARDS`. Absent on every destination the referrer chose when raising it. */ addedBy?: string; };';
 
 /**
  * The `psychiatric_ward` destination arm, cited whole — from its `kind` discriminant to the brace
@@ -186,7 +187,10 @@ export const BED_RELEASE_BODY =
   "/** Reason the most recent discharge blocker was cleared, chosen from `DISCHARGE_DELAY_CLEAR_REASONS`. */ " +
   "lastClearedBlockReason?: DischargeDelayClearReason; " +
   "/** Append-only history of cleared discharge blockers on this bed release. */ " +
-  "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; /** Absent when the clearing event named no reason; never defaulted. */ readonly reason?: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; };";
+  "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; /** Absent when the clearing event named no reason; never defaulted. */ readonly reason?: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; " +
+  "/** * #398 (D-72): the support notices the ward sent for this confirmed release, one per service, * oldest " +
+  "first (`SEND_RELEASE_SUPPORT_NOTICE`). About the bed only. Absent until the first. */ supportNoticesSent?: " +
+  "ReadonlyArray<{ readonly service: SupportServiceType; readonly at: Instant; readonly by: WardFlowRole; }>; };";
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather
@@ -260,13 +264,13 @@ export const MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST: FalsifyingEdit = {
   replaceWith: "declines: Decline | null;",
 };
 
-export const MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL: FalsifyingEdit = {
+/** D-76 (23 Oct 2026): the origin department became optional for a journey from a community team. */
+export const MOVEMENT_ORIGIN_ED_BECOMES_REQUIRED: FalsifyingEdit = {
   change:
-    "The origin department stops being required — `originEdId: string | null;` — so a movement no longer " +
-    "always names one. (Where a screen adds that the person is PHYSICALLY in that department, that is a " +
-    "reading of what the field MEANS, and no substring witnesses a meaning.)",
-  find: "originEdId: string;",
-  replaceWith: "originEdId: string | null;",
+    "The origin department becomes required again — `originEdId: string;` — so no journey can start at a " +
+    "community team and every movement names a department.",
+  find: "originEdId?: string;",
+  replaceWith: "originEdId: string;",
 };
 
 export const REFERRED_UNIT_IDS_BECOMES_ONE_ID: FalsifyingEdit = {
@@ -358,18 +362,16 @@ export const HELD_IS_DERIVED_FROM_TWO_AGGREGATES =
  * been wrong, and a test written from the same brief would have agreed with it.
  */
 export const DECLINE_REASONS_LIST =
-  'export const DECLINE_REASONS = [ "no_bed", "sex_mix", "specialling_unavailable", "acuity_mix", ' +
-  '"capability_mismatch", "bed_pulled_for_earlier_referral", "out_of_catchment", ] as const;';
+  'export const DECLINE_REASONS = [ "no_suitable_bed", "age_band_not_provided_here", ' +
+  '"sex_designation_unavailable", "secure_bed_unavailable", "belongs_to_another_service", ' +
+  '"referred_elsewhere", "specialling_unavailable", "acuity_mix", "capability_mismatch", ' +
+  '"bed_pulled_for_earlier_referral", "another_reason", ] as const;';
 
 /**
- * The referral-side vocabulary, cited whole for the same reason and for one more: the claim is that
- * it is a DIFFERENT list from the one above, and difference is only witnessed by pinning both. A
- * member migrating from one list to the other would break exactly one of these two citations.
+ * D-78 (Josh, 21 Oct 2026): the referral-side name is now the SAME list as the one above, kept so
+ * importers are unchanged. Pinned so a second, separate referral list cannot return in silence.
  */
-export const REFERRAL_DECLINE_REASONS_LIST =
-  'export const REFERRAL_DECLINE_REASONS = [ "no_suitable_bed", "age_band_not_provided_here", ' +
-  '"sex_designation_unavailable", "secure_bed_unavailable", "belongs_to_another_service", ' +
-  '"referred_elsewhere", "another_reason", ] as const;';
+export const REFERRAL_DECLINE_REASONS_LIST = "export const REFERRAL_DECLINE_REASONS = DECLINE_REASONS;";
 
 /**
  * The two derived properties of a team page, cited as ONE substring so the CONTRAST between them is

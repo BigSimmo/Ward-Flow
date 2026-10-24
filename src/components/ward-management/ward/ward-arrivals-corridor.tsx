@@ -3,6 +3,7 @@
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
+import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type {
   Unit,
   Movement,
@@ -29,7 +30,6 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   PULL_PATIENT: "Pull a bed",
   PATIENT_ARRIVED: "Confirm Arrival",
 };
-import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
@@ -41,21 +41,20 @@ import {
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
+import { observationSummary } from "@/components/ward-management/ward-observation";
+import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 
 export { pullBlockedReason };
 
-function originPlaceLabel(originEdId: string): string {
-  return edById(originEdId)?.name ?? "Emergency department";
+function originPlaceLabel(movement: Movement): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  return originName(movement) ?? "Emergency department";
 }
 
 function arrivalIsLate(movement: Movement, now: Instant): boolean {
   const eta = movement.arrivalDetails?.estimatedArrivalAt;
   if (eta === undefined) return false;
   return minutesUntil(eta, now) < 0;
-}
-
-function wardSafeRejectionReason(reason: string): string {
-  return reason;
 }
 
 interface WardArrivalsCorridorProps {
@@ -176,7 +175,7 @@ export function WardArrivalsCorridor({
                 movement.transport?.collectedAt !== undefined ||
                 (noTransportNeeded && (movement.stage === "pulled" || movement.stage === "handover_ready")));
             const arriveBlocked = movement.transport?.diversion
-              ? `${patientInfo.displayName} was diverted; release the held bed rather than recording arrival.`
+              ? `${patientInfo.displayName} was diverted; release the pulled bed rather than recording arrival.`
               : noTransportNeeded
                 ? movement.stage === "pulled" || movement.stage === "handover_ready"
                   ? undefined
@@ -216,7 +215,7 @@ export function WardArrivalsCorridor({
                       <path d="M2 8h12M10 4l4 4-4 4" />
                     </svg>
                     <span>
-                      Origin: <strong>{originPlaceLabel(movement.originEdId)}</strong>
+                      Origin: <strong>{originPlaceLabel(movement)}</strong>
                     </span>
                   </div>
                   <div className={styles.tagCluster}>
@@ -230,10 +229,10 @@ export function WardArrivalsCorridor({
                       </span>
                     ) : null}
                     {/* Audit A1-5: only an observation level somebody recorded, never one read from
-                        the bed's security. */}
-                    {movement.specialling ? (
+                        the bed's security. General is the ordinary level, so it carries no tag. */}
+                    {movement.observation.level !== "general" ? (
                       <span className={styles.statusTag} data-type="acuity">
-                        1:1 specialling
+                        {observationSummary(movement.observation)}
                       </span>
                     ) : movement.highAcuity ? (
                       <span className={styles.statusTag} data-type="acuity">
@@ -418,7 +417,7 @@ export function WardArrivalsCorridor({
                           })
                         }
                       >
-                        Release the held bed
+                        Release the pulled bed
                       </button>
                     </div>
                   ) : null}
@@ -487,7 +486,7 @@ export function WardArrivalsCorridor({
 
       {heldAfterStop.length > 0 ? (
         <section aria-label="Stopped transports awaiting bed release" className={styles.heldSection}>
-          <h3>Transport stopped — release held bed</h3>
+          <h3>Transport stopped — release pulled bed</h3>
           {heldAfterStop.map((movement) => {
             const patient = resolvePatientIdentity(movement);
             const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : "(UMRN not recorded)";
@@ -498,17 +497,17 @@ export function WardArrivalsCorridor({
                     <strong>{patient.displayName}</strong>
                     {patient.umrn ? <span className={styles.patientUmrn}> UMRN: {patient.umrn}</span> : null}
                   </div>
-                  <p>Transport stopped after collection. The bed remains held until released.</p>
+                  <p>Transport stopped after collection. The bed stays pulled until released.</p>
                 </div>
                 <div className={styles.corridorActions}>
                   <button
                     type="button"
-                    aria-label={`Release held bed for ${patient.displayName} ${patientDistinction}`}
+                    aria-label={`Release pulled bed for ${patient.displayName} ${patientDistinction}`}
                     className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
                     data-testid={`ward-release-stopped-bed-${movement.id}`}
                     onClick={() => setReleaseHeldId(movement.id)}
                   >
-                    Release held bed
+                    Release pulled bed
                   </button>
                 </div>
               </article>
@@ -526,11 +525,11 @@ export function WardArrivalsCorridor({
         open={releaseHeldMovement !== undefined}
         onClose={() => setReleaseHeldId(null)}
         size="sm"
-        title="Release held bed?"
-        description={`The bed held for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
+        title="Release pulled bed?"
+        description={`The bed pulled for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
         secondary={[{ label: "Cancel", onAction: () => setReleaseHeldId(null) }]}
         primary={{
-          label: "Release held bed",
+          label: "Release pulled bed",
           onAction: () => {
             setReleaseHeldId(null);
             if (!releaseHeldMovement) return;

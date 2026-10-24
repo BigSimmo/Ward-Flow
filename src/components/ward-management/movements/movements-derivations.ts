@@ -19,7 +19,8 @@ import {
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { isOpen, stageCopy, transportLeg, type TransportLeg } from "@/components/ward-management/ward-derivations";
-import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   MOVEMENT_STAGES,
@@ -43,7 +44,7 @@ const STAGE_BLURBS: Record<MovementStage, string> = {
   placement_requested: "A destination has been asked for; nothing has responded yet.",
   destination_review: "At least one unit is weighing up whether it can take this patient.",
   accepted_awaiting_bed: "A unit has agreed in principle, but no bed has been pulled yet.",
-  pulled: "A bed is being held for this patient, and the hold has a time limit.",
+  pulled: "A bed is pulled for this patient, and the pull has a time limit.",
   handover_ready: "Bed and paperwork are ready; only the physical move is outstanding.",
   moving: "A vehicle has collected the patient and the move is under way.",
   arrived: "The patient has arrived — this leg of the journey is complete.",
@@ -339,12 +340,15 @@ export function corridorCounts(movements: Movement[]): CorridorCount[] {
     const acceptedUnitId = movement.acceptedUnitId;
     if (acceptedUnitId === undefined) continue;
 
-    const key = `${movement.originEdId} ${acceptedUnitId} ${movement.stage}`;
+    // D-76: the traffic diagram draws ED-to-ward corridors, so a journey from a community team has none.
+    const originEdId = movement.originEdId;
+    if (originEdId === undefined) continue;
+    const key = `${originEdId} ${acceptedUnitId} ${movement.stage}`;
     const existing = rows.get(key);
     if (existing) {
       existing.count += 1;
     } else {
-      rows.set(key, { originEdId: movement.originEdId, acceptedUnitId, stage: movement.stage, count: 1 });
+      rows.set(key, { originEdId, acceptedUnitId, stage: movement.stage, count: 1 });
     }
   }
   return Array.from(rows.values());
@@ -366,16 +370,18 @@ export type RefusedCorridorCount = {
 export function refusedCorridorCounts(movements: Movement[], now: Instant): RefusedCorridorCount[] {
   const rows = new Map<string, RefusedCorridorCount>();
   for (const movement of movements) {
+    const originEdId = movement.originEdId;
+    if (originEdId === undefined) continue;
     for (const decline of movement.declines) {
       if (decline.at > now || dayOf(decline.at) !== dayOf(now)) continue;
-      const key = `${movement.originEdId} ${decline.unitId}`;
+      const key = `${originEdId} ${decline.unitId}`;
       const existing = rows.get(key);
       if (existing) {
         existing.count += 1;
         if (!existing.reasons.includes(decline.reason)) existing.reasons.push(decline.reason);
       } else {
         rows.set(key, {
-          originEdId: movement.originEdId,
+          originEdId,
           unitId: decline.unitId,
           count: 1,
           reasons: [decline.reason],
@@ -521,7 +527,7 @@ export type MovementHorizonLane = {
 /** Same display title `delayGroups`' `bed_pull_expired` cause already uses
  *  (`delays/delays-derivations.ts`) for exactly this fact — a held bed whose reserved time has
  *  passed. Reused rather than re-worded, so this chart cannot describe the same fact differently. */
-const BED_PULL_EXPIRED_TITLE = "Reserved time has passed, bed still held";
+const BED_PULL_EXPIRED_TITLE = "Pull expired, bed still pulled";
 
 function horizonEventType(movement: Movement, now: Instant): MovementHorizonEventType {
   if (movement.stage === "moving") return "transit";
@@ -564,7 +570,7 @@ function horizonEvent(
     ...(movement.plannedMoveAt !== undefined && movement.stage !== "moving"
       ? { plannedAt: movement.plannedMoveAt }
       : {}),
-    origin: departmentLabel(movement.originEdId, ed?.name),
+    origin: movementOriginLabel(movement, ed?.name),
     dest: destName,
     carrier: movement.transport?.provider ?? "",
     title: horizonEventTitle(movement, type, now),

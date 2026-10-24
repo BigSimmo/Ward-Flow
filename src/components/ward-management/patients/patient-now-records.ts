@@ -6,7 +6,7 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
-import { dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { dayOf, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 
@@ -505,7 +505,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
     ring: [
       {
         who: BTY_ADULT_SECURE,
-        role: "Holding the bed, pulled at {{pulled}}",
+        role: "Bed pulled at {{pulled}}",
         note: "Expecting this person.",
         tone: null,
       },
@@ -516,7 +516,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         tone: "warn",
       },
     ],
-    ladder: "No escalation ladder is needed while the bed is held and transport is being organised.",
+    ladder: "No escalation ladder is needed while the bed is pulled and transport is being organised.",
     next: [
       {
         w: "Record the transport booking when the escort provider confirms it",
@@ -525,7 +525,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
       },
       {
         w: "Nothing else outstanding",
-        d: `${BTY_ADULT_SECURE} is holding the bed.`,
+        d: `${BTY_ADULT_SECURE} has pulled the bed.`,
         tone: null,
       },
     ],
@@ -567,6 +567,8 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
 };
 
 export function dur(min: number): string {
+  // UX audit 21 Oct 2026: "169h 0m" here read as a different wait from "7d 1h" on every other screen.
+  if (min >= 1440) return splitDuration(min);
   const h = Math.floor(min / 60);
   const m = min % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;

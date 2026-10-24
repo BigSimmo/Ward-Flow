@@ -5,6 +5,7 @@
  * Nothing here blocks a step. A check that is not met is shown as a warning, and a person who goes
  * ahead records which checks were open and a coded reason (`TransportException`).
  */
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -231,11 +232,21 @@ export function transportAnswersBlockedReason(draft: TransportBookingAnswers, no
   const missing: string[] = [];
   if (draft.provider === undefined) missing.push("choose who is collecting the patient");
   if (draft.escortRequired === undefined) missing.push("answer the escort question");
+  const cadProblem = cadNumberProblem(draft.cadNumber);
   if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
   if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
   if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
     missing.push("enter the estimated time");
   }
-  if (missing.length === 0) return undefined;
-  return `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
+  // A typed CAD number the rule refuses is a wrong answer, not a missing one, so it gets its own
+  // sentence rather than the "none is filled in for you" line.
+  const refused = draft.cadNumber.trim().length > 0 && cadProblem !== undefined ? cadNumberSentence(cadProblem) : "";
+  if (missing.length === 0) return refused || undefined;
+  const unanswered = `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
+  return refused ? `${refused} ${unanswered}` : unanswered;
+}
+
+/** The CAD rule's reason as a sentence for a form, e.g. "The CAD number looks like a placeholder, ...". */
+export function cadNumberSentence(problem: string): string {
+  return `${problem.charAt(0).toUpperCase()}${problem.slice(1)}.`;
 }

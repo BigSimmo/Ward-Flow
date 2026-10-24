@@ -42,6 +42,16 @@ import {
   URGENCY_OPTIONS,
 } from "./ed-screen-model";
 import styles from "./ed.module.css";
+import {
+  INTERMITTENT_INTERVAL_MINUTES,
+  OBSERVATION_LEVELS,
+  observationLevelName,
+  observationRatio,
+  type ObservationLevel,
+} from "@/components/ward-management/ward-observation";
+
+/** The observation picker's "nothing chosen yet" value: unanswered, never a level. */
+const NO_OBSERVATION_VALUE = "";
 
 export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
   const { referralOpen, setReferralOpen, setRaisingFromReferralId } = ctx;
@@ -79,7 +89,8 @@ const MISSING_FIELD_LABELS: Record<ReferralDraftField, string> = {
   gender: "Gender",
   legalStatus: "Legal status",
   urgency: "Urgency",
-  specialling: "One-to-one nursing",
+  observation: "Observation level",
+  observationReviewTime: "Observation review time",
   highAcuity: "High-acuity nursing",
   legalFormDueAtDate: "Expiry date",
   legalFormDueAtTime: "Expiry time",
@@ -94,7 +105,8 @@ const MISSING_FIELD_TEST_IDS: Record<ReferralDraftField, string> = {
   gender: "ward-ed-referral-gender",
   legalStatus: "ward-ed-referral-legal-status",
   urgency: "ward-ed-referral-urgency",
-  specialling: "ward-ed-referral-specialling-required",
+  observation: "ward-ed-referral-observation",
+  observationReviewTime: "ward-ed-referral-observation-review-time",
   highAcuity: "ward-ed-referral-high-acuity-required",
   legalFormDueAtDate: "ward-ed-referral-legal-form-due-at-date",
   legalFormDueAtTime: "ward-ed-referral-legal-form-due-at-time",
@@ -108,7 +120,16 @@ const MISSING_FIELD_TEST_IDS: Record<ReferralDraftField, string> = {
  * button and moves focus to the first, as the registration form does. Nothing is filed.
  */
 function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
-  const { setReferralOpen, setRaisingFromReferralId, draft, setDraft, registryPatients, submitReferral } = ctx;
+  const {
+    setReferralOpen,
+    setRaisingFromReferralId,
+    draft,
+    setDraft,
+    registryPatients,
+    submitReferral,
+    referralFieldsDisabled,
+    referralSaveMessage,
+  } = ctx;
   const formRef = useRef<HTMLFormElement>(null);
   const [attempted, setAttempted] = useState(false);
   const answers = { ...draft, patientFound: draft.patientId !== undefined };
@@ -155,7 +176,11 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
         }}
         data-testid="ward-ed-referral-form"
       >
-        <div className={styles.referralGrid}>
+        <fieldset
+          className={`${styles.declineFieldset} ${styles.referralGrid} ${missingStyles.saveFields}`}
+          disabled={referralFieldsDisabled}
+          aria-label="Referral details"
+        >
           <EdReferralPatientField
             patients={registryPatients}
             patientId={draft.patientId}
@@ -399,33 +424,80 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             </select>
             {missingNote("urgency")}
           </label>
-          <fieldset
-            className={fieldClass("specialling", styles.referralCheckbox)}
-            aria-describedby={isMissing("specialling") ? missingNoteId("specialling") : undefined}
-          >
-            <legend>One-to-one nursing</legend>
-            <label>
-              <input
-                type="radio"
-                name="ward-ed-referral-specialling"
-                data-testid="ward-ed-referral-specialling-required"
-                checked={draft.specialling === true}
-                onChange={() => setDraft((current) => ({ ...current, specialling: true }))}
-              />
-              Required
+          <label className={fieldClass("observation", styles.referralField)}>
+            Observation level
+            <select
+              data-testid="ward-ed-referral-observation"
+              aria-invalid={isMissing("observation") || undefined}
+              value={draft.observation ?? NO_OBSERVATION_VALUE}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  observation:
+                    event.target.value === NO_OBSERVATION_VALUE ? undefined : (event.target.value as ObservationLevel),
+                }))
+              }
+            >
+              <option value={NO_OBSERVATION_VALUE}>Choose an observation level</option>
+              {OBSERVATION_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {observationRatio(level)
+                    ? `${observationLevelName(level)} (${observationRatio(level)})`
+                    : observationLevelName(level)}
+                </option>
+              ))}
+            </select>
+            {missingNote("observation")}
+          </label>
+          {draft.observation === "intermittent" ? (
+            <label className={styles.referralField}>
+              Check every
+              <select
+                data-testid="ward-ed-referral-observation-interval"
+                value={draft.observationIntervalMinutes}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, observationIntervalMinutes: Number(event.target.value) }))
+                }
+              >
+                {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} minutes
+                  </option>
+                ))}
+              </select>
             </label>
-            <label>
-              <input
-                type="radio"
-                name="ward-ed-referral-specialling"
-                data-testid="ward-ed-referral-specialling-not-required"
-                checked={draft.specialling === false}
-                onChange={() => setDraft((current) => ({ ...current, specialling: false }))}
-              />
-              Not required
+          ) : null}
+          <label className={fieldClass("observationReviewTime", styles.referralField)}>
+            Review time (optional)
+            <input
+              data-testid="ward-ed-referral-observation-review-time"
+              type="text"
+              inputMode="numeric"
+              placeholder="For example 14:30"
+              aria-invalid={isMissing("observationReviewTime") || undefined}
+              value={draft.observationReviewTime}
+              onChange={(event) => setDraft((current) => ({ ...current, observationReviewTime: event.target.value }))}
+            />
+            {missingNote("observationReviewTime")}
+          </label>
+          {draft.observationReviewTime.trim() !== "" ? (
+            <label className={styles.referralField}>
+              Review day
+              <select
+                data-testid="ward-ed-referral-observation-review-day"
+                value={draft.observationReviewDay}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    observationReviewDay: event.target.value as "today" | "tomorrow",
+                  }))
+                }
+              >
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+              </select>
             </label>
-            {groupMissingNote("specialling")}
-          </fieldset>
+          ) : null}
           <fieldset
             className={fieldClass("highAcuity", styles.referralCheckbox)}
             aria-describedby={isMissing("highAcuity") ? missingNoteId("highAcuity") : undefined}
@@ -453,21 +525,31 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             </label>
             {groupMissingNote("highAcuity")}
           </fieldset>
-        </div>
+        </fieldset>
         <div className={styles.actionRow}>
           <button
             type="submit"
             data-testid="ward-ed-referral-submit"
             className={styles.acceptButton}
-            aria-disabled={referralBlocked ? "true" : undefined}
-            aria-describedby={referralBlocked ? "ward-ed-referral-blocked" : undefined}
-            title={referralBlocked ?? undefined}
+            aria-disabled={referralBlocked || referralFieldsDisabled ? "true" : undefined}
+            aria-describedby={
+              referralSaveMessage
+                ? "ward-ed-referral-save-message"
+                : referralBlocked
+                  ? "ward-ed-referral-blocked"
+                  : undefined
+            }
+            title={
+              referralFieldsDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : (referralBlocked ?? undefined)
+            }
             onClick={
-              referralBlocked
+              referralBlocked || referralFieldsDisabled
                 ? (event) => {
                     // Greyed, so nothing is filed: the click shows what is still unanswered.
                     event.preventDefault();
-                    showMissingFields();
+                    if (!referralFieldsDisabled) showMissingFields();
                   }
                 : undefined
             }
@@ -485,6 +567,11 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
           >
             Cancel
           </button>
+          {referralSaveMessage ? (
+            <p role="status" id="ward-ed-referral-save-message">
+              {referralSaveMessage}
+            </p>
+          ) : null}
           {referralBlocked ? (
             // A2-10 (audit 13 Oct 2026): the reason shows beside the greyed button, not
             // only to a screen reader or on hover; its first sentence fits one line.

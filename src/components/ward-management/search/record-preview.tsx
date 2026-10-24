@@ -10,6 +10,7 @@ import type { Movement, Referral, ReferralState, Unit } from "@/components/ward-
 import {
   declinedAddressings,
   referralState,
+  referralWithdrawn,
   referralDestinationLabel,
   referralAddressingStateLabel,
 } from "@/components/ward-management/ward-referrals";
@@ -17,7 +18,7 @@ import { patientDisplayName, patientAgeYears, type Patient } from "@/components/
 import { calendarDateOf, demoDayZero, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { edById } from "@/components/ward-management/ward-sites";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -58,7 +59,7 @@ export type MovementSummary = {
 
 function originDepartmentText(movement: Movement): string {
   const originEd = edById(movement.originEdId);
-  return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
+  return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
 }
 
 export function buildMovementSummary(movement: Movement, units: Unit[], now: number): MovementSummary {
@@ -93,7 +94,9 @@ export function buildReferralSummary(referral: Referral): ReferralSummary {
   const totalCount = referral.destinations.length;
   const state = referralState(referral);
   let declineNote: string;
-  if (state === "accepted") {
+  if (referralWithdrawn(referral)) {
+    declineNote = "the referrer withdrew this referral; no destination accepted.";
+  } else if (state === "accepted") {
     declineNote =
       declinedCount > 0
         ? `${declinedCount} of ${totalCount} destination${totalCount === 1 ? "" : "s"} declined before another destination accepted.`
@@ -344,13 +347,14 @@ export function RecordPreview({
       !movements.some((movement) => movement.patientId === patient.id && isOpen(movement))
     ) {
       // Same rule as the search row: no open movement and no queued referral means Past.
-      const declined = referralState(referral) === "declined";
+      const withdrawn = referralWithdrawn(referral);
+      const declined = !withdrawn && referralState(referral) === "declined";
       presenceStatus = "past";
       bannerTitle = "Not on this board now";
-      bannerTag = declined ? "Referral declined" : "Referral closed";
-      disposition = declined ? "Declined" : NOT_RECORDED;
+      bannerTag = withdrawn ? "Referral withdrawn" : declined ? "Referral declined" : "Referral closed";
+      disposition = withdrawn ? "Withdrawn" : declined ? "Declined" : NOT_RECORDED;
       targetWard = "Not admitted";
-      currentStage = declined ? "Declined" : "No open movement";
+      currentStage = withdrawn ? "Withdrawn" : declined ? "Declined" : "No open movement";
       originSite = referral.originSiteCode;
       urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
@@ -499,7 +503,10 @@ export function RecordPreview({
               <h4 className={styles.tieHeading}>Referral</h4>
               {referral && referralSummary ? (
                 <p className={styles.tieBody}>
-                  <strong>This referral</strong> — {referralStateSentence(referralState(referral))}
+                  <strong>This referral</strong> —{" "}
+                  {referralWithdrawn(referral)
+                    ? "Withdrawn — the referrer withdrew it."
+                    : referralStateSentence(referralState(referral))}
                   <br />
                   {referralSummary.originLine} — {referralSummary.declineNote}
                 </p>
@@ -708,18 +715,21 @@ export function RecordPreview({
     const linkedMovement = linkedOpenMovementFor(referral, movements);
 
     const isComm = isCommunityReferral(referral);
-    const declined = referralState(referral) === "declined" && !linkedMovement;
-    const presenceStatus = declined ? "past" : isComm ? "community" : "live";
-    const bannerTitle = declined
-      ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
-      : isComm
-        ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
-        : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
+    const withdrawn = referralWithdrawn(referral) && !linkedMovement;
+    const declined = !withdrawn && referralState(referral) === "declined" && !linkedMovement;
+    const presenceStatus = declined || withdrawn ? "past" : isComm ? "community" : "live";
+    const bannerTitle = withdrawn
+      ? "REFERRAL WITHDRAWN · BY THE REFERRER"
+      : declined
+        ? "REFERRAL DECLINED · NO DESTINATION ACCEPTED"
+        : isComm
+          ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
+          : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
     const bannerTag = isComm ? "Community Referral" : "Acute Referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
       ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
-      : `Queued referral · Age cohort: ${referral.ageBand}`;
+      : `${withdrawn ? "Withdrawn" : "Queued"} referral · Age cohort: ${referral.ageBand}`;
 
     return (
       <WardPanel title={`Selected referral: ${subjectName}`} testId="ward-patient-search-preview" headingLevel={2}>

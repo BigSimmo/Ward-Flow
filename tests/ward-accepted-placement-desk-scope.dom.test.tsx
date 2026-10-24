@@ -12,12 +12,12 @@ vi.mock("@/components/ward-management/shell/ward-access", async (original) => ({
   useDeskInScope: () => scope.deskInScope,
 }));
 
-function AcceptedReferral() {
+function AcceptedReferral({ source }: { source: Referral["source"] }) {
   const value = useWardFlow();
   const referral: Referral = {
     ...value.referrals[0],
     id: "WF-SYNTHETIC-DESK-SCOPE",
-    source: "ed_medical",
+    source,
     originSiteCode: "SCGH",
     intake: undefined,
     destinations: [
@@ -49,11 +49,14 @@ function AcceptedReferral() {
   );
 }
 
-function renderPlacement(deskInScope: ((deskId: string) => boolean) | undefined) {
+function renderPlacement(
+  deskInScope: ((deskId: string) => boolean) | undefined,
+  source: Referral["source"] = "ed_medical",
+) {
   scope.deskInScope = deskInScope;
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <AcceptedReferral />
+      <AcceptedReferral source={source} />
     </WardFlowProvider>,
   );
 }
@@ -78,5 +81,29 @@ describe("accepted referral placement respects the desk's ED scope", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
     expect(screen.getByRole("button", { name: "Confirm and start placement" })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-accepted-placement-coordinator")).not.toBeInTheDocument();
+  });
+
+  it("offers Start placement to a ward-only desk for an accepted community referral, which names no ED (D-76)", () => {
+    renderPlacement((deskId) => deskId === "scgh-adult-open", "community");
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    expect(screen.getByRole("button", { name: "Confirm and start placement" })).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-accepted-placement-coordinator")).not.toBeInTheDocument();
+  });
+});
+
+describe("accepted referral placement asks the Intermittent interval", () => {
+  it("shows Check every only for Intermittent, offering 15 and 30 minutes", () => {
+    renderPlacement(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    expect(screen.queryByRole("combobox", { name: "Check every" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), {
+      target: { value: "intermittent" },
+    });
+    const interval = screen.getByRole("combobox", { name: "Check every" });
+    expect([...(interval as HTMLSelectElement).options].map((option) => option.value)).toEqual(["15", "30"]);
+    fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), {
+      target: { value: "within_sight" },
+    });
+    expect(screen.queryByRole("combobox", { name: "Check every" })).not.toBeInTheDocument();
   });
 });

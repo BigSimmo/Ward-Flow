@@ -30,6 +30,8 @@ import {
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
 import styles from "./ed.module.css";
+import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
+import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 
 const OUTCOME_CONSEQUENCE =
   "This ends the bed search: live ward requests are withdrawn, a held bed is released and uncollected transport is cancelled.";
@@ -64,7 +66,12 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     setCommunityReferralOpenFor,
     communityTeamChoice,
     setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
     examinationOutcome,
+    examinationFieldsDisabled,
+    examinationSaveDisabled,
+    examinationSaveMessage,
     setExaminationOutcome,
     setEdOutcomeOpenFor,
     urgencyDraft,
@@ -72,6 +79,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     legalStatusDraft,
     setLegalStatusDraft,
     legalFormExpiryDraft,
+    legalFormExpiryFieldsDisabled,
+    legalFormExpiryCommandDisabled,
+    legalFormExpirySaveMessage,
     setLegalFormExpiryDraft,
     receiptCorrectionReasonDraft,
     setReceiptCorrectionReasonDraft,
@@ -81,7 +91,16 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitLegalStatusChange,
     submitLegalFormExpiry,
     submitReceiptCorrection,
+    recordSaveState,
   } = ctx;
+  const urgencySave = recordSaveState("urgency", movement.id);
+  const legalStatusSave = recordSaveState("legalStatus", movement.id);
+  const receiptSave = recordSaveState("receipt", movement.id);
+  // D-74: the team and what the referral is for are both required before it can be sent.
+  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
+  const cmhtMissing = !communityTeamChoice
+    ? "Choose a community mental health team first."
+    : "Choose what the referral is for first.";
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
     legalStatusDraft.legalStatus === undefined
@@ -134,7 +153,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
           <p className={styles.cardMeta}>
-            Direct referral to Community Mental Health Team (inpatient admission not required):
+            Direct referral to Community Mental Health Team. No bed is requested by this referral.
           </p>
           <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
             Legal status:{" "}
@@ -166,32 +185,50 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               ))}
             </select>
           </label>
+          <fieldset className={styles.referralField} data-testid={`ward-ed-cmht-purpose-${movement.id}`}>
+            <legend>What is the referral for?</legend>
+            {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
+              <label key={purpose}>
+                <input
+                  type="radio"
+                  name={`ward-ed-cmht-purpose-${movement.id}`}
+                  value={purpose}
+                  checked={communityPurposeChoice === purpose}
+                  onChange={() => setCommunityPurposeChoice(purpose)}
+                  data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
+                />{" "}
+                {communityReferralPurposeLabel(purpose)}
+              </label>
+            ))}
+          </fieldset>
           <div className={styles.actionRow}>
             <button
               type="button"
-              aria-disabled={!communityTeamChoice ? "true" : undefined}
-              aria-describedby={!communityTeamChoice ? `ward-ed-cmht-reason-${movement.id}` : undefined}
-              title={!communityTeamChoice ? "Choose a community mental health team first." : undefined}
+              aria-disabled={!cmhtReady ? "true" : undefined}
+              aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+              title={!cmhtReady ? cmhtMissing : undefined}
               data-testid={`ward-ed-cmht-confirm-${movement.id}`}
               className={styles.declineButton}
               onClick={(event) => {
-                if (!communityTeamChoice) {
+                if (!communityTeamChoice || !communityPurposeChoice) {
                   ignoreUnavailableActivation(event);
                   return;
                 }
                 raise("REFER_TO_COMMUNITY_TEAM", {
                   movementId: movement.id,
                   team: communityTeamChoice,
+                  purpose: communityPurposeChoice,
                 });
                 setCommunityReferralOpenFor(undefined);
                 setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
               }}
             >
               Confirm CMHT referral
             </button>
-            {!communityTeamChoice ? (
+            {!cmhtReady ? (
               <span id={`ward-ed-cmht-reason-${movement.id}`} className="sr-only">
-                Choose a community mental health team first.
+                {cmhtMissing}
               </span>
             ) : null}
             <button
@@ -201,6 +238,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               onClick={() => {
                 setCommunityReferralOpenFor(undefined);
                 setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
               }}
             >
               Cancel
@@ -217,7 +255,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitExamination(event, movement.id)}
           data-testid={`ward-ed-examine-form-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset}>
+          <fieldset className={styles.declineFieldset} disabled={examinationFieldsDisabled}>
             <legend className={styles.declineLegend}>Examination outcome for {patientInfo.displayName}</legend>
             {(
               [
@@ -247,14 +285,31 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                             an empty choice. */}
           <button
             type="submit"
-            aria-disabled={examinationOutcome ? undefined : "true"}
-            aria-describedby={examinationOutcome ? undefined : `ward-ed-examine-choose-${movement.id}`}
-            title={examinationOutcome ? undefined : "Choose an outcome first"}
+            aria-disabled={examinationOutcome && !examinationSaveDisabled ? undefined : "true"}
+            aria-describedby={
+              examinationSaveMessage
+                ? `ward-ed-examine-message-${movement.id}`
+                : examinationOutcome
+                  ? undefined
+                  : `ward-ed-examine-choose-${movement.id}`
+            }
+            title={
+              examinationSaveDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : examinationOutcome
+                  ? undefined
+                  : "Choose an outcome first"
+            }
             className={styles.declineSubmit}
-            onClick={examinationOutcome ? undefined : ignoreUnavailableActivation}
+            onClick={examinationOutcome && !examinationSaveDisabled ? undefined : ignoreUnavailableActivation}
           >
             Confirm examination outcome
           </button>
+          {examinationSaveMessage ? (
+            <p role="status" id={`ward-ed-examine-message-${movement.id}`}>
+              {examinationSaveMessage}
+            </p>
+          ) : null}
           {examinationOutcome ? null : (
             <span id={`ward-ed-examine-choose-${movement.id}`} className="sr-only">
               Choose an outcome first
@@ -338,6 +393,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <label className={styles.referralField} htmlFor={`ward-change-urgency-tier-${movement.id}`}>
             Urgency tier for {patientInfo.displayName}
             <select
+              disabled={urgencySave.disabled}
               id={`ward-change-urgency-tier-${movement.id}`}
               value={urgencyDraft.urgency}
               onChange={(event) =>
@@ -360,6 +416,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <label className={styles.referralField} htmlFor={`ward-change-urgency-reason-${movement.id}`}>
             Reason
             <select
+              disabled={urgencySave.disabled}
               id={`ward-change-urgency-reason-${movement.id}`}
               required
               value={urgencyDraft.reason ?? NO_CHANGE_REASON_VALUE}
@@ -384,15 +441,32 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={urgencyDraft.reason === undefined ? "true" : undefined}
+            aria-disabled={urgencyDraft.reason === undefined || urgencySave.disabled ? "true" : undefined}
             aria-describedby={
-              urgencyDraft.reason === undefined ? `ward-change-urgency-blocked-${movement.id}` : undefined
+              urgencySave.message
+                ? `ward-change-urgency-message-${movement.id}`
+                : urgencyDraft.reason === undefined
+                  ? `ward-change-urgency-blocked-${movement.id}`
+                  : undefined
             }
-            title={urgencyDraft.reason === undefined ? URGENCY_REASON_UNCHOSEN : undefined}
-            onClick={urgencyDraft.reason === undefined ? ignoreUnavailableActivation : undefined}
+            title={
+              urgencySave.disabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : urgencyDraft.reason === undefined
+                  ? URGENCY_REASON_UNCHOSEN
+                  : undefined
+            }
+            onClick={
+              urgencyDraft.reason === undefined || urgencySave.disabled ? ignoreUnavailableActivation : undefined
+            }
           >
             Record urgency change
           </button>
+          {urgencySave.message ? (
+            <p role="status" id={`ward-change-urgency-message-${movement.id}`}>
+              {urgencySave.message}
+            </p>
+          ) : null}
           {urgencyDraft.reason === undefined ? (
             <span id={`ward-change-urgency-blocked-${movement.id}`} className="sr-only">
               {URGENCY_REASON_UNCHOSEN}
@@ -410,6 +484,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <label className={styles.referralField} htmlFor={`ward-change-legal-status-value-${movement.id}`}>
             Legal status for {patientInfo.displayName}
             <select
+              disabled={legalStatusSave.disabled}
               id={`ward-change-legal-status-value-${movement.id}`}
               value={legalStatusDraft.legalStatus ?? ""}
               onChange={(event) =>
@@ -430,6 +505,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <label className={styles.referralField} htmlFor={`ward-change-legal-status-reason-${movement.id}`}>
             Reason
             <select
+              disabled={legalStatusSave.disabled}
               id={`ward-change-legal-status-reason-${movement.id}`}
               required
               value={legalStatusDraft.reason ?? NO_CHANGE_REASON_VALUE}
@@ -454,13 +530,28 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={legalStatusBlocked ? "true" : undefined}
-            aria-describedby={legalStatusBlocked ? `ward-change-legal-status-blocked-${movement.id}` : undefined}
-            title={legalStatusBlocked}
-            onClick={legalStatusBlocked ? ignoreUnavailableActivation : undefined}
+            aria-disabled={legalStatusBlocked || legalStatusSave.disabled ? "true" : undefined}
+            aria-describedby={
+              legalStatusSave.message
+                ? `ward-change-legal-status-message-${movement.id}`
+                : legalStatusBlocked
+                  ? `ward-change-legal-status-blocked-${movement.id}`
+                  : undefined
+            }
+            title={
+              legalStatusSave.disabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : legalStatusBlocked
+            }
+            onClick={legalStatusBlocked || legalStatusSave.disabled ? ignoreUnavailableActivation : undefined}
           >
             Record legal status change
           </button>
+          {legalStatusSave.message ? (
+            <p role="status" id={`ward-change-legal-status-message-${movement.id}`}>
+              {legalStatusSave.message}
+            </p>
+          ) : null}
           {legalStatusBlocked ? (
             <span id={`ward-change-legal-status-blocked-${movement.id}`} className="sr-only">
               {legalStatusBlocked}
@@ -475,7 +566,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitLegalFormExpiry(event, movement.id, movement.legalForm?.dueAt)}
           data-testid={`ward-ed-legal-form-expiry-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset}>
+          <fieldset className={styles.declineFieldset} disabled={legalFormExpiryFieldsDisabled}>
             <legend className={styles.declineLegend}>
               {legalFormExpiryIsExtension
                 ? `Extension written on the form for ${patientInfo.displayName}`
@@ -514,16 +605,31 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={legalFormExpirySaveBlocked ? "true" : undefined}
-            onClick={legalFormExpirySaveBlocked ? ignoreUnavailableActivation : undefined}
-            aria-describedby={
-              legalFormExpirySaveBlocked ? `ward-ed-legal-form-expiry-reason-${movement.id}` : undefined
+            aria-disabled={legalFormExpirySaveBlocked || legalFormExpiryCommandDisabled ? "true" : undefined}
+            onClick={
+              legalFormExpirySaveBlocked || legalFormExpiryCommandDisabled ? ignoreUnavailableActivation : undefined
             }
-            title={legalFormExpirySaveBlockedReason}
+            aria-describedby={
+              legalFormExpirySaveMessage
+                ? `ward-ed-legal-form-expiry-message-${movement.id}`
+                : legalFormExpirySaveBlocked
+                  ? `ward-ed-legal-form-expiry-reason-${movement.id}`
+                  : undefined
+            }
+            title={
+              legalFormExpiryCommandDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : legalFormExpirySaveBlockedReason
+            }
             data-testid={`ward-ed-legal-form-expiry-save-${movement.id}`}
           >
             {legalFormExpiryIsExtension ? "Save extension" : "Save expiry"}
           </button>
+          {legalFormExpirySaveMessage ? (
+            <p role="status" id={`ward-ed-legal-form-expiry-message-${movement.id}`}>
+              {legalFormExpirySaveMessage}
+            </p>
+          ) : null}
           {legalFormExpirySaveBlocked ? (
             <span id={`ward-ed-legal-form-expiry-reason-${movement.id}`} className="sr-only">
               {legalFormExpirySaveBlockedReason}
@@ -541,6 +647,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <label className={styles.referralField} htmlFor={`ed-correct-form-receipt-reason-${movement.id}`}>
             Reason for correction
             <select
+              disabled={receiptSave.disabled}
               id={`ed-correct-form-receipt-reason-${movement.id}`}
               required
               value={receiptCorrectionReasonDraft ?? NO_CHANGE_REASON_VALUE}
@@ -563,22 +670,35 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={receiptCorrectionReasonDraft === undefined ? "true" : undefined}
-            onClick={receiptCorrectionReasonDraft === undefined ? ignoreUnavailableActivation : undefined}
-            aria-describedby={
-              receiptCorrectionReasonDraft === undefined
-                ? `ed-correct-form-receipt-reason-hint-${movement.id}`
+            aria-disabled={receiptCorrectionReasonDraft === undefined || receiptSave.disabled ? "true" : undefined}
+            onClick={
+              receiptCorrectionReasonDraft === undefined || receiptSave.disabled
+                ? ignoreUnavailableActivation
                 : undefined
             }
+            aria-describedby={
+              receiptSave.message
+                ? `ed-correct-form-receipt-message-${movement.id}`
+                : receiptCorrectionReasonDraft === undefined
+                  ? `ed-correct-form-receipt-reason-hint-${movement.id}`
+                  : undefined
+            }
             title={
-              receiptCorrectionReasonDraft === undefined
-                ? "Choose a reason for the receipt correction first."
-                : undefined
+              receiptSave.disabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : receiptCorrectionReasonDraft === undefined
+                  ? "Choose a reason for the receipt correction first."
+                  : undefined
             }
             data-testid={`ed-correct-form-receipt-save-${movement.id}`}
           >
             Save correction
           </button>
+          {receiptSave.message ? (
+            <p role="status" id={`ed-correct-form-receipt-message-${movement.id}`}>
+              {receiptSave.message}
+            </p>
+          ) : null}
           {receiptCorrectionReasonDraft === undefined ? (
             <span id={`ed-correct-form-receipt-reason-hint-${movement.id}`} className="sr-only">
               Choose a reason for the receipt correction first.

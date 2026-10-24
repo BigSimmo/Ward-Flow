@@ -9,6 +9,7 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 /**
  * OWNER RULING, 2026-09-02: a coordinator may see the suburb a referred patient is from —
  * `PD-3` permits a suburb precisely because it names a service area, never a dwelling. This suite
@@ -69,7 +70,7 @@ function SeedReferredMovement() {
         cohort: "Adult",
         security: "Open",
         sex: "Female",
-        specialling: false,
+        observation: GENERAL_OBSERVATION,
         highAcuity: false,
         legalStatus: "Voluntary",
         urgency: 2,
