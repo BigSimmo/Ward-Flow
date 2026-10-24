@@ -188,7 +188,7 @@ describe("ED and Delays on a phone (C1)", () => {
         <EdScreen edId="rph-ed" />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Needs you/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/ }));
     expect(screen.queryByTestId("ward-ed-filter-fold")).toBeNull();
   });
 
