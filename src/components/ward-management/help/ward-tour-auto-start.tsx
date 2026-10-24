@@ -23,12 +23,17 @@ function readTourAutoDone(): boolean {
   }
 }
 
-/** Records that the tour has started on its own on this device. The value is a fixed word. */
-function markTourAutoDone(): void {
+/**
+ * Records that the tour has started on its own on this device (the value is a fixed word), and says
+ * whether that was saved. A tour whose mark cannot be saved does not start on its own, or it would
+ * start again at the next visit.
+ */
+function markTourAutoDone(): boolean {
   try {
     window.localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, "yes");
+    return true;
   } catch {
-    // Without storage, readTourAutoDone already answers done.
+    return false;
   }
 }
 
@@ -56,8 +61,7 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
     if (started.current || seen || !home || (pathname !== home && pathname !== deskHome)) return;
     const timer = window.setTimeout(() => {
       started.current = true;
-      if (readTourAutoDone()) return;
-      markTourAutoDone();
+      if (readTourAutoDone() || !markTourAutoDone()) return;
       onStart();
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);

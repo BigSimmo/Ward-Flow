@@ -200,6 +200,20 @@ describe("tour auto-start", () => {
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
   });
 
+  it("stays quiet when the device mark cannot be saved", async () => {
+    const onStart = vi.fn();
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    try {
+      render(<WardTourAutoStart onStart={onStart} />);
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      expect(onStart).not.toHaveBeenCalled();
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
   it("waits for the desk's access to settle before it starts", async () => {
     vi.useFakeTimers();
     try {
