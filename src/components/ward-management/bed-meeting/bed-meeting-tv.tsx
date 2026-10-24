@@ -370,7 +370,7 @@ function BedMeetingTvView({
       <TvTiles
         tiles={[
           {
-            label: "Waiting in ED",
+            label: "Open ED journeys",
             value: ed.waiting,
             detail: `${ed.overLongWait} waiting ${LONG_WAIT_TEXT}`,
             tone: ed.overLongWait > 0 ? "danger" : ed.waiting > 0 ? "warning" : undefined,
@@ -378,7 +378,7 @@ function BedMeetingTvView({
             testId: "bed-meeting-tv-ed",
           },
           {
-            label: "Longest ED wait",
+            label: "Longest open ED journey",
             value: longest ? splitDuration(longest.waitMinutes) : 0,
             detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
             tone: longest && longest.waitMinutes > LONG_WAIT_MINUTES ? "danger" : undefined,
@@ -430,7 +430,7 @@ function BedMeetingTvView({
           <BedsThatFit gaps={extras.gaps} />
         </Panel>
 
-        <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel">
+        <Panel title="Longest open ED journeys" testId="bed-meeting-tv-waits-panel">
           {ed.longestWaits.length === 0 ? (
             <Empty>Nobody waiting.</Empty>
           ) : (

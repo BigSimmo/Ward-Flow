@@ -553,6 +553,9 @@ const undoRecord = z.discriminatedUnion("kind", [
     admissionId: text,
     unitId: text,
     beforeBed: z.nullable(bed),
+    beforeBedKind: z.optional(z.nullable(z.enum(["open", "locked"]))),
+    beforeMovementBed: z.optional(z.nullable(bed)),
+    beforeReferralBed: z.optional(z.nullable(bed)),
     afterBed: bed,
   }),
   z

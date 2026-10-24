@@ -106,7 +106,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
 
           const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
           const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
-          const visibleSummary = `${row.ed.siteCode}${shownService}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
+          const visibleSummary = `${row.ed.siteCode}${shownService}, ${row.waiting} journeys still open from ED, ${waitText}, ${deadline.text}`;
           const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");
           else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);
@@ -140,7 +140,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 {/* A space between the lines (collapsed in the flex column) so the visible words read
                     apart for voice control and axe label-in-name, F-19. */}{" "}
                 <span className={styles.edWaiting} aria-hidden="true">
-                  <span className={styles.edWaitingValue}>{row.waiting}</span> waiting
+                  <span className={styles.edWaitingValue}>{row.waiting}</span> journeys
                 </span>{" "}
                 <span className={styles.edLine} aria-hidden="true">
                   {row.waiting > 0 ? (

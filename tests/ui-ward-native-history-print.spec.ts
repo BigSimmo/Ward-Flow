@@ -28,6 +28,28 @@ test.describe("native history and handover print @mockup", () => {
     await page.close(); // Keep automatic failure context free of synthetic patient rows.
   });
 
+  test("pre-hydration scripts preserve rail preference and client navigation without script errors", async ({
+    page,
+    context,
+  }) => {
+    const scriptErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && /script tag|scripts inside React components/i.test(message.text()))
+        scriptErrors.push(message.text());
+    });
+    await context.addInitScript(() => localStorage.setItem("ward-flow-rail", "closed"));
+    await page.goto(HOME);
+    await settled(page);
+    await expect(page.getByTestId("ward-rail")).toHaveAttribute("data-rail", "closed");
+    await page.evaluate(() => document.documentElement.setAttribute("data-review-navigation", "same-document"));
+    expect(scriptErrors).toEqual([]);
+    await navigate(page, "/capacity");
+    await expect(page.locator("html")).toHaveAttribute("data-review-navigation", "same-document");
+    await navigate(page, "/referrals");
+    await expect(page.locator("html")).toHaveAttribute("data-review-navigation", "same-document");
+    expect(scriptErrors).toEqual([]);
+  });
+
   test("phone Keep draft closes through native history and reopens the referral from memory", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 568 });
     await page.goto(`${HOME}/delays`);

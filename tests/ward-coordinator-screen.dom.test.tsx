@@ -28,6 +28,15 @@ function SaveUrgentWindow() {
 }
 
 describe("CoordinatorScreen", () => {
+  it("names open ED journeys separately from physical ED presence and transit", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("heading", { name: /open ED journeys/ })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/\d+ still in ED · \d+ in transit/);
+  });
   it("renders the prototype footer with coordinator governance disclosure", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -39,6 +48,7 @@ describe("CoordinatorScreen", () => {
     expect(footer).toBeInTheDocument();
     expect(footer).toHaveTextContent("Demo coordinator view · Not approved for clinical use");
     expect(footer).toHaveTextContent("Synthetic prototype");
+    expect(footer).toHaveTextContent("CAHS inpatient wards are not modelled; private live feeds are unavailable");
   });
 
   // #113 review: the hero's deadline count is classified by `clockState`, which reads the saved

@@ -11,6 +11,7 @@ import type {
   Cohort,
   HomeRegion,
   LegalStatus,
+  Movement,
   MovementId,
   RecordedSex,
   ReferralGender,
@@ -553,7 +554,7 @@ export type Admission = {
   /**
    * WHICH KIND OF BED THIS ADMISSION ACTUALLY TOOK — item 11, owner answer 11 (17 September 2026):
    * *"voluntary patients take open beds first, and secure patients take locked beds first."*
-   * `PULL_PATIENT` is the only runtime writer, and it records exactly the kind it took: an Open
+   * `PULL_PATIENT` and numbered bed moves record exactly the kind taken: an Open
    * request that had to fall back to a locked bed records `"locked"`, a Secure request that had to
    * fall back to an open bed (only with a recorded override reason) records `"open"` — never the
    * kind the REQUEST preferred, always the kind the BED actually was.
@@ -571,7 +572,7 @@ export type Admission = {
    * WHICH OF THE UNIT'S BEDS THIS STAY IS IN, numbered 1 to `Unit.beds` — v10 pass 2 (Josh, 10 Oct
    * 2026: the ward Bed board's pick up and place). A fact about the WARD'S ACT, in the same category
    * as `bedKind` above: where the ward put the person, never anything about the person. Written only
-   * by `PLACE_IN_BED` (and reversed by `UNDO_PLACE_IN_BED`). OPTIONAL, and absent is ordinary: no
+   * by a numbered pull, arrival or `PLACE_IN_BED` (and reversed by `UNDO_PLACE_IN_BED`). OPTIONAL, and absent is ordinary: no
    * seeded admission records a bed number, and a screen lays unnumbered stays out by position.
    */
   bedNumber?: number;
@@ -770,6 +771,22 @@ export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_P
  */
 export function bedIsOccupied(admission: Admission): boolean {
   return admission.state === "pulled" || admission.state === "occupied";
+}
+
+/** Seeded stays may be joined only by Movement.admissionId; conflicting or multiple live joins stay unresolved. */
+export function liveMovementForAdmission(admission: Admission, movements: readonly Movement[]): Movement | undefined {
+  const matches = movements.filter(
+    (movement) =>
+      !movement.closure &&
+      movement.stage !== "arrived" &&
+      movement.acceptedUnitId === admission.unitId &&
+      (movement.id === admission.movementId || movement.admissionId === admission.id),
+  );
+  if (matches.length !== 1) return undefined;
+  const movement = matches[0]!;
+  if (admission.movementId !== null && movement.id !== admission.movementId) return undefined;
+  if (movement.admissionId !== undefined && movement.admissionId !== admission.id) return undefined;
+  return movement;
 }
 
 /**

@@ -120,6 +120,8 @@ for (const databaseProvider of Object.keys(DATABASE_PROVIDERS)) {
       assert.equal(envelope.actorId, config.coordinatorIds[0]);
       assert.deepEqual(await (await handler(request("/v1/workspace/audit"))).json(), {
         events: [{ action: "synthetic" }],
+        complete: true,
+        nextCursor: null,
       });
       assert.deepEqual(await (await handler(request("/v1/workspace/push-key"))).json(), { enabled: false });
       const commandId = randomUUID().toUpperCase();

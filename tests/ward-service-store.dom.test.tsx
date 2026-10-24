@@ -211,7 +211,7 @@ describe("WardBar's Service selector, wired to the store", () => {
     const panel = screen.getByTestId("ward-bar-service-panel");
     const nonZero = within(panel)
       .getAllByRole("button")
-      .filter((button) => /\d+ waiting/.test(button.textContent ?? ""));
+      .filter((button) => /[1-9]\d* open ED journeys?/.test(button.textContent ?? ""));
     expect(nonZero.length).toBeGreaterThan(1);
   });
 

@@ -57,7 +57,7 @@ const waitedPastADay = (movement: Movement, now: Instant) => now - movement.open
  * synthetic state with the rules the other statistics screens already use: open movements by stage
  * for the ED side, `bedStates` occupancy for the ward, and the ward page's "Due out, 7 days" and the
  * Summary's "Discharged today" for the way out. The four ED stages partition the open movements, so
- * they add up to the Summary's "Waiting in ED".
+ * they add up to the Summary's "Open ED journeys".
  */
 export function journeyStages({
   units,
@@ -117,7 +117,7 @@ export function journeyStages({
   return [
     {
       id: "waiting",
-      label: "Waiting in ED",
+      label: "Awaiting placement",
       caption: "No ward has answered",
       tone: "neutral",
       count: waiting.length,
@@ -541,19 +541,19 @@ export function StatisticsJourneyView({
           <StatCard
             id="journey-waiting"
             icon={Clock}
-            title="Who is waiting"
-            meta={`${totalWaiting} in ${waitingRows.length} ${waitingRows.length === 1 ? "ED" : "EDs"}`}
+            title="Open ED journeys"
+            meta={`${totalWaiting} open journeys from ${waitingRows.length} ${waitingRows.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
               {waitingRows.length === 0 ? (
-                <p className={styles.empty}>Nobody is waiting in an ED for a bed right now.</p>
+                <p className={styles.empty}>No open ED journeys are recorded.</p>
               ) : (
                 <StatisticsEdSwarm
                   rows={waitingRows}
                   labelWidth={128}
                   testId="ward-statistics-journey-swarm"
-                  label="Each person waiting in ED, by department and how long they have waited"
+                  label="Each open ED journey, by originating department and time since opening"
                 />
               )}
               <SrOnly>Each row opens that ED&apos;s statistics.</SrOnly>

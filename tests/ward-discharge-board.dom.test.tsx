@@ -1,7 +1,7 @@
 // The setup file already loads these matchers; importing them here as well lets the commit-time
 // type check, which reads only the changed files, see them too.
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -40,6 +40,28 @@ function renderBoard() {
     </WardFlowProvider>,
   );
 }
+
+it("names identified release rows and distinguishes aggregate copying from printing identities", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  try {
+    renderBoard();
+    expect(screen.getByRole("button", { name: /Now, bed releases/ })).toBeInTheDocument();
+    expect(screen.getByText(/Bed releases, blocked first/)).toBeInTheDocument();
+    expect(screen.getByText(/Bed releases · Identifiers may be included/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-copy")).toHaveTextContent("Copy counts");
+    expect(screen.getByTestId("ward-discharge-print")).toHaveAccessibleName("Print list (may include identifiers)");
+    expect(screen.queryByText(/anonymous releases|Bed frees \(no name\)/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ward-discharge-copy"));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0][0]).toMatch(/^Discharges, bed releases, as of/);
+    expect(writeText.mock.calls[0][0]).not.toMatch(/UMRN|WF-|PT-|WR-/);
+  } finally {
+    if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+});
 
 /**
  * Raises a real `FLAG_BED_RELEASE` reducer event — the same mechanism `ward-handover.dom.test.tsx`'s

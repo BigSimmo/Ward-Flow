@@ -1,4 +1,5 @@
-import { daysInBed, isDischargeBarrier } from "./ward-admissions";
+import { daysInBed, isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
+import { lockedBedsFree, openBedsFree, numberedBedKind } from "./ward-bed-designation";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
@@ -88,13 +89,59 @@ export function reduceBedEvent(
         return reject(state, event, `This stay is already recorded in bed ${event.bedNumber}`);
       const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, admission.id);
       if (bedRefusal) return reject(state, event, bedRefusal);
-      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
+      const linkedMovement =
+        admission.state === "pulled" ? liveMovementForAdmission(admission, state.movements) : undefined;
+      const linkedReferral =
+        linkedMovement &&
+        state.referrals.find((referral) => referral.id === (admission.referralId ?? linkedMovement.referralId));
+      const linkedArm = linkedReferral?.destinations.find(
+        (arm) =>
+          arm.state === "accepted" &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      );
+      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber, linkedMovement?.id, linkedReferral?.id);
       if (heldRefusal) return reject(state, event, heldRefusal);
+      const bedKind = numberedBedKind(unit, event.bedNumber);
+      const oldKind =
+        admission.bedKind ??
+        (admission.bedNumber === undefined ? undefined : numberedBedKind(unit, admission.bedNumber));
+      if (oldKind !== bedKind && (bedKind === "locked" ? lockedBedsFree(unit) : openBedsFree(unit)) <= 0)
+        return reject(state, event, `No ${bedKind} capacity remains for that numbered bed`);
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      const placed = replaceAdmission(state, admission.id, { ...admission, bedNumber: event.bedNumber });
+      const nextLocked = unit.allocatableLocked + (oldKind === "locked" ? 1 : 0) - (bedKind === "locked" ? 1 : 0);
+      const withCapacity =
+        nextLocked === unit.allocatableLocked
+          ? state
+          : replaceUnit(state, unit.id, {
+              ...unit,
+              allocatableLocked: nextLocked,
+            });
+      const placed = replaceAdmission(withCapacity, admission.id, {
+        ...admission,
+        bedNumber: event.bedNumber,
+        bedKind,
+      });
       return {
         ...placed,
+        movements: linkedMovement
+          ? placed.movements.map((movement) =>
+              movement === linkedMovement ? { ...movement, heldBedNumber: event.bedNumber } : movement,
+            )
+          : placed.movements,
+        referrals: linkedArm
+          ? placed.referrals.map((referral) =>
+              referral === linkedReferral
+                ? {
+                    ...referral,
+                    destinations: referral.destinations.map((arm) =>
+                      arm === linkedArm ? { ...arm, heldBedNumber: event.bedNumber } : arm,
+                    ),
+                  }
+                : referral,
+            )
+          : placed.referrals,
         undoRecords: withUndoRecord(state.undoRecords, {
           kind: "bed-placement",
           admissionId: admission.id,
@@ -102,6 +149,9 @@ export function reduceBedEvent(
           at: event.now,
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
+          beforeBedKind: admission.bedKind ?? null,
+          ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
+          ...(linkedArm ? { beforeReferralBed: linkedArm.heldBedNumber ?? null } : {}),
           afterBed: event.bedNumber,
         }),
       };

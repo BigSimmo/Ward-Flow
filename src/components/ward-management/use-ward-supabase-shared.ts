@@ -1,4 +1,5 @@
 "use client";
+import { forgetDowntimePack } from "./reports/downtime-pack";
 import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush } from "./shell/ward-phone-push";
@@ -127,7 +128,10 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
     let connectedActorId: string | null = null;
     const disconnect = (forgetDrafts = true) => {
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
-      if (forgetDrafts) clearReferralDraftSession();
+      forgetDowntimePack();
+      if (forgetDrafts) {
+        clearReferralDraftSession();
+      }
       connectedActorId = null;
       if (timer) clearInterval(timer);
       timer = undefined;
@@ -168,6 +172,11 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: () => instance.token(),
         workingAs,
+        recoveryStorage: {
+          getItem: (key) => window.sessionStorage.getItem(key),
+          setItem: (key, value) => window.sessionStorage.setItem(key, value),
+          removeItem: (key) => window.sessionStorage.removeItem(key),
+        },
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
@@ -280,6 +289,11 @@ export function useWardSupabaseShared(enabled: boolean, createAuth: () => WardBr
             // speaks as the role worked as, so an account with several roles can turn alerts off.
             const chosen = workingAs.get();
             workingAs.set(null);
+            try {
+              window.sessionStorage.removeItem("wardflow:pending-command-v1");
+            } catch {
+              /* Storage unavailable. */
+            }
             // Stop board reads, queued writes and late responses in the click's own call stack.
             disconnect();
             setForm({ open: false, recovery: false, busy: false, message: null });

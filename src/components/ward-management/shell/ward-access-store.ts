@@ -1,4 +1,5 @@
 "use client";
+import { forgetDowntimePack } from "../reports/downtime-pack";
 
 /**
  * **WHO IS AT THIS DESK — the local demo's access, held for this tab (role access plan, PR 1).**
@@ -102,6 +103,7 @@ function covered(desk: WardAccess, covers: readonly CoverRecord[]): WardAccess {
 }
 
 function emit(next: Omit<Snapshot, "access">): void {
+  forgetDowntimePack();
   const access = covered(next.desk, next.covers);
   snapshot = { ...next, access: sameDesk(access, snapshot.access) ? snapshot.access : access };
   for (const listener of listeners) listener();

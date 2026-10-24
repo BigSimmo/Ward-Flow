@@ -67,6 +67,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
   RECEIVE_REFERRAL: { category: "patient", plainWording: "New referral received" },
   ACCEPT_REFERRAL: { category: "patient", plainWording: "Referral accepted by destination service" },
+  HOLD_REFERRAL_BED: { category: "both", plainWording: "Numbered bed held for accepted referral" },
   DECLINE_REFERRAL: { category: "patient", plainWording: "Referral declined by destination service" },
   RECORD_REFERRER_WITHDRAWAL: { category: "patient", plainWording: "Referral withdrawn by referrer" },
   ADD_REFERRAL_CORRECTION: { category: "patient", plainWording: "Referral details corrected" },

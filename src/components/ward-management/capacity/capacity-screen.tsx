@@ -263,7 +263,7 @@ export function CapacityScreen() {
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // shell-1: the hero's figures are all whole-network, whatever service is chosen.
-  const heroScopeLabel = service === null ? "Statewide" : `Statewide, not only ${service}`;
+  const heroScopeLabel = service === null ? "Modelled network" : `Modelled network, not only ${service}`;
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = useMemo(
     () =>
@@ -702,7 +702,7 @@ export function CapacityScreen() {
           }
           titleMeta={
             isPhone
-              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} waiting in ED${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
+              ? `${gapTotals.gap < 0 ? `${Math.abs(gapTotals.gap)} short of` : gapTotals.gap === 0 ? "Exactly enough for" : `${gapTotals.gap} spare for`} ${gapTotals.waiting} open ED journeys${netTotals.pendingPreparation ? ` · ${netTotals.pendingPreparation} being made ready` : ""}`
               : netTotals.pendingPreparation
                 ? `${netTotals.pendingPreparation} being made ready`
                 : undefined
@@ -1064,7 +1064,7 @@ export function CapacityScreen() {
         ) : null}
         <WardPrototypeFooter
           testId="ward-capacity-governance"
-          note="Statewide bed capacity · Not approved for clinical use"
+          note="Statewide bed capacity · Limited synthetic demo coverage: CAHS inpatient wards are not modelled; private live feeds are unavailable · Not approved for clinical use"
         />
       </main>
     </div>

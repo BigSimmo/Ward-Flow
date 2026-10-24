@@ -14,6 +14,8 @@ vi.mock("next/link", () => ({
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 
 /**
  * v10 Network (pass 3): the hero figures highlight the bed flow. Pressing Ready now marks every ward
@@ -33,6 +35,18 @@ function unitRows() {
 }
 
 describe("Network hero figures highlight the bed flow", () => {
+  it("names the open-journey count without describing travelling people as physically in ED", () => {
+    const seed = seedWardFlowState();
+    const figure = waitingInEds(seed.movements, NOW_ANCHOR);
+    expect(figure.inTransit).toBeGreaterThan(0);
+    renderNetwork();
+    expect(
+      screen.getByRole("button", {
+        name: new RegExp(`Open ED journeys.*${figure.total}|${figure.total}.*Open ED journeys`, "u"),
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Waiting in ED/u })).not.toBeInTheDocument();
+  });
   it("dims wards without a ready bed when Ready now is pressed, and keeps every row", () => {
     renderNetwork();
     const before = unitRows().length;

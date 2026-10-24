@@ -6,7 +6,11 @@ import {
   type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import {
+  lockedBedsFree,
+  openBedsFree,
+  numberedBedKindRefusal,
+} from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { MOVEMENT_STAGES, STEP_BACK_REASONS, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -282,6 +286,13 @@ export function reducePlacementEvent(
         : openBedsFree(unit) > 0
           ? "open"
           : "locked";
+      if (movement.heldBedNumber !== undefined) {
+        const numberedRefusal =
+          helpers.bedNumberRefusal(state, unit, movement.heldBedNumber, undefined) ??
+          helpers.heldBedRefusal(state, unit, movement.heldBedNumber, movement.id, movement.referralId) ??
+          numberedBedKindRefusal(unit, movement.heldBedNumber, secureBedNeeded);
+        if (numberedRefusal) return reject(state, event, numberedRefusal);
+      }
 
       /**
        * The eligibility gate goes last, after every existing refusal (Ward Lead ruling): a
@@ -346,6 +357,7 @@ export function reducePlacementEvent(
         // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
         // See `Admission.bedKind`.
         bedKind: bedKindTaken,
+        ...(movement.heldBedNumber === undefined ? {} : { bedNumber: movement.heldBedNumber }),
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,

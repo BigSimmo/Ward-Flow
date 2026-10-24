@@ -1,4 +1,6 @@
 import type { AuditDecision } from "./ward-audit";
+import { liveMovementForAdmission } from "./ward-admissions";
+import { lockedBedsFree, openBedsFree, numberedBedKind } from "./ward-bed-designation";
 import type {
   bedNumberRefusal,
   findAdmission,
@@ -128,14 +130,72 @@ export function reduceUndoEvent(
         const heldRefusal = heldBedRefusal(state, unit, record.beforeBed);
         if (heldRefusal) return reject(state, event, `${heldRefusal}, so the move cannot be undone`);
       }
+      const linkedMovement =
+        record.beforeMovementBed !== undefined ? liveMovementForAdmission(admission, state.movements) : undefined;
+      if (
+        record.beforeMovementBed !== undefined &&
+        (!linkedMovement || linkedMovement.closure || admission.state !== "pulled")
+      )
+        return reject(state, event, "The bed journey has changed, so the held-bed move cannot be undone");
       // Exact: a stay that had no bed number before gets none back (the key absent, not undefined).
       const { bedNumber: _placed, ...unplaced } = admission;
       void _placed;
       const restored: Admission = record.beforeBed === null ? unplaced : { ...admission, bedNumber: record.beforeBed };
+      const beforeKind =
+        record.beforeBedKind === undefined
+          ? admission.bedKind
+          : (record.beforeBedKind ?? (record.beforeBed === null ? undefined : numberedBedKind(unit, record.beforeBed)));
+      const currentKind = admission.bedKind;
+      if (
+        beforeKind !== undefined &&
+        beforeKind !== currentKind &&
+        (beforeKind === "locked" ? lockedBedsFree(unit) : openBedsFree(unit)) <= 0
+      )
+        return reject(state, event, `No ${beforeKind} capacity remains, so the move cannot be undone`);
+      if (record.beforeBedKind === null) delete restored.bedKind;
+      else if (record.beforeBedKind !== undefined) restored.bedKind = record.beforeBedKind;
+      const nextLocked =
+        unit.allocatableLocked + (currentKind === "locked" ? 1 : 0) - (beforeKind === "locked" ? 1 : 0);
+      const restoredUnits =
+        nextLocked === unit.allocatableLocked
+          ? state.units
+          : state.units.map((candidate) =>
+              candidate.id !== unit.id
+                ? candidate
+                : {
+                    ...unit,
+                    allocatableLocked: nextLocked,
+                  },
+            );
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return {
         ...replaceAdmission(state, admission.id, restored),
+        units: restoredUnits,
+        movements: linkedMovement
+          ? state.movements.map((movement) =>
+              movement === linkedMovement
+                ? { ...movement, heldBedNumber: record.beforeMovementBed ?? undefined }
+                : movement,
+            )
+          : state.movements,
+        referrals:
+          record.beforeReferralBed !== undefined
+            ? state.referrals.map((referral) =>
+                referral.id === (admission.referralId ?? linkedMovement?.referralId)
+                  ? {
+                      ...referral,
+                      destinations: referral.destinations.map((arm) =>
+                        arm.state === "accepted" &&
+                        arm.destination.kind === "psychiatric_ward" &&
+                        (arm.acceptedUnitId ?? arm.destination.unitId) === admission.unitId
+                          ? { ...arm, heldBedNumber: record.beforeReferralBed ?? undefined }
+                          : arm,
+                      ),
+                    }
+                  : referral,
+              )
+            : state.referrals,
         undoRecords: withoutUndoRecord(state.undoRecords, record),
       };
     }

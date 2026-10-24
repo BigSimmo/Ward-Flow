@@ -138,7 +138,9 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     } as WardFlowEvent;
     renderBoard([receive]);
 
-    const chip = document.querySelector<HTMLElement>("[data-testid^='ward-board-pick-']");
+    const chip = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-pick-']")].find(
+      (item) => !item.textContent?.includes("Accepted"),
+    );
     expect(chip, "the received referral is waiting on the board").not.toBeNull();
     fireEvent.click(chip!);
     expect(chip).toHaveAttribute("aria-pressed", "true");
@@ -148,8 +150,8 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
     expect(cellText(to)).toMatch(/held for/);
-    // The referral has left the waiting list.
-    expect(document.querySelector("[data-testid^='ward-board-pick-']")).toBeNull();
+    // Its accepted arm remains available for a separate bed reassignment; acceptance can still be undone.
+    expect(screen.getByTestId(chip!.dataset.testid!)).toHaveTextContent("Accepted");
 
     act(() => {
       fireEvent.click(within(screen.getByTestId("toast")).getByRole("button", { name: /^Undo/ }));

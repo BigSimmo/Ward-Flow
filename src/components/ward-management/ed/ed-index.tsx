@@ -279,6 +279,8 @@ export function EdIndex() {
   // Statewide hero counts.
   const total = (pick: (row: EdRow) => number) => rows.reduce((sum, row) => sum + pick(row), 0);
   const waiting = total((row) => row.summary.waiting);
+  const stillInEd = total((row) => row.summary.stillInEd);
+  const inTransit = total((row) => row.summary.inTransit);
   const withWaiting = rows.filter((row) => row.summary.waiting > 0);
   const longestRow = [...rows].sort((a, b) => b.summary.longestWaitMinutes - a.summary.longestWaitMinutes)[0];
   const longest = longestRow?.summary.longestWaitMinutes ?? 0;
@@ -426,16 +428,18 @@ export function EdIndex() {
           title={
             <>
               <SrOnly>All EDs, </SrOnly>
-              {waiting} waiting in {withWaiting.length} EDs
+              {waiting} open ED journeys from {withWaiting.length} EDs
             </>
           }
           titleMeta={
-            // v10 phone: one quiet line under the title in place of the checking foot.
-            isPhone
-              ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-              : undefined
+            <span data-testid="ward-ed-population">
+              {stillInEd} still in ED · {inTransit} in transit
+              {isPhone
+                ? waiting > 0 && longestRow
+                  ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                  : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                : null}
+            </span>
           }
           aside={
             isPhone ? (
@@ -630,7 +634,7 @@ export function EdIndex() {
         ) : view === "lanes" ? (
           <EdLanes rows={ordered} services={services} accessTarget={accessTarget} isDim={isDim} highlight={highlight} />
         ) : (
-          // Device audit 11 Oct 2026: Waiting by service is a rail beside the cards rather than an
+          // Device audit 11 Oct 2026: Open ED journeys by service is a rail beside the cards rather than an
           // eleventh card, and a full-width strip under them at tablet portrait.
           <div className={styles.cardsWithRail}>
             <section className={styles.cardGrid} aria-label="Emergency department cards">
@@ -865,7 +869,7 @@ function EdCard({
       </div>
       <PeoplePips row={row} highlight={highlight} />
       <p className={styles.figures}>
-        <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
+        <b className={styles.num}>{summary.waiting}</b> open ED journeys <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.held}</b> held <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.forms}</b> form
@@ -1167,7 +1171,7 @@ function EdLanes({
 }
 
 /**
- * Waiting by service (v10): the bars are the service filter. Pressing a bar keeps that service's
+ * Open ED journeys by service (v10): the bars are the service filter. Pressing a bar keeps that service's
  * EDs solid and dims the rest (the same as the service tabs); pressing it again clears it.
  */
 function ServicePicker({
@@ -1191,7 +1195,7 @@ function ServicePicker({
   return (
     <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
       <h2 id="ed-index-by-service" className={styles.eyebrow}>
-        Waiting by service
+        Open ED journeys by service
       </h2>
       <BarList
         label="Highlight a health service"
@@ -1267,9 +1271,9 @@ function PhoneEdList({
               "Clear"
             )
           }
-          time={item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : undefined}
+          time={item.summary.waiting > 0 ? `${item.summary.waiting} open ED journeys` : undefined}
           onSelect={() => onPreview(item.summary.ed.id)}
-          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.summary.waiting} waiting, longest ${splitDuration(item.summary.longestWaitMinutes)}` : "clear"}. Opens a preview.`}
+          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.summary.waiting} open ED journeys, longest ${splitDuration(item.summary.longestWaitMinutes)}` : "clear"}. Opens a preview.`}
           data-testid={`ed-index-phone-row-${item.summary.ed.id}`}
         />
       </div>
@@ -1305,7 +1309,7 @@ function EdPreview({
       <FactGrid
         className={styles.previewFacts}
         facts={[
-          { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
+          { id: "waiting", label: "Open ED journeys", value: <b className={styles.num}>{row.summary.waiting}</b> },
           {
             id: "past",
             label: `Past ${waitLine(accessTarget)}`,

@@ -21,8 +21,9 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  * they disagreed on the same day for the same department** — a movement can exist with no
  * referral yet raised, and a referral can exist for someone no movement has been opened for.
  *
- * **Owner ruling, 2026-09-04: the population is the patient physically present, awaiting a bed —
- * the movement-based set — and the ED hub is being told the same, so the two screens agree by
+ * **Owner ruling, 2026-09-04: use the movement-based set, never referrals. The later
+ * 2026-09-07 clarification preserves ED accountability through transit until ward arrival;
+ * this is the open-journey population, not a physical ED census. The ED hub uses the same set by
  * construction rather than by fixture.** The reason given is clinical: "waiting for a psychiatric
  * bed" describes a person in a department, not a piece of paperwork, and a patient can be waiting
  * before any referral exists — the worst case this screen exists to surface, not an edge case. A
@@ -40,7 +41,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  * explanation.
  */
 export const ED_HOME_POPULATION_NOTE =
-  "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. That is the model's Movement record (an open journey from this department toward a bed), deliberately never a referral count: a patient can be waiting before any referral exists, and a referral-keyed view has no row for that — the very state a coordinator most needs to see. Ruled 2026-09-04 so both this screen and a department's own hub count the same population by construction.";
+  "Open ED journeys count open Movement records from an emergency department, including people in transit until ward arrival; ED accountability continues during transport. Still in ED excludes moving journeys and recorded physical departures. In transit counts the remaining open journeys that have left ED. These are journey counts, never referral counts or a complete ED census. The movement-based ruling of 2026-09-04 was clarified on 2026-09-07 to preserve transit accountability.";
 
 /**
  * "Detained under the Act" — the two legal statuses that place a person under the Mental Health
@@ -112,6 +113,10 @@ export type EdSummary = {
    *  list, if one is ever added) never has to re-filter the network to get back to them. */
   open: Movement[];
   waiting: number;
+  /** Physically present among these open journeys; matches the downtime queue definition. */
+  stillInEd: number;
+  /** Open journeys already moving or with a recorded ED departure; accountability continues. */
+  inTransit: number;
   longestWaitMinutes: number;
   detained: number;
   pastAccessTarget: number;
@@ -153,12 +158,17 @@ export function edOpenSummaries(movements: readonly Movement[], now: Instant): E
   return allEmergencyDepartments().map((ed) => {
     const open = movements.filter((movement) => isOpen(movement) && movement.originEdId === ed.id);
     const elapsed = open.map((movement) => elapsedOpenMinutes(movement, now));
+    const stillInEd = open.filter(
+      (movement) => movement.stage !== "moving" && movement.leftDepartmentAt === undefined,
+    ).length;
     return {
       ed,
       service: healthServiceOf(ed),
       siteName: siteNameOf(ed),
       open,
       waiting: open.length,
+      stillInEd,
+      inTransit: open.length - stillInEd,
       longestWaitMinutes: elapsed.length ? Math.max(...elapsed) : 0,
       detained: open.filter((movement) => isDetainedUnderTheAct(movement.legalStatus)).length,
     };
@@ -197,6 +207,8 @@ type NetworkLongestWait = { movement: Movement; summary: EdSummary; waitMinutes:
 
 export type EdHomeTotals = {
   waiting: number;
+  stillInEd: number;
+  inTransit: number;
   detained: number;
   detainedAndPastAccessTarget: number;
   departmentsPastAccessTarget: EdSummary[];
@@ -215,6 +227,8 @@ export function edHomeTotals(summaries: readonly EdSummary[], now: Instant): EdH
   }
   return {
     waiting: summaries.reduce((sum, summary) => sum + summary.waiting, 0),
+    stillInEd: summaries.reduce((sum, summary) => sum + summary.stillInEd, 0),
+    inTransit: summaries.reduce((sum, summary) => sum + summary.inTransit, 0),
     detained: summaries.reduce((sum, summary) => sum + summary.detained, 0),
     detainedAndPastAccessTarget: summaries.reduce((sum, summary) => sum + summary.detainedAndPastAccessTarget, 0),
     departmentsPastAccessTarget: summaries.filter((summary) => summary.pastAccessTarget > 0),

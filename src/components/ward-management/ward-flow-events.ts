@@ -1347,6 +1347,15 @@ export type WardFlowEvent =
       tentativeDiagnosis?: TentativeDiagnosisBlock;
     }
   | {
+      type: "HOLD_REFERRAL_BED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      actingUnitId: string;
+      bedNumber: number;
+    }
+  | {
       type: "ACCEPT_REFERRAL";
       role: WardFlowRole;
       now: Instant;
@@ -2914,6 +2923,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * team decide a psychiatric ward bed.
    */
   ACCEPT_REFERRAL: ["ward", "coordinator", "ed", "community"],
+  HOLD_REFERRAL_BED: ["ward", "coordinator"],
   /*
    * `community` MAY ALSO DECLINE — owner ruling 2026-09-06. The two lists are one line apart on
    * purpose: `answerableBy` in the reducer carries `community: "community_team"` for BOTH events

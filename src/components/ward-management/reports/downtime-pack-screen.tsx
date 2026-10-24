@@ -35,6 +35,7 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   downtimePack,
   downtimePackIsStale,
+  downtimePackAccessVersion,
   lastDowntimePack,
   rememberDowntimePack,
   subscribeDowntimePack,
@@ -141,7 +142,7 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
-  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration, shared } = useWardFlowSelect(
     "dayZero",
     "units",
     "admissions",
@@ -149,11 +150,13 @@ export function DowntimePackScreen() {
     "leaveBeds",
     "movements",
     "worldGeneration",
+    "shared",
   );
   const patientOf = usePatientOf();
   const isPhone = useIsPhone();
   const role = useRouteRole();
-  const canSnapshot = role === "coordinator";
+  const canSnapshot = role === "coordinator" && (!shared?.enabled || shared.status === "ready");
+  const accessVersion = useSyncExternalStore(subscribeDowntimePack, downtimePackAccessVersion, () => 0);
 
   const take = useCallback((): void => {
     const pack = downtimePack({
@@ -168,8 +171,8 @@ export function DowntimePackScreen() {
         return `${person.displayName} · ${person.umrn}`;
       },
     });
-    rememberDowntimePack(pack, worldGeneration);
-  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration]);
+    rememberDowntimePack(pack, worldGeneration, accessVersion);
+  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, accessVersion]);
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
@@ -191,7 +194,7 @@ export function DowntimePackScreen() {
     () => () => {
       if (takingTimer.current !== null) window.clearTimeout(takingTimer.current);
     },
-    [],
+    [accessVersion],
   );
   const newSnapshot = () => {
     if (!canSnapshot || taking) return;
@@ -207,6 +210,13 @@ export function DowntimePackScreen() {
 
   const [section, setSection] = useState<Section>("beds");
   const [sheet, setSheet] = useState<SheetRow | null>(null);
+  const [shownAccessVersion, setShownAccessVersion] = useState(accessVersion);
+  if (shownAccessVersion !== accessVersion) {
+    setShownAccessVersion(accessVersion);
+    setSheet(null);
+    setBefore(null);
+    setTaking(false);
+  }
 
   const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : reportMoment(instant, dayZero));
 

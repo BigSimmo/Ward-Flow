@@ -87,7 +87,7 @@ describe("Summary, Map view", () => {
     renderView();
     fireEvent.click(screen.getByRole("radio", { name: /^ED waits/ }));
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Most waiting in ED" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Most open ED journeys" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
     for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/statistics\/ed\//);

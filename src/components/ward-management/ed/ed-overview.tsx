@@ -222,7 +222,7 @@ export function EdOverview({
                   </span>
                   <span className={styles.waiting}>
                     <b>{department.waiting}</b>
-                    <small>waiting</small>
+                    <small>open ED journeys</small>
                   </span>
                   <span className={styles.longest}>
                     {department.waiting === 0 ? (

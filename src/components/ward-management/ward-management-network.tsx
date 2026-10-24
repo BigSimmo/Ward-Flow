@@ -662,16 +662,16 @@ export function WardNetworkWorkspace() {
         titleMeta={
           isPhone
             ? longestInEd > 0
-              ? `Longest in ED ${splitDuration(longestInEd)} · ${readyNow} ready against ${waitingInEd} waiting`
-              : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`
-            : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`
+              ? `Longest open journey ${splitDuration(longestInEd)} · ${readyNow} ready against ${waitingInEd} open ED journeys`
+              : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} open ED journeys`
+            : `${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} open ED journeys`
         }
         stats={
           <>
             {/* v10 Network: each figure highlights the bed flow cells and rows it counts. */}
             <HeroStat
               value={waitingInEd}
-              label="Waiting in ED"
+              label="Open ED journeys"
               pressed={heroHighlight === "waiting"}
               onToggle={() => toggleHighlight("waiting")}
             />
@@ -705,7 +705,7 @@ export function WardNetworkWorkspace() {
             {longestInEd > 0 && !isPhone ? (
               <span className={thirdEdition.longestChip}>
                 <Clock3 size={13} aria-hidden="true" />
-                <b>{splitDuration(longestInEd)}</b> longest in ED
+                <b>{splitDuration(longestInEd)}</b> longest open journey
               </span>
             ) : null}
             <button

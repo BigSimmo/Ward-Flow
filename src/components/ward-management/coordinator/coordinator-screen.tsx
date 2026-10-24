@@ -589,8 +589,8 @@ export function CoordinatorScreen() {
       }),
     [movements, units, referrals, bedReleases, leaveBeds, now, thresholds, network],
   );
-  // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
-  const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
+  // Open ED journeys retain transport accountability; physical ED presence is shown separately.
+  const edJourneys = useMemo(() => waitingInEds(movements, now), [now, movements]);
   const breachWithinHour = openMovements.filter(
     (movement) =>
       movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "critical",
@@ -622,9 +622,17 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{waitingInEd}</span> waiting in ED,{" "}
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED journeys,{" "}
       <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
+  );
+  const populationNote = (
+    <span data-testid="ward-home-ed-population">
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit · Limited demo coverage
+      {isPhone
+        ? ` · Synthetic demo${statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""}`
+        : ""}
+    </span>
   );
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
   // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
@@ -767,15 +775,11 @@ export function CoordinatorScreen() {
             className={styles.homeHero}
             // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
             // title, three figures you can tap, then New since and Pause.
-            eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
-            title={heroTitle}
-            titleMeta={
-              isPhone
-                ? `Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`
-                : undefined
+            eyebrow={
+              isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
+            title={heroTitle}
+            titleMeta={isPhone ? populationNote : undefined}
             stats={
               isPhone ? (
                 <>
@@ -914,29 +918,32 @@ export function CoordinatorScreen() {
             }
             foot={
               isPhone ? undefined : (
-                <CheckingFoot
-                  items={[
-                    {
-                      id: "overdue",
-                      label: "Overdue",
-                      value: overdueInQueue,
-                      tone: overdueInQueue > 0 ? "danger" : "neutral",
-                    },
-                    {
-                      id: "stale-counts",
-                      label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
-                      value: staleBedCounts,
-                      tone: staleBedCounts > 0 ? "warning" : "neutral",
-                    },
-                    {
-                      id: "not-reporting",
-                      label: "Wards not reporting",
-                      value: wardsNotReporting,
-                      tone: wardsNotReporting > 0 ? "warning" : "neutral",
-                    },
-                  ]}
-                  notChecked={["private hospitals, no feed"]}
-                />
+                <div>
+                  <p className={styles.heroPopulation}>{populationNote}</p>
+                  <CheckingFoot
+                    items={[
+                      {
+                        id: "overdue",
+                        label: "Overdue",
+                        value: overdueInQueue,
+                        tone: overdueInQueue > 0 ? "danger" : "neutral",
+                      },
+                      {
+                        id: "stale-counts",
+                        label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
+                        value: staleBedCounts,
+                        tone: staleBedCounts > 0 ? "warning" : "neutral",
+                      },
+                      {
+                        id: "not-reporting",
+                        label: "Wards not reporting",
+                        value: wardsNotReporting,
+                        tone: wardsNotReporting > 0 ? "warning" : "neutral",
+                      },
+                    ]}
+                    notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
+                  />
+                </div>
               )
             }
           />
@@ -1138,7 +1145,8 @@ export function CoordinatorScreen() {
           testId="ward-coordinator-governance"
           note={
             <>
-              Demo coordinator view · Not approved for clinical use
+              Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are
+              not modelled; private live feeds are unavailable
               <span
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}

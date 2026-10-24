@@ -70,6 +70,17 @@ export function createWorkspaceStore(
    */
   const snapshot = (row, at, view) => ({
     dataMode: row.data_mode,
+    ...(view
+      ? {
+          accessBoundary: createHash("sha256")
+            .update(JSON.stringify([view.actorId, view.membershipId, view.access, view.grantIds]))
+            .digest("hex"),
+          accessUntil: Math.min(
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+        }
+      : {}),
     // Whether the demonstration controls work here, so the screens can say when they do not.
     demoControls: demoEvents,
     revision: Number(row.revision),
@@ -515,8 +526,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
-            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
+            ? "SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
+            : "SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -530,7 +541,12 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         if (!access) continue;
         if (row.kind === "cover" && access.role === "ward")
-          wardCovers.push({ membershipId: row.id, access, lastUsed: row.last_used_at ?? null });
+          wardCovers.push({
+            membershipId: row.id,
+            access,
+            lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
+          });
         // Cover gives no place of its own, so it can never be passed on (own: null).
         else
           roles.push({
@@ -538,6 +554,7 @@ export function createWorkspaceStore(
             access,
             own: row.kind === "cover" ? null : access,
             lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
           });
       }
       // Cover of a ward joins a nurse in charge's own ward, so night cover of two wards is one desk.
@@ -548,6 +565,7 @@ export function createWorkspaceStore(
           choice.access.role === "ward" && wardCovers.length
             ? {
                 ...choice,
+                accessUntil: Math.min(choice.accessUntil, ...wardCovers.map((cover) => cover.accessUntil)),
                 access: engine.withCover(
                   choice.access,
                   wardCovers.map((cover) => cover.access.scope),
@@ -570,6 +588,7 @@ export function createWorkspaceStore(
           }
         : { status: "none" };
     let grants = [];
+    let grantIds = [];
     let recentGrant = false;
     const writeEvery = new Date(at.getTime() - LAST_USED_EVERY_MS);
     if (
@@ -590,7 +609,7 @@ export function createWorkspaceStore(
         });
     if (chosen.membershipId) {
       const { rows } = await connection.query(
-        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
+        `SELECT id, patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
       const nowMs = at.getTime();
@@ -611,6 +630,10 @@ export function createWorkspaceStore(
         );
         recentGrant = settling.rows[0]?.settling === true;
       }
+      grantIds = rows
+        .filter((row) => row.until > at)
+        .map((row) => String(row.id))
+        .sort();
       grants = rows
         .filter((row) => row.until > at)
         .map((row) => ({ patientId: row.patient_id, until: new Date(row.until) }));
@@ -620,11 +643,13 @@ export function createWorkspaceStore(
       actorId,
       version,
       membershipId: chosen.membershipId,
+      accessUntil: "accessUntil" in chosen ? chosen.accessUntil : Infinity,
       access: chosen.access,
       // The role as granted, before any cover joined it: what this desk may give cover of. `null`
       // when the desk is working as cover, which is never given on.
       ownAccess: chosen.own === undefined ? chosen.access : chosen.own,
       grants,
+      grantIds,
       recentGrant,
     };
   }
@@ -932,23 +957,47 @@ export function createWorkspaceStore(
      * access admin reads only role changes inside their own place, never which patient was opened.
      * The HTTP layer refuses everyone else before this runs.
      */
-    async audit(view) {
+    async audit(view, cursor = null) {
       const whole = !view || engine.wholeNetwork(view.access);
       const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
+      const statewide = whole || view.access.scope.kind === "statewide";
+      let payload;
+      if (!statewide) {
+        const world = await pool.query(
+          "SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+          [workspaceId],
+        );
+        payload = world.rows[0]?.payload;
+        if (!payload || !engine.validWorld(payload)) return [];
+      }
+      // Keyset-page the retained history, applying scope before the public 200-row cap.
+      // Sequence stays as the database's bigint text: never round a cursor through Number.
+      const selected = [];
+      let before = cursor;
+      for (;;) {
+        const { rows } = await pool.query(
+          `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+          before === null ? [workspaceId] : [workspaceId, before],
+        );
+        for (const row of rows) {
+          const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
+          if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+          if (selected.length === 200) return selected;
+        }
+        if (rows.length < 200) return selected;
+        before = rows.at(-1).sequence;
+      }
+    },
+    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
+    async receipt(actorId, commandId) {
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"} ORDER BY sequence DESC LIMIT 200`,
-        [workspaceId],
+        "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
+        [workspaceId, actorId, commandId],
       );
-      if (whole || view.access.scope.kind === "statewide") return rows;
-      const world = await pool.query("SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'", [
-        workspaceId,
-      ]);
-      const payload = world.rows[0]?.payload;
-      if (!payload || !engine.validWorld(payload)) return [];
-      return rows.filter((row) => {
-        const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
-        return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
-      });
+      const row = rows[0];
+      return row
+        ? { outcome: row.status === 200 ? "accepted" : "refused", commandRevision: row.result.commandRevision }
+        : null;
     },
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each
@@ -1204,8 +1253,8 @@ export function createWorkspaceStore(
         if (refusal || !view.membershipId)
           return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
         const until = new Date(at.getTime() + engine.BREAK_GLASS_MINUTES * 60_000);
-        await client.query(
-          "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+        const inserted = await client.query(
+          "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
           [workspaceId, view.actorId, view.membershipId, patientId, reason, at, until],
         );
         const { rows } = await client.query(
@@ -1221,7 +1270,11 @@ export function createWorkspaceStore(
           revision,
           changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
         });
-        const opened = { ...view, grants: [...view.grants, { patientId, until }] };
+        const opened = {
+          ...view,
+          grantIds: [...(view.grantIds ?? []), String(inserted.rows[0].id)].sort(),
+          grants: [...view.grants, { patientId, until }],
+        };
         return { status: 200, body: { until: until.toISOString(), pattern, snapshot: snapshot(row, at, opened) } };
       });
     },
@@ -1231,7 +1284,7 @@ export function createWorkspaceStore(
      * the end. A refused or stale command always carries the snapshot. `options.view` is the
      * sender's desk from `viewer()`: the command is checked against its role and place, and the
      * reply carries only its part of the workspace.
-     * @param {{ revisionOnly?: boolean, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * @param {{ revisionOnly?: boolean, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, accessUntil?: number, grantIds?: readonly string[], access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view } = options;

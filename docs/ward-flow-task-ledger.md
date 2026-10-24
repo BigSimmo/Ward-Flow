@@ -368,3 +368,37 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
+
+## §7.83 — Live product review and resolution (23 October 2026)
+
+Task: `wardflow-live-product-review-20261023`. Owner: Codex review-resolution coordinator.
+Source: `BigSimmo/Ward-Flow`, local base `5875823b5322f0b4ed2f5239628f88d40ea0195e`.
+Candidate: `codex/ward-review-resolution-20261023`, isolated from the main checkout.
+Status: Needs user for scoped test-lease recovery. The authorised stage is local
+engineering and public WA research. No commit or publication has been made.
+
+All nine prioritised findings have local implementations from three isolated workers.
+Independent source review caught and repaired a receipt/role race, an outage local-demo
+fallback, seeded bed-link handling and complementary Statistics suppression. ED journeys
+remain accountable through transit; physical ED presence is shown separately. Recovery
+retains command identity only, never typed payloads. The existing WA pathway report has a
+dated public-source addendum and proposed system authority/reconciliation boundaries.
+
+Evidence and restart point: the private local review folder
+`C:/Users/joshs/Documents/Codex/Reviews/Ward-Flow-20261023/` contains `REVIEW.md`,
+`REVIEW-PROMPT.md`, `RESOLUTION.md`, check logs and desktop/phone screenshots. Full
+TypeScript checking passes; changed-source lint, focused regressions, the documentation
+aggregate and offline backend checks pass. The backend run has 178 passes and 10 explicit
+PostgreSQL skips. Browser inspection verified desktop/phone summaries, identified-release
+wording and keyboard acceptance-to-numbered-hold without accepting again. A clean Chromium
+startup test passed on the original source. Development Fast Refresh/script warnings
+recurred with React DevTools; their production relevance remains unverified.
+
+Next action: after scoped owner approval, recover the abandoned machine-wide lease
+`bcca1318-fb59-438f-be10-a2e5ab2cb161` belonging to `D:/Repos/wf-533-1025`, then run full
+lint, the full offline unit gate and production browser journeys/axe on the combined
+candidate. Owner/guardian/child PIDs are absent, but its unfinished child record blocks
+automatic admission; no peer lease has been changed. Internal HealthPoint policy,
+service-owner endorsement, physical devices and live interfaces remain external acceptance
+boundaries. No remote Git, hosted CI, provider database operation or deployment has run.
+Notion is unsynced. Last verified: 23 October 2026 against the named local receipts.

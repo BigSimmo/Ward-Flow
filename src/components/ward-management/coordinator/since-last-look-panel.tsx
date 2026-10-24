@@ -183,7 +183,7 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
     });
   }
   if (changes.newMovementIds.length > 0) {
-    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new in ED` });
+    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new ED journeys` });
   }
   if (bedsTotal > 0) {
     groups.push({
@@ -330,7 +330,7 @@ export function SinceLastLookPanel({
     lines.push({
       key: "journeys",
       tone: "neutral",
-      label: `${plural(changes.newMovementIds.length, "new person", "new people")} waiting in ED`,
+      label: `${plural(changes.newMovementIds.length, "new person", "new people")} with new open ED journeys`,
     });
   }
   if (bedsTotal > 0) {

@@ -14,6 +14,23 @@ import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-a
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 
+const UNAVAILABLE_ACCESS_MESSAGE =
+  "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
+/** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
+const unavailableAccessApi: SharedAccessApi = {
+  listAccess: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  listCovers: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  grantAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  revokeAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  giveCover: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  decideRequest: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  breakGlass: async () => UNAVAILABLE_ACCESS_MESSAGE,
+};
+
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
 const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
@@ -284,8 +301,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const { accessApi, reauthenticate } = connection;
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
   const sharedAccess = useMemo(
-    () => (connected && accessApi ? { api: accessApi, actorId } : null),
-    [connected, accessApi, actorId],
+    () =>
+      connection.enabled
+        ? { api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi, actorId }
+        : null,
+    [connection.enabled, connection.recovering, connected, accessApi, actorId],
   );
   // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
   useEffect(() => {
@@ -408,6 +428,12 @@ function WardSharedWorkspaceContent({
   access: WardAccess | null;
   children: ReactNode;
 }) {
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
+    const timer = setTimeout(() => setCheckedAt(Date.now()), Math.max(0, connection.accessUntil! - checkedAt));
+    return () => clearTimeout(timer);
+  }, [connection.accessUntil, checkedAt]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
@@ -461,7 +487,11 @@ function WardSharedWorkspaceContent({
         )}
       </main>
     );
-  const blocked = connection.status !== "ready";
+  const outage =
+    connection.status === "unavailable" &&
+    Number.isFinite(connection.accessUntil) &&
+    connection.accessUntil! > checkedAt;
+  const blocked = connection.status !== "ready" && !outage;
   return (
     <>
       <div role="status" aria-live="polite">
@@ -471,6 +501,7 @@ function WardSharedWorkspaceContent({
             ? "Connection unavailable — changes are disabled."
             : `${access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"} · shared synthetic workspace`}
         {connection.error && <span> {connection.error}</span>}
+        {connection.recovery && <span role="alert"> {connection.recovery}</span>}
         {connection.canSwitch && connection.switchRole && (
           <button type="button" onClick={connection.switchRole}>
             Switch role
@@ -485,7 +516,17 @@ function WardSharedWorkspaceContent({
           Sign out
         </button>
       </div>
-      <div inert={blocked}>{children}</div>
+      <div
+        key={JSON.stringify([
+          connection.actorId,
+          connection.workingAs,
+          connection.access,
+          connection.snapshot?.accessBoundary,
+        ])}
+        inert={blocked}
+      >
+        {children}
+      </div>
     </>
   );
 }

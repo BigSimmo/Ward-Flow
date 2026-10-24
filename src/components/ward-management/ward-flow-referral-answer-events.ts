@@ -1,5 +1,6 @@
 import { referralIntakeError } from "./referrals/referral-submission";
 import { type AuditDecision } from "./ward-audit";
+import { numberedBedKindRefusal } from "./ward-bed-designation";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -63,6 +64,7 @@ export type ReferralAnswerEvent = Extract<
       | "DECLINE"
       | "RECEIVE_REFERRAL"
       | "ACCEPT_REFERRAL"
+      | "HOLD_REFERRAL_BED"
       | "DECLINE_REFERRAL"
       | "WITHDRAW_ACCEPTANCE";
   }
@@ -146,7 +148,8 @@ export function reduceReferralAnswerEvent(
       if (event.bedNumber !== undefined) {
         const bedRefusal =
           bedNumberRefusal(state, acceptedUnit, event.bedNumber, undefined) ??
-          heldBedRefusal(state, acceptedUnit, event.bedNumber, movement.id);
+          heldBedRefusal(state, acceptedUnit, event.bedNumber, movement.id) ??
+          numberedBedKindRefusal(acceptedUnit, event.bedNumber, movement.security === "Secure");
         if (bedRefusal) return reject(state, event, bedRefusal);
       }
       // An override is filed only when it is new: a gate genuinely fails for this unit and no
@@ -609,6 +612,58 @@ export function reduceReferralAnswerEvent(
       return { ...state, referrals: [...state.referrals, created], frontDoorReferralSequence: sequence };
     }
 
+    case "HOLD_REFERRAL_BED": {
+      const referral = findReferral(state, event.referralId);
+      if (!referral) return reject(state, event, "No referral found to hold a bed for");
+      if (event.role === "ward" && event.actingUnitId !== event.unitId)
+        return reject(state, event, "A ward may only hold its own beds");
+      const arm = referral.destinations.find(
+        (candidate) =>
+          candidate.destination.kind === "psychiatric_ward" &&
+          candidate.state === "accepted" &&
+          (candidate.acceptedUnitId ?? candidate.destination.unitId) === event.unitId,
+      );
+      if (!arm || arm.destination.kind !== "psychiatric_ward" || arm.withdrawnAt !== undefined)
+        return reject(state, event, "This ward needs a current accepted referral before holding a bed");
+      if (
+        state.movements.some((m) => m.referralId === referral.id) ||
+        state.admissions.some((a) => a.referralId === referral.id && (a.state === "pulled" || a.state === "occupied"))
+      )
+        return reject(state, event, "This referral already has a bed journey or current stay; use that record");
+      const unit = findUnit(state, event.unitId);
+      if (!unit) return reject(state, event, "No accepting ward found");
+      const refusal =
+        bedNumberRefusal(state, unit, event.bedNumber, undefined) ??
+        heldBedRefusal(state, unit, event.bedNumber, undefined, referral.id) ??
+        numberedBedKindRefusal(unit, event.bedNumber, arm.destination.secureBedNeeded === true);
+      if (refusal) return reject(state, event, refusal);
+      // Recheck current suitability using only the override already recorded at acceptance.
+      const suitability = referralAcceptanceRefusal(
+        {
+          type: "ACCEPT_REFERRAL",
+          role: event.role,
+          now: event.now,
+          referralId: referral.id,
+          destinationKind: "psychiatric_ward",
+          unitId: unit.id,
+          overrideReason: arm.acceptOverrideReason,
+        },
+        referral,
+        arm.destination,
+        unit,
+        event.now,
+      );
+      if (suitability.refusal) return reject(state, event, suitability.refusal);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return replaceReferral(state, referral.id, {
+        ...referral,
+        destinations: referral.destinations.map((candidate) =>
+          candidate === arm ? { ...arm, heldBedNumber: event.bedNumber } : candidate,
+        ),
+      });
+    }
+
     case "ACCEPT_REFERRAL": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
@@ -871,7 +926,8 @@ export function reduceReferralAnswerEvent(
         if (event.bedNumber !== undefined) {
           const bedRefusal =
             bedNumberRefusal(state, unit, event.bedNumber, undefined) ??
-            heldBedRefusal(state, unit, event.bedNumber, undefined, referral.id);
+            heldBedRefusal(state, unit, event.bedNumber, undefined, referral.id) ??
+            numberedBedKindRefusal(unit, event.bedNumber, addressing.destination.secureBedNeeded === true);
           if (bedRefusal) return reject(state, event, bedRefusal);
         }
         const acceptRefusal = referralAcceptanceRefusal(

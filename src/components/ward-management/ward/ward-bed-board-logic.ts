@@ -7,7 +7,7 @@ import type { BedItem } from "./ward-beds-matrix";
  */
 export type BoardPick =
   /** A referral waiting for this ward's answer, placed with `ACCEPT_REFERRAL` and a bed number. */
-  | { kind: "referral"; referralId: string; name: string; secureBedNeeded: boolean }
+  | { kind: "referral"; referralId: string; name: string; secureBedNeeded: boolean; accepted?: boolean }
   /** A person the coordinator referred to this ward, placed with `ACCEPT_IN_PRINCIPLE` and a bed number. */
   | { kind: "movement"; movementId: string; name: string; secureBedNeeded: boolean }
   /** A current stay moved to another bed with `PLACE_IN_BED`. */
@@ -22,19 +22,41 @@ export function bedFits(bed: BoardBed, pick: BoardPick | null, isMixed: boolean)
   return true;
 }
 
+/** The board and reducer preserve open-first selection when either numbered designation is offered. */
+export function boardBedFits(
+  beds: readonly BoardBed[],
+  bed: BoardBed,
+  pick: BoardPick | null,
+  isMixed: boolean,
+): boolean {
+  if (!bedFits(bed, pick, isMixed)) return false;
+  if (
+    pick &&
+    pick.kind !== "stay" &&
+    !pick.secureBedNeeded &&
+    isMixed &&
+    bed.designation === "Locked" &&
+    beds.some((candidate) => candidate.designation === "Open" && bedFits(candidate, pick, isMixed))
+  )
+    return false;
+  return true;
+}
+
 /** Why `bed` does not fit, as the end of "Bed 07 does not fit, …". */
-export function whyBedDoesNotFit(bed: BoardBed, pick: BoardPick, isMixed: boolean): string {
+export function whyBedDoesNotFit(bed: BoardBed, pick: BoardPick, isMixed: boolean, beds?: readonly BoardBed[]): string {
   if (bed.status === "closed") return "it is closed";
   if (bed.heldFor !== undefined) return `it is held for ${bed.heldFor}`;
   if (bed.status !== "ready") return "it is taken";
   if (bed.preparing) return "it is still being made ready";
   if (pick.kind !== "stay" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked")
     return `${pick.name} needs a locked bed`;
+  if (beds && bedFits(bed, pick, isMixed) && !boardBedFits(beds, bed, pick, isMixed))
+    return "an open bed is available and must be chosen first";
   return "it is not free";
 }
 
 export function fitCount(beds: readonly BoardBed[], pick: BoardPick | null, isMixed: boolean): number {
-  return beds.filter((bed) => bedFits(bed, pick, isMixed)).length;
+  return beds.filter((bed) => boardBedFits(beds, bed, pick, isMixed)).length;
 }
 
 export function bedNumberLabel(bed: number | string): string {

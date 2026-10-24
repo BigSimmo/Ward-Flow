@@ -485,7 +485,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             className={detail.anchor}
             icon={Clock}
             title="ED waits"
-            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} open journeys from ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -497,7 +497,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 <StatisticsEdSwarm
                   rows={edSwarmRows}
                   labelWidth={180}
-                  label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
+                  label={`Each open ED journey from ${service}, by time since opening`}
                   testId="ward-statistics-service-ed-swarm"
                 />
               )}

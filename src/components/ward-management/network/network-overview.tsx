@@ -57,7 +57,7 @@ function serviceShort(service: HealthService): string {
 export type NetworkHighlight = "waiting" | "ready" | "pulled" | "expected";
 
 const HIGHLIGHT_WORDS: Record<NetworkHighlight, string> = {
-  waiting: "in a service with people waiting in ED",
+  waiting: "in a service with open ED journeys",
   ready: "with a ready bed",
   pulled: "with a pulled bed",
   expected: "expecting a bed today",
@@ -95,7 +95,7 @@ export function NetworkBedflow({
   highlight?: NetworkHighlight;
   onClearHighlight?: () => void;
   /**
-   * Optional controlled service scope. Phone (v10 Network) lets a "Ready against waiting" row
+   * Optional controlled service scope. Phone (v10 Network) lets a "Ready against open ED journeys" row
    * outside this card scope the beds; without these props the card keeps its own scope.
    */
   scope?: HealthService | "all";
@@ -215,7 +215,7 @@ export function NetworkBedflow({
                     className={styles.serviceMeta}
                     data-hl={highlight === "waiting" && group.waiting > 0 ? "true" : undefined}
                   >
-                    <b>{group.waiting}</b> in ED
+                    <b>{group.waiting}</b> open ED journeys
                     {share === undefined ? null : (
                       <>
                         {" "}
@@ -368,10 +368,10 @@ function ReadyAgainstWaiting({ groups }: { groups: readonly ServiceGroup[] }) {
     <section className={styles.versus} aria-labelledby={`${baseId}-ward-network-versus-heading`}>
       <header className={styles.versusHead}>
         <h3 id={`${baseId}-ward-network-versus-heading`} className={styles.versusTitle}>
-          Ready against waiting
+          Ready against open ED journeys
         </h3>
         <span className={styles.versusKey} aria-hidden="true">
-          <span className={styles.keyReady} /> Ready <span className={styles.keyWaiting} /> Waiting
+          <span className={styles.keyReady} /> Ready <span className={styles.keyWaiting} /> Open ED journeys
         </span>
       </header>
       <ul className={styles.versusList}>
@@ -386,7 +386,7 @@ function ReadyAgainstWaiting({ groups }: { groups: readonly ServiceGroup[] }) {
               </span>
               <span className={styles.versusFigure}>
                 {group.ready}/{group.waiting}
-                <SrOnly> ready against waiting</SrOnly>
+                <SrOnly> ready against open ED journeys</SrOnly>
               </span>
               <span className={styles.versusGap}>
                 <StatusGlyph tone={gap < 0 ? "warning" : "success"} size={9} />
@@ -410,7 +410,7 @@ const SERVICE_DOT: Partial<Record<HealthService, string>> = {
 };
 
 /**
- * Phone (v10 Network): "Ready against waiting" as the first list, one row per service. Pressing a
+ * Phone (v10 Network): "Ready against open ED journeys" as the first list, one row per service. Pressing a
  * row scopes the bed flow below to that service; pressing it again shows every service.
  */
 export function ReadyAgainstWaitingPhone({
@@ -431,7 +431,7 @@ export function ReadyAgainstWaitingPhone({
     <section className={styles.phoneVersus} aria-labelledby={`${baseId}-ward-network-versus-phone-heading`}>
       <header className={styles.phoneVersusHead}>
         <h2 id={`${baseId}-ward-network-versus-phone-heading`} className={styles.phoneVersusTitle}>
-          Ready against waiting
+          Ready against open ED journeys
         </h2>
         {onScope ? <span className={styles.phoneVersusHint}>tap to scope beds</span> : null}
       </header>
@@ -454,7 +454,7 @@ export function ReadyAgainstWaitingPhone({
                 <span className={styles.phoneVersusMain}>
                   <span className={styles.phoneVersusName}>{group.service}</span>
                   <span className={styles.phoneVersusMeta}>
-                    <b>{group.ready}</b> ready · <b>{group.waiting}</b> waiting in ED
+                    <b>{group.ready}</b> ready · <b>{group.waiting}</b> open ED journeys
                   </span>
                 </span>
                 <span className={styles.phoneVersusGap}>
@@ -490,7 +490,7 @@ export function ReadyAgainstWaitingPhone({
   );
 }
 
-/** A Ready against waiting row: a button when it scopes a list, plain figures otherwise. */
+/** A Ready against open ED journeys row: a button when it scopes a list, plain figures otherwise. */
 function PhoneVersusRowShell({
   className,
   selected,

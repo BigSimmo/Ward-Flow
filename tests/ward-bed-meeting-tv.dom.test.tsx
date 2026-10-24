@@ -158,7 +158,13 @@ describe("the bed meeting TV view", () => {
     const labels = within(screen.getByTestId("bed-meeting-tv-tiles"))
       .getAllByRole("term")
       .map((term) => term.firstElementChild?.textContent);
-    expect(labels).toEqual(["Waiting in ED", "Longest ED wait", "Beds ready now", "Discharges due", "Delayed"]);
+    expect(labels).toEqual([
+      "Open ED journeys",
+      "Longest open ED journey",
+      "Beds ready now",
+      "Discharges due",
+      "Delayed",
+    ]);
     // Every box says its state in words as well as colour.
     for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
       expect(tile.textContent).toMatch(/Act now|Watch|Good|Steady/);

@@ -142,14 +142,14 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
 
         <section className={styles.section} aria-labelledby="bed-meeting-ed" data-testid="bed-meeting-ed">
           <h3 id="bed-meeting-ed" className={styles.sectionTitle}>
-            Waiting in emergency departments
+            Open ED journeys
           </h3>
           <p className={styles.summary}>
-            <Count value={ed.waiting} /> waiting · <Count value={ed.detained} /> detained under the Act ·{" "}
+            <Count value={ed.waiting} /> open ED journeys · <Count value={ed.detained} /> detained under the Act ·{" "}
             <Count value={ed.overLongWait} /> waiting {LONG_WAIT_TEXT}
           </p>
           {ed.departments.length === 0 ? (
-            <p className={styles.empty}>Nobody is waiting in an emergency department.</p>
+            <p className={styles.empty}>No open ED journeys are recorded.</p>
           ) : (
             <>
               <ul className={styles.list}>
@@ -157,7 +157,7 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
                   <li key={row.id} className={styles.row}>
                     <span className={styles.rowLead}>{row.department}</span>
                     <span className={styles.rowNote}>
-                      {row.waiting} waiting · longest {splitDuration(row.longestWaitMinutes)}
+                      {row.waiting} open ED journeys · longest {splitDuration(row.longestWaitMinutes)}
                     </span>
                   </li>
                 ))}

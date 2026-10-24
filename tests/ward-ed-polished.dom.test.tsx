@@ -89,8 +89,8 @@ describe("ED compact draft selectors", () => {
       // v6: the department strip is always shown, so there is no "Other EDs" toggle to open first.
       const strip = screen.getByRole("navigation", { name: "Emergency departments" });
       const currentDepartment = within(strip).getByRole("link", { current: "page" });
-      const boardCount = within(currentDepartment).getByText("waiting").parentElement!;
-      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*waiting$`));
+      const boardCount = within(currentDepartment).getByText("open ED journeys").parentElement!;
+      expect(boardCount).toHaveTextContent(new RegExp(`^${count}\\s*open ED journeys$`));
       view.unmount();
     }
   });

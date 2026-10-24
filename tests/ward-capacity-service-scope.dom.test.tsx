@@ -155,10 +155,10 @@ describe("with South Metro chosen, the map and ward table are scoped", () => {
     expect(within(bedMapPanel).getByText(`${scopedBeds} beds`)).toBeInTheDocument();
   });
 
-  it("labels the hero Statewide, never South Metro, because its figures are whole-network (shell-1)", () => {
+  it("labels the hero Modelled network, never South Metro, because its figures are whole-network (shell-1)", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
-    expect(screen.getByText(/^Capacity · Statewide, not only South Metro · /u)).toBeInTheDocument();
+    expect(screen.getByText(/^Capacity · Modelled network, not only South Metro · /u)).toBeInTheDocument();
     expect(screen.queryByText(/^Capacity · South Metro/u)).toBeNull();
   });
 

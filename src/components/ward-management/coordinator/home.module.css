@@ -239,6 +239,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.heroPopulation {
+  margin: 0 0 var(--wf-s-1);
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
 .edLine {
   display: flex;
   align-items: center;

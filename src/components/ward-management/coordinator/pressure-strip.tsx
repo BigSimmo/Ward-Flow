@@ -122,7 +122,7 @@ export function PressureStrip({
           meta={
             <>
               <span className={styles.countTag}>{scopedPressure.length} departments</span>{" "}
-              <span className={styles.metaHint}>Waiting and longest wait</span>
+              <span className={styles.metaHint}>Open journeys and longest wait</span>
             </>
           }
           action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}
@@ -184,7 +184,10 @@ export function PressureStrip({
           if (row.waiting === 0) {
             accessibleNameParts.push("no patients waiting");
           } else {
-            accessibleNameParts.push(`${row.waiting} waiting`, `longest ${splitDuration(row.longestWaitMinutes)}`);
+            accessibleNameParts.push(
+              `${row.waiting} journeys still open from ED`,
+              `longest ${splitDuration(row.longestWaitMinutes)}`,
+            );
           }
           accessibleNameParts.push(deadlineAccessible);
           const accessibleName = accessibleNameParts.join(", ");
@@ -228,7 +231,7 @@ export function PressureStrip({
                         ) : null}
                         {row.waiting}
                       </span>
-                      <span className={styles.phoneRowUnit}>waiting</span>
+                      <span className={styles.phoneRowUnit}>journeys</span>
                     </span>
                   </>
                 ) : (
@@ -244,7 +247,7 @@ export function PressureStrip({
                     ) : (
                       <>
                         <span className={styles.waiting} aria-hidden="true">
-                          <strong>{row.waiting}</strong> waiting
+                          <strong>{row.waiting}</strong> journeys
                         </span>
                         <span className={styles.track} aria-hidden="true">
                           <span

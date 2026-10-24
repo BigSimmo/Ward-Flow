@@ -19,6 +19,8 @@ import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { isTierOverdue, tierOverdueAfterMinutes, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
+import { downtimePack } from "@/components/ward-management/reports/downtime-pack";
+import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
@@ -30,6 +32,23 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
 describe("the shared figures agree on the seed (hero, chip, badge and list)", () => {
   const state = seedWardFlowState();
   const now = NOW_ANCHOR;
+
+  it("reconciles two open ED journeys with one physical wait and one transit in Statistics and Downtime", () => {
+    const waiting = state.movements.find((m) => isOpen(m) && m.stage !== "moving" && m.leftDepartmentAt === undefined)!;
+    expect(waiting, "fixture needs an open ED journey").toBeDefined();
+    const movements = [
+      waiting,
+      { ...waiting, id: "WF-TRANSIT-CHECK" as const, stage: "moving" as const, leftDepartmentAt: now - 5 },
+    ];
+    const figure = waitingInEds(movements, now);
+    expect(figure).toMatchObject({ total: 2, stillInEd: 1, inTransit: 1 });
+    expect(edWaitFigures(movements, waiting.originEdId, now).onTheList).toBe(figure.total);
+    const pack = downtimePack({ ...state, movements, now, identify: (movement) => movement.id });
+    expect(pack.edQueue.map((row) => row.movementId)).toEqual([waiting.id]);
+    expect(pack.edQueue).toHaveLength(figure.stillInEd);
+    expect(pack.leftEd).toBe(figure.inTransit);
+    expect(pack.edQueue.length + pack.leftEd).toBe(figure.total);
+  });
 
   it("occupancy: Home's ring, the rail, and Statistics read one figure, Occupied + Pulled", () => {
     const home = wardOccupancy(state.units, state.admissions, state.bedReleases);

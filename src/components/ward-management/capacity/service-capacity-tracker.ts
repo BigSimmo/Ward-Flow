@@ -260,7 +260,7 @@ export function deriveEdWarning(
     return {
       code: "yellow",
       label: "Elevated Pressure",
-      message: `${waitingCount} waiting in ED (longest wait ${Math.floor(longestWaitMinutes / 60)}h ${longestWaitMinutes % 60}m). ${detainedCount} detained under the Act.`,
+      message: `${waitingCount} open ED journeys (longest wait ${Math.floor(longestWaitMinutes / 60)}h ${longestWaitMinutes % 60}m). ${detainedCount} detained under the Act.`,
     };
   }
 
@@ -268,7 +268,7 @@ export function deriveEdWarning(
   return {
     code: "green",
     label: "Flow Manageable",
-    message: `${waitingCount} waiting in ED (under ${ED_ELEVATED_PRESSURE_WAIT_MINUTES / 60}h, ${OPERATIONAL_DEFAULT_LABEL}). Flow manageable.`,
+    message: `${waitingCount} open ED journeys (under ${ED_ELEVATED_PRESSURE_WAIT_MINUTES / 60}h, ${OPERATIONAL_DEFAULT_LABEL}). Flow manageable.`,
   };
 }
 
@@ -293,7 +293,7 @@ export function evaluateCompoundEscalation(
       level: "black",
       protocolTier: "Level 4 (Black Gridlock)",
       title: `${service}: no beds`,
-      description: `Critical access block: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} waiting in ED (${edSummary.totalPastAccessTarget} past target). Immediate executive bed diversion protocol active.`,
+      description: `Critical access block: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} open ED journeys (${edSummary.totalPastAccessTarget} past target). Immediate executive bed diversion protocol active.`,
       actionRequired: true,
     };
   }
@@ -304,7 +304,7 @@ export function evaluateCompoundEscalation(
       level: "red",
       protocolTier: "Level 3 (Red Escalation)",
       title: `${service} Capacity Escalation Level 3`,
-      description: `Surge alert: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} waiting in ED (${edSummary.totalPastAccessTarget} past target). Proactive discharge and inter-site transfer required.`,
+      description: `Surge alert: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} open ED journeys (${edSummary.totalPastAccessTarget} past target). Proactive discharge and inter-site transfer required.`,
       actionRequired: true,
     };
   }
@@ -315,7 +315,7 @@ export function evaluateCompoundEscalation(
       level: "yellow",
       protocolTier: "Level 2 (Amber Alert)",
       title: `${service} Capacity Alert Level 2`,
-      description: `Capacity constrained: ${remainingBeds} free beds (${remainingPercent}% capacity), ${edSummary.totalWaiting} waiting in ED. Review pending discharges and expedited reviews.`,
+      description: `Capacity constrained: ${remainingBeds} free beds (${remainingPercent}% capacity), ${edSummary.totalWaiting} open ED journeys. Review pending discharges and expedited reviews.`,
       actionRequired: false,
     };
   }

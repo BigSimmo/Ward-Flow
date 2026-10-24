@@ -46,6 +46,10 @@ export type BedPlacementUndo = {
   role: WardFlowRole;
   /** The bed number before the placement; `null` when none was recorded. */
   beforeBed: number | null;
+  /** Null means no kind was recorded; absent is an older undo record. */
+  beforeBedKind?: "open" | "locked" | null;
+  beforeMovementBed?: number | null;
+  beforeReferralBed?: number | null;
   afterBed: number;
 };
 

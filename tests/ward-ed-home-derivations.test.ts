@@ -60,6 +60,21 @@ describe("edHomeSummaries", () => {
   const eds = allEmergencyDepartments();
   const [edA, edB] = eds;
 
+  it("retains transit accountability while separating physical ED presence", () => {
+    const movements = [
+      movement({ id: "WF-WAIT", originEdId: edA.id }),
+      movement({ id: "WF-TRANSIT", originEdId: edA.id, stage: "moving", leftDepartmentAt: NOW - 10 }),
+    ];
+    const summary = edHomeSummaries(movements, NOW, ED_ACCESS_TARGET_MINUTES).find((s) => s.ed.id === edA.id);
+    expect(summary).toMatchObject({ waiting: 2, stillInEd: 1, inTransit: 1 });
+    expect(summary?.open.map((m) => m.id)).toEqual(["WF-WAIT", "WF-TRANSIT"]);
+    expect(edHomeTotals(edHomeSummaries(movements, NOW, ED_ACCESS_TARGET_MINUTES), NOW)).toMatchObject({
+      waiting: 2,
+      stillInEd: 1,
+      inTransit: 1,
+    });
+  });
+
   it("returns exactly one summary per real emergency department — the collection itself, not a hospital walk", () => {
     const summaries = edHomeSummaries([], NOW, ED_ACCESS_TARGET_MINUTES);
     expect(summaries).toHaveLength(eds.length);

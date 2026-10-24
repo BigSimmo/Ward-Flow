@@ -416,7 +416,7 @@ export function StatisticsScreen({
           ready: unitCapacity(u, sourceBedReleases).available,
         }))
         .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
+      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} open ED journeys` })),
       service: HEALTH_SERVICES.map((svc) => {
         const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
         return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
@@ -485,7 +485,7 @@ export function StatisticsScreen({
               ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
               ["Admissions ended today", dischargesCount],
-              ["Waiting in ED", waitingCount],
+              ["Open ED journeys", waitingCount],
             ],
           }}
           chips={
@@ -506,7 +506,7 @@ export function StatisticsScreen({
               />
               <HeroChip
                 value={waitingCount}
-                label="Waiting in ED"
+                label="Open ED journeys"
                 onPress={() =>
                   document
                     .querySelector('[data-testid="ward-statistics-emergency-departments"]')
@@ -827,7 +827,7 @@ export function StatisticsScreen({
                         <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
                         <SortTh
                           id="waiting"
-                          label="Waiting"
+                          label="Open ED journeys"
                           sort={edSortCol}
                           asc={edSortAsc}
                           onSort={handleEdSort}

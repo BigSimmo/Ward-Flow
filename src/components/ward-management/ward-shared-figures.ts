@@ -21,30 +21,36 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 /**
- * WAITING — people on an open movement out of an emergency department, by the health service that
- * runs the department. The noun is "waiting". Home's hero ("70 waiting"), the header's service
- * picker ("All services 70 waiting", "East Metro 35 waiting") and Network's ready-against-waiting
+ * OPEN ED JOURNEYS — people on an open movement out of an emergency department, by the service that
+ * runs the department, including transit until arrival. The legacy waitingInEds/waitingText names
+ * remain for callers. Home's hero, the header's service picker and Network's ready-against-journeys
  * rows all read this, so each service's figure is the same everywhere and the services add up to
- * the total: a person waits in exactly one department.
+ * the total: a journey originates from exactly one department. This is not physical ED occupancy.
  */
 export type WaitingFigure = {
   total: number;
+  stillInEd: number;
+  inTransit: number;
   byService: ReadonlyMap<HealthService, number>;
 };
 
 export function waitingInEds(movements: readonly Movement[], now: Instant): WaitingFigure {
   const byService = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
   let total = 0;
+  let stillInEd = 0;
+  let inTransit = 0;
   for (const summary of edOpenSummaries(movements, now)) {
     total += summary.waiting;
+    stillInEd += summary.stillInEd;
+    inTransit += summary.inTransit;
     byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.waiting);
   }
-  return { total, byService };
+  return { total, stillInEd, inTransit, byService };
 }
 
-/** "35 waiting", "none waiting": the picker's words, so the noun never leaves the number. */
+/** The picker's words name the open-journey population, including transit. */
 export function waitingText(count: number): string {
-  return count > 0 ? `${count} waiting` : "none waiting";
+  return `${count} open ED ${count === 1 ? "journey" : "journeys"}`;
 }
 
 /**

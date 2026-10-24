@@ -1,7 +1,7 @@
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -12,11 +12,15 @@ vi.mock("next/link", () => ({
 }));
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
+import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
+import * as statisticsHero from "@/components/ward-management/statistics/statistics-hero";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
  * 🔴 **EVERY DEPARTMENT GETS A ROW, INCLUDING THE ONES WITH NOBODY IN THEM — and that is the whole
@@ -59,6 +63,83 @@ function renderEd(movements: Movement[]) {
 }
 
 describe("comparison across departments", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      window.sessionStorage.clear();
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("prevents the executive population split revealing a suppressed complement", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    renderEd(
+      Array.from({ length: 10 }, (_, index) =>
+        specimen({
+          id: `WF-population-${index}`,
+          originEdId: DEPARTMENTS[0]!.id,
+          leftDepartmentAt: undefined,
+          ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
+        }),
+      ),
+    );
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("10");
+    expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent(
+      "not shown still in ED · fewer than 5 in transit",
+    );
+  });
+
+  it("also suppresses the complementary split on the executive all-ED page", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    const originalLive = statisticsHero.useStatisticsLive;
+    vi.spyOn(statisticsHero, "useStatisticsLive").mockImplementation(() => {
+      const live = originalLive();
+      return {
+        ...live,
+        state: {
+          ...live.state,
+          movements: Array.from({ length: 10 }, (_, index) =>
+            specimen({
+              id: `WF-network-population-${index}`,
+              originEdId: DEPARTMENTS[0]!.id,
+              leftDepartmentAt: undefined,
+              ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
+            }),
+          ),
+        },
+      };
+    });
+    render(
+      <WardFlowProvider>
+        <StatisticsEdsIndexScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId("ward-statistics-eds-population")).toHaveTextContent(
+      "not shown still in ED · fewer than 5 in transit",
+    );
+  });
+
+  it("keeps travelling people in open journeys and names physical ED presence separately", () => {
+    renderEd([
+      specimen({ id: "WF-wait", originEdId: DEPARTMENTS[0]!.id, leftDepartmentAt: undefined }),
+      specimen({
+        id: "WF-transit",
+        originEdId: DEPARTMENTS[0]!.id,
+        stage: "moving",
+        leftDepartmentAt: 100,
+      }),
+    ]);
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("2");
+    expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
+    expect(screen.getByText("Open ED journeys")).toBeInTheDocument();
+  });
   it("has departments to compare at all", () => {
     expect(DEPARTMENTS.length, "ward-sites.ts lists no emergency departments").toBeGreaterThan(1);
   });

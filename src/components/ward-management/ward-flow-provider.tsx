@@ -801,7 +801,8 @@ function WardFlowWorld({
       };
     },
   );
-  const state = container.world;
+  // A same-revision scope change must never expose the previous desk while adoption effects run.
+  const state = shared.enabled && shared.snapshot ? shared.snapshot.payload.state : container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   const broadcastInstanceIdRef = useRef("");
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);

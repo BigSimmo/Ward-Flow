@@ -66,7 +66,8 @@ export function bedSummaryText(input: BedSummaryInput): string {
     `Mental health bed summary at ${formatInstant(now)} AWST`,
     `Ready beds: ${readyTotal} of ${beds}${pendingTotal > 0 ? `, ${pendingTotal} pending preparation` : ""}.`,
     byService ? `Ready by service: ${byService}.` : "Ready by service: none.",
-    `Waiting in EDs: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
+    `Open ED journeys: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
+    `Still in ED: ${waiting.stillInEd}. In transit: ${waiting.inTransit}.`,
     `Discharges today: ${confirmed} confirmed, ${expected} expected, ${blocked} blocked.`,
     ...(flagged.length > 0
       ? [`Flagged: ${flagged.map((figure) => `${figure.value} ${figure.label.toLowerCase()}`).join(", ")}.`]

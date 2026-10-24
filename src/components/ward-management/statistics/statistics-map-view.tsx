@@ -250,7 +250,7 @@ const lensAria = (site: SiteFigures, lens: MapLens): string => {
   if (lens === "beds")
     return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
-    return `${site.name} ED: ${site.edWaiting} waiting${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
+    return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
   return `${site.name}: mean stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
@@ -266,7 +266,7 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   {
     id: "ed",
     label: "ED waits",
-    rankTitle: "Most waiting in ED",
+    rankTitle: "Most open ED journeys",
     key: `Ring: longest wait, to ${VERY_LONG_WAIT_HOURS}h. Centre: people waiting. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
@@ -368,7 +368,7 @@ export function StatisticsMapView({
         ]
       : lens === "ed"
         ? [
-            { value: String(network.edWaiting), label: "Waiting in ED" },
+            { value: String(network.edWaiting), label: "Open ED journeys" },
             {
               value: network.longest?.edLongest == null ? "none" : durMinutes(Math.round(network.longest.edLongest)),
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",

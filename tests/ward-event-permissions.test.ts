@@ -55,6 +55,7 @@ describe("who may raise which event", () => {
     // Pinned in `tests/ward-referral-reducer.test.ts` ("RB5 — a community team's own
     // acceptance...").
     ACCEPT_REFERRAL: ["ward", "coordinator", "ed", "community"],
+    HOLD_REFERRAL_BED: ["ward", "coordinator"],
     ADD_PATIENT: ["ed", "community", "coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.

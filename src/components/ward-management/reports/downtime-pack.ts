@@ -186,13 +186,22 @@ let lastPack: DowntimePack | null = null;
 /** The world generation the pack was taken in. A reset or scenario switch makes any pack stale. */
 let packGeneration: number | null = null;
 const listeners = new Set<() => void>();
+/** Invalidates work started under an earlier desk/session, including delayed snapshot callbacks. */
+let accessVersion = 0;
+export function downtimePackAccessVersion(): number {
+  return accessVersion;
+}
 
 function notify(): void {
   for (const listener of listeners) listener();
 }
 
-export function rememberDowntimePack(pack: DowntimePack, worldGeneration: number | null = null): void {
-  if (typeof window === "undefined") return; // never hold a pack in the server process
+export function rememberDowntimePack(
+  pack: DowntimePack,
+  worldGeneration: number | null = null,
+  startedUnderAccess = accessVersion,
+): void {
+  if (typeof window === "undefined" || startedUnderAccess !== accessVersion) return; // never hold a pack in the server process or restore an ended desk
   lastPack = pack;
   packGeneration = worldGeneration;
   notify();
@@ -220,6 +229,7 @@ export function subscribeDowntimePack(listener: () => void): () => void {
  * saved session is restored (the seed's pack no longer describes the world) and by tests.
  */
 export function forgetDowntimePack(): void {
+  accessVersion += 1;
   lastPack = null;
   packGeneration = null;
   notify();

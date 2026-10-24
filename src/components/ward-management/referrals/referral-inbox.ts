@@ -38,7 +38,9 @@ export function referralInboxName(entry: Pick<WardReferralInboxEntry, "patientId
 export function wardReferralInboxEntries(referrals: readonly Referral[], unitId: string): WardReferralInboxEntry[] {
   return referrals.flatMap((referral) => {
     const arm = referral.destinations.find(
-      (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.destination.unitId === unitId,
+      (addressing) =>
+        addressing.destination.kind === "psychiatric_ward" &&
+        (addressing.acceptedUnitId ?? addressing.destination.unitId) === unitId,
     );
     if (!arm || arm.destination.kind !== "psychiatric_ward") return [];
     return [

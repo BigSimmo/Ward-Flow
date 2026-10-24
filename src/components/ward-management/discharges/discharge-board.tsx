@@ -208,7 +208,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       <main id="main-content" className={pageStyles.main}>
         <h1 className={pageStyles.localTitle}>Discharges</h1>
         <p className={pageStyles.printScope}>
-          {population === "records" ? "Admission records" : "Anonymous releases"}
+          {population === "records" ? "Admission records" : "Bed releases"} · Identifiers may be included
           {" · "}
           {service === "all" ? "All services" : service}
           {" · "}
@@ -251,7 +251,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <LiveChip state="live" onHero />
               {isPhone ? null : (
                 <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
-                  Copy summary
+                  Copy counts
                 </Button>
               )}
               <Button
@@ -261,6 +261,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
+                aria-label="Print list (may include identifiers)"
               >
                 Print list
               </Button>
@@ -480,7 +481,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 <table className={pageStyles.workTable}>
                   <caption className={pageStyles.localTitle}>
                     {population === "releases"
-                      ? "Bed frees (no name), blocked first. Completed releases cover the last 24 hours."
+                      ? "Bed releases, blocked first. Rows may include identifiers. Completed releases cover the last 24 hours."
                       : "Admission records, blocked first. Expected dates do not imply confirmation."}
                   </caption>
                   <thead>
