@@ -350,7 +350,18 @@ test("a desk that loses its network says it is not connected, then catches up wi
   await one.context.setOffline(true);
   await expect(sharedStatus(one.page)).toContainText("Connection unavailable", POLL);
   await expect(sharedStatus(one.page).getByRole("button", { name: "Retry" })).toBeVisible();
-  expect(await placementInert(one.page)).toBe(true);
+  // PR #675: while its access is still current, an outage keeps the board readable and its dated
+  // reports printable, so the page is not inert. It still takes no changes: a save is refused in
+  // the browser and nothing is sent.
+  expect(await placementInert(one.page)).toBe(false);
+  const sentWhileOffline: string[] = [];
+  one.page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/v1/workspace/commands"))
+      sentWhileOffline.push(request.url());
+  });
+  const offlineTier = await openUrgencyForm(one.page);
+  await chooseOtherTier(one.page, offlineTier);
+  await placement(one.page).getByRole("button", { name: "Record urgency change" }).click();
 
   // Meanwhile desk two saves a change.
   const tier = await openUrgencyForm(two.page);
@@ -360,6 +371,8 @@ test("a desk that loses its network says it is not connected, then catches up wi
   await expect(queueRow(two.page)).toContainText(chosen);
   await expect(queueRow(one.page)).not.toContainText(chosen);
   await expect(sharedStatus(one.page)).toContainText("Connection unavailable");
+  // Desk one's refused save never left the browser.
+  expect(sentWhileOffline).toEqual([]);
 
   // The network returns. Without Retry or a reload, desk one's own poll reconnects and catches up.
   await one.context.setOffline(false);

@@ -35,6 +35,7 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../../src/components/ward-management/ward-change-reasons";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { numberedBedKindRefusal } from "@/components/ward-management/ward-bed-designation";
 import { ABSENCE_STEPS, SUPPORT_SERVICE_TYPES } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo";
@@ -1284,24 +1285,22 @@ export function candidateEvents(
           })),
         );
     case "HOLD_REFERRAL_BED":
-      // A hold answers an already accepted ward arm; let the reducer check every physical number.
+      // A hold answers an already accepted ward arm. Offer one bed per arm, the first the open/locked
+      // rule allows (bed 1 when none is free, so the refusal path still runs): offering every
+      // numbered bed at every visited state made each sweep shard outrun its time limit.
       return state.referrals.flatMap((referral) =>
         referral.destinations.flatMap((arm) => {
           if (arm.state !== "accepted" || arm.withdrawnAt !== undefined || arm.destination.kind !== "psychiatric_ward")
             return [];
           const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
           const unit = state.units.find((candidate) => candidate.id === unitId);
-          return unit
-            ? Array.from({ length: unit.beds }, (_, index) => ({
-                type,
-                role,
-                now,
-                referralId: referral.id,
-                unitId: unit.id,
-                actingUnitId: unit.id,
-                bedNumber: index + 1,
-              }))
-            : [];
+          if (!unit) return [];
+          const secure = arm.destination.secureBedNeeded === true;
+          const bedNumber =
+            Array.from({ length: unit.beds }, (_, index) => index + 1).find(
+              (candidate) => numberedBedKindRefusal(unit, candidate, secure) === null,
+            ) ?? 1;
+          return [{ type, role, now, referralId: referral.id, unitId: unit.id, actingUnitId: unit.id, bedNumber }];
         }),
       );
     case "DECLINE_REFERRAL":
