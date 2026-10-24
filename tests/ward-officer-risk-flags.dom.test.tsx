@@ -10,6 +10,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { RISK_FLAG_LABELS } from "@/components/ward-management/referrals/ward-referral-drawer-model";
 
 /**
  * D-80 PR 5 (item 7): the transport officer sees the referral's collection risk flags on the job,
@@ -47,7 +48,11 @@ describe("transport officer job panel shows collection risk flags", () => {
       const flags = within(panel).getByTestId(`ward-officer-risk-flags-${job.id}`);
       expect(flags).toBeVisible();
       expect(within(flags).getByText("Risk flags")).toBeInTheDocument();
-      expect(flags.querySelector("dd")).toHaveTextContent(/^Aggression, Suicide or self-harm, Vulnerable adult$/);
+      // The officer's copy of the words (kept apart for phone page size) must read exactly as the
+      // referral drawer's own labels, so the two lists cannot drift (audit 24-2, TH-07).
+      const words = [RISK_FLAG_LABELS.aggression, RISK_FLAG_LABELS.suicide, RISK_FLAG_LABELS.vulnerable].join(", ");
+      expect(words).toBe("Aggression, Suicide or self-harm, Vulnerable adult");
+      expect(flags.querySelector("dd")?.textContent).toBe(words);
     } finally {
       live.collectionRiskFlags = saved;
     }
