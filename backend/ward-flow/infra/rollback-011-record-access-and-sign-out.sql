@@ -2,8 +2,8 @@
 -- psql "$WARD_SUPABASE_MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f infra/rollback-011-record-access-and-sign-out.sql
 -- Removes the record access log, the edit block on break glass rows and server-side sign-outs.
 -- The record access log is the "who opened which record" history: export it first if it must be
--- kept, because dropping the table deletes it. The backend accepts versions 5 to 11, so it keeps
--- working; before 11 opening a record is not logged and a sign-out ends the sign-in only when its
+-- kept, because dropping the table deletes it. The backend accepts versions 5 to the latest (see
+-- migrations.mjs), so it keeps working; before 11 opening a record is not logged and a sign-out ends the sign-in only when its
 -- token expires. Refuses unless the database is at exactly 11.
 -- Takes migrate()'s lock first, so a migration running at the same moment cannot slip in.
 SELECT pg_advisory_xact_lock(782322);
