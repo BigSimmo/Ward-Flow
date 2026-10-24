@@ -6,7 +6,7 @@ export type PaperItem =
   | { kind: "isbar"; row: HandoverRow };
 export type ExtraEntry =
   { kind: "ward"; ward: HandoverWard } | { kind: "hold"; hold: HeldDischarge } | { kind: "noHolds" } | { kind: "sigs" };
-export type ExtraSectionId = "beds" | "holds" | "sigs";
+type ExtraSectionId = "beds" | "holds" | "sigs";
 export type ExtraSection = { id: ExtraSectionId; entries: ExtraEntry[]; continued: boolean };
 
 export type PaperMeasurements = {
