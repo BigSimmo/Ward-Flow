@@ -10,7 +10,6 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { instantFromDateAndTimeInputs } from "@/components/ward-management/ed/ed-screen-model";
@@ -23,7 +22,6 @@ const DRAFT = { date: "2026-10-25", time: "14:00" };
 let world = 0;
 let overrideDispatch: WardCommandDispatch | undefined;
 let shared: WardFlowContextValue["shared"];
-let eventLog: EventLogEntry[] = [];
 function Scope({ children }: { children: ReactNode }) {
   const value = useWardFlow();
   return (
@@ -32,7 +30,7 @@ function Scope({ children }: { children: ReactNode }) {
         ...value,
         worldGeneration: world,
         shared,
-        eventLog,
+        eventLog: [],
         ...(overrideDispatch ? { dispatch: overrideDispatch } : {}),
       }}
     >
@@ -85,25 +83,11 @@ function openSave(dispatch: WardCommandDispatch) {
       ),
   };
 }
-function receipt(accepted = true, changes: Partial<EventLogEntry> & { commandId?: string } = {}): EventLogEntry {
-  const entry = {
-    commandId: "synthetic-expiry",
-    sequence: 0,
-    type: "RECORD_LEGAL_FORM_EXPIRY" as const,
-    role: "ed" as const,
-    now: NOW_ANCHOR,
-    movementId: ID,
-    accepted,
-    ...changes,
-  };
-  return entry;
-}
 afterEach(() => {
   cleanup();
   overrideDispatch = undefined;
   world = 0;
   shared = undefined;
-  eventLog = [];
   sessionStorage.clear();
 });
 
@@ -208,40 +192,43 @@ describe("ED expiry save confirmation", () => {
     await act(async () => view.submit());
     expect(view.result.current.panels.legalFormExpiryDraft).toEqual(DRAFT);
     expect(view.result.current.legalFormExpirySaveMessage).toContain("Save is not confirmed");
+    expect(view.result.current.legalFormExpiryCommandDisabled).toBe(false);
   });
 
-  it("keeps a failed draft frozen until Retry's own accepted receipt arrives", async () => {
+  it("keeps a failed draft frozen until its private Retry confirmation accepts with an empty scoped log", async () => {
     shared = connected();
     const reply = deferred();
+    const terminal = deferred();
     const dispatch = vi.fn<WardCommandDispatch>(() => reply.promise);
     const view = openSave(dispatch);
     view.submit();
     shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-expiry", status: "failed" }));
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
+    shared = connected();
     view.rerender(view.props);
     view.submit();
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(view.result.current.legalFormExpiryFieldsDisabled).toBe(true);
-    eventLog = [receipt()];
-    shared = connected();
-    view.rerender(view.props);
+    await act(async () => terminal.resolve({ commandId: "synthetic-expiry", status: "accepted" }));
     expect(view.result.current.panels.legalFormExpiryOpenFor).toBeUndefined();
   });
 
-  it("waits for an adopted board after Retry accepts while refresh is unavailable", async () => {
+  it("a confirmed Retry acceptance is authoritative while the global read error remains", async () => {
     shared = connected();
     const reply = deferred();
+    const terminal = deferred();
     const view = openSave(() => reply.promise);
     view.submit();
-    shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-expiry", status: "failed" }));
-    eventLog = [receipt()];
+    shared = { enabled: true, status: "unavailable", error: "The shared board could not be refreshed." };
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
     view.rerender(view.props);
-    expect(view.result.current.panels.legalFormExpiryOpenFor).toBe(ID);
-    expect(view.result.current.legalFormExpiryFieldsDisabled).toBe(true);
-    shared = connected();
-    view.rerender(view.props);
+    await act(async () => terminal.resolve({ commandId: "synthetic-expiry", status: "accepted" }));
     expect(view.result.current.panels.legalFormExpiryOpenFor).toBeUndefined();
+    expect(view.result.current.legalFormExpiryCommandDisabled).toBe(true);
   });
 
   it("does not clear an edited draft for the same record after delayed acceptance", async () => {
@@ -254,37 +241,77 @@ describe("ED expiry save confirmation", () => {
     expect(view.result.current.panels.legalFormExpiryDraft.time).toBe("15:00");
   });
 
-  it("does not call an unrelated poll or an old receipt acceptance", async () => {
-    eventLog = [receipt()];
+  it("does not treat a ready background read as acceptance or permit a new command", async () => {
     shared = connected();
     const reply = deferred();
-    const view = openSave(() => reply.promise);
+    const terminal = deferred();
+    const dispatch = vi.fn<WardCommandDispatch>(() => reply.promise);
+    const view = openSave(dispatch);
     view.submit();
-    shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-expiry", status: "failed" }));
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
     shared = connected();
-    eventLog = [receipt(), receipt(true, { sequence: 1, commandId: "synthetic-other-command" })];
     view.rerender(view.props);
+    view.submit();
+    expect(dispatch).toHaveBeenCalledTimes(1);
     expect(view.result.current.panels.legalFormExpiryDraft).toEqual(DRAFT);
     expect(view.result.current.panels.legalFormExpiryOpenFor).toBe(ID);
   });
 
-  it("a refused Retry stays refused even if a later matching receipt appears", async () => {
+  it("a private Retry refusal stays visible after the global error clears", async () => {
     shared = connected();
     const reply = deferred();
+    const terminal = deferred();
     const view = openSave(() => reply.promise);
     view.submit();
-    shared = { enabled: true, status: "unavailable", error: "Save is not confirmed." };
-    await act(async () => reply.resolve({ commandId: "synthetic-expiry", status: "failed" }));
-    eventLog = [receipt(false)];
-    shared = { enabled: true, status: "ready", error: "Synthetic concurrent expiry refusal." };
-    view.rerender(view.props);
-    expect(view.result.current.legalFormExpirySaveMessage).toContain("Synthetic concurrent expiry refusal");
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
+    await act(async () =>
+      terminal.resolve({
+        commandId: "synthetic-expiry",
+        status: "refused",
+        message: "Synthetic concurrent expiry refusal.",
+      }),
+    );
     shared = connected();
-    eventLog = [receipt(false), receipt(true, { sequence: 1 })];
     view.rerender(view.props);
+    expect(view.result.current.legalFormExpirySaveMessage).toBe("Not recorded: Synthetic concurrent expiry refusal.");
     expect(view.result.current.panels.legalFormExpiryDraft).toEqual(DRAFT);
     expect(view.result.current.legalFormExpiryCommandDisabled).toBe(false);
+  });
+
+  it("an ended world cannot clear a revised form through private Retry confirmation", async () => {
+    shared = connected();
+    const reply = deferred();
+    const terminal = deferred();
+    const view = openSave(() => reply.promise);
+    view.submit();
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
+    world++;
+    view.rerender(view.props);
+    act(() => view.result.current.panels.setLegalFormExpiryDraft({ ...DRAFT, time: "15:00" }));
+    await act(async () => terminal.resolve({ commandId: "synthetic-expiry", status: "accepted" }));
+    expect(view.result.current.panels.legalFormExpiryOpenFor).toBe(ID);
+    expect(view.result.current.panels.legalFormExpiryDraft.time).toBe("15:00");
+  });
+
+  it("a revised same-record draft survives private Retry acceptance", async () => {
+    shared = connected();
+    const reply = deferred();
+    const terminal = deferred();
+    const view = openSave(() => reply.promise);
+    view.submit();
+    await act(async () =>
+      reply.resolve({ commandId: "synthetic-expiry", status: "failed", confirmation: terminal.promise }),
+    );
+    act(() => view.result.current.panels.setLegalFormExpiryDraft({ ...DRAFT, time: "15:00" }));
+    await act(async () => terminal.resolve({ commandId: "synthetic-expiry", status: "accepted" }));
+    expect(view.result.current.panels.legalFormExpiryOpenFor).toBe(ID);
+    expect(view.result.current.panels.legalFormExpiryDraft.time).toBe("15:00");
   });
 
   it("does not clear a later record or changed draft after a delayed acceptance", async () => {
