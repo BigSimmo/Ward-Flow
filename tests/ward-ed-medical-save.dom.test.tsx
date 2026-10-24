@@ -142,40 +142,43 @@ describe("ED medical save confirmation", () => {
     expect(confirm).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("settles a failed save only from its same-command Retry acceptance", async () => {
-    const pending = deferred();
+  it("settles a scoped failed save from its private same-command Retry completion with no event log", async () => {
+    const pending = deferred(),
+      terminal = deferred(),
+      unrelated = deferred();
     mocked.raise.mockReturnValue(pending.promise);
     const view = open();
     confirmPath(view.controls);
-    await act(async () => pending.resolve({ commandId: "original-save", status: "failed" }));
-    mocked.flow = { ...mocked.flow, eventLog: [receipt("another-save", true)] };
+    const failed = { commandId: "original-save", status: "failed" as const, confirmation: terminal.promise };
+    await act(async () => pending.resolve(failed));
+    mocked.flow = { ...mocked.flow, eventLog: [] };
     redraw(view);
+    await act(async () => unrelated.resolve({ commandId: "another-save", status: "accepted" }));
     expect(within(view.controls).getByRole("status")).not.toHaveTextContent("Recorded medically cleared.");
     expect(within(view.controls).getByRole("button", { name: paths[0].confirm })).toBeInTheDocument();
-    mocked.flow = { ...mocked.flow, eventLog: [...mocked.flow.eventLog!, receipt("original-save", true, 2)] };
-    redraw(view);
+    await act(async () => terminal.resolve({ commandId: "original-save", status: "accepted" }));
     expect(mocked.raise).toHaveBeenCalledOnce();
+    expect(mocked.flow.eventLog).toEqual([]);
     expect(within(view.controls).queryByRole("button", { name: paths[0].confirm })).not.toBeInTheDocument();
     expect(within(view.controls).getByRole("status")).toHaveTextContent("Recorded medically cleared.");
   });
 
-  it("keeps a refused Retry refused after matching snapshots and later unrelated acceptance", async () => {
-    const pending = deferred();
+  it("keeps a refused private Retry refused after matching snapshots and later unrelated acceptance", async () => {
+    const pending = deferred(),
+      terminal = deferred();
     mocked.raise.mockReturnValue(pending.promise);
     const view = open();
     confirmPath(view.controls);
-    await act(async () => pending.resolve({ commandId: "original-save", status: "failed" }));
-    mocked.flow = {
-      ...mocked.flow,
-      shared: { enabled: true, status: "ready", error: "Synthetic refusal." },
-      eventLog: [receipt("original-save", false)],
-    };
-    redraw(view);
+    const failed = { commandId: "original-save", status: "failed" as const, confirmation: terminal.promise };
+    await act(async () => pending.resolve(failed));
+    await act(async () =>
+      terminal.resolve({ commandId: "original-save", status: "refused", message: "Synthetic refusal." }),
+    );
     expect(within(view.controls).getByRole("status")).toHaveTextContent("Synthetic refusal.");
     mocked.flow = {
       ...mocked.flow,
       shared: { enabled: true, status: "ready", error: null },
-      eventLog: [...mocked.flow.eventLog!, receipt("other-save", true, 2)],
+      eventLog: [receipt("other-save", true)],
     };
     redraw(view);
     expect(within(view.controls).getByRole("status")).toHaveTextContent("Synthetic refusal.");
@@ -245,19 +248,75 @@ describe("ED medical save confirmation", () => {
       "true",
     );
   });
-  it("does not reuse an earlier transport error as a Retry refusal reason", async () => {
-    const pending = deferred();
+  it("uses the private Retry refusal reason instead of an earlier transport error", async () => {
+    const pending = deferred(),
+      terminal = deferred();
     mocked.raise.mockReturnValue(pending.promise);
     const view = open();
     confirmPath(view.controls);
-    await act(async () => pending.resolve({ commandId: "original-save", status: "failed" }));
+    const failed = { commandId: "original-save", status: "failed" as const, confirmation: terminal.promise };
+    await act(async () => pending.resolve(failed));
     mocked.flow = {
       ...mocked.flow,
       shared: { enabled: true, status: "unavailable", error: "Save is not confirmed." },
-      eventLog: [receipt("original-save", false)],
+      eventLog: [],
     };
     redraw(view);
-    expect(within(view.controls).getByRole("status")).toHaveTextContent("Not recorded: The action was not applied.");
+    await act(async () =>
+      terminal.resolve({ commandId: "original-save", status: "refused", message: "Synthetic workflow refusal." }),
+    );
+    expect(within(view.controls).getByRole("status")).toHaveTextContent("Not recorded: Synthetic workflow refusal.");
     expect(within(view.controls).getByRole("status")).not.toHaveTextContent("Not recorded: Save is not confirmed.");
+  });
+
+  it("ignores private Retry acceptance after a new world's confirmation opens", async () => {
+    const pending = deferred(),
+      terminal = deferred();
+    mocked.raise.mockReturnValue(pending.promise);
+    const view = open();
+    confirmPath(view.controls);
+    const failed = { commandId: "old-save", status: "failed" as const, confirmation: terminal.promise };
+    await act(async () => pending.resolve(failed));
+    mocked.flow = { ...mocked.flow, worldGeneration: 2 };
+    redraw(view);
+    fireEvent.click(within(view.controls).getByRole("button", { name: paths[1].open }));
+    await act(async () => terminal.resolve({ commandId: "old-save", status: "accepted" }));
+    expect(within(view.controls).getByRole("button", { name: paths[1].confirm })).toBeInTheDocument();
+    expect(within(view.controls).queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("releases a private Retry cancelled by the ended session without reporting acceptance", async () => {
+    const pending = deferred(),
+      terminal = deferred();
+    mocked.raise.mockReturnValue(pending.promise);
+    const { controls } = open();
+    confirmPath(controls);
+    const failed = { commandId: "old-save", status: "failed" as const, confirmation: terminal.promise };
+    await act(async () => pending.resolve(failed));
+    await act(async () => terminal.resolve({ commandId: "old-save", status: "cancelled", isCurrent: () => false }));
+    expect(within(controls).queryByRole("status")).not.toBeInTheDocument();
+    expect(within(controls).getByRole("button", { name: paths[0].confirm })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+  it("keeps the original lifetime fence when a private reply omits its own fence", async () => {
+    let current = true;
+    const pending = deferred(),
+      terminal = deferred();
+    mocked.raise.mockReturnValue(pending.promise);
+    const { controls } = open();
+    confirmPath(controls);
+    const failed = {
+      commandId: "old-save",
+      status: "failed" as const,
+      confirmation: terminal.promise,
+      isCurrent: () => current,
+    };
+    await act(async () => pending.resolve(failed));
+    current = false;
+    await act(async () => terminal.resolve({ commandId: "old-save", status: "accepted" }));
+    expect(within(controls).queryByRole("status")).not.toBeInTheDocument();
+    expect(within(controls).getByRole("button", { name: paths[0].confirm })).toBeInTheDocument();
   });
 });

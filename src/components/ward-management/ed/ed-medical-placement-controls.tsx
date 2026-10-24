@@ -5,6 +5,7 @@ import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import type { WardCommandOutcome } from "../ward-shared-client";
+import { confirmedWardCommand } from "../ward-command-completion";
 import { wardCommandFailure } from "../ward/use-ward-command-completion";
 import styles from "./ed.module.css";
 
@@ -12,9 +13,6 @@ type Confirmation = "deterioration" | "cleared" | "not_cleared";
 type Choice = { kind: Confirmation; movementId: string; world: number };
 type MedicalSave = {
   choice: Choice;
-  at: number;
-  sequence: number;
-  localVoid?: boolean;
   phase: "pending" | "unconfirmed" | "accepted" | "refused" | "failed" | "cancelled";
   outcome?: WardCommandOutcome;
 };
@@ -27,10 +25,9 @@ export function EdMedicalPlacementControls({
   movementId: string;
   actingPlaceId: string;
 }) {
-  const { movements, referrals, eventLog, worldGeneration, shared } = useWardFlowSelect(
+  const { movements, referrals, worldGeneration, shared } = useWardFlowSelect(
     "movements",
     "referrals",
-    "eventLog",
     "worldGeneration",
     "shared",
   );
@@ -57,53 +54,36 @@ export function EdMedicalPlacementControls({
   const waiting = attempt?.phase === "pending" || attempt?.phase === "unconfirmed";
   const unavailable = shared?.enabled === true && shared.status !== "ready";
   const blocked = waiting || unavailable;
-  const finish = useCallback((submitted: MedicalSave, outcome?: WardCommandOutcome) => {
+  const finish = useCallback(function finishSave(submitted: MedicalSave, outcome: WardCommandOutcome) {
     if (active.current !== submitted) return;
-    const ended = outcome?.isCurrent && !outcome.isCurrent();
+    const ended =
+      (submitted.outcome?.isCurrent && !submitted.outcome.isCurrent()) || (outcome.isCurrent && !outcome.isCurrent());
     const phase = ended
       ? "cancelled"
-      : outcome?.status === "failed" && outcome.commandId
+      : outcome.status === "failed" && outcome.commandId
         ? "unconfirmed"
-        : (outcome?.status ?? "pending");
-    const next: MedicalSave = { ...submitted, phase, outcome, localVoid: !outcome };
+        : outcome.status;
+    const next: MedicalSave = { ...submitted, phase, outcome };
     active.current = next;
     setSaved(next);
     if (phase === "accepted") setChoice((current) => (current === submitted.choice ? null : current));
+    if (phase === "unconfirmed" && outcome.confirmation) {
+      // This private completion follows only the original command. Scoped desks deliberately
+      // have no event log; neither a poll nor a matching minute/value confirms this save.
+      void outcome.confirmation.then(
+        (answer) => {
+          if (answer.commandId === outcome.commandId) finishSave(next, answer);
+        },
+        () =>
+          finishSave(next, {
+            ...outcome,
+            confirmation: undefined,
+            message: "Save is not confirmed. Review the board before trying again.",
+          }),
+      );
+    }
   }, []);
 
-  useEffect(() => {
-    if (!attempt || (attempt.phase !== "unconfirmed" && !(attempt.phase === "pending" && attempt.localVoid))) return;
-    // Shared logs contain only replies to this tab's commands. A Retry can finish after its
-    // original Promise failed; its opaque ID, not a matching minute/value, identifies that reply.
-    const reply = eventLog?.find(
-      (entry) =>
-        entry.sequence > attempt.sequence &&
-        (attempt.localVoid
-          ? entry.type ===
-              (attempt.choice.kind === "deterioration"
-                ? "RECORD_ED_MEDICAL_DETERIORATION"
-                : "RECORD_MOVEMENT_MEDICAL_CLEARANCE") &&
-            entry.role === "ed" &&
-            entry.now === attempt.at &&
-            entry.movementId === movementId
-          : attempt.outcome?.commandId && Reflect.get(entry, "commandId") === attempt.outcome.commandId),
-    );
-    if (!reply) return;
-    const outcome: WardCommandOutcome = {
-      commandId: attempt.outcome?.commandId ?? "",
-      status: reply.accepted ? "accepted" : "refused",
-      ...(!reply.accepted
-        ? {
-            message:
-              (shared?.status === "ready" ? shared.error : null) ??
-              "The action was not applied. Review the current board before trying again.",
-          }
-        : {}),
-      ...(attempt.outcome?.isCurrent ? { isCurrent: attempt.outcome.isCurrent } : {}),
-    };
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- An external command receipt settles this retained confirmation.
-    finish(attempt, outcome);
-  }, [attempt, eventLog, movementId, shared?.status, shared?.error, finish]);
   const paused = movement?.medicalDeterioration !== undefined && movement.medicalDeterioration.resumedAt === undefined;
   const available =
     movement !== undefined &&
@@ -152,23 +132,22 @@ export function EdMedicalPlacementControls({
     if (!confirmation || !available || blocked || savingHere()) return;
     const submitted: MedicalSave = {
       choice: confirmation,
-      at: now,
-      sequence: eventLog?.at(-1)?.sequence ?? -1,
       phase: "pending",
     };
     active.current = submitted;
     setSaved(submitted);
     try {
-      const result =
+      const result = confirmedWardCommand(
         confirmation.kind === "deterioration"
           ? raise("RECORD_ED_MEDICAL_DETERIORATION", { movementId, actingPlaceId })
-          : raise("RECORD_MOVEMENT_MEDICAL_CLEARANCE", { movementId, cleared: confirmation.kind === "cleared" });
-      if (result && "then" in result)
+          : raise("RECORD_MOVEMENT_MEDICAL_CLEARANCE", { movementId, cleared: confirmation.kind === "cleared" }),
+      );
+      if ("then" in result)
         void result.then(
           (outcome) => finish(submitted, outcome),
           () => finish(submitted, { commandId: "", status: "failed" }),
         );
-      else finish(submitted, result || undefined);
+      else finish(submitted, result);
     } catch {
       finish(submitted, { commandId: "", status: "failed" });
     }
