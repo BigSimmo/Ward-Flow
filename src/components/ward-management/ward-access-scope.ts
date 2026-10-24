@@ -43,6 +43,7 @@ import {
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
+import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
 /** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
@@ -659,6 +660,36 @@ function noticeInScope(notice: Notice, access: WardAccess, places: PlaceLookup):
   }
 }
 
+const KEPT_ON_ED_COPY: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
+
+/** A movement on an ED's copy: each ward's decline without its reason, unless it waitlisted. */
+function edMovementCopy(movement: Movement): Movement {
+  if (!movement.declines.some((decline) => decline.reason !== undefined && !KEPT_ON_ED_COPY.includes(decline.reason)))
+    return movement;
+  return {
+    ...movement,
+    declines: movement.declines.map(({ reason, ...decline }) =>
+      reason !== undefined && KEPT_ON_ED_COPY.includes(reason) ? { ...decline, reason } : decline,
+    ),
+  };
+}
+
+/** A referral on an ED's copy: a ward's answer without its decline reason. */
+function edReferralCopy(referral: Referral): Referral {
+  if (
+    !referral.destinations.some(
+      (line) => line.destination.kind === "psychiatric_ward" && line.declineReason !== undefined,
+    )
+  )
+    return referral;
+  return {
+    ...referral,
+    destinations: referral.destinations.map(({ declineReason, ...line }) =>
+      declineReason === undefined || line.destination.kind === "psychiatric_ward" ? line : { ...line, declineReason },
+    ),
+  };
+}
+
 /**
  * The workspace one role at one place may see. Returns the input itself, untouched, for a
  * statewide coordinator, so the whole view costs nothing.
@@ -1011,6 +1042,13 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         ? { ...admission, dischargeCriteria: communityDischargeCriteria(admission.dischargeCriteria) }
         : admission,
     );
+  }
+
+  // D-80: other wards' decline reasons are the coordinator's. An ED still sees each ward
+  // answered, and a waitlist answer keeps its reason because it is the ward's state, not a refusal.
+  if (access.role === "ed") {
+    movements = movements.map(edMovementCopy);
+    referrals = referrals.map(edReferralCopy);
   }
 
   const patientIds = new Set<string>(grantIds);

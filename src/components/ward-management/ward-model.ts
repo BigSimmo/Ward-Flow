@@ -469,8 +469,12 @@ export type Site = {
 export type Decline = {
   unitId: string;
   at: Instant;
-  reason: DeclineReason;
+  /** Absent only on an ED's copy: other wards' decline reasons are the coordinator's (D-80). */
+  reason?: DeclineReason;
 };
+
+/** What a screen says in place of a reason the desk's copy does not carry (D-80). */
+export const DECLINE_REASON_NOT_SHARED = "Reason not shared";
 
 export type MovementClosure = {
   at: Instant;

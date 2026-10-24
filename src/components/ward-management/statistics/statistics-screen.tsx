@@ -214,7 +214,7 @@ export function StatisticsScreen({
   } = live.state;
   const now = live.now;
   const service = useServiceScope();
-  const { countsOnly } = useStatisticsCounts();
+  const { countsOnly, small } = useStatisticsCounts();
   const isPhone = useIsPhone();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
@@ -531,9 +531,10 @@ export function StatisticsScreen({
               ["Beds in use (occupied or pulled)", inUseCount],
               ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
-              ["Admissions ended today", dischargesCount],
-              ["Waiting in ED", waitingCount],
-              ["Still open", stillOpenCount],
+              // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
+              ["Admissions ended today", small(dischargesCount)],
+              ["Waiting in ED", small(waitingCount)],
+              ["Still open", small(stillOpenCount)],
             ],
           }}
           chips={
@@ -542,7 +543,7 @@ export function StatisticsScreen({
               <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
-                value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}
+                value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
                 label={
                   <>
                     Admissions ended today
@@ -553,9 +554,9 @@ export function StatisticsScreen({
                 }
               />
               <HeroChip
-                value={waitingCount}
+                value={small(waitingCount)}
                 // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                label={`Waiting in ED · ${stillOpenCount} still open`}
+                label={`Waiting in ED · ${small(stillOpenCount)} still open`}
                 onPress={() =>
                   document
                     .querySelector('[data-testid="ward-statistics-emergency-departments"]')

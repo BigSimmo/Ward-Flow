@@ -17,6 +17,8 @@ import {
   STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import { WEEKLY_REPORT_HREF } from "@/components/ward-management/reports/report-routes";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { statisticsHeldToOwnPlace } from "@/components/ward-management/ward-role-access";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-nav.module.css";
 
@@ -121,6 +123,8 @@ export function StatisticsNav({
   const router = useOptionalRouter();
 
   const activeSection = currentSection || sectionOf(pathname);
+  // D-80: a ward, ED or team desk opens only its own place's page, so no section leads anywhere.
+  const ownPlaceOnly = statisticsHeldToOwnPlace(useEffectiveWardAccess());
 
   // The four unit kinds open their index pages (Statistics A, 9 Oct 2026): every service, ward, ED
   // and team on one page, each the way into its own page. The tab stays current on a detail page.
@@ -135,6 +139,8 @@ export function StatisticsNav({
     { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
+
+  if (ownPlaceOnly) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;
 
   if (variant === "chips") {
     // Phone review F-12 (15 Oct 2026): every statistics screen shows the same eight chips, in the
