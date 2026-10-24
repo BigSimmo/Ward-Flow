@@ -443,6 +443,11 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // site, so the construction-site scan above still sees and counts each one.
   // R01 (16 Oct 2026): step and Undo now share submit(event, ...), whose one dispatch(event)
   // forwards the caller-built event. Their literal construction sites remain scanned above.
+  // #631 (24 Oct 2026): the ED examination save keeps the event it dispatched so a same-command Retry can be
+  // reconciled against the committed record. It builds that event as an object literal with a literal
+  // `type: "RECORD_EXAMINATION"` in the same function, so the construction-site scan above still sees it.
+  "src/components/ward-management/ed/use-ed-examination-save.ts :: recordedEvent":
+    "useEdExaminationSave(): dispatches the RECORD_EXAMINATION event it built as a literal just above, so it can retain it for Retry",
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
   // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
@@ -656,7 +661,8 @@ describe("ward override-surface guard", () => {
     // 2 -> 3, fix list 1.5 (15 Oct 2026): the named raise helper in ward-flow-raise.ts.
     // 3 -> 2, R01 (16 Oct 2026): Undo's dispatch(undoEvent) and run's dispatch(event) now
     // converge on submit(...), which retains the one direct dispatch(event) forwarding site.
-    expect(nonLiteralDispatchCalls.length).toBe(2);
+    // 2 -> 3, #631 (24 Oct 2026): the ED examination save forwards the literal-typed event it built and retains.
+    expect(nonLiteralDispatchCalls.length).toBe(3);
   });
 
   /**
