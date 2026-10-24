@@ -26,7 +26,11 @@ function setup() {
       if (!options?.body) return Response.json({ snapshot: snapshot(board.revision) });
       sent.push(JSON.parse(String(options.body)).expectedRevision);
       board.revision += 1;
-      return Response.json({ outcome: "accepted", commandRevision: board.revision, snapshot: snapshot(board.revision) });
+      return Response.json({
+        outcome: "accepted",
+        commandRevision: board.revision,
+        snapshot: snapshot(board.revision),
+      });
     },
   });
   return { client, board, sent };

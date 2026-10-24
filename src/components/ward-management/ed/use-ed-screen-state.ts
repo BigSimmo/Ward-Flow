@@ -4,6 +4,7 @@
 // (fix list 2.5 and 9.6, 15 Oct 2026). `EdScreen` calls these hooks in the order their state was
 // declared there, so every effect still runs in the same order.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { holdOpenForm } from "@/components/wf/sheet-focus";
 import type {
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
@@ -102,6 +103,10 @@ export function useEdRowPanels() {
     legalStatus: LegalStatus | undefined;
     reason: LegalStatusChangeReason | undefined;
   }>({ legalStatus: undefined, reason: undefined });
+  // Audit 4 A4-01: an open urgency or legal status form is checked against the board it opened on,
+  // as a popup is, so another desk's change meanwhile is reported, not overwritten.
+  const recordFormFor = urgencyChangeOpenFor ?? legalStatusChangeOpenFor;
+  useEffect(() => (recordFormFor === undefined ? undefined : holdOpenForm()), [recordFormFor]);
 
   // `TR-D1`: the sending team books the transport out, and this department is the sending team for
   // its own patients. One open-for id and one draft, the same shape the three toggles above use —
