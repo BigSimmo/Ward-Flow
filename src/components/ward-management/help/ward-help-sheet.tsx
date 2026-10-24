@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Sheet } from "@/components/wf/sheet";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
+import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 
 import { filterGlossary, screenHelpFor } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
@@ -40,7 +41,15 @@ export function WardHelpSheet({
   const pathname = usePathname() ?? "";
   const role = useTourRole();
   const guide = DESK_GUIDES[role];
-  const help = useMemo(() => screenHelpFor(pathname, railEntries()), [pathname]);
+  // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
+  const help = useMemo(
+    () =>
+      screenHelpFor(
+        pathname,
+        railEntries().filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
+      ),
+    [pathname],
+  );
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query);
 
@@ -56,18 +65,22 @@ export function WardHelpSheet({
       bodyClassName={styles.body}
     >
       <section className={styles.intro} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
-        <h3 id="ward-help-intro-title" className={styles.introTitle}>
-          {deskLabel(role)}
-        </h3>
-        <p className={styles.text}>{guide.summary}</p>
-        <button
-          type="button"
-          className={styles.tourButton}
-          onClick={() => onView("tour")}
-          data-testid="ward-help-view-tour"
-        >
-          Take the tour
-        </button>
+        <div className={styles.introRow}>
+          <div>
+            <p className={styles.introKicker}>Your desk</p>
+            <h3 id="ward-help-intro-title" className={styles.introTitle}>
+              {deskLabel(role)}
+            </h3>
+          </div>
+          <button
+            type="button"
+            className={styles.tourButton}
+            onClick={() => onView("tour")}
+            data-testid="ward-help-view-tour"
+          >
+            Take the tour
+          </button>
+        </div>
         <p className={styles.note}>
           The tour starts by itself only once on this device. Open it again here or in Settings.
         </p>
@@ -90,7 +103,8 @@ export function WardHelpSheet({
 
       {view === "desk" ? (
         <section aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
-          <h3 id="ward-help-desk-title" className={styles.title}>
+          <p className={styles.lead}>{guide.summary}</p>
+          <h3 id="ward-help-desk-title" className={styles.subTitle}>
             Where you start
           </h3>
           <p className={styles.text}>{guide.startsAt}</p>
@@ -132,9 +146,12 @@ export function WardHelpSheet({
             </ul>
           </section>
         ) : (
-          <p className={styles.text} data-testid="ward-help-screen-none">
-            This screen has no help page yet. Your desk guide and the glossary still apply.
-          </p>
+          <div data-testid="ward-help-screen-none">
+            <p className={styles.text}>This screen has no help page of its own yet. Your desk guide covers it.</p>
+            <button type="button" className={styles.linkButton} onClick={() => onView("desk")}>
+              Open your desk guide
+            </button>
+          </div>
         )
       ) : null}
 
@@ -148,9 +165,13 @@ export function WardHelpSheet({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               autoComplete="off"
+              placeholder="For example Pulled, NIC or RPH"
               data-testid="ward-help-glossary-filter"
             />
           </label>
+          <p className={styles.note} aria-live="polite">
+            {terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}
+          </p>
           {terms.length === 0 ? (
             <p className={styles.text}>No word or code matches.</p>
           ) : (

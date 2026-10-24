@@ -5,15 +5,18 @@
 }
 
 .views {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
 }
 
 .viewButton {
   min-height: var(--spacing-tap, 3rem);
-  padding: 0 1rem;
-  border: 1px solid var(--wf-line);
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
   border-radius: var(--wf-r-md);
   background: transparent;
   color: var(--wf-ink-2);
@@ -74,6 +77,10 @@
   font-weight: 500;
 }
 
+.search::placeholder {
+  color: var(--wf-ink-3);
+}
+
 .search {
   min-height: var(--spacing-tap, 3rem);
   padding: 0 0.75rem;
@@ -115,7 +122,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-accent-tint);
@@ -128,8 +135,48 @@
   font-weight: 600;
 }
 
+.introRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.introKicker {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0 0 0.25rem;
+  color: var(--wf-ink-1);
+  line-height: 1.5;
+}
+
+.linkButton {
+  min-height: var(--spacing-tap, 3rem);
+  margin-top: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-strong);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 .tourButton {
-  align-self: flex-start;
   min-height: var(--spacing-tap, 3rem);
   padding: 0 1.25rem;
   border: 1px solid var(--wf-accent);

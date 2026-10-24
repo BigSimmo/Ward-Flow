@@ -119,6 +119,15 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
   });
 
+  it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
+    route.pathname = "/ward-flow/settings";
+    const onView = vi.fn();
+    render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
+    expect(screen.queryByTestId("ward-help-screen")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open your desk guide" }));
+    expect(onView).toHaveBeenCalledWith("desk");
+  });
+
   it("filters the glossary as you type, without saving the words", () => {
     render(<Harness initial="glossary" />);
     fireEvent.change(screen.getByTestId("ward-help-glossary-filter"), { target: { value: "St John" } });
@@ -130,7 +139,7 @@ describe("help sheet", () => {
   it("shows the signed-in desk's guide: where it starts, its jobs and how to tell it saved", () => {
     render(<Harness initial="desk" />);
     const desk = screen.getByTestId("ward-help-desk");
-    expect(screen.getByTestId("ward-help-intro").textContent).toContain(DESK_GUIDES.coordinator.summary);
+    expect(desk.textContent).toContain(DESK_GUIDES.coordinator.summary);
     for (const item of DESK_GUIDES.coordinator.jobs) expect(desk.textContent).toContain(item.how);
     expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
   });
