@@ -71,7 +71,7 @@ function fillModal(kind: ModalKind) {
   if (kind === "arrival") {
     fireEvent.change(screen.getByLabelText(/Transport CAD/), { target: { value: "SYNTHETIC-TRACKING" } });
   } else {
-    fireEvent.change(screen.getByLabelText("Upload document file"), {
+    fireEvent.change(screen.getByLabelText("Select a file to record its details"), {
       target: { files: [new File(["synthetic"], "synthetic-form.pdf", { type: "application/pdf" })] },
     });
   }

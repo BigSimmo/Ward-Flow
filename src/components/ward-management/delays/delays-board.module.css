@@ -2942,3 +2942,11 @@ button.gLaneL:hover {
     margin: 0;
   }
 }
+
+@media (max-width: 48rem) {
+  .footNote > .lnk {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-touch);
+  }
+}

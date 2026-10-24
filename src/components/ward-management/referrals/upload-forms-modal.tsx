@@ -238,7 +238,6 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 className={styles.fileInput}
-                aria-label="Upload document file"
               />
               <FileText aria-hidden="true" size={32} style={{ color: "var(--wf-accent)", margin: "0 auto 0.5rem" }} />
               <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>

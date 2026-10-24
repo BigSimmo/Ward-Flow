@@ -98,7 +98,13 @@ function useWardLiveRegionText(): string {
 export function WardLiveRegion() {
   const text = useWardLiveRegionText();
   return (
-    <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-live-region">
+    <p
+      className="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+      data-testid="ward-live-region"
+      data-sheet-inert-skip=""
+    >
       {text}
     </p>
   );

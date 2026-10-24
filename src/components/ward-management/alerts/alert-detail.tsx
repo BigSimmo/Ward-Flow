@@ -207,7 +207,7 @@ export function AlertDetail({
       icon={mine ? Check : UserRound}
       disabledReason={actionDisabledReason ?? (mine ? "You own this alert" : undefined)}
       reasonDisplay="tooltip"
-      aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
+      aria-label={mine ? `Yours: ${subjectLine}` : `Take ${subjectLine}`}
       onClick={() => handlers.onTake(item)}
     >
       {mine ? "Yours" : "Take"}
@@ -223,7 +223,7 @@ export function AlertDetail({
           icon={seen ? Check : undefined}
           disabledReason={actionDisabledReason ?? (seen ? "Already acknowledged" : undefined)}
           reasonDisplay="tooltip"
-          aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
+          aria-label={seen ? `Seen: ${subjectLine}` : `Acknowledge ${subjectLine}`}
           onClick={() => handlers.onAcknowledge(item)}
         >
           {seen ? "Seen" : "Acknowledge"}

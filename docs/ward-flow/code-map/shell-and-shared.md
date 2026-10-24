@@ -1,5 +1,15 @@
 # Routes, shell, navigation and shared UI
 
+## Shared save recovery — 23 October 2026
+
+`ward-shared-access.tsx` publishes memory-only save recovery through
+`shell/ward-shared-save-context.ts`. `ward-shared-save-status.tsx` keeps the existing status and
+Retry within the top open sheet's focus trap, following `wf/sheet-focus.ts` as sheets stack or
+their portal roots mount. The background controls are inert while that recovery is shown; an
+already-inert inline dialog keeps the global fallback instead. No action is queued in browser
+storage. `tests/ward-shared-recovery.dom.test.tsx` covers the recovery controls, retained form
+state, nested and late-mounted sheets, focus and cleanup.
+
 ## Current routing reference — 21 October 2026
 
 Start with the [current architecture orientation](../../codebase-index.md) and the

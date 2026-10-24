@@ -629,8 +629,11 @@ function textOf(node: ReactNode): string | undefined {
 }
 
 function setFlag(element: HTMLElement, key: "fadeStart" | "fadeEnd", on: boolean) {
-  if (on) element.dataset[key] = "true";
-  else delete element.dataset[key];
+  if (on) {
+    if (element.dataset[key] !== "true") element.dataset[key] = "true";
+  } else if (element.dataset[key] !== undefined) {
+    delete element.dataset[key];
+  }
 }
 
 /**
@@ -643,7 +646,8 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
   const frameRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
 
-  // The fade flags are written straight onto the frame, so scrolling never re-renders the row.
+  // Only changed fade flags are written onto the frame, so scrolling avoids redundant DOM writes
+  // and never re-renders the row.
   const measure = useCallback(() => {
     const frame = frameRef.current;
     const row = rowRef.current;
