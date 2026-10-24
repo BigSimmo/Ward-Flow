@@ -3,7 +3,16 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type ComponentProps, type ComponentType, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+  type RefObject,
+} from "react";
 import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
@@ -119,7 +128,8 @@ export type WardPhoneMenuProps = {
   tasksCount: number;
   activityUnread: number;
   /** Opens one of the bar's own drawers once the menu has closed. */
-  onOpenDrawer: (id: "tasks" | "activity" | "tools") => void;
+  /** `opener` is the dock button that opened the drawer, where its close returns focus (DR-08). */
+  onOpenDrawer: (id: "tasks" | "activity" | "tools", opener?: HTMLElement) => void;
   onNewReferral: () => void;
 };
 
@@ -303,8 +313,8 @@ function PhoneDock({
   oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
-  onCreate: () => void;
-  onDrawer: (id: DrawerId) => void;
+  onCreate: (opener: HTMLElement) => void;
+  onDrawer: (id: DrawerId, opener?: HTMLElement) => void;
 }) {
   const alertsLink = (count: number | undefined) => (
     <Link
@@ -378,7 +388,7 @@ function PhoneDock({
             className={styles.dockItem}
             aria-haspopup="dialog"
             data-testid="ward-phone-menu-activity"
-            onClick={() => onDrawer("activity")}
+            onClick={(event) => onDrawer("activity", event.currentTarget)}
           >
             <DockFace
               icon={Activity}
@@ -416,7 +426,7 @@ function PhoneDock({
           aria-label="Create: new referral, delay, bed or patient"
           aria-haspopup="dialog"
           data-testid="ward-phone-create"
-          onClick={onCreate}
+          onClick={(event) => onCreate(event.currentTarget)}
         >
           <Plus aria-hidden="true" strokeWidth={2} />
         </button>
@@ -427,6 +437,42 @@ function PhoneDock({
 }
 
 export type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
+
+/**
+ * The bar's Activity sheet on a phone. DR-08: closing returns focus to the dock button that opened
+ * it; an open from the Menu sheet passes no opener and falls back to Menu or Back. DR-12: its list
+ * scrolls, so the body takes a tab stop and a name. Above the phone it returns to the bar's trigger.
+ */
+export function usePhoneActivitySheet(
+  isPhone: boolean,
+  phoneReturnTarget: RefObject<HTMLElement | null>,
+  desktopTrigger: RefObject<HTMLElement | null>,
+  openPopover: (id: DrawerId) => void,
+) {
+  const openerRef = useRef<HTMLElement | null>(null);
+  const returnFocusRef = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        const opener = openerRef.current;
+        return opener?.isConnected ? opener : phoneReturnTarget.current;
+      },
+    }),
+    [phoneReturnTarget],
+  );
+  const openFromPhone = useCallback(
+    (id: DrawerId, opener?: HTMLElement) => {
+      if (id === "activity") openerRef.current = opener ?? null;
+      openPopover(id);
+    },
+    [openPopover],
+  );
+  return {
+    openFromPhone,
+    sheetProps: isPhone
+      ? { returnFocusRef, bodyTabIndex: 0, bodyLabel: "Activity list" }
+      : { returnFocusRef: desktopTrigger },
+  };
+}
 
 /**
  * The Menu and Create sheets (their rows, search and More) are their own chunk, so a phone's first
@@ -492,6 +538,9 @@ export function WardPhoneMenu({
   const [sheetsMounted, setSheetsMounted] = useState(false);
   if (!sheetsMounted && (open || createOpen || switcherOpen)) setSheetsMounted(true);
   const [query, setQuery] = useState("");
+  // DR-08: Create returns focus to the dock's + that opened it, not to Menu. Cleared when Menu opens,
+  // so the Menu sheet still returns to Menu.
+  const createOpenerRef = useRef<HTMLElement | null>(null);
   // F-07: marks <html data-wf-keyboard> so the dock hides and pinned footers lift over the keyboard.
   useMobileKeyboard({ trackState: false });
 
@@ -501,6 +550,7 @@ export function WardPhoneMenu({
         // The rail's own sheet answers above 48rem.
         if (!isPhoneViewport()) return;
         setQuery("");
+        createOpenerRef.current = null;
         setOpen(true);
         announceToWardShell("Menu opened.");
       }),
@@ -597,17 +647,27 @@ export function WardPhoneMenu({
           .filter((group) => group.entries.length > 0)
       : groups;
 
+  const sheetReturnRef = useMemo<RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        const opener = createOpenerRef.current;
+        return opener instanceof HTMLButtonElement && opener.isConnected ? opener : returnFocusRef.current;
+      },
+    }),
+    [returnFocusRef],
+  );
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
   const go = (entry: RailEntry) => {
     announceGo(pathname, entry);
     close();
   };
-  const drawer = (id: DrawerId) => {
+  const drawer = (id: DrawerId, opener?: HTMLElement) => {
     close();
-    onOpenDrawer(id);
+    onOpenDrawer(id, opener);
   };
-  const create = () => {
+  const create = (opener?: HTMLElement) => {
+    createOpenerRef.current = opener ?? null;
     close();
     setCreateOpen(true);
     announceToWardShell("Create opened.");
@@ -624,7 +684,7 @@ export function WardPhoneMenu({
           onClose={close}
           query={query}
           onQuery={setQuery}
-          returnFocusRef={returnFocusRef}
+          returnFocusRef={sheetReturnRef}
           shellRole={shellRole}
           pathname={pathname}
           counts={counts}
