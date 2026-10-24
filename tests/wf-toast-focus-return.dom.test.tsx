@@ -41,7 +41,43 @@ function Actions({ removeTrigger = false, moveOnUndo = false }: { removeTrigger?
   );
 }
 
+function SeveralNotices() {
+  const toast = useToast();
+  const earlier = useRef("");
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          earlier.current = toast.push({ title: "Earlier notice", tone: "info", duration: 0 });
+          toast.push({ title: "Later notice", tone: "info", undo: { durationMs: 5000, onUndo: () => {} } });
+        }}
+      >
+        Create notices
+      </button>
+      <button type="button" onClick={() => toast.dismiss(earlier.current)}>
+        Remove earlier notice
+      </button>
+    </>
+  );
+}
+
 describe("toast focus return", () => {
+  it("keeps focus on a surviving toast when another notice disappears", () => {
+    render(
+      <ToastProvider>
+        <SeveralNotices />
+      </ToastProvider>,
+    );
+    const create = screen.getByRole("button", { name: "Create notices" });
+    create.focus();
+    fireEvent.click(create);
+    const undo = screen.getByRole("button", { name: "Undo" });
+    undo.focus();
+    // Exercise the same API as expiry without moving focus to a pointer target.
+    fireEvent.click(screen.getByRole("button", { name: "Remove earlier notice" }));
+    expect(undo).toHaveFocus();
+  });
   it.each([false, true])(
     "returns to a surviving workflow control after Undo (removed trigger: %s)",
     (removeTrigger) => {

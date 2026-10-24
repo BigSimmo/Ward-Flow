@@ -119,11 +119,10 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     const targets = pendingFocusReturn.current;
     pendingFocusReturn.current = null;
     if (!targets) return;
-    const active = document.activeElement;
-    // An action that deliberately focused another connected control owns that focus.
-    if (active && active !== document.body && active.isConnected) return;
+    // An action that deliberately focused another control owns that focus.
+    if (document.activeElement !== document.body) return;
     for (const target of targets) {
-      if (!target.isConnected || target.closest("[inert]") || !canRestoreFocusTo(target)) continue;
+      if (!canRestoreFocusTo(target)) continue;
       target.focus({ preventScroll: true });
       if (document.activeElement === target) break;
     }
@@ -144,9 +143,9 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const dismiss = useCallback(
     (id: string) => {
       const active = document.activeElement;
-      if (active instanceof HTMLElement && active.closest("[data-toast-id]")?.getAttribute("data-toast-id") === id) {
+      if (active?.closest('[data-testid="toast"]')) {
         // The triggering save strip may have disappeared; keep earlier surviving controls too.
-        pendingFocusReturn.current = [...recentControls.current];
+        pendingFocusReturn.current = recentControls.current;
       }
       const gone = toastsRef.current.find((toast) => toast.id === id);
       const next = toastsRef.current.filter((toast) => toast.id !== id);
@@ -295,7 +294,6 @@ function ToastCard({
   return (
     <ToastView
       data-testid="toast"
-      data-toast-id={toast.id}
       data-tone={toast.tone}
       data-announce-key={toast.announceKey ?? 0}
       // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
