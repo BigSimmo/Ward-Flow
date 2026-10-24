@@ -81,7 +81,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     renderScreen();
     const panel = selectedPanel();
     fireEvent.click(within(panel).getByRole("button", { name: /^Acknowledge / }));
-    expect(within(panel).getByRole("button", { name: /^Acknowledged / })).toHaveTextContent("Seen");
+    expect(within(panel).getByRole("button", { name: /^Seen: / })).toHaveTextContent("Seen");
     expect(within(panel).getByText(/Seen by Flow coordinator/)).toBeInTheDocument();
   });
 
