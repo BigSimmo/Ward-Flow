@@ -320,7 +320,7 @@ export function WardScreenBedDrawer({
             }
             onSetObservation={
               !pathname || routeRole === "ward" || routeRole === "coordinator"
-                ? (admissionId, observation) => {
+                ? (admissionId, observation, expected) => {
                     // Audit 24-3 SV-4: the same answer also keeps the control open until accepted.
                     let completion: ReturnType<WardCommandDispatch> = undefined;
                     recordFeedback(
@@ -328,6 +328,7 @@ export function WardScreenBedDrawer({
                         (completion = raise("RECORD_OBSERVATION_LEVEL", {
                           target: { kind: "admission", admissionId, actingUnitId: unitId },
                           observation,
+                          expected,
                         })),
                       `Observation level recorded: ${observationSummary(observation)}.`,
                     );

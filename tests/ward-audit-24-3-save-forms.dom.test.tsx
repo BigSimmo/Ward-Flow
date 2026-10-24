@@ -441,4 +441,18 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     expect(screen.getByTestId("ward-observation-interval")).toHaveValue("30");
     expectSaid("ward-observation-error", mode);
   });
+
+  it("sends the version seen on opening, so a colleague's later change is refused, not overwritten", async () => {
+    const onSave = vi.fn(() => outcomeFor("accepted"));
+    const view = render(
+      <WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} editingToken="v1" onSave={onSave} />,
+    );
+    fireEvent.click(screen.getByTestId("ward-observation-change"));
+    view.rerender(
+      <WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} editingToken="v2" onSave={onSave} />,
+    );
+    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
+    await press(screen.getByTestId("ward-observation-save"));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ level: "intermittent" }), "v1");
+  });
 });

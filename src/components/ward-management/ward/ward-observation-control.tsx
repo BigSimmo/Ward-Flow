@@ -49,13 +49,16 @@ export function observationWithReview(observation: Observation, now: Instant): s
 export function WardObservationControl({
   observation,
   now,
+  editingToken,
   onSave,
   showCurrent = true,
 }: {
   observation: Observation;
   now: Instant;
+  /** The record's `observationEditingToken` now; the one seen on opening goes with the save. */
+  editingToken?: string;
   /** Absent for a desk that may not change it: the level is shown and nothing more. */
-  onSave?: (next: Observation) => ReturnType<WardCommandDispatch>;
+  onSave?: (next: Observation, expected?: string) => ReturnType<WardCommandDispatch>;
   /** False where a row above already states the level, as in the bed drawer. */
   showCurrent?: boolean;
 }) {
@@ -68,6 +71,8 @@ export function WardObservationControl({
   const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">("today");
   const [reviewEdited, setReviewEdited] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A colleague's change made while this is open is refused by the server, not overwritten.
+  const [openedToken, setOpenedToken] = useState<string>();
   // Audit 24-3 SV-4: the control stays open with its choices until the level is accepted.
   const recording = useWardFormSave("observation");
 
@@ -86,7 +91,7 @@ export function WardObservationControl({
     const next = { level, intervalMinutes: level === "intermittent" ? interval : null, reviewAt };
     if (onSave)
       recording.submit(
-        () => onSave(next),
+        () => onSave(next, openedToken),
         () => setOpen(false),
       );
   }
@@ -116,6 +121,7 @@ export function WardObservationControl({
             setReviewEdited(false);
             setError(null);
             recording.clearError();
+            setOpenedToken(editingToken);
             setOpen(true);
           }}
         >
