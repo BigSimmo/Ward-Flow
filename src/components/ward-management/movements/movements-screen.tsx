@@ -62,6 +62,7 @@ import styles from "./movements.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementsPhoneNav } from "./movements-phone-nav";
+import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { HighlightStat, PhoneGroupHeading, StageRow, TierPill } from "./movements-stage-row";
 import {
@@ -86,6 +87,17 @@ import {
 export { causeOf, inServiceSuffix } from "./movements-screen-helpers";
 
 const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
+const MOVEMENTS_ROUTE = "/ward-flow/movements";
+/** What Back brings back (`use-return-to-place.ts`). The tab lives in the address, and the search is typed text, so neither is kept here. */
+type MovementsPlace = {
+  order: "stands" | "cause" | "transport" | "wait";
+  shapeTab: "stage" | "transport" | "waiting" | "resolved";
+  sideView: "transport" | "shape";
+  phoneOpenGroups: ReadonlySet<string>;
+  showAll: boolean;
+  highlight: string | null;
+};
+const worklistRow = (id: string) => rowWithAttribute("data-record-key", id, "li");
 
 /**
  * MERGE 03 — the patient movement board (`MovementsView`, a stage strip) and the coordinator's live
@@ -106,6 +118,7 @@ const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
+  const returned = useReturnedView<MovementsPlace>(MOVEMENTS_ROUTE);
   const thresholds = useDueSoonThresholds();
   const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlowSelect(
     "movements",
@@ -139,6 +152,7 @@ export function MovementsScreen() {
 
   const openDetail = useCallback((id: string) => {
     setDetailId(id);
+    rememberReturnRow(MOVEMENTS_ROUTE, id);
     if (typeof window !== "undefined") {
       const priorState =
         typeof window.history.state === "object" && window.history.state !== null ? window.history.state : {};
@@ -173,21 +187,25 @@ export function MovementsScreen() {
     document.getElementById(`movements-tab-${boardTab}`)?.focus();
     keyboardTabFocus.current = null;
   }, [boardTab]);
-  const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
-  const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
-  const [sideView, setSideView] = useState<"transport" | "shape">("transport");
+  const [order, setOrder] = useState<MovementsPlace["order"]>(returned?.order ?? "stands");
+  const [shapeTab, setShapeTab] = useState<MovementsPlace["shapeTab"]>(returned?.shapeTab ?? "stage");
+  const [sideView, setSideView] = useState<"transport" | "shape">(returned?.sideView ?? "transport");
   // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | null>(null);
   // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
   const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
   // v10 phone: each worklist group opens on its own "Show N more" row.
-  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string>>(new Set());
+  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string>>(
+    () => returned?.phoneOpenGroups ?? new Set(),
+  );
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(returned?.showAll ?? false);
   // Hero highlight: one of `heroHighlights` by id, or `stage:<stage>` from the stage track.
-  const [highlight, setHighlight] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(returned?.highlight ?? null);
+  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, showAll, highlight };
+  useReturnToPlace(MOVEMENTS_ROUTE, place, worklistRow);
   function toggleHighlight(key: string) {
     setHighlight((current) => (current === key ? null : key));
     setSearch("");
