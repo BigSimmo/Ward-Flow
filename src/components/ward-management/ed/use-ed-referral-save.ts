@@ -11,10 +11,8 @@ type Attempt = {
   draft: ReturnType<typeof useEdReferralDraft>["draft"];
   referralId: string | undefined;
   world: number | undefined;
-  sequence: number;
-  now: number;
   outcome?: WardCommandOutcome;
-  local?: boolean;
+  confirmed?: WardCommandOutcome;
   shared: boolean;
   before?: ReadonlySet<string>;
   scope?: string;
@@ -22,7 +20,7 @@ type Attempt = {
 
 /** An accepted command confirms a raise; a newly visible movement alone never does. */
 export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDraft>, scope?: string) {
-  const snapshot = useOptionalWardFlowSelect("worldGeneration", "shared", "eventLog");
+  const snapshot = useOptionalWardFlowSelect("worldGeneration", "shared");
   const { draft, raisingFromReferralId, setDraft, setReferralOpen, setRaisingFromReferralId } = draftState;
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [message, setMessage] = useState<string>();
@@ -77,6 +75,22 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
       started.outcome = outcome;
       setAttempt({ ...started });
       setMessage(wardCommandFailure(outcome));
+      // Scoped desks deliberately cannot read command history. This private channel belongs to
+      // the original command and settles only when Retry or lifecycle cleanup is definitive.
+      if (outcome.confirmation) {
+        void outcome.confirmation.then(
+          (confirmed) => {
+            if (!mounted.current || active.current !== started || confirmed.commandId !== outcome.commandId) return;
+            if (confirmed.status === "accepted") {
+              started.confirmed = confirmed;
+              setAttempt({ ...started });
+            } else if (confirmed.status !== "failed") finish(started, confirmed);
+          },
+          () => {
+            // Keep the existing unconfirmed warning and draft if the confirmation channel fails.
+          },
+        );
+      }
     } else {
       active.current = null;
       setAttempt(null);
@@ -98,44 +112,18 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
       setMessage(undefined);
       return;
     }
-    const receipt = snapshot?.eventLog?.find(
-      (entry) =>
-        entry.sequence > started.sequence &&
-        entry.type === "RAISE_REFERRAL" &&
-        entry.role === "ed" &&
-        entry.now === started.now &&
-        (started.local ||
-          (started.outcome?.commandId && Reflect.get(entry, "commandId") === started.outcome.commandId)),
-    );
-    if (!receipt) return;
-    if (receipt.accepted && snapshot?.shared?.enabled && snapshot.shared.status !== "ready") return;
-    finish(started, {
-      commandId: started.outcome?.commandId ?? "",
-      status: receipt.accepted ? "accepted" : "refused",
-      message: receipt.accepted
-        ? undefined
-        : (snapshot?.shared?.error ?? "The referral was not raised. Review the details before trying again."),
-      isCurrent: started.outcome?.isCurrent,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- finish uses this render's setters; receipt/world changes drive reconciliation.
-  }, [
-    attempt,
-    scope,
-    snapshot?.worldGeneration,
-    snapshot?.eventLog,
-    snapshot?.shared?.enabled,
-    snapshot?.shared?.status,
-    snapshot?.shared?.error,
-  ]);
+    if (started.confirmed && (!snapshot?.shared?.enabled || snapshot.shared.status === "ready")) {
+      finish(started, started.confirmed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- finish uses this render's setters; terminal/lifetime/adoption changes drive reconciliation.
+  }, [attempt, scope, snapshot?.worldGeneration, snapshot?.shared?.enabled, snapshot?.shared?.status]);
 
-  function saveReferral(record: () => ReturnType<WardCommandDispatch>, now: number, before?: ReadonlySet<string>) {
+  function saveReferral(record: () => ReturnType<WardCommandDispatch>, _now: number, before?: ReadonlySet<string>) {
     if (active.current || (snapshot?.shared?.enabled && snapshot.shared.status !== "ready")) return false;
     const started: Attempt = {
       draft,
       referralId: raisingFromReferralId,
       world: snapshot?.worldGeneration,
-      sequence: snapshot?.eventLog?.at(-1)?.sequence ?? -1,
-      now,
       shared: snapshot?.shared?.enabled === true,
       before,
       scope,
@@ -151,10 +139,7 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
           () => finish(started, { commandId: "", status: "failed" }),
         );
       } else if (completion) finish(started, completion);
-      else {
-        started.local = true;
-        setAttempt({ ...started });
-      }
+      else finish(started, { commandId: "", status: "failed" });
     } catch {
       finish(started, { commandId: "", status: "failed" });
     }

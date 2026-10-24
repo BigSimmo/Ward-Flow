@@ -156,18 +156,26 @@ describe("ED referral save attribution and lifetime", () => {
     expect(h.result.current.accepted).toBe(0);
     expect(h.result.current.referralSaveMessage).toContain("Synthetic refusal");
   });
-  it("ignores another command's same-minute receipt and accepts only the original Retry", async () => {
+  it("ignores other command history and accepts its private Retry confirmation with an empty scoped log", async () => {
     const h = hookSetup();
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
+    });
     await act(async () => {
-      h.result.current.saveReferral(() => Promise.resolve({ commandId: "synthetic-one", status: "failed" }), 642);
+      h.result.current.saveReferral(
+        () => Promise.resolve({ commandId: "synthetic-one", status: "failed", confirmation }),
+        642,
+      );
     });
     h.snapshot.eventLog = [receipt("synthetic-other", true)];
     h.rerender();
     expect(h.result.current.state.referralOpen).toBe(true);
     expect(h.result.current.accepted).toBe(0);
+    h.snapshot.eventLog = []; // WardAccessScope deliberately hides the ED's history.
     h.snapshot.shared.status = "saving";
-    h.snapshot.eventLog = [...h.snapshot.eventLog, receipt("synthetic-one", true, 1)];
     h.rerender();
+    await act(async () => confirm({ commandId: "synthetic-one", status: "accepted" }));
     expect(h.result.current.state.referralOpen).toBe(true);
     h.snapshot.shared.status = "ready";
     h.rerender();
@@ -177,16 +185,23 @@ describe("ED referral save attribution and lifetime", () => {
   it("keeps a refused Retry terminal after later reads clear the global error", async () => {
     const h = hookSetup();
     const draft = h.result.current.state.draft;
-    await act(async () => {
-      h.result.current.saveReferral(() => Promise.resolve({ commandId: "synthetic-one", status: "failed" }), 642);
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
     });
-    h.snapshot.shared.error = "Synthetic refused Retry";
-    h.snapshot.eventLog = [receipt("synthetic-one", false)];
-    h.rerender();
+    await act(async () => {
+      h.result.current.saveReferral(
+        () => Promise.resolve({ commandId: "synthetic-one", status: "failed", confirmation }),
+        642,
+      );
+    });
+    await act(async () =>
+      confirm({ commandId: "synthetic-one", status: "refused", message: "Synthetic refused Retry" }),
+    );
     expect(h.result.current.referralFieldsDisabled).toBe(false);
     expect(h.result.current.referralSaveMessage).toContain("Synthetic refused Retry");
     h.snapshot.shared.error = null;
-    h.snapshot.eventLog = [...h.snapshot.eventLog, receipt("synthetic-other", true, 1)];
+    h.snapshot.eventLog = [receipt("synthetic-other", true)];
     h.rerender();
     expect(h.result.current.state.draft).toBe(draft);
     expect(h.result.current.state.referralOpen).toBe(true);
@@ -340,5 +355,55 @@ describe("ED referral scope lifetime", () => {
     expect(h.result.current.state.draft.sex).toBe("Male");
     expect(h.result.current.accepted).toBe(0);
     expect(h.result.current.referralFieldsDisabled).toBe(false);
+  });
+});
+
+describe("ED referral private confirmation fencing", () => {
+  it("does not accept an unrelated command on a mismatched private channel", async () => {
+    const h = hookSetup();
+    await act(async () => {
+      h.result.current.saveReferral(
+        () =>
+          Promise.resolve({
+            commandId: "synthetic-one",
+            status: "failed",
+            confirmation: Promise.resolve({ commandId: "synthetic-other", status: "accepted" as const }),
+          }),
+        642,
+      );
+    });
+    expect(h.result.current.state.referralOpen).toBe(true);
+    expect(h.result.current.accepted).toBe(0);
+    expect(h.result.current.referralFieldsDisabled).toBe(true);
+  });
+  it("does not clear a new department's draft when an old Retry confirms", async () => {
+    intercepted.select = { worldGeneration: 1, shared: { enabled: true, status: "ready", error: null }, eventLog: [] };
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
+    });
+    const h = renderHook(
+      ({ scope }) => {
+        const state = useEdReferralDraft();
+        return { state, ...useEdReferralSave(state, scope) };
+      },
+      { initialProps: { scope: "synthetic-ed-one" } },
+    );
+    act(() => {
+      h.result.current.state.setReferralOpen(true);
+      h.result.current.state.setDraft({ ...DEFAULT_DRAFT, sex: "Female" });
+    });
+    await act(async () => {
+      h.result.current.saveReferral(
+        () => Promise.resolve({ commandId: "synthetic-one", status: "failed", confirmation }),
+        642,
+      );
+    });
+    h.rerender({ scope: "synthetic-ed-two" });
+    act(() => h.result.current.state.setDraft({ ...DEFAULT_DRAFT, sex: "Male" }));
+    await act(async () => confirm({ commandId: "synthetic-one", status: "accepted" }));
+    expect(h.result.current.state.referralOpen).toBe(true);
+    expect(h.result.current.state.draft.sex).toBe("Male");
+    expect(h.result.current.accepted).toBe(0);
   });
 });
