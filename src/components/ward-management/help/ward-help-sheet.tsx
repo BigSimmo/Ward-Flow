@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { Sheet } from "@/components/wf/sheet";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 
-import { filterGlossary, screenHelpFor } from "./ward-help-content";
+import { filterGlossary, glossaryForSites, screenHelpFor } from "./ward-help-content";
+import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
 import styles from "./ward-help.module.css";
 
@@ -30,9 +31,10 @@ export function WardHelpSheet({
   onClose: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  const { sites } = useWardNetwork();
   const help = useMemo(() => screenHelpFor(pathname, railEntries()), [pathname]);
   const [query, setQuery] = useState("");
-  const terms = filterGlossary(query);
+  const terms = filterGlossary(query, glossaryForSites(sites));
 
   return (
     <Sheet

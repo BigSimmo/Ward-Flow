@@ -46,6 +46,19 @@ export function applyRulingsDemoOverlay<
   return state;
 }
 
+export function rulingsDemoOverlay(now: Instant): {
+  exampleIds: readonly string[];
+  movements: Movement[];
+  admissions: Admission[];
+  referrals: Referral[];
+  patients: Patient[];
+  leaveBeds: LeaveBed[];
+  skipped: readonly { example: string; field: string; reason: string }[];
+} {
+  void now;
+  return { exampleIds: [], movements: [], admissions: [], referrals: [], patients: [], leaveBeds: [], skipped: [] };
+}
+
 export function withDemoPlannedMoveTimes(movements: readonly Movement[], anchor: Instant): Movement[] {
   void anchor;
   return [...movements];

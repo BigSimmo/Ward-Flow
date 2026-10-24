@@ -175,6 +175,15 @@
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* D-80: a sent journey's own controls, under the row and outside its button. */
+.rowControls {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+.rowControls:empty {
+  display: none;
+}
+
 .attention {
   margin: 0;
   padding: 0;
