@@ -3,21 +3,27 @@
 // "What would change tomorrow most" and "Beds held by blockers" (forecasting build, Josh,
 // 23 Oct 2026, screen 3). Both are counts of records the forecast already reads, sorted so the
 // coordinator sees which call would move tomorrow's figure most. Nothing is weighted or scored:
-// a lever's size is the number of beds it covers, and that is the whole ranking.
+// likely uplift counts only beds whose current date and blocker allow that action to move them.
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
 export type ForecastLever =
-  | { kind: "confirm_dates"; beds: number; wards: string[] }
-  | { kind: "clear_held_up"; beds: number; reasons: { reason: BedReleaseBlocker; count: number }[] }
+  | { kind: "confirm_dates"; beds: number; likelyUplift: number; wards: string[] }
+  | {
+      kind: "clear_held_up";
+      beds: number;
+      likelyUplift: number;
+      reasons: { reason: BedReleaseBlocker; count: number }[];
+    }
   | { kind: "review_overdue"; beds: number };
 
 /**
- * The levers on tomorrow's figure, biggest first. Confirming a planned date or clearing a held-up
- * release moves a bed into the likely figure. An overdue release only ever widens the range, so it
- * always comes last whatever its size.
+ * The levers on tomorrow's figure, largest likely uplift first. Keep every operational record in
+ * `beds`, but only dates from today onwards can lift likely (the forecast's on-time bucket).
+ * Flagging requires an occupied stay and inherits its blocker. Neither action alone makes an
+ * overdue or still-blocked release likely. A separate overdue review remains last.
  */
 export function forecastLevers(
   units: readonly Unit[],
@@ -52,12 +58,27 @@ export function forecastLevers(
     .sort((a, b) => b.count - a.count);
   const overdue = due.filter((release) => release.blocker === null && dayOf(release.expectedAt) < dayOf(now)).length;
 
-  const moving: ForecastLever[] = [
-    { kind: "confirm_dates" as const, beds: unflagged.length, wards: wardNames },
-    { kind: "clear_held_up" as const, beds: heldUp.length, reasons },
+  const moving = [
+    {
+      kind: "confirm_dates" as const,
+      beds: unflagged.length,
+      likelyUplift: unflagged.filter(
+        (admission) =>
+          admission.state === "occupied" &&
+          dayOf(admission.expectedDischargeAt!) >= dayOf(now) &&
+          admission.blockReason === null,
+      ).length,
+      wards: wardNames,
+    },
+    {
+      kind: "clear_held_up" as const,
+      beds: heldUp.length,
+      likelyUplift: heldUp.filter((release) => dayOf(release.expectedAt) >= dayOf(now)).length,
+      reasons,
+    },
   ]
     .filter((lever) => lever.beds > 0)
-    .sort((a, b) => b.beds - a.beds);
+    .sort((a, b) => b.likelyUplift - a.likelyUplift || b.beds - a.beds);
   return overdue > 0 ? [...moving, { kind: "review_overdue", beds: overdue }] : moving;
 }
 

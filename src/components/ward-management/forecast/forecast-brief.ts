@@ -56,7 +56,10 @@ function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
 function bestAction(levers: readonly ForecastLever[]): string {
   const top = levers[0];
   if (!top) return "Nothing on record would move tomorrow's figure.";
-  const upTo = `Up to ${top.beds} ${top.beds === 1 ? "bed" : "beds"}.`;
+  const upTo =
+    top.kind === "review_overdue" || top.likelyUplift === 0
+      ? "These beds remain in the range only. Check arrival, dates and blockers before expecting a gain."
+      : `Up to ${top.likelyUplift} ${top.likelyUplift === 1 ? "bed" : "beds"}.`;
   switch (top.kind) {
     case "confirm_dates":
       return `Ask ${top.wards.length} ${top.wards.length === 1 ? "ward" : "wards"} to confirm tomorrow's discharges. ${upTo}`;
