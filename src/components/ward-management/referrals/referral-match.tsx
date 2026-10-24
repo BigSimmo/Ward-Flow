@@ -1,5 +1,6 @@
 "use client";
 
+import { readyBedsAllPromised, readyBedsPromisedSentence } from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -796,6 +797,11 @@ export function ReferralMatchView({
   const pick = phonePick === undefined ? undefined : candidates.find((c) => c.unit.id === phonePick);
   const acceptUnavailable = candidates.length === 0 ? "No unit to accept at in this network." : "Choose a ward first.";
   const pickPlain = pick !== undefined && candidateAccepts(pick) && !needsGenderPlacement(pick.unit.id);
+  /* Audit 2 E-07: says when this ward's Ready beds are all promised to earlier yeses. Refuses nothing. */
+  const pickPromised =
+    pick !== undefined && turnaroundState
+      ? readyBedsAllPromised(turnaroundState, pick.unit, { referralId: referral.id })
+      : undefined;
   /* A ward that fits, or fails only its gender designation, and still needs the gender placement
      check accepts through that one form (the same test `MatchRow` applies). */
   const pickGenderForm =
@@ -1096,6 +1102,11 @@ export function ReferralMatchView({
                 needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
               />
             </ul>
+          ) : null}
+          {pickPromised && pick ? (
+            <p className={ph.note} role="status" data-testid="ward-referral-match-ready-promised">
+              {readyBedsPromisedSentence(pick.unit.name, pickPromised)}
+            </p>
           ) : null}
           <p className={ph.note} data-testid="ward-referral-match-governance">
             <strong>Not approved for clinical use.</strong> Fixed network order in each group. This view places nobody:
