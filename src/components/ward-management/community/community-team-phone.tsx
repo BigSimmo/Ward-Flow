@@ -46,6 +46,8 @@ type CommunityPhoneRow = {
   action?: PhoneRowAction;
   /** A quiet line under the row (a transport note). */
   note?: ReactNode;
+  /** Controls under the row, outside its button (D-80: a sent journey's urgency and legal status). */
+  controls?: ReactNode;
   testId?: string;
 };
 
@@ -234,6 +236,7 @@ export function CommunityTeamPhone({
                           action={row.action}
                         />
                         {row.note ? <p className={css.rowNote}>{row.note}</p> : null}
+                        {row.controls ? <div className={css.rowControls}>{row.controls}</div> : null}
                       </li>
                     ))}
                   </ul>

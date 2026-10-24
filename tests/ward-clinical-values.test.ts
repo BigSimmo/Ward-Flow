@@ -119,6 +119,7 @@ describe("clinical values file", () => {
       // Role access later pass (Josh, 16 Oct 2026): cover, step-up sign-in and the access review.
       coverLength: 12,
       sessionLimit: 12,
+      sessionWarning: 10,
       stepUpWindow: 10,
       accessExpiringSoon: 14,
       accessUnused: 45,

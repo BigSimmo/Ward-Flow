@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  seedWardFlowStateAt,
+  wardFlowReducer,
+  type WardFlowState,
+} from "@/components/ward-management/ward-flow-reducer";
 import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { WARD_FLOW_TYPED_TEXT_EVENT_TYPES } from "@/components/ward-management/ward-flow-persistence-classification";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
@@ -19,7 +24,7 @@ import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
  * event is dispatched here with marker text in every typed field, and the device copy is searched.
  */
 
-const worlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowState(scenario));
+const worlds = (offsetMinutes = 0) => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
 
 function stored(value: unknown): string {
   return JSON.stringify(value);
@@ -94,6 +99,102 @@ describe("device copy of a session holding typed text", () => {
       };
       compare(copy, live, "state");
     });
+  });
+
+  it("keeps a referral's own seeded intake in decision snapshots and can undo after recovery", () => {
+    const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.label === "ACCEPT_REFERRAL with reassessmentNote")!;
+    const { before, event } = fixture.build(seedWardFlowState());
+    if (event.type !== "ACCEPT_REFERRAL") throw new Error("Expected a referral acceptance fixture");
+    const next = wardFlowReducer(before, event);
+    const copy = redactTypedTextForDevice(next, typedTextOf(event) ?? [], worlds, true);
+    expect(copy).not.toBeNull();
+    const decision = copy!.undoRecords?.find((entry) => entry.kind === "referral-decision");
+    if (decision?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
+    const original = before.referrals.find((referral) => referral.id === event.referralId)!;
+    expect(original.intake).toBeDefined();
+    expect(decision.before.intake).toEqual(original.intake);
+    expect(decision.after.intake).toEqual(original.intake);
+    expect(stored(copy)).not.toContain(fixture.markers[0]);
+    expect(isValidStoredWardFlowState(copy)).toBe(true);
+    const undone = wardFlowReducer(copy!, {
+      type: "UNDO_REFERRAL_DECISION",
+      role: "coordinator",
+      now: event.now,
+      referralId: event.referralId,
+    });
+    expect(undone.rejections).toEqual([]);
+    expect(undone.referrals.find((referral) => referral.id === event.referralId)).toEqual(JSON.parse(stored(original)));
+  });
+
+  it("removes unholdable typed intake from both live referrals and decision snapshots without losing undo", () => {
+    const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.label === "ACCEPT_REFERRAL with reassessmentNote")!;
+    const { before, event } = fixture.build(seedWardFlowState());
+    if (event.type !== "ACCEPT_REFERRAL") throw new Error("Expected a referral acceptance fixture");
+    const changed = structuredClone(before);
+    const intake = changed.referrals.find((referral) => referral.id === event.referralId)!.intake!;
+    const email = "typed-undo-contact-4bd1@example.invalid";
+    const chartText = "Synthetic uploaded chart marker-undo-4bd1";
+    const chartBytes = Buffer.from(chartText);
+    intake.referrer.email = email;
+    intake.charts[0] = { ...intake.charts[0], sizeBytes: chartBytes.length, base64: chartBytes.toString("base64") };
+    const next = wardFlowReducer(changed, event);
+    expect(next.rejections).toEqual([]);
+    const copy = redactTypedTextForDevice(next, typedTextOf(event) ?? [], worlds, true);
+    expect(copy).not.toBeNull();
+    const decision = copy!.undoRecords?.find((entry) => entry.kind === "referral-decision");
+    if (decision?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
+    expect(copy!.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
+    expect(decision.before.intake).toBeUndefined();
+    expect(decision.after.intake).toBeUndefined();
+    for (const marker of [email, chartText, chartBytes.toString("base64"), ...fixture.markers])
+      expect(stored(copy)).not.toContain(marker);
+    expect(isValidStoredWardFlowState(copy)).toBe(true);
+    const undone = wardFlowReducer(copy!, {
+      type: "UNDO_REFERRAL_DECISION",
+      role: "coordinator",
+      now: event.now,
+      referralId: event.referralId,
+    });
+    expect(undone.rejections).toEqual([]);
+    expect(undone.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
+  });
+
+  it("does not keep another referral's seeded text in a decision snapshot", () => {
+    const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.label === "ACCEPT_REFERRAL with reassessmentNote")!;
+    const { before, event } = fixture.build(seedWardFlowState());
+    if (event.type !== "ACCEPT_REFERRAL") throw new Error("Expected a referral acceptance fixture");
+    const source = before.referrals.find((referral) => referral.id !== event.referralId && referral.history)!;
+    const changed = structuredClone(before);
+    changed.referrals.find((referral) => referral.id === event.referralId)!.history = source.history;
+    const next = wardFlowReducer(changed, event);
+    const copy = redactTypedTextForDevice(next, typedTextOf(event) ?? [], worlds, true);
+    expect(copy).not.toBeNull();
+    const decision = copy!.undoRecords?.find((entry) => entry.kind === "referral-decision");
+    if (decision?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
+    expect(decision.before.history).toBe(TYPED_TEXT_NOT_KEPT);
+    expect(decision.after.history).toBe(TYPED_TEXT_NOT_KEPT);
+    expect(copy!.referrals.find((referral) => referral.id === event.referralId)!.history).toBe(TYPED_TEXT_NOT_KEPT);
+  });
+  it("keeps every seeded intake once the session clock has re-anchored the fixture's referral targets", () => {
+    const offsetZero = redactTypedTextForDevice(seedWardFlowStateAt(0), [], worlds)!;
+    const kept = offsetZero.referrals.filter((referral) => referral.intake !== undefined).length;
+    expect(kept).toBeGreaterThan(0);
+    for (const offset of [60, -90, 1440]) {
+      const moved = redactTypedTextForDevice(seedWardFlowStateAt(offset), [], worlds);
+      expect(moved, `offset ${offset}`).not.toBeNull();
+      expect(moved!.referrals.filter((referral) => referral.intake !== undefined)).toHaveLength(kept);
+    }
+  });
+
+  it("still replaces a typed clearance time that is not the fixture's own re-anchored figure", () => {
+    const moved = seedWardFlowStateAt(60);
+    const target = moved.referrals.find((referral) => referral.intake && !referral.intake.medicalClearance.cleared)!;
+    const intake = target.intake!;
+    if (intake.medicalClearance.cleared) throw new Error("Expected a pending clearance");
+    intake.medicalClearance.expectedAt = "2026-11-01T09:17:00+08:00";
+    const copy = scrubTypedTextFields(moved, worlds);
+    const scrubbed = copy.referrals.find((referral) => referral.id === target.id)!.intake;
+    expect(stored(scrubbed ?? null)).not.toContain("2026-11-01T09:17");
   });
 
   it("keeps the fixture's own prose and every other change, with no typed text held", () => {

@@ -18,8 +18,9 @@ import { perthMidnight } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-// The submitted times (here and on the drawer's Submitted details card) read as every other referral time does, on the board clock with its day when
-// it is not today, never as the raw "2026-10-24 10:00 AWST" text. Synthetic data only.
+// The submitted times (here and on the drawer's Submitted details card) read as every other referral time does, through the shared
+// referral time formatter on the board clock with its day when it is not today, never as the raw "2026-10-24 10:00" text.
+// Synthetic data only.
 afterEach(() => {
   cleanup();
 });
@@ -56,12 +57,12 @@ describe("referral intake summary times", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByText("Medical clearance").parentElement).toHaveTextContent(
-      /^Medical clearancePending · expected 14:30$/,
+      /^Medical clearancePending · expected 14:30 AWST$/,
     );
     expect(screen.getByText("Proposed arrival").parentElement).toHaveTextContent(
-      /^Proposed arrivalAmbulance · 09:00 tomorrow$/,
+      /^Proposed arrivalAmbulance · 09:00 tomorrow AWST$/,
     );
-    expect(document.body).not.toHaveTextContent("AWST");
+    expect(document.body).not.toHaveTextContent("2026-10");
   });
 
   it("says when no arrival time was recorded", () => {
@@ -111,7 +112,7 @@ describe("referral drawer submitted details", () => {
     } as unknown as WardReferralDrawerState;
     render(<ReferralConfirmation s={s} />);
     const arrival = screen.getByText("Proposed arrival").parentElement!;
-    expect(arrival).toHaveTextContent(/09:00 tomorrow$/);
+    expect(arrival).toHaveTextContent(/09:00 tomorrow AWST$/);
     expect(arrival).not.toHaveTextContent("2026-10-25");
   });
 });
