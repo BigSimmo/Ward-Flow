@@ -1,12 +1,14 @@
 # Ward Flow — status
 
-Last updated: **17 October 2026** (verified on `main` through commit `e025da04`, PR #392). **Current baseline (17 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `e025da04` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–17 October remediation, clinical workflow, and architecture wave across PRs #283–#392). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the 8 October remediation receipt (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82). Local checks, hosted CI, and deployment each require separate evidence.
+Last updated: **24 October 2026** (source and commit summary through `main` at `d1e61c1`, PR #666; not re-verified). Earlier verified point: **17 October 2026** on `main` through commit `e025da04`, PR #392. **Current baseline (17 October 2026):** dedicated `BigSimmo/Ward-Flow` `main` through commit `e025da04` (incorporating the v10 design system, phone layouts, the 13 October honesty pass in PR #258, PR #264 at `30b1803`, and the 14–17 October remediation, clinical workflow, and architecture wave across PRs #283–#392). Earlier audit baselines (`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` on 8 October 2026 and `0bbcd341d08ad1b2e0c67a77a9cab84367e03769` across PRs #121–#131) and their local verification receipts (`3d01bf9` at 936 files / 10,881 tests, and `8682118` across 325 regression tests, production build, and 12 Chromium journey checks) are preserved in the 8 October remediation receipt (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82). Local checks, hosted CI, and deployment each require separate evidence.
 
 _Updated 19 October 2026 — persistence wording aligned with D-67; dated acceptance evidence above is unchanged._
 
 _Updated 21 October 2026 — added the 17 to 21 October summary below, through `main` at `90e92444` (PR #527). The 17 October baseline and counts above are not re-verified._
 
 _Updated 2026-10-23 - current saving and route summaries checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns. Earlier acceptance receipts are unchanged; no new runtime, hosted CI or deployment verification is claimed._
+
+_Updated 24 October 2026 — added the 21 to 24 October summary and the decision status table below, through `main` at `d1e61c1` (PR #666). Source and commit summary only; no new runtime, hosted CI or deployment verification is claimed._
 
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
@@ -53,6 +55,109 @@ A dated summary of merged pull request titles from #393 to #527, not a fresh ver
 - **Shared mode and backend:** each workspace record saves separately, two people saving at once is tested, and demo records are left out of live builds (#409). Idle desks lock, sign-ins end on the server, record views are logged and role access is on (#411). Shared-mode and backend fixes (audit package B, #435). Backend health shows whether the database answers, with an uptime alert (F-06, #488). A hospital feed test seam reads invented ADT messages only (#439). Audited access, recovery and logging defects are fixed (#496, #505).
 - **Reporting:** pilot measures are added to the weekly report, plus a daily missed-request check (#438). The bed forecast shows where beds are coming from, ward by ward (#481).
 - **Process and CI:** Ward Flow moved out of `/mockups` to its own address (#420). The repository was cleaned up (#412). Scope-selected PR checks and build reuse (#506). Merge queue preparation (#525). The pre-push in-flight CI guard is on by default (#522). Documentation navigation and organisation checks are repaired (#526). Owner ruling of 21 October: don't arm auto-merge on a held PR (#523, #524). Vite security bump to 8.2.4 (#527).
+
+## Since the baseline: 21 to 24 October 2026
+
+A dated summary of merge commits after `90e92444`, through `main` at `d1e61c1` (PR #666; the highest merged PR number in the range is #674). This is a source and commit summary only. No new runtime, hosted CI or deployment verification is claimed. Check current source before relying on any item. More than 130 pull requests merged in that range.
+
+- **Owner decisions:** D-72 to D-80 are recorded in [decisions.md](decisions.md) (#531, #556, #580, #589, #602). Their build state is in the table below.
+- **21 October fix plan (D-72):** recorded observation levels replace the specialling flag (#533, #577). Seclusion, restraint and incident view (#553). The bed hold, discharge notices and arrival checks are built, and dev-only unwired controls are deleted (#542). Referral owner, call log and community Assign (#536, #552). Saving carries on after typed text (#534, #565). Withdrawing an acceptance that holds a bed is one act (#540).
+- **Community gaps (D-74, D-76):** a community team sees what it sent in a Sent tab (#564). The coordinator can ask more wards (#578). An accepted community referral is a full journey, and the referring team is told (#611).
+- **Bigger UX changes (D-77):** ED board referral status (#561), decision pane and Ask wards (#566), Legal forms and Add a patient tidy (#557), Alerts drawer one action and the Demo menu under the Synthetic pill (#558), one Statistics Network page (#560), phone Stays and discharges (#568), the 1280 top bar (#587) and a three-step community form (#599). Also Home v7 (#583), a tour for every desk (#576) and Ward Notices on the shared Alerts drawer (#585).
+- **Decline list and referral detail (D-78, D-79):** one decline list for wards and coordinators (#579). Wards see the full referral, with name and UMRN, before they answer (#588).
+- **Role access plan (D-80):** PR 1, the FD-23 journey leak (#600). PR 2, bug fixes (#606). PR 3, bed manager site actions (#607, #674). PR 4, sender tools, cover limits and a 12 month role ceiling (#608, #609, #617). PR 5 so far: officers see their own service's jobs with risk flags (#637), phone alerts and a community Movements screen (#666), and opening a referral's full detail logged as a record view (#667, part 1).
+- **Save confirmation and Retry:** ED examination, expiry, correction, medical and referral saves, and community contact saves, wait for confirmation before clearing drafts or showing success (#631, #644, #653, #654, #655, #659, #642). Retry stays inside the open record sheet (#629), retried saves confirm privately (#639), and a reload warns before unsaved shared recovery is lost (#624).
+- **Accessibility:** modal focus, live announcements above drawers, toast focus return, label, contrast and 44px phone target fixes (#638, #640, #641, #643, #645 to #652).
+- **Privacy and security:** hidden record existence is concealed in commands (#664), receiving contact history is filtered (#663), audit failures stay in their test workspace (#665), copies start with the synthetic line and carry no UMRN (#539), and destinations outside a desk's own wards keep their ward names (#668). Optional server Sentry (#541). Braces review of 21 October, next on 5 November (#532).
+- **Output, print and recovery:** export scope and print timestamps (#620, #634), downtime packs keep recorded observations (#627), print fixes (#626, #630, #632, #633), and recovery validation for restrictive practice and paper expiry corrections (#623, #635).
+- **Forecasting, performance and tidy-up:** forecasting features (#598). Phone script budget and performance work (#549, #656, #658, #660 to #662). Unused helpers, chart CSS and the unreachable phone ward sheet are removed (#596, #601, #604, #610, #614, #616).
+
+## Decision status (D-numbers)
+
+Status of every decision in [decisions.md](decisions.md), D-1 to D-80, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 is only the next free number (`next-decision` in [FACTS.md](../FACTS.md)); no D-81 entry exists yet.
+
+| No.  | Short title                                   | Status                | Evidence                                                                      |
+| ---- | --------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| D-1  | Local only, no linked repository              | Dropped or superseded | Replaced by D-27                                                              |
+| D-2  | Railway disconnected                          | Dropped or superseded | Hosting record of 27 September, [`hosting.md`](../hosting.md)                 |
+| D-3  | Retire PsychSift and Database code            | Built                 | Dedicated repository; clean-up #412                                           |
+| D-4  | Synthetic patients only                       | Policy only           | `src/lib/synthetic-data-guard.ts`                                             |
+| D-5  | Parallel worktrees, folded one at a time      | Policy only           | Blanket retest replaced by D-26                                               |
+| D-6  | Aboriginal cultural safety review deferred    | Policy only           | See D-36, D-37                                                                |
+| D-7  | First four milestones, in order               | Policy only           | [`roadmap.md`](roadmap.md)                                                    |
+| D-8  | Standing rulings R1 to R16                    | Policy only           | R1 replaced by D-27                                                           |
+| D-9  | Rulings R17 to R21                            | Unverified            | Product items not re-checked one by one                                       |
+| D-10 | Gate build type check (R22)                   | Built                 | `scripts/ward-flow/gate-build-flag.mjs`                                       |
+| D-11 | Rulings R23 to R25                            | Dropped or superseded | R24 and R25 replaced by D-26; R23 not re-checked                              |
+| D-12 | Rulings R26 to R31                            | Built                 | `gate-tsc.mjs`, `related-tests.mjs`; R28 and R31 replaced by D-26             |
+| D-13 | Tooling tests in batch gates (R32)            | Built                 | `TOOLING_TESTS` in `scripts/check-ward-expected-reds.mjs`                     |
+| D-14 | Standing defaults for small choices           | Policy only           | —                                                                             |
+| D-15 | Rulings R33 to R35                            | Unverified            | `tsconfig.ward-gate.json` present; R33 and R35 not re-checked                 |
+| D-16 | No legal override; receipts on nine forms     | Built                 | `OVERRIDE_LEGAL_MISMATCH` gone, `FLAG_LEGAL_MISMATCH` kept                    |
+| D-17 | Morning roll-up is Josh's default             | Built                 | `MORNING_ROLLUP_TIME_MINUTES`                                                 |
+| D-18 | Privacy lock only for typed text              | Built                 | `eventCarriesTypedTextPayload`; narrowed by D-67, D-72                        |
+| D-19 | 25 September evening rulings                  | Unverified            | Many items; not re-checked one by one                                         |
+| D-20 | High-contrast colour check retired            | Unverified            | Named archive note is not in this repository                                  |
+| D-21 | Coordinator bed board, nine answers           | Unverified            | Capacity bed board exists; items not re-checked                               |
+| D-22 | No legal limits in hour rules                 | Built                 | `ward-operational-defaults.ts`                                                |
+| D-23 | Leave-bed fields kept; search not by ward     | Unverified            | `leaveOpenWarning` present; search change not re-checked                      |
+| D-24 | Hour-rules morning list, all A                | Built                 | `LONG_WAIT_MINUTES`, `DUE_SOON_URGENT_MINUTES`                                |
+| D-25 | Lone-patient check reads free beds            | Built                 | `ward-eligibility.ts`                                                         |
+| D-26 | Select fold checks by changed risk            | Unverified            | `select-fold-gate.mjs` not in repository; PR checks scope-selected (#506)     |
+| D-27 | Dedicated `BigSimmo/Ward-Flow` repository     | Policy only           | AGENTS.md hard rule 2                                                         |
+| D-28 | Design modernisation, anti-box                | Unverified            | Item 4 replaced by D-42                                                       |
+| D-29 | Act time limits as a labelled demo            | Dropped or superseded | Replaced by D-70; `act-periods-demo.ts` deleted                               |
+| D-30 | Coordinator approval for inter-ward transfers | Unverified            | Not found by source search                                                    |
+| D-31 | Gender-diverse placement needs review         | Built                 | `ward-eligibility.ts`                                                         |
+| D-32 | Wait-order queues with triage badges          | Built                 | Restored by D-71 (#490)                                                       |
+| D-33 | Ward shift notes stay local                   | Unverified            | Not re-checked                                                                |
+| D-34 | Medical deterioration releases the bed        | Built                 | `ward-flow-record-events.ts`, `ed-medical-placement-controls.tsx`             |
+| D-35 | Regional multi-leg transport deferred         | Policy only           | Deferred                                                                      |
+| D-36 | External governance hard gates                | Policy only           | Gates stay parked                                                             |
+| D-37 | Governance postures and roadmap               | Policy only           | Azure parts superseded by D-55                                                |
+| D-38 | Leave, AWOL and CTO on the Patient page       | Built                 | `RECORD_ABSENT_WITHOUT_LEAVE`, `RECORD_COMMUNITY_TREATMENT_ORDER`             |
+| D-39 | UMRN, never a WF number                       | Built                 | `movementUmrn`, `ward-patient-resolver.ts`                                    |
+| D-40 | A second CTO keeps the first                  | Built                 | `earlier` in `ward-patients.ts`                                               |
+| D-41 | Delays filters state the hidden count         | Built                 | "Show everyone"; Delays renamed Waiting (#474)                                |
+| D-42 | 12px floor, no uppercase exception            | Built                 | `--wf-fs-11` alias in `ward-flow-v9-tokens.css`                               |
+| D-43 | Colour in glyphs; red is a 1px edge           | Built                 | `--wf-act-edge`                                                               |
+| D-44 | Compact sizing and white cards                | Unverified            | Not re-checked                                                                |
+| D-45 | Phone is its own 390×844 design               | Unverified            | Phone layouts exist; `--wf-bp-narrow` not found                               |
+| D-46 | Focal part, own part and hero per page        | Unverified            | Not re-checked                                                                |
+| D-47 | Glass about 80% opaque with sheen             | Built                 | `saturate(1.4)` glass in `src/components/wf/`                                 |
+| D-48 | Figures in Geist Mono, tabular digits         | Unverified            | `tabular-nums` present; font use not re-checked                               |
+| D-49 | 44px default row, dense and touch             | Built                 | `data-density` in `ward-flow-v9-tokens.css`                                   |
+| D-50 | Neutral T1 pill; amber Form 1A badge          | Unverified            | Not re-checked                                                                |
+| D-51 | Queues highlight; Delays hides with count     | Unverified            | `HighlightPills` not found                                                    |
+| D-52 | 10 October page review rulings                | Unverified            | `--wf-overdue-zone` present; other items not re-checked                       |
+| D-53 | Elevate design language and Glare mode        | Built                 | `ward-flow-v9-tokens.css`, `v10-parts.tsx`; `CommandPalette` later dropped    |
+| D-54 | Tier thresholds need clinical sign-off        | Policy only           | Open until health service sign-off                                            |
+| D-55 | Supabase provider; Azure retired              | Built                 | `backend/ward-flow/`, [DATABASE.md](DATABASE.md)                              |
+| D-56 | Josh signs sourced clinical values            | Built                 | `ward-clinical-values.ts`                                                     |
+| D-57 | Twenty Top 25 items into real screens         | Partly built          | Items 9 (later D-60) and 16 (parked) not built in it                          |
+| D-58 | Josh signs three nationally sourced values    | Built                 | `ward-clinical-values.ts`                                                     |
+| D-59 | One role access table, default deny           | Built                 | `ward-role-access.ts`, `ward-access-scope.ts`                                 |
+| D-60 | Criteria led discharge, voluntary only        | Built                 | `ward-discharge-criteria.ts`                                                  |
+| D-61 | Tasks and Alerts are one queue                | Built                 | Signed off by D-62                                                            |
+| D-62 | Alerts queue flag removed                     | Built                 | `alerts-one-queue` flag gone                                                  |
+| D-63 | Remaining clinical values signed              | Built                 | `dischargeCriteriaValidity` in `ward-clinical-values.ts`                      |
+| D-64 | Criteria led discharge on boards              | Built                 | CLD chips in `ward-discharge-criteria.ts`                                     |
+| D-65 | CLD on in production; typed criteria          | Built                 | `sessionLimit`; AWOL review back on (#487)                                    |
+| D-66 | Granted roles need no second approval         | Built                 | `/approve` refusal in `backend/ward-flow/shared-http.mjs`                     |
+| D-67 | Session draft recovery for forms              | Built                 | `referrals/referral-draft-store.ts`                                           |
+| D-68 | Bed meeting TV content and access             | Built                 | Ward access in `ward-role-access.ts`; item 3 replaced by D-79                 |
+| D-69 | No legal status needs involuntary bed         | Built                 | `involuntaryBedNeededForLegalStatus`                                          |
+| D-70 | No computed Act periods                       | Built                 | `act-periods-demo.ts` deleted                                                 |
+| D-71 | Audit 1 clinical safety fixes                 | Built                 | #490, #504                                                                    |
+| D-72 | Seven fix plan product decisions              | Partly built          | #533, #534, #542, #553; six screens withdrawn (D-74); history table pending   |
+| D-73 | Batch merge safeguards                        | Policy only           | Item 5 replaced by a lighter substitute                                       |
+| D-74 | Owner answers, 21 October                     | Built                 | Build items: #564, #578, #611; Realtime closed, six screens cancelled         |
+| D-75 | UX follow-up, caching, extra-travel hold      | Built                 | `extraTravelHold`; PERF-03 in `src/proxy.ts`                                  |
+| D-76 | Community move journey and Ask more wards     | Built                 | #578, #611                                                                    |
+| D-77 | Ten bigger UX changes                         | Built                 | #557, #558, #560, #561, #566, #568, #587, #599                                |
+| D-78 | One decline list                              | Built                 | #579                                                                          |
+| D-79 | Wards see the full referral first             | Built                 | #588                                                                          |
+| D-80 | Role access plan version 2                    | Partly built          | PRs 1 to 4 merged; PR 5 in part; item 14 mock-ups and item 17 (pilot) pending |
 
 ## What is built
 

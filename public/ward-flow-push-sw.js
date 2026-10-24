@@ -4,8 +4,8 @@
  * switch (shell/ward-phone-push.ts), both with scope /ward-flow, so Home is covered too.
  *
  * Push: shows the notification the Ward Flow server sent and opens Ward Flow when it is tapped. It
- * shows only the server's generic words (a count, a site and "Synthetic demo data"), and opens only
- * a Ward Flow path on this site.
+ * shows only the server's generic words (a count, a site and "Synthetic demo data"), checked against
+ * the exact templates the server builds (PS-13), and opens only a Ward Flow path on this site.
  *
  * Caching (D-18): only static files, never pages or data. `wardFlowCacheRule` decides, and it is
  * unit-tested (tests/ward-pwa-worker.test.ts). Kept: the build's hashed files under /_next/static
@@ -17,6 +17,19 @@
 const WARD_FLOW_PATH = "/ward-flow";
 const ALERTS_PATH = `${WARD_FLOW_PATH}/alerts`;
 const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
+// The only words a push may show: the templates pushPayload builds in backend/ward-flow/push.mjs.
+// Anything else, such as free text that could name a person, is replaced by FALLBACK (PS-13). A site
+// is allowed only as a short plain label.
+const PUSH_WHERE = "(?:Ward Flow network|\\d{1,5} sites|[A-Za-z0-9][A-Za-z0-9 '&.()-]{0,59})";
+const PUSH_TITLES = [
+  /^Ward Flow: \d{1,5} new act now items?$/,
+  /^Ward Flow: \d{1,5} new or changed transport jobs?$/,
+  /^Ward Flow: \d{1,5} updates? for your team$/,
+];
+const PUSH_BODIES = [
+  new RegExp(`^${PUSH_WHERE}\\. Open (?:Alerts|Transport jobs) to review\\. Synthetic demo data\\.$`),
+  /^A referral answered, or a client admitted or discharged\. Open Alerts to review\. Synthetic demo data\.$/,
+];
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.
 const OPEN_MESSAGE = "ward-flow-open";
 
@@ -101,6 +114,12 @@ function wardFlowPath(value) {
 
 function shortText(value, fallback, limit) {
   return typeof value === "string" && value.trim() && value.length <= limit ? value : fallback;
+}
+
+/** Push words only when they are short and match one of the server's templates; else the fallback. */
+function pushText(value, fallback, limit, templates) {
+  const text = shortText(value, fallback, limit);
+  return templates.some((template) => template.test(text)) ? text : fallback;
 }
 
 // Only hashed build files are trimmed: the offline page and icons were added first at install, so
@@ -198,8 +217,8 @@ self.addEventListener("push", (event) => {
   } catch {
     data = {};
   }
-  const title = shortText(data.title, FALLBACK.title, 120);
-  const body = shortText(data.body, FALLBACK.body, 240);
+  const title = pushText(data.title, FALLBACK.title, 120, PUSH_TITLES);
+  const body = pushText(data.body, FALLBACK.body, 240, PUSH_BODIES);
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
