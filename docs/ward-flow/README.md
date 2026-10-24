@@ -12,6 +12,7 @@ _Updated 2026-10-21 - audience navigation and task/history boundaries; Documenta
 | Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)         |
 | Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md) |
 | Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                     |
+| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                         |
 
 ## What Ward Flow is
 
