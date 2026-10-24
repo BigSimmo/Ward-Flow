@@ -163,7 +163,14 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
                 <table
                   className={styles.a2Table}
                   data-columns={isTabletPortrait ? "priority" : "all"}
-                  aria-label="Emergency department board, longest wait first"
+                  // Item 4: the name follows the Sort choice, so it never claims an order the rows lack.
+                  aria-label={`Emergency department board, ${
+                    patientSort === "longest"
+                      ? "longest in ED first"
+                      : patientSort === "name"
+                        ? "A to Z by patient name"
+                        : "in current order"
+                  }`}
                 >
                   <colgroup>
                     {columns.map((column) => (

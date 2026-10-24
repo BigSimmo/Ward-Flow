@@ -2,6 +2,8 @@
 
 _Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
+_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->13<!-- /fact --> migrations, latest <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
+
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
 manager and privacy officer need to review and sign it off. Prepared 18 October 2026 for readiness
@@ -32,6 +34,8 @@ All tables are in the `ward_flow` schema of the Supabase database named in
 | Supabase Auth        | Staff sign-in accounts (email, password hash), held by Supabase outside `ward_flow`                                                                     | Staff only. Supabase's own log retention is unconfirmed |
 
 `record_access` and `session_sign_outs` arrive with migration 11 (readiness items 8 and 9).
+Migration 12 adds indexes only, and migration 13 lets `record_access` log a referral view (D-80).
+Neither adds a table.
 `audit`, `record_access` and `break_glass` are append-only. The database refuses any change or
 removal, including by the backend itself.
 

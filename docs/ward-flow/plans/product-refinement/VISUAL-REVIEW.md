@@ -1,5 +1,9 @@
 # Q004 visual review — active lean policy
 
+> **Historical evidence, 13 September 2026.** A dated visual-acceptance record for the drawing-era build. It is not current acceptance. For current visual checks see [building-ui.md](../../../agents/building-ui.md) and the [active screen checklist](../../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Owner approved risk-based coverage and removed numerical scoring from active delivery on 2026-09-13. The rubric below and previous scores are **historical material retained for a future polish pass**, not current acceptance requirements.
 
 - Compare each changed page against its served HTML drawing at 1440px in light and dark. Fix material reference mismatches, unreadable content, hidden actions, misleading data, clipping and broken scrolling/navigation.

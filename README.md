@@ -1,6 +1,8 @@
 # Ward Flow
 
-_Updated 2026-10-21 - link the documentation portal; Documentation owns._
+<!-- last-checked: 2026-10-24 -->
+
+_Updated 2026-10-24 - link the operations runbook and the release tags; Documentation owns._
 
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
@@ -52,7 +54,8 @@ npm ci --prefix backend/ward-flow
 
 - Every pull request runs [Ward Flow CI](.github/workflows/ward-flow.yml). Its scope plan selects executable static checks, eight unit shards, browser journeys, the release gate and a production build; documentation checks and a secret scan still run for narrower changes. See [scope by change](docs/ward-flow/PUBLIC-CI.md#scope-by-change). `Ward Flow required` checks the selected results and permitted skips.
 - Dependabot opens grouped dependency updates each Monday.
-- Railway deploys `main` automatically through its GitHub integration. Build, start and health check settings are recorded in [hosting](docs/hosting.md). A green CI run does not prove a deploy; check the hosted app directly.
+- Railway deploys the `live` branch, not `main`. A daily release workflow at 6 am Perth moves `live` to the newest CI-passed `main` commit ([HOW-WE-WORK §4](docs/ward-flow/HOW-WE-WORK.md#4-integration-in-the-dedicated-repository)), so merging into `main` does not change the live site. Build, start and health check settings are recorded in [hosting](docs/hosting.md); day-to-day checks and rollback are in the [operations runbook](docs/ward-flow/OPERATIONS-RUNBOOK.md). A green CI run does not prove a deploy; check the hosted app directly.
+- Each `main` commit that passes CI is tagged `release-YYYY-MM-DD-<short sha>` ([release tag workflow](.github/workflows/release-tag.yml)), giving a named point to compare or roll back to.
 
 ## Where to read next
 

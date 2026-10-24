@@ -1,5 +1,9 @@
 # Build contract — Out of area (`/mockups/ward-flow/out-of-area`)
 
+> **Historical build contract, 12 September 2026.** Written for the drawing-era `/mockups/ward-flow/*` routes, which moved to `/ward-flow/*` on 19 October 2026. Its routes, paths and line counts are from that date. Some tests still cite it in comments; check current source and tests before relying on any claim. Current entry: [Ward Flow README](../README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Drawing: `design/third-edition-mockups/out-of-area-third-edition.html` (8233 lines).
 Read-only research. No repository file touched.
 

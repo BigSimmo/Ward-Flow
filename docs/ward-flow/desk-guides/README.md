@@ -1,5 +1,7 @@
 # Ward Flow desk guides
 
+<!-- last-checked: 2026-10-24 -->
+
 One printable page for each desk. Each guide says what the desk sees first, the jobs it does most,
 what it cannot do, and how to tell that a change was saved.
 

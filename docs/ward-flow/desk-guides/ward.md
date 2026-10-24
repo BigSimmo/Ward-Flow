@@ -1,5 +1,7 @@
 # Desk guide: Ward (nurse in charge)
 
+<!-- last-checked: 2026-10-24 -->
+
 You run your own ward's beds and answer the referrals sent to it.
 
 ## What you see first

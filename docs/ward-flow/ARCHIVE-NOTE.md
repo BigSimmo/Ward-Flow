@@ -1,5 +1,7 @@
 # Ward Flow docs — archive note
 
+_Updated 2026-10-24 - live list brought up to date with the current entry points; Documentation owns._
+
 Dated handovers, owner-answer dumps, and one-off measurement notes are **historical**.
 
 ## Live (use these)
@@ -10,6 +12,10 @@ Dated handovers, owner-answer dumps, and one-off measurement notes are **histori
 4. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — builder workflow
 5. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — task ledger
 6. [`OWNER-RULINGS.md`](OWNER-RULINGS.md) — rulings index (open cited sources)
+7. [`../task-receipts.md`](../task-receipts.md) — current task and evidence handoff
+8. [`decisions.md`](decisions.md) — decision log (D-numbers)
+9. [`DATABASE.md`](DATABASE.md) and [`OPERATIONS-RUNBOOK.md`](OPERATIONS-RUNBOOK.md) — provider and hosted operations
+10. [`desk-guides/`](desk-guides/README.md), [`STAFF-RELEASE-NOTES.md`](STAFF-RELEASE-NOTES.md) and [`DEMO-SCRIPT.md`](DEMO-SCRIPT.md) — staff-facing pages
 
 ## Archived
 

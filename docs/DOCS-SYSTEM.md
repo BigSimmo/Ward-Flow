@@ -2,7 +2,7 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-21 - align committed-document checks, reader metadata and safe organisation changes; Documentation owns._
+_Updated 2026-10-24 - site-map write command matches `package.json`; external skills marked as not shipped in the repository; Documentation owns._
 
 ## Principles
 
@@ -39,7 +39,7 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 
 | Generated file                                                                                          | Write / refresh command                                                                                  | Check command                                            |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [`site-map.md`](site-map.md)                                                                            | `npx tsx scripts/generate-site-map.ts --write`                                                           | `npm run sitemap:check`                                  |
+| [`site-map.md`](site-map.md)                                                                            | `npm run sitemap:update` (or `npm run docs:update`, which also refreshes the script counts)              | `npm run sitemap:check`                                  |
 | [`scripts-index.md`](scripts-index.md)                                                                  | `node scripts/update-docs-inventory.mjs`                                                                 | `npm run docs:check-inventory`                           |
 | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md)                                                    | `node scripts/ward-flow/screen-map.mjs --write`                                                          | `node scripts/ward-flow/screen-map.mjs --check`          |
 | [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                  | `node scripts/ward-flow/screen-verification.mjs --write`                                                 | `node scripts/ward-flow/screen-verification.mjs --check` |
@@ -56,8 +56,9 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to compare the exact tracked-script and package-command counts in `docs/scripts-index.md`. The rest of that catalogue is curated; count equality does not establish catalogue completeness or semantic freshness.
 5. **Ward Flow relative doc links, including history:** run `node scripts/ward-flow/check-doc-links.mjs` directly (no `--file`) to check `docs/ward-flow/` with archived sections. `npm run docs:check-links` excludes marked history sections.
 6. **Staged checks, committed-tree checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; general site-map, inventory and codebase-index checks remain advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. The local CI definition also checks the committed screen map, drawing manifest, screen-verification index, exact script counts and architecture directory coverage directly, including documentation-only scope. The site-map check runs after dependencies install; changes to its route, generator and root output inputs select that installation. Owner-rulings, rules and organisation retain their independent scope selection. This describes workflow wiring, not an observed hosted result. Separately, `node scripts/check-stale-docs.mjs` reports old, unreferenced documents; it is advisory and does not detect generated-file drift.
-7. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
-8. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
+7. **Living-docs freshness (`npm run docs:freshness`):** pages that describe the app as it is now (entry READMEs, STATUS, demo script, operations runbook, staff release notes, DATABASE, local first run and every desk guide; the list is in `scripts/check-living-docs-freshness.mjs`) carry an invisible `<!-- last-checked: YYYY-MM-DD -->` marker near the top. The check warns when a marker is missing or more than 14 days older than the HEAD commit. It works on shallow clones and runs inside `docs:maintain:check`. It is advisory; `--strict` makes it fail. Update the date only after checking the page against the current app.
+8. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
+9. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
 
 ## Facts and retired terms
 
@@ -127,5 +128,6 @@ Ward Flow is in `BigSimmo/Ward-Flow`. `BigSimmo/Database` is the separate PsychS
 
 ## Related
 
-- Agent skills: **Documentation Operating System**, **Docs Freshness Audit**.
-- Weekday freshness sweep routine (Documentation bot).
+- Agent skills named **Documentation Operating System** and **Docs Freshness Audit**, and a weekday
+  freshness sweep (Documentation bot), live outside this repository. It ships no `.claude` or
+  `.agents` folder, so check that a skill is actually installed before relying on it.
