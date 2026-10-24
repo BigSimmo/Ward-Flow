@@ -885,6 +885,13 @@ export type WardFlowEvent =
        * constrains future callers rather than this one.
        */
       actingUnitId?: string;
+      /**
+       * Audit 24-7 (CT-06): the pull an Undo was offered for — the unit and the index of its
+       * `to: "pulled"` entry in `stageChanges`. When given, the release is refused unless that entry
+       * is still the movement's latest stage change at that unit, so an Undo never releases a
+       * different pull made since. Absent for every other caller, which behave as before.
+       */
+      expectedPull?: { unitId: string; stageIndex: number };
     }
   | {
       /**

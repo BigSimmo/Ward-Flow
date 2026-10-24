@@ -48,6 +48,19 @@ import { wardCopyReadmission } from "@/components/ward-management/ward-readmissi
 
 export { pullBlockedReason };
 
+/** Audit 24-1 (B-09) / Audit 24-7 (CT-22): a second tap this soon after Pull a bed is the same
+ *  double tap, so it never lands on the Release button that appears below. */
+export const PULL_SECOND_TAP_GUARD_MS = 600;
+
+/** Wall-clock milliseconds since a tap, read only inside event handlers and refs. */
+function msSinceTap(tap: { at: number }): number {
+  return Date.now() - tap.at;
+}
+
+function tapNow(): number {
+  return Date.now();
+}
+
 function originPlaceLabel(movement: Movement): string {
   if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
   return originName(movement) ?? "Emergency department";
@@ -106,6 +119,24 @@ export function WardArrivalsCorridor({
   // Audit 1, Josh 20 Oct (CS-07): releasing a stopped transport's held bed asks first, naming the person.
   const [releaseHeldId, setReleaseHeldId] = React.useState<string | null>(null);
   const releaseHeldMovement = heldAfterStop.find((movement) => movement.id === releaseHeldId);
+  // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first too.
+  const [releaseDivertedId, setReleaseDivertedId] = React.useState<string | null>(null);
+  const releaseDivertedMovement = accepted.find((movement) => movement.id === releaseDivertedId);
+  // Audit 24-1 (B-09) / Audit 24-7 (CT-22): after Pull a bed the button goes, so focus moves to the
+  // card's "Bed pulled" status line, and a second tap within the guard is ignored by Release.
+  const pullTapRef = React.useRef<{ movementId: string; at: number } | null>(null);
+  const pendingPulledFocusRef = React.useRef<string | null>(null);
+  const focusPulledStatus = (movementId: string) => (element: HTMLParagraphElement | null) => {
+    if (element === null || pendingPulledFocusRef.current !== movementId) return;
+    pendingPulledFocusRef.current = null;
+    // A pull the engine refused and that lands much later never steals focus.
+    const tap = pullTapRef.current;
+    if (tap !== null && tap.movementId === movementId && msSinceTap(tap) < 5000) element.focus();
+  };
+  const isSecondTapAfterPull = (movementId: string) => {
+    const tap = pullTapRef.current;
+    return tap !== null && tap.movementId === movementId && msSinceTap(tap) < PULL_SECOND_TAP_GUARD_MS;
+  };
   // CS-07: Confirm arrival goes through the undo-offering step, so a mis-tap can be taken back
   // (`UNDO_TRANSPORT_STEP`). A refusal is still said inline by the card, as before.
   const routeRole = useRouteRole();
@@ -348,6 +379,8 @@ export function WardArrivalsCorridor({
                           blocked
                             ? ignoreUnavailableActivation
                             : () => {
+                                pullTapRef.current = { movementId: movement.id, at: tapNow() };
+                                pendingPulledFocusRef.current = movement.id;
                                 if (onPullPatient) {
                                   onPullPatient(movement.id, unit.id);
                                 } else {
@@ -398,12 +431,25 @@ export function WardArrivalsCorridor({
 
                   {canRelease ? (
                     <div>
+                      {/* Audit 24-1 (B-09): this line takes Pull a bed's place, so Release sits below it. */}
+                      <p
+                        ref={focusPulledStatus(movement.id)}
+                        tabIndex={-1}
+                        role="status"
+                        className={styles.cancelNote}
+                        data-testid={`ward-pulled-status-${movement.id}`}
+                      >
+                        Bed pulled for {patientIdentityLine(patientInfo)}.
+                      </p>
                       <button
                         type="button"
                         data-testid={`ward-release-pull-toggle-${movement.id}`}
                         aria-expanded={releaseOpen}
                         className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
-                        onClick={() => toggleRelease(movement.id)}
+                        onClick={() => {
+                          if (isSecondTapAfterPull(movement.id)) return;
+                          toggleRelease(movement.id);
+                        }}
                       >
                         Release the pulled bed
                       </button>
@@ -418,15 +464,7 @@ export function WardArrivalsCorridor({
                         type="button"
                         data-testid={`ward-release-diverted-bed-${movement.id}`}
                         className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
-                        onClick={() =>
-                          dispatch({
-                            type: "RELEASE_DIVERTED_BED",
-                            role: "ward",
-                            now,
-                            movementId: movement.id,
-                            actingUnitId: unit.id,
-                          })
-                        }
+                        onClick={() => setReleaseDivertedId(movement.id)}
                       >
                         Release the pulled bed
                       </button>
@@ -560,6 +598,35 @@ export function WardArrivalsCorridor({
         {releaseHeldMovement ? (
           <p data-testid="ward-release-stopped-identity">
             Check: {patientIdentityLine(resolvePatientIdentity(releaseHeldMovement))}
+          </p>
+        ) : null}
+      </Dialog>
+      <Dialog
+        open={releaseDivertedMovement !== undefined}
+        onClose={() => setReleaseDivertedId(null)}
+        size="sm"
+        title="Release pulled bed?"
+        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted journey is closed. This cannot be undone.`}
+        secondary={[{ label: "Cancel", onAction: () => setReleaseDivertedId(null) }]}
+        primary={{
+          label: "Release pulled bed",
+          onAction: () => {
+            setReleaseDivertedId(null);
+            if (!releaseDivertedMovement) return;
+            dispatch({
+              type: "RELEASE_DIVERTED_BED",
+              role: "ward",
+              now,
+              movementId: releaseDivertedMovement.id,
+              actingUnitId: unit.id,
+            });
+          },
+        }}
+        data-testid="ward-release-diverted-confirm"
+      >
+        {releaseDivertedMovement ? (
+          <p data-testid="ward-release-diverted-identity">
+            Check: {patientIdentityLine(resolvePatientIdentity(releaseDivertedMovement))}
           </p>
         ) : null}
       </Dialog>
