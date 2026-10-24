@@ -2,6 +2,8 @@
 
 import { useState, useSyncExternalStore } from "react";
 
+import { OverlayPortal } from "@/components/wf/overlay-root";
+
 import { openWardHelp } from "./ward-help-events";
 import styles from "./ward-whats-new.module.css";
 
@@ -49,7 +51,10 @@ function shouldShow(): boolean {
 
 const noSubscribe = () => () => {};
 
-/** The note itself: a small card in the corner, never a dialog, so it blocks nothing on screen. */
+/**
+ * The note itself: a small card in the corner, never a dialog, so it blocks nothing on screen. It is
+ * portalled out of the header, whose backdrop filter would otherwise pin a fixed card to the header.
+ */
 export function WardWhatsNew() {
   // Read once from the device; the server and hydration read "not shown".
   const due = useSyncExternalStore(noSubscribe, shouldShow, () => false);
@@ -60,30 +65,32 @@ export function WardWhatsNew() {
     setClosed(true);
   };
   return (
-    <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">
-      <h2 id="ward-whats-new-title" className={styles.title}>
-        What&apos;s new
-      </h2>
-      <ul className={styles.list}>
-        {WHATS_NEW.lines.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
-      <div className={styles.buttons}>
-        <button
-          type="button"
-          className={styles.primary}
-          onClick={() => {
-            close();
-            openWardHelp("desk");
-          }}
-        >
-          Open Help
-        </button>
-        <button type="button" className={styles.secondary} onClick={close} data-testid="ward-whats-new-close">
-          Got it
-        </button>
-      </div>
-    </section>
+    <OverlayPortal layer="toast" name="ward-whats-new">
+      <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">
+        <h2 id="ward-whats-new-title" className={styles.title}>
+          What&apos;s new
+        </h2>
+        <ul className={styles.list}>
+          {WHATS_NEW.lines.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <div className={styles.buttons}>
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => {
+              close();
+              openWardHelp("desk");
+            }}
+          >
+            Open Help
+          </button>
+          <button type="button" className={styles.secondary} onClick={close} data-testid="ward-whats-new-close">
+            Got it
+          </button>
+        </div>
+      </section>
+    </OverlayPortal>
   );
 }
