@@ -9,7 +9,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { Card, Select, SrOnly, StatusGlyph } from "@/components/wf";
 import { HANDOVER_SHIFTS, handoverAt, handoverSignedAt } from "./handover-model";
 import styles from "./handover-refined.module.css";
@@ -89,8 +89,15 @@ export function HandoverScopeControl({
   units: Unit[];
 }) {
   const access = useEffectiveWardAccess();
+  const { sites } = useWardNetwork();
   const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
-  const sortedEds = useMemo(() => [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name)), []);
+  const sortedEds = useMemo(
+    () =>
+      sites
+        .flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [sites],
+  );
   const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
   const scopeId = useId();
 

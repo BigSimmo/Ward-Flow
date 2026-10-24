@@ -50,7 +50,7 @@ import {
   type Referral,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
@@ -237,10 +237,6 @@ export const roleTaskLabel: Record<WardRole, string> = {
   ward: "Accept and pull bed",
 };
 
-const edServiceById = new Map<string, HealthService | undefined>(
-  allEmergencyDepartments().map((candidate) => [candidate.id, siteByCode(candidate.siteCode)?.service]),
-);
-
 const unitMapCache = new WeakMap<readonly Unit[], Map<string, Unit>>();
 
 function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
@@ -262,7 +258,8 @@ export function movementHealthService(movement: Movement): HealthService | undef
   // D-76: a journey from a community team takes the service of the location its referral gave.
   if (movement.originEdId === undefined)
     return movement.originCommunity && siteByCode(movement.originCommunity.siteCode)?.service;
-  return edServiceById.get(movement.originEdId);
+  const originEd = edById(movement.originEdId);
+  return originEd && siteByCode(originEd.siteCode)?.service;
 }
 
 /**

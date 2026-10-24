@@ -21,6 +21,7 @@ import {
   type ReferralDossier,
 } from "@/components/ward-management/ward-referral-dossier-seed";
 import { edById } from "@/components/ward-management/ward-sites";
+import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
   CLEARANCE_CHECK_LABELS,
   CLEARANCE_CHECKS,
@@ -134,6 +135,7 @@ export function WardReferralDetail({
   fit,
   onUpdateBeds,
 }: WardReferralDetailProps) {
+  const { dayZero } = useWardFlowSelect("dayZero");
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const patient = identity.patient;
   const ed = edById(movement.originEdId);
@@ -179,7 +181,7 @@ export function WardReferralDetail({
       label: "Status",
       detail: intake.medicalClearance.cleared
         ? "Cleared"
-        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${intake.medicalClearance.expectedAt}` : ""}`,
+        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}` : ""}`,
     });
   else if (dossier?.medicalClearance.clearedBy) {
     const at = timeAfter(movement, dossier.medicalClearance.clearedAfterMinutes, now);
@@ -519,7 +521,7 @@ export function WardReferralDetailDrawer({
         identity={identity}
         ageYears={ageYears}
         intake={intake}
-        dossier={seededReferralDossier(movement.id)}
+        dossier={seededReferralDossier(movement.id, movement)}
         fit={fit}
         onUpdateBeds={onUpdateBeds}
       />
