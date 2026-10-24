@@ -136,8 +136,9 @@
   color: var(--wf-ink-3);
 }
 
+/* L15 (device sweep): a label that wraps to two lines no longer drops its value below the others. */
 .figures dd {
-  margin: 0;
+  margin: auto 0 0;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
   color: var(--wf-ink-1);
 }
