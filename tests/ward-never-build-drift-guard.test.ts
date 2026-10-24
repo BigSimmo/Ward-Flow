@@ -5,8 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedSummaryText } from "@/components/ward-management/tools/ward-bed-summary";
+import { closerBedOptions } from "@/components/ward-management/out-of-area/out-of-area-model";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 
 /*
  * Never-build drift guard (Josh's standing rule, 19 Oct 2026; sweep of 24 Oct 2026). The rule
@@ -106,5 +109,24 @@ describe("never-build drift guard", () => {
         (patient.familyName.length > 3 && new RegExp(`\\b${patient.familyName}\\b`, "u").test(text)),
     );
     expect(leaks.map((patient) => patient.id)).toEqual([]);
+  });
+
+  it("closer beds for a patient away from home list wards A to Z within each travel band, never most beds first", () => {
+    const units = allUnits();
+    const { entries } = outOfAreaLedger(wardAdmissions, units, NOW_ANCHOR);
+    let checked = 0;
+    for (const entry of entries) {
+      const options = closerBedOptions(entry, units, NOW_ANCHOR);
+      for (let index = 1; index < options.length; index += 1) {
+        const [before, after] = [options[index - 1]!, options[index]!];
+        if (before.band !== after.band) continue;
+        checked += 1;
+        expect(
+          before.unit.name.localeCompare(after.unit.name, "en-AU"),
+          `${before.unit.name} then ${after.unit.name}`,
+        ).toBeLessThanOrEqual(0);
+      }
+    }
+    expect(checked, "the seed must give at least one band with two wards").toBeGreaterThan(0);
   });
 });
