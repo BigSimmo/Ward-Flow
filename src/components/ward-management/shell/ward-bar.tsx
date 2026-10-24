@@ -75,6 +75,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { WardBarScreenHelp } from "./ward-bar-screen-help";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
@@ -1141,6 +1142,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           >
             {routeTitle}
           </span>
+          {isPhone ? null : <WardBarScreenHelp title={routeTitle} className={styles.screenHelp} />}
         </div>
 
         <WardBarServiceSelector

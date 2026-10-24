@@ -12,10 +12,12 @@ import { subscribeWardHelp, type HelpView } from "./ward-help-events";
 const WardHelpSheet = dynamic(() => import("./ward-help-sheet").then((m) => m.WardHelpSheet));
 const WardTour = dynamic(() => import("./ward-tour").then((m) => m.WardTour));
 const WardTourAutoStart = dynamic(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart));
+const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
 
 /**
  * Mounted once by the header. Draws nothing until something calls `openWardHelp`, except that a
- * signed-in desk (role access on) checks whether its tour should start on its own.
+ * signed-in desk (role access on) checks whether its tour should start on its own, and whether this
+ * device has a what's new note to read.
  */
 export function WardHelpHost() {
   const [view, setView] = useState<HelpView | null>(null);
@@ -25,5 +27,10 @@ export function WardHelpHost() {
   const close = useCallback(() => setView(null), []);
   if (view === "tour") return <WardTour onClose={close} />;
   if (view !== null) return <WardHelpSheet view={view} onView={setView} onClose={close} />;
-  return signedIn ? <WardTourAutoStart onStart={startTour} /> : null;
+  return signedIn ? (
+    <>
+      <WardTourAutoStart onStart={startTour} />
+      <WardWhatsNew />
+    </>
+  ) : null;
 }
