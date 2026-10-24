@@ -43,6 +43,7 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
+import { SentReferralJourneyChanges } from "../movements/sent-journey-changes";
 import {
   sentAgo,
   sentAnswer,
@@ -157,6 +158,13 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                     ...referral.addressings.map((addressing) => sentPlaceLine(addressing, units)),
                   ].join(" "),
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
+                  // D-80: the team changes its own journey's urgency or legal status.
+                  controls: (
+                    <SentReferralJourneyChanges
+                      referralId={referral.id}
+                      patientWho={phoneName(person, "this person")}
+                    />
+                  ),
                 };
               }),
               empty: `No referral on record names ${team.name} as the team that sent it.`,
