@@ -81,6 +81,9 @@ export type SharedChangeResult = string | null;
 export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
+  /** This command's definitive answer, including after an uncertain response and same-ID Retry.
+   * Memory only: scoped forms need no access to another command's event history. */
+  confirmation?: Promise<WardCommandOutcome>;
   message?: string;
   /**
    * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
@@ -174,6 +177,7 @@ export class SharedWorkspaceClient {
     this.unloadWarningActive = needed;
   }
   private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
+  private confirmations = new Map<string, (outcome: WardCommandOutcome) => void>();
   private roleLifetime = new AbortController();
   private settle(
     commandId: string,
@@ -183,15 +187,20 @@ export class SharedWorkspaceClient {
     metadata?: WardCommandMetadata,
     partly?: string,
   ) {
-    this.completions.get(commandId)?.({
+    const outcome: WardCommandOutcome = {
       commandId,
       status,
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
       ...(partly ? { partly } : {}),
-    });
+    };
+    this.completions.get(commandId)?.(outcome);
     this.completions.delete(commandId);
+    if (status !== "failed") {
+      this.confirmations.get(commandId)?.(outcome);
+      this.confirmations.delete(commandId);
+    }
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
@@ -592,17 +601,23 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
+      const worldEpoch = this.worldEpoch;
+      return {
+        ...outcome,
+        isCurrent: () =>
+          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+        canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+      };
+    };
+    const confirmation = new Promise<WardCommandOutcome>((resolve) =>
+      this.confirmations.set(commandId, (outcome) => resolve(currentOutcome(outcome))),
+    );
     const completion = new Promise<WardCommandOutcome>((resolve) =>
       this.completions.set(commandId, (outcome) => {
-        const worldEpoch = this.worldEpoch;
         resolve({
-          ...outcome,
-          isCurrent: () =>
-            !this.disposed &&
-            !roleSignal.aborted &&
-            generation === this.viewGeneration &&
-            this.worldEpoch === worldEpoch,
-          canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+          ...currentOutcome(outcome),
+          confirmation,
         });
       }),
     );
