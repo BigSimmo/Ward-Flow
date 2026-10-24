@@ -231,7 +231,9 @@ export function newActNowItems(previousIds: ReadonlySet<string>, current: readon
  */
 export function inboxOwnerRoles(owner: string, wardNames: readonly string[] = []): WardChromeRole[] {
   const roles = new Set<WardChromeRole>();
-  if (/coordinator|bed manager/i.test(owner)) roles.add("coordinator");
+  if (/coordinator/i.test(owner)) roles.add("coordinator");
+  // D-80: a "Bed manager" row is the site bed manager's own, which it can now act on.
+  if (/bed manager/i.test(owner)) roles.add("bed_manager");
   if (/\bED\b|emergency|sending team/i.test(owner)) roles.add("ed");
   if (/ward|nurse in charge/i.test(owner) || wardNames.includes(owner)) roles.add("ward");
   if (/transport/i.test(owner)) roles.add("officer");

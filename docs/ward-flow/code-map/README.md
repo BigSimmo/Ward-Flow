@@ -5,6 +5,7 @@ and [AGENTS.md](../../../AGENTS.md).** This index routes builders to the relevan
 requiring them to treat its September census as a current specification.
 
 **Audience:** builders. **Status:** maintained navigation over dated subsystem records. **Owner:** Documentation.
+_Updated 2026-10-23 - D-72 saving summary checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 The clock and transport-route corrections were checked from source at
 `fc30c90c9cdae9a208786ade6e885750f770a7ea` on 21 October 2026; this is not a new verification of every map entry.
 
@@ -51,8 +52,9 @@ verdict it names that document.
    schedules 30-second ticks. Supplying `initialNow` pins deterministic test/render time and stops
    those ticks. Read the [provider](../../../src/components/ward-management/ward-flow-provider.tsx),
    rather than applying the older census's clock description.
-7. **Demo state saves stop once anything typed happens.** D-67 separately permits bounded
-   synthetic referral/legal form session drafts; submitted state retains the typed-event privacy lock.
+7. **D-72 permits a scrubbed device copy after typed events.** Original typed values are excluded;
+   saving stops if a safe, valid copy cannot be made. D-67 separately permits bounded synthetic
+   referral/legal form session drafts for human review. See [current persistence guidance](../STATUS.md#remaining-work-and-local-remediation).
 8. **The rendered app is the current design authority; the engine is the behaviour authority.** The
    drawings in `design/third-edition-mockups/` are background. See [Ward Flow's entry point](../README.md).
 9. **The current base is public Ward Flow `main`.** Verify the checkout and `origin` before any remote
