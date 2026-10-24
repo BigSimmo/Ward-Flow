@@ -20,6 +20,10 @@
   font: inherit;
 }
 
+.recovery:focus {
+  outline: none;
+}
+
 .recovery p {
   margin: 0;
 }

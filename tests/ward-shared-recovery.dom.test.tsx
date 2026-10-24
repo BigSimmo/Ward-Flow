@@ -105,6 +105,20 @@ describe("shared recovery within an open sheet", () => {
     expect(dialog).toHaveFocus();
   });
 
+  it("keeps keyboard focus inside the sheet when Retry is replaced by the saving status", async () => {
+    const shared = connection();
+    const view = render(<Harness shared={shared} />);
+    const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
+    const recovery = await within(dialog).findByTestId("ward-shared-recovery");
+    const retry = within(recovery).getByRole("button", { name: "Retry" });
+    retry.focus();
+    fireEvent.click(retry);
+    expect(shared.retry).toHaveBeenCalledOnce();
+    view.rerender(<Harness shared={{ ...shared, status: "saving", error: null }} />);
+    expect(within(dialog).queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(within(dialog).getByTestId("ward-shared-recovery")).toHaveFocus();
+  });
+
   it("moves recovery to the top nested sheet and back without dropping the outer draft", async () => {
     render(<Harness shared={connection()} />);
     const outer = await screen.findByRole("dialog", { name: "Synthetic record" });
