@@ -2259,9 +2259,9 @@
  * THAT WAS WRONG FOR A REASON THE SELECTOR CANNOT SHOW YOU. The CSS Module hash does confine the
  * SELECTOR to this component — that part was sound. But CUSTOM PROPERTIES INHERIT, so the real
  * exposure was never what the selector matches, it is everything that RENDERS INSIDE it.
- * `ClinicalRail` is the first child of `.screen` here and is shared chrome: it also renders on the
+ * At the time of that defect, `ClinicalRail` was the first child of `.screen` and shared chrome on the
  * coordinator screen, the community index, the discharge board, the ED screen, the escalation
- * board and the ward-flow error page, none of which are inside `.screen`. The same rail was
+ * board and the ward-flow error page, none of which were inside `.screen`. The same rail was
  * drawing its borders near 4.5:1 on this board and near 1.2:1 everywhere else — one component,
  * two appearances, decided by which page it happened to be on. Undeclared, invisible to every
  * gate, and exactly the difference a later editor deletes without knowing why it was there.

@@ -2,8 +2,8 @@
  * Task 12. A small module in its own right, following the same convention every other
  * ward-management module documents on its own root class (see `ward.module.css` and
  * `officer.module.css`): every local token this file needs is declared here, never borrowed
- * from `ClinicalRail`'s own `--ward-*` scope even though this component is always mounted
- * inside it — this stays self-sufficient regardless of where it is placed.
+ * from a navigation ancestor's `--ward-*` scope. The switcher stays self-sufficient
+ * regardless of where it is placed.
  */
 .switcher {
   composes: descendantKill from "./ward-reduced-motion.module.css";

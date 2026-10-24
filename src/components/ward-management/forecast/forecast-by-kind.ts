@@ -17,6 +17,7 @@ import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-manageme
 import { numberedBedKind, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
+import { forecastReleaseAt } from "./forecast-release-date";
 
 export type KindForecast = {
   id: BedKindId;
@@ -109,6 +110,7 @@ export function forecastByKind(
   const gaps = bedKindGaps([...movements], [...units], now, admissions);
   const openUnits = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
   const pending = releases.filter((release) => release.state !== "discharged" && openUnits.has(release.unitId));
   const flagged = new Set(pending.map((release) => release.admissionId));
   const waitingMovements = movements.filter((movement) => isOpen(movement) && WAITING_STAGES.includes(movement.stage));
@@ -123,9 +125,9 @@ export function forecastByKind(
     const gap = gaps.find((row) => row.id === id)!;
     const ofKind = (release: BedRelease) =>
       bedKindOfBed(openUnits.get(release.unitId)!, admissionById.get(release.admissionId)) === id;
-    const due = pending.filter((release) => release.expectedAt <= until && ofKind(release));
+    const due = pending.filter((release) => expectedAt(release) <= until && ofKind(release));
     const clear = due.filter((release) => release.blocker === null);
-    const onTime = clear.filter((release) => dayOf(release.expectedAt) >= dayOf(now));
+    const onTime = clear.filter((release) => dayOf(expectedAt(release)) >= dayOf(now));
     const confirmed = onTime.filter((release) => release.state === "confirmed").length;
     const expected = onTime.filter((release) => release.state === "expected").length;
     const plannedNotFlagged = admissions.filter((admission) => {

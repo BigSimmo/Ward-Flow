@@ -48,6 +48,74 @@ function windowOf(sources: ReturnType<typeof bedsForecastSources>, id: string) {
 }
 
 describe("bedsForecastSources", () => {
+  it.each([NOW + 3 * MINUTES_PER_DAY, NOW + 60])(
+    "keeps current plan provenance separate when the recorded release date is %s",
+    (reportedAt) => {
+      const flagged = release(first, { admissionId: "AD-SRC-MOVED", expectedAt: reportedAt });
+      const stay = {
+        ...wardAdmissions[0]!,
+        id: flagged.admissionId,
+        unitId: first.id,
+        expectedDischargeAt: NOW + 60,
+        dischargeDateSetAt: NOW - 10,
+        dischargeDateSetBy: "Ward manager" as const,
+      };
+      const sources = bedsForecastSources([ward(first)], [flagged], [stay], NOW);
+      const entries = sources.windows.flatMap((window) => window.wards.flatMap((unit) => unit.entries));
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        expectedAt: NOW + 60,
+        saidBy: flagged.confirmedBy,
+        saidAt: flagged.confirmedAt,
+        planDate: { recordedAt: NOW - 10, recordedBy: "Ward manager" },
+      });
+      expect(sources.laterFlagged).toBe(0);
+      expect(flagged.expectedAt).toBe(reportedAt);
+    },
+  );
+
+  it.each([true, false])("counts a current occupied discharge-plan edit as an update (flagged %s)", (flagged) => {
+    const unit = ward(first, { allocatable: { ...first.allocatable, confirmedAt: DAY_SHIFT_START - 1 } });
+    const stay: Admission = {
+      ...wardAdmissions[0]!,
+      unitId: first.id,
+      state: "occupied",
+      expectedDischargeAt: NOW + 60,
+      dischargeDateSetAt: NOW,
+    };
+    const releases = flagged
+      ? [release(first, { admissionId: stay.id, expectedAt: NOW + 60, confirmedAt: DAY_SHIFT_START - 1 })]
+      : [];
+    expect(
+      bedsForecastSources([unit], releases, [{ ...stay, dischargeDateSetAt: DAY_SHIFT_START - 1 }], NOW)
+        .notUpdatedThisShift,
+    ).toBe(1);
+    expect(bedsForecastSources([unit], releases, [stay], NOW).notUpdatedThisShift).toBe(0);
+    expect(stay.dischargeDateSetAt).toBe(NOW);
+  });
+
+  it.each([
+    { state: "departed" as const, planAt: NOW + 60, recordedAt: NOW },
+    { state: "waitlisted" as const, planAt: NOW + 60, recordedAt: NOW },
+    { state: "occupied" as const, planAt: null, recordedAt: NOW },
+    { state: "occupied" as const, planAt: NOW + 60, recordedAt: null },
+    { state: "occupied" as const, planAt: NOW + 60, recordedAt: NaN },
+    { state: "occupied" as const, planAt: NaN, recordedAt: NOW },
+  ])(
+    "does not count an inactive or unrecorded plan as a fresh update ($state, $planAt, $recordedAt)",
+    ({ state, planAt, recordedAt }) => {
+      const unit = ward(first, { allocatable: { ...first.allocatable, confirmedAt: DAY_SHIFT_START - 1 } });
+      const stay: Admission = {
+        ...wardAdmissions[0]!,
+        unitId: first.id,
+        state,
+        expectedDischargeAt: planAt,
+        dischargeDateSetAt: recordedAt,
+      };
+      expect(bedsForecastSources([unit], [], [stay], NOW).notUpdatedThisShift).toBe(1);
+    },
+  );
+
   it("splits the next 24 hours on the shift pattern, with an overdue group last", () => {
     const units = [ward(first), ward(second)];
     const releases = [

@@ -13,6 +13,22 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Keep useful panel space while either optional statistics view loads. */
+.viewLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  min-block-size: 24rem;
+  box-sizing: border-box;
+  color: var(--wf-ink-3);
+}
+
+.viewLoading p {
+  margin: 0;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
