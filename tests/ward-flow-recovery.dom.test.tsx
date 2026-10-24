@@ -81,6 +81,7 @@ describe("conservative demo recovery", () => {
         ...unit.allocatable,
         value,
         source: "ward",
+        confirmedBy: "ward",
         confirmedAt: current.now,
         revision: (unit.allocatable.revision ?? 0) + 1,
         confirmations: (unit.allocatable.confirmations ?? 0) + 1,
