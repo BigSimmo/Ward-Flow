@@ -172,6 +172,28 @@ describe("URE-05: correction note", () => {
     expect(note.value).toBe("");
     expect(screen.queryByTestId("ward-referral-correction-failure")).toBeNull();
   });
+
+  it("keeps text typed while the save was pending once the first note is accepted", async () => {
+    const pending = deferred();
+    const dispatch = vi.fn<WardCommandDispatch>(() => pending.promise);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Refer />
+        <Shared dispatch={dispatch}>
+          <LatestReferral>
+            {(referral) => <ReferralHistoryAndCorrections referral={referral} now={NOW_ANCHOR} />}
+          </LatestReferral>
+        </Shared>
+      </WardFlowProvider>,
+    );
+    const note = screen.getByTestId("ward-referral-correction-note") as HTMLTextAreaElement;
+    fireEvent.change(note, { target: { value: "Synthetic correction." } });
+    fireEvent.click(screen.getByTestId("ward-referral-add-correction"));
+    fireEvent.change(note, { target: { value: "Synthetic correction. And a second thought." } });
+    await act(async () => pending.finish({ commandId: "c-4", status: "accepted" }));
+    expect(JSON.stringify(dispatch.mock.calls[0])).toContain(String.raw`"note":"Synthetic correction."`);
+    expect(note.value).toBe("Synthetic correction. And a second thought.");
+  });
 });
 
 describe("URE-05: call log", () => {

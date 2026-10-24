@@ -64,18 +64,19 @@ export function ReferralHistoryAndCorrections({
    * note (`maxLength` on the textarea) or an unknown referral. The shared workspace can still answer
    * `failed` (a lost response, a role change) or `cancelled` (workspace not ready), so the note is
    * cleared only once the correction is recorded; otherwise it stays with the reason beside the
-   * button (production audit URE-05).
+   * button (production audit URE-05). A note edited while the save was pending is kept.
    */
   function handleAddCorrection() {
     if (trimmedNote.length === 0 || saving) return;
     setFailure(undefined);
+    const submitted = note;
     const finish = (outcome?: WardCommandOutcome | void) => {
       setSaving(false);
       const message = wardCommandFailure(outcome ?? undefined);
       if (message) setFailure(message);
-      else setNote("");
+      else setNote((current) => (current === submitted ? "" : current));
     };
-    const result = raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note });
+    const result = raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note: submitted });
     if (result instanceof Promise) {
       setSaving(true);
       result.then(finish, () => finish({ commandId: "", status: "failed" }));

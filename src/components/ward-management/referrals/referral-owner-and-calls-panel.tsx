@@ -224,13 +224,16 @@ function OwnerAndCalls({
                   setCallFailure(undefined);
                   // Production audit URE-05: the choices clear only once the call is recorded; a
                   // shared answer of failed or cancelled keeps them, with the reason beside the button.
+                  // A choice changed while the save was pending is kept.
+                  const sentContact = contactChoice;
+                  const sentOutcome = outcomeChoice;
                   const finish = (outcome?: WardCommandOutcome | void) => {
                     setCallSaving(false);
                     const message = wardCommandFailure(outcome ?? undefined);
                     if (message) setCallFailure(message);
                     else {
-                      setContactChoice("");
-                      setOutcomeChoice("");
+                      setContactChoice((current) => (current === sentContact ? "" : current));
+                      setOutcomeChoice((current) => (current === sentOutcome ? "" : current));
                     }
                   };
                   const result = raise("LOG_REFERRAL_CONTACT", {
