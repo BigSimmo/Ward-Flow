@@ -93,6 +93,22 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitReceiptCorrection,
     recordSaveState,
   } = ctx;
+  // Audit 24-1 B-06: an accepted request is live too (acceptance empties `referredUnitIds`), and
+  // withdrawing it gives back a pulled bed, by the same rule as `releasePulledBedAndAdmission`.
+  const acceptedUnitId = movement.acceptedUnitId;
+  const liveRequestCount =
+    movement.referredUnitIds.filter((unitId) => unitId !== acceptedUnitId).length + (acceptedUnitId ? 1 : 0);
+  const bedPulled =
+    acceptedUnitId !== undefined &&
+    (movement.stage === "pulled" ||
+      movement.stage === "handover_ready" ||
+      movement.stage === "moving" ||
+      movement.admissionId !== undefined);
+  const pulledWardName = acceptedUnitId
+    ? (ctx.units.find((unit) => unit.id === acceptedUnitId)?.name ?? "the accepting ward")
+    : undefined;
+  const withdrawWho = `${patientInfo.displayName} (${patientInfo.umrn})`;
+  const releasesPulledBed = bedPulled ? ` and releases the bed pulled at ${pulledWardName}` : "";
   const urgencySave = recordSaveState("urgency", movement.id);
   const legalStatusSave = recordSaveState("legalStatus", movement.id);
   const receiptSave = recordSaveState("receipt", movement.id);
@@ -124,9 +140,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       {withdrawOpen && !withdrawBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-withdraw-referral-${movement.id}`}>
           <p className={styles.cardMeta}>
-            {movement.referredUnitIds.length === 1
-              ? `Withdraw the referral for ${patientInfo.displayName}? This says the patient no longer needs a bed, so it withdraws that referral and closes the movement.`
-              : `Withdraw every live referral for ${patientInfo.displayName}? This says the patient no longer needs a bed, so it withdraws all ${movement.referredUnitIds.length} of them at once and closes the movement.`}{" "}
+            {liveRequestCount === 1
+              ? `Withdraw the referral for ${withdrawWho}? This says the patient no longer needs a bed, so it withdraws that referral${releasesPulledBed} and closes the movement.`
+              : `Withdraw every live referral for ${withdrawWho}? This says the patient no longer needs a bed, so it withdraws all ${liveRequestCount} of them at once${releasesPulledBed} and closes the movement.`}{" "}
             It cannot be undone, and it does not say where the patient went.
           </p>
           <div className={styles.actionRow}>

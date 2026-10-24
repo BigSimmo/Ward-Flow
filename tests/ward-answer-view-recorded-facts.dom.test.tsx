@@ -172,6 +172,8 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
         ];
       }),
     );
+    // Audit 24-1 D-01: the panel no longer swaps to the next request by itself; the user picks it.
+    fireEvent.click(screen.getByRole("button", { name: /^Show request 1 of / }));
     expect(shownId()).toBe("WF-AUDIT-NEXT");
     expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("standard");
     fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
