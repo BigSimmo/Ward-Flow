@@ -85,7 +85,8 @@ describe("community demonstration queue totals", () => {
     ]);
     renderTeam("midland", true);
     expectTotals(1, 1);
-    expect(within(screen.getByTestId("ward-community-waiting-list")).getAllByRole("listitem")).toHaveLength(1);
+    // Count queue rows only: a seeded referral's intake summary renders its own nested list items.
+    expect(screen.getByTestId("ward-community-waiting-list").children).toHaveLength(1);
   });
 
   it("keeps the phone queue total and rendered sample rows together", () => {
