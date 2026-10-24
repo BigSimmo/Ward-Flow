@@ -9,6 +9,7 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 
 import { downtimePack, lastDowntimeSyncAt, noteDowntimeSync, rememberDowntimePack } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
+import { useOwnUnits } from "./use-own-units";
 
 /**
  * Takes a downtime pack of the desk's current scope and remembers it in this tab's memory (D-18).
@@ -27,6 +28,9 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
     "worldGeneration",
     "shared",
   );
+  // Beds of the desk's own wards only (issue #628): another ward's stays are not in this desk's
+  // records. Every ward still names a destination.
+  const bedUnits = useOwnUnits(units);
   const patientOf = usePatientOf();
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
@@ -39,6 +43,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
       if (!ready || !canTake) return;
       const pack = downtimePack({
         units,
+        bedUnits,
         admissions,
         bedReleases,
         leaveBeds,
@@ -59,6 +64,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
     },
     [
       units,
+      bedUnits,
       admissions,
       bedReleases,
       leaveBeds,

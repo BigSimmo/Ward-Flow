@@ -282,8 +282,15 @@ export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
   let parsed: WardAccessScope | null = null;
   switch (fields.kind) {
     case "statewide":
-    case "jobs":
       parsed = only() ? { kind: fields.kind } : null;
+      break;
+    case "jobs":
+      // A granted officer holds its own service's jobs only (D-80 item 7). A row from before the
+      // service was named fails closed until it is granted again.
+      parsed =
+        only("service") && (HEALTH_SERVICES as readonly unknown[]).includes(fields.service)
+          ? { kind: "jobs", service: fields.service as HealthService }
+          : null;
       break;
     case "service":
       parsed =
