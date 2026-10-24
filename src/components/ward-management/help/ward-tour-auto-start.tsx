@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { useTourRole, useTourSeen } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
+import { markWhatsNewSeen } from "./ward-whats-new";
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 
@@ -62,6 +63,8 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
     const timer = window.setTimeout(() => {
       started.current = true;
       if (readTourAutoDone() || !markTourAutoDone()) return;
+      // A first visit gets the tour, not the what's new note as well.
+      markWhatsNewSeen();
       onStart();
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);

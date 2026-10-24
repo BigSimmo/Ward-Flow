@@ -75,7 +75,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
+import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -1119,10 +1119,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         onOpenReferral={openReferral}
         liveOverSheet={headerLiveOverSheet}
       />
-      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
-          tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
-          button, which stays the one keyboard and screen-reader control; taps inside the button's
-          own container (the button itself, the sheet and its scrim) are left to it. */}
+      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's tap
+          target, not the 91 x 18 line alone. A title tap forwards to the service button, the one keyboard
+          and screen-reader control; taps in its own container (button, sheet, scrim) are left to it. */}
       {backHref ? <WardBarBack parentHref={backHref} phone={false} /> : null}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
@@ -1144,6 +1143,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           >
             {routeTitle}
           </span>
+          {isPhone ? null : <WardHelpScreenButton title={routeTitle} className={styles.screenHelp} />}
         </div>
 
         <WardBarServiceSelector
