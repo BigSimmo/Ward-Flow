@@ -688,6 +688,8 @@ export type Movement = MovementOrigin & {
    * the person knows them without seeing the referral.
    */
   collectionRiskFlags?: import("./referrals/referral-submission").ReferralIntakeDetails["riskFlags"];
+  /** The sending ward of a ward to ward journey, on a transport officer's copy only (D-80 item 7). */
+  collectionFromUnitId?: string;
   legalStatus: LegalStatus;
   legalForm?: LegalForm;
   /**

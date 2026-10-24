@@ -249,7 +249,11 @@ const COLLECTION_FIELDS = [
  * reaches the officer. The required histories it never reads are empty, and only cancelled
  * transports are kept from the unwind trail.
  */
-function collectionMovement(movement: Movement, riskFlags: Movement["collectionRiskFlags"]): Movement {
+function collectionMovement(
+  movement: Movement,
+  riskFlags: Movement["collectionRiskFlags"],
+  fromUnitId: string | undefined,
+): Movement {
   const trimmed: Record<string, unknown> = {
     id: movement.id,
     originEdId: movement.originEdId,
@@ -277,7 +281,12 @@ function collectionMovement(movement: Movement, riskFlags: Movement["collectionR
     blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
   };
   for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
-  if (riskFlags?.length) trimmed.collectionRiskFlags = [...riskFlags];
+  // The browser scopes the server's officer copy again, with no referrals or stays left to read,
+  // so a copy keeps what the first pass found (review on PR #637).
+  const flags = riskFlags ?? movement.collectionRiskFlags;
+  if (flags?.length) trimmed.collectionRiskFlags = [...flags];
+  const from = fromUnitId ?? movement.collectionFromUnitId;
+  if (from !== undefined) trimmed.collectionFromUnitId = from;
   return trimmed as Movement;
 }
 
@@ -546,7 +555,8 @@ function officerJobInService(
   return (movement) =>
     (movement.originEdId !== undefined && places.edService(movement.originEdId) === service) ||
     unitIn(movement.acceptedUnitId) ||
-    (movement.sourceAdmissionId !== undefined && unitIn(admissionUnits.get(movement.sourceAdmissionId)));
+    (movement.sourceAdmissionId !== undefined && unitIn(admissionUnits.get(movement.sourceAdmissionId))) ||
+    unitIn(movement.collectionFromUnitId);
 }
 
 /** A patient with only what a transport officer needs: who to collect and how to keep them safe. */
@@ -916,6 +926,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     }
     case "officer": {
       const inService = officerJobInService(workspace, scope, places);
+      const admissionUnits = new Map(workspace.admissions.map((admission) => [admission.id, admission.unitId]));
       movements = workspace.movements.filter(
         (movement) =>
           movement.transport !== undefined &&
@@ -931,6 +942,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         collectionMovement(
           movement,
           movement.referralId === undefined ? undefined : riskFlags.get(movement.referralId),
+          movement.sourceAdmissionId === undefined ? undefined : admissionUnits.get(movement.sourceAdmissionId),
         ),
       );
       officer = true;

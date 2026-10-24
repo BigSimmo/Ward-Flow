@@ -111,6 +111,37 @@ describe("transport officer jobs by service (D-80 item 7)", () => {
     expect(world.movements.find((movement) => movement.id === job.id)!.collectionRiskFlags).toBeUndefined();
   });
 
+  it("keeps the jobs and flags when the browser scopes the server's officer copy again", () => {
+    const [service] = HEALTH_SERVICES.filter((candidate) => jobs.some((job) => serviceOf(job) === candidate));
+    const stay = state.admissions.find((admission) => places.unitService(admission.unitId) === service)!;
+    const elsewhereWard = state.units.find((unit) => places.unitService(unit.id) !== service)!;
+    const job = jobs[0];
+    const referral = state.referrals[0];
+    const intake = { riskFlags: ["absconding"] } as unknown as NonNullable<Referral["intake"]>;
+    // A ward to ward journey from this service's ward to another service's ward.
+    const wardToWard = {
+      ...job,
+      originEdId: undefined,
+      sourceAdmissionId: stay.id,
+      acceptedUnitId: elsewhereWard.id,
+      referralId: referral.id,
+    } as Movement;
+    const world = {
+      ...state,
+      movements: state.movements.map((movement) => (movement.id === job.id ? wardToWard : movement)),
+      referrals: state.referrals.map((candidate) =>
+        candidate.id === referral.id ? { ...candidate, intake } : candidate,
+      ),
+    };
+    const officer = officerOf(service);
+    const server = scopeWardFlowState(world, officer, options).state;
+    const browser = scopeWardFlowState(server, officer, options).state;
+    expect(browser.movements.map((movement) => movement.id)).toEqual(server.movements.map((movement) => movement.id));
+    const copy = browser.movements.find((movement) => movement.id === job.id)!;
+    expect(copy.collectionRiskFlags).toEqual(["absconding"]);
+    expect(copy.collectionFromUnitId).toBe(stay.unitId);
+  });
+
   it("makes the server require a service, and the admin offer only service officer places", () => {
     expect(parseAccess("officer", { kind: "jobs" })).toBeNull();
     expect(parseAccess("officer", { kind: "jobs", service: "Not a service" })).toBeNull();
