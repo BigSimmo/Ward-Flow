@@ -45,6 +45,34 @@ describe("opening a referral's full detail", () => {
     expect(logRecordView).toHaveBeenCalledTimes(1);
   });
 
+  it("logs the patient a referral link names when the journey has no direct link", () => {
+    const linked = state.movements.find(
+      (candidate) =>
+        candidate.patientId === undefined &&
+        state.referrals.some((referral) => referral.id === candidate.referralId && referral.patientId !== undefined),
+    )!;
+    const identity = resolveSubjectPatient(linked, state);
+    expect(identity.patient).toBeDefined();
+    const logRecordView = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedSessionContext.Provider value={{ signOut: vi.fn(), logRecordView }}>
+          <WardReferralDetailDrawer
+            movement={linked}
+            unit={unit}
+            now={NOW_ANCHOR}
+            identity={identity}
+            onClose={() => {}}
+            blocked={undefined}
+            onDecline={() => {}}
+            onAccept={() => {}}
+          />
+        </SharedSessionContext.Provider>
+      </WardFlowProvider>,
+    );
+    expect(logRecordView).toHaveBeenCalledWith(identity.patient!.id, "referral");
+  });
+
   it("logs nothing in the local demo", () => {
     expect(() => render(<WardFlowProvider initialNow={NOW_ANCHOR}>{drawer()}</WardFlowProvider>)).not.toThrow();
   });

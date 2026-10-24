@@ -1380,8 +1380,9 @@ export function createWorkspaceStore(
         surface === "patient"
           ? state.patients.some((patient) => patient.id === patientId)
           : surface === "referral"
-            ? state.referrals.some((referral) => referral.patientId === patientId) ||
-              state.movements.some((movement) => movement.patientId === patientId && movement.referralId !== undefined)
+            ? // A ward bed request needs no front-door referral link to be opened.
+              state.referrals.some((referral) => referral.patientId === patientId) ||
+              state.movements.some((movement) => movement.patientId === patientId)
             : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
       return transaction(async (client, loggedAt) => {
