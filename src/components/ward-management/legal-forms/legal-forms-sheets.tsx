@@ -22,6 +22,7 @@ import {
   CATALOGUE,
   STANDING_TONE,
   clockStanding,
+  instantFromDateAndTimeInputs,
   receiptEventAccepts,
   isOwnedLegalFormCode,
   standingWord,
@@ -34,13 +35,20 @@ const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
 /**
- * The time typed from the paper form, today. A blank, malformed, out-of-range or future time is
- * refused (null): Ward Flow records only times a person typed, never the save moment standing in
- * for one, and a form cannot have been written after now.
+ * The time typed from the paper form, on the date typed beside it (blank date = today). A blank,
+ * malformed, out-of-range or future time is refused (null): Ward Flow records only times a person
+ * typed, never the save moment standing in for one, and a form cannot have been written after now.
+ * The date lets a form written at 23:50 be recorded at 00:10 (audit 24-6 TC-03); it is read on the
+ * Perth calendar through `instantFromDateAndTimeInputs`, the same reading the extend sheet uses.
  */
-function parseWrittenInstant(value: string, now: Instant): Instant | null {
+export function parseWrittenInstant(value: string, now: Instant, date = "", dayZero?: Date): Instant | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
+  if (date !== "") {
+    if (!dayZero || !/^\d{1,2}:\d{2}$/.test(trimmed)) return null;
+    const dated = instantFromDateAndTimeInputs(date, trimmed, dayZero);
+    return dated === undefined || dated > now ? null : dated;
+  }
   const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
   if (!match) return null;
   const hours = Number(match[1]);
@@ -189,17 +197,19 @@ export function RecordFormSheet({
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
+  const [dateOnForm, setDateOnForm] = useState("");
   const [saving, setSaving] = useState(false);
   const submissionVersion = useRef(0);
-  const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration");
+  const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration", "dayZero");
+  const dayZero = world?.dayZero;
   const scenario = world?.scenario ?? "standard";
   const [storageKey] = useState(() =>
     sessionDraftKey(`${scenario}/${world?.worldGeneration ?? 0}`, "legal-record", "new"),
   );
   const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
     storageKey: world && !world.sessionAdopted ? undefined : storageKey,
-    isDirty: !!timeOnForm || !!draft.movement,
-    value: JSON.stringify({ ...draft, timeOnForm }),
+    isDirty: !!timeOnForm || !!dateOnForm || !!draft.movement,
+    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm }),
     onRestore: (raw) => {
       try {
         const restored: unknown = JSON.parse(raw);
@@ -219,6 +229,8 @@ export function RecordFormSheet({
         if (targetMovement && restored.movement !== targetMovement) return false;
         onDraft({ movement: restored.movement, form: restored.form });
         setTimeOnForm(restored.timeOnForm);
+        // A draft saved before the date field existed has no date: blank means today.
+        setDateOnForm("dateOnForm" in restored && typeof restored.dateOnForm === "string" ? restored.dateOnForm : "");
         return true;
       } catch {
         return false; /* A damaged form draft never becomes a legal record. */
@@ -231,13 +243,14 @@ export function RecordFormSheet({
       submissionVersion.current += 1;
       clearDraft();
       setTimeOnForm("");
+      setDateOnForm("");
       setSaving(false);
     }
     priorMovement.current = draft.movement;
   }, [draft.movement, clearDraft]);
   const typeRef = useRef<HTMLSelectElement | null>(null);
   const baseId = useId();
-  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
+  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now, dayZero ? dateOnForm : "", dayZero);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
   // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
   const dismiss = onClose;
@@ -253,7 +266,9 @@ export function RecordFormSheet({
           : draft.form === "3C" && movementRefuses3C(selectedMovement)
             ? "Form 3C is refused when the person arrived on a Form 3D."
             : parsedWrittenAt === null
-              ? "Enter the time written on the form as HH:MM, no later than now."
+              ? dayZero && dateOnForm !== ""
+                ? "Enter the date and time written on the form, no later than now."
+                : "Enter the time written on the form as HH:MM, no later than now."
               : undefined);
   return (
     <Sheet
@@ -274,6 +289,7 @@ export function RecordFormSheet({
               clearDraft();
               onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
               setTimeOnForm("");
+              setDateOnForm("");
               setFormKey((key) => key + 1);
             }}
           >
@@ -299,6 +315,7 @@ export function RecordFormSheet({
                 if (accepted) {
                   clearDraft();
                   setTimeOnForm("");
+                  setDateOnForm("");
                   onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
                   onClose();
                 }
@@ -343,6 +360,7 @@ export function RecordFormSheet({
             onChange={(event) => {
               clearDraft();
               setTimeOnForm("");
+              setDateOnForm("");
               onDraft({ ...draft, movement: event.target.value });
             }}
           >
@@ -371,6 +389,22 @@ export function RecordFormSheet({
             />
           </Field>
         </div>
+        {dayZero ? (
+          <Field
+            label="Date on form"
+            id={`${baseId}-legal-forms-new-date`}
+            help="Leave blank for today. Use it for a form written before midnight."
+          >
+            <TextInput
+              type="date"
+              data-testid="ward-legal-forms-new-date"
+              autoComplete="off"
+              disabled={saving}
+              value={dateOnForm}
+              onChange={(event) => setDateOnForm(event.target.value)}
+            />
+          </Field>
+        ) : null}
         <Field label="Notes" id={`${baseId}-legal-forms-new-notes`}>
           <Textarea
             readOnly
@@ -397,17 +431,31 @@ type ExtendSheetProps = {
   onClose: () => void;
   extendUnavailable?: string;
   onExtendForm: (movement: Movement, dueAt: Instant) => boolean | Promise<boolean>;
+  /** The provider's day zero, so a typed expiry date resolves to its Perth day (Audit 24-6 TC-01). */
+  dayZero?: Date;
 };
 
 export function ExtendSheet(props: ExtendSheetProps) {
   return <ExtendSheetContent key={props.target?.id ?? "closed"} {...props} />;
 }
 
-function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, onExtendForm }: ExtendSheetProps) {
+function ExtendSheetContent({
+  target,
+  label,
+  now,
+  onClose,
+  extendUnavailable,
+  onExtendForm,
+  dayZero,
+}: ExtendSheetProps) {
   const thresholds = useDueSoonThresholds();
   const baseId = useId();
   const standing = target ? clockStanding(target, now, thresholds) : "none";
-  const [expiryState, setExpiryState] = useState<{ targetId: string | undefined; value: string } | null>(null);
+  const [expiryState, setExpiryState] = useState<{
+    targetId: string | undefined;
+    value: string;
+    date?: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
   const submissionVersion = useRef(0);
@@ -417,11 +465,27 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
     },
     [],
   );
-  const expiryValue = expiryState && expiryState.targetId === target?.id ? expiryState.value : "";
-  const parsedDueAt = target ? parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt) : null;
+  const currentExpiry = expiryState && expiryState.targetId === target?.id ? expiryState : null;
+  const expiryValue = currentExpiry?.value ?? "";
+  const expiryDate = currentExpiry?.date ?? "";
+  // A typed date is the day written on the form; blank keeps the next-occurrence reading of the time.
+  const datedDueAt =
+    expiryDate !== "" && dayZero
+      ? (instantFromDateAndTimeInputs(expiryDate, expiryValue.trim(), dayZero) ?? null)
+      : null;
+  const parsedDueAt = !target
+    ? null
+    : expiryDate !== ""
+      ? datedDueAt !== null && datedDueAt > now
+        ? datedDueAt
+        : null
+      : parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt);
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
+    (expiryDate !== "" && datedDueAt !== null && datedDueAt <= now
+      ? "The new expiry written on the form is already past. Check the date and time."
+      : undefined) ??
     (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
@@ -495,10 +559,24 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
           <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />
           </Field>
+          <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
+            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
+          </Field>
           <div className={styles.fieldPair}>
-            <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
-              <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
-            </Field>
+            {dayZero ? (
+              <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
+                <TextInput
+                  type="date"
+                  data-testid="ward-legal-forms-renew-date"
+                  autoComplete="off"
+                  disabled={saving}
+                  value={expiryDate}
+                  onChange={(event) =>
+                    setExpiryState({ targetId: target.id, value: expiryValue, date: event.target.value })
+                  }
+                />
+              </Field>
+            ) : null}
             <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>
               <TextInput
                 data-testid="ward-legal-forms-renew-expiry"
@@ -509,12 +587,14 @@ function ExtendSheetContent({ target, label, now, onClose, extendUnavailable, on
                 aria-required="true"
                 disabled={saving}
                 value={expiryValue}
-                onChange={(event) => setExpiryState({ targetId: target.id, value: event.target.value })}
+                onChange={(event) =>
+                  setExpiryState({ targetId: target.id, value: event.target.value, date: expiryDate })
+                }
               />
             </Field>
           </div>
           {parsedDueAt !== null ? (
-            // The field takes a time only, so the resolved day is shown before Confirm records it.
+            // The resolved day is shown before Confirm records it, typed or read from the time alone.
             <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
               Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
             </p>

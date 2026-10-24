@@ -284,9 +284,14 @@ export function createSharedHandler({
           403,
           {
             error: "No Ward Flow role is assigned to this account",
-            // The form is offered only where a request can be filed, so not before migration 9.
-            ...(store.requestAccess
-              ? { code: "no-role", canRequest: store.takesRequests ? await store.takesRequests() : true }
+            // The form is offered only where a request can be filed, so not before migration 9. A
+            // role that names no health service (granted before one was required) is refused the
+            // same way, under its own code so the screen can say to have it given again (RA-02).
+            ...(store.requestAccess || view.needsService
+              ? {
+                  code: view.needsService ? "role-needs-service" : "no-role",
+                  canRequest: !store.requestAccess ? false : store.takesRequests ? await store.takesRequests() : true,
+                }
               : {}),
           },
           "auth_denied",

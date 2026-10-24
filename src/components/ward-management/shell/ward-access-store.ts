@@ -110,8 +110,15 @@ function emit(next: Omit<Snapshot, "access">): void {
   for (const listener of listeners) listener();
 }
 
-/** Reads a stored desk, keeping only a known role with a scope that role may hold. */
-export function parseStoredAccess(raw: string | null): WardAccess | null {
+/**
+ * Reads a stored desk, keeping only a known role with a scope that role may hold. `shared` reads a
+ * role from the shared server, which refuses a transport officer with no health service (audit
+ * 24-5 RA-02); the local demo's officer desk works across every service and keeps reading.
+ */
+export function parseStoredAccess(
+  raw: string | null,
+  { shared = false }: { shared?: boolean } = {},
+): WardAccess | null {
   if (!raw) return null;
   let value: unknown;
   try {
@@ -130,7 +137,7 @@ export function parseStoredAccess(raw: string | null): WardAccess | null {
       parsed = { kind: s.kind };
       break;
     case "jobs":
-      if (s.service === undefined) parsed = { kind: "jobs" };
+      if (s.service === undefined) parsed = shared ? null : { kind: "jobs" };
       else
         parsed =
           typeof s.service === "string" && (HEALTH_SERVICES as readonly string[]).includes(s.service)
@@ -164,6 +171,15 @@ export function parseStoredAccess(raw: string | null): WardAccess | null {
   if (!parsed) return null;
   const access = { role: role as WardAccess["role"], scope: parsed };
   return accessIsValid(access) ? access : null;
+}
+
+/** A role from the server that is a transport officer naming no health service (audit 24-5 RA-02). */
+export function sharedAccessNeedsService(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const { role, scope } = value as { role?: unknown; scope?: unknown };
+  if (role !== "officer" || !scope || typeof scope !== "object") return false;
+  const s = scope as Record<string, unknown>;
+  return s.kind === "jobs" && s.service === undefined;
 }
 
 function load(): void {
