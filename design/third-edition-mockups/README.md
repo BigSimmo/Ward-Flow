@@ -165,12 +165,16 @@ contract and not the third-edition standard**: they copy the current app's v9 to
 style. Each is one self-contained file: no network requests, no browser storage, nothing saves.
 Invented data only. Open either file straight in a browser, at desktop or phone width.
 
-| Mockup                                        | File                                                               |
-| --------------------------------------------- | ------------------------------------------------------------------ |
-| B5, "Needs you now" Home (bed coordinator)    | [`needs-you-now-home-mockup.html`](needs-you-now-home-mockup.html) |
-| B2, one ward page (nurse in charge, Dabakarn) | [`one-ward-page-mockup.html`](one-ward-page-mockup.html)           |
+| Mockup                                        | File                                                                         |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| B5, "Needs you now" Home (bed coordinator)    | [`needs-you-now-home-mockup.html`](needs-you-now-home-mockup.html)           |
+| B2, one ward page (nurse in charge, Dabakarn) | [`one-ward-page-mockup.html`](one-ward-page-mockup.html)                     |
+| D-72 item 4, six coordinator screens          | [`coordinator-six-screens-mockup.html`](coordinator-six-screens-mockup.html) |
 
-Both keep the never-build list: no scores, no ranking, no suggested ward or bed, no automatic
+The six coordinator screens mockup was added on 24 October 2026 for D-72 item 4, built from screenshots
+of the running app at `2d6f926` (three commits behind `main` `64beeda1`).
+
+All three keep the never-build list: no scores, no ranking, no suggested ward or bed, no automatic
 placement, no computed legal times, and no hold released without a person pressing Release.
 Controls outside the tried flow say "Not wired in this prototype."
 

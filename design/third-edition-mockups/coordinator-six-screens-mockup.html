@@ -1,0 +1,2465 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow mockup · Six coordinator screens (D-72)</title>
+    <!--
+      Layout try-out for owner decision D-72 item 4 (21 October 2026): six core coordinator screens.
+      Built from screenshots of the running app at 2d6f926, three commits behind main 64beeda1
+      (screenshots in .design/six-screens/screenshots/). Mock-up only, not built.
+      Self-contained: no network requests, no browser storage, nothing saves. Invented (synthetic)
+      data only, copied from the running prototype's demonstration figures.
+      Colour and size values are copied from src/app/ward-flow-v9-tokens.css (v9 tokens) through
+      one-ward-page-mockup.html and are only declared on :root. Not a build contract.
+      Never-build rule kept: no scores, no ranking, no suggested ward or bed, no automatic placement,
+      lists stay in wait order (views filter, never re-sort), no computed legal times, no hold
+      released without a person pressing Release, no patient details in emails.
+    -->
+    <style>
+      :root {
+        --wf-canvas: #e8ecf0;
+        --wf-surface: #fdfdfe;
+        --wf-surface-2: #f6f8fa;
+        --wf-track: #eceff3;
+        --wf-hover: #f2f5f8;
+        --wf-selected: #eef3f8;
+        --wf-line: rgba(22, 30, 40, 0.08);
+        --wf-line-2: rgba(22, 30, 40, 0.15);
+        --wf-line-3: rgba(22, 30, 40, 0.26);
+        --wf-ink-1: #161a20;
+        --wf-ink-2: #414953;
+        --wf-ink-3: #5b646f;
+        --wf-line-ctl: #808892;
+        --wf-accent: #245a8c;
+        --wf-accent-tint: #e3eef9;
+        --wf-accent-ink: #1f4d7a;
+        --wf-on-accent: #fff;
+        --wf-pri-1: #2f6aa3;
+        --wf-pri-2: #234f7a;
+        --wf-pri-edge: #1d4569;
+        --wf-hero-1: #22384d;
+        --wf-hero-2: #1c2f41;
+        --wf-hero-ink: #fff;
+        --wf-hero-ink-2: #c3d1de;
+        --wf-hero-ink-3: #a3b8cc;
+        --wf-hero-line: rgba(255, 255, 255, 0.16);
+        --wf-hero-chip: rgba(255, 255, 255, 0.08);
+        --wf-danger: #c4513f;
+        --wf-danger-ink: #9a3424;
+        --wf-danger-tint: #fcf0ee;
+        --wf-warning: #ac720a;
+        --wf-warning-ink: #7a5208;
+        --wf-warning-tint: #fbf5e6;
+        --wf-success: #2f8a5f;
+        --wf-success-ink: #1c6343;
+        --wf-success-tint: #e2f0e8;
+        --wf-info: #4f7398;
+        --wf-scrim: rgba(22, 30, 40, 0.14);
+        --wf-e1:
+          0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
+          0 12px 28px -20px rgba(16, 24, 40, 0.22);
+        --wf-e3:
+          0 0 0 0.5px rgba(16, 24, 40, 0.14), 0 2px 4px rgba(16, 24, 40, 0.06), 0 24px 48px -12px rgba(16, 24, 40, 0.3);
+        --wf-r-sm: 10px;
+        --wf-r-md: 12px;
+        --wf-r-lg: 16px;
+        --wf-r-xl: 22px;
+        --wf-r-pill: 999px;
+        --wf-r-ctl: 12px;
+        --wf-r-tag: 6px;
+        --wf-fs-12: 12px;
+        --wf-fs-13: 13px;
+        --wf-fs-14: 14px;
+        --wf-fs-16: 16px;
+        --wf-fs-20: 20px;
+        --wf-fs-28: 28px;
+        --wf-row: 52px;
+        --wf-tap: 44px;
+        --wf-font: Geist, "Segoe UI", system-ui, -apple-system, sans-serif;
+        --wf-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --wf-canvas: #0d141b;
+          --wf-surface: #141d26;
+          --wf-surface-2: #18232e;
+          --wf-track: #223040;
+          --wf-hover: #1b2733;
+          --wf-selected: #1f2e3c;
+          --wf-line: rgba(255, 255, 255, 0.07);
+          --wf-line-2: rgba(255, 255, 255, 0.13);
+          --wf-line-3: rgba(255, 255, 255, 0.24);
+          --wf-ink-1: #e9eef3;
+          --wf-ink-2: #bcc8d4;
+          --wf-ink-3: #93a4b5;
+          --wf-line-ctl: #6e7d8d;
+          --wf-accent: #8cbcf0;
+          --wf-accent-tint: #1d3349;
+          --wf-accent-ink: #b7d3f0;
+          --wf-pri-1: #3a72a8;
+          --wf-pri-2: #2c5c8c;
+          --wf-pri-edge: #5a8fc4;
+          --wf-hero-1: #22374d;
+          --wf-hero-2: #1c2e41;
+          --wf-danger: #e27a68;
+          --wf-danger-ink: #f2a495;
+          --wf-danger-tint: #3a211d;
+          --wf-warning: #d9a441;
+          --wf-warning-ink: #f0cc85;
+          --wf-warning-tint: #33291a;
+          --wf-success: #4cb383;
+          --wf-success-ink: #8fd6b3;
+          --wf-success-tint: #17322a;
+          --wf-info: #7fa3c8;
+          --wf-scrim: rgba(0, 0, 0, 0.4);
+          --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+          --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --wf-canvas: #0d141b;
+        --wf-surface: #141d26;
+        --wf-surface-2: #18232e;
+        --wf-track: #223040;
+        --wf-hover: #1b2733;
+        --wf-selected: #1f2e3c;
+        --wf-line: rgba(255, 255, 255, 0.07);
+        --wf-line-2: rgba(255, 255, 255, 0.13);
+        --wf-line-3: rgba(255, 255, 255, 0.24);
+        --wf-ink-1: #e9eef3;
+        --wf-ink-2: #bcc8d4;
+        --wf-ink-3: #93a4b5;
+        --wf-line-ctl: #6e7d8d;
+        --wf-accent: #8cbcf0;
+        --wf-accent-tint: #1d3349;
+        --wf-accent-ink: #b7d3f0;
+        --wf-pri-1: #3a72a8;
+        --wf-pri-2: #2c5c8c;
+        --wf-pri-edge: #5a8fc4;
+        --wf-hero-1: #22374d;
+        --wf-hero-2: #1c2e41;
+        --wf-danger: #e27a68;
+        --wf-danger-ink: #f2a495;
+        --wf-danger-tint: #3a211d;
+        --wf-warning: #d9a441;
+        --wf-warning-ink: #f0cc85;
+        --wf-warning-tint: #33291a;
+        --wf-success: #4cb383;
+        --wf-success-ink: #8fd6b3;
+        --wf-success-tint: #17322a;
+        --wf-info: #7fa3c8;
+        --wf-scrim: rgba(0, 0, 0, 0.4);
+        --wf-e1: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
+        --wf-e3: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
+        color-scheme: dark;
+      }
+
+      /* ─── shell (adapted from one-ward-page-mockup.html) ─── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--wf-canvas);
+        color: var(--wf-ink-1);
+        font-family: var(--wf-font);
+        font-size: var(--wf-fs-14);
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      a {
+        color: var(--wf-accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--wf-accent);
+        outline-offset: 2px;
+      }
+      .mono {
+        font-family: var(--wf-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .proto-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--wf-warning-tint);
+        color: var(--wf-warning-ink);
+        border-bottom: 1px solid var(--wf-line-2);
+        font-size: var(--wf-fs-13);
+      }
+      .proto-strip strong {
+        font-weight: 600;
+      }
+      .doc {
+        max-width: 1488px;
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+      }
+      .doc > header h1 {
+        font-size: var(--wf-fs-28);
+        margin: 0 0 6px;
+        letter-spacing: -0.01em;
+      }
+      .doc > header p {
+        margin: 4px 0;
+        color: var(--wf-ink-2);
+        max-width: 92ch;
+      }
+      .meta .tag {
+        white-space: normal;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-tag);
+        padding: 1px 6px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+        background: var(--wf-surface);
+        white-space: nowrap;
+      }
+      .tag.warn {
+        background: var(--wf-warning-tint);
+        color: var(--wf-warning-ink);
+        border-color: transparent;
+      }
+      .tag.ok {
+        background: var(--wf-success-tint);
+        color: var(--wf-success-ink);
+        border-color: transparent;
+      }
+      .tag.danger {
+        background: var(--wf-danger-tint);
+        color: var(--wf-danger-ink);
+        border-color: transparent;
+      }
+      .tag.accent {
+        background: var(--wf-accent-tint);
+        color: var(--wf-accent-ink);
+        border-color: transparent;
+      }
+      section.part {
+        margin-top: 40px;
+      }
+      section.part > h2 {
+        font-size: var(--wf-fs-20);
+        margin: 0 0 4px;
+      }
+      section.part > p.lede {
+        margin: 0 0 16px;
+        color: var(--wf-ink-2);
+        max-width: 92ch;
+      }
+      .card {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        box-shadow: var(--wf-e1);
+      }
+      /* ─── before → after map ─── */
+      .map {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+      }
+      .map .card {
+        padding: 4px 0 8px;
+      }
+      .map h3 {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-ink-3);
+        margin: 12px 16px 6px;
+      }
+      .map table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--wf-fs-13);
+      }
+      .map td {
+        padding: 7px 16px;
+        border-top: 1px solid var(--wf-line);
+        vertical-align: top;
+      }
+      .map td:first-child {
+        font-weight: 600;
+        width: 38%;
+      }
+      .map td .arrow {
+        color: var(--wf-ink-3);
+        margin-right: 4px;
+      }
+      .map td small {
+        display: block;
+        color: var(--wf-ink-3);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 0 0 12px;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      /* ─── frame (one per core screen) ─── */
+      .frame-wrap {
+        overflow-x: auto;
+        border-radius: var(--wf-r-xl);
+        box-shadow: var(--wf-e3);
+        margin: 0 0 12px;
+      }
+      .frame {
+        width: 100%;
+        min-width: 1200px;
+        min-height: 820px;
+        display: grid;
+        grid-template-columns: 232px minmax(0, 1fr);
+        background: var(--wf-canvas);
+        border-radius: var(--wf-r-xl);
+        overflow: hidden;
+      }
+      .rail {
+        background: var(--wf-surface-2);
+        border-right: 1px solid var(--wf-line-2);
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: var(--wf-fs-16);
+      }
+      .brand-mark {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--wf-r-sm);
+        background: var(--wf-pri-1);
+        color: var(--wf-on-accent);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      .shift {
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-line);
+        border-radius: var(--wf-r-lg);
+        padding: 10px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .shift b {
+        display: block;
+        color: var(--wf-ink-1);
+        font-size: var(--wf-fs-13);
+      }
+      .nav-label {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        margin: 4px 8px 0;
+      }
+      .nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav li > span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid transparent;
+        border-radius: var(--wf-r-ctl);
+        padding: 7px 10px;
+        min-height: 38px;
+        color: var(--wf-ink-2);
+      }
+      .nav li > span[aria-current="page"] {
+        background: var(--wf-accent-tint);
+        border-color: var(--wf-line-2);
+        color: var(--wf-accent-ink);
+        font-weight: 600;
+      }
+      .nav .count {
+        margin-left: auto;
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+      }
+      .nav.more li > span {
+        min-height: 30px;
+        padding: 4px 10px;
+        font-size: var(--wf-fs-13);
+      }
+      .rail .foot {
+        margin-top: auto;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+        padding: 0 8px;
+      }
+      .main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        background: var(--wf-hero-1);
+        color: var(--wf-hero-ink);
+      }
+      .topbar .title {
+        font-weight: 600;
+        font-size: var(--wf-fs-16);
+      }
+      .chip-dark {
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        border-radius: var(--wf-r-pill);
+        padding: 3px 10px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-hero-ink);
+        white-space: nowrap;
+      }
+      .search {
+        flex: 1;
+        max-width: 360px;
+        border: 1px solid var(--wf-hero-line);
+        border-radius: var(--wf-r-ctl);
+        padding: 6px 12px;
+        color: var(--wf-hero-ink-3);
+        font-size: var(--wf-fs-13);
+      }
+      .topbar .spacer {
+        flex: 1;
+      }
+      .bell {
+        position: relative;
+        border: 1px solid var(--wf-hero-line);
+        background: var(--wf-hero-chip);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 10px;
+        color: var(--wf-hero-ink);
+        font-size: var(--wf-fs-13);
+      }
+      .btn-pri {
+        background: linear-gradient(var(--wf-pri-1), var(--wf-pri-2));
+        border: 1px solid var(--wf-pri-edge);
+        color: var(--wf-on-accent);
+        border-radius: var(--wf-r-ctl);
+        padding: 6px 14px;
+        font-weight: 600;
+        font-size: var(--wf-fs-13);
+      }
+      .hero {
+        background: linear-gradient(var(--wf-hero-1), var(--wf-hero-2));
+        color: var(--wf-hero-ink);
+        padding: 16px 18px 18px;
+      }
+      .eyebrow {
+        font-size: var(--wf-fs-12);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--wf-hero-ink-2);
+        font-weight: 600;
+      }
+      .hero h3 {
+        margin: 4px 0 10px;
+        font-size: var(--wf-fs-20);
+      }
+      .hero h3 small {
+        font-size: var(--wf-fs-13);
+        font-weight: 400;
+        color: var(--wf-hero-ink-2);
+        margin-left: 6px;
+      }
+      .hero .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .hero .chips .chip-dark b {
+        font-family: var(--wf-mono);
+        margin-right: 4px;
+      }
+      .views {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .seg {
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        border-radius: var(--wf-r-pill);
+        background: var(--wf-hero-chip);
+        border: 1px solid var(--wf-hero-line);
+      }
+      .seg button {
+        border: 0;
+        background: none;
+        color: var(--wf-hero-ink-2);
+        border-radius: var(--wf-r-pill);
+        padding: 6px 14px;
+        font-size: var(--wf-fs-13);
+        min-height: 32px;
+      }
+      .seg button[aria-selected="true"] {
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+      }
+      .seg button .n {
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-12);
+        margin-left: 6px;
+        opacity: 0.85;
+      }
+      .views .was {
+        font-size: var(--wf-fs-12);
+        color: var(--wf-hero-ink-3);
+      }
+      .body {
+        padding: 16px 18px 24px;
+        display: grid;
+        gap: 14px;
+      }
+      .panel[hidden] {
+        display: none;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 14px;
+        align-items: start;
+      }
+      .card h4 {
+        margin: 0;
+        padding: 12px 16px;
+        font-size: var(--wf-fs-14);
+        border-bottom: 1px solid var(--wf-line);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .card h4 .r {
+        margin-left: auto;
+        font-weight: 400;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      table.list {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--wf-fs-13);
+      }
+      table.list th {
+        text-align: left;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      table.list td {
+        padding: 9px 16px;
+        border-bottom: 1px solid var(--wf-line);
+        vertical-align: top;
+      }
+      table.list td small {
+        display: block;
+        color: var(--wf-ink-3);
+      }
+      table.list tr.flag td:first-child {
+        box-shadow: inset 3px 0 0 var(--wf-danger);
+      }
+      .group-row td {
+        background: var(--wf-surface-2);
+        font-size: var(--wf-fs-12);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--wf-ink-2);
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--wf-line);
+        align-items: center;
+        font-size: var(--wf-fs-13);
+      }
+      .pill {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-pill);
+        padding: 3px 10px;
+        background: var(--wf-surface);
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-2);
+        white-space: nowrap;
+      }
+      .pill b {
+        font-family: var(--wf-mono);
+        margin-left: 4px;
+      }
+      .pill.on {
+        background: var(--wf-accent-tint);
+        color: var(--wf-accent-ink);
+        border-color: var(--wf-line-3);
+        font-weight: 600;
+      }
+      .order-note {
+        margin-left: auto;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .btn {
+        border: 1px solid var(--wf-line-ctl);
+        background: var(--wf-surface);
+        border-radius: var(--wf-r-ctl);
+        padding: 4px 12px;
+        font-size: var(--wf-fs-13);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .tiles > div {
+        padding: 12px 16px;
+        border-right: 1px solid var(--wf-line);
+      }
+      .tiles > div:last-child {
+        border-right: 0;
+      }
+      .tiles b {
+        display: block;
+        font-family: var(--wf-mono);
+        font-size: var(--wf-fs-20);
+      }
+      .tiles small {
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-12);
+      }
+      .neg {
+        color: var(--wf-warning-ink);
+      }
+      .pos {
+        color: var(--wf-success-ink);
+      }
+      .danger {
+        color: var(--wf-danger-ink);
+      }
+      .wards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 12px 16px 16px;
+      }
+      .ward {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        padding: 10px 12px;
+        font-size: var(--wf-fs-13);
+        background: var(--wf-surface);
+      }
+      .ward b {
+        display: block;
+      }
+      .ward small {
+        color: var(--wf-ink-3);
+      }
+      .beds {
+        display: flex;
+        gap: 3px;
+        margin: 8px 0;
+      }
+      .beds i {
+        flex: 1;
+        height: 10px;
+        border-radius: 3px;
+        background: var(--wf-track);
+      }
+      .beds i.r {
+        background: var(--wf-success);
+      }
+      .beds i.p {
+        background: repeating-linear-gradient(45deg, var(--wf-info) 0 2px, var(--wf-track) 2px 5px);
+      }
+      .bedgrid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px 16px 16px;
+      }
+      .bed {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-md);
+        padding: 8px 10px;
+        font-size: var(--wf-fs-12);
+        background: var(--wf-surface);
+      }
+      .bed b {
+        display: block;
+        font-size: var(--wf-fs-13);
+      }
+      .bed.ready {
+        border-color: var(--wf-success);
+        background: var(--wf-success-tint);
+      }
+      .bed.pulled {
+        border-style: dashed;
+      }
+      .drawer {
+        border-left: 1px solid var(--wf-line-2);
+        background: var(--wf-surface);
+        box-shadow: var(--wf-e3);
+      }
+      .note {
+        padding: 10px 16px;
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+      }
+      .kept {
+        font-size: var(--wf-fs-12);
+        color: var(--wf-ink-3);
+        margin: 0 0 4px;
+      }
+      .kept b {
+        color: var(--wf-ink-2);
+      }
+      .tvgrid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .tv {
+        border-radius: var(--wf-r-lg);
+        border: 1px solid var(--wf-line-2);
+        border-left: 4px solid var(--wf-warning);
+        background: var(--wf-warning-tint);
+        padding: 12px 14px;
+      }
+      .tv.act {
+        border-left-color: var(--wf-danger);
+        background: var(--wf-danger-tint);
+      }
+      .tv span {
+        font-weight: 600;
+        font-size: var(--wf-fs-13);
+      }
+      .tv b {
+        display: block;
+        font-size: var(--wf-fs-28);
+        font-family: var(--wf-mono);
+      }
+      .tv small {
+        color: var(--wf-ink-2);
+      }
+      .sidebar-compare {
+        display: grid;
+        align-items: start;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .sidebar-compare .rail {
+        border: 1px solid var(--wf-line-2);
+        border-radius: var(--wf-r-lg);
+      }
+      ol.questions {
+        margin: 0;
+        padding: 0 0 0 22px;
+        max-width: 96ch;
+      }
+      ol.questions li {
+        margin: 0 0 10px;
+      }
+      ol.questions li em {
+        display: block;
+        font-style: normal;
+        color: var(--wf-ink-3);
+        font-size: var(--wf-fs-13);
+      }
+      .never {
+        padding: 12px 16px;
+        font-size: var(--wf-fs-13);
+        color: var(--wf-ink-2);
+      }
+      .never ul {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      @media (max-width: 720px) {
+        .doc > header h1 {
+          font-size: var(--wf-fs-20);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="proto-strip" role="note">
+      <strong>Mock-up only, synthetic data, not built.</strong>
+      <span>Layout try-out for D-72 item 4. Nothing here saves, and no app screen has changed.</span>
+    </div>
+
+    <main class="doc">
+      <header>
+        <h1>Six coordinator screens</h1>
+        <p>
+          A try-out of owner decision
+          <a
+            href="../../docs/ward-flow/decisions.md#d-72-seven-product-decisions-for-the-21-october-fix-plan-21-october-2026"
+            >D-72</a
+          >
+          item 4: Home, Referrals, Beds, Movements, Discharges and Handover as the six core coordinator screens, with
+          everything else as a secondary screen under More. Each frame below is built from a screenshot of today's
+          screen, using its real labels and demonstration figures.
+        </p>
+        <p>
+          The change being tried is the grouping, not the style. Inside each screen, the pages that were merged become
+          views. A view only filters. Every list keeps its wait order, as today.
+        </p>
+        <div class="meta">
+          <span class="tag warn">Mock-up only, synthetic data, not built</span>
+          <span class="tag"
+            >Source: running app at <span class="mono">2d6f926</span>, 3 commits behind main
+            <span class="mono">64beeda1</span></span
+          >
+          <span class="tag"
+            >Screenshots: <span class="mono">.design/six-screens/screenshots/</span> (14, 1440 × 900, light)</span
+          >
+          <span class="tag">24 October 2026</span>
+        </div>
+      </header>
+
+      <section class="part" aria-labelledby="h-map">
+        <h2 id="h-map">Before → after: where each of today's 22 sidebar pages goes</h2>
+        <p class="lede">
+          Today's full sidebar has 22 pages in four groups. (The bed coordinator's own sidebar in the screenshots is
+          shorter: My list, Capacity, Movements, Referrals and More.) After: six core screens, plus secondary screens
+          under More. Items marked <span class="tag warn">Ask Josh</span> are open questions at the end.
+        </p>
+        <div class="legend">
+          <span><span class="tag accent">Core</span> becomes one of the six</span>
+          <span><span class="tag">View</span> becomes a view inside a core screen</span>
+          <span><span class="tag ok">More</span> stays as a secondary screen</span>
+          <span><span class="tag warn">Ask Josh</span> placement not decided</span>
+        </div>
+        <div class="map">
+          <div class="card">
+            <h3>Today</h3>
+            <table>
+              <tr>
+                <td>Home</td>
+                <td><span class="arrow">→</span><span class="tag accent">Core</span> Home, "Needs you now"</td>
+              </tr>
+              <tr>
+                <td>Movements</td>
+                <td><span class="arrow">→</span><span class="tag accent">Core</span> Movements › All</td>
+              </tr>
+              <tr>
+                <td>Capacity</td>
+                <td><span class="arrow">→</span><span class="tag">View</span> Beds › Capacity</td>
+              </tr>
+              <tr>
+                <td>Waiting</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag">View</span> Referrals › Waiting and Delays
+                  <small>Waiting is the renamed Delays screen (19 Oct 2026)</small>
+                </td>
+              </tr>
+              <tr>
+                <td>Bed meeting TV</td>
+                <td><span class="arrow">→</span><span class="tag">View</span> Handover › TV</td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Where</h3>
+            <table>
+              <tr>
+                <td>Places</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag ok">More</span> Directory
+                  <span class="tag warn">Ask Josh</span>
+                  <small>Route /hub. Its ward counts already appear in Beds › Wards</small>
+                </td>
+              </tr>
+              <tr>
+                <td>All EDs</td>
+                <td><span class="arrow">→</span><span class="tag ok">More</span> Directory</td>
+              </tr>
+              <tr>
+                <td>All wards</td>
+                <td><span class="arrow">→</span><span class="tag">View</span> Beds › Wards</td>
+              </tr>
+              <tr>
+                <td>Community</td>
+                <td><span class="arrow">→</span><span class="tag ok">More</span> Directory</td>
+              </tr>
+              <tr>
+                <td>Transport</td>
+                <td><span class="arrow">→</span><span class="tag">View</span> Movements › Transport</td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Work</h3>
+            <table>
+              <tr>
+                <td>Patients</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag ok">More</span> Search
+                  <small>Also the search box in every top bar</small>
+                </td>
+              </tr>
+              <tr>
+                <td>New referral</td>
+                <td>
+                  <span class="arrow">→</span>Top bar button only
+                  <small>An action, not a screen</small>
+                </td>
+              </tr>
+              <tr>
+                <td>Referrals</td>
+                <td><span class="arrow">→</span><span class="tag accent">Core</span> Referrals › Queue</td>
+              </tr>
+              <tr>
+                <td>Handover</td>
+                <td><span class="arrow">→</span><span class="tag accent">Core</span> Handover</td>
+              </tr>
+              <tr>
+                <td>Discharges</td>
+                <td><span class="arrow">→</span><span class="tag accent">Core</span> Discharges</td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Reports and reference</h3>
+            <table>
+              <tr>
+                <td>Governance</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag ok">More</span> <span class="tag warn">Ask Josh</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Statistics</td>
+                <td><span class="arrow">→</span><span class="tag ok">More</span> Statistics</td>
+              </tr>
+              <tr>
+                <td>Legal forms</td>
+                <td><span class="arrow">→</span><span class="tag ok">More</span> Legal forms</td>
+              </tr>
+              <tr>
+                <td>Out of area</td>
+                <td><span class="arrow">→</span><span class="tag">View</span> Movements › Out of area</td>
+              </tr>
+              <tr>
+                <td>Alerts</td>
+                <td>
+                  <span class="arrow">→</span>Home's drawer (the bell)
+                  <small>Same tabs: Now, Broadcast, Notices, History</small>
+                </td>
+              </tr>
+              <tr>
+                <td>On-call</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag ok">More</span> <span class="tag warn">Ask Josh</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Seclusion</td>
+                <td>
+                  <span class="arrow">→</span><span class="tag ok">More</span> <span class="tag warn">Ask Josh</span>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Old routes D-72 folds in</h3>
+            <table>
+              <tr>
+                <td>Command</td>
+                <td><span class="arrow">→</span>Home <small>Already redirects to Home</small></td>
+              </tr>
+              <tr>
+                <td>Hub</td>
+                <td><span class="arrow">→</span>More › Directory <small>Today it is the Places page</small></td>
+              </tr>
+              <tr>
+                <td>Constellation</td>
+                <td><span class="arrow">→</span>Home <small>Already redirects to Home</small></td>
+              </tr>
+              <tr>
+                <td>Exceptions, Escalation, Queue</td>
+                <td><span class="arrow">→</span>Referrals › Delays <small>Already redirect to Waiting</small></td>
+              </tr>
+              <tr>
+                <td>Network</td>
+                <td>
+                  <span class="arrow">→</span>Beds › Capacity
+                  <small>Retired 19 Oct 2026; road time already lives on Capacity</small>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="part" aria-labelledby="h-nav">
+        <h2 id="h-nav">The new sidebar</h2>
+        <p class="lede">
+          Six core screens, then a More group that is closed by default. Counts are the same counts the current sidebar
+          shows. Settings and Help stay at the foot of the rail.
+        </p>
+        <div class="sidebar-compare">
+          <nav class="rail" aria-label="Today's bed coordinator sidebar">
+            <div class="nav-label">Today (bed coordinator)</div>
+            <ul class="nav">
+              <li><span aria-current="page">My list</span></li>
+              <li>
+                <span>Capacity <span class="count">26</span></span>
+              </li>
+              <li>
+                <span>Movements <span class="count">70</span></span>
+              </li>
+              <li>
+                <span>Referrals <span class="count">7</span></span>
+              </li>
+              <li><span>More (18 pages)</span></li>
+              <li><span>Help</span></li>
+            </ul>
+          </nav>
+          <nav class="rail" aria-label="Proposed sidebar">
+            <div class="nav-label">After · core</div>
+            <ul class="nav">
+              <li>
+                <span aria-current="page">Home <span class="count">3</span></span>
+              </li>
+              <li>
+                <span>Referrals <span class="count">7</span></span>
+              </li>
+              <li>
+                <span>Beds <span class="count">26</span></span>
+              </li>
+              <li>
+                <span>Movements <span class="count">70</span></span>
+              </li>
+              <li>
+                <span>Discharges <span class="count">53</span></span>
+              </li>
+              <li>
+                <span>Handover <span class="mono count">15:00</span></span>
+              </li>
+            </ul>
+            <div class="nav-label">More</div>
+            <ul class="nav more">
+              <li><span>Statistics</span></li>
+              <li><span>Search patients</span></li>
+              <li><span>Directory: places, EDs, community</span></li>
+              <li><span>Legal forms</span></li>
+              <li>
+                <span>Governance ·<em> ask</em></span>
+              </li>
+              <li>
+                <span>On-call ·<em> ask</em></span>
+              </li>
+              <li>
+                <span>Seclusion ·<em> ask</em></span>
+              </li>
+              <li><span>Settings</span></li>
+            </ul>
+          </nav>
+          <div class="card never">
+            <b>Kept from the never-build rule</b>
+            <ul>
+              <li>No risk, acuity or points scores.</li>
+              <li>No "best match", suggested or recommended ward or bed, and no automatic placement.</li>
+              <li>Every merged list stays in wait order. Views and chips filter or highlight; nothing re-sorts.</li>
+              <li>No computed Mental Health Act times or expiry.</li>
+              <li>No held bed is released unless a person presses Release.</li>
+              <li>No patient details in emails.</li>
+            </ul>
+            <p class="kept">
+              Where today's screens offer another order (<b>By blocker</b>, <b>Most ready</b>, <b>Next action</b>,
+              <b>meeting order</b>), the frames below leave it out.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 1 HOME ───────────── -->
+      <section class="part" aria-labelledby="h-home">
+        <h2 id="h-home">1 · Home: "Needs you now", with Alerts as its drawer</h2>
+        <p class="lede">
+          From screenshots 01 (Home) and 13 (Alerts). The bell opens Alerts as a drawer over Home, so the Alerts page
+          goes. Home's own list is unchanged: act now first because a person must act, then referrals oldest first.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Home frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span aria-current="page">Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span>Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span>Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span>Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span>Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span>Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Home</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:42</span>
+                <span class="search">Search</span><span class="spacer"></span>
+                <span class="bell" aria-label="Alerts drawer is open, 12 alerts">Alerts <b class="mono">12</b></span>
+                <span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Statewide · mental health beds · day shift</div>
+                <h3>62 waiting in ED, 26 beds ready <small>8 more in transit · 85.2% occupied</small></h3>
+                <div class="chips">
+                  <span class="chip-dark"><b>3</b>Act now</span
+                  ><span class="chip-dark"><b>7</b>Referrals to decide</span
+                  ><span class="chip-dark"><b>33</b>Overdue waits</span><span class="chip-dark"><b>18</b>Tier 1</span>
+                </div>
+              </div>
+              <div class="body" style="grid-template-columns: minmax(0, 1fr) 380px; padding-right: 0; padding-top: 0">
+                <div style="padding-top: 16px; display: grid; gap: 14px">
+                  <div class="card">
+                    <h4>Needs you now <span class="r">My list 19 · Everyone waiting 70</span></h4>
+                    <table class="list">
+                      <tr class="group-row">
+                        <td colspan="3">Act now · 3 · needs a person now</td>
+                      </tr>
+                      <tr class="flag">
+                        <td>
+                          <b>Pull expired, bed still pulled</b
+                          ><small>Cadwaller, Rhys UM100046 · BTY Adult Secure</small>
+                        </td>
+                        <td class="mono">10m overdue</td>
+                        <td><span class="btn">Release bed</span></td>
+                      </tr>
+                      <tr class="flag">
+                        <td>
+                          <b>Multiple destinations declined</b
+                          ><small>Wren, Tobias UM100023 · Peel Health Campus ED</small>
+                        </td>
+                        <td class="mono">5m</td>
+                        <td><span class="btn">Open patient</span></td>
+                      </tr>
+                      <tr class="flag">
+                        <td>
+                          <b>No eligible bed: shown to the bed coordinator</b
+                          ><small>Oquinn, Priya UM100006 · St John of God Midland ED</small>
+                        </td>
+                        <td>Time not recorded</td>
+                        <td><span class="btn">Open patient</span></td>
+                      </tr>
+                      <tr class="group-row">
+                        <td colspan="3">Referrals to decide · 7 · oldest first</td>
+                      </tr>
+                      <tr>
+                        <td><b>Tier 3 · Any suitable ward</b><small>Ridgewell, Sasha UM100083 · from RPH</small></td>
+                        <td class="mono">3d 3h</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td><b>Tier 3 · Any suitable ward</b><small>Pinewhistle, Reagan UM100082 · from RPH</small></td>
+                        <td class="mono">2h 30m</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      "Find a bed" on today's Home becomes "Open patient": the person chooses the ward. Nothing is
+                      suggested.
+                    </p>
+                  </div>
+                  <div class="card">
+                    <h4>Beds that fit <span class="r">counts only · 26 ready · whole network</span></h4>
+                    <div class="tiles" style="grid-template-columns: repeat(4, 1fr)">
+                      <div><small>Locked adult</small><b class="neg">−6</b><small>13 waiting · 7 beds fit</small></div>
+                      <div><small>Open adult</small><b class="neg">−14</b><small>28 waiting · 14 beds fit</small></div>
+                      <div><small>Older adult</small><b class="neg">−4</b><small>8 waiting · 4 beds fit</small></div>
+                      <div><small>Youth</small><b class="pos">+1</b><small>0 waiting · 1 bed fits</small></div>
+                    </div>
+                  </div>
+                </div>
+                <aside class="drawer" aria-label="Alerts drawer">
+                  <h4 style="margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--wf-line)">
+                    Alerts <span class="tag">drawer</span>
+                  </h4>
+                  <div class="filters">
+                    <span class="pill on">Now <b>12</b></span
+                    ><span class="pill">Broadcast <b>0</b></span
+                    ><span class="pill">Notices <b>0</b></span
+                    ><span class="pill">History</span>
+                  </div>
+                  <table class="list">
+                    <tr class="group-row">
+                      <td>Act now · 3</td>
+                    </tr>
+                    <tr class="flag">
+                      <td><b>Bed pull expired</b><small>Cadwaller, Rhys · BTY Adult Secure · 12m overdue</small></td>
+                    </tr>
+                    <tr class="flag">
+                      <td><b>Multiple destinations declined</b><small>Wren, Tobias · since 10:37</small></td>
+                    </tr>
+                    <tr class="flag">
+                      <td><b>No eligible bed</b><small>Oquinn, Priya · time not recorded</small></td>
+                    </tr>
+                    <tr class="group-row">
+                      <td>Forecast · 2 · coordinators only</td>
+                    </tr>
+                    <tr>
+                      <td><b>Open adult short tomorrow</b><small>Likely 9 short, at worst 15 short</small></td>
+                    </tr>
+                    <tr class="group-row">
+                      <td>Waiting · 9</td>
+                    </tr>
+                    <tr>
+                      <td><b>Transport awaiting departure</b><small>Tremalow, Noor · since 10:12</small></td>
+                    </tr>
+                  </table>
+                  <p class="note">
+                    Same alerts, tabs and actions as today's Alerts page. Closing the drawer returns to Home.
+                  </p>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 2 REFERRALS ───────────── -->
+      <section class="part" aria-labelledby="h-ref">
+        <h2 id="h-ref">2 · Referrals: Queue, Waiting and Delays as views</h2>
+        <p class="lede">
+          From screenshots 02 (Referrals) and 03 (Waiting, the renamed Delays). Press a view to switch. All three keep
+          wait order, longest first. Delays filters the same list by blocker; it never groups or re-sorts it.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Referrals frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span>Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span aria-current="page">Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span>Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span>Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span>Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span>Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Referrals</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:43</span>
+                <span class="search">Search</span><span class="spacer"></span
+                ><span class="bell">Alerts <b class="mono">12</b></span>
+                <span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Referrals · statewide</div>
+                <h3>7 awaiting decision, 62 waiting in ED <small>Oldest 3d 3h · 8 in transit</small></h3>
+                <div class="chips">
+                  <span class="chip-dark"><b>1</b>Overdue</span><span class="chip-dark"><b>19</b>Over 8h</span
+                  ><span class="chip-dark"><b>5</b>Over 24h</span
+                  ><span class="chip-dark"><b>1</b>Form due within 1 h</span>
+                </div>
+                <div class="views">
+                  <div class="seg" role="tablist" aria-label="Referrals views">
+                    <button role="tab" aria-selected="true" data-view="queue">Queue<span class="n">7</span></button
+                    ><button role="tab" aria-selected="false" data-view="waiting">
+                      Waiting<span class="n">70</span></button
+                    ><button role="tab" aria-selected="false" data-view="delays">Delays</button>
+                  </div>
+                  <span class="was"
+                    >was: /referrals · /waiting · Delays (renamed Waiting) and the old queue, exceptions and
+                    escalation</span
+                  >
+                </div>
+              </div>
+              <div class="body">
+                <div class="panel" data-panel="queue">
+                  <div class="card">
+                    <div class="filters">
+                      <span class="pill on">Queue <b>7</b></span
+                      ><span class="pill">History <b>24</b></span
+                      ><span class="pill">Ward bed <b>4</b></span
+                      ><span class="pill">ED review <b>4</b></span
+                      ><span class="pill">Community <b>0</b></span>
+                      <span class="order-note">Order: longest wait first (fixed)</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Tier</th>
+                        <th>Patient</th>
+                        <th>Since referral</th>
+                        <th>From</th>
+                        <th>Asking for</th>
+                        <th></th>
+                      </tr>
+                      <tr class="flag">
+                        <td>T3</td>
+                        <td>Ridgewell, Sasha<small>UM100083 · Adult</small></td>
+                        <td class="mono">3d 3h<small class="danger">2d 3h overdue</small></td>
+                        <td>RPH</td>
+                        <td>ED review</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T3</td>
+                        <td>Pinewhistle, Reagan<small>UM100082 · Adult</small></td>
+                        <td class="mono">2h 30m<small>due in 21h 30m</small></td>
+                        <td>RPH</td>
+                        <td>ED review</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T2</td>
+                        <td>Vallowen, Orla<small>UM600006 · Adult, Female</small></td>
+                        <td class="mono">55m<small>due in 3h 05m</small></td>
+                        <td>ARM</td>
+                        <td>Ward bed</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T3</td>
+                        <td>Gorsebrook, Lorna<small>UM100063 · Adult, Female</small></td>
+                        <td class="mono">50m<small>due in 23h 10m</small></td>
+                        <td>FSH</td>
+                        <td>Ward bed, ED review</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T2</td>
+                        <td>Mossgrave, Tilly<small>UM100079 · Youth, Female</small></td>
+                        <td class="mono">40m<small>due in 3h 20m</small></td>
+                        <td>ARM</td>
+                        <td>Ward bed</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T2</td>
+                        <td>Davenport, Bao<small>UM100009 · Adult</small></td>
+                        <td class="mono">35m<small>due in 3h 25m</small></td>
+                        <td>RPH</td>
+                        <td>ED review</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                      <tr>
+                        <td>T2</td>
+                        <td>Coldharbour, Cyril<small>UM100060 · Older adult</small></td>
+                        <td class="mono">20m<small>due in 3h 40m</small></td>
+                        <td>FSH</td>
+                        <td>Ward bed</td>
+                        <td><span class="btn">Decide</span></td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      Today's "Fit · 11 ready" column is left out of this frame; whether a count of ready beds of that
+                      type stays is a question below. No ward is suggested.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="waiting" hidden>
+                  <div class="card">
+                    <div class="filters">
+                      <span class="pill">Due soon or on you <b>45</b></span
+                      ><span class="pill">Form due within 3 h <b>3</b></span
+                      ><span class="pill">For handover <b>13</b></span
+                      ><span class="pill">Locked bed <b>17</b></span>
+                      <span class="order-note">Order: longest wait first (fixed). Chips filter only.</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Person</th>
+                        <th>Waited</th>
+                        <th>T</th>
+                        <th>Blocker</th>
+                        <th>Legal</th>
+                        <th>Last update</th>
+                      </tr>
+                      <tr>
+                        <td>Oakendell, Verity<small>UM100069 · Armadale Hospital ED</small></td>
+                        <td class="mono danger">7d 1h</td>
+                        <td>T2</td>
+                        <td>Waiting on you</td>
+                        <td><span class="tag">Involuntary</span></td>
+                        <td>No update</td>
+                      </tr>
+                      <tr>
+                        <td>Hawthornby, Dermot<small>UM100020 · Rockingham General Hospital ED</small></td>
+                        <td class="mono danger">2d 14h</td>
+                        <td>T2</td>
+                        <td>Waiting on you</td>
+                        <td><span class="tag">Voluntary</span></td>
+                        <td>10h 01m ago</td>
+                      </tr>
+                      <tr>
+                        <td>Marrowbee, Devan<small>UM100004 · Armadale Hospital ED</small></td>
+                        <td class="mono danger">2d</td>
+                        <td>T3</td>
+                        <td>Waiting on you</td>
+                        <td><span class="tag">Voluntary</span></td>
+                        <td>No update</td>
+                      </tr>
+                      <tr>
+                        <td>Slateridge, Margery<small>UM100022 · Peel Health Campus ED</small></td>
+                        <td class="mono danger">1d 5h</td>
+                        <td>T3</td>
+                        <td>Waiting on you</td>
+                        <td><span class="tag">Voluntary</span></td>
+                        <td>No update</td>
+                      </tr>
+                      <tr>
+                        <td>Finchgrove, Callum<small>Country transfer being organised</small></td>
+                        <td class="mono danger">1d 1h</td>
+                        <td>T1</td>
+                        <td>Transport</td>
+                        <td><span class="tag">Form 4C</span></td>
+                        <td>—</td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      The legal column shows what a person typed. Nothing is counted down or computed from the Act.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="delays" hidden>
+                  <div class="card">
+                    <h4>Why people are still waiting <span class="r">pick a blocker to filter the list</span></h4>
+                    <div class="tiles" style="grid-template-columns: repeat(4, 1fr)">
+                      <div><b>41</b><small>Waiting on you · 1 form due or past its time</small></div>
+                      <div><b>16</b><small>Wards · 1 no suitable bed</small></div>
+                      <div><b>12</b><small>Transport · 3 over 8h</small></div>
+                      <div><b>1</b><small>Other · 1 waiting</small></div>
+                    </div>
+                  </div>
+                  <div class="cols" style="margin-top: 14px">
+                    <div class="card">
+                      <div class="filters">
+                        <span class="pill on">Waiting on you <b>41</b></span
+                        ><span class="pill">Wards <b>16</b></span
+                        ><span class="pill">Transport <b>12</b></span
+                        ><span class="pill">Other <b>1</b></span>
+                        <span class="order-note">Same list as Waiting, filtered. Wait order kept.</span>
+                      </div>
+                      <table class="list">
+                        <tr>
+                          <td>Oakendell, Verity<small>Armadale Hospital ED</small></td>
+                          <td class="mono danger">7d 1h</td>
+                          <td>Waiting on you</td>
+                        </tr>
+                        <tr>
+                          <td>Hawthornby, Dermot<small>Rockingham General Hospital ED</small></td>
+                          <td class="mono danger">2d 14h</td>
+                          <td>Waiting on you</td>
+                        </tr>
+                        <tr>
+                          <td>Marrowbee, Devan<small>Armadale Hospital ED</small></td>
+                          <td class="mono danger">2d</td>
+                          <td>Waiting on you</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="card">
+                      <h4>Escalated <span class="r">2</span></h4>
+                      <table class="list">
+                        <tr>
+                          <td>Wren, Tobias<small>To State bed coordination desk · 4m ago</small></td>
+                        </tr>
+                        <tr>
+                          <td>Flint, Oona<small>To State bed coordination desk · 6m ago</small></td>
+                        </tr>
+                      </table>
+                      <h4>Daily check</h4>
+                      <p class="note">17 to confirm: missed or doubled bed requests.</p>
+                    </div>
+                  </div>
+                  <p class="kept">
+                    Today's <b>By blocker</b> grouping is replaced by these filter chips, so no row moves.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 3 BEDS ───────────── -->
+      <section class="part" aria-labelledby="h-beds">
+        <h2 id="h-beds">3 · Beds: Capacity, Wards and Board as views</h2>
+        <p class="lede">
+          From screenshots 04 (Capacity), 05 (All wards), 06 (stays and discharges board, Dabakarn) and 14 (Places).
+          Network was retired on 19 October 2026 and its road-time list already lives on Capacity, so it needs no view
+          of its own.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Beds frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span>Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span>Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span aria-current="page">Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span>Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span>Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span>Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Beds</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:43</span
+                ><span class="search">Search</span><span class="spacer"></span
+                ><span class="bell">Alerts <b class="mono">12</b></span
+                ><span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Beds · statewide · 22 wards · as at 10:43</div>
+                <h3>26 beds ready of 304 <small>1 being made ready · 85.2% occupied</small></h3>
+                <div class="chips">
+                  <span class="chip-dark"><b>7</b>Locked beds ready</span
+                  ><span class="chip-dark"><b>19</b>Open beds ready</span
+                  ><span class="chip-dark"><b>17</b>Beds pulled</span
+                  ><span class="chip-dark"><b>2</b>Beds due out today</span
+                  ><span class="chip-dark"><b>1</b>Stale count</span>
+                </div>
+                <div class="views">
+                  <div class="seg" role="tablist" aria-label="Beds views">
+                    <button role="tab" aria-selected="true" data-view="capacity">Capacity</button
+                    ><button role="tab" aria-selected="false" data-view="wards">Wards<span class="n">22</span></button
+                    ><button role="tab" aria-selected="false" data-view="board">Board</button>
+                  </div>
+                  <span class="was">was: /capacity · /wards · /board/[ward] (and the retired /network)</span>
+                </div>
+              </div>
+              <div class="body">
+                <div class="panel" data-panel="capacity">
+                  <div class="card">
+                    <h4>
+                      Where the mismatch is
+                      <span class="r">now, and likely by 10:43 tomorrow from recorded releases</span>
+                    </h4>
+                    <div class="tiles">
+                      <div>
+                        <small>A locked adult bed</small><b class="neg">−6</b
+                        ><small>13 waiting · 7 fit · tomorrow −6</small>
+                      </div>
+                      <div>
+                        <small>An open adult bed</small><b class="neg">−14</b
+                        ><small>28 waiting · 14 fit · tomorrow −9</small>
+                      </div>
+                      <div>
+                        <small>An older-adult bed</small><b class="neg">−4</b
+                        ><small>8 waiting · 4 fit · tomorrow 0</small>
+                      </div>
+                      <div>
+                        <small>A youth bed</small><b class="pos">+1</b><small>0 waiting · 1 fit · tomorrow +2</small>
+                      </div>
+                      <div>
+                        <small>All four together</small><b class="neg">−23</b
+                        ><small>49 waiting · 26 fit · tomorrow −13</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card" style="margin-top: 14px">
+                    <h4>
+                      Next 7 days <span class="r">recorded discharge dates (out) and planned admissions (in)</span>
+                    </h4>
+                    <table class="list">
+                      <tr>
+                        <th>Ward</th>
+                        <th>Sun 25</th>
+                        <th>Mon 26</th>
+                        <th>Tue 27</th>
+                        <th>Wed 28</th>
+                        <th>Thu 29</th>
+                        <th>Fri 30</th>
+                        <th>Sat 31</th>
+                      </tr>
+                      <tr>
+                        <td>Dabakarn</td>
+                        <td>·</td>
+                        <td>1 in</td>
+                        <td>2 out</td>
+                        <td>2 out</td>
+                        <td>1 out</td>
+                        <td>2 out</td>
+                        <td>1 out</td>
+                      </tr>
+                      <tr>
+                        <td>Maali (Ward 4.2) — open</td>
+                        <td>1 in</td>
+                        <td>1 out</td>
+                        <td>2 out</td>
+                        <td>2 out</td>
+                        <td>1 out</td>
+                        <td>2 out</td>
+                        <td>·</td>
+                      </tr>
+                      <tr>
+                        <td>Mental Health Unit</td>
+                        <td>·</td>
+                        <td>1 out</td>
+                        <td>1 out</td>
+                        <td>2 out · 1 in</td>
+                        <td>2 out</td>
+                        <td>2 out</td>
+                        <td>·</td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      Road time to ready beds stays on this view, captioned "Distance only, not suitability" (D-71).
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="wards" hidden>
+                  <div class="card">
+                    <div class="filters">
+                      <span class="pill on">All <b>22</b></span
+                      ><span class="pill">North <b>4</b></span
+                      ><span class="pill">East <b>7</b></span
+                      ><span class="pill">South <b>5</b></span
+                      ><span class="pill">WACHS <b>4</b></span
+                      ><span class="pill">Private <b>2</b></span> <span class="pill">Has ready</span
+                      ><span class="pill">Stale</span>
+                      <span class="order-note">Order: by service, fixed</span>
+                    </div>
+                    <div class="wards">
+                      <div class="ward">
+                        <b>Mental Health Unit</b><small>North Metro · Sir Charles Gairdner · Adult · Open</small>
+                        <div class="beds">
+                          <i class="r"></i><i class="r"></i><i class="p"></i><i class="p"></i><i></i><i></i><i></i
+                          ><i></i><i></i><i></i>
+                        </div>
+                        79% occupied · 2 ready · 4 out · 0 in<br /><small>16m since confirmed</small>
+                      </div>
+                      <div class="ward">
+                        <b>SCGH Older Adult</b><small>North Metro · Sir Charles Gairdner · Older adult · Open</small>
+                        <div class="beds">
+                          <i class="r"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        94% occupied · 1 ready · 4 out · 0 in<br /><small>19m since confirmed</small>
+                      </div>
+                      <div class="ward">
+                        <b>Graylands Adult Secure</b><small>North Metro · Graylands · Adult · Locked</small>
+                        <div class="beds">
+                          <i class="r"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        87% occupied · 1 ready · 2 out · 0 in<br /><small>21m since confirmed</small>
+                      </div>
+                      <div class="ward">
+                        <b>Graylands Older Adult</b><small>North Metro · Graylands · Older adult · Open</small>
+                        <div class="beds"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        90% occupied · 0 ready · 3 out · 0 in<br /><small class="neg">5h 01m stale, ask NUM</small>
+                      </div>
+                      <div class="ward">
+                        <b>Dabakarn</b><small>East Metro · Royal Perth · Adult · Locked</small>
+                        <div class="beds">
+                          <i class="r"></i><i class="p"></i><i class="p"></i><i></i><i></i><i></i><i></i><i></i><i></i
+                          ><i></i>
+                        </div>
+                        90% occupied · 1 ready · 3 out · 2 in<br /><small>21m since confirmed</small>
+                      </div>
+                      <div class="ward">
+                        <b>RPH Older Adult</b><small>East Metro · Royal Perth · Older adult · Open</small>
+                        <div class="beds">
+                          <i class="r"></i><i class="p"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        86% occupied · 1 ready · 3 out · 1 in<br /><small>26m since confirmed</small>
+                      </div>
+                    </div>
+                    <p class="note">
+                      Today's "Most ready" order and the "Most ready: FSH Adult Secure 3" chip are left out: wards stay
+                      in a fixed service order so no ward looks recommended.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="board" hidden>
+                  <div class="card">
+                    <h4>
+                      Dabakarn <span class="tag">Royal Perth · East Metro · 20 beds · all locked</span>
+                      <span class="r">Change ward ▾ (22 wards)</span>
+                    </h4>
+                    <div class="tiles">
+                      <div><b>1</b><small>Ready</small></div>
+                      <div><b>16</b><small>Occupied</small></div>
+                      <div><b>1</b><small>Going out today and tomorrow</small></div>
+                      <div><b>2</b><small>Coming in</small></div>
+                      <div><b class="danger">2</b><small>Pulled, not arrived</small></div>
+                    </div>
+                    <div class="filters">
+                      <span class="pill on">All beds <b>20</b></span
+                      ><span class="pill">Needs a look <b>6</b></span
+                      ><span class="pill">Ready <b>1</b></span
+                      ><span class="pill">Nobody due out <b>2</b></span>
+                      <span class="order-note">Order: bed number</span>
+                    </div>
+                    <div class="bedgrid">
+                      <div class="bed ready"><b>Bed 1 · Ready</b>Cleaned 09:40</div>
+                      <div class="bed"><b>Ferrowmoor, G</b>Occupied · 210 days</div>
+                      <div class="bed"><b>Banksiavale, T</b>Occupied · 130 days</div>
+                      <div class="bed"><b>Ferrowmoor, E</b>Occupied · 95 days</div>
+                      <div class="bed pulled"><b>Bed 5 · Pulled</b>Not arrived</div>
+                    </div>
+                    <p class="note">
+                      Same board as today's stays and discharges page. Ward home (the nurse in charge's page) stays
+                      separate and is reached from the ward name.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 4 MOVEMENTS ───────────── -->
+      <section class="part" aria-labelledby="h-mov">
+        <h2 id="h-mov">4 · Movements: All, Transport and Out of area as views</h2>
+        <p class="lede">
+          From screenshots 07 (Movements), 08 (Transport desk) and 09 (Out of area). The hero counts stay the same
+          whichever view is open.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Movements frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span>Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span>Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span>Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span aria-current="page">Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span>Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span>Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Movements</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:43</span
+                ><span class="search">Search</span><span class="spacer"></span
+                ><span class="bell">Alerts <b class="mono">12</b></span
+                ><span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Movements · statewide</div>
+                <h3>
+                  70 open movements <small>8 moving · 7 resolved today · 13 transport jobs · 15 away from home</small>
+                </h3>
+                <div class="chips">
+                  <span class="chip-dark"><b>18</b>Tier 1</span><span class="chip-dark"><b>5</b>Past 24h</span
+                  ><span class="chip-dark"><b>19</b>Over 8h</span
+                  ><span class="chip-dark">Longest wait Oakendell 7d 1h</span>
+                </div>
+                <div class="views">
+                  <div class="seg" role="tablist" aria-label="Movements views">
+                    <button role="tab" aria-selected="true" data-view="all">All<span class="n">70</span></button
+                    ><button role="tab" aria-selected="false" data-view="transport">
+                      Transport<span class="n">13</span></button
+                    ><button role="tab" aria-selected="false" data-view="ooa">
+                      Out of area<span class="n">15</span>
+                    </button>
+                  </div>
+                  <span class="was">was: /movements · /transport/officer · /out-of-area</span>
+                </div>
+              </div>
+              <div class="body">
+                <div class="panel" data-panel="all">
+                  <div class="card">
+                    <div class="filters">
+                      Stage
+                      <span class="pill">Referred <b>21</b></span
+                      ><span class="pill">Review <b>19</b></span
+                      ><span class="pill">Accepted <b>9</b></span
+                      ><span class="pill">Pulled <b>8</b></span
+                      ><span class="pill">Handover <b>5</b></span
+                      ><span class="pill">Moving <b>8</b></span>
+                      <span class="order-note">Stage chips filter. Order: longest wait first.</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Receiving ward</th>
+                        <th>Now 10:43</th>
+                        <th>+8h 18:43</th>
+                        <th>+16h 02:43</th>
+                        <th>+24h 10:43</th>
+                        <th>+32h 18:43</th>
+                      </tr>
+                      <tr>
+                        <td>SJGS Adult Open<small>Private</small></td>
+                        <td><span class="tag accent">Rookwell, T</span> <span class="tag">Pardoe, M</span></td>
+                        <td></td>
+                        <td><span class="tag accent">Embleton, J</span></td>
+                        <td></td>
+                        <td><span class="tag accent">Ridgeholt, H</span></td>
+                      </tr>
+                      <tr>
+                        <td>Bunbury Acute Psychiatric Unit<small>WACHS</small></td>
+                        <td><span class="tag accent">Finchgrove, C</span> <span class="tag">Quillcross, S</span></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <td>SJGM Adult Open<small>East Metro</small></td>
+                        <td><span class="tag accent">Kestrel, R</span> <span class="tag accent">Ridgeholt, B</span></td>
+                        <td></td>
+                        <td></td>
+                        <td><span class="tag accent">Quenfold, O</span></td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <td>BTY Adult Secure<small>East Metro</small></td>
+                        <td>
+                          <span class="tag warn">Cadwaller, R · hold passed</span> <span class="tag">Ridgeholt, D</span>
+                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      48 hour timeline from today's Movements. "Bed hold passed" is shown, never acted on: the hold
+                      stays until a person presses Release. Today's "Next expiry" chip is left out of this frame pending
+                      the check that it shows only a typed time.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="transport" hidden>
+                  <div class="card">
+                    <div class="filters">
+                      <span class="pill">To accept <b>0</b></span
+                      ><span class="pill">Crew to send <b>5</b></span
+                      ><span class="pill">Crew en route <b>0</b></span
+                      ><span class="pill">On board <b>8</b></span
+                      ><span class="pill">Past ward ETA <b>0</b></span
+                      ><span class="pill">Jobs need forms <b>6</b></span>
+                      <span class="order-note">Order: longest wait first</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Patient</th>
+                        <th>Route</th>
+                        <th>Stage</th>
+                        <th>Forms</th>
+                        <th>Next</th>
+                      </tr>
+                      <tr>
+                        <td>Noor Tremalow<small>UM100047</small></td>
+                        <td>Maali (Ward 4.2) — open from PEEL<small>Patient transport · escort</small></td>
+                        <td>Accepted<small>31m</small></td>
+                        <td>0 of 3</td>
+                        <td><span class="btn">En route</span></td>
+                      </tr>
+                      <tr>
+                        <td>Merrick Sedgeward<small>UM100064</small></td>
+                        <td>
+                          Mabu Liyan / Broome Mental Health Unit from SJGM<small>Patient transport · escort</small>
+                        </td>
+                        <td>Accepted<small>26m</small></td>
+                        <td>0 of 3</td>
+                        <td><span class="btn">En route</span></td>
+                      </tr>
+                      <tr>
+                        <td>Reya Ridgeholt<small>UM500257</small></td>
+                        <td>Bunbury Acute Psychiatric Unit from PEEL<small>Patient transport</small></td>
+                        <td>Collected<small>25m</small></td>
+                        <td>0 of 3</td>
+                        <td><span class="btn">Delivered</span></td>
+                      </tr>
+                      <tr>
+                        <td>Reya Quenfold<small>UM500237</small></td>
+                        <td>Great Southern Acute Psychiatric Unit from FSH<small>Patient transport · escort</small></td>
+                        <td>Collected<small>23m</small></td>
+                        <td>0 of 3</td>
+                        <td><span class="btn">Delivered</span></td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      Today's "Next action" sort is left out; jobs stay in wait order. The transport officer's own desk
+                      (its role view) is unchanged.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="ooa" hidden>
+                  <div class="cols">
+                    <div class="card">
+                      <div class="filters">
+                        <span class="pill">Date passed <b>4</b></span
+                        ><span class="pill">Air only <b>4</b></span
+                        ><span class="pill">3 hours or more <b>11</b></span
+                        ><span class="pill">No plan <b>15</b></span
+                        ><span class="pill">Awaiting home bed <b>0</b></span>
+                        <span class="order-note">Order: ledger (date away)</span>
+                      </div>
+                      <table class="list">
+                        <tr>
+                          <th>Patient</th>
+                          <th>Home region</th>
+                          <th>Placement</th>
+                          <th>Discharge</th>
+                          <th>Days away</th>
+                        </tr>
+                        <tr>
+                          <td>Alaric Ferrowmoor<small>Legal not recorded · UM500000</small></td>
+                          <td>South West<small>3 hours or more</small></td>
+                          <td>Dabakarn<small>Royal Perth</small></td>
+                          <td class="neg">Due 2 days ago<small>Awaiting accommodation</small></td>
+                          <td class="mono">34 days</td>
+                        </tr>
+                        <tr>
+                          <td>Junia Ferrowmoor<small>Legal not recorded · UM500009</small></td>
+                          <td>South West<small>3 hours or more</small></td>
+                          <td>Dabakarn<small>Royal Perth</small></td>
+                          <td>Due in 5 days<small>Fri 30 Oct</small></td>
+                          <td class="mono">4 days</td>
+                        </tr>
+                        <tr>
+                          <td>Delia Glasswell<small>Legal not recorded · UM500023</small></td>
+                          <td>South West<small>Air only</small></td>
+                          <td>Mental Health Unit<small>Sir Charles Gairdner</small></td>
+                          <td class="neg">Due 1 day ago<small>Awaiting transport</small></td>
+                          <td class="mono">61 days</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="card">
+                      <h4>This shift <span class="r">07:00 to now</span></h4>
+                      <div class="tiles" style="grid-template-columns: repeat(3, 1fr)">
+                        <div><b>0</b><small>Returns</small></div>
+                        <div><b>0</b><small>Leaving</small></div>
+                        <div><b>1</b><small>Due soon</small></div>
+                      </div>
+                      <p class="note">"Plan next return" asks a person to choose. Nothing proposes a home bed.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 5 DISCHARGES ───────────── -->
+      <section class="part" aria-labelledby="h-dis">
+        <h2 id="h-dis">5 · Discharges</h2>
+        <p class="lede">
+          From screenshot 10. Already one screen, so nothing merges in. It moves up into the six because releasing beds
+          is half of bed flow. Its List and Barriers views stay.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Discharges frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span>Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span>Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span>Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span>Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span aria-current="page">Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span>Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Discharges</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:44</span
+                ><span class="search">Search</span><span class="spacer"></span
+                ><span class="bell">Alerts <b class="mono">12</b></span
+                ><span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Bed release · all services</div>
+                <h3>53 discharges open <small>81 bed days past the ward's date</small></h3>
+                <div class="chips">
+                  <span class="chip-dark"><b>5</b>Discharges held up</span
+                  ><span class="chip-dark"><b>1</b>Confirmed</span><span class="chip-dark"><b>47</b>Expected</span
+                  ><span class="chip-dark"><b>4</b>Discharged · 24h</span>
+                </div>
+                <div class="views">
+                  <div class="seg" role="tablist" aria-label="Discharges views">
+                    <button role="tab" aria-selected="true" data-view="list">List<span class="n">53</span></button
+                    ><button role="tab" aria-selected="false" data-view="barriers">Barriers</button>
+                  </div>
+                  <span class="was">unchanged: /discharges</span>
+                </div>
+              </div>
+              <div class="body">
+                <div class="panel" data-panel="list">
+                  <div class="card">
+                    <div class="filters">
+                      <span class="pill">Service: All</span><span class="pill">Ward: All</span
+                      ><span class="pill">Status: All · 57</span><span class="pill">Blocker: All</span>
+                      <span class="order-note">Grouped by recorded stage; within each, oldest date first</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Ward / service</th>
+                        <th>Timing</th>
+                        <th>Stage / blocker</th>
+                      </tr>
+                      <tr class="group-row">
+                        <td colspan="3">Blocked · 5 · these need someone to act on them now</td>
+                      </tr>
+                      <tr class="flag">
+                        <td>Dabakarn<small>East Metro · Ferrowmoor, Alaric</small></td>
+                        <td class="mono danger">2d 0h past Fri, 23 Oct</td>
+                        <td>Confirmed<small>Awaiting accommodation</small></td>
+                      </tr>
+                      <tr>
+                        <td>Mental Health Unit<small>North Metro · Glasswell, Delia</small></td>
+                        <td class="mono danger">1d 0h past Sat, 24 Oct</td>
+                        <td>Expected<small>Awaiting transport</small></td>
+                      </tr>
+                      <tr>
+                        <td>Moodjar<small>East Metro · Ironbrook, Barnaby</small></td>
+                        <td class="mono danger">4d 0h past Wed, 21 Oct</td>
+                        <td>Expected<small>Awaiting receiving-service acceptance</small></td>
+                      </tr>
+                      <tr>
+                        <td>SJGS Adult Secure<small>Private · Quenfold, Junia</small></td>
+                        <td class="mono danger">2d 0h past Fri, 23 Oct</td>
+                        <td>Expected<small>Awaiting clean</small></td>
+                      </tr>
+                      <tr class="group-row">
+                        <td colspan="3">Confirmed · 1 · waiting only on the clock, not blocked</td>
+                      </tr>
+                      <tr>
+                        <td>SJGS Adult Open<small>Private · Pallowmere, Reya</small></td>
+                        <td class="mono danger">3d 0h past Thu, 22 Oct</td>
+                        <td>Confirmed</td>
+                      </tr>
+                      <tr class="group-row">
+                        <td colspan="3">Expected · 47 · not yet confirmed by the ward, and not blocked</td>
+                      </tr>
+                      <tr>
+                        <td>Dabakarn<small>East Metro · Banksiavale, Teodor</small></td>
+                        <td class="mono danger">2d 0h past Fri, 23 Oct</td>
+                        <td>Expected</td>
+                      </tr>
+                    </table>
+                    <p class="note">"Copy summary" keeps the synthetic first line and is for the board, not email.</p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="barriers" hidden>
+                  <div class="card">
+                    <h4>Barriers <span class="r">counts of recorded blockers</span></h4>
+                    <div class="tiles" style="grid-template-columns: repeat(4, 1fr)">
+                      <div><b>2</b><small>Awaiting transport</small></div>
+                      <div><b>1</b><small>Awaiting accommodation</small></div>
+                      <div><b>1</b><small>Awaiting receiving-service acceptance</small></div>
+                      <div><b>1</b><small>Awaiting clean</small></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────── 6 HANDOVER ───────────── -->
+      <section class="part" aria-labelledby="h-hand">
+        <h2 id="h-hand">6 · Handover: Handover, Bed meeting and TV as views</h2>
+        <p class="lede">
+          From screenshots 11 (Handover), 12 (Bed meeting TV) and the Bed meeting sheet and agenda buttons on 04
+          (Capacity). The shift switcher stays on top of all three views.
+        </p>
+        <div class="frame-wrap">
+          <div class="frame" data-frame>
+            <nav class="rail" aria-label="Sidebar (Handover frame)">
+              <div class="brand"><span class="brand-mark">+</span>Ward Flow <span class="tag">WA</span></div>
+              <div class="shift"><b>Day shift 07:00–15:00</b>Dr S. Chen · Bed coordinator</div>
+              <ul class="nav">
+                <li>
+                  <span>Home <span class="count">3</span></span>
+                </li>
+                <li>
+                  <span>Referrals <span class="count">7</span></span>
+                </li>
+                <li>
+                  <span>Beds <span class="count">26</span></span>
+                </li>
+                <li>
+                  <span>Movements <span class="count">70</span></span>
+                </li>
+                <li>
+                  <span>Discharges <span class="count">53</span></span>
+                </li>
+                <li>
+                  <span aria-current="page">Handover <span class="count">15:00</span></span>
+                </li>
+              </ul>
+              <div class="nav-label">More ›</div>
+              <div class="foot">Settings · Help</div>
+            </nav>
+            <div class="main">
+              <div class="topbar">
+                <span class="title">Handover</span><span class="chip-dark">Statewide</span
+                ><span class="chip-dark">Synthetic</span><span class="chip-dark mono">10:44</span
+                ><span class="search">Search</span><span class="spacer"></span
+                ><span class="bell">Alerts <b class="mono">12</b></span
+                ><span class="btn-pri">+ New referral</span>
+              </div>
+              <div class="hero">
+                <div class="eyebrow">Handover · 15:00 day to evening</div>
+                <h3>10 to hand over <small>Whole network · starts in 4h 16m</small></h3>
+                <div class="chips">
+                  <span class="chip-dark">07:00 Night to day</span
+                  ><span class="chip-dark" style="background: var(--wf-surface); color: var(--wf-ink-1)"
+                    >15:00 Day to evening</span
+                  ><span class="chip-dark">23:00 Evening to night</span> <span class="chip-dark"><b>3</b>Act now</span
+                  ><span class="chip-dark"><b>2</b>Flagged urgent</span
+                  ><span class="chip-dark"><b>37</b>Finding a ward</span><span class="chip-dark"><b>9</b>Moving</span>
+                </div>
+                <div class="views">
+                  <div class="seg" role="tablist" aria-label="Handover views">
+                    <button role="tab" aria-selected="true" data-view="handover">Handover</button
+                    ><button role="tab" aria-selected="false" data-view="meeting">Bed meeting</button
+                    ><button role="tab" aria-selected="false" data-view="tv">TV</button>
+                  </div>
+                  <span class="was"
+                    >was: /handover · Bed meeting sheet and agenda (from Capacity) · /bed-meeting (TV)</span
+                  >
+                </div>
+              </div>
+              <div class="body">
+                <div class="panel" data-panel="handover">
+                  <div class="card">
+                    <h4>Since previous handover <span class="r">at 07:00</span></h4>
+                    <div class="tiles" style="grid-template-columns: repeat(4, 1fr)">
+                      <div><b>0</b><small>admitted</small></div>
+                      <div><b>1</b><small>discharged · 1 Dabakarn</small></div>
+                      <div><b>32</b><small>new on the sheet</small></div>
+                      <div><b>0</b><small>new act now</small></div>
+                    </div>
+                  </div>
+                  <div class="card" style="margin-top: 14px">
+                    <div class="filters">
+                      Highlight
+                      <span class="pill">Constant obs <b>9</b></span
+                      ><span class="pill">Form recorded <b>33</b></span
+                      ><span class="pill">Declined <b>2</b></span
+                      ><span class="pill">Over a day <b>5</b></span
+                      ><span class="pill">Mine <b>45</b></span
+                      ><span class="pill">Escalated <b>2</b></span>
+                      <span class="order-note">Order: longest wait first. Highlights do not move rows.</span>
+                    </div>
+                    <table class="list">
+                      <tr>
+                        <th>Patient</th>
+                        <th>Status</th>
+                        <th>Waiting</th>
+                        <th>From and to</th>
+                        <th>Next step (typed)</th>
+                      </tr>
+                      <tr class="flag">
+                        <td>Oquinn, Priya<small>UM100006 · T3 · act now</small></td>
+                        <td>Placement requested<small>Coordinator</small></td>
+                        <td class="mono">10h 58m</td>
+                        <td>SJGM ED<small>No ward asked yet</small></td>
+                        <td>Ask a ward</td>
+                      </tr>
+                      <tr class="flag">
+                        <td>Wren, Tobias<small>UM100023 · T1 · act now</small></td>
+                        <td>Ward reviewing<small>Coordinator</small></td>
+                        <td class="mono">7h 02m</td>
+                        <td>PEEL ED<small>5 declined, none asked</small></td>
+                        <td>Ask another ward, 5 declined, escalated</td>
+                      </tr>
+                      <tr class="flag">
+                        <td>Cadwaller, Rhys<small>UM100046 · T1 · act now</small></td>
+                        <td>Bed pulled<small>Coordinator</small></td>
+                        <td class="mono">6h 52m</td>
+                        <td>SJGM ED<small>BTY Adult Secure</small></td>
+                        <td>Pull expired 12m ago. Move or release</td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      Today's "Group: meeting order" puts act-now rows first; in this frame act now is a highlight and
+                      the rows stay in wait order (D-71 item 3). Copy summary and Downtime pack stay.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="meeting" hidden>
+                  <div class="card">
+                    <h4>Bed meeting sheet <span class="r">printable · same figures as Beds › Capacity</span></h4>
+                    <table class="list">
+                      <tr>
+                        <th>Bed</th>
+                        <th>Waiting</th>
+                        <th>Fit</th>
+                        <th>Gap</th>
+                        <th>Tomorrow</th>
+                      </tr>
+                      <tr>
+                        <td>Locked</td>
+                        <td>13</td>
+                        <td>7</td>
+                        <td class="neg">Short 6</td>
+                        <td class="neg">Short 6</td>
+                      </tr>
+                      <tr>
+                        <td>Open</td>
+                        <td>28</td>
+                        <td>14</td>
+                        <td class="neg">Short 14</td>
+                        <td class="neg">Short 9</td>
+                      </tr>
+                    </table>
+                    <h4>Agenda</h4>
+                    <p class="note">
+                      1. Act now (3). 2. Discharges held up (5). 3. Wards not confirmed since 05:42 (1). 4. Out of area
+                      with date passed (4). Items are typed by the chair; the list does not choose who is discussed.
+                    </p>
+                  </div>
+                </div>
+                <div class="panel" data-panel="tv" hidden>
+                  <div class="tvgrid">
+                    <div class="tv act">
+                      <span>Waiting in ED</span><b class="danger">62</b><small>5 waiting over 24 hours</small>
+                    </div>
+                    <div class="tv act">
+                      <span>Longest ED wait</span><b class="danger">7d 1h</b><small>At Armadale Hospital</small>
+                    </div>
+                    <div class="tv">
+                      <span>Beds ready now</span><b>26</b><small>7 locked · 1 being made ready</small>
+                    </div>
+                    <div class="tv">
+                      <span>Due out today and tomorrow</span><b>53</b><small>1 confirmed, 5 held up</small>
+                    </div>
+                    <div class="tv"><span>Still open</span><b>70</b><small>movements</small></div>
+                  </div>
+                  <div class="card" style="margin-top: 14px">
+                    <h4>By health service <span class="r">Open full screen for the wall TV</span></h4>
+                    <table class="list">
+                      <tr>
+                        <th>Service</th>
+                        <th>In ED</th>
+                        <th>Longest</th>
+                        <th>Ready</th>
+                        <th>Locked</th>
+                        <th>Going</th>
+                      </tr>
+                      <tr>
+                        <td>NMHS</td>
+                        <td>10</td>
+                        <td class="danger">1d 1h</td>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>13</td>
+                      </tr>
+                      <tr>
+                        <td>EMHS</td>
+                        <td>33</td>
+                        <td class="danger">7d 1h</td>
+                        <td>9</td>
+                        <td>2</td>
+                        <td>17</td>
+                      </tr>
+                      <tr>
+                        <td>SMHS</td>
+                        <td>19</td>
+                        <td class="danger">2d 14h</td>
+                        <td>8</td>
+                        <td>3</td>
+                        <td>13</td>
+                      </tr>
+                      <tr>
+                        <td>WACHS</td>
+                        <td>0</td>
+                        <td>None</td>
+                        <td>3</td>
+                        <td>0</td>
+                        <td>6</td>
+                      </tr>
+                    </table>
+                    <p class="note">
+                      Today's TV tile "Most urgent: form due time running out" is left out; the TV shows counts only and
+                      no patient names.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="part" aria-labelledby="h-q">
+        <h2 id="h-q">Open questions for Josh</h2>
+        <p class="lede">Each has one recommendation. Nothing here is decided until Josh answers.</p>
+        <ol class="questions">
+          <li>
+            Where does <b>Governance</b> go?
+            <em>Recommendation: More. It is a reporting page, not part of the shift's flow.</em>
+          </li>
+          <li>
+            Where does <b>On-call</b> go?
+            <em>Recommendation: More, with a link from Handover, since on-call changes at shift change.</em>
+          </li>
+          <li>
+            Where does <b>Seclusion</b> go, now that D-72 item 6 makes it an operational view (in use now, room
+            availability)?
+            <em>Recommendation: More for now; revisit as a Beds view once the operational view is built.</em>
+          </li>
+          <li>
+            Does the <b>Places</b> directory (route /hub) fold into Beds, or stay in More with All EDs and Community?
+            <em>
+              Recommendation: one Directory in More for places, EDs and community teams. Its ward counts already show in
+              Beds › Wards.
+            </em>
+          </li>
+          <li>
+            Should <b>Delays</b> be its own view, or only blocker filters on Waiting?
+            <em>Recommendation: its own view, as drawn, so the blocker counts stay one press away. It filters only.</em>
+          </li>
+          <li>
+            Does the Referrals queue keep its "Fit · N ready" count of ready beds of that type?
+            <em>Recommendation: keep it as a count only (D-71 allows counts); it names no ward.</em>
+          </li>
+          <li>
+            Does the bed coordinator's <b>My list</b> stay as Home's default tab, as today?
+            <em>Recommendation: yes. Home opens on My list, with Everyone waiting one press away.</em>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <script>
+      // View switching inside each frame. No storage, no network; nothing saves.
+      document.querySelectorAll("[data-frame]").forEach((frame) => {
+        const tabs = frame.querySelectorAll('[role="tab"][data-view]');
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.setAttribute("aria-selected", String(t === tab)));
+            frame.querySelectorAll("[data-panel]").forEach((panel) => {
+              panel.hidden = panel.getAttribute("data-panel") !== tab.dataset.view;
+            });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
