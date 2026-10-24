@@ -4,6 +4,8 @@ import { runInNewContext } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
+import { pushPayload } from "../backend/ward-flow/push.mjs";
+
 /**
  * PWA plan items 4, 6, 12 and 13 (Oct 2026): what `public/ward-flow-push-sw.js` may keep.
  *
@@ -272,6 +274,93 @@ describe("worker lifecycle", () => {
       listeners.fetch({ request: request(path), respondWith: () => (answered = true) });
     }
     expect(answered).toBe(false);
+  });
+});
+
+describe("what a push may show (PS-13)", () => {
+  const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
+
+  async function shown(data: unknown) {
+    const listeners: Record<string, (event: unknown) => void> = {};
+    const notes: { title: string; options: { body: string; tag: string; data: { url: string } } }[] = [];
+    runInNewContext(WORKER_SOURCE, {
+      URL,
+      self: {
+        location: { origin: ORIGIN },
+        addEventListener: (type: string, listener: (event: unknown) => void) => {
+          listeners[type] = listener;
+        },
+        registration: {
+          showNotification: async (title: string, options: (typeof notes)[number]["options"]) => {
+            notes.push({ title, options });
+          },
+        },
+      },
+    });
+    let work: Promise<unknown> = Promise.resolve();
+    listeners.push({ data: { json: () => data }, waitUntil: (promise: Promise<unknown>) => (work = promise) });
+    await work;
+    expect(notes).toHaveLength(1);
+    return { title: notes[0].title, body: notes[0].options.body, url: notes[0].options.data.url };
+  }
+
+  it.each([
+    ["act now, one site", [{ id: "bed-pull-WF-004", site: "Royal Perth Hospital" }]],
+    [
+      "act now, two sites",
+      [
+        { id: "x", site: "Royal Perth Hospital" },
+        { id: "y", site: "Fiona Stanley Hospital" },
+      ],
+    ],
+    ["act now, no site", [{ id: "x", site: null }]],
+    [
+      "transport jobs",
+      [
+        { id: "job:WF-005:abc", site: "Peel Health Campus", kind: "job" },
+        { id: "job:WF-006:def", site: "Peel Health Campus", kind: "job" },
+      ],
+    ],
+    ["team update", [{ id: "community:1", site: "Royal Perth Hospital", kind: "community" }]],
+  ])("shows the server's own %s payload as sent", async (_label, alerts) => {
+    const payload = pushPayload(alerts);
+    expect(await shown(payload)).toEqual({ title: payload.title, body: payload.body, url: payload.url });
+  });
+
+  it.each([
+    ["free text", "Synthetic Person Example UM100001 arrived", "Synthetic Person Example UM100001 arrived"],
+    [
+      "a name inside the template",
+      "Ward Flow: 1 new act now item for Synthetic Person",
+      "Synthetic Person. Open Alerts to review. Synthetic demo data. Call UM100001",
+    ],
+    [
+      "a long site",
+      "Ward Flow: 2 new act now items in bed 2",
+      `${"A".repeat(61)}. Open Alerts to review. Synthetic demo data.`,
+    ],
+    [
+      "a site with other characters",
+      "Ward Flow: 3 new act now items: Synthetic Person",
+      "Ward 4: Synthetic Person, bed 2. Open Alerts to review. Synthetic demo data.",
+    ],
+  ])("shows the fallback words for %s", async (_label, title, body) => {
+    expect(await shown({ title, body, url: "/ward-flow/alerts" })).toEqual({ ...FALLBACK, url: "/ward-flow/alerts" });
+  });
+
+  it("checks the title and body separately, and keeps the length limits", async () => {
+    const good = pushPayload([{ id: "x", site: "Royal Perth Hospital" }]);
+    expect(await shown({ ...good, title: "Synthetic Person Example" })).toMatchObject({
+      title: FALLBACK.title,
+      body: good.body,
+    });
+    expect(await shown({ ...good, body: "Synthetic Person Example" })).toMatchObject({
+      title: good.title,
+      body: FALLBACK.body,
+    });
+    expect(await shown({})).toMatchObject(FALLBACK);
+    const long = `Ward Flow: 1 new act now item${" ".repeat(100)}`;
+    expect(await shown({ title: long, body: good.body })).toMatchObject({ title: FALLBACK.title });
   });
 });
 
