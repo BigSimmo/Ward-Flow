@@ -177,7 +177,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
         data-testid="ward-ed-referral-form"
       >
         <fieldset
-          className={`${styles.declineFieldset} ${styles.referralGrid}`}
+          className={`${styles.declineFieldset} ${styles.referralGrid} ${missingStyles.saveFields}`}
           disabled={referralFieldsDisabled}
           aria-label="Referral details"
         >
