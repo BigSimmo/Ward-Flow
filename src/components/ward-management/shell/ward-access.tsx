@@ -792,6 +792,8 @@ export function WardIdleLock() {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (onTv) return;
     let countdown: number | undefined;
+    // Wall-clock deadline, so a laptop woken after its timers were held still signs out on time.
+    let deadline = 0;
     const lock = () => {
       window.clearInterval(countdown);
       setSecondsLeft(null);
@@ -803,20 +805,27 @@ export function WardIdleLock() {
     };
     // A signed-in desk is asked "Still there?" for the last minute, so a person at it is not signed out.
     const warn = () => {
-      let left = IDLE_WARNING_SECONDS;
-      setSecondsLeft(left);
+      const secondsTo = () => Math.ceil((deadline - Date.now()) / 1000);
+      setSecondsLeft(Math.min(IDLE_WARNING_SECONDS, secondsTo()));
       countdown = window.setInterval(() => {
-        left -= 1;
+        const left = secondsTo();
         if (left <= 0) lock();
         else setSecondsLeft(left);
       }, 1000);
     };
-    const arm = () =>
-      session
+    const arm = () => {
+      deadline = Date.now() + minutes * 60_000;
+      return session
         ? window.setTimeout(warn, minutes * 60_000 - IDLE_WARNING_SECONDS * 1000)
         : window.setTimeout(lock, minutes * 60_000);
+    };
     let timer = arm();
     const reset = () => {
+      if (Date.now() >= deadline) {
+        window.clearTimeout(timer);
+        lock();
+        return;
+      }
       window.clearTimeout(timer);
       window.clearInterval(countdown);
       setSecondsLeft(null);

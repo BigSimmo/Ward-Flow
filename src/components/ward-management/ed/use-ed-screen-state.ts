@@ -105,8 +105,9 @@ export function useEdRowPanels() {
   }>({ legalStatus: undefined, reason: undefined });
   // Audit 4 A4-01: an open urgency or legal status form is checked against the board it opened on,
   // as a popup is, so another desk's change meanwhile is reported, not overwritten.
-  const recordFormFor = urgencyChangeOpenFor ?? legalStatusChangeOpenFor;
-  useEffect(() => (recordFormFor === undefined ? undefined : holdOpenForm()), [recordFormFor]);
+  // One hold each, so opening one form never moves the other's basis to a newer board.
+  useEffect(() => (urgencyChangeOpenFor === undefined ? undefined : holdOpenForm()), [urgencyChangeOpenFor]);
+  useEffect(() => (legalStatusChangeOpenFor === undefined ? undefined : holdOpenForm()), [legalStatusChangeOpenFor]);
 
   // `TR-D1`: the sending team books the transport out, and this department is the sending team for
   // its own patients. One open-for id and one draft, the same shape the three toggles above use —

@@ -115,6 +115,19 @@ it("asks 'Still there?' for the last minute before an idle sign-out, and says wh
   );
 });
 
+it("signs out, not rearms, when activity comes after the idle deadline (a woken laptop)", () => {
+  const signOut = vi.fn();
+  render(
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  // The clock moves on while the timers are held, as when a laptop sleeps.
+  vi.setSystemTime(Date.now() + IDLE_MS + 5_000);
+  fireEvent.keyDown(window, { key: "a" });
+  expect(signOut).toHaveBeenCalledTimes(1);
+});
+
 it("logs the person a patient or movement page shows, and nothing on other pages (review item 9)", () => {
   const movements = [{ id: "WF-012", patientId: "PT-0042" as const }];
   expect(recordViewFor(screenForPath(patientHref("PT-0001")), movements)).toEqual({
