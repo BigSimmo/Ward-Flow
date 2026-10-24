@@ -58,13 +58,15 @@ const ON_WARD_UMRN = "UM100028";
 const OFF_WARD_UMRN = "UM100023";
 const OTHER_WARD_UMRN = "UM100030";
 const heldBedWard = seed.units.find((unit) => unit.id === "rph-older-adult")!;
+const SEEDED_REFERRAL_IDS = new Set(seed.referrals.map((referral) => referral.id));
 
 type KeptWards = { selectedUnitIds: string[] };
 type KeptReason = { notOnWard?: { unitId: string; reason: string } };
 
 function Probe() {
   const { referrals, rejections } = useWardFlow();
-  const sent = referrals.filter((referral) => referral.intake);
+  // The seeded referrals already carry authored intakes; "sent" means sent in this session.
+  const sent = referrals.filter((referral) => referral.intake && !SEEDED_REFERRAL_IDS.has(referral.id));
   return (
     <>
       <output data-testid="sent">

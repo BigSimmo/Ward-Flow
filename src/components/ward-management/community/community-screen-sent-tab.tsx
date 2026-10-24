@@ -6,7 +6,7 @@
  * elapsed, because the team page never prints a date or a clock face.
  */
 
-import { useId, useState } from "react";
+import { Fragment, useId, useState } from "react";
 import styles from "./community.module.css";
 import {
   type SentAnswerTone,
@@ -20,6 +20,7 @@ import {
   unattributedSentLine,
 } from "./community-sent-referrals";
 import type { CommunityScreenView } from "./community-screen";
+import { SentReferralJourneyChanges } from "../movements/sent-referral-journey-changes";
 
 const FILTERS: { id: SentFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -99,32 +100,48 @@ export function CommunityScreenSentTab({ view }: { view: CommunityScreenView }) 
                   visible.map((referral) => {
                     const answer = sentAnswer(referral, units);
                     return (
-                      <tr key={referral.id} data-testid={`ward-community-sent-${referral.id}`}>
-                        <td>
-                          <strong>
-                            {referral.patientId ? identityOf({ patientId: referral.patientId }) : "Person not recorded"}
-                          </strong>
-                        </td>
-                        <td>
-                          {sentAskedFor(referral)}
-                          <span className={styles.cellSub}>Sent {sentAgo(referral.raisedAt, now)}</span>
-                        </td>
-                        <td>{sentToLine(referral, units)}</td>
-                        <td>
-                          <span
-                            className={`${styles.statusPillBadge} ${styles[TONE_CLASS[answer.tone]]} ${styles.sentAnswer}`}
-                          >
-                            {answer.text}
-                          </span>
-                          <ul className={styles.sentPlaces} aria-label="Where it was sent">
-                            {referral.addressings.map((addressing, index) => (
-                              <li key={`${referral.id}-${index}`} className={styles.cellSub}>
-                                {sentPlaceLine(addressing, units)}
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                      </tr>
+                      <Fragment key={referral.id}>
+                        <tr data-testid={`ward-community-sent-${referral.id}`}>
+                          <td>
+                            <strong>
+                              {referral.patientId
+                                ? identityOf({ patientId: referral.patientId })
+                                : "Person not recorded"}
+                            </strong>
+                          </td>
+                          <td>
+                            {sentAskedFor(referral)}
+                            <span className={styles.cellSub}>Sent {sentAgo(referral.raisedAt, now)}</span>
+                          </td>
+                          <td>{sentToLine(referral, units)}</td>
+                          <td>
+                            <span
+                              className={`${styles.statusPillBadge} ${styles[TONE_CLASS[answer.tone]]} ${styles.sentAnswer}`}
+                            >
+                              {answer.text}
+                            </span>
+                            <ul className={styles.sentPlaces} aria-label="Where it was sent">
+                              {referral.addressings.map((addressing, index) => (
+                                <li key={`${referral.id}-${index}`} className={styles.cellSub}>
+                                  {sentPlaceLine(addressing, units)}
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                        </tr>
+                        {/* D-80: the team changes its own journey's urgency or legal status, on a row of its own. */}
+                        <SentReferralJourneyChanges
+                          referral={referral}
+                          patientWho={
+                            referral.patientId ? identityOf({ patientId: referral.patientId }) : "this person"
+                          }
+                          wrap={(controls) => (
+                            <tr data-testid={`ward-community-sent-journey-${referral.id}`}>
+                              <td colSpan={4}>{controls}</td>
+                            </tr>
+                          )}
+                        />
+                      </Fragment>
                     );
                   })
                 )}

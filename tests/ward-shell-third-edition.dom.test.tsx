@@ -53,6 +53,7 @@ import {
   resolveWardPrimaryAction,
   type WardPrimaryAction,
 } from "@/components/ward-management/ward-nav";
+import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -768,8 +769,9 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     expect(pill).toHaveAttribute("aria-expanded", "true");
     const menu = await screen.findByRole("dialog", { name: "Demo" }, { timeout: 15_000 });
     const panel = await within(menu).findByTestId("ward-tools-demo-panel");
-    // One list of all seven scenarios, so the separate Demo reset block is not repeated here.
-    expect(within(panel).getAllByRole("radio")).toHaveLength(7);
+    // One list of every scenario (the seven standard stories and the opt-in fictional network), so the
+    // separate Demo reset block is not repeated here.
+    expect(within(panel).getAllByRole("radio")).toHaveLength(WARD_SCENARIOS.length);
     expect(within(panel).queryByTestId("ward-demo-reset")).toBeNull();
   });
 

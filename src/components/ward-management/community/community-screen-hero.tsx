@@ -51,8 +51,8 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
     teamConfig,
     lists,
     waitingReferrals,
-    urgentWaitingCount,
-    hasAnyReferralsForTeam,
+    waitingCount,
+    urgentAnswerCount,
     caseloadRows,
     inBedCount,
     bedPulledCount,
@@ -108,11 +108,8 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
               {
                 id: "urgent",
                 label: "Urgent answers",
-                value: isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount,
-                tone:
-                  (isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount) > 0
-                    ? "danger"
-                    : undefined,
+                value: urgentAnswerCount,
+                tone: urgentAnswerCount > 0 ? "danger" : undefined,
               },
               ...(isDemoMode
                 ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
@@ -167,9 +164,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                   tab.id === "tab-sent"
                     ? sentReferrals.sent.length
                     : tab.id === "tab-triage"
-                      ? isDemoMode && !hasAnyReferralsForTeam
-                        ? teamConfig.triage
-                        : waitingReferrals.length
+                      ? waitingCount
                       : tab.id === "tab-inpatients"
                         ? isDemoMode
                           ? teamConfig.inpatients
@@ -246,8 +241,8 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
         <WardFigureStrip>
           <WardFigure
             label="Waiting for an answer"
-            value={`${waitingReferrals.length}`}
-            sub={`referral${waitingReferrals.length === 1 ? "" : "s"} addressed to this team`}
+            value={`${waitingCount}`}
+            sub={`referral${waitingCount === 1 ? "" : "s"} addressed to this team`}
           />
           <WardFigure
             label="Admitted while with the team"

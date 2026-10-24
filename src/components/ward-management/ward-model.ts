@@ -488,6 +488,8 @@ export type Movement = MovementBase & {
    */
   patientId?: PatientId;
   openedAt: Instant;
+  /** A ward's own copy only (D-80): the accepted person's last discharge in the readmission window. */
+  readmissionDischargedAt?: Instant;
   /**
    * THE FRONT-DOOR REFERRAL THIS JOURNEY WAS RAISED FROM — the link that did not exist.
    *
