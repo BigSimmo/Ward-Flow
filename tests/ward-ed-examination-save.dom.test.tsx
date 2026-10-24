@@ -10,13 +10,14 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
-import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import {
   WardSharedSaveContext,
   type WardSharedSave,
 } from "@/components/ward-management/shell/ward-shared-save-context";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { commandMetadata } from "@/components/ward-management/ward-command-metadata";
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -168,12 +169,20 @@ describe("ED examination save confirmation", () => {
 
   it("blocks a fresh submission while the original save is unconfirmed and reconciles its Retry", async () => {
     shared = connected();
-    const reply = deferred();
+    const reply = deferred(),
+      terminal = deferred();
     const dispatch = vi.fn<WardCommandDispatch>(() => reply.promise);
     const view = openSave(dispatch);
     view.submit();
     shared = { ...shared, unconfirmedSave: true, status: "unavailable" };
-    await act(async () => reply.resolve({ commandId: "synthetic-command", status: "failed", isCurrent: () => true }));
+    await act(async () =>
+      reply.resolve({
+        commandId: "synthetic-command",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => true,
+      }),
+    );
     view.rerender(view.props);
     view.submit();
     expect(dispatch).toHaveBeenCalledTimes(1);
@@ -183,8 +192,166 @@ describe("ED examination save confirmation", () => {
       ...view.props,
       movements: [{ ...movement, examination: { at: NOW_ANCHOR, outcome: "inpatient_order" } }],
     });
+    expect(view.result.current.panels.examinationOpenFor).toBe(ID);
+    expect(view.result.current.examinationFieldsDisabled).toBe(true);
+    await act(async () => terminal.resolve({ commandId: "synthetic-command", status: "accepted" }));
     expect(view.result.current.panels.examinationOpenFor).toBeUndefined();
     expect(view.result.current.panels.examinationOutcome).toBeUndefined();
+  });
+
+  it("confirms an accepted replay after another desk supersedes its examination", async () => {
+    shared = connected();
+    const first = deferred(),
+      terminal = deferred();
+    const dispatch = vi.fn<WardCommandDispatch>(() => first.promise);
+    const view = openSave(dispatch);
+    act(() => view.result.current.panels.setExaminationOutcome("further_examination_ordered"));
+    view.submit();
+    const recordedA = wardFlowReducer(seed, {
+      type: "RECORD_EXAMINATION",
+      role: "ed",
+      now: NOW_ANCHOR,
+      movementId: ID,
+      outcome: "further_examination_ordered",
+    });
+    const recordedB = wardFlowReducer(recordedA, {
+      type: "RECORD_EXAMINATION",
+      role: "ed",
+      now: NOW_ANCHOR + 1,
+      movementId: ID,
+      outcome: "further_examination_ordered",
+    });
+    expect(recordedB.rejections).toHaveLength(seed.rejections.length);
+    expect(recordedB.movements.find((row) => row.id === ID)?.supersededExaminations).toContainEqual({
+      at: NOW_ANCHOR,
+      outcome: "further_examination_ordered",
+    });
+    shared = { ...shared, status: "unavailable", unconfirmedSave: true };
+    await act(async () =>
+      first.resolve({
+        commandId: "replayed-examination",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => true,
+      }),
+    );
+    shared = connected();
+    view.rerender({
+      ...view.props,
+      now: NOW_ANCHOR + 1,
+      movements: [recordedB.movements.find((row) => row.id === ID)!],
+    });
+    const ownUndo = commandMetadata(seed, recordedA).undoStep;
+    expect(ownUndo).toBeDefined();
+    const accepted: WardCommandOutcome = {
+      commandId: "replayed-examination",
+      status: "accepted",
+      isCurrent: () => true,
+      canUndo: () => true,
+      undoStep: ownUndo,
+    };
+    await act(async () => terminal.resolve(accepted));
+    expect(view.result.current.panels.examinationOpenFor).toBeUndefined();
+    expect(view.result.current.panels.examinationOutcome).toBeUndefined();
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(view.offerStep).toHaveBeenCalledTimes(1);
+    const offeredCompletion = view.offerStep.mock.calls[0]?.[1]?.completion;
+    const offered = await offeredCompletion;
+    expect(offered).toMatchObject({ commandId: accepted.commandId, status: "accepted", undoStep: accepted.undoStep });
+    expect(offered.isCurrent?.()).toBe(true);
+    expect(offered.canUndo?.()).toBe(true);
+  });
+
+  it("keeps a refused private Retry refused when a foreign matching snapshot arrives", async () => {
+    shared = connected();
+    const first = deferred(),
+      terminal = deferred();
+    const view = openSave(() => first.promise);
+    view.submit();
+    shared = { ...shared, status: "unavailable", unconfirmedSave: true };
+    await act(async () =>
+      first.resolve({
+        commandId: "refused-examination",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => true,
+      }),
+    );
+    await act(async () =>
+      terminal.resolve({
+        commandId: "refused-examination",
+        status: "refused",
+        message: "Synthetic examination refusal.",
+        isCurrent: () => true,
+      }),
+    );
+    shared = connected(); // A later recovered read no longer carries the command's refusal text.
+    view.rerender({
+      ...view.props,
+      movements: [{ ...movement, examination: { at: NOW_ANCHOR, outcome: "inpatient_order" } }],
+    });
+    expect(view.result.current.panels.examinationOpenFor).toBe(ID);
+    expect(view.result.current.panels.examinationOutcome).toBe("inpatient_order");
+    expect(view.result.current.examinationSaveMessage).toBe("Not recorded: Synthetic examination refusal.");
+  });
+
+  it("preserves a changed choice when the original private Retry accepts", async () => {
+    shared = connected();
+    const first = deferred(),
+      terminal = deferred();
+    const view = openSave(() => first.promise);
+    view.submit();
+    shared = { ...shared, status: "unavailable", unconfirmedSave: true };
+    await act(async () =>
+      first.resolve({
+        commandId: "original-examination",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => true,
+      }),
+    );
+    act(() => view.result.current.panels.setExaminationOutcome("community_order"));
+    shared = connected();
+    view.rerender(view.props);
+    await act(async () => terminal.resolve({ commandId: "original-examination", status: "accepted" }));
+    expect(view.result.current.panels.examinationOpenFor).toBe(ID);
+    expect(view.result.current.panels.examinationOutcome).toBe("community_order");
+    expect(view.result.current.examinationFieldsDisabled).toBe(false);
+    expect(view.result.current.examinationSaveMessage).toBeUndefined();
+  });
+
+  it("fences the retained form and Undo when the original failed command lifetime ends", async () => {
+    shared = connected();
+    let current = true;
+    const first = deferred(),
+      terminal = deferred();
+    const view = openSave(() => first.promise);
+    view.submit();
+    shared = { ...shared, status: "unavailable", unconfirmedSave: true };
+    await act(async () =>
+      first.resolve({
+        commandId: "ended-examination",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => current,
+      }),
+    );
+    current = false;
+    shared = connected();
+    view.rerender(view.props);
+    await act(async () =>
+      terminal.resolve({
+        commandId: "ended-examination",
+        status: "accepted",
+        isCurrent: () => true,
+        undoStep: { undoType: "UNDO_ED_STEP", subjectId: ID, seq: 1 },
+      }),
+    );
+    expect(view.result.current.panels.examinationOpenFor).toBe(ID);
+    expect(view.result.current.panels.examinationOutcome).toBe("inpatient_order");
+    expect(view.result.current.examinationFieldsDisabled).toBe(false);
+    const offered = await view.offerStep.mock.calls[0]?.[1]?.completion;
+    expect(offered.isCurrent?.()).toBe(false);
   });
 
   it("keeps a local refusal editable instead of assuming a void dispatch succeeded", () => {
@@ -210,11 +377,19 @@ describe("ED examination save confirmation", () => {
 
   it("retains the draft when Retry refuses the command with another desk's matching winner", async () => {
     shared = connected();
-    const reply = deferred();
+    const reply = deferred(),
+      terminal = deferred();
     const view = openSave(() => reply.promise);
     view.submit();
     shared = { ...shared, unconfirmedSave: true, status: "unavailable" };
-    await act(async () => reply.resolve({ commandId: "synthetic-command", status: "failed", isCurrent: () => true }));
+    await act(async () =>
+      reply.resolve({
+        commandId: "synthetic-command",
+        status: "failed",
+        confirmation: terminal.promise,
+        isCurrent: () => true,
+      }),
+    );
     shared = {
       ...shared,
       unconfirmedSave: false,
@@ -226,24 +401,26 @@ describe("ED examination save confirmation", () => {
       movements: [{ ...movement, examination: { at: NOW_ANCHOR, outcome: "inpatient_order" as const } }],
     };
     view.rerender(winner);
+    await act(async () =>
+      terminal.resolve({ commandId: "synthetic-command", status: "refused", message: shared?.error ?? undefined }),
+    );
     expect(view.result.current.panels.examinationOpenFor).toBe(ID);
     expect(view.result.current.panels.examinationOutcome).toBe("inpatient_order");
-    expect(view.result.current.examinationSaveMessage).toBe("Another desk changed this record. Nothing was changed.");
+    expect(view.result.current.examinationSaveMessage).toBe(
+      "Not recorded: Another desk changed this record. Nothing was changed.",
+    );
     shared = { ...shared, error: null };
     view.rerender(winner);
     expect(view.result.current.panels.examinationOpenFor).toBe(ID);
     expect(view.result.current.panels.examinationOutcome).toBe("inpatient_order");
   });
 
-  it("requires a new history record to confirm a repeat examination at the same time", async () => {
-    shared = connected();
+  it("requires a new local history record to confirm a void repeat examination at the same time", () => {
     const previous = { at: NOW_ANCHOR, outcome: "further_examination_ordered" as const };
     const repeated = { ...movement, examination: previous };
-    const reply = deferred();
-    const view = openSave(() => reply.promise, repeated);
+    const view = openSave(() => undefined, repeated);
     act(() => view.result.current.panels.setExaminationOutcome("further_examination_ordered"));
     view.submit();
-    await act(async () => reply.resolve({ commandId: "synthetic-command", status: "failed", isCurrent: () => true }));
     view.rerender({ ...view.props, movements: [{ ...repeated, examination: { ...previous } }] });
     expect(view.result.current.panels.examinationOpenFor).toBe(ID);
     expect(view.result.current.panels.examinationOutcome).toBe("further_examination_ordered");
