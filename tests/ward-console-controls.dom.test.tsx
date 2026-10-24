@@ -1147,7 +1147,7 @@ describe("a transport job that outlived the bed it was booked against", () => {
     expect(within(rail).getByText(/Transport booked with Patient transport service/i)).toBeInTheDocument();
     expect(within(rail).getByText(/Record behind/i)).toBeInTheDocument();
     expect(
-      within(rail).getByText(/the ward may still be holding one — check with them before cancelling/i),
+      within(rail).getByText(/the ward may still have a bed pulled — check with them before cancelling/i),
     ).toBeInTheDocument();
   });
 
