@@ -220,6 +220,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  * in `ward-clinical-values.ts` instead.
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
+  {
+    file: "ward-role-alerts.ts",
+    name: "ROLE_ALERT_WINDOW_MINUTES",
+    why: "how long a phone alert id stays live for a retried delivery (D-80); never shown",
+  },
   { file: "ward-model.ts", name: "PULL_HOLD_MINUTES", why: "legal figure guard provenance; listed as pullHold" },
   {
     file: "ward-model.ts",
