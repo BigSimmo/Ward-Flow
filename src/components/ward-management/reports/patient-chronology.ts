@@ -410,7 +410,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(expiry.at),
       who: whoLabel(expiry.by),
       action: expiry.basis === "extension" ? "Form extension recorded" : "Form expiry recorded",
-      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero)}`,
+      after: `Typed expiry ${formatSheetMoment(expiry.dueAt, dayZero, { includeYearAndZone: true })}`,
     });
   }
   for (const correction of movement.legalFormReceiptCorrections ?? []) {
@@ -490,7 +490,10 @@ function transportRows(movement: Movement, record: string, dayZero: Date, wardNa
   const legal = job.transportLegalStatus
     ? `, ${job.transportLegalStatus === "involuntary" ? "Involuntary" : "Voluntary"}`
     : "";
-  const eta = finite(job.estimatedAt) !== null ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero)}` : "";
+  const eta =
+    finite(job.estimatedAt) !== null
+      ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero, { includeYearAndZone: true })}`
+      : "";
   rows.push({
     record,
     recordedAt: null,
@@ -799,7 +802,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
 
 /** A time for paper or a spreadsheet: weekday, date and clock face, or "Not recorded". */
 export function chronologyTime(instant: Instant | null, dayZero: Date): string {
-  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero);
+  return instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
 }
 
 export const CHRONOLOGY_CSV_HEADER = [
@@ -831,9 +834,11 @@ export function chronologyCsv(
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
-      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero)}`),
+      csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero, { includeYearAndZone: true })}`),
     ].join(","),
     ...(patient ? [[csvCell("Patient"), csvCell(patient)].join(",")] : []),
+    [csvCell("Scope"), csvCell("Selected patient's retained chronology")].join(","),
+    [csvCell("Period"), csvCell("Recorded events in the exported view; no date-range restriction")].join(","),
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
     ...rows.map((row) =>
       [

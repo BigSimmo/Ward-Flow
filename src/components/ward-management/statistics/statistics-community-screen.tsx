@@ -1,7 +1,5 @@
 "use client";
 
-import { downloadBlob } from "@/components/ward-management/ward-download";
-
 import { useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronDown, FileText, LayoutList, PhoneCall, Search, Users } from "lucide-react";
@@ -25,7 +23,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   admissionsWithNoCommunityTeam,
@@ -41,13 +39,12 @@ import {
   STATISTICS_COMMUNITY_CHOOSER_HREF,
   STATISTICS_TEAMS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-absence";
 import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { dateOf, fromToday, isPastDate } from "./statistics-dates";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
@@ -85,7 +82,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const { countsOnly, small, parts } = useStatisticsCounts();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
-  const { dayZero } = useWardFlowSelect("dayZero");
+  const { dayZero } = live.state;
   const isPhone = useIsPhone();
 
   const section = statisticsSectionById("community");
@@ -305,7 +302,11 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         <>
           <FlushRow layout="lead2">
             <Follow className={detail.followBody}>
-              <TeamComparison current={team} rows={allTeams} />
+              <TeamComparison
+                current={team}
+                rows={allTeams}
+                asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+              />
             </Follow>
             <FlushStack>
               <StatCard
@@ -704,9 +705,11 @@ const TOP = 12;
 function TeamComparison({
   current,
   rows,
+  asAt,
 }: {
   current: CommunityTeam;
   rows: { team: CommunityTeam; figures: CommunityFigures }[];
+  asAt: string;
 }) {
   const [view, setView] = useState<"chart" | "data">("chart");
   const [measure, setMeasure] = useState<Measure>("admitted");
@@ -758,10 +761,10 @@ function TeamComparison({
         String(cellText(row.figures.other)),
       ]),
     ];
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      "ward-flow-synthetic-community-teams.csv",
-    );
+    downloadCsv("ward-flow-synthetic-community-teams.csv", lines, {
+      asAt,
+      scope: `Team comparison from ${current.name}; matching teams`,
+    });
   }
 
   return (
