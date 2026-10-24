@@ -550,7 +550,13 @@ export type AssertNever<T extends never> = T;
 
 type UnreviewedSafeEventPayloadKeys = {
   [T in (typeof WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE)[number]]: UnreviewedStringOrUnknownKeys<
-    Extract<WardFlowEvent, { type: T }>
+    // Only this command's expected token is reviewed: a canonical tuple of fixed observation
+    // values, record identity and a history count. Exact reducer comparison refuses arbitrary
+    // text; neither accepted nor refused tokens are copied into state or the session log.
+    // Keep the generic key guard unchanged: another event's expected:string still fails.
+    T extends "RECORD_OBSERVATION_LEVEL"
+      ? Omit<Extract<WardFlowEvent, { type: T }>, "expected">
+      : Extract<WardFlowEvent, { type: T }>
   >;
 }[(typeof WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE)[number]];
 
