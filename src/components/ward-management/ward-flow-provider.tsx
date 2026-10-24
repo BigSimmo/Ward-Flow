@@ -529,7 +529,8 @@ function wardFlowContainerReducer(
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 /** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
-const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
+const fixtureWorlds = (offsetMinutes = 0) =>
+  WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);

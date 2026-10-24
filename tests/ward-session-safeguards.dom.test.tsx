@@ -94,6 +94,40 @@ it("signs out of the shared workspace when it locks, so the next person needs th
   expect(screen.getByTestId("ward-idle-unlock")).toHaveTextContent("Sign in again");
 });
 
+it("asks 'Still there?' for the last minute before an idle sign-out, and says why it signed out (A4-04, A4-05)", () => {
+  const signOut = vi.fn();
+  render(
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  act(() => vi.advanceTimersByTime(IDLE_MS - 60_000));
+  expect(screen.getByRole("alertdialog", { name: "Still there?" })).toBeVisible();
+  act(() => vi.advanceTimersByTime(20_000));
+  expect(screen.getByTestId("ward-idle-countdown")).toHaveTextContent("signed out in 40 seconds");
+  fireEvent.click(screen.getByTestId("ward-idle-still-here"));
+  expect(screen.queryByRole("alertdialog")).toBeNull();
+  act(() => vi.advanceTimersByTime(IDLE_MS - 61_000));
+  expect(signOut).not.toHaveBeenCalled();
+  act(() => vi.advanceTimersByTime(61_000));
+  expect(signOut).toHaveBeenCalledWith(
+    `Signed out after ${CLINICAL_VALUES.idleLock.value} minutes without use. Sign in again to carry on.`,
+  );
+});
+
+it("signs out, not rearms, when activity comes after the idle deadline (a woken laptop)", () => {
+  const signOut = vi.fn();
+  render(
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  // The clock moves on while the timers are held, as when a laptop sleeps.
+  vi.setSystemTime(Date.now() + IDLE_MS + 5_000);
+  fireEvent.keyDown(window, { key: "a" });
+  expect(signOut).toHaveBeenCalledTimes(1);
+});
+
 it("logs the person a patient or movement page shows, and nothing on other pages (review item 9)", () => {
   const movements = [{ id: "WF-012", patientId: "PT-0042" as const }];
   expect(recordViewFor(screenForPath(patientHref("PT-0001")), movements)).toEqual({

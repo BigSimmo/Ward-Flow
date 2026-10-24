@@ -58,8 +58,7 @@ import {
   SUPPORT_NOTIFICATION_PARTIES,
 } from "./ward-support-notifications";
 import { isSnoozeReason } from "./ward-inbox-snooze";
-import { WARD_SCENARIOS } from "./ward-scenarios";
-import { allEmergencyDepartments, siteByCode } from "./ward-sites";
+import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
@@ -284,7 +283,7 @@ const capacityFigure = z.looseObject({
 const unit = z
   .looseObject({
     id,
-    siteCode: text.check(z.refine((code) => !!siteByCode(code))),
+    siteCode: text,
     name: text,
     cohort: z.enum(COHORTS),
     sexDesignation: z.enum(["Undesignated", "Female only", "Male only"]),
@@ -393,8 +392,6 @@ const unit = z
     ),
   );
 
-const emergencyDepartmentId = text.check(z.refine((edId) => allEmergencyDepartments().some((ed) => ed.id === edId)));
-const knownSiteCode = text.check(z.refine((code) => !!siteByCode(code)));
 const turnaroundPriority = z.strictObject({ unitId: id, flaggedAt: finite, source: z.enum(["cld", "departure"]) });
 // Smart features idea 5: a bed meeting action is chosen from fixed lists, never typed text.
 // A ward owner always names its ward, and a done action records both when and by whom.
@@ -421,9 +418,9 @@ const observationChangeRule = z.strictObject({ at: finite, from: observationRule
 const movement = z
   .looseObject({
     id,
-    originEdId: z.optional(emergencyDepartmentId),
+    originEdId: z.optional(text),
     // D-76: a journey from an accepted community referral starts at the referring team instead.
-    originCommunity: z.optional(z.strictObject({ teamName: z.optional(text), siteCode: knownSiteCode })),
+    originCommunity: z.optional(z.strictObject({ teamName: z.optional(text), siteCode: text })),
     turnaroundPriority: z.optional(turnaroundPriority),
     cohort: z.enum(COHORTS),
     security: z.enum(["Open", "Secure"]),
@@ -541,7 +538,7 @@ const referralDestination = z.discriminatedUnion("kind", [
     highAcuityNursingNeeded: bool,
   }),
   z.looseObject({ kind: z.literal("community_team"), teamName: text }),
-  z.looseObject({ kind: z.literal("emergency_department"), edId: emergencyDepartmentId, purpose: text }),
+  z.looseObject({ kind: z.literal("emergency_department"), edId: text, purpose: text }),
 ]);
 // A ward's ask is a fixed item and two role labels; a tick-off carries both its time and its role.
 const informationNeed = z
@@ -834,8 +831,8 @@ const repatriation = z
     at: finite,
     estimatedAt: finite,
     by: role,
-    // The reducer only records a site it knows, so anything else would be typed text.
-    homeHospital: text.check(z.refine((code) => siteByCode(code) !== undefined)),
+    // Membership is checked against the saved scenario below; other text is still refused.
+    homeHospital: text,
     cadNumber: notKept,
     receivingWardAgreed: bool,
     mode: z.enum(REPATRIATION_MODES),
@@ -945,12 +942,37 @@ const storedState = z.looseObject({
 });
 type StoredState = z.infer<typeof storedState>;
 
+/** Identity membership belongs to the saved world, before that world becomes the active network. */
+function identitiesMatchScenario(state: StoredState): boolean {
+  const sites = scenarioWardNetwork(state.scenario).sites;
+  const siteCodes = new Set(sites.map((site) => site.code));
+  const edIds = new Set(sites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment.id] : [])));
+  return (
+    state.units.every((unit) => siteCodes.has(unit.siteCode)) &&
+    state.movements.every(
+      (movement) =>
+        (movement.originEdId === undefined || edIds.has(movement.originEdId)) &&
+        (movement.originCommunity === undefined || siteCodes.has(movement.originCommunity.siteCode)),
+    ) &&
+    state.referrals.every((referral) =>
+      referral.destinations.every(
+        ({ destination }) => destination.kind !== "emergency_department" || edIds.has(destination.edId),
+      ),
+    ) &&
+    state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
+    state.patients.every(({ registrationScope }) => {
+      if (registrationScope === undefined) return true;
+      if (registrationScope.kind === "ed") return edIds.has(registrationScope.placeId);
+      if (registrationScope.kind === "site") return siteCodes.has(registrationScope.placeId);
+      return isPatientRegistrationScope(registrationScope, state.units);
+    })
+  );
+}
+
 // Pass 3: links between rows. Ids are already unique within each collection.
 function consistent(state: StoredState, value: RecordValue): boolean {
+  if (!identitiesMatchScenario(state)) return false;
   if (validateConfiguration(value.configuration) === null) return false;
-  for (const patient of state.patients)
-    if (patient.registrationScope !== undefined && !isPatientRegistrationScope(patient.registrationScope, state.units))
-      return false;
   const submissionIds = state.referrals.flatMap((referral) =>
     referral.submissionId === undefined ? [] : [referral.submissionId],
   );

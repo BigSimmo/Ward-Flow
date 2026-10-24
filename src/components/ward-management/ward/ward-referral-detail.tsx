@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useContext, useEffect, useState, type ReactNode } from "react";
 
 import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
@@ -20,6 +21,7 @@ import {
   type ReferralDossier,
 } from "@/components/ward-management/ward-referral-dossier-seed";
 import { edById } from "@/components/ward-management/ward-sites";
+import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
   CLEARANCE_CHECK_LABELS,
   CLEARANCE_CHECKS,
@@ -133,6 +135,7 @@ export function WardReferralDetail({
   fit,
   onUpdateBeds,
 }: WardReferralDetailProps) {
+  const { dayZero } = useWardFlowSelect("dayZero");
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const patient = identity.patient;
   const ed = edById(movement.originEdId);
@@ -178,7 +181,7 @@ export function WardReferralDetail({
       label: "Status",
       detail: intake.medicalClearance.cleared
         ? "Cleared"
-        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${intake.medicalClearance.expectedAt}` : ""}`,
+        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}` : ""}`,
     });
   else if (dossier?.medicalClearance.clearedBy) {
     const at = timeAfter(movement, dossier.medicalClearance.clearedAfterMinutes, now);
@@ -493,6 +496,14 @@ export function WardReferralDetailDrawer({
   const intake = wardReferralInbox(unit.id).find((entry) => entry.id === movement.referralId)?.intake;
   const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
   const ageYears = identity.patient ? patientAgeYears(identity.patient, calendarDateOf(now, dayZero)) : undefined;
+  // Since D-79 this shows the name, UMRN and documents, so opening it is a record view (D-80).
+  // Logged on the server in the signed-in shared workspace only; nothing in the local demo.
+  const session = useContext(SharedSessionContext);
+  // The patient this drawer already names, not the journey's link (D-14).
+  const patientId = identity.patient?.id;
+  useEffect(() => {
+    if (patientId) session?.logRecordView(patientId, "referral");
+  }, [session, patientId]);
   return (
     <Drawer
       open
@@ -510,7 +521,7 @@ export function WardReferralDetailDrawer({
         identity={identity}
         ageYears={ageYears}
         intake={intake}
-        dossier={seededReferralDossier(movement.id)}
+        dossier={seededReferralDossier(movement.id, movement)}
         fit={fit}
         onUpdateBeds={onUpdateBeds}
       />

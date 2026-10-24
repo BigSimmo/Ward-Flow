@@ -21,9 +21,10 @@ import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
-import { SharedSessionContext, type SharedSession } from "./shell/ward-shared-session-context";
+import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
@@ -70,7 +71,10 @@ export type WardSharedConnection = SharedView & {
   enabled: boolean;
   signedIn: boolean;
   signIn: () => void;
-  signOut: () => void;
+  /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
+  signOut: (reason?: unknown) => void;
+  /** When this sign-in reaches the session limit, in wall-clock milliseconds. */
+  sessionEndsAt?: number | null;
   retry: () => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
@@ -83,7 +87,7 @@ export type WardSharedConnection = SharedView & {
   /** The step-up sign-in with the account's own password. */
   reauthenticate?: (password: string) => Promise<void>;
   /** Tells the server this desk opened a patient's record. Best effort; nothing when not connected. */
-  logRecordView?: (patientId: string, surface: "patient" | "movement") => void;
+  logRecordView?: (patientId: string, surface: RecordViewSurface) => void;
 };
 
 /**
@@ -385,7 +389,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     () =>
       sessionOpen
         ? {
-            signOut: () => latest.current.signOut(),
+            signOut: (reason) => latest.current.signOut(reason),
             logRecordView: (patientId, surface) => latest.current.logRecordView?.(patientId, surface),
           }
         : null,
@@ -626,6 +630,7 @@ function WardSharedWorkspaceContent({
   const blocked = connection.status !== "ready" && !outage;
   return (
     <>
+      <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
       <WardSharedSaveStatus
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
@@ -643,6 +648,31 @@ function WardSharedWorkspaceContent({
         {children}
       </FocusKeepingInert>
     </>
+  );
+}
+
+/** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced before it ends (`sessionWarning`). */
+const SESSION_WARNING_MS = CLINICAL_VALUES.sessionWarning.value * 60_000;
+
+export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
+  // Wall-clock time, not the demonstration clock: the server measures the limit in real time.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (endsAt === null) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(timer);
+  }, [endsAt]);
+  if (endsAt === null || now < endsAt - SESSION_WARNING_MS) return null;
+  const at = new Date(endsAt).toLocaleTimeString("en-AU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Australia/Perth",
+  });
+  return (
+    <p role="alert" className={styles.sessionEnding} data-testid="ward-session-ending">
+      You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
+      typing and save it now.
+    </p>
   );
 }
 

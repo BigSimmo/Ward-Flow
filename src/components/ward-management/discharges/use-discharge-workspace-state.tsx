@@ -277,8 +277,12 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const releaseActor = recordActorFor(detailRelease?.unitId);
-  const canChangeRelease = releaseActor.role === "ward" || releaseActor.role === "coordinator";
-  const canRecordDeparture = canChangeRelease && detailRelease?.state === "confirmed";
+  // D-80: the site bed manager clears a release blocker in its own name. The departure stays with
+  // the ward (and the coordinator), so it is offered no Record departure.
+  const canChangeRelease =
+    releaseActor.role === "ward" || releaseActor.role === "coordinator" || releaseActor.role === "bed_manager";
+  const canRecordDeparture =
+    (releaseActor.role === "ward" || releaseActor.role === "coordinator") && detailRelease?.state === "confirmed";
   const departureDestination: LeavingDestination =
     departure.releaseId === detailRelease?.id ? departure.destination : "discharged-to-the-community";
   // One primary per area: on a phone a blocked release keeps Clear blocker as the primary.

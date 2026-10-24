@@ -392,7 +392,10 @@ describe("a command from a desk", () => {
     ).toBeNull();
   });
 
-  it("is refused when it names another ward's stay or patient, however deep", () => {
+  it("is refused when it names another ward's stay or a nested movement subject", () => {
+    const visible = new Set(scopeWardFlowState(state, ward, options).state.movements.map((movement) => movement.id));
+    const hiddenMovement = state.movements.find((movement) => !visible.has(movement.id))!;
+    expect(hiddenMovement).toBeDefined();
     expect(
       commandScopeRefusal(
         state,
@@ -405,7 +408,16 @@ describe("a command from a desk", () => {
       commandScopeRefusal(
         state,
         ward,
-        { type: "X", role: "ward", nested: [{ id: otherAdmission.patientId }] },
+        {
+          type: "COMPLETE_BED_MEETING_ACTION",
+          role: "ward",
+          subject: {
+            kind: "movement",
+            id: hiddenMovement.id,
+          },
+          now: NOW_ANCHOR,
+          action: "review_step_down",
+        },
         options,
       ),
     ).toMatch(/outside/);

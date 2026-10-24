@@ -8,6 +8,26 @@ import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
+
+/** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
+const SESSION_CHANNEL = "ward-flow-session";
+
+/**
+ * When this sign-in reaches the session limit: the token's oldest sign-in factor plus the limit,
+ * as the server counts it (ISM-0428). `null` when the token carries no start time.
+ */
+function sessionEndsAt(token: string): number | null {
+  try {
+    const claims = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const times = (Array.isArray(claims?.amr) ? claims.amr : [])
+      .map((entry: { timestamp?: unknown }) => entry?.timestamp)
+      .filter((value: unknown): value is number => Number.isFinite(value));
+    return times.length ? Math.min(...times) * 1000 + CLINICAL_VALUES.sessionLimit.value * 3_600_000 : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
@@ -111,6 +131,7 @@ export function useWardSupabaseShared(
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
+  const [endsAt, setEndsAt] = useState<number | null>(null);
   const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
   // Latest factory, read when the session boots. Updated in an effect (not during render) and
   // declared before the boot effect so it is current when that effect runs; the boot effect keys
@@ -133,7 +154,7 @@ export function useWardSupabaseShared(
     signIn: (email: string, password: string) => Promise<void>;
     recover: (email: string) => Promise<void>;
     updatePassword: (password: string) => Promise<void>;
-    signOut: () => Promise<void>;
+    signOut: (reason?: string, everyTab?: boolean) => Promise<void>;
     retry: () => Promise<void>;
     reauthenticate: (password: string) => Promise<void>;
   } | null>(null);
@@ -144,6 +165,7 @@ export function useWardSupabaseShared(
     let onVisibilityChange: (() => void) | undefined;
     let auth: WardBrowserAuthAdapter | null = null;
     let connectedActorId: string | null = null;
+    let channel: BroadcastChannel | null = null;
     const disconnect = (forgetDrafts = true) => {
       forgetDowntimePack();
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
@@ -159,6 +181,7 @@ export function useWardSupabaseShared(
       connection.current = null;
       if (!closed) {
         setSignedIn(false);
+        setEndsAt(null);
         setView({ ...emptyView, status: "ready" });
       }
     };
@@ -213,6 +236,10 @@ export function useWardSupabaseShared(
       connection.current = client;
       await client.refresh();
       if (closed || connection.current !== client) return;
+      void instance.token().then(
+        (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
+        () => {},
+      );
       void rememberPhonePushOwnership({
         ownerId: actorId,
         pushKey: () => client.pushKey(),
@@ -312,7 +339,9 @@ export function useWardSupabaseShared(
           reauthenticate: async (password) => {
             await auth!.reauthenticate(password);
           },
-          signOut: async () => {
+          // `reason` is shown on the sign-in screen; a deliberate sign-out (no reason) ends every tab.
+          signOut: async (reason, everyTab = reason === undefined) => {
+            if (everyTab) channel?.postMessage("signed-out");
             const token = auth!.captureAccessTokenForSignOut();
             const ownerId = auth!.userId;
             // The next person at this device chooses their own role. The cleanup below still
@@ -328,6 +357,7 @@ export function useWardSupabaseShared(
             // here too, so it goes even when the session had already ended or auth was swapped.
             endWardFlowBrowserSession();
             setForm({ open: false, recovery: false, busy: false, message: null });
+            if (reason && !closed) setView({ ...emptyView, status: "ready", error: reason });
             // The next account on a shared phone never sees this one's act-now count, even when
             // the session has expired and the phone alert cleanup could not run.
             setActNowAppBadge(0);
@@ -363,6 +393,15 @@ export function useWardSupabaseShared(
               }
             }),
         };
+        try {
+          channel = new BroadcastChannel(SESSION_CHANNEL);
+          channel.onmessage = (event) => {
+            if (event.data === "signed-out" && auth?.userId)
+              void actions.current?.signOut("Signed out in another Ward Flow tab. Sign in again to carry on.", false);
+          };
+        } catch {
+          // No broadcast channel in this browser: each tab still signs itself out.
+        }
         if (fragmentError) {
           fail(fragmentError);
           return;
@@ -386,6 +425,7 @@ export function useWardSupabaseShared(
     void boot();
     return () => {
       closed = true;
+      channel?.close();
       disconnect(false);
       auth?.dispose();
       actions.current = null;
@@ -396,8 +436,11 @@ export function useWardSupabaseShared(
     signedIn,
     client: connection,
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
-    signOut: () => {
-      void actions.current?.signOut();
+    /** When this sign-in reaches the session limit, in wall-clock milliseconds; `null` when unknown. */
+    sessionEndsAt: endsAt,
+    /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
+    signOut: (reason?: unknown) => {
+      void actions.current?.signOut(typeof reason === "string" ? reason : undefined);
     },
     retry: () => {
       void actions.current?.retry();
@@ -427,7 +470,7 @@ export function useWardSupabaseShared(
         await actions.current?.updatePassword(password);
       },
       cancel: () => {
-        if (form.recovery) void actions.current?.signOut();
+        if (form.recovery) void actions.current?.signOut(undefined, false);
         else setForm((old) => ({ ...old, open: false, message: null }));
       },
     } satisfies WardCredentialForm,

@@ -72,6 +72,11 @@ export const MIGRATIONS = Object.freeze([
     file: "012-foreign-key-indexes.sql",
     sha256: "7de22a95f0ecee0fe53c2f0964a2a72eaea016522dd8c7960fed5cf697577fed",
   },
+  {
+    version: 13,
+    file: "013-referral-record-views.sql",
+    sha256: "9de1c9faa77af43e560d3ab514fdf3f8e16626fcac6102fa4beaeba90fe459a4",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -79,13 +84,14 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 12:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 13:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
  * the workspace is saved as one record, so any change refuses every other save made against an older
  * revision. Before 11 opening a record is not logged and a sign-out does not end the sign-in's token
- * on this server. Migration 12 adds indexes only, so nothing behaves differently before it.
+ * on this server. Migration 12 adds indexes only, so nothing behaves differently before it. Before
+ * 13 opening a referral's full detail is not logged.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
@@ -100,6 +106,9 @@ export const RECORDS_MIGRATION = 10;
 
 /** The first schema with the record access log and server-side sign-outs (migration 11). */
 export const RECORD_ACCESS_MIGRATION = 11;
+
+/** The first schema whose record access log takes a referral opening (migration 13). */
+export const REFERRAL_VIEW_MIGRATION = 13;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

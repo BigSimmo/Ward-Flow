@@ -437,7 +437,8 @@ describe("who may raise which event", () => {
     RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
     RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
     RECORD_PATIENT_DISCHARGE: ["ward", "coordinator"],
-    OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
+    // D-80: the site bed manager reads its own site's records.
+    OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community", "bed_manager"],
     REVIEW_AUDIT_EVENT: ["coordinator"],
     // Settings wiring (2026-09-16, the owner's "wire some up for real"): the ED access target, the
     // parallel referral cap and the pulled-bed hold are coordinator settings. The reducer refuses

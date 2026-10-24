@@ -25,7 +25,7 @@ const ROUTES = new Map([
   ["/v1/workspace/sign-out", "sign_out"],
 ]);
 /** The screens that open a patient's record, as the record access log names them. */
-const VIEW_SURFACES = new Set(["patient", "movement"]);
+const VIEW_SURFACES = new Set(["patient", "movement", "referral"]);
 /** A synthetic person or movement id, as the workspace names them. */
 const RECORD_ID = /^(?:PT|WF)-[A-Za-z0-9-]{1,96}$/;
 /**

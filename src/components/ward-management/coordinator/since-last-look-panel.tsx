@@ -7,6 +7,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 
 import styles from "./home.module.css";
+import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import {
   changesSinceInstant,
   scopedChangesSinceLastLook,
@@ -61,6 +62,12 @@ function subscribe(onChange: () => void) {
 }
 
 const pendingLeaveSaves = new Map<string, number>();
+// Audit 4 A4-07: a leave-save scheduled as the signed-in screen closes ran after the sign-out
+// sweep and left this picture behind. Each session end moves this on, and a save from before stops.
+let sessionEpoch = 0;
+onWardSessionEnd(() => {
+  sessionEpoch += 1;
+});
 
 const serverLastLook = () => null;
 
@@ -131,10 +138,16 @@ export function useSinceLastLook(
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
     if (scopeKey) return;
+    const epoch = sessionEpoch;
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture.
       const snapshot = latest.current;
-      if (snapshot.userId === userId && snapshot.worldGeneration === generation && snapshot.scopeKey === scopeKey)
+      if (
+        epoch === sessionEpoch &&
+        snapshot.userId === userId &&
+        snapshot.worldGeneration === generation &&
+        snapshot.scopeKey === scopeKey
+      )
         writeSnapshot(snapshot, storageKey);
     };
     window.addEventListener("pagehide", saveOnLeave);

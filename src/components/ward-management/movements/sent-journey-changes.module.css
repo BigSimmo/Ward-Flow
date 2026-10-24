@@ -1,0 +1,53 @@
+/* D-80: the sending ward's or team's urgency and legal status controls. v6 tokens only, so the
+   same block reads as one family in the ward bed dossier and on the community team's Sent list. */
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.now {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.form > * {
+  align-self: stretch;
+}
+
+.form > .submit {
+  align-self: flex-start;
+}
+
+.blocked {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.message {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}

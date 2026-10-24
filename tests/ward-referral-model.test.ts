@@ -1245,6 +1245,9 @@ describe("Referral privacy — structural", () => {
    */
   const ALLOWED_ADDRESSING_FIELDS = [
     "waitlistedAt",
+    // WIDENED 24 Oct 2026: seeded arms now record when that destination was referred (an instant
+    // already on `ReferralAddressing`; it names no person and no other destination).
+    "referredAt",
     "destination",
     "state",
     "decidedAt",
@@ -1385,6 +1388,7 @@ describe("Referral privacy — structural", () => {
         // this is the exhaustive half of the guard and it has to reach the fields it is guarding.
         {
           waitlistedAt: NOW_ANCHOR,
+          referredAt: NOW_ANCHOR,
           destination: {
             kind: "psychiatric_ward",
             unitId: "rph-adult-secure",

@@ -80,7 +80,7 @@ test.describe("native history and handover print @mockup", () => {
       return referral;
     };
     let referral = await openReferral();
-    await referral.locator("#refDocInput").fill("Synthetic clinician");
+    await referral.locator("#refDocInput").fill("Draft-recovery marker clinician");
     await referral.getByRole("button", { name: "Close step", exact: true }).click();
     await page.keyboard.press("Escape");
     await page
@@ -92,11 +92,12 @@ test.describe("native history and handover print @mockup", () => {
     await expect(toolsTrigger).toBeFocused();
     expect(prompts).toBe(0);
     referral = await openReferral();
-    // Keep assertion output free of the typed fixture value.
+    // Keep assertion output free of the typed fixture value. The marker must stay unique: the seeded
+    // referrals carry referrer names such as "Synthetic clinician 1", so a shared prefix would match them.
     expect(
       await referral
         .locator("#refDocInput")
-        .evaluate((input) => (input as HTMLInputElement).value === "Synthetic clinician"),
+        .evaluate((input) => (input as HTMLInputElement).value === "Draft-recovery marker clinician"),
     ).toBe(true);
     // D-67 (17 Oct 2026): the synthetic referral drawer may keep a session-scoped `wf-draft:v2:`
     // recovery copy. Typed text must appear nowhere else: no other session key, never localStorage.
@@ -105,12 +106,12 @@ test.describe("native history and handover print @mockup", () => {
         [
           ...Object.entries(sessionStorage).filter(([key]) => !key.startsWith("wf-draft:v2:")),
           ...Object.entries(localStorage),
-        ].some(([, value]) => value.includes("Synthetic clinician")),
+        ].some(([, value]) => value.includes("Draft-recovery marker clinician")),
       ),
     ).toBe(false);
     const recovery = await page.evaluate(() => {
       const entries = Object.entries(sessionStorage).filter(
-        ([key, raw]) => key.startsWith("wf-draft:v2:") && raw.includes("Synthetic clinician"),
+        ([key, raw]) => key.startsWith("wf-draft:v2:") && raw.includes("Draft-recovery marker clinician"),
       );
       if (entries.length !== 1) return false;
       const [key, raw] = entries[0]!;
@@ -121,7 +122,7 @@ test.describe("native history and handover print @mockup", () => {
         envelope.version === 1 &&
         envelope.expiresAt > Date.now() &&
         envelope.expiresAt - envelope.savedAt <= 12 * 60 * 60_000 &&
-        projection.doctorNote === "Synthetic clinician" &&
+        projection.doctorNote === "Draft-recovery marker clinician" &&
         projection.documentation.charts.length === 0
       );
     });
