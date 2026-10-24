@@ -138,6 +138,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^PERTH_UTC_OFFSET_MINUTES$/,
   },
   {
+    id: "phone-alert-hold",
+    why: "How long an officer or community phone alert id stays live so a failed delivery can be retried (D-80, 24 Oct 2026); never shown, not a limit.",
+    file: /^ward-role-alerts\.ts$/,
+    name: /^ROLE_ALERT_WINDOW_MINUTES$/,
+  },
+  {
     id: "typing-pause",
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
     file: /^referrals\/referral-draft-cache\.ts$/,
