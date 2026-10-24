@@ -43,7 +43,7 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
-import { SentReferralJourneyChanges } from "../movements/sent-journey-changes";
+import { SentReferralJourneyChanges } from "../movements/sent-referral-journey-changes";
 import {
   sentAgo,
   sentAnswer,
@@ -160,10 +160,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
                   // D-80: the team changes its own journey's urgency or legal status.
                   controls: (
-                    <SentReferralJourneyChanges
-                      referralId={referral.id}
-                      patientWho={phoneName(person, "this person")}
-                    />
+                    <SentReferralJourneyChanges referral={referral} patientWho={phoneName(person, "this person")} />
                   ),
                 };
               }),

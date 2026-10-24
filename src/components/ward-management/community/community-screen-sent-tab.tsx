@@ -20,7 +20,7 @@ import {
   unattributedSentLine,
 } from "./community-sent-referrals";
 import type { CommunityScreenView } from "./community-screen";
-import { SentReferralJourneyChanges } from "../movements/sent-journey-changes";
+import { SentReferralJourneyChanges } from "../movements/sent-referral-journey-changes";
 
 const FILTERS: { id: SentFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -131,7 +131,7 @@ export function CommunityScreenSentTab({ view }: { view: CommunityScreenView }) 
                         </tr>
                         {/* D-80: the team changes its own journey's urgency or legal status, on a row of its own. */}
                         <SentReferralJourneyChanges
-                          referralId={referral.id}
+                          referral={referral}
                           patientWho={
                             referral.patientId ? identityOf({ patientId: referral.patientId }) : "this person"
                           }

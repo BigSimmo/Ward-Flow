@@ -24,7 +24,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import {
   openJourneyFromStay,
   SentJourneyChanges,
-  useJourneyIsMine,
+  useStayJourneyIsMine,
 } from "@/components/ward-management/movements/sent-journey-changes";
 import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
 import {
@@ -218,7 +218,7 @@ export function WardBedDossierDrawer({
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
   // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
   const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;
-  const sentJourneyControls = useJourneyIsMine(sentJourney) ? (
+  const sentJourneyControls = useStayJourneyIsMine(sentJourney) ? (
     <SentJourneyChanges key={sentJourney!.id} movement={sentJourney!} patientWho={occupantAlias} />
   ) : null;
   const tone = bedTone(bedItem, isReady);

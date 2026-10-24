@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { Button, Field, Select } from "@/components/wf";
 import {
   LEGAL_STATUS_OPTIONS,
@@ -42,13 +42,6 @@ import styles from "./sent-journey-changes.module.css";
  * renders nothing, so it never offers an action the reducer or the server would refuse.
  */
 
-/** The open journey started from a referral (a community team's, D-76), never one leaving a stay. */
-export function openJourneyForReferral(movements: readonly Movement[], referralId: string): Movement | undefined {
-  return movements.find(
-    (movement) => movement.referralId === referralId && movement.sourceAdmissionId === undefined && !movement.closure,
-  );
-}
-
 /**
  * The open journey a ward sent for the person in one of its beds: the one leaving this stay (a
  * return journey). Matched on the stay alone, never on the person: the D-14 guard keeps the patient
@@ -61,38 +54,42 @@ export function openJourneyFromStay(
   return movements.find((movement) => !movement.closure && movement.sourceAdmissionId === admission.id);
 }
 
-/** The community team's Sent list: the controls for the open journey a sent referral started. */
-export function SentReferralJourneyChanges({
-  referralId,
-  patientWho,
-  wrap = (controls) => controls,
-}: {
-  referralId: string;
-  patientWho: string;
-  /** Places the controls (a table row of their own), only when there are controls to place. */
-  wrap?: (controls: ReactNode) => ReactNode;
-}) {
-  const { movements } = useWardFlowSelect("movements");
-  const movement = openJourneyForReferral(movements, referralId);
-  const mine = useJourneyIsMine(movement);
-  return movement && mine
-    ? wrap(<SentJourneyChanges key={movement.id} movement={movement} patientWho={patientWho} />)
-    : null;
-}
-
-/** Whether the route desk may change this journey's urgency and legal status (see the module comment). */
-export function useJourneyIsMine(movement: Movement | undefined): boolean {
-  const routeRole = useRouteRole();
-  const { referrals, admissions, units } = useWardFlowSelect("referrals", "admissions", "units");
-  const access = useEffectiveWardAccess();
+/**
+ * Whether the route desk may change this journey's urgency and legal status (see the module comment).
+ * Takes the records rather than reading them, because FD-23 keeps the full referral list off the
+ * ward's and the team's screens (`tests/ward-referral-screen-boundary.test.ts`): the ward passes none
+ * and the team passes only its own Sent row (`sent-referral-journey-changes.tsx`).
+ */
+export function journeyIsMine(
+  records: Parameters<typeof journeySentByDesk>[0],
+  movement: Movement | undefined,
+  routeRole: string,
+  access: Parameters<typeof journeySentByDesk>[2],
+  places: Parameters<typeof journeySentByDesk>[3],
+): movement is Movement {
   return (
     movement !== undefined &&
     (routeRole === "ward" || routeRole === "community") &&
     !movement.closure &&
     canDispatch(routeRole, "CHANGE_URGENCY") &&
     canDispatch(routeRole, "CHANGE_LEGAL_STATUS") &&
-    journeySentByKind(referrals, movement, routeRole) &&
-    journeySentByDesk({ referrals, admissions }, movement, access, wardPlaceLookup(units))
+    journeySentByKind(records.referrals, movement, routeRole) &&
+    journeySentByDesk(records, movement, access, places)
+  );
+}
+
+/**
+ * The ward's check for a journey leaving one of its stays. Both sender checks answer a journey
+ * leaving a stay from the stay alone, so no referral is read; one that is not is never the ward's
+ * here.
+ */
+export function useStayJourneyIsMine(movement: Movement | undefined): boolean {
+  const routeRole = useRouteRole();
+  const { admissions, units } = useWardFlowSelect("admissions", "units");
+  const access = useEffectiveWardAccess();
+  return (
+    movement?.sourceAdmissionId !== undefined &&
+    journeyIsMine({ referrals: [], admissions }, movement, routeRole, access, wardPlaceLookup(units))
   );
 }
 
@@ -124,11 +121,12 @@ function Submit({ id, blocked, children }: { id: string; blocked: string | undef
   );
 }
 
+/** The two forms. Render it only for a journey `journeyIsMine` passed (`useStayJourneyIsMine` on the
+ *  ward, `SentReferralJourneyChanges` on the team's Sent list). */
 export function SentJourneyChanges({ movement, patientWho }: { movement: Movement; patientWho: string }) {
   const routeRole = useRouteRole();
   const { dispatch } = useWardFlowSelect("dispatch");
   const now = useWardFlowClock();
-  const mine = useJourneyIsMine(movement);
   const baseId = useId();
   const [open, setOpen] = useState<Open>(null);
   const [urgency, setUrgency] = useState<1 | 2 | 3>(movement.urgency);
@@ -136,8 +134,6 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
   const [legalStatus, setLegalStatus] = useState<LegalStatus | undefined>(undefined);
   const [legalReason, setLegalReason] = useState<LegalStatusChangeReason | undefined>(undefined);
   const [message, setMessage] = useState<string | undefined>(undefined);
-
-  if (!mine) return null;
 
   const raise = wardRaise(dispatch, routeRole, now);
   const report = (result: ReturnType<typeof raise>) => {
