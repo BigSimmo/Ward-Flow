@@ -1241,7 +1241,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 </div>
                                 <div>
                                   <dt>Bed</dt>
-                                  <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
+                                  <dd>{capacity.available > 0 ? "Ready now" : "Not ready yet"}</dd>
                                 </div>
                               </dl>
                               <div className={styles.phoneSheetField}>
@@ -1388,7 +1388,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             {phoneFold(
               "capacity",
               "Confirm your beds",
-              `Allocatable ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
+              `Confirmed free ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
               unit.allocatable.value,
               <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
                 <div className={styles.panelHeader}>
@@ -1401,11 +1401,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <dd>{states.ready}</dd>
                     </div>
                     <div>
-                      <dt>Physically empty</dt>
+                      <dt>Empty</dt>
                       <dd>{unit.empty.value}</dd>
                     </div>
                     <div>
-                      <dt>Allocatable</dt>
+                      <dt>Confirmed free</dt>
                       <dd>{unit.allocatable.value}</dd>
                     </div>
                     <div>
@@ -1428,7 +1428,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   ) : null}
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
                     <span className={styles.capacityLabel} id="ward-capacity-label">
-                      Allocatable now, for {unit.name}
+                      Free beds now, for {unit.name}
                     </span>
                     <div className={styles.capacityRow}>
                       {/* v10: one control only, a stepper; no slider and no free number box. */}
@@ -1436,7 +1436,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         value={Number(capacityValue) || 0}
                         min={0}
                         max={unit.beds}
-                        noun="allocatable beds"
+                        noun="free beds"
                         valueTestId="ward-capacity-input"
                         onChange={(next) =>
                           setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })
