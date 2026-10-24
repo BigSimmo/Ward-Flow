@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
  * The community route (`src/components/ward-management/community/`) is immune: it renders
  * DURATIONS — "3 days", "day 4 of this demonstration" — and never a calendar date. Verified here:
  * `ward-clock.ts` exports exactly two calendar-date-producing functions, `calendarDateOf` and
- * `formatSheetMoment`, and `handover-page.tsx` genuinely calls `formatSheetMoment` to print one
+ * `formatSheetMoment`, and `handover-print-sheet.tsx` genuinely calls `formatSheetMoment` to print one
  * (this file's positive control). No file under `community/` references either function, or any
  * of the raw `Date` APIs that could print one directly.
  *
@@ -113,10 +113,10 @@ describe("the community route prints durations, never calendar dates", () => {
 
   describe("controls — a guard nobody has watched fail is not known to be a guard", () => {
     it("reports MORE THAN ZERO against a file that genuinely prints a calendar date (positive control)", () => {
-      // handover-page.tsx imports and calls formatSheetMoment to print a real calendar date on
-      // the printed handover sheet — the strongest control available, because it proves the
+      // handover-print-sheet.tsx imports and calls formatSheetMoment to print a real calendar date
+      // on the printed handover sheet — the strongest control available, because it proves the
       // detector distinguishes the community route from a file that really does the thing.
-      const path = "src/components/ward-management/handover/handover-page.tsx";
+      const path = "src/components/ward-management/handover/handover-print-sheet.tsx";
 
       expect(dateConstructCount(readFileSync(path, "utf8"), path)).toBeGreaterThan(0);
     });
