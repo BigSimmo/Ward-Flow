@@ -29,6 +29,7 @@ import {
   filterGlossary,
   screenHelpFor,
 } from "@/components/ward-management/help/ward-help-content";
+import { DESK_GUIDES, SAVED_OR_NOT } from "@/components/ward-management/help/ward-help-guide";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import {
@@ -124,6 +125,23 @@ describe("help sheet", () => {
     expect(screen.getByText("CAD number")).toBeTruthy();
     expect(screen.queryByText("ECT")).toBeNull();
     expect(JSON.stringify({ ...window.localStorage })).not.toContain("St John");
+  });
+
+  it("shows the signed-in desk's guide: where it starts, its jobs and how to tell it saved", () => {
+    render(<Harness initial="desk" />);
+    const desk = screen.getByTestId("ward-help-desk");
+    expect(screen.getByTestId("ward-help-intro").textContent).toContain(DESK_GUIDES.coordinator.summary);
+    for (const item of DESK_GUIDES.coordinator.jobs) expect(desk.textContent).toContain(item.how);
+    expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
+  });
+
+  it("gives every desk a plain guide that never ranks, scores or calls an incoming bed held", () => {
+    for (const [role, guide] of Object.entries(DESK_GUIDES)) {
+      expect(guide.jobs.length, role).toBeGreaterThanOrEqual(3);
+      expect(guide.jobs.length, role).toBeLessThanOrEqual(6);
+      const words = JSON.stringify(guide).toLowerCase();
+      expect(words, role).not.toMatch(/best match|risk score|acuity|recommended ward|hold the bed|bed hold/);
+    }
   });
 
   it("starts the tour from its own button", () => {

@@ -29,7 +29,7 @@ vi.mock("@/components/wf", async (importOriginal) => ({
 }));
 
 import { WardTour, findTourTarget } from "@/components/ward-management/help/ward-tour";
-import { WardTourAutoStart } from "@/components/ward-management/help/ward-tour-auto-start";
+import { TOUR_AUTO_DONE_STORAGE_KEY, WardTourAutoStart } from "@/components/ward-management/help/ward-tour-auto-start";
 import {
   TOUR_SEEN_STORAGE_KEY,
   markTourSeen,
@@ -53,6 +53,7 @@ beforeEach(() => {
   phone.on = false;
   push.mockReset();
   resetTourSeenForTests();
+  window.localStorage.removeItem(TOUR_AUTO_DONE_STORAGE_KEY);
 });
 
 afterEach(() => {
@@ -185,6 +186,18 @@ describe("tour auto-start", () => {
     await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
     rerender(<WardTourAutoStart onStart={onStart} />);
     expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts on its own only once per device, even if the tour was never closed", async () => {
+    const onStart = vi.fn();
+    const { unmount } = render(<WardTourAutoStart onStart={onStart} />);
+    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    unmount();
+    // A reload or a desk switch: the desk's tour is still unseen, but this device already had it.
+    render(<WardTourAutoStart onStart={onStart} />);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
   });
 
   it("waits for the desk's access to settle before it starts", async () => {

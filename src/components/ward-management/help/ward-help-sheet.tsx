@@ -5,20 +5,28 @@ import { useMemo, useState } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
+import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 
 import { filterGlossary, screenHelpFor } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
+import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
+import { useTourRole, type WardTourRole } from "./ward-help-store";
 import styles from "./ward-help.module.css";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
+  { id: "desk", label: "Your desk" },
   { id: "screen", label: "This screen" },
   { id: "glossary", label: "Glossary" },
 ];
 
+function deskLabel(role: WardTourRole): string {
+  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
+}
+
 /**
- * HELP: what this screen is for and a glossary, in one sheet (fix plan item 12), with the way into
- * the desk's tour, which runs over the screen itself (`ward-tour.tsx`). The glossary filter is held
- * in this component only and is never saved.
+ * HELP: the desk's own guide, what this screen is for and a glossary, in one sheet (fix plan item
+ * 12; desk guide 24 Oct 2026), with the way into the desk's tour, which runs over the screen itself
+ * (`ward-tour.tsx`). The glossary filter is held in this component only and is never saved.
  */
 export function WardHelpSheet({
   view,
@@ -30,6 +38,8 @@ export function WardHelpSheet({
   onClose: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  const role = useTourRole();
+  const guide = DESK_GUIDES[role];
   const help = useMemo(() => screenHelpFor(pathname, railEntries()), [pathname]);
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query);
@@ -45,6 +55,24 @@ export function WardHelpSheet({
       placement="right"
       bodyClassName={styles.body}
     >
+      <section className={styles.intro} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
+        <h3 id="ward-help-intro-title" className={styles.introTitle}>
+          {deskLabel(role)}
+        </h3>
+        <p className={styles.text}>{guide.summary}</p>
+        <button
+          type="button"
+          className={styles.tourButton}
+          onClick={() => onView("tour")}
+          data-testid="ward-help-view-tour"
+        >
+          Take the tour
+        </button>
+        <p className={styles.note}>
+          The tour starts by itself only once on this device. Open it again here or in Settings.
+        </p>
+      </section>
+
       <div className={styles.views} role="group" aria-label="Help sections">
         {VIEWS.map((item) => (
           <button
@@ -58,15 +86,36 @@ export function WardHelpSheet({
             {item.label}
           </button>
         ))}
-        <button
-          type="button"
-          className={styles.viewButton}
-          onClick={() => onView("tour")}
-          data-testid="ward-help-view-tour"
-        >
-          Take the tour
-        </button>
       </div>
+
+      {view === "desk" ? (
+        <section aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
+          <h3 id="ward-help-desk-title" className={styles.title}>
+            Where you start
+          </h3>
+          <p className={styles.text}>{guide.startsAt}</p>
+          <h4 className={styles.subTitle}>Jobs you do most</h4>
+          <ol className={styles.jobs}>
+            {guide.jobs.map((item) => (
+              <li key={item.job}>
+                <b className={styles.job}>{item.job}.</b> {item.how}
+              </li>
+            ))}
+          </ol>
+          <h4 className={styles.subTitle}>Good to know</h4>
+          <ul className={styles.list}>
+            {guide.limits.map((limit) => (
+              <li key={limit}>{limit}</li>
+            ))}
+          </ul>
+          <h4 className={styles.subTitle}>Is it saved?</h4>
+          <ul className={styles.list}>
+            {SAVED_OR_NOT.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {view === "screen" ? (
         help ? (
@@ -84,7 +133,7 @@ export function WardHelpSheet({
           </section>
         ) : (
           <p className={styles.text} data-testid="ward-help-screen-none">
-            This screen has no help page yet. The glossary and tour still apply.
+            This screen has no help page yet. Your desk guide and the glossary still apply.
           </p>
         )
       ) : null}
