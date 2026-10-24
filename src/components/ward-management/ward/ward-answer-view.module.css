@@ -1431,6 +1431,9 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--wf-s-3);
     align-items: start;
+    /* A4 (device sweep, 24 Oct 2026): the three cards span the page as Bed request does above
+       them; the column's start alignment had shrunk the row to its content. */
+    align-self: stretch;
     min-width: 0;
   }
 
