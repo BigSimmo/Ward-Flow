@@ -802,6 +802,15 @@
   gap: 10px;
 }
 
+/* Device sweep (24 Oct 2026): the section now lives only in the Transport sheet, whose body already
+   pads its content, so it drops the section padding and top rule that indented it past the sheet
+   header and drew a stray line under it. */
+.sec.transportSec {
+  padding-top: 0;
+  padding-inline: 0;
+  border-top: 0;
+}
+
 .transportHeader {
   display: flex;
   align-items: center;
@@ -2230,6 +2239,16 @@
   min-width: 0;
 }
 
+@keyframes stepsMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-hero-ink-2);
+  }
+  to {
+    border-right-color: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  }
+}
+
 /* The seven stages size to their labels, so no label is cut short. */
 .v6Steps {
   display: flex;
@@ -2442,6 +2461,18 @@
 @media (max-width: 1024px) {
   .v6Steps {
     overflow-x: auto;
+  }
+
+  /* Device sweep (24 Oct 2026): on a tablet or a phone on its side the stage strip scrolls, and the
+     last stage ("Moving") was cut at the edge with no sign of more. The right edge is drawn while
+     there is more to the right, the same scroll-driven edge as the shared ward table: a border,
+     never a fade. */
+  @supports (animation-timeline: scroll()) {
+    .v6Steps {
+      border-right-width: 2px;
+      animation: stepsMoreRight linear both;
+      animation-timeline: scroll(self inline);
+    }
   }
 
   .v6HeroTabsRow {

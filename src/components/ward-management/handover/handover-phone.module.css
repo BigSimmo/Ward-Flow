@@ -655,6 +655,27 @@
   border-radius: var(--wf-r-ctl);
 }
 
+/* Device sweep R7-05 (24 Oct 2026): on a short screen (a phone on its side, or 200% zoom) the bar
+   and the dock took about 40% of the height and covered the hero buttons, so the bar sits at the
+   end of the page there instead of floating. */
+@media (max-height: 30rem) {
+  .sticky {
+    position: static;
+  }
+}
+
+/* Device sweep B6-17 (24 Oct 2026): at 320 px "Copy summary" was cut to "Copy summa…"; the bar and
+   its buttons give back some side padding so both labels fit. */
+@media (max-width: 22.5rem) {
+  .sticky {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .sticky .stickyButton {
+    padding-inline: var(--wf-s-2);
+  }
+}
+
 /* ---------------------------------------------------------------- shift sheet */
 
 .shiftList {
