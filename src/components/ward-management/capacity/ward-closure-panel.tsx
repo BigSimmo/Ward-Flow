@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { Button, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
+import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -39,6 +39,8 @@ export function WardClosurePanel({ unit, now, actor }: { unit: Unit; now: Instan
 function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
   const [reason, setReason] = useState<WardClosureReason | "">("");
   const [reopenAfter, setReopenAfter] = useState("");
+  // DR-07 (design re-score, 24 Oct 2026): closing a ward asks once before it is recorded.
+  const [confirming, setConfirming] = useState(false);
   const reasonId = useId();
   const mayAct = actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === unit.id);
   const refusal = mayAct ? undefined : "Only this ward or the coordinator can close or reopen it.";
@@ -94,14 +96,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
           onClick={() => {
             if (closeRefusal || reason === "") return;
-            raise("CLOSE_WARD_TO_ADMISSIONS", {
-              unitId: unit.id,
-              ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-              reason,
-              ...(reopenAfter !== "" ? { until: now + Number(reopenAfter) * 60 } : {}),
-            });
-            setReason("");
-            setReopenAfter("");
+            setConfirming(true);
           }}
           data-testid="ward-closure-close"
         >
@@ -109,6 +104,30 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         </Button>
         {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
         {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+        <Dialog
+          open={confirming}
+          onClose={() => setConfirming(false)}
+          size="sm"
+          title={`Close ${unit.name} to admissions?`}
+          description={`${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled or accepted here stay where they are.`}
+          secondary={[{ label: "Cancel", onAction: () => setConfirming(false) }]}
+          primary={{
+            label: `Close ${unit.name}`,
+            onAction: () => {
+              setConfirming(false);
+              if (closeRefusal || reason === "") return;
+              raise("CLOSE_WARD_TO_ADMISSIONS", {
+                unitId: unit.id,
+                ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+                reason,
+                ...(reopenAfter !== "" ? { until: now + Number(reopenAfter) * 60 } : {}),
+              });
+              setReason("");
+              setReopenAfter("");
+            },
+          }}
+          data-testid="ward-closure-confirm"
+        />
       </section>
     );
   }
