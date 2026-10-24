@@ -610,7 +610,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
               scrollToSection("ward-community-phone-lists");
             },
           },
-          { id: "mdt", label: "Catchment MDT", icon: Users, onPress: () => setActiveModalType("handover") },
+          { id: "mdt", label: "Catchment counts", icon: Users, onPress: () => setActiveModalType("handover") },
         ]}
         attention={phoneAttentionItems}
         lists={phoneLists}

@@ -1024,7 +1024,12 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     thresholds,
   ]);
 
-  const stamp = asAtStamp(now);
+  // Audit 24-7 (CT-02): while not live, the time stops at the last moment the screen was live, so
+  // "As at" never moves forward over figures that have stopped updating. Adjusted during render.
+  const live = online && !sharedDown;
+  const [lastLive, setLastLive] = useState(now);
+  if (live && lastLive !== now) setLastLive(now);
+  const stamp = asAtStamp(live ? now : lastLive);
 
   if (!enabled) {
     return (
@@ -1088,12 +1093,14 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} ·{" "}
-            {!online
-              ? "offline, not updating"
-              : sharedDown
-                ? "connection unavailable, not updating"
-                : "updates on its own"}
+            {stamp.time === null ? "Time not recorded" : live ? `As at ${stamp.time}` : `Last updated ${stamp.time}`} ·{" "}
+            {live ? (
+              "updates on its own"
+            ) : (
+              <strong className={styles.stale} data-testid="bed-meeting-tv-stale">
+                {!online ? "offline, not updating" : "connection unavailable, not updating"}
+              </strong>
+            )}
           </p>
         </div>
         <div className={styles.actions}>

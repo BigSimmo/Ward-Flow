@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { ContextualBackLink } from "@/components/contextual-back-link";
+import { Dialog } from "@/components/wf";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import {
@@ -89,7 +90,7 @@ import {
   transportNeedState,
   transportStatusLabel,
 } from "@/components/ward-management/ward-derivations";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import {
@@ -159,6 +160,8 @@ export function MovementWorkspaceCockpit({
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
+  // Audit 24-7 (CT-07): releasing a pulled bed asks first, naming the person and the ward.
+  const [releaseConfirm, setReleaseConfirm] = useState<"held" | "diverted" | null>(null);
 
   if (!patient) {
     return null;
@@ -1139,9 +1142,38 @@ export function MovementWorkspaceCockpit({
     const earlierStages = MOVEMENT_STAGES.slice(0, Math.max(MOVEMENT_STAGES.indexOf(movement.stage), 0));
     const acceptedStageIndex = MOVEMENT_STAGES.indexOf(movement.stage);
     const orphanedJob = orphanedTransport(movement);
+    const releaseWho = resolveSubjectPatient(movement, { patients, referrals, movements });
+    // Audit 24-7 (CT-19): a risky step names the patient on its final button, so nobody commits it
+    // against the wrong person after only picking a reason.
+    const commitName = releaseWho.formalName;
+    const releaseWardName = units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? "the accepting ward";
 
     return (
       <div className={styles.panelCard}>
+        <Dialog
+          open={releaseConfirm !== null}
+          onClose={() => setReleaseConfirm(null)}
+          size="sm"
+          title="Release pulled bed?"
+          description={
+            releaseConfirm === "diverted"
+              ? `The bed pulled at ${releaseWardName} for ${releaseWho.formalName} is offered again and the diverted journey is closed. This cannot be undone.`
+              : `The bed pulled at ${releaseWardName} for ${releaseWho.formalName} is offered again.`
+          }
+          secondary={[{ label: "Cancel", onAction: () => setReleaseConfirm(null) }]}
+          primary={{
+            label: "Release pulled bed",
+            onAction: () => {
+              const kind = releaseConfirm;
+              setReleaseConfirm(null);
+              if (kind === "held") raise("RELEASE_HELD_BED", { ...holdingWard, movementId: movement.id });
+              else if (kind === "diverted") raise("RELEASE_DIVERTED_BED", { ...holdingWard, movementId: movement.id });
+            },
+          }}
+          data-testid="ward-console-release-bed-confirm"
+        >
+          <p data-testid="ward-console-release-bed-identity">Check: {patientIdentityLine(releaseWho)}</p>
+        </Dialog>
         <div className={styles.panelCardHeader}>
           <div className={styles.panelTitleGroup}>
             <Activity className={styles.readinessCardIcon} size={18} aria-hidden="true" />
@@ -1403,7 +1435,7 @@ export function MovementWorkspaceCockpit({
                           }
                     }
                   >
-                    Cancel the transport job
+                    Cancel the transport job for {commitName}
                   </button>
                   {wardCannotCancel ? (
                     <span
@@ -1516,7 +1548,7 @@ export function MovementWorkspaceCockpit({
                             }
                       }
                     >
-                      Stop transport
+                      Stop transport for {commitName}
                     </button>
                     {lock("STOP_TRANSPORT").note}
                   </>
@@ -1541,12 +1573,7 @@ export function MovementWorkspaceCockpit({
                   type="button"
                   className={styles.controlButton}
                   data-testid="ward-console-release-held-bed"
-                  onClick={() =>
-                    raise("RELEASE_HELD_BED", {
-                      ...holdingWard,
-                      movementId: movement.id,
-                    })
-                  }
+                  onClick={() => setReleaseConfirm("held")}
                 >
                   Release the pulled bed
                 </button>
@@ -1667,12 +1694,7 @@ export function MovementWorkspaceCockpit({
                   type="button"
                   className={styles.controlButton}
                   data-testid="ward-console-release-diverted-bed"
-                  onClick={() =>
-                    raise("RELEASE_DIVERTED_BED", {
-                      ...holdingWard,
-                      movementId: movement.id,
-                    })
-                  }
+                  onClick={() => setReleaseConfirm("diverted")}
                 >
                   Release the pulled bed
                 </button>
@@ -1765,7 +1787,7 @@ export function MovementWorkspaceCockpit({
                               }
                         }
                       >
-                        Withdraw the acceptance
+                        Withdraw acceptance for {commitName}
                       </button>
                       {lock("WITHDRAW_ACCEPTANCE").note}
                     </>

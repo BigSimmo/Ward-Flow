@@ -1310,6 +1310,15 @@
   .workTable tr {
     break-inside: avoid;
   }
+
+  /* Audit 24-7 (CT-04): the name is a button, and the global print rule hides every button, so the
+     paper list lost every name. Print it as plain text. */
+  .workTable .recordButton {
+    display: inline !important;
+    border: 0;
+    background: none;
+    color: CanvasText;
+  }
 }
 
 /* Phone (8 Oct 2026): today's releases first. The hero keeps three status figures in one row,

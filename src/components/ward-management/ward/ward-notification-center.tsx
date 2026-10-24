@@ -272,14 +272,11 @@ export function WardNotificationCenter({
     }
   }, [hasUrgentBuzz]);
 
-  const handleAcknowledgeBuzz = (buzzKey: string, isUrgent?: boolean) => {
-    if (isUrgent) {
-      triggerUrgentBuzzAlert();
-    }
+  // Audit 24-7 (CT-13): acknowledging stops the alert; it never plays the chime again.
+  const handleAcknowledgeBuzz = (buzzKey: string) => {
     onDismissBuzz?.(buzzKey);
   };
   const acknowledgeGroup = (group: readonly BuzzEntry[]) => {
-    if (group.some(({ buzz }) => buzz.urgent === true)) triggerUrgentBuzzAlert();
     for (const { buzzKey } of group) onDismissBuzz?.(buzzKey);
   };
   // Urgent buzzes first, then newest first.
@@ -462,7 +459,7 @@ export function WardNotificationCenter({
             <button
               type="button"
               className={`${drawer.btn} ${drawer.btnPrimary}`}
-              onClick={() => handleAcknowledgeBuzz(buzzKey, buzz.urgent)}
+              onClick={() => handleAcknowledgeBuzz(buzzKey)}
             >
               Acknowledge
             </button>
@@ -489,11 +486,7 @@ export function WardNotificationCenter({
               {group.map((entry) => (
                 <span key={entry.buzzKey} className={styles.repeatItem}>
                   <time>{formatInstantWithDay(entry.buzz.at, now)}</time>
-                  <button
-                    type="button"
-                    className={drawer.btn}
-                    onClick={() => handleAcknowledgeBuzz(entry.buzzKey, entry.buzz.urgent)}
-                  >
+                  <button type="button" className={drawer.btn} onClick={() => handleAcknowledgeBuzz(entry.buzzKey)}>
                     Acknowledge
                   </button>
                 </span>

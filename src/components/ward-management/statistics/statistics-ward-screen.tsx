@@ -1120,7 +1120,8 @@ function Roster({
     ];
     downloadCsv(`ward-flow-synthetic-${unit.id}-roster.csv`, lines, {
       asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
-      scope: `${unit.name}; matching roster rows; status filter: ${filter}`,
+      // Audit 24-7 (CT-15): say a search narrowed the rows, never the typed text itself.
+      scope: `${unit.name}; matching roster rows; status filter: ${filter}${needle ? "; search applied" : ""}`,
     });
   }
 

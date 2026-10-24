@@ -173,7 +173,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
     fireEvent.click(screen.getByRole("button", { name: "Ask 1 ward" }));
     fireEvent.click(screen.getByText("Withdraw referral", { selector: "summary" }));
-    fireEvent.click(screen.getByLabelText("Confirm this bed search is no longer required"));
+    fireEvent.click(screen.getByLabelText(/^Confirm this bed search is no longer required for /));
     fireEvent.click(screen.getByRole("button", { name: /^Withdraw referral$/ }));
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");

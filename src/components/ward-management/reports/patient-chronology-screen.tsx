@@ -58,6 +58,7 @@ import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -226,6 +227,14 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       (!needle || `${row.action} ${row.who} ${row.reason} ${row.before} ${row.after}`.toLowerCase().includes(needle)),
   );
   const filtered = tab !== "all" || kind !== "all" || needle !== "";
+  /* Audit 24-7 (CT-12): print and CSV carry the filtered rows, so both name the active filter.
+     The typed search text never goes into the file; only that a search was applied. */
+  const filterScope = [
+    tab === "all" ? "All sources" : `${SOURCE_OF_TAB[tab]} only`,
+    kind === "all" ? "Every record kind" : `${kind} only`,
+    needle ? "Search applied" : "No search",
+    ...(nurseView ? ["Ward nurse view"] : []),
+  ].join(" · ");
   const clearFilters = () => {
     setTab("all");
     setKind("all");
@@ -258,18 +267,17 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   function downloadCsv() {
     if (!chronology) return;
+    const lines = chronologyCsv(
+      rows,
+      dayZero,
+      now,
+      chronology.patient ? `${patientDisplayName(chronology.patient)} · ${chronology.patient.umrn}` : undefined,
+    ).split("\r\n");
+    // Audit 24-7 (CT-12): a filter row sits under Scope so the file says which rows it holds.
+    const scopeAt = lines.findIndex((line) => line.startsWith(`${csvCell("Scope")},`));
+    lines.splice(scopeAt + 1, 0, [csvCell("Filter"), csvCell(filterScope)].join(","));
     downloadBlob(
-      new Blob(
-        [
-          chronologyCsv(
-            rows,
-            dayZero,
-            now,
-            chronology.patient ? `${patientDisplayName(chronology.patient)} · ${chronology.patient.umrn}` : undefined,
-          ),
-        ],
-        { type: "text/csv;charset=utf-8" },
-      ),
+      new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" }),
       "ward-flow-synthetic-chronology.csv",
     );
   }
@@ -295,6 +303,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     <span data-testid="ward-chronology-generated">
       Generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo data, not a clinical
       record
+      <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
+        {" "}
+        · Filter: {filterScope}
+      </span>
     </span>
   );
 
@@ -381,6 +393,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               <span data-testid="ward-chronology-generated">
                 PIR chronology · generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                 <span className={phone.srOnly}> · Synthetic demo data</span>
+                <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
+                  {" "}
+                  · Filter: {filterScope}
+                </span>
               </span>
             }
             title={

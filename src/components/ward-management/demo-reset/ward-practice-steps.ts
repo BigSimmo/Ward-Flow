@@ -6,7 +6,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * learner does it in the real screens; nothing here raises an event or changes the record.
  *
  * Progress is worked out from the movements alone, against the ids that existed when practice
- * started, so it is held on screen only and never saved (D-18). It follows the newest bed request
+ * started, so it is held on screen only and never saved (D-18). It follows the first bed request
  * raised since practice started.
  */
 
@@ -57,7 +57,9 @@ function reached(movement: Movement, stage: Movement["stage"]): boolean {
 export function practiceProgress(movements: readonly Movement[], startedWith: ReadonlySet<string>): PracticeProgress {
   const fresh = movements
     .filter((movement) => !startedWith.has(movement.id))
-    .sort((a, b) => b.openedAt - a.openedAt)[0];
+    // The first request raised since Start, so a later one (another tab's) never takes over the
+    // practice part way through (audit 24-7, CT-05).
+    .sort((a, b) => a.openedAt - b.openedAt)[0];
   const done: Record<PracticeStepId, boolean> = {
     raise: fresh !== undefined,
     ask: fresh !== undefined && wardsAsked(fresh) >= 2,
