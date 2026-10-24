@@ -216,7 +216,7 @@ export function StatisticsTeamsIndexScreen() {
                   <p className={index.cardNote}>No admission in a bed has a referral that names a community team.</p>
                 ) : (
                   <BarList
-                    label="People in a bed, or holding one, by the community team their referral named"
+                    label="People in a bed, or with one pulled, by the community team their referral named"
                     track
                     axis
                     max={countAxisMax(active.map((entry) => entry.inBed ?? 0))}

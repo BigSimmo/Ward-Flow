@@ -303,7 +303,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
           : [
               ["ED access target", `${value.edAccessTargetMinutes} min`],
               ["Parallel referral cap", `${value.parallelReferralCap}`],
-              ["Pull hold", `${value.pullHoldMinutes} min`],
+              ["Pull time limit", `${value.pullHoldMinutes} min`],
             ];
       return (
         <div className={thirdEdition.snapshotStack}>

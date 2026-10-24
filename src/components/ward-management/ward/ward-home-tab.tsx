@@ -895,7 +895,8 @@ export function WardHomeTab({
   if (heldAfterStop.length > 0) {
     actNow.push({
       key: "stopped-holds",
-      title: heldAfterStop.length === 1 ? "Stopped transport holding bed" : "Stopped transports holding beds",
+      title:
+        heldAfterStop.length === 1 ? "Stopped transport, bed still pulled" : "Stopped transports, beds still pulled",
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).displayName}, transport stopped after collection`)
         .join("; "),

@@ -33,6 +33,8 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { GLOSSARY } from "@/components/ward-management/help/ward-help-content";
+import { SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
 /**
  * ⚠️ **THE WORD, ON THE SCREEN — NOT THE IDENTIFIER.**
  *
@@ -525,6 +527,37 @@ describe("a refused pull says pull in the refusal a coordinator actually reads",
     expect(drawer).toContain("cannot release a pull");
     expect(drawer).not.toContain("cannot hold a bed");
     expect(drawer).not.toContain("cannot release a hold");
+  });
+});
+
+/*
+ * D-81 (Josh, 24 Oct 2026): a bed kept for an INCOMING patient is "Pulled", with a "Pull time
+ * limit". "Held" is only a bed kept for its own patient on leave or away. These read the words
+ * the screens show for an incoming bed and refuse the old "Bed held" / "Bed hold" ones.
+ */
+describe("incoming beds say pulled and pull time limit, never held (D-81)", () => {
+  it("the ED board's referral status says 'Bed pulled'", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdScreen edId="peel-ed" />
+      </WardFlowProvider>,
+    );
+    const cell = screen.getByTestId("ward-ed-referral-WF-016");
+    expect(cell).toHaveTextContent(/bed pulled/i);
+    expect(cell.textContent ?? "").not.toMatch(/\bbed held\b|\bbed hold\b/i);
+  });
+
+  it("the glossary keeps Held bed for leave and names the Pull time limit", () => {
+    const held = GLOSSARY.find((term) => term.term === "Held bed");
+    expect(held?.meaning).toMatch(/leave or away/);
+    expect(held?.meaning).not.toMatch(/not arrived/);
+    expect(GLOSSARY.some((term) => term.term === "Pull time limit")).toBe(true);
+  });
+
+  it("the settings rule and its search entry say Pull time limit", () => {
+    const entry = SETTINGS_SEARCH_ENTRIES.find((item) => item.id === "pull-hold");
+    expect(entry?.label).toBe("Pull time limit");
+    expect(SETTINGS_SEARCH_ENTRIES.some((item) => item.label === "Pull hold")).toBe(false);
   });
 });
 

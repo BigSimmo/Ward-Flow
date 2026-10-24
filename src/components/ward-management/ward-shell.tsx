@@ -35,6 +35,9 @@ export function WardGround({ children }: { children: ReactNode }) {
   const mounted = useRef(false);
   const historyPath = useRef<string | null>(null);
   const currentPath = useRef(pathname);
+  // Usability review, 24 Oct 2026: the link last opened and the page it was on, so Back can put focus on it
+  // rather than on <body>. Memory only: never stored, logged or put in the address.
+  const opened = useRef<OpenedLink | null>(null);
 
   useEffect(() => {
     const onHistory = () => {
@@ -67,6 +70,7 @@ export function WardGround({ children }: { children: ReactNode }) {
         frame = window.requestAnimationFrame(() => {
           frame = 0;
           scroller.scrollTop = top;
+          restoreOpenedLinkFocus(scroller, opened.current, pathname);
         });
       });
     }
@@ -97,11 +101,46 @@ export function WardGround({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const ground = groundRef.current;
+    if (!ground) return undefined;
+    const onClick = (event: MouseEvent) => {
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      const href = link?.getAttribute("href");
+      if (!link || !href) return;
+      // Several rows can link to the same place (two movements to one ward), so remember which one.
+      const index = Array.from(ground.querySelectorAll(linkSelector(href))).indexOf(link);
+      opened.current = { path: currentPath.current, href, index };
+    };
+    ground.addEventListener("click", onClick, true);
+    return () => ground.removeEventListener("click", onClick, true);
+  }, []);
+
   return (
     <div ref={groundRef} className={styles.shell} data-ward-ground>
       {children}
     </div>
   );
+}
+
+/**
+ * Usability review, 24 Oct 2026: after Back, focus returns to the link the user opened, unless
+ * something else already holds focus. A link that is no longer on the page is left alone.
+ */
+type OpenedLink = { path: string; href: string; index: number };
+
+const linkSelector = (href: string) => `a[href="${CSS.escape(href)}"]`;
+
+function restoreOpenedLinkFocus(scroller: HTMLElement, opened: OpenedLink | null, pathname: string) {
+  if (opened?.path !== pathname) return;
+  const active = document.activeElement;
+  if (active !== null && active !== document.body) return;
+  const link = scroller.querySelectorAll<HTMLElement>(`[data-ward-ground] ${linkSelector(opened.href)}`)[opened.index];
+  if (!link?.isConnected) return;
+  link.focus({ preventScroll: true });
+  const box = scroller.getBoundingClientRect();
+  const rect = link.getBoundingClientRect();
+  if (rect.top < box.top || rect.bottom > box.bottom) link.scrollIntoView?.({ block: "nearest" });
 }
 
 /**

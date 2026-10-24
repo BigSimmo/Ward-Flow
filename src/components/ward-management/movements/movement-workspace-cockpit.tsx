@@ -286,7 +286,7 @@ export function MovementWorkspaceCockpit({
       return [
         {
           at: unwind.at,
-          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its held bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
+          label: `Acceptance by ${ward} withdrawn${bedReleased ? " and its pulled bed released" : ""}, by ${unwind.by}${reasonLabel ? ` · ${reasonLabel}` : ""}`,
         },
       ];
     }),
@@ -664,7 +664,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
             {patient.pullExpiresAt !== undefined ? (
               <WardFigure
-                label="Hold on the bed"
+                label="Pull time limit"
                 value={formatRemaining(minutesUntil(patient.pullExpiresAt, now))}
                 flagged={flagged.has("pull")}
                 sub={`${patient.pullExpiresAt <= now ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
@@ -1337,7 +1337,7 @@ export function MovementWorkspaceCockpit({
                 <p className={styles.actionSay}>
                   {orphanedJob.kind === "pull_released"
                     ? `The bed this job was booked against has been given back to the ward. ${orphanedJob.provider} is still recorded as collecting this patient, and nothing has told them otherwise. A replacement cannot be booked until this job is cancelled.`
-                    : `The recorded stage has been moved back behind the booking. Correcting a stage does not release a bed, so the ward may still be holding one — check with them before cancelling ${orphanedJob.provider}.`}
+                    : `The recorded stage has been moved back behind the booking. Correcting a stage does not release a bed, so the ward may still have a bed pulled — check with them before cancelling ${orphanedJob.provider}.`}
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
@@ -1534,7 +1534,7 @@ export function MovementWorkspaceCockpit({
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
-                  Transport for this patient was stopped and the bed is still held. Releasing it gives the bed back to
+                  Transport for this patient was stopped and the bed is still pulled. Releasing it gives the bed back to
                   the ward.
                 </p>
                 <button
@@ -1660,7 +1660,7 @@ export function MovementWorkspaceCockpit({
               <section className={styles.actionSection} data-testid="ward-patient-release-diverted-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
-                  This patient was diverted and the bed is still held. Releasing it gives the bed back to the ward and
+                  This patient was diverted and the bed is still pulled. Releasing it gives the bed back to the ward and
                   ends the journey.
                 </p>
                 <button

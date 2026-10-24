@@ -44,7 +44,7 @@
   {
     "file": "patients/patient-now-arrival-section.tsx",
     "rule": "hour window",
-    "text": "4h window passed — review the hold",
+    "text": "4h window passed — review the pull",
     "owner": "Build linked demo data"
   },
   {

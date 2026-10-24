@@ -143,7 +143,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                           })
                         }
                       >
-                        Release the held bed
+                        Release the pulled bed
                       </button>
                     </div>
                   ) : null}

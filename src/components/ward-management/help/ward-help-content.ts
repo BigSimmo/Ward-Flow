@@ -26,13 +26,13 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "What needs the coordinator now, across every ward, ED and movement.",
     actions: [
       "Work down the act-now list first. Each row opens the record it is about.",
-      "Check the ready and held bed figures before the bed meeting.",
+      "Check the ready and pulled bed figures before the bed meeting.",
       "Open Tasks in the header for everything addressed to this desk.",
     ],
   },
   capacity: {
     title: "Capacity",
-    purpose: "Each ward's confirmed beds, what is free, held or closed, and when it was last confirmed.",
+    purpose: "Each ward's confirmed beds, what is free, pulled or closed, and when it was last confirmed.",
     actions: [
       "Ask a ward to confirm its beds when the figure is old.",
       "Open a ward to see its beds and who is coming in.",
@@ -172,6 +172,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
   { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },
   { term: "Held bed", meaning: "A bed kept for a patient on leave or away from the ward, ready for their return." },
+  { term: "Pull time limit", meaning: "How long a pulled bed is kept before it returns to the ward." },
   { term: "Confirmed beds", meaning: "The bed figures a ward last confirmed, with the time it did so." },
   {
     term: "Tentative diagnosis",

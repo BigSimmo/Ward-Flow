@@ -92,11 +92,11 @@ describe("settings screen: every Preview control says it is not wired", () => {
     expect(pane.textContent).not.toMatch(/\bPreview\b/u);
   });
 
-  // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull hold. No second Preview timer.
-  it("keeps one bed hold rule: Pull hold, with no separate Bed hold expires row", () => {
+  // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull time limit (D-81, was Pull hold). No second Preview timer.
+  it("keeps one bed hold rule: Pull time limit, with no separate Bed hold expires row", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
-    expect(screen.getByText("Pull hold")).toBeInTheDocument();
+    expect(screen.getByText("Pull time limit")).toBeInTheDocument();
     expect(screen.queryByText("Bed hold expires")).not.toBeInTheDocument();
     expect(SETTINGS_SEARCH_ENTRIES.some((entry) => entry.label === "Bed hold expires")).toBe(false);
   });
@@ -133,7 +133,7 @@ describe("settings screen: every Preview control says it is not wired", () => {
  */
 describe("settings screen — the three controls Task 9 actually wired", () => {
   // v10: each wired rule is one stepper (no slider), named by what it sets.
-  const WIRED_STEPPERS = ["ED access target", "Pulled bed hold duration", "Parallel referral enquiry limit"];
+  const WIRED_STEPPERS = ["ED access target", "Pull time limit", "Parallel referral enquiry limit"];
 
   it("are not aria-disabled", () => {
     renderSettings();
