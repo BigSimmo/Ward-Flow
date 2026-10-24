@@ -1,5 +1,9 @@
 # Ward Flow local implementation acceptance — r37
 
+> **Historical evidence, 13 September 2026.** A dated visual-acceptance record for the drawing-era build. It is not current acceptance. For current visual checks see [building-ui.md](../../../../agents/building-ui.md) and the [active screen checklist](../../../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 2026-09-13. This is the final implementation checkpoint for the commissioned visual rebuild. It supersedes earlier partial-status summaries without rewriting their historical test results.
 
 ## Delivered scope

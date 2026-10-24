@@ -1685,6 +1685,15 @@ button.check[aria-pressed="true"] {
   white-space: nowrap;
 }
 
+/* Item 4: why the desktop Now list is in its order. */
+.orderNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
 .phoneNote {
   margin: var(--wf-s-3) 0 0;
   color: var(--wf-ink-3);

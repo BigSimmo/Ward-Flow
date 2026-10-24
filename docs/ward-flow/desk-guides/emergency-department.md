@@ -1,5 +1,7 @@
 # Desk guide: ED mental health clinician
 
+<!-- last-checked: 2026-10-24 -->
+
 You look after mental health patients waiting in your own emergency department.
 
 ## What you see first

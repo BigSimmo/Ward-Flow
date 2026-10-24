@@ -1,5 +1,9 @@
 # Statistics screens, third edition — the shared brief
 
+> **Historical record, September 2026.** Written for the drawing-era and second-edition build. It is not current guidance, and its paths, line counts and design rules may no longer match the code. The rendered app is the current design authority: start at the [Ward Flow entry point](../README.md) and the [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Owner brief, 2026-09-06, verbatim on the points that matter:** _"utilise the design system like
 other pages and keep it crisp and white like the same database design system colour scheme … perfect
 the overall style and layout and also make sure it is symmetrical and fix those boxes at the top and
@@ -113,7 +117,12 @@ are all correct; this edition changes how they look, not what they say. Keep:
 - **Owner ruling R7** where a waiting-on reason appears: one hold-up is recorded, _the one that will
   take longest_, and the screen must say so.
 - **"Ready"** is the one word for `min(allocatable, empty)`.
+
+<!-- docs-script-refs:historical-start -->
+
 - Never sum "no bed" and "not suitable" declines into one figure.
+
+<!-- docs-script-refs:historical-end -->
 
 ---
 

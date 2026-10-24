@@ -1,5 +1,9 @@
 # Shell notes: what changed, how to graft it, what is left
 
+> **Historical drawing-era record, September 2026.** Written while the third-edition drawings were being built. It is not current guidance for app screens. The rendered app is the current design authority; start at the [Ward Flow entry point](../../../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 The owner's universal header and rail (`inputs/rail.html`) restyled to the third edition as graft
 ready fragments. The review that drove the changes is `inputs/SHELL-REVIEW.md`. Everything here
 was verified on `shell/preview.html` with `shell/check-preview.mjs` (the third edition harness

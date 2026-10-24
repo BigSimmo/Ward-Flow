@@ -20,7 +20,7 @@ import type {
   SharedMembership,
 } from "@/components/ward-management/ward-shared-client";
 import type { SharedAccessApi } from "@/components/ward-management/shell/ward-shared-access-context";
-import { parseStoredAccess } from "@/components/ward-management/shell/ward-access-store";
+import { parseStoredAccess, sharedAccessNeedsService } from "@/components/ward-management/shell/ward-access-store";
 import type { StepUpResult } from "@/components/ward-management/shell/ward-step-up";
 
 const NOT_REACHED = "The server was not reached. Nothing was confirmed.";
@@ -31,12 +31,19 @@ function accountLabel(actorId: string, self: string | null): string {
 }
 
 function accessOf(role: string, scope: unknown): WardAccess | null {
-  return parseStoredAccess(JSON.stringify({ role, scope }));
+  return parseStoredAccess(JSON.stringify({ role, scope }), { shared: true });
 }
 
-/** A role from the server, on the demo clock. A row the access table would not allow is dropped. */
+/**
+ * A role from the server, on the demo clock. A row the access table would not allow is dropped,
+ * except a transport officer's role naming no health service: the server refuses it, so the admin
+ * sees it as not active and can give it again with one (audit 24-5 RA-02).
+ */
 export function sharedMembership(row: SharedMembership, now: Instant): AccessMembership | null {
-  const access = accessOf(row.role, row.scope);
+  const needsService = row.kind !== "cover" && sharedAccessNeedsService({ role: row.role, scope: row.scope });
+  const access = needsService
+    ? parseStoredAccess(JSON.stringify({ role: row.role, scope: row.scope }))
+    : accessOf(row.role, row.scope);
   const minutes = row.minutes;
   if (!access || typeof minutes?.granted !== "number" || typeof minutes.expires !== "number") return null;
   return {
@@ -49,7 +56,7 @@ export function sharedMembership(row: SharedMembership, now: Instant): AccessMem
     expiresAt: now + minutes.expires,
     approvedBy: row.approvedBy,
     // Only an older backend sends `approved: false`; it still refuses this role until it is updated.
-    ...(row.kind !== "cover" && row.approved === false ? { blockedByOlderServer: true } : {}),
+    ...((row.kind !== "cover" && row.approved === false) || needsService ? { blockedByOlderServer: true } : {}),
     lastUsedAt: typeof minutes.lastUsed === "number" ? now + minutes.lastUsed : null,
     revokedAt: null,
   };

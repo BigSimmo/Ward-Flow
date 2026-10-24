@@ -1,5 +1,9 @@
 # Q004 Task 5 — Ward operational family
 
+> **Historical evidence, 13 September 2026.** A dated visual-acceptance record for the drawing-era build. It is not current acceptance. For current visual checks see [building-ui.md](../../../agents/building-ui.md) and the [active screen checklist](../../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Source boundary frozen for consolidated review. Seven owned source files changed:
 
 - `wards/ward-index.tsx`, `wards/ward-index.module.css`: owner-authorized directory redesign; visible page heading, canonical service jump navigation, complete live ward groups, site-labelled cards, optional provenance after the list. No capacity derivation or filtering added.

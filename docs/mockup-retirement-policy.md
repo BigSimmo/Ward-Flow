@@ -4,7 +4,7 @@
 > This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
 > For current authority, see [`AGENTS.md`](../AGENTS.md), [`docs/ward-flow/README.md`](ward-flow/README.md), [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md), and [`design/v9/design-system-v9.md`](../design/v9/design-system-v9.md).
 >
-> **Ward Flow production routing note:** In `BigSimmo/Ward-Flow`, `/ward-flow` and `/ward-flow-sign-in` are publicly reachable demonstration routes in production. They left `/mockups` on 19 October 2026, so no `/mockups` route is exempt from the production block any more, and [`src/proxy.ts`](../src/proxy.ts) redirects the old `/mockups/ward-flow` addresses. The inherited PsychSift RAG/mockup retirement rules below are historical context only.
+> **Ward Flow production routing note:** In `BigSimmo/Ward-Flow`, `/ward-flow` and `/ward-flow-sign-in` are publicly reachable demonstration routes in production. They left `/mockups` on 19 October 2026, so no `/mockups` route is exempt from the production block any more, and [`src/proxy.ts`](../src/proxy.ts) redirects the old `/mockups/ward-flow` addresses. The inherited PsychSift RAG/mockup retirement rules below are historical context only. `npm run check:mockups` still runs inside `npm run verify:cheap` against [`mockups/README.md`](../mockups/README.md); Ward Flow CI runs only its unit test, against fake repositories. Read the script, not this page, for what it enforces today.
 
 <!-- docs-script-refs:historical-start -->
 

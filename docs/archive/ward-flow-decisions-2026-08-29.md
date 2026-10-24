@@ -1,5 +1,9 @@
 # Ward Flow — owner decisions, 2026-08-29, and two drafts for review
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **THE FOUNDATION, above everything in this document.** Owner, 2026-08-29: _the core principle is
 patient flow from the emergency department to the wards. That is the foundation. Everything is built
 on it._ Every decision below is subordinate to it, and where one would obstruct the forward flow — or

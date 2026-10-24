@@ -1,5 +1,12 @@
 # Ward Flow — open questions
 
+> **Not kept current since 17 September 2026 — noted 24 October 2026.** "None open" below was true
+> on that date only. Owner questions since then were asked in threads and their answers are in
+> [decisions.md](decisions.md) (for example D-72 and D-74 to D-80) and dated `owner-answers-*.md`
+> files. Work an owner decision left unfinished shows as "Partly built" in the
+> [STATUS decision table](STATUS.md#decision-status-d-numbers). Check those before treating
+> anything here as open or closed.
+
 **Rewritten 17 September 2026, evening, round 2. Keeps only what is still genuinely open.** Re-derive
 before acting on anything below. For the full history of how each item was closed, see the dated
 entries this replaces, kept below the line, and `docs/ward-flow-task-ledger.md` §7.8.

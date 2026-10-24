@@ -1,5 +1,9 @@
 # Front-door boards — the locked design
 
+> **Dated owner ruling, 5 September 2026.** Kept as the record of that decision. Later decisions may change it, and this file is not read by the owner-rulings index generator. Check [decisions.md](../decisions.md) and the [owner-rulings index](../OWNER-RULINGS.md) before relying on it.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Owner decision, 2026-09-05.** The design published as
 `prototypes/mockup-front-doors-v5.html` is locked and is what gets built.
 
