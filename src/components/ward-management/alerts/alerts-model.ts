@@ -143,7 +143,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   declines: "Every ward asked declined",
   unsuitable: "Destination unsuitable",
   nobed: "No eligible bed",
-  hold: "Bed hold expired",
+  hold: "Pull expired",
   transport: "Transport not yet left",
   planned: "Planned arrival not recorded",
   notify: "Notifications to record",

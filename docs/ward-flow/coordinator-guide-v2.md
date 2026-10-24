@@ -146,7 +146,7 @@ To decline, choose a reason:
 
 ### From accepted to arrived
 
-- **"Pull the bed"** holds a bed for an accepted patient.
+- **"Pull the bed"** keeps a bed for an accepted patient, with a pull time limit.
 - **"Book transport"** records the transport job. If no transport is needed, record that instead.
   The ED screen then stops warning that transport is not booked.
 - **"Release the pulled bed"** gives the bed back. It is hidden while transport is booked. Cancel the
@@ -159,7 +159,7 @@ To decline, choose a reason:
 The officer moves each job through "Accepted", "En route", "Collected" and "Delivered". Each job card
 names the patient. After each step, a short message says whether it was recorded or why it was
 refused. A step is refused if the patient's examination order was revoked while their bed was still
-held. That bed must be released first.
+pulled. That bed must be released first.
 
 Transport can be cancelled by the coordinator, or by the community team that booked it. The movement
 screen says which. _(not yet checked on screen)_
@@ -200,7 +200,7 @@ app's words:
 - "Form due time running out"
 - "No suitable bed anywhere in the network"
 - "Awaiting a ward's answer"
-- "Reserved time has passed, bed still held"
+- "Pull expired, bed still pulled"
 - "Awaiting the bed itself"
 - "Awaiting transport"
 - "Patient or family factors"
@@ -277,7 +277,7 @@ These source-based corrections have not been rechecked on screen.
 - **Not recorded:** nobody has entered this. The app does not guess.
 - **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Ward Flow holds no statutory period table (`D-70`).
 - **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
-- **Pulled (`R-B-05`):** a bed taken and held for one named, accepted patient, from pull until arrival or release.
+- **Pulled (`R-B-05`):** a bed kept for one named, accepted patient, from pull until arrival or release, with a pull time limit. "Held" is used only for a bed kept for its own patient on leave or away (D-81).
 - **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.
 - **Occupied (`R-B-05`):** a bed with an admitted inpatient currently in it.
 
