@@ -747,8 +747,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 </p>
               </div>
             ) : selectionLeft && incoming.length > 0 ? (
-              <div className={styles.sbarCard} role="status" data-testid="ward-answer-selection-left">
-                <p>
+              <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
+                <p role="status">
                   {answerSelection.name}&rsquo;s request was answered or withdrawn elsewhere. Choose the next request.
                 </p>
                 <button
