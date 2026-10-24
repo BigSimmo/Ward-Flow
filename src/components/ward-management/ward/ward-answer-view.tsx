@@ -321,7 +321,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
   const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
   const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).displayName);
-  const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere;
+  const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) =>
     setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
@@ -367,6 +367,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       return;
     }
     setDeclineNudge(false);
+    setPriorRejectionCount(rejections.length);
     setAnsweredHereId(movementId);
     declinePendingRef.current = true;
     setDeclinePending(true);
@@ -748,7 +749,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
                 </p>
               </div>
-            ) : selectionLeft && incoming.length > 0 ? (
+            ) : selectionLeft ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
                 <p role="status">{leftName}&rsquo;s request was answered or withdrawn elsewhere.</p>
                 <button

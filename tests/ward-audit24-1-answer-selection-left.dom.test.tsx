@@ -1,7 +1,7 @@
 // Audit 24-1 D-01 and B-08: when the request on the ward answer view is answered or withdrawn at
 // another desk, the panel names who left and shows nobody until the user picks the next request;
 // the one-step Accept in principle toast names the person. Synthetic seed data only.
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useLayoutEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -14,6 +14,7 @@ import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-vi
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -154,6 +155,51 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     act(() => view.rerender(tree()));
     expect(screen.getByTestId("ward-answer-selection-left")).toBeInTheDocument();
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
+  });
+
+  it("lands on the next request after a refused accept and then a decline here", async () => {
+    const dispatch = vi.fn<(event: WardFlowEvent) => WardCommandOutcome>(() => ({
+      commandId: "WF-C",
+      status: "accepted",
+    }));
+    let stage: "open" | "refused" | "declined" = "open";
+    let id = "";
+    function Declining({ children }: { children: ReactNode }) {
+      const state = useWardFlow();
+      const all = withSecond(state.movements);
+      id ||= all.find((movement) => movement.referredUnitIds.includes(UNIT))!.id;
+      const movements = stage === "declined" ? all.filter((movement) => movement.id !== id) : all;
+      const refusal = {
+        id: "WF-R",
+        at: NOW_ANCHOR,
+        movementId: id,
+        attempted: "ACCEPT_IN_PRINCIPLE" as const,
+        reason: "Refused.",
+      };
+      const rejections = stage === "open" ? state.rejections : [...state.rejections, refusal];
+      return <WardFlowOverride value={{ ...state, dispatch, movements, rejections }}>{children}</WardFlowOverride>;
+    }
+    const tree = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Declining>
+          <WardAnswerView unitId={UNIT} />
+        </Declining>
+      </WardFlowProvider>
+    );
+    const view = render(tree());
+    fireEvent.click(screen.getByTestId(`ward-accept-${shownId()}`));
+    stage = "refused";
+    act(() => view.rerender(tree()));
+    fireEvent.click(screen.getByTestId(`ward-decline-toggle-${id}`));
+    const form = screen.getByTestId(`ward-decline-form-${id}`);
+    fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
+    await act(async () => {
+      fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
+    });
+    stage = "declined";
+    act(() => view.rerender(tree()));
+    expect(screen.queryByTestId("ward-answer-selection-left")).not.toBeInTheDocument();
+    expect(shownId()).not.toBe(id);
   });
 
   it("still lands on the next request after this desk's own answer", () => {
