@@ -111,6 +111,19 @@ describe("Ward desktop scroll history", () => {
       expect(getByRole("link", { name: "Second" })).toHaveFocus();
     });
 
+    it("returns focus to the opened row when several rows link to the same place", async () => {
+      const { getByRole, rerender, view } = renderAt(() => (
+        <>
+          <a href={RECORD}>Earlier row</a>
+          <a href={RECORD}>Later row</a>
+        </>
+      ));
+      fireEvent.click(getByRole("link", { name: "Later row" }));
+      goToRecordAndBack(rerender, view);
+      await afterFrames();
+      expect(getByRole("link", { name: "Later row" })).toHaveFocus();
+    });
+
     it("leaves focus on <body> without throwing when the link is no longer there", async () => {
       let showLink = true;
       const { getByRole, rerender, view } = renderAt(() => (showLink ? <a href={RECORD}>Second</a> : <p>no rows</p>));
