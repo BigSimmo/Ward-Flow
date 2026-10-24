@@ -1388,15 +1388,17 @@ test.describe("@mockup Role switcher — the loop", () => {
 
     const job = page.getByTestId("ward-officer-job-WF-315");
     const selectJob = page.getByTestId("ward-officer-select-WF-315");
-    // WF-315's transport job was only just created (step 6), so it is very unlikely to already
-    // be the screen's default-selected job — the default is the first job in fixture array
-    // order among the seed jobs (`ui-ward-roles.spec.ts`'s own "gives the officer four actions"
-    // test pins that default to WF-005). Checked rather than assumed, so this journey does not
-    // silently depend on an ordering coincidence either way.
-    if (await selectJob.count()) {
-      await selectJob.click();
-    }
+    // The select button toggles (`selectJob` in officer-screen.tsx: a second click closes the
+    // panel), and nothing is selected when the screen opens. The old step clicked only if
+    // `count()` found the row at that instant, and `count()` does not wait: a row not yet
+    // rendered skipped the click, and a click before hydration was lost, so the panel never
+    // opened (the flake). Wait for the row, then click until the row reports it is open, never
+    // clicking an already-open row closed.
     await expect(job).toBeVisible();
+    await expect(async () => {
+      if ((await selectJob.getAttribute("aria-expanded")) !== "true") await selectJob.click();
+      await expect(selectJob).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
     const panel = page.getByTestId("ward-officer-detail");
     await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);

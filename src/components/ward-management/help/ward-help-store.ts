@@ -6,6 +6,7 @@
  * it before, and a tour that reappeared at every sign-in would be noise. It holds desk role ids only,
  * each checked against the known desks on read, so no typed text reaches storage (D-11, D-18). The
  * step each tour was left at sits beside it under the same prefix, as role ids and step numbers.
+ * Whether the tour has already started on its own on this device is kept in `ward-tour-auto-start.tsx`.
  */
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";

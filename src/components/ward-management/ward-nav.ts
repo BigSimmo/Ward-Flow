@@ -566,10 +566,9 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
  * redesigns — the ones named in `docs/ward-flow/plans/2026-09-10-third-edition-build-master-plan.md`
  * and proved built in `design/third-edition-mockups/third-edition-kit/check-output.txt`, plus the service
  * statistics route that follows the same export-action contract. Every other route (Handover, Discharges, the
- * referral board, Out of area, Officer, the ward/community indexes, Network, Governance) keeps
- * using `ward-chrome-header.tsx`'s existing role-adaptive `roleAction()` for now — **this task does
- * not delete that function**, because nothing yet consumes this list to replace it; that is the
- * shell task's job once the bar actually reads from here.
+ * referral board, Out of area, Officer, the ward/community indexes, Governance) draws no primary
+ * action from this list. (When this was written they used the retired `ward-chrome-header.tsx`'s
+ * `roleAction()`; that header and its function were removed with the third-edition shell.)
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
 
 /**
@@ -754,7 +753,7 @@ function matchesDynamicRoute(route: string, pathname: string): boolean {
  * `pathname` -> its `WARD_PRIMARY_ACTIONS` entry, or `undefined` when the route is not one of the
  * routes this list covers at all (this list's own header comment: every
  * other route — Handover, Discharges, the referral board, Out of area, Officer, the ward/community
- * indexes, Network, Governance — still uses `ward-chrome-header.tsx`'s `roleAction()`). Absence
+ * indexes, Governance — draws no action from this list). Absence
  * here is exactly as honest as `{ kind: "none" }` for a route this list DOES cover: both render no
  * button, for two different and equally real reasons this function does not need to tell apart —
  * the caller only ever needs "is there an action to draw", never "why not".

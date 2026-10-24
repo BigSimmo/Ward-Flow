@@ -4,6 +4,7 @@ import type { DischargeRecord } from "@/components/ward-management/ward-discharg
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import type { DueSortMode } from "@/components/ward-management/ward-due-sort";
 import { durMinutes, type WfTone } from "@/components/wf";
 import { type DischargeDayKey } from "./discharge-flow-charts";
 
@@ -189,6 +190,46 @@ export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {
   departed: "Departed",
 };
 export const WORK_ORDER: WorkStatus[] = ["blocked", "confirmed", "expected", "departed"];
+
+/**
+ * Item 4 (usability, 24 Oct 2026): one line saying why the list is in its order, read from the
+ * sorts that build it (`use-discharge-workspace-state.tsx`). Barriers: largest group first, with
+ * highlighted people first in each. Records: by `WORK_ORDER`, then soonest expected date, or one
+ * list by expected date under Due first. Releases: by `GROUP_ORDER`, then by release band (rows in one band keep their stored order, so no
+ * time order is promised inside it), or by expected time under Due first. A highlight puts the highlighted rows first.
+ */
+export function dischargeOrderLine({
+  population,
+  view,
+  sortMode,
+  allStatuses,
+  highlighted,
+}: {
+  population: Population;
+  view: TableView;
+  sortMode: DueSortMode;
+  allStatuses: boolean;
+  highlighted: boolean;
+}): string {
+  if (view === "barriers")
+    return highlighted
+      ? "Largest barrier group first. Highlighted people first in each."
+      : "Largest barrier group first";
+  const lead = highlighted
+    ? population === "records"
+      ? "Highlighted people first. "
+      : "Highlighted people first in each group. "
+    : "";
+  if (population === "records" && sortMode === "due-first")
+    return `${lead}Soonest expected date first. Departed and undated last.`;
+  const within =
+    population === "records"
+      ? "Soonest expected date first"
+      : sortMode === "due-first"
+        ? "Earliest expected time first"
+        : "Soonest time band first";
+  return allStatuses ? `${lead}Blocked first, then by stage. ${within} in each.` : `${lead}${within}`;
+}
 
 /**
  * The top KPI strip's four card labels, corrected 2026-09-16 (ward-audit-screens review) on two

@@ -184,7 +184,7 @@ to read" (owner ruling, 10 September 2026).
 
 ### 1.2 Route table
 
-Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (50 `page.tsx` routes under `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest` = **52 routes** total). Shared design-system primitives in `src/components/wf/**` (`v10-parts.tsx`, labeled `"v10 sections 8 to 14"`, alongside `bar.tsx`, `rail.tsx`, `drawer.tsx`, `modal.tsx`, `toast.tsx`, `pill.tsx`, `kbd.tsx`, `avatar.tsx`, `stat.tsx`, `table.tsx`, `filter-chip.tsx`, `segmented.tsx`, `banner.tsx`, `sparkline.tsx`) implement Sections 8–14 of `design/v9/design-system-v9.md`. "Screen" is the component the page renders; its file is named once in §1.4 rather than repeated per row.
+Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (53 `page.tsx` routes under `/ward-flow/**` plus `/ward-flow-sign-in`, the root `/` redirect and `/mockups/ward-flow-digest` = **56 routes** total; recounted 24 Oct 2026). Shared design-system primitives in `src/components/wf/**` (`v10-parts.tsx`, labeled `"v10 sections 8 to 14"`, alongside `bar.tsx`, `rail.tsx`, `drawer.tsx`, `modal.tsx`, `toast.tsx`, `pill.tsx`, `kbd.tsx`, `avatar.tsx`, `stat.tsx`, `table.tsx`, `filter-chip.tsx`, `segmented.tsx`, `banner.tsx`, `sparkline.tsx`) implement Sections 8–14 of `design/v9/design-system-v9.md`. "Screen" is the component the page renders; its file is named once in §1.4 rather than repeated per row.
 
 | URL under `/ward-flow`            | Screen                                                                  |
 | --------------------------------- | ----------------------------------------------------------------------- |
@@ -196,7 +196,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/community`                      | `CommunityIndex`                                                        |
 | `/community/[teamId]`             | `CommunityScreen`                                                       |
 | `/constellation`                  | redirect → `/` (`/ward-flow`)                                           |
-| `/delays`                         | `DelaysScreen`                                                          |
+| `/delays`                         | redirect → `/waiting` (filters and `?view=` carried across)             |
 | `/discharges`                     | `DischargeBoard`                                                        |
 | `/ed`                             | `EdIndex`                                                               |
 | `/ed/[edId]`                      | `EdScreen`                                                              |
@@ -204,11 +204,13 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/exceptions`                     | redirect → `/waiting`                                                   |
 | `/governance`                     | `WardModeWorkspace` mode `"governance"` → `GovernanceWorkbench`         |
 | `/bed-meeting`                    | `BedMeetingTvScreen` (flag `bed-meeting-tv`)                            |
+| `/bed-meeting/agenda`             | `BedMeetingAgendaScreen`                                                |
 | `/handover`                       | `HandoverPage`                                                          |
 | `/hub`                            | `HubScreen`                                                             |
 | `/legal-forms`                    | `LegalFormsScreen`                                                      |
 | `/movements`                      | `MovementsScreen`                                                       |
 | `/movements/[movementId]`         | `PatientNowScreen` (or `WardMovementNotFound`)                          |
+| `/network`                        | redirect → `/` (`/ward-flow`)                                           |
 | `/on-call`                        | `OnCallScreen`                                                          |
 | `/out-of-area`                    | `OutOfAreaBoard`                                                        |
 | `/people/[patientId]`             | `PatientNowScreen`, or `WardMovementNotFound`                           |
@@ -219,6 +221,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/reports/chronology`             | `PatientChronologyScreen`                                               |
 | `/reports/downtime`               | `DowntimePackScreen`                                                    |
 | `/search`                         | `PatientSearchPage`                                                     |
+| `/seclusion`                      | `SeclusionScreen` (D-72, operational only)                              |
 | `/settings`                       | `SettingsScreen`                                                        |
 | `/statistics`                     | `StatisticsScreen`                                                      |
 | `/statistics/community/[teamId]`  | `StatisticsCommunityScreen`                                             |
@@ -234,16 +237,17 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/statistics/weekly`              | `WeeklyReportScreen`                                                    |
 | `/transport`                      | redirect → `/movements`                                                 |
 | `/transport/officer`              | `OfficerScreen`                                                         |
+| `/waiting`                        | `DelaysScreen` (the Waiting list; B4 step 3, 19 Oct 2026)               |
 | `/ward/[unitId]`                  | `WardScreen`                                                            |
 | `/ward/[unitId]/answer`           | `WardScreen` (`presentation="answer"`)                                  |
 | `/wards`                          | `WardIndex`                                                             |
 
-`/ward-flow-sign-in`: `WardFlowSignInScreen`. `/mockups/ward-flow-digest`: not a page — a
+`/ward-flow-sign-in`: `WardFlowSignInScreen`. `/` (`src/app/page.tsx`): redirect → `/ward-flow`. `/mockups/ward-flow-digest`: not a page — a
 route handler (`GET`) that streams `design/third-edition-mockups/ward-flow-digest.html` back verbatim.
 
-**Seven redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
+**Eight redirect stubs**, all `redirect()` from a Server Component with no UI of their own:
 `command`, `constellation` and `network` (Network screen retired 19 Oct 2026) → `/ward-flow`; `escalation`, `exceptions`, `queue` →
-`/waiting` (the old-bookmark banner was removed 22 Oct 2026); `transport` →
+`/waiting` (the old-bookmark banner was removed 22 Oct 2026); `delays` → `/waiting` with its query carried across; `transport` →
 `/movements`. (`/ed` was formerly a redirect to `/ed/fremantle-ed` and now renders `EdIndex`.) `transport/officer` is a separate, nested route unaffected by the `transport` redirect.
 
 ### 1.3 Error and loading boundaries
@@ -294,7 +298,9 @@ Two `error.tsx` files, one `loading.tsx`, and no `not-found.tsx` under this tree
 - **`src/app/ward-flow/community/[teamId]/page.tsx`** (22) — `/community/[teamId]` →
   `CommunityScreen`; `generateMetadata` resolves the team name via `communityTeamById`.
 - **`src/app/ward-flow/constellation/page.tsx`** (10) — redirect → `/ward-flow`.
-- **`src/app/ward-flow/delays/page.tsx`** (13) — `/delays` → `DelaysScreen`.
+- **`src/app/ward-flow/bed-meeting/page.tsx`** (22) — `/bed-meeting` → `BedMeetingTvScreen` (flag `bed-meeting-tv`).
+- **`src/app/ward-flow/bed-meeting/agenda/page.tsx`** (13) — `/bed-meeting/agenda` → `BedMeetingAgendaScreen`.
+- **`src/app/ward-flow/delays/page.tsx`** — redirect → `/waiting`, carrying the query (`?view=`, `?owner=`) across (Delays renamed Waiting, B4 step 3, 19 Oct 2026).
 - **`src/app/ward-flow/discharges/page.tsx`** (12) — `/discharges` → `DischargeBoard`.
 - **`src/app/ward-flow/ed/page.tsx`** — `/ed` → `EdIndex` (`@/components/ward-management/ed/ed-index`).
 - **`src/app/ward-flow/ed/[edId]/page.tsx`** (24) — `/ed/[edId]` → `EdScreen`;
@@ -360,6 +366,7 @@ defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).
 - **`src/app/ward-flow/transport/page.tsx`** (18) — redirect → `/movements`.
 - **`src/app/ward-flow/transport/officer/page.tsx`** (12) — `/transport/officer` →
   `OfficerScreen` (`@/components/ward-management/officer/officer-screen`).
+- **`src/app/ward-flow/waiting/page.tsx`** (14) — `/waiting` → `DelaysScreen` (the Waiting list; `/delays`, `/queue`, `/escalation` and `/exceptions` redirect here).
 - **`src/app/ward-flow/ward/[unitId]/page.tsx`** (36) — `/ward/[unitId]` → `WardScreen` (`@/components/ward-management/ward/ward-screen`).
   `generateMetadata` resolves the unit's name from the frozen `ward-sites.ts` fixture rather than
   the live provider (metadata generation runs on the server; `useWardFlow()` is client state) — the

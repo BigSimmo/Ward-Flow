@@ -5,7 +5,7 @@ and [AGENTS.md](../../../AGENTS.md).** This index routes builders to the relevan
 requiring them to treat its September census as a current specification.
 
 **Audience:** builders. **Status:** maintained navigation over dated subsystem records. **Owner:** Documentation.
-_Updated 2026-10-23 - D-72 saving summary checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-10-24 - test commands and `EVENT_ROLE` location corrected; Documentation owns._
 The clock and transport-route corrections were checked from source at
 `fc30c90c9cdae9a208786ade6e885750f770a7ea` on 21 October 2026; this is not a new verification of every map entry.
 
@@ -66,7 +66,7 @@ verdict it names that document.
 
 | You want…                             | Look in                                                                                                                                                           |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What an action does and who may do it | `ward-flow-events.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                                                                                |
+| What an action does and who may do it | `ward-flow-events.ts`, `ward-flow-event-roles.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                                                    |
 | A type (Movement, Referral, Unit…)    | `ward-model.ts`, `ward-patients.ts`, `ward-admissions.ts`                                                                                                         |
 | A figure shown on a screen            | The selector in `ward-derivations.ts` or a domain file — [Data and rules](data-and-rules.md)                                                                      |
 | Seed patients, wards, sites           | `ward-sites.ts`, `ward-movements.ts` (seed fixtures despite the name), `ward-*-seed.ts`                                                                           |
@@ -89,7 +89,8 @@ the checkout and remote before changing or running anything.
 ```bash
 npm run ensure                                    # start or verify local server and print the URL
 node scripts/ward-flow/serve-mockups.mjs          # serve the drawings (never double-click them)
-node scripts/run-vitest.mjs <files>               # focused tests: your files + up to 3 direct importers
+node scripts/run-vitest.mjs run <test-files>      # run only the test files you name
+npm run test:focused -- --files <a>,<b>           # tests that import your changed source files
 node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit
 ```
 
@@ -109,7 +110,7 @@ apply the former Database ward-line fold procedure to this repository.
 
 1. **Reading the exit code instead of the summary.** A run that died before starting can look like
    one that ran and failed. For the ward suite, files handed in must equal files that ran.
-2. **Adding an event in one place.** A new event needs its union member, an `EVENT_ROLE` entry, a
+2. **Adding an event in one place.** A new event needs its union member, an `EVENT_ROLE` entry (`ward-flow-event-roles.ts`), a
    reducer case, a persistence classification and a permissions test. See [Engine](engine.md).
 3. **Showing what the data does not hold.** The biggest recurring defect family: screens inventing
    vitals, pods, ages, legal status or figures. Every figure must come from state through a selector.
