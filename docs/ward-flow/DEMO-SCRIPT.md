@@ -127,7 +127,7 @@ form**.
 > re-sort it or score anyone."
 
 **Do:** click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
-sent, Dabakarn accepted, Bed held for this patient: No bed yet, Transport: Not booked yet), then to
+sent, Dabakarn accepted, Pulled bed: none yet, Transport: Not booked yet), then to
 **Form ends: Not written**.
 
 **Say:**

@@ -16,7 +16,7 @@ Your main menu: **My ED board, My referrals, New referral, Find a bed**.
 3. **Legal paperwork.** Use **Change legal status** and **Mark Form 1A received**. Type any expiry
    time from the paper form. The app never works it out.
 4. **Transport.** Once a bed is pulled for your patient, press **Transport booked**, or **No
-   transport needed**. The board shows a pulled bed as "Bed held".
+   transport needed**. The board shows it as "Pulled".
 5. **Fix a mistake.** Use **Withdraw referral**, **Record urgency change** or **Correct receipt**.
 
 ## What you cannot do
