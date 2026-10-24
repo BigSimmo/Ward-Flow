@@ -11,7 +11,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { edId } = await params;
   const id = safeDecodeURIComponent(edId);
   const ed = knownEmergencyDepartment(id);
-  const site = ed?.name ?? id;
+  // DR-20: an unknown id never reaches the title; the address text is whatever was typed.
+  if (!ed) return { title: "Emergency department not found — Ward Flow" };
+  const site = ed.name;
   return {
     title: `${site} — Ward Flow`,
     description: `Synthetic single-department emergency department view for ${site} in the Ward Flow prototype.`,

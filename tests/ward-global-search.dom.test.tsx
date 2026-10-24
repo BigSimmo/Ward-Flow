@@ -655,6 +655,26 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(screen.queryByTestId("ward-global-search-cancel")).not.toBeInTheDocument();
   });
 
+  it("hands focus back to the closed search field when Cancel is pressed from a keyboard (DR-08)", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+    const cancel = screen.getByTestId("ward-global-search-cancel");
+    cancel.focus();
+    fireEvent.click(cancel, { detail: 0 });
+
+    expect(input).toHaveFocus();
+    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+  });
+
+  it("lets a tap on Cancel blur the field, so a phone keyboard goes down", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+    fireEvent.click(screen.getByTestId("ward-global-search-cancel"), { detail: 1 });
+
+    expect(input).not.toHaveFocus();
+    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+  });
+
   it("remembers an opened record for the session and offers it under Recent before typing", () => {
     clearGlobalSearchRecents();
     const { input, onNavigate } = renderPalette();
