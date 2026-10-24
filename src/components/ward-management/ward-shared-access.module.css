@@ -234,3 +234,15 @@
   padding: 0;
   list-style: none;
 }
+
+.sessionEnding {
+  composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--warn-border);
+  color: var(--ink);
+  background: var(--warn-soft);
+  font-family: var(--body);
+  font-size: 0.875rem;
+  font-weight: 600;
+}

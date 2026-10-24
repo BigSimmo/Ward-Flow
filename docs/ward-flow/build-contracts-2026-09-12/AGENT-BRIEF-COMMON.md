@@ -1,5 +1,9 @@
 # Common brief — every Ward Flow screen agent, 2026-09-12
 
+> **Historical build contract, 12 September 2026.** Written for the drawing-era `/mockups/ward-flow/*` routes, which moved to `/ward-flow/*` on 19 October 2026. Its routes, paths and line counts are from that date. Some tests still cite it in comments; check current source and tests before relying on any claim. Current entry: [Ward Flow README](../README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Read this in full before your screen-specific instructions. Where the two disagree, the
 screen-specific one wins and you say so in your report.**
 

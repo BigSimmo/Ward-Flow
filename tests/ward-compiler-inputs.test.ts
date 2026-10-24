@@ -87,8 +87,13 @@ describe("screens take the scenario's wards and the warnings as inputs", () => {
 });
 
 describe("site identity is the same in every scenario, so its lookups need no scenario input", () => {
+  // The opt-in fictional WA-like network is the one deliberate exception: it carries its own invented
+  // sites, checked on its own below, so a lookup reads the active network instead of the standard list.
+  const FICTIONAL_NETWORK = "wa-synthetic";
+  const STANDARD_SITE_SCENARIOS = WARD_SCENARIOS.filter((scenario) => scenario !== FICTIONAL_NETWORK);
+
   it("every network keeps the standard sites in order, differing only in wards", () => {
-    for (const scenario of WARD_SCENARIOS) {
+    for (const scenario of STANDARD_SITE_SCENARIOS) {
       const sites = scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES;
       const identities = sites.map((site) => {
         const { units, ...identity } = site;
@@ -101,11 +106,22 @@ describe("site identity is the same in every scenario, so its lookups need no sc
 
   it("every network shares the standard emergency departments, object for object", () => {
     const standard = allEmergencyDepartments();
-    for (const scenario of WARD_SCENARIOS) {
+    for (const scenario of STANDARD_SITE_SCENARIOS) {
       const sites = scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES;
       const departments = sites.flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []));
       expect(departments.length, scenario).toBe(standard.length);
       departments.forEach((department, index) => expect(department, scenario).toBe(standard[index]));
+    }
+  });
+
+  it("the fictional network uses only invented site codes, none shared with the standard sites", () => {
+    expect(WARD_SCENARIOS).toContain(FICTIONAL_NETWORK);
+    const sites = scenarioNetwork(FICTIONAL_NETWORK)?.sites ?? [];
+    expect(sites.length).toBeGreaterThan(0);
+    const standardCodes = new Set(siteDirectory.map((site) => site.code));
+    for (const site of sites) {
+      expect(site.code.startsWith("SYN-"), site.code).toBe(true);
+      expect(standardCodes.has(site.code), site.code).toBe(false);
     }
   });
 

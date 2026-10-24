@@ -1,6 +1,8 @@
 # Ward Flow — local first run
 
-_Updated 2026-10-19 - audit target resolution and required ownership log; Documentation owns._
+<!-- last-checked: 2026-10-24 -->
+
+_Updated 2026-10-24 - unit test example uses the run-vitest wrapper; Documentation owns._
 
 **Audience:** anyone opening the Ward Flow UI on their own machine (Windows, macOS or Linux).
 **Product/process entry:** [`README.md`](README.md). This page is only how to boot the UI.
@@ -39,7 +41,7 @@ npm run ensure
 ## Useful checks
 
 ```sh
-npx vitest run tests/ward-model.test.ts    # one unit test file, fast
+node scripts/run-vitest.mjs run tests/ward-model.test.ts    # one unit test file, offline defaults
 npm run lint
 npm run typecheck
 npm run docs:check-links                   # links and anchors in tracked Markdown

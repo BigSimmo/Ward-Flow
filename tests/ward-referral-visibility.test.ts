@@ -1481,9 +1481,23 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
             `the seeded community projection carries "${key}"`,
           ).toContain(key);
         }
-        const nested = ["medicalClearance", "intake"].filter((key) => keys.includes(key));
-        expect(nested, "no seeded community referral records a clearance or an intake yet").toEqual([]);
-        expect(sweep(projection).objectPaths.sort()).toEqual([...COMMUNITY_PROJECTION_OBJECT_PATHS].sort());
+        // The authored seed now records an intake for community-addressed referrals, which the
+        // projection carries (15 Oct 2026 ruling above). Hold it to the cut intake: only the
+        // allowlisted intake keys, never the arrival, ward clearance checklist or non-community needs.
+        const intake = (projection as { intake?: Record<string, unknown> }).intake;
+        if (intake !== undefined) {
+          for (const key of Object.keys(intake)) {
+            expect(ALLOWED_COMMUNITY_INTAKE_FIELDS, `the seeded community intake carries "${key}"`).toContain(key);
+          }
+          const needs = intake.needs as { kind?: string } | undefined;
+          if (needs !== undefined)
+            expect(needs.kind, "a non-community need crossed into the community view").toBe("community");
+        }
+        // Outside the intake the object nodes stay exactly the three the allowlists cover.
+        const outsideIntake = sweep(projection).objectPaths.filter(
+          (path) => path !== "intake" && !path.startsWith("intake.") && !path.startsWith("intake["),
+        );
+        expect(outsideIntake.sort()).toEqual([...COMMUNITY_PROJECTION_OBJECT_PATHS].sort());
       }
     });
 

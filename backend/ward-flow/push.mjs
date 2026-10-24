@@ -24,12 +24,20 @@ function decodedLength(value) {
   return typeof value === "string" && BASE64URL.test(value) ? Buffer.from(value, "base64url").length : -1;
 }
 
-/** Null (feature off) unless all three settings are set; throws when they are set but malformed. */
-export function readPushConfig(env = process.env) {
+/**
+ * Null (feature off) unless all three settings are set; throws when they are set but malformed.
+ * When only some are set, push stays off and one startup warning says so (setting name only, never
+ * a value), so a missing or misspelt setting is visible without stopping the backend from starting.
+ */
+export function readPushConfig(env = process.env, log = (event) => console.error(JSON.stringify(event))) {
   const publicKey = env.WARD_FLOW_VAPID_PUBLIC_KEY?.trim();
   const privateKey = env.WARD_FLOW_VAPID_PRIVATE_KEY?.trim();
   const subject = env.WARD_FLOW_VAPID_SUBJECT?.trim();
-  if (!publicKey || !privateKey || !subject) return null;
+  if (!publicKey || !privateKey || !subject) {
+    if (publicKey || privateKey || subject)
+      log({ event: "ward_backend_config_warning", setting: "WARD_FLOW_VAPID", outcome: "push_off" });
+    return null;
+  }
   const publicBytes = decodedLength(publicKey);
   if (
     publicBytes !== 65 ||
@@ -103,14 +111,32 @@ export function freshAlerts(previousIds, current) {
   });
 }
 
+export const OFFICER_PATH = "/ward-flow/transport/officer";
+
 /**
- * The notification for a batch of new act-now items. Takes only `{ site }` per item, so no
- * identifier can reach the payload even if a caller passes a fuller object.
+ * The notification for a batch of new items. Takes only `{ site, kind }` per item, so no
+ * identifier can reach the payload even if a caller passes a fuller object. A desk hears one kind
+ * (engine `scopedActNowAlerts`): act-now rows, an officer's jobs or a community team's updates.
  */
 export function pushPayload(alerts) {
   const count = alerts.length;
   const sites = [...new Set(alerts.map((alert) => alert?.site).filter((site) => typeof site === "string" && site))];
   const where = sites.length === 1 ? sites[0] : sites.length > 1 ? `${sites.length} sites` : "Ward Flow network";
+  const kinds = new Set(alerts.map((alert) => alert?.kind));
+  if (kinds.size === 1 && kinds.has("job"))
+    return {
+      title: `Ward Flow: ${count} new or changed transport ${count === 1 ? "job" : "jobs"}`,
+      body: `${where}. Open Transport jobs to review. Synthetic demo data.`,
+      url: OFFICER_PATH,
+      tag: "ward-flow-jobs",
+    };
+  if (kinds.size === 1 && kinds.has("community"))
+    return {
+      title: `Ward Flow: ${count} ${count === 1 ? "update" : "updates"} for your team`,
+      body: "A referral answered, or a client admitted or discharged. Open Alerts to review. Synthetic demo data.",
+      url: ALERTS_PATH,
+      tag: "ward-flow-team",
+    };
   return {
     title: `Ward Flow: ${count} new act now ${count === 1 ? "item" : "items"}`,
     body: `${where}. Open Alerts to review. Synthetic demo data.`,

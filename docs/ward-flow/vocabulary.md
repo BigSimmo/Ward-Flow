@@ -6,8 +6,8 @@
 >
 > **Reconciliation with active rulings (`D-39` and `R-B-05`):**
 >
-> - **Patient identifiers (`D-39` in [`decisions.md`](decisions.md)):** User-facing screens display synthetic WA Health UMRNs (`[A-Z]\d{7}` formatted via `formatUmrnDisplay`) rather than raw internal `WF-…` referral IDs, which remain internal engine/audit keys.
-> - **Bed states (`R-B-05` in [`RULES.md`](RULES.md) and [`decisions.md`](decisions.md) `D-03`):** The live engine uses 4 operational bed states (`ready`, `being_made_ready`, `pulled`, `occupied`) plus closed beds styled with `--wf-data-closed` in [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md).
+> - **Patient identifiers (`D-39` in [`decisions.md`](decisions.md)):** User-facing screens show the patient's synthetic UMRN (`UM` plus six digits, for example `UM100047`, read through `ward-patient-resolver.ts`) rather than internal `WF-…` journey IDs, which remain internal engine and audit keys.
+> - **Bed states (`R-B-05`, indexed in [`OWNER-RULINGS.md`](OWNER-RULINGS.md)):** The live engine counts four bed states, `ready`, `pulled`, `closed` and `occupied`, which add up to the ward's beds. `beingMadeReady` is a marker, not a fifth state, and beds held for a patient on leave sit inside `occupied` (`src/components/ward-management/ward-bed-states.ts`). _Corrected 24 October 2026 against source._
 
 <!-- docs-script-refs:historical-start -->
 

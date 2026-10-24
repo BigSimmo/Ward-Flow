@@ -1,5 +1,11 @@
 # Ward Flow — product brief
 
+> **Dated brief — labelled 24 October 2026.** Written 25 September 2026 and not kept up to date.
+> Later owner decisions in [decisions.md](decisions.md) (D-27 onwards) win where they differ. For
+> example, D-71 settled that the app never suggests a ward, D-70 removed computed Act periods, and
+> a bed kept for an incoming patient is now a Pulled bed with a Pull time limit, not a "hold". Use
+> it for the product's purpose and users, and check current source for what is built.
+
 Written 25 September 2026 from the ward line at `663a66484a`. It is drawn from what the code, the
 documents and the drawings already say. Anything marked **(Guess — Josh to confirm)** is my
 inference, not a recorded decision. Every patient, ward and figure in the app is invented.

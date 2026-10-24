@@ -615,6 +615,23 @@ test("cover, requests and answers check their fields; asking for access needs no
     takesRequests: async () => false,
   });
   assert.equal((await (await early.handler(request("/access"))).json()).canRequest, false);
+  // A role the server cannot read because it names no health service is refused the same way, under
+  // its own code, so the screen can say to have it given again (RA-02).
+  for (const requestAccess of [answer("request"), undefined]) {
+    const unnamed = setup(other, "prototype", {
+      viewer: async () => ({ status: "none", needsService: true }),
+      ...(requestAccess ? { requestAccess } : {}),
+    });
+    for (const path of ["/access", ""]) {
+      const refusedUnnamed = await unnamed.handler(request(path));
+      assert.equal(refusedUnnamed.status, 403, path);
+      assert.deepEqual(await refusedUnnamed.json(), {
+        error: "No Ward Flow role is assigned to this account",
+        code: "role-needs-service",
+        canRequest: !!requestAccess,
+      });
+    }
+  }
 });
 
 test("a signed-out sign-in is refused on every route at once; sign-out needs no role", async () => {
@@ -669,6 +686,13 @@ test("every desk logs the records it opens; only the statewide coordinator reads
   const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
   assert.deepEqual(await opened.json(), { logged: true });
   assert.deepEqual(logged, [["ward", "PT-1001", "movement"]]);
+  // The full referral detail is a screen of its own (D-80).
+  assert.equal(
+    (await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "referral" }))).status,
+    200,
+  );
+  assert.deepEqual(logged.at(-1), ["ward", "PT-1001", "referral"]);
+  logged.pop();
   assert.equal((await ward.handler(request("/record-access"))).status, 403);
   for (const bad of [
     { patientId: "Jane Citizen", surface: "patient" },

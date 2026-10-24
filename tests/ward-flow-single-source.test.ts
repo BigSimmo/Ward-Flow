@@ -24,7 +24,16 @@ const SRC_DIR = "src";
  *  Scoped to `WARD_DIR`, not `SRC_DIR` — the fixture only ever needs importing from within the
  *  ward-management feature, so bare basenames are unambiguous here and this rule is unchanged
  *  from fix round 3. */
-const ALLOWED = new Set(["ward-movements.ts", "ward-flow-reducer.ts", "ward-pressure.ts", "ward-derivations.ts"]);
+const ALLOWED = new Set([
+  "ward-movements.ts",
+  "ward-flow-reducer.ts",
+  "ward-pressure.ts",
+  "ward-derivations.ts",
+  // Josh, 24 Oct 2026 (decision card, PR #657): the seeded referral dossiers are authored per seeded
+  // journey, so the seed finds that journey in its own fixture to check the dossier still belongs to
+  // the same patient. It reads no live state and nothing on screen counts from it.
+  "ward-referral-dossier-seed.ts",
+]);
 
 /**
  * Files allowed to import the ADMISSION seed (`ward-admissions-seed.ts`) — the sibling of the
@@ -129,6 +138,11 @@ const NOW_ANCHOR_ALLOWLIST = new Set([
   // against a clock that has moved on. It reads the constant to compute a DIFFERENCE and never as
   // a time in its own right, which is the same narrow use the provider is allowed on the line above.
   "src/components/ward-management/ward-flow-reducer.ts",
+  // Josh, 24 Oct 2026 (decision card, PR #657): two more fixture files that author synthetic times
+  // as offsets from the anchor, like ward-demo-network.ts. The WA-like network dates its extra stays
+  // from it, and the referral dossier seed builds the rulings overlay at it to find a seeded journey.
+  "src/components/ward-management/ward-wa-synthetic-network.ts",
+  "src/components/ward-management/ward-referral-dossier-seed.ts",
 ]);
 
 /**

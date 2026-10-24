@@ -1,5 +1,18 @@
 # Tests
 
+## Current-tree check — 24 October 2026
+
+Checked against `main` at `899b232e`. The per-file census below dates from 25 September and its
+counts are history: `tests/` now holds 1,294 `ward-*` files and 15 `ui-ward-*.spec.ts` browser
+journeys (the census says 656 and 13). These census entries name test files that are no longer in
+the repository; treat them as history: `ward-flow-chat-control.test.ts`, `ward-output.test.ts`,
+`ward-console-record-gender.dom.test.tsx`, `ward-drawing-rules.test.ts`,
+`ward-ledger-stale-row-guard.test.ts`, `ward-whois-register.test.ts`,
+`ward-mutation-harness-reachable.test.ts`, `ward-mutation-tooling.test.ts`,
+`ward-chrome-header-actions.dom.test.tsx`, `ward-sidebar.dom.test.tsx` and
+`ward-selector-default-base.test.ts`. Before relying on any entry, confirm the file exists with
+`ls tests/<name>`.
+
 ## Audit repair coverage — 20 October 2026
 
 - `tests/ward-audit-command-permissions.test.ts` checks statewide settings, complete broadcast
@@ -381,7 +394,13 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-match-hooks-order.dom.test.tsx`** (138 lines) — ReferralMatchView — every hook is called above the not-a-bed-question early return
 - **`tests/ward-referral-match-non-ward-decline.dom.test.tsx`** (283 lines) — the emergency-department decline control on the 'no bed shortlist' panel
 - **`tests/ward-referral-match-suburb.dom.test.tsx`** (113 lines) — the seed actually holds a referral with an unknown suburb
+
+<!-- docs-script-refs:historical-start -->
+
 - **`tests/ward-referral-matching.test.ts`** (888 lines) — eligibility matching field by field: age, legal_status, gender_designation, sex_mix independence, forensic, and more (many `describe` blocks; first is "age")
+
+<!-- docs-script-refs:historical-end -->
+
 - **`tests/ward-referral-model.test.ts`** (1849 lines) — bed category — SexDesignation
 - **`tests/ward-referral-no-bed-breakdown.test.ts`** (157 lines) — why nobody can take this patient
 - **`tests/ward-referral-producers.test.ts`** (212 lines) — every Referral field has something that can write it

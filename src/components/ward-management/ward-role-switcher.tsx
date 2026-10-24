@@ -53,9 +53,9 @@ export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } =
   const { movements, units, focusMovementId } = useWardFlowSelect("movements", "units", "focusMovementId");
   const [open, setOpen] = useState(false);
   // Owner answer 38 (17 Sept 2026): other wards in the switcher are coordinators-only. `?? ""` is
-  // the same fallback `ward-chrome-header.tsx`/`ward-standing-strip.tsx`/`ward-chrome-search.tsx`
-  // already use — `wardChromeRole("")` reads as "coordinator", the widest default, rather than
-  // throwing or silently narrowing when no App Router pathname context is mounted (a bare render in
+  // the same fallback `ward-standing-strip.tsx` uses (as did the retired `ward-chrome-header.tsx`
+  // and `ward-chrome-search.tsx`) — `wardChromeRole("")` reads as "coordinator", the widest
+  // default, rather than throwing or silently narrowing when no App Router pathname context is mounted (a bare render in
   // a test, for instance).
   const pathname = usePathname() ?? "";
   const isCoordinatorRoute = wardChromeRole(pathname) === "coordinator";
@@ -128,7 +128,7 @@ export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } =
    * has no legitimate reason to be told which OTHER wards a patient was referred to — that is
    * coordinator-only traffic, the same way the coordinator's own inbox is. So this component now
    * DOES take a route input, the same way every other route-aware piece of Ward Flow chrome already
-   * does (`ward-chrome-header.tsx`, `ward-standing-strip.tsx`, `ward-chrome-search.tsx`): it reads
+   * does (`ward-standing-strip.tsx`, and the retired `ward-chrome-header.tsx`): it reads
    * `usePathname()` and asks `wardChromeRole()` whether the route is the coordinator's. Giving it
    * that input was ruled out in 2026-09-03 only because nothing yet needed it; item 38 is that need.
    *

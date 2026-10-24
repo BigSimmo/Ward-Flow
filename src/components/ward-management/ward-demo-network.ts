@@ -22,6 +22,7 @@ import type { Gender, Patient, PatientId } from "@/components/ward-management/wa
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
+import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
 
 /*
  * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
@@ -1054,7 +1055,7 @@ function buildReferral(
       decidedBy: `Nurse unit manager, ${ward?.name ?? "ward"}`,
     };
   }
-  return {
+  return completeSyntheticReferralIntake({
     id: `RF-DN-${String(index + 1).padStart(3, "0")}`,
     patientId,
     destinations: [addressing],
@@ -1068,7 +1069,7 @@ function buildReferral(
     originSiteCode: spec.originSiteCode,
     transportNeeded: spec.source !== "gp",
     history: spec.history,
-  };
+  });
 }
 
 function pulledAdmission(

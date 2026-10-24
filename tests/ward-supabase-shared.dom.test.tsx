@@ -1,6 +1,10 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useWardShared, WardSharedAccess } from "../src/components/ward-management/ward-shared-access";
+import {
+  useWardShared,
+  WardSessionEndingNotice,
+  WardSharedAccess,
+} from "../src/components/ward-management/ward-shared-access";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { SharedWorkspaceClient } from "../src/components/ward-management/ward-shared-client";
 import { releasePhonePush } from "../src/components/ward-management/shell/ward-phone-push";
@@ -8,6 +12,7 @@ vi.mock("../src/components/ward-management/shell/ward-phone-push", async (origin
   const actual = await original<typeof import("../src/components/ward-management/shell/ward-phone-push")>();
   return { ...actual, releasePhonePush: vi.fn(async () => {}) };
 });
+import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
 import { WARD_AUTH_STORAGE_KEY } from "../src/components/ward-management/ward-supabase-auth";
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
 function Probe({ enabled = true }: { enabled?: boolean }) {
@@ -328,7 +333,7 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
 it("stops polling and signs out the view when the workspace refuses access", async () => {
   const fetcher = vi.fn(async (url: string | URL | Request) =>
     String(url).includes("/v1/workspace")
-      ? Response.json({}, { status: 403 })
+      ? Response.json({ error: "Origin not allowed" }, { status: 403 })
       : String(url).endsWith("/user")
         ? Response.json(user)
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
@@ -434,4 +439,91 @@ it("pauses 3-second polling while document is hidden and refreshes immediately w
     expect(fetcher.mock.calls.filter(([url]) => String(url).includes("/v1/workspace"))).toHaveLength(2),
   );
   unmount();
+});
+describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-05, A4-06)", () => {
+  const channels: { posted: unknown[]; onmessage: ((event: { data: unknown }) => void) | null }[] = [];
+  const startedAt = 1_790_000_000; // seconds, the token's first sign-in factor
+  const payload = btoa(JSON.stringify({ amr: [{ method: "password", timestamp: startedAt }] })).replace(/=+$/, "");
+  const access = `header.${payload}.signature`;
+  async function signedIn() {
+    channels.length = 0;
+    vi.stubGlobal(
+      "BroadcastChannel",
+      class {
+        posted: unknown[] = [];
+        onmessage: ((event: { data: unknown }) => void) | null = null;
+        constructor() {
+          channels.push(this);
+        }
+        postMessage(data: unknown) {
+          this.posted.push(data);
+        }
+        close() {}
+      },
+    );
+    vi.mocked(releasePhonePush).mockResolvedValue();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) =>
+        String(url).includes("/v1/workspace")
+          ? Response.json({ snapshot: null }, { status: 503 })
+          : String(url).endsWith("/user")
+            ? Response.json(user)
+            : String(url).includes("/logout")
+              ? Response.json({})
+              : Response.json({ access_token: access, refresh_token: "refresh", expires_in: 3600, user }),
+      ),
+    );
+    const hook = renderHook(() => useWardShared(true));
+    await waitFor(() => expect(hook.result.current.status).toBe("ready"));
+    await act(async () => {
+      await hook.result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+    });
+    return hook;
+  }
+
+  it("tells every other tab when a person signs out on purpose", async () => {
+    const { result } = await signedIn();
+    await act(async () => {
+      result.current.signOut();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(channels[0].posted).toEqual(["signed-out"]);
+  });
+
+  it("signs this tab out, says why and stays quiet, when another tab signs out", async () => {
+    const { result } = await signedIn();
+    await act(async () => {
+      channels[0].onmessage?.({ data: "signed-out" });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.signedIn).toBe(false);
+    expect(result.current.error).toBe("Signed out in another Ward Flow tab. Sign in again to carry on.");
+    expect(channels[0].posted).toEqual([]);
+    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  });
+
+  it("an idle sign-out with a reason stays in this tab", async () => {
+    const { result } = await signedIn();
+    await act(async () => {
+      result.current.signOut("Signed out after 15 minutes without use. Sign in again to carry on.");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(channels[0].posted).toEqual([]);
+    expect(result.current.error).toBe("Signed out after 15 minutes without use. Sign in again to carry on.");
+  });
+
+  it("knows when the sign-in reaches the session limit, from the token's first sign-in", async () => {
+    const { result } = await signedIn();
+    await waitFor(() =>
+      expect(result.current.sessionEndsAt).toBe(startedAt * 1000 + CLINICAL_VALUES.sessionLimit.value * 3_600_000),
+    );
+  });
+});
+
+it("warns ten minutes before the session limit, and not before (A4-05)", () => {
+  const { rerender } = render(<WardSessionEndingNotice endsAt={Date.now() + 11 * 60_000} />);
+  expect(screen.queryByTestId("ward-session-ending")).toBeNull();
+  rerender(<WardSessionEndingNotice endsAt={Date.now() + 9 * 60_000} />);
+  expect(screen.getByRole("alert")).toHaveTextContent(/You will be signed out at .*12-hour sign-in limit/);
 });

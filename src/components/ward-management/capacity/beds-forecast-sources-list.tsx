@@ -25,12 +25,23 @@ function windowBreakdown(window: ForecastSourceWindow): string {
 }
 
 function entryText(entry: ForecastSourceEntry, inOverdueGroup: boolean, now: Instant): string {
-  const parts = [formatInstantWithDay(entry.expectedAt, now), entry.state === "confirmed" ? "Confirmed" : "Expected"];
+  const parts = [formatInstantWithDay(entry.expectedAt, now)];
+  if (entry.planDate) parts.push("Current discharge plan");
+  parts.push(entry.state === "confirmed" ? "Confirmed" : "Expected");
   if (entry.blocker !== null) parts.push(`Held up: ${entry.blocker}`);
   if (entry.waitingOn !== null) parts.push(entry.waitingOn);
   if (entry.preparing) parts.push("Bed being made ready");
   if (entry.overdue && !inOverdueGroup) parts.push("Past the time given");
   return parts.join(" · ");
+}
+
+function planDateText(plan: NonNullable<ForecastSourceEntry["planDate"]>, now: Instant): string {
+  if (plan.recordedBy !== null) {
+    return `plan date set by ${plan.recordedBy}${plan.recordedAt === null ? " (time not recorded)" : `, ${formatInstantWithDay(plan.recordedAt, now)}`}`;
+  }
+  return plan.recordedAt === null
+    ? "plan date update details not recorded"
+    : `plan date recorded ${formatInstantWithDay(plan.recordedAt, now)} (role not recorded)`;
 }
 
 export function BedsForecastSourcesList({ sources, now }: { sources: BedsForecastSources; now: Instant }) {
@@ -144,7 +155,10 @@ function SourceWindow({ window, now }: { window: ForecastSourceWindow; now: Inst
                     {entryText(entry, window.id === "overdue", now)}
                     <span className={styles.sourceSaid}>
                       {" "}
-                      · said by {entry.saidBy}, {formatInstantWithDay(entry.saidAt, now)}
+                      {entry.planDate
+                        ? `· ${planDateText(entry.planDate, now)} · release last reported by `
+                        : "· said by "}
+                      {entry.saidBy}, {formatInstantWithDay(entry.saidAt, now)}
                     </span>
                   </li>
                 ))}

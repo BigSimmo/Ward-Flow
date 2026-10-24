@@ -119,6 +119,7 @@ describe("clinical values file", () => {
       // Role access later pass (Josh, 16 Oct 2026): cover, step-up sign-in and the access review.
       coverLength: 12,
       sessionLimit: 12,
+      sessionWarning: 10,
       stepUpWindow: 10,
       accessExpiringSoon: 14,
       accessUnused: 45,
@@ -220,6 +221,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  * in `ward-clinical-values.ts` instead.
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
+  {
+    file: "ward-role-alerts.ts",
+    name: "ROLE_ALERT_WINDOW_MINUTES",
+    why: "how long a phone alert id stays live for a retried delivery (D-80); never shown",
+  },
   { file: "ward-model.ts", name: "PULL_HOLD_MINUTES", why: "legal figure guard provenance; listed as pullHold" },
   {
     file: "ward-model.ts",

@@ -390,7 +390,7 @@ export function reduceBroadcastEvent(state: WardFlowState, event: WardFlowEvent)
 /**
  * Extends an active broadcast alert's expiry by `extensionMinutes` (defaults to +2 hours / 120 minutes) (#25).
  */
-export function extendBroadcastAlert(
+function extendBroadcastAlert(
   state: WardFlowState,
   alertId: string,
   now: Instant,

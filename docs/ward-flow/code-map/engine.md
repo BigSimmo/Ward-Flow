@@ -2,6 +2,13 @@
 
 _Updated 2026-10-23 - current saving and sign-in pointers checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
+## Current-tree check — 24 October 2026
+
+Checked against `main` at `899b232e`. `EVENT_ROLE` now lives in `ward-flow-event-roles.ts`
+(re-exported from `ward-flow-events.ts`) and has 151 entries; the "129 variants" count below is
+dated 14 October. The stored state version is 7. Line numbers (`:NNNN`) in the event catalogue
+are from the September census and will not match current source; search by event name instead.
+
 ## Current persistence boundary — 23 October 2026
 
 D-72 item 1 replaces the blanket submitted-state saving stop described in earlier
@@ -143,6 +150,13 @@ when unavailable). `public/ward-flow-push-sw.js` shows the notification and open
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 
+Since D-80 (24 Oct 2026) transport officers and community teams hear alerts too. `ward-role-alerts.ts`
+gives an officer one id per open job, new whenever the booking changes, and a community team ids
+for its referral answered and a client admitted or leaving, each held for 12 hours. `actNowAlerts`
+returns every item with its `kind`; `scopedActNowAlerts` gives each desk only its own kind, and a
+bootstrap coordinator is queued act-now rows only. `pushPayload` words each kind, and a job alert
+opens Transport jobs. Tests: `tests/ward-role-alerts.test.ts` and the payload case in `push.test.mjs`.
+
 ## Role access, later pass — 16 October 2026
 
 Behind the `role-access` flag. `ward-access-admin.ts` holds the one set of rules (grant, approve,
@@ -178,15 +192,16 @@ added across the October passes: 20 named variants (`RECORD_ADMISSION_FOLLOW_UP`
 `RECORD_STAY_DISCHARGE_BLOCKER`, `CLEAR_STAY_DISCHARGE_BLOCKER`) and 13
 `UNDO_*` events). All events retain role, audit/history, stage and
 persistence classifications. D-34 is an explicit originating-ED, pre-collection action:
-release the held admission, cancel uncollected transport, clear placement acceptance and
+release the pulled bed and its admission, cancel uncollected transport, clear placement acceptance and
 pause until a later clinician clearance. Re-clearance requires a new placement, never
 restores an old reservation. `ward-medical-clearance.ts` resolves recorded movement and
 identity-matched referral clearance; the same fact drives the ED board and onward guards.
 An already-collected patient's actual arrival remains recordable after a later negative
 clearance. ATS 1–5 is an optional separately recorded field, independent of urgency 1–3.
 
-Local browser storage is version 6; version 5 snapshots are refused and reset to the
-synthetic seed. D-18 still stops saving after typed free text. Privacy-safe records are
+Local browser storage is now version 7 (`WARD_FLOW_STORED_STATE_VERSION`, checked
+24 October 2026); a version 6 save migrates and older saves are refused. D-72 has replaced
+D-18's stop after typed free text with a scrubbed copy (see the top of this page). Privacy-safe records are
 not authentication, an authoritative shared backend or a clinical audit service.
 Arrival-capacity disagreement is recorded rather than inventing a physical vacancy;
 held arrival links are validated against actual admissions and wards. See the
@@ -328,7 +343,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   (`:1077`), **`referralAcceptanceRefusal`** (`:1125`) — the shared eligibility/override helper
   functions called from `PULL_PATIENT`, `REFER_TO_UNITS`, `ACCEPT_IN_PRINCIPLE`,
   `ACCEPT_REFERRAL`, and from four transport-leg cases that re-check a gender judgement against an
-  already-held unit (`heldUnitGenderRefusal`).
+  already-pulled unit (`heldUnitGenderRefusal`).
 - **`findMovement`/`findUnit`/`findBedRelease`/`findNotice`/`findAdmission`/`findLeaveBed`/
   `findReferral`** (`:1166`–`:1218`) and their **`replace*`** counterparts (`:1183`–`:1233`) —
   the id-lookup and immutable-array-splice helpers every case uses.
@@ -489,7 +504,7 @@ terminal); "open" means no closure yet.
   refused. Case at `:1873`.
 - **`RECORD_EXAMINATION`** — roles: `ed`. Effect: sets `movement.examination`, archiving any
   prior exam into `supersededExaminations`; `inpatient_order`/`further_examination_ordered` just
-  record; `revoked`/`community_order` either flag the movement (bed held, awaiting manual release)
+  record; `revoked`/`community_order` either flag the movement (bed still pulled, awaiting manual release)
   or close it and release the pulled bed/transport. Guards: movement exists; not closed; not
   already examined with a conclusive outcome. Case at `:2858`.
 - **`RECORD_MEDICAL_CLEARANCE`** — roles: `ed`. Effect: overwrites `referral.medicalClearance`
@@ -569,7 +584,7 @@ terminal); "open" means no closure yet.
   stage back to `destination_review` (never re-adds to `referredUnitIds`). Guards: movement
   exists, open, currently `accepted_awaiting_bed` or `pulled`, or stepped back earlier while
   still holding a bed (keeps that stage); `reason` in `STEP_BACK_REASONS`. A
-  held bed (at `pulled`, or stepped back holding one) is released in the same act, recording
+  pulled bed (at `pulled`, or stepped back holding one) is released in the same act, recording
   `pull_released` and `acceptance_withdrawn` unwinds and telling the ward and the ED (Q16);
   refused while a transport job is booked or collected. Case at `:7727`.
 - **`WITHDRAW_WARD_REQUEST`** — roles: `coordinator`. Effect: removes one unit from
@@ -697,14 +712,14 @@ ACCEPT_IN_PRINCIPLE | PULL_PATIENT | ACCEPT_REFERRAL`.)
 ### 2.6 Transport (9)
 
 - **`TRANSPORT_ACCEPTED`** — roles: `officer`. Effect: sets `transport.acceptedAt`. Guards:
-  movement/open; refused while an examination revoked/community_order still holds the bed; stage
+  movement/open; refused while an examination revoked/community_order still keeps the pulled bed; stage
   `handover_ready` with a `transport` job present; not already accepted; `heldUnitGenderRefusal`
   re-check. Case at `:4241`.
 - **`TRANSPORT_EN_ROUTE`** — roles: `officer`. Effect: sets `transport.enRouteAt`. Guards: same
   shape, requires `transport.acceptedAt` set; not already en route. Case at `:4291`.
 - **`PATIENT_COLLECTED`** — roles: `officer`. Effect: sets stage `moving`,
   `transport.collectedAt`. Guards: same shape, requires `transport.enRouteAt` set; last of the
-  four held-unit gender re-checks. Case at `:4362`.
+  four pulled-unit gender re-checks. Case at `:4362`.
 - **`BOOK_TRANSPORT`** — roles: `ed`, `ward`, `community`. Effect: sets `movement.transport` to a
   new job (`provider`, `escortRequired`, `cadNumber`, `transportLegalStatus`, `estimatedAt`,
   `bookedBy`). Guards: movement exists, open, stage `pulled`/`handover_ready`, no transport
@@ -719,18 +734,18 @@ ACCEPT_IN_PRINCIPLE | PULL_PATIENT | ACCEPT_REFERRAL`.)
   `CANCEL_TRANSPORT_REASONS`. Case at `:7116`.
 - **`STOP_TRANSPORT`** — roles: `coordinator`, `ed`. Effect: marks the job cancelled/stopped
   (`stoppedAt`/`stoppedBy`/`stopReason`/`stoppedWhereabouts`), closes the movement
-  `did_not_proceed`, leaves the bed held (not auto-released). Guards: movement exists, open, has a
+  `did_not_proceed`, leaves the bed pulled (not released automatically). Guards: movement exists, open, has a
   transport job collected but not already arrived/diverted/cancelled; `reason` in
   `STOP_TRANSPORT_REASONS`; `whereabouts` in `TRANSPORT_WHEREABOUTS`. Case at `:7384`.
 - **`RELEASE_HELD_BED`** — roles: `coordinator`, `ward`, `ed`. Effect: releases the bed/admission
-  a prior `STOP_TRANSPORT` left held, via `releasePulledBedAndAdmission`. Guards: movement was
+  a prior `STOP_TRANSPORT` left pulled, via `releasePulledBedAndAdmission`. Guards: movement was
   stopped via `STOP_TRANSPORT` (`transport.stoppedAt` set); still holds an admission; `ward`
   caller's `actingUnitId` matches `acceptedUnitId`. Case at `:7502`.
 - **`RECORD_DIVERSION`** — roles: `officer`, `coordinator`. Effect: sets
-  `transport.diversion` to `{at, by, place, reason}`; bed stays held, movement stays open. Guards:
+  `transport.diversion` to `{at, by, place, reason}`; bed stays pulled, movement stays open. Guards:
   movement exists, open, has a job collected but not arrived/stopped/cancelled/already diverted;
   `reason` in `DIVERSION_REASONS`; `place` in `TRANSPORT_WHEREABOUTS`. Case at `:7540`.
-- **`RELEASE_DIVERTED_BED`** — roles: `coordinator`, `ward`, `ed`. Effect: releases the held
+- **`RELEASE_DIVERTED_BED`** — roles: `coordinator`, `ward`, `ed`. Effect: releases the pulled
   bed/admission, marks transport cancelled, closes the movement `did_not_proceed`. Guards:
   movement has a recorded diversion; still holds an admission; `ward` caller's `actingUnitId`
   matches. Case at `:7616`.
@@ -748,7 +763,7 @@ false`, clears `urgentFlag`, closes the newest `urgentFlagHistory` entry. Guards
   exists; must currently be flagged (no closure check — clearing is always allowed). Case at
   `:4817`.
 - **`RECORD_MOVEMENT_GENDER`** — roles: `ed`, `coordinator`. Effect: sets `movement.gender`,
-  appends to `genderChanges`; if a bed is already held, notifies the coordinator to recheck
+  appends to `genderChanges`; if a bed is already pulled, notifies the coordinator to recheck
   placement. Guards: movement exists, open; `gender` in `REFERRAL_GENDERS`; refused if unchanged.
   Case at `:2568`.
 
@@ -981,9 +996,9 @@ guard.test.ts` is what proves that check can actually fail.
   (`STAGE_TRANSITION_BLOCKERS`, `ward-flow-reducer.ts:210`), the other is a closed enum
   (`BedReleaseBlocker`) written only by `BLOCK_BED_RELEASE`/`CLEAR_BED_RELEASE_BLOCK`. Do not
   conflate them when reading or writing either.
-- **`STEP_BACK_STAGE` does not release a held bed.** It only rewinds `movement.stage`; a movement
+- **`STEP_BACK_STAGE` does not release a pulled bed.** It only rewinds `movement.stage`; a movement
   stepped back from `pulled` still holds the phantom admission and consumes ward capacity until a
-  separate release event runs. `WITHDRAW_ACCEPTANCE` is the exception (Q16): it releases a held
+  separate release event runs. `WITHDRAW_ACCEPTANCE` is the exception (Q16): it releases a pulled
   bed explicitly in the same act and records the release.
 - **`Referral.history` is the one genuine free-text field on a `Referral`**, and it (along with 11
   other event types' typed fields) never reaches `sessionStorage` once typed in a session — do
