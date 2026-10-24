@@ -758,6 +758,7 @@ export function WardBreakGlassReview() {
 }
 
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+const IDLE_WARNING_SECONDS = 60;
 
 /**
  * Shared computer lock (feature 10, readiness review item 8): after the set time with no use, the
@@ -775,11 +776,14 @@ export function WardIdleLock() {
   const onTv = useWardFeatureFlag("bed-meeting-tv") && pathname === WARD_BED_MEETING_TV_HREF;
   const session = useContext(SharedSessionContext);
   const [locked, setLocked] = useState<false | "screen" | "signed-out">(false);
+  // Seconds left on the "Still there?" countdown before an idle sign-out, or null (Josh, 21 Oct 2026).
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const lockRef = useRef<HTMLDivElement | null>(null);
+  const stillHere = useRef(() => {});
   const minutes = CLINICAL_VALUES.idleLock.value;
   // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
   useModalFocus({
-    open: locked !== false,
+    open: locked !== false || secondsLeft !== null,
     onClose: () => undefined,
     panelRef: lockRef,
     closeOnEscape: false,
@@ -789,23 +793,74 @@ export function WardIdleLock() {
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (onTv) return;
+    let countdown: number | undefined;
+    // Wall-clock deadline, so a laptop woken after its timers were held still signs out on time.
+    let deadline = 0;
     const lock = () => {
+      window.clearInterval(countdown);
+      setSecondsLeft(null);
       lockWardDesk();
       forgetStepUp();
-      if (session) session.signOut();
+      // Only this tab: another tab in use keeps its own idle lock (Audit 4 A4-04, A4-06).
+      if (session) session.signOut(`Signed out after ${minutes} minutes without use. Sign in again to carry on.`);
       setLocked((current) => current || (session ? "signed-out" : "screen"));
     };
-    let timer = window.setTimeout(lock, minutes * 60_000);
-    const reset = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(lock, minutes * 60_000);
+    // A signed-in desk is asked "Still there?" for the last minute, so a person at it is not signed out.
+    const warn = () => {
+      const secondsTo = () => Math.ceil((deadline - Date.now()) / 1000);
+      setSecondsLeft(Math.min(IDLE_WARNING_SECONDS, secondsTo()));
+      countdown = window.setInterval(() => {
+        const left = secondsTo();
+        if (left <= 0) lock();
+        else setSecondsLeft(left);
+      }, 1000);
     };
+    const arm = () => {
+      deadline = Date.now() + minutes * 60_000;
+      return session
+        ? window.setTimeout(warn, minutes * 60_000 - IDLE_WARNING_SECONDS * 1000)
+        : window.setTimeout(lock, minutes * 60_000);
+    };
+    let timer = arm();
+    const reset = () => {
+      if (Date.now() >= deadline) {
+        window.clearTimeout(timer);
+        lock();
+        return;
+      }
+      window.clearTimeout(timer);
+      window.clearInterval(countdown);
+      setSecondsLeft(null);
+      timer = arm();
+    };
+    stillHere.current = reset;
     for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, { passive: true });
     return () => {
       window.clearTimeout(timer);
+      window.clearInterval(countdown);
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset);
     };
   }, [access, minutes, onTv, session]);
+  if (!locked && secondsLeft !== null)
+    return (
+      <div
+        ref={lockRef}
+        className={styles.lock}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="ward-idle-warn-title"
+      >
+        <div className={styles.lockCard}>
+          <h1 id="ward-idle-warn-title">Still there?</h1>
+          <p data-testid="ward-idle-countdown">
+            This desk has not been used for {minutes - 1} minutes. You will be signed out in {secondsLeft} seconds.
+          </p>
+          <Button variant="pri" data-testid="ward-idle-still-here" onClick={() => stillHere.current()}>
+            I&apos;m still here
+          </Button>
+        </div>
+      </div>
+    );
   if (!locked) return null;
   return (
     <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
