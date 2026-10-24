@@ -188,10 +188,22 @@ function trimReferral(
 ): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
-  if (destinations.length === referral.destinations.length) return referral;
+  if (
+    destinations.length === referral.destinations.length &&
+    referral.genderPlacements === undefined &&
+    referral.contactLog === undefined
+  )
+    return referral;
   const trimmed: Referral = { ...referral, destinations };
-  if (referral.contactLog === undefined) return trimmed;
   const keptUnits = new Set(referralDestinationUnitIds(trimmed));
+  // Placement history names wards independently of the addressing lines. A receiving desk must
+  // not recover a hidden destination from that history, even when all its lines were kept.
+  if (referral.genderPlacements)
+    trimmed.genderPlacements = referral.genderPlacements.flatMap((placement) => {
+      const unitIds = placement.unitIds.filter((id) => keptUnits.has(id));
+      return unitIds.length || !placement.unitIds.length ? [{ ...placement, unitIds }] : [];
+    });
+  if (referral.contactLog === undefined) return trimmed;
   const keptTeams = new Set(
     destinations.flatMap((line) =>
       line.destination.kind === "community_team" ? [communityTeamSlug(line.destination.teamName)] : [],
