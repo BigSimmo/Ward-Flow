@@ -4,7 +4,12 @@ import { runInNewContext } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
-import { pushPayload } from "../backend/ward-flow/push.mjs";
+// The backend's payload builder, loaded by address so the website's type check does not take in the
+// untyped backend module. The tests below run its real output through the worker.
+type PushPayload = { title: string; body: string; url: string };
+const { pushPayload } = (await import(new URL("../backend/ward-flow/push.mjs", import.meta.url).href)) as {
+  pushPayload: (alerts: readonly { id: string; site: string | null; kind?: string }[]) => PushPayload;
+};
 
 /**
  * PWA plan items 4, 6, 12 and 13 (Oct 2026): what `public/ward-flow-push-sw.js` may keep.
