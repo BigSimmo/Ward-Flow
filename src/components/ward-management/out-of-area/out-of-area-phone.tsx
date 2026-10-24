@@ -311,7 +311,7 @@ export function OutOfAreaPhone({
             label: "Home today",
             tone: "success",
             onPress: () => setTab("needs"),
-            actionLabel: `${leaving.length} going home today, show Needs you`,
+            actionLabel: `${leaving.length} going home today, show My list`,
           },
           {
             id: "date-passed",
@@ -340,14 +340,14 @@ export function OutOfAreaPhone({
         value={tab}
         onChange={setTab}
         items={[
-          { id: "needs", label: "Needs you", count: ready.length + leaving.length },
+          { id: "needs", label: "My list", count: ready.length + leaving.length },
           { id: "all", label: "Everyone", count: people.length },
           { id: "beds", label: "Beds" },
         ]}
       />
 
       {tab === "needs" ? (
-        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-needs" aria-label="Needs you">
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-needs" aria-label="My list">
           {leaving.length ? (
             <section className={styles.phoneSection} aria-label="Leaving today">
               <h2 className={styles.phoneSectionTitle}>

@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { generateKeyPairSync } from "node:crypto";
 import {
   ALERTS_PATH,
+  OFFICER_PATH,
   createPushSender,
   errorFields,
   freshAlerts,
@@ -39,9 +40,10 @@ const browserKeys = { p256dh: keys.publicKey, auth: Buffer.alloc(16, 3).toString
 const offCurve = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString("base64url");
 
 test("phone push is off unless all three VAPID settings are present", () => {
+  const quiet = () => {};
   assert.equal(readPushConfig({}), null);
-  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: "" }), null);
-  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "  " }), null);
+  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: "" }, quiet), null);
+  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "  " }, quiet), null);
   assert.deepEqual(readPushConfig(env), {
     publicKey: keys.publicKey,
     privateKey: keys.privateKey,
@@ -121,6 +123,21 @@ test("the payload carries a count, a site and the Alerts path only", () => {
     pushPayload([{ id: "x", site: null }]).body,
     "Ward Flow network. Open Alerts to review. Synthetic demo data.",
   );
+});
+
+test("an officer's jobs and a team's updates get their own words, with no record id (D-80)", () => {
+  const jobs = pushPayload([
+    { id: "job:WF-005:abc", site: "Peel Health Campus", kind: "job" },
+    { id: "job:WF-006:def", site: "Peel Health Campus", kind: "job" },
+  ]);
+  assert.equal(jobs.title, "Ward Flow: 2 new or changed transport jobs");
+  assert.equal(jobs.url, OFFICER_PATH);
+  const updates = pushPayload([{ id: "admitted:AD-01", site: null, kind: "community" }]);
+  assert.equal(updates.title, "Ward Flow: 1 update for your team");
+  assert.equal(updates.url, ALERTS_PATH);
+  for (const payload of [jobs, updates])
+    for (const value of ["WF-005", "WF-006", "AD-01", "job:", "admitted:"])
+      assert.equal(JSON.stringify(payload).includes(value), false, `payload must not contain ${value}`);
 });
 
 test("no patient name, UMRN, Ward Flow id, alert text or typed text reaches the payload", async () => {

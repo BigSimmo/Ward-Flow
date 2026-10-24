@@ -4,8 +4,8 @@
  * header region (`.header`/`.place`, consumed by `WardShellHeader`) — two components, one
  * stylesheet, per the 2026-09-04 ruling that split `ward-shell.tsx`: `WardGround` mounts in
  * `src/app/ward-flow/layout.tsx` (the only thing that is an ancestor of every route's
- * `<main>`) and `WardShellHeader` mounts in `ClinicalRail` (`ward-management-navigation.tsx`),
- * and neither could reach its own mount point while bundled with the other's job.
+ * `<main>`). `WardShellHeader` supplies a route's in-flow place label. Neither could reach
+ * its own mount point while bundled with the other's job.
  *
  * ⚠️ THIS IS THE ONLY WARD FLOW STYLESHEET THAT PAINTS --ward-ground.
  * tests/ward-shell.dom.test.tsx pins that as a sorted list, not a count: a second painter means
@@ -236,9 +236,8 @@
 
 /* The header region: only where a route has one, the place as a non-heading label. See
  * ward-shell.tsx's doc comment and Decision 1 of the navigation-shell plan for why this is
- * never an <h1> or any other heading level. Carries no role switcher — `ClinicalRail` already
- * renders `WardRoleSwitcher` in the rail (see `WardShellHeader`'s own doc comment for why that
- * clause of Decision 1 is superseded). Rendered as ordinary in-flow content everywhere (Decision
+ * never an <h1> or any other heading level. The shared shell owns the desk switcher.
+ * Rendered as ordinary in-flow content everywhere (Decision
  * 3, amended 2026-09-04): no `position: fixed`/`sticky` rule belongs on this class or `.place`. */
 .header {
   display: flex;

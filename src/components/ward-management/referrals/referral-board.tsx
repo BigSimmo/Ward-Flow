@@ -96,6 +96,7 @@ import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -232,7 +233,17 @@ function readLinkedReferralId(): string | null {
  * beds ready statewide, Next overdue and the bed meeting list. Filters highlight and never hide a
  * referral; the queue stays longest wait first with the tier only breaking ties (D-32).
  */
-export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFirst?: boolean } = {}) {
+export function ReferralBoard({
+  defaultSelectFirst = false,
+  readOnly: readOnlyProp,
+}: {
+  defaultSelectFirst?: boolean;
+  /** Viewing, filters and the detail only: no decision, placement, owner or call control. */
+  readOnly?: boolean;
+} = {}) {
+  // D-80: the site bed manager reads its site's referral lines and answers none of them.
+  const routeRole = useRouteRole();
+  const readOnly = readOnlyProp ?? routeRole === "bed_manager";
   const {
     referrals,
     units,
@@ -280,7 +291,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const [searchQuery, setSearchQuery] = useState("");
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
-  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("place");
+  const [chosenTab, setInspectorTab] = useState<InspectorTab>("place");
+  // A read-only board has no Place tab, so it opens on the patient.
+  const inspectorTab: InspectorTab = readOnly && chosenTab === "place" ? "patient" : chosenTab;
   /* v10 phone: the sheet has no tabs; the timeline and the patient details open in place. */
   const isPhone = useIsPhone();
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
@@ -929,7 +942,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             >
                               Open movement
                             </Link>
-                          ) : (
+                          ) : readOnly ? null : (
                             <Link
                               href={`/ward-flow/board/${targetWardUnitId}`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
@@ -962,6 +975,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     />
                   </div>
 
+                  {readOnly ? (
+                    <p className={a.panelMeta} data-testid="ward-referral-read-only">
+                      Read only. The coordinator and the receiving ward answer this referral.
+                    </p>
+                  ) : null}
                   <ReferralAlerts
                     referral={selectedReferral}
                     readmission={
@@ -978,11 +996,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       value={inspectorTab}
                       onChange={setInspectorTab}
                       items={[
-                        {
-                          id: "place",
-                          label: wardArm(selectedReferral) ? "Place" : "Decide",
-                          count: selectedReadyUnits,
-                        },
+                        ...(readOnly
+                          ? []
+                          : [
+                              {
+                                id: "place" as const,
+                                label: wardArm(selectedReferral) ? "Place" : "Decide",
+                                count: selectedReadyUnits,
+                              },
+                            ]),
                         { id: "patient", label: "Patient" },
                         {
                           id: "timeline",
@@ -1023,17 +1045,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </section>
                       ) : null;
                     })()}
-                    <ReferralMatchView
-                      key={selectedReferral.id}
-                      referral={selectedReferral}
-                      units={units}
-                      now={now}
-                      dispatch={dispatch}
-                      rejections={rejections}
-                      patientInfo={selectedPatientInfo}
-                      hideDossierHeader
-                      onDecision={decide(selectedReferral)}
-                      phone={
+                    {(() => {
+                      const phoneExtras = (
                         <>
                           <button
                             type="button"
@@ -1051,6 +1064,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                                 referral={selectedReferral}
                                 now={now}
                                 dispatch={dispatch}
+                                readOnly={readOnly}
                               />
                             </ReferralTimeline>
                           ) : null}
@@ -1063,7 +1077,12 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             {phonePatientOpen ? "Hide patient details" : "Show patient details"}
                           </button>
                           {phonePatientOpen ? (
-                            <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                            <ReferralPatientTab
+                              referral={selectedReferral}
+                              now={now}
+                              readyUnits={selectedReadyUnits}
+                              readOnly={readOnly}
+                            />
                           ) : null}
                           <div className={mph.acts}>
                             <span className={a.spacer} />
@@ -1079,8 +1098,25 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             </Button>
                           </div>
                         </>
-                      }
-                    />
+                      );
+                      // D-80: a read-only board shows the timeline and patient details with no decision list.
+                      return readOnly ? (
+                        phoneExtras
+                      ) : (
+                        <ReferralMatchView
+                          key={selectedReferral.id}
+                          referral={selectedReferral}
+                          units={units}
+                          now={now}
+                          dispatch={dispatch}
+                          rejections={rejections}
+                          patientInfo={selectedPatientInfo}
+                          hideDossierHeader
+                          onDecision={decide(selectedReferral)}
+                          phone={phoneExtras}
+                        />
+                      );
+                    })()}
                   </div>
                 ) : (
                   <TabPanel
@@ -1089,7 +1125,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     id={inspectorTab}
                     className={cx(styles.registerDetailBody, a.panelBody)}
                   >
-                    {inspectorTab === "place" ? (
+                    {inspectorTab === "place" && !readOnly ? (
                       <ReferralMatchView
                         key={selectedReferral.id}
                         referral={selectedReferral}
@@ -1103,11 +1139,21 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       />
                     ) : null}
                     {inspectorTab === "patient" ? (
-                      <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
+                      <ReferralPatientTab
+                        referral={selectedReferral}
+                        now={now}
+                        readyUnits={selectedReadyUnits}
+                        readOnly={readOnly}
+                      />
                     ) : null}
                     {inspectorTab === "timeline" ? (
                       <ReferralTimeline referral={selectedReferral} units={units} now={now}>
-                        <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
+                        <ReferralHistoryAndCorrections
+                          referral={selectedReferral}
+                          now={now}
+                          dispatch={dispatch}
+                          readOnly={readOnly}
+                        />
                       </ReferralTimeline>
                     ) : null}
                   </TabPanel>
@@ -1146,7 +1192,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   </h2>
                   <EmptyState
                     icon={ClipboardList}
-                    title="Select a queued referral to review its facts and record a decision."
+                    title={
+                      readOnly
+                        ? "Select a queued referral to review its facts."
+                        : "Select a queued referral to review its facts and record a decision."
+                    }
                     meta={`${queued.length} awaiting decision · ${decidedTotal} decided`}
                   />
                 </section>

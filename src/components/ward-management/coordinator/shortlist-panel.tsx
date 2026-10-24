@@ -6,7 +6,8 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { holdOpenForm } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Button, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
 
@@ -641,6 +642,10 @@ export function ShortlistPanel({
     // fresh report FROM the treating team — a team that never made one. The two options say where
     // the entry came from, not why a status changed: an audit-trail defect, not a clinical one.
   }>({ legalStatus: movement?.legalStatus ?? "Voluntary", reason: undefined });
+  // Audit 4 A4-01: while either form is open, a save from it is checked against the board it
+  // opened on, as a popup's is, so another desk's change meanwhile is reported, not overwritten.
+  const recordFormOpen = urgencyChangeOpen || legalStatusChangeOpen;
+  useEffect(() => (recordFormOpen ? holdOpenForm() : undefined), [recordFormOpen]);
   // Task 3: the undo the prototype has never had. Both forms only ever OPEN when the reducer
   // would actually accept the event — see `canReleasePull`/`canCancelTransport` below — so
   // neither control can advertise an action the reducer would silently refuse.

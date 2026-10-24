@@ -41,7 +41,12 @@ export type WardAccessScope =
   | { readonly kind: "ward"; readonly unitIds: readonly string[] }
   | { readonly kind: "ed"; readonly edId: string }
   | { readonly kind: "team"; readonly teamName: string }
-  | { readonly kind: "jobs" };
+  /**
+   * A transport officer's jobs. A granted officer holds its own health service's jobs only (D-80
+   * item 7); the server refuses a membership without one. The local demo's officer desk has no
+   * service and sees every open job.
+   */
+  | { readonly kind: "jobs"; readonly service?: HealthService };
 
 export type WardAccess = { readonly role: WardAccessRole; readonly scope: WardAccessScope };
 
@@ -164,6 +169,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     board: "own",
     discharges: "own",
     "bed-meeting": "own",
+    // D-80: read only, its own wards' incoming lines. The board offers it no action and the server
+    // refuses every referral change from it (no bed manager in EVENT_ROLE for one).
+    referrals: "own",
     patient: "own",
     movements: "own",
     delays: "own",
@@ -221,6 +229,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // D-80: the team books transport for its own journeys (D-76), so it follows them here.
+    movements: "own",
     delays: "own",
     "legal-forms": "own",
     search: "own",

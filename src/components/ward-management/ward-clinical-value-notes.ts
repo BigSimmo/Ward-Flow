@@ -200,6 +200,9 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-65 (17 Oct 2026), Australian Government ISM-0428: sessions end after at most twelve hours. Checked against the September 2026 ISM on cyber.gov.au",
   },
+  sessionWarning: {
+    source: "Audit 4 A4-05 (Josh, 21 Oct 2026): ten minutes to finish and save before the sign-in limit",
+  },
   stepUpWindow: {
     source: "D-63 (16 Oct 2026), local security choice, stricter than NIST SP 800-63B",
   },

@@ -1,5 +1,10 @@
 # Data, seeds and domain rules
 
+**Status:** the per-file entries began as the 25 September 2026 census; the dated sections below
+correct parts of it. Line numbers and importer counts are history. A 24 October 2026 check against
+`main` at `899b232e` found every file this part names still present, except the removed D-29 demo
+and the removed contention brief noted in place. Back to [the code map index](README.md).
+
 ## Output accuracy corrections
 
 Physical ED wait counts use `ward-ed-presence.ts` to exclude ward-origin transfers and stop at
@@ -262,7 +267,7 @@ capacity figure anywhere in this group is real.
   only) — Reports, but does not resolve, when more than one live claim (referral, acceptance, or
   parallel referral) is counting on the same unit's bed. Its own doc comment states this is
   deliberately unwired: "No existing caller is wired up here" pending an owner decision on how
-  contention should be resolved (`docs/ward-flow/brief-contention-model-2026-09-04.md`). See
+  contention should be resolved (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). See
   [Pitfalls](#pitfalls-in-this-area). Key exports: `contention`, `contentionPairs`.
 - **`src/components/ward-management/ward-pressure.ts`** (65 lines, 7 importers) — Ranks EDs by
   pressure: a passed legal deadline outranks a long wait, which outranks volume. `movements` is a
@@ -390,7 +395,9 @@ capacity figure anywhere in this group is real.
   so "the role IS the route". A chrome hint only, never a permission (permissions stay in the
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
   `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
-  readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
+  readmission flag is the coordinator's on every route, Josh, 9 Oct 2026; since D-80 a ward also
+  sees it on its own accepted journeys, carried on its scoped copy as the discharge time only by
+  `ward-readmission-copy.ts`), `CHROME_ROLE_LABELS`.
 - **`src/components/ward-management/ward-role-permissions.ts`** (145 lines, added 9 Oct 2026,
   feature 11) — Whether the route's role may take an action: `EVENT_ROLE` plus the one explicit
   `CROSS_ROLE_ALLOWED` list of borrowed-role pairs (Patient page, Legal forms Mark received, ward
@@ -430,7 +437,7 @@ capacity figure anywhere in this group is real.
   only) — Built, tested, and explicitly **not wired into any screen or the reducer**, by design.
   Its header states the function reports contention (two live claims resting on the same bed) but
   never ranks, resolves or decides who wins one, because that decision has not been made by the
-  product owner (`docs/ward-flow/brief-contention-model-2026-09-04.md`). Read before either wiring
+  product owner (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). Read before either wiring
   it up or deleting it — it is neither dead code nor a shipped feature, it is a deliberately
   unreached primitive.
 

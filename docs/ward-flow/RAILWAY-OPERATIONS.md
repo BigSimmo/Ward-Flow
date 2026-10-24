@@ -5,6 +5,10 @@ guidance, not a new gate, background monitor, merge controller or approval proce
 Use the authority already granted for the task. Preserve owner-held work and ask
 only when a proposed action adds effects outside that authority.
 
+Since 24 October 2026 the service's source branch is `live`, not `main`; the daily release
+workflow moves `live` once a day ([HOW-WE-WORK §4](HOW-WE-WORK.md#4-integration-in-the-dedicated-repository)).
+Compare the live deployment with `live`, not `main`. The 4 October notes below predate that change.
+
 ## What happened and what actually needed fixing
 
 | Observation on 4 October 2026                                       | Cause or interpretation                                                                                                                                                         | Correction and evidence                                                                                                                                                                          |

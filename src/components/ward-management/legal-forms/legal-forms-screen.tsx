@@ -1131,6 +1131,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             return target ? `${nameOf(target)} · ${umrnOf(target)}` : "";
           })()}
           now={now}
+          dayZero={dayZero}
           onClose={() => setExtendId(null)}
           extendUnavailable={extendGate.reason}
           onExtendForm={(movement, dueAt) => {

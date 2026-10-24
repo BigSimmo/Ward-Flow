@@ -161,7 +161,7 @@ describe("ward-docs-maintain-pipeline", () => {
         "doc-facts",
       ]);
       expect(CHECK_INDEX_STEPS.length).toBe(7);
-      expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(8);
+      expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(9);
     });
 
     it("executes main(['--classify', ..., '--json']) with exit code 0", () => {

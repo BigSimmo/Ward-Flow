@@ -9,6 +9,7 @@ import { WardFlowProvider, WardFlowOverride, useWardFlow } from "@/components/wa
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearSessionDrafts } from "@/components/ward-management/ward-session-drafts";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -124,5 +125,65 @@ describe("legal extension completion and recovery", () => {
     expect(closed).toBe(0);
     expect(screen.getByTestId("ward-legal-forms-renew-expiry")).toHaveValue("23:59");
     expect(screen.getByTestId("ward-legal-forms-renew-expiry")).not.toBeDisabled();
+  });
+});
+
+// Audit 24-6 TC-01: the Extend sheet takes the date written on the form, so an extension more than a
+// day away is recorded on its own day and a past expiry is refused, not moved to tomorrow.
+describe("legal extension typed date", () => {
+  const dayZero = perthMidnight(2026, 9, 24);
+  const target = () => seedWardFlowStateAt(0).movements.find((m) => !m.closure && m.legalForm?.dueAt !== undefined)!;
+
+  it("records the typed date and time, counted from day zero", async () => {
+    const recorded: number[] = [];
+    render(
+      <WardFlowProvider initialNow={1242}>
+        <ExtendSheet
+          target={target()}
+          label="Synthetic record"
+          now={1242}
+          dayZero={dayZero}
+          onClose={() => {}}
+          onExtendForm={(_movement, dueAt) => {
+            recorded.push(dueAt);
+            return true;
+          }}
+        />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-26" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "09:00" } });
+    expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent("09:00");
+    fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
+    expect(recorded).toEqual([2 * 1440 + 9 * 60]);
+  });
+
+  it("refuses a typed expiry already past instead of moving it to tomorrow", () => {
+    const recorded: number[] = [];
+    render(
+      <WardFlowProvider initialNow={1242}>
+        <ExtendSheet
+          target={target()}
+          label="Synthetic record"
+          now={1242}
+          dayZero={dayZero}
+          onClose={() => {}}
+          onExtendForm={(_movement, dueAt) => {
+            recorded.push(dueAt);
+            return true;
+          }}
+        />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "08:00" } });
+    expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).toBeNull();
+    const confirm = screen.getByTestId("ward-legal-forms-renew-confirm");
+    expect(confirm).toHaveAttribute(
+      "title",
+      "The new expiry written on the form is already past. Check the date and time.",
+    );
+    fireEvent.click(confirm);
+    expect(recorded).toEqual([]);
   });
 });

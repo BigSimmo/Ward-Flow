@@ -50,7 +50,7 @@ import {
   type Referral,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
@@ -105,7 +105,7 @@ export { stageCopy };
  * the passing gate so a coordinator sees it before confirming.
  *
  * ⚠️ `!unitHasOpenBeds(unit)` — WHOLLY locked, not merely "has some locked beds" — deliberately,
- * since the 2026-09-04 locked/open split added mixed wards. `MORE_RESTRICTIVE_NOTE` below says "a
+ * since the 2026-09-04 locked/open split added mixed wards. The notice this raises says "a
  * locked ward"; a mixed ward with open beds free is not one, and this function does not know which
  * specific bed a mixed-ward placement would land on. Flagging every mixed ward here would call a
  * ward "locked" that is mostly open — the exact ward-level/bed-level conflation the owner's
@@ -117,10 +117,6 @@ export { stageCopy };
 export function isMoreRestrictiveThanRequired(movement: Movement, unit: Unit): boolean {
   return movement.security === "Open" && !unitHasOpenBeds(unit);
 }
-
-/** The wording used wherever `isMoreRestrictiveThanRequired` is surfaced, so it reads identically
- * on the shortlist row, the gate note, the suggestion badge and the diagram node. */
-export const MORE_RESTRICTIVE_NOTE = "More restrictive than required — a locked ward for an open-status movement";
 
 /** A real, per-movement audit trail built from actual fields — never generic flavour text. */
 export function movementTimeline(movement: Movement) {
@@ -243,10 +239,6 @@ export const roleTaskLabel: Record<WardRole, string> = {
   ward: "Accept and pull bed",
 };
 
-const edServiceById = new Map<string, HealthService | undefined>(
-  allEmergencyDepartments().map((candidate) => [candidate.id, siteByCode(candidate.siteCode)?.service]),
-);
-
 const unitMapCache = new WeakMap<readonly Unit[], Map<string, Unit>>();
 
 function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
@@ -268,7 +260,8 @@ export function movementHealthService(movement: Movement): HealthService | undef
   // D-76: a journey from a community team takes the service of the location its referral gave.
   if (movement.originEdId === undefined)
     return movement.originCommunity && siteByCode(movement.originCommunity.siteCode)?.service;
-  return edServiceById.get(movement.originEdId);
+  const originEd = edById(movement.originEdId);
+  return originEd && siteByCode(originEd.siteCode)?.service;
 }
 
 /**

@@ -3,7 +3,8 @@
 -- Ends every cover now, then removes cover rows' kind, requests for access, last used times and the
 -- role on phone alert devices. Devices turned on by membership are revoked, because the backend
 -- before 9 sends alerts to the WARD_COORDINATOR_USER_IDS accounts only. The backend accepts
--- versions 5 to 9, so it keeps working. Refuses unless the database is at exactly 9.
+-- versions 5 to the latest (see migrations.mjs), so it keeps working. Refuses unless the database
+-- is at exactly 9.
 -- A role 9 switched off for not being used has no end of its own before 9, so it works again after
 -- this. To keep such roles off, end them first, with the not used window from the clinical values
 -- module (ACCESS_UNUSED_MINUTES), for example:

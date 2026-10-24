@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { NAMESPACE_OBJECT_LIMIT, verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 
 const sqlFiles = [
@@ -18,6 +18,7 @@ const sqlFiles = [
   "010-workspace-records",
   "011-record-access-and-sign-out",
   "012-foreign-key-indexes",
+  "013-referral-record-views",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -235,6 +236,11 @@ function fixture(version = LATEST_MIGRATION) {
   if (version >= 7)
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
+  if (version >= 13) {
+    const [, surface] = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[12]);
+    catalog.constraints.find((c) => c.table_name === "record_access" && c.definition.includes("surface")).definition =
+      `CHECK (${checkExpressions(surface)[0]})`;
+  }
   if (version >= 6)
     for (const object of catalog.objects.filter((o) => o.kind === "r")) {
       object.rls = true;
@@ -524,7 +530,7 @@ test("catalogue and migration ledger reads fail without exposing upstream errors
 test("bounded catalog overflow and incomplete summaries refuse migration", async () => {
   for (const alter of [
     (c) => {
-      c.objects = Array.from({ length: 65 }, () => c.objects[0]);
+      c.objects = Array.from({ length: NAMESPACE_OBJECT_LIMIT + 1 }, () => c.objects[0]);
     },
     (c) => {
       c.constraints = undefined;
@@ -698,4 +704,14 @@ test("from migration 11 the record access log, its guards and sign-outs are exac
     alter(catalog);
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
   }
+});
+
+test("the namespace object bound keeps headroom above the latest schema", async () => {
+  // Production audit DB-04: hitting the bound refuses every migrate and prune as "unsafe namespace".
+  const catalog = fixture();
+  await verifyPostgresNamespace(pool(catalog));
+  assert.ok(
+    catalog.objects.length <= NAMESPACE_OBJECT_LIMIT - 10,
+    `${catalog.objects.length} objects is within 10 of the ${NAMESPACE_OBJECT_LIMIT} bound; raise it`,
+  );
 });

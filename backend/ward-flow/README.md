@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-21 - shared build inputs and deployment watch contract checked against source; Documentation owns._
+_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -13,14 +13,15 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
 
 - **Local mode (default):** with `NEXT_PUBLIC_WARD_SHARED_ENABLED` unset or `false`, the app runs
-  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). Saving stops
-  for the rest of the session once typed free text is dispatched (D-18).
+  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). After typed
+  text is dispatched it saves a scrubbed copy with typed values removed, and stops saving only if
+  a safe copy cannot be made (D-72, which replaced D-18's stop).
 - **Shared mode (opt in):** with `WARD_SHARED_ENABLED=true` and
   `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, the UI signs in through `use-ward-supabase-shared.ts`
   and talks to this backend's `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`
@@ -124,7 +125,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -176,7 +177,12 @@ These source files do not establish a current hosted connection or deployment.
     a second, so apply it at a quiet time rather than mid-demonstration.
     `infra/rollback-012-foreign-key-indexes.sql` takes a database back to 11. Reapply runtime
     grants after 12.
-    The backend accepts versions 5 to 12.
+  - `013-referral-record-views.sql`: the record access log also takes `referral`, so opening a
+    referral's full detail is logged as a record view (role access plan v2, D-80). No row, grant or
+    policy changes. Before 13 a referral opening is not logged.
+    `infra/rollback-013-referral-record-views.sql` takes a database back to 12, and refuses once a
+    referral opening has been logged, because the log is append-only. Reapply runtime grants after 13.
+    The backend accepts versions 5 to 13.
 
 ## Boundaries
 
