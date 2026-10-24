@@ -8,6 +8,8 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
 import { REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS, type Referral } from "@/components/ward-management/ward-model";
 import { referralSentByDesk, routeSentKind } from "@/components/ward-management/ward-referral-sender";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -52,22 +54,32 @@ export function ReferralHistoryAndCorrections({
     routeSentKind(routeRole, referral.source) &&
     referralSentByDesk(referral, access, wardPlaceLookup(flow?.units ?? []));
   const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [failure, setFailure] = useState<string | undefined>(undefined);
   const noteId = useId();
   const trimmedNote = note.trim();
 
   /**
-   * ⚠️ NO REJECTION PATH REACHES THIS BUTTON. `ADD_REFERRAL_CORRECTION` refuses only a blank note
-   * (guarded by `aria-disabled` below, the same belt-and-braces discipline `handleDecline` already
-   * uses for its own guard), an over-limit note (prevented outright — `maxLength` on the textarea
-   * makes typing past `REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS` impossible), or an unknown referral (this
-   * component is only ever mounted on a referral that already exists). So a guarded dispatch here
-   * always succeeds, and the draft is cleared unconditionally rather than built on the
-   * rejection-tracking machinery `handleAccept`/`handleDecline` need for genuinely refusable acts.
+   * The local reducer refuses only a blank note (guarded by `aria-disabled` below), an over-limit
+   * note (`maxLength` on the textarea) or an unknown referral. The shared workspace can still answer
+   * `failed` (a lost response, a role change) or `cancelled` (workspace not ready), so the note is
+   * cleared only once the correction is recorded; otherwise it stays with the reason beside the
+   * button (production audit URE-05).
    */
   function handleAddCorrection() {
-    if (trimmedNote.length === 0) return;
-    raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note });
-    setNote("");
+    if (trimmedNote.length === 0 || saving) return;
+    setFailure(undefined);
+    const finish = (outcome?: WardCommandOutcome | void) => {
+      setSaving(false);
+      const message = wardCommandFailure(outcome ?? undefined);
+      if (message) setFailure(message);
+      else setNote("");
+    };
+    const result = raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note });
+    if (result instanceof Promise) {
+      setSaving(true);
+      result.then(finish, () => finish({ commandId: "", status: "failed" }));
+    } else finish(result);
   }
 
   return (
@@ -128,10 +140,10 @@ export function ReferralHistoryAndCorrections({
                 type="button"
                 className={styles.addCorrectionBtn}
                 data-testid="ward-referral-add-correction"
-                aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
+                aria-disabled={trimmedNote.length === 0 || saving ? "true" : undefined}
                 aria-describedby={trimmedNote.length === 0 ? `${noteId}-ward-referral-correction-blocked` : undefined}
                 title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
-                onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
+                onClick={trimmedNote.length === 0 || saving ? ignoreUnavailableActivation : handleAddCorrection}
               >
                 Add a correction
               </button>
@@ -139,6 +151,11 @@ export function ReferralHistoryAndCorrections({
                 Corrections are added as new notes. The history sent with the referral is never changed.
               </span>
             </div>
+            {failure ? (
+              <p className={styles.rejection} role="alert" data-testid="ward-referral-correction-failure">
+                {failure}
+              </p>
+            ) : null}
             {trimmedNote.length === 0 ? (
               <span id={`${noteId}-ward-referral-correction-blocked`} className="sr-only">
                 Write a note before adding a correction.
