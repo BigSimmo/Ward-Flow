@@ -103,5 +103,16 @@ describe("the sender's own journey tools (D-80)", () => {
     >[2];
     expect(commandScopeRefusal(returning, receivingWard, need, options)).toBeNull();
     expect(commandScopeRefusal(returning, sendingWard, need, options)).not.toBeNull();
+    const recorded = (unitId: string) =>
+      wardFlowReducer(returning, {
+        type: "RECORD_TRANSPORT_NEED",
+        role: "ward",
+        now: NOW_ANCHOR,
+        movementId: back.id,
+        actingUnitId: unitId,
+        needed: true,
+      }).rejections.length - returning.rejections.length;
+    expect(recorded(receiving!.id)).toBe(0);
+    expect(recorded(sending!.id)).toBe(1);
   });
 });

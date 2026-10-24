@@ -233,9 +233,10 @@ export function reduceRecordedFactEvent(
       }
       if (event.role === "ward") {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        // The stay a journey leaves names its sender first, as in the access check (review on PR #617).
         const sendingWard =
-          referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
           (movement as { originUnitId?: string }).originUnitId;
         // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
         // transport need, named or not; the origin and coordinator do. With a sending ward, an
