@@ -34,8 +34,18 @@ function addThemeColorMeta() {
   return meta;
 }
 
+// Records every cookie string written, so the attributes (not just the value) can be checked.
+function recordCookieWrites() {
+  const writes: string[] = [];
+  vi.spyOn(Document.prototype, "cookie", "set").mockImplementation((value: string) => {
+    writes.push(value);
+  });
+  return writes;
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   setThemePreference("system");
   setGlarePreference(false);
   window.localStorage.clear();
@@ -160,5 +170,29 @@ describe("the Glare mode preference", () => {
     applyGlareToDocument(false);
     expect(document.documentElement.getAttribute("data-mode")).toBe("other");
     document.documentElement.removeAttribute("data-mode");
+  });
+});
+
+describe("the theme and Glare cookies", () => {
+  it("carry Secure on every set and clear over https", () => {
+    vi.stubGlobal("location", { ...window.location, protocol: "https:" });
+    const writes = recordCookieWrites();
+    setThemePreference("dark");
+    setThemePreference("system");
+    setGlarePreference(true);
+    setGlarePreference(false);
+    expect(writes).toHaveLength(4);
+    for (const write of writes) expect(write).toMatch(/; Secure$/);
+  });
+
+  it("leave Secure off over plain http, so localhost dev still keeps the choice", () => {
+    vi.stubGlobal("location", { ...window.location, protocol: "http:" });
+    const writes = recordCookieWrites();
+    setThemePreference("dark");
+    setThemePreference("system");
+    setGlarePreference(true);
+    setGlarePreference(false);
+    expect(writes).toHaveLength(4);
+    for (const write of writes) expect(write).not.toContain("Secure");
   });
 });

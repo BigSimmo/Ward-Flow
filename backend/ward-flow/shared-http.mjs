@@ -315,8 +315,10 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          // No session limit configured means no sign-in deadline (a set limit with no start time was
+          // already refused above), so only a role or grant expiry can bound access here.
           accessUntil: Math.min(
-            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Date.now(),
+            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Infinity,
             view.accessUntil ?? Infinity,
             ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
           ),

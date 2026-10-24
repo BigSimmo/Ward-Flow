@@ -5,7 +5,7 @@ Read when selecting or reporting verification. [AGENTS.md](../../AGENTS.md) gove
 ## Checks and evidence
 
 - Run the smallest check that could catch a plausible regression from this diff. Run nothing for planning or read-only work. Do not stack broad gates or rerun an unchanged passing gate.
-- While editing, run `npx vitest run <path/to/test.ts>` directly. `npm run test:focused -- --files <paths>` suits source-only iteration and fails closed to `npm run test`. Keep `npm run test` and `npm run verify:pr-local` for pre-push readiness. Current entry points: [task-efficiency.md](task-efficiency.md).
+- While editing, run `node scripts/run-vitest.mjs run <path/to/test.ts>` so offline defaults and the shared run lock apply (raw `npx vitest` skips both). `npm run test:focused -- --files <a>,<b>` (one comma-separated argument) suits source-only iteration and fails closed to `npm run test`. Keep `npm run test` and `npm run verify:pr-local` for pre-push readiness. Current entry points: [task-efficiency.md](task-efficiency.md).
 - One wide run at a time per machine. Narrow checks use the shared run slots. A busy lock belongs to someone else: wait or narrow the check, never force or delete lock state.
 - Before running a script, confirm its checkout, base and provider effects suit this repository. A pass in the old checkout proves nothing here.
 - Stop servers, browsers and processes you started once the task no longer needs them. Check ownership before stopping one that may belong to another session.
