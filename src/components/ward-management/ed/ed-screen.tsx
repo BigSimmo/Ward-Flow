@@ -46,6 +46,7 @@ import {
   useEdRowPanels,
 } from "./use-ed-screen-state";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { useEdExpirySave } from "./use-ed-expiry-save";
 import { useEdExaminationSave } from "./use-ed-examination-save";
 
 /*
@@ -132,6 +133,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const { draft, setDraft, setReferralOpen, raisingFromReferralId, setRaisingFromReferralId } = referralDraft;
   const boardDrafts = useEdBoardDrafts();
   const rowPanels = useEdRowPanels();
+  const expirySave = useEdExpirySave({ dispatch, now, dayZero, panels: rowPanels });
   const { arrivalPlanOpenFor, setArrivalPlanOpenFor, transportOpenFor, closeTransportDialog, toggleBookTransport } =
     rowPanels;
   /**
@@ -281,6 +283,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     dayZero,
     thisEdId,
     submitExamination: examinationSave.submitExamination,
+    submitLegalFormExpiry: expirySave.submitLegalFormExpiry,
     panels: rowPanels,
   });
 
@@ -384,6 +387,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...derived,
     ...examinationSave,
     ...actions,
+    ...expirySave,
   };
 
   const boardSplit = waitingSplit(patients);

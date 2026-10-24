@@ -7,15 +7,14 @@ import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
-import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 
 export function edScreenActions({
   raise,
   now,
-  dayZero,
   thisEdId,
   submitExamination,
+  submitLegalFormExpiry,
   panels,
 }: {
   raise: WardRaise;
@@ -23,6 +22,11 @@ export function edScreenActions({
   dayZero: WardFlowContextValue["dayZero"];
   thisEdId: string;
   submitExamination: (event: FormEvent<HTMLFormElement>, movementId: string) => void;
+  submitLegalFormExpiry: (
+    event: FormEvent<HTMLFormElement>,
+    movementId: string,
+    currentDueAt: Instant | undefined,
+  ) => void;
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
   const {
@@ -31,9 +35,6 @@ export function edScreenActions({
     legalStatusDraft,
     setLegalStatusChangeOpenFor,
     setWithdrawOpenFor,
-    legalFormExpiryDraft,
-    setLegalFormExpiryOpenFor,
-    setLegalFormExpiryDraft,
     receiptCorrectionReasonDraft,
     setReceiptCorrectionOpenFor,
     setReceiptCorrectionReasonDraft,
@@ -70,26 +71,6 @@ export function edScreenActions({
   function confirmWithdrawReferral(movementId: string) {
     raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
-  }
-
-  function submitLegalFormExpiry(
-    event: FormEvent<HTMLFormElement>,
-    movementId: string,
-    currentDueAt: Instant | undefined,
-  ) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises, the same
-    // bypass every other panel on this screen guards against.
-    const dueAt = instantFromDateAndTimeInputs(legalFormExpiryDraft.date, legalFormExpiryDraft.time, dayZero);
-    // Never dispatched half-answered or backwards. Both refusals are the reducer's own rule
-    // ("There is no legal form…"/"An extension's new expiry must be later…") — this mirrors them
-    // rather than owning them, the same discipline `submitBookTransport` below holds to, so the
-    // control never advertises a save it already knows the reducer would refuse.
-    if (dueAt === undefined) return;
-    if (currentDueAt !== undefined && dueAt <= currentDueAt) return;
-    raise("RECORD_LEGAL_FORM_EXPIRY", { movementId, dueAt });
-    setLegalFormExpiryOpenFor(undefined);
-    setLegalFormExpiryDraft(BLANK_TYPED_EXPIRY_DRAFT);
   }
 
   function submitReceiptCorrection(event: FormEvent<HTMLFormElement>, movementId: string) {
