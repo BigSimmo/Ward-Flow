@@ -136,11 +136,9 @@ describe("bed numbers stay put (audit 24-1)", () => {
     for (const bed of closedBefore) expect(["closed", "occupied"]).toContain(card(bed).state);
   });
 
-  // Known engine fault, reported not fixed here (file scope): `releasePulledBedAndAdmission` gives
-  // back only an allocatable bed, but `bedStates` counts this seeded pull (admission with no
-  // `movementId`) inside the occupied beds. The closed bed is re-counted as occupied and the board
-  // draws an unnamed occupied tile. Flip to `it` once the engine counts agree.
-  it.fails("B-02: the closed bed stays closed and no unnamed occupied tile appears", () => {
+  // `releasePulledBedAndAdmission` now gives back the physical empty bed a seeded pull (admission
+  // with no `movementId`) held, so `bedStates` no longer re-counts the closed bed as occupied.
+  it("B-02: the closed bed stays closed and no unnamed occupied tile appears", () => {
     const unit = "sjgm-adult-open";
     renderWard(unit);
     const withdrawn = latest.api!.movements.find((movement) => movement.id === "WF-311")!;

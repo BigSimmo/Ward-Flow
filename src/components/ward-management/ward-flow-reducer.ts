@@ -1022,12 +1022,17 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
   // ceiling or rewrite physical empty. Record the disagreement for explicit re-confirmation.
   const releaseCountDisagrees =
     unit.allocatable.value === unit.beds || (lockedBedReleased && unit.allocatableLocked === unit.lockedBeds);
+  // Audit 24-1 B-02: a seeded pulled stay (`movementId: null`) sits outside the empty count
+  // (`bedStates`), so its bed becomes physically empty again here. Without this the released bed
+  // stayed in Occupied with nobody in it, and a Closed bed read as an unnamed Occupied one.
+  const seededPullReleased = heldAdmission?.movementId === null;
   const releasedUnit: Unit = {
     ...unit,
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
     },
+    ...(seededPullReleased ? { empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) } } : {}),
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
       ? {
