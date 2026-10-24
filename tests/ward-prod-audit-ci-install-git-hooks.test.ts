@@ -18,7 +18,12 @@ function fixture(globalHooksPath?: string) {
   mkdirSync(join(repo, "scripts"), { recursive: true });
   cpSync("scripts/install-git-hooks.mjs", join(repo, "scripts/install-git-hooks.mjs"));
   if (globalHooksPath) writeFileSync(join(home, ".gitconfig"), `[core]\n\thooksPath = ${globalHooksPath}\n`);
-  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, XDG_CONFIG_HOME: join(home, ".config"), GIT_CONFIG_NOSYSTEM: "1" };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    HOME: home,
+    XDG_CONFIG_HOME: join(home, ".config"),
+    GIT_CONFIG_NOSYSTEM: "1",
+  };
   delete env.GIT_CONFIG_GLOBAL;
   execFileSync("git", ["init", "--quiet"], { cwd: repo, env });
   const run = () =>
