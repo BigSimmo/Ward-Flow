@@ -98,6 +98,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "formWrittenAt",
   "openedAt",
   "raisedAt",
+  // D-80: the discharge a ward copy's readmission flag points back to (`Movement.readmissionDischargedAt`).
+  "readmissionDischargedAt",
   /**
    * FD-5's withdrawal time on a `ReferralAddressing` (O-17.11, 2026-09-12). ⚠️ **Found by this set's
    * own guard, not by remembering** — the field landed in `ward-model.ts` and the test went red
