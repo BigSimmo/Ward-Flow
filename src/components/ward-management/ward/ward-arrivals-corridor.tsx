@@ -120,17 +120,10 @@ export function WardArrivalsCorridor({
   // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first too.
   const [releaseDivertedId, setReleaseDivertedId] = React.useState<string | null>(null);
   const releaseDivertedMovement = accepted.find((movement) => movement.id === releaseDivertedId);
-  // Audit 24-1 (B-09) / Audit 24-7 (CT-22): after Pull a bed the button goes, so focus moves to the
-  // card's "Bed pulled" status line, and a second tap within the guard is ignored by Release.
+  // Audit 24-1 (B-09) / Audit 24-7 (CT-22): after Pull a bed the button goes and a "Bed pulled" status
+  // line takes its place (focus stays on the arrival, DA-11), so a second tap within the guard is
+  // ignored by Release.
   const pullTapRef = React.useRef<{ movementId: string; at: number } | null>(null);
-  const pendingPulledFocusRef = React.useRef<string | null>(null);
-  const focusPulledStatus = (movementId: string) => (element: HTMLParagraphElement | null) => {
-    if (element === null || pendingPulledFocusRef.current !== movementId) return;
-    pendingPulledFocusRef.current = null;
-    // A pull the engine refused and that lands much later never steals focus.
-    const tap = pullTapRef.current;
-    if (tap !== null && tap.movementId === movementId && msSinceTap(tap) < 5000) element.focus();
-  };
   const isSecondTapAfterPull = (movementId: string) => {
     const tap = pullTapRef.current;
     return tap !== null && tap.movementId === movementId && msSinceTap(tap) < PULL_SECOND_TAP_GUARD_MS;
@@ -369,7 +362,6 @@ export function WardArrivalsCorridor({
                             ? ignoreUnavailableActivation
                             : () => {
                                 pullTapRef.current = { movementId: movement.id, at: tapNow() };
-                                pendingPulledFocusRef.current = movement.id;
                                 if (onPullPatient) {
                                   onPullPatient(movement.id, unit.id);
                                 } else {
@@ -421,13 +413,7 @@ export function WardArrivalsCorridor({
                   {canRelease ? (
                     <div>
                       {/* Audit 24-1 (B-09): this line takes Pull a bed's place, so Release sits below it. */}
-                      <p
-                        ref={focusPulledStatus(movement.id)}
-                        tabIndex={-1}
-                        role="status"
-                        className={styles.cancelNote}
-                        data-testid={`ward-pulled-status-${movement.id}`}
-                      >
+                      <p role="status" className={styles.cancelNote} data-testid={`ward-pulled-status-${movement.id}`}>
                         Bed pulled for {patientIdentityLine(patientInfo)}.
                       </p>
                       <button

@@ -2,54 +2,16 @@
 
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
-import { useId, useMemo, useSyncExternalStore } from "react";
+import { useId, useMemo } from "react";
 
 import { Button } from "@/components/wf";
 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
-import { useOptionalWardFlowSelect, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
+import { setPracticeSession as setSession, usePracticeSession } from "./ward-practice-session";
 import { PRACTICE_STEPS, practiceProgress } from "./ward-practice-steps";
 import styles from "./ward-practice-mode.module.css";
-
-type PracticeSession = { scenario: string; generation: number; startedWith: ReadonlySet<string> };
-
-/**
- * The running practice, held at module level so it survives the Tools sheet closing while the
- * learner works in the real screens. Tied to the scenario and the world generation: switching
- * scenario, resetting the demo or loading a scenario file ends it, since newly seeded requests would
- * otherwise look like ones the learner raised.
- */
-let session: PracticeSession | null = null;
-const listeners = new Set<() => void>();
-
-function setSession(next: PracticeSession | null) {
-  session = next;
-  for (const listener of listeners) listener();
-}
-
-// A practice belongs to the person running it, so signing out ends it (PR #487).
-onWardSessionEnd(() => setSession(null));
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-const readSession = () => session;
-const serverSession = () => null;
-
-/**
- * Audit 24-7 (CT-17): whether a practice is running for the current scenario and demo, so screens
- * outside Tools can say so. Never true in the shared workspace, where practice is off (CT-01).
- */
-export function usePracticeRunning(): boolean {
-  const ward = useOptionalWardFlowSelect("scenario", "worldGeneration", "shared");
-  const current = useSyncExternalStore(subscribe, readSession, serverSession);
-  if (!ward || !current || ward.shared?.enabled === true) return false;
-  return current.scenario === ward.scenario && current.generation === ward.worldGeneration;
-}
 
 /**
  * PRACTICE MODE in Tools (smart features idea 10): a guided placement on the demo data. Shown
@@ -65,7 +27,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
     "worldGeneration",
     "shared",
   );
-  const current = useSyncExternalStore(subscribe, readSession, serverSession);
+  const current = usePracticeSession();
   // Audit 24-7 (CT-01): practice has no sandbox, so every step is a real save. In the shared
   // workspace that save reaches everyone, so practice is off there and a running one stops.
   const inShared = shared?.enabled === true;

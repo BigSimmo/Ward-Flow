@@ -645,18 +645,9 @@ export function reducePlacementEvent(
         },
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
         // Ledger L3-06 (audit 24-7): the journey is over, so it no longer lingers as live at any
-        // ward, the same as the examination-outcome closure in `ward-flow-record-events.ts`. Any
-        // request still live is recorded as withdrawn by the person who closed the journey.
+        // ward, as `RELEASE_HELD_BED` already does when it ends a bed search.
         acceptedUnitId: undefined,
         referredUnitIds: [],
-        withdrawnReferrals: [
-          ...movement.withdrawnReferrals,
-          ...movement.referredUnitIds.map((unitId) => ({
-            unitId,
-            at: event.now,
-            reason: "coordinator_withdrew" as const,
-          })),
-        ],
       };
       const next = replaceMovement(withoutHeldBed, movement.id, released);
       if (event.role === "ward" || movement.acceptedUnitId === undefined) {

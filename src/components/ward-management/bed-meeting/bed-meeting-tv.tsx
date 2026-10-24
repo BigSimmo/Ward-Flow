@@ -159,16 +159,25 @@ function Panel({
   title,
   testId,
   wide = false,
+  area,
   children,
 }: {
   title: string;
   testId: string;
   wide?: boolean;
+  /** The panel's place in the all-services meeting grid at 1080p (DR-02). */
+  area?: "main" | "fit" | "brief" | "waits" | "delays";
   children: ReactNode;
 }) {
   const id = `${testId}-title`;
   return (
-    <section className={styles.panel} data-wide={wide || undefined} aria-labelledby={id} data-testid={testId}>
+    <section
+      className={styles.panel}
+      data-wide={wide || undefined}
+      data-area={area}
+      aria-labelledby={id}
+      data-testid={testId}
+    >
       <h2 id={id} className={styles.panelTitle}>
         {title}
       </h2>
@@ -486,7 +495,7 @@ function BedMeetingTvView({
 
       <div className={styles.panels} data-layout="meeting">
         {sheet.service === null ? (
-          <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide>
+          <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide area="main">
             <ServiceTable rows={extras.services} />
           </Panel>
         ) : (
@@ -498,17 +507,18 @@ function BedMeetingTvView({
         <Panel
           title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${healthServiceAcronym(sheet.service)}`}
           testId="bed-meeting-tv-fit-panel"
+          area="fit"
         >
           <BedsThatFit gaps={extras.gaps} tomorrow={sheet.service === null ? forecast.tomorrow.kinds : undefined} />
         </Panel>
 
         {sheet.service === null ? (
-          <Panel title="Brief for this meeting" testId="bed-meeting-tv-brief-panel" wide>
+          <Panel title="Brief for this meeting" testId="bed-meeting-tv-brief-panel" wide area="brief">
             <ForecastBriefPanel now={now} />
           </Panel>
         ) : null}
 
-        <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel">
+        <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel" area="waits">
           {ed.longestWaits.length === 0 ? (
             <Empty>Nobody waiting.</Empty>
           ) : (
@@ -526,7 +536,7 @@ function BedMeetingTvView({
           )}
         </Panel>
 
-        <Panel title="Delays by cause" testId="bed-meeting-tv-delays-panel">
+        <Panel title="Delays by cause" testId="bed-meeting-tv-delays-panel" area="delays">
           {delays.groups.length === 0 ? (
             <Empty>No delays.</Empty>
           ) : (

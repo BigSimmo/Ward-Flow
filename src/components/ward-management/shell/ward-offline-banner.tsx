@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { usePracticeRunning } from "@/components/ward-management/demo-reset/ward-practice-mode";
+import { usePracticeRunning } from "@/components/ward-management/demo-reset/ward-practice-session";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -11,10 +11,11 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 import styles from "./ward-offline-banner.module.css";
 
 // Design audit DA-07: a screen in full screen (the bed meeting TV) shows only the element it made
-// full screen, so the notice moves inside that element, pinned to its top corner, while it lasts.
+// full screen, so the notice moves inside that element, pinned to its bottom corner so it never
+// covers "Leave full screen" or "Leave TV view" at the top (DR-10), while it lasts.
 const FULLSCREEN_PLACEMENT = {
   position: "fixed",
-  insetBlockStart: "0.75rem",
+  insetBlockEnd: "0.75rem",
   insetInlineEnd: "0.75rem",
   zIndex: 10,
   maxInlineSize: "min(36rem, calc(100% - 1.5rem))",

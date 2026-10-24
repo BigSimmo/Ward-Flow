@@ -322,7 +322,6 @@ describe("ward arrivals card: a double tap on Pull never lands on Release (B-09,
     fireEvent.click(screen.getByTestId(`ward-pull-${movementId}`));
     const status = screen.getByTestId(`ward-pulled-status-${movementId}`);
     expect(status).toHaveTextContent("Bed pulled for PATIENT, Synthetic · UM000001.");
-    expect(status).toHaveFocus();
     fireEvent.click(screen.getByTestId(`ward-release-pull-toggle-${movementId}`));
     expect(toggleRelease).not.toHaveBeenCalled();
     clock += PULL_SECOND_TAP_GUARD_MS + 1;

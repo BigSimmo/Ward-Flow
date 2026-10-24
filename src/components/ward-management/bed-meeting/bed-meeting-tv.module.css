@@ -88,7 +88,7 @@
   padding: 0 var(--wf-s-2);
   border: 2px solid var(--wf-warning-ink);
   border-radius: var(--wf-r-sm);
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
   font-weight: 700;
 }
 
@@ -398,6 +398,49 @@
   }
 }
 
+/* DR-02: on a 1080p TV the all-services meeting has five panels, and four abreast left "Beds that fit"
+ * a letter wide and the Brief overprinting itself. Up to about 2700 px they sit in three columns: the
+ * Brief runs under the service table and "Beds that fit", where its four parts have room, and the
+ * delays sit under the ED waits. Table rows are a little tighter so it all stays on one screen. */
+@container (min-width: 90rem) and (max-width: 170rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "main fit waits"
+      "main fit delays"
+      "brief brief delays";
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) .table :is(th, td) {
+    padding-block: calc(var(--wf-s-2) * 0.5);
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > .panel {
+    padding-block: calc(var(--tv-gap) * 0.6);
+  }
+
+  .panels[data-layout="meeting"] > [data-area="main"] {
+    grid-area: main;
+  }
+
+  .panels[data-layout="meeting"] > [data-area="fit"] {
+    grid-area: fit;
+  }
+
+  .panels[data-layout="meeting"] > [data-area="brief"] {
+    grid-area: brief;
+  }
+
+  .panels[data-layout="meeting"] > [data-area="waits"] {
+    grid-area: waits;
+  }
+
+  .panels[data-layout="meeting"] > [data-area="delays"] {
+    grid-area: delays;
+  }
+}
+
 .panel {
   min-width: 0;
   font-size: var(--tv-row);
@@ -446,6 +489,11 @@
 .table tbody th {
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+/* DR-02: a bed type ("Locked", "Older") is one short word; never print it a letter a line. */
+.panels [data-area="fit"] .table tbody th {
+  overflow-wrap: normal;
 }
 
 .table th,
