@@ -10,6 +10,16 @@ import { isObservation, sameObservation, type Observation } from "@/components/w
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
 export type { Observation };
 
+/** A stable editing version: record identity, recorded fact and retained history position. */
+export function observationEditingToken(
+  kind: "movement" | "admission",
+  id: string,
+  observation: Observation,
+  changeCount: number,
+): string {
+  return JSON.stringify([kind, id, observation.level, observation.intervalMinutes, observation.reviewAt, changeCount]);
+}
+
 /**
  * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after intake.
  * Targets the open movement, or the admission once a bed is held; the movement and its live
@@ -24,6 +34,8 @@ export type ObservationLevelEvent = {
   now: Instant;
   target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
+  /** Optional for older callers. When supplied, a stale editor cannot replace a newer record. */
+  expected?: string;
 };
 
 type ObservationLevelHelpers = Pick<
@@ -73,6 +85,23 @@ export function reduceObservationLevelEvent(
   }
 
   const current = admission?.observation ?? movement?.observation;
+  // History belongs to the named target: a movement may have changes from before its admission
+  // was created. Comparing the count also catches a level changed away and then back while an
+  // older draft remained open. Linked records still have to agree with the captured fact.
+  const target = event.target.kind === "movement" ? movement : admission;
+  if (
+    event.expected !== undefined &&
+    (!target ||
+      observationEditingToken(
+        event.target.kind,
+        target.id,
+        target.observation,
+        target.observationChanges?.length ?? 0,
+      ) !== event.expected ||
+      (movement && admission && !sameObservation(movement.observation, admission.observation)))
+  ) {
+    return reject(state, event, "Observation changed. Reopen it.");
+  }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
   const changed = <T extends Movement | Admission>(row: T): T => ({
