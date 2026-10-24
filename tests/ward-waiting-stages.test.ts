@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { WAITING_STAGES, waitingStages } from "@/components/ward-management/reports/waiting-stages";
-import { withDemoWaitingStages } from "@/components/ward-management/ward-demo-waiting-stages";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -65,29 +64,14 @@ describe("waitingStages", () => {
     expect(rows.every((row) => row.recorded.length + row.notRecorded.length === 0)).toBe(true);
   });
 
-  it("publishes a typical time for every stage from the demo seed, with one stage not recorded", () => {
+  it("on the demo seed, times the ward response and counts later stages as not recorded", () => {
+    // Seeded journeys carry no stage changes (never backfilled), so only the referral and
+    // acceptance times are on record; later stages honestly read "not recorded".
     const rows = waitingStages(seedWardFlowState().movements);
-    for (const row of rows) expect(row.summary.median).toBeTypeOf("number");
-    const transport = rows.find((row) => row.id === "awaiting_transport")!;
-    expect(transport.notRecorded.map((journey) => journey.movement.id)).toContain("WF-321");
-  });
-});
-
-describe("withDemoWaitingStages", () => {
-  it("only touches arrived journeys with no stage changes, and keeps their order", () => {
-    const state = seedWardFlowState();
-    const open = state.movements.filter((movement) => movement.stage !== "arrived");
-    expect(open.every((movement) => movement.stageChanges.length === 0)).toBe(true);
-    const again = withDemoWaitingStages(state.movements);
-    expect(again.map((movement) => movement.id)).toEqual(state.movements.map((movement) => movement.id));
-    expect(again).toEqual(state.movements);
-  });
-
-  it("writes stage changes in time order between the journey's own recorded times", () => {
-    const movement = seeded("WF-300");
-    const times = movement.stageChanges.map((change) => change.at);
-    expect(times).toEqual([...times].sort((a, b) => a - b));
-    expect(times[0]).toBe(movement.referredAt);
-    expect(times.at(-2)).toBe(movement.transport?.collectedAt);
+    expect(rows[0]!.summary.median).toBeTypeOf("number");
+    for (const row of rows.slice(1)) {
+      expect(row.recorded).toEqual([]);
+      expect(row.notRecorded.length).toBeGreaterThan(0);
+    }
   });
 });

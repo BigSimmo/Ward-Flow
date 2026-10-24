@@ -69,13 +69,15 @@ function enteredAt(movement: Movement, stage: MovementStage): Instant | undefine
   return undefined;
 }
 
-/** When the journey left `stage`: the first recorded entry into any later stage, at or after `from`. */
+/**
+ * When the journey left `stage`: the recorded entry into the very next stage, at or after `from`.
+ * A later stage's time is never used instead, because the gap would hide an unrecorded stage's time
+ * inside this one; a missing next time leaves this stage not recorded.
+ */
 function leftAt(movement: Movement, stage: MovementStage, from: Instant): Instant | undefined {
-  const later = MOVEMENT_STAGES.slice(MOVEMENT_STAGES.indexOf(stage) + 1);
-  const times = later
-    .map((next) => enteredAt(movement, next))
-    .filter((at): at is Instant => at !== undefined && Number.isFinite(at) && at >= from);
-  return times.length > 0 ? Math.min(...times) : undefined;
+  const next = MOVEMENT_STAGES[MOVEMENT_STAGES.indexOf(stage) + 1];
+  const at = next === undefined ? undefined : enteredAt(movement, next);
+  return at !== undefined && Number.isFinite(at) && at >= from ? at : undefined;
 }
 
 export type WaitingStageJourney = { movement: Movement; minutes?: number };

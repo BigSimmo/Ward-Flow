@@ -153,7 +153,6 @@ const wardPatients: Patient[] = [
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo-planned-moves";
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
-import { withDemoWaitingStages } from "@/components/ward-management/ward-demo-waiting-stages"; // closing-the-loop seed
 
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
@@ -479,12 +478,9 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     auditSequence: 0,
     auditReviewSequence: 0,
     auditCaptureStartedAt: NOW_ANCHOR,
-    // Closing-the-loop features (24 Oct 2026): demo stage changes on six arrived journeys.
-    movements: withDemoWaitingStages(
-      withDemoStageTimes(
-        withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
-        NOW_ANCHOR,
-      ),
+    movements: withDemoStageTimes(
+      withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
+      NOW_ANCHOR,
     ),
     units: scenarioUnits(scenario),
     rejections: [],
