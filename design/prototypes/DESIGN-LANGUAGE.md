@@ -1,5 +1,9 @@
 # Ward Flow — the "Board" design language
 
+> **Historical design reference, September 2026.** These "Board" prototypes were approved on 3–4 September 2026 and were later replaced by the third-edition drawings and then by the v9 standard. They do not govern current screens. The rendered app is the current design authority; written rules are in [design-system-v9.md](../v9/design-system-v9.md). Start at the [Ward Flow entry point](../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 The owner chose this direction on 2026-09-03 from a two-way comparison. It now governs **every**
 Ward Flow surface, not only the seven screens being redesigned. Around 22 routes exist; seven
 bespoke pages would drift apart within a week, so the language lives in one place and is copied,

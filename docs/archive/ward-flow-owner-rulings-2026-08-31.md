@@ -1,5 +1,9 @@
 # Owner rulings, 2026-08-31 — five decisions taken in one answer
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Status: DECIDED.** The owner was given five questions, each with a single recommendation, and
 answered **"Yes to all your recommendations."** These are his decisions; the wording of the
 recommendations is a session's. That distinction is preserved below because it changes what a later

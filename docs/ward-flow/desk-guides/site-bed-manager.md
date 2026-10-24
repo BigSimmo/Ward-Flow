@@ -1,7 +1,9 @@
 # Desk guide: Site bed manager
 
-You look after bed flow for one hospital site. You see your own site in detail and other sites as
-bed counts only.
+<!-- last-checked: 2026-10-24 -->
+
+You look after bed flow for one hospital site. On **Capacity** and **Wards** you see your own site
+in detail and other sites as bed counts only.
 
 ## What you see first
 
@@ -16,7 +18,8 @@ bed counts only.
 3. **Discharge blockers.** Record or clear what is holding up a discharge, on **Discharges**.
 4. **Close or reopen a ward.** Choose a reason, then **Close [ward] to admissions**. Use
    **Reopen [ward] to admissions** when it can take patients again.
-5. **Bed meeting.** Use **Open on TV** and **Meeting agenda**. Mark agreed actions **Done**.
+5. **Bed meeting.** Use **Open on TV** on **Capacity** to show the board. The coordinator runs
+   the **Meeting agenda**; it is not on your menu.
 6. **Alerts and notices.** Reply to a bed call and mark notices read.
 
 ## What you cannot do

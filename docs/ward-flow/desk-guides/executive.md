@@ -1,5 +1,7 @@
 # Desk guide: Executive (read only)
 
+<!-- last-checked: 2026-10-24 -->
+
 You see how the network or your health service is going, as numbers. You do not see patients.
 
 ## What you see first

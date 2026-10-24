@@ -138,12 +138,17 @@ export function wardEnvironment(
 /**
  * Audit F-20 (19 Oct 2026): safeguards fail closed. A deployed build that names no environment
  * still runs as demo, but its safeguard flags are locked on as in production, so a device or a
- * server setting cannot switch role access off by accident. Naming `demo` keeps them switchable.
+ * server setting cannot switch role access off by accident. Naming `demo` keeps them switchable,
+ * except in a shared build (`NEXT_PUBLIC_WARD_SHARED_ENABLED=true`), which always locks them.
  */
 export function wardSafeguardsLocked(
   configured: string | undefined = process.env.NEXT_PUBLIC_WARD_ENVIRONMENT,
   nodeEnv: string | undefined = process.env.NODE_ENV,
+  shared: string | undefined = process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED,
 ): boolean {
+  // Audit RA-07 (24 Oct 2026): a shared workspace holds other people's records, so a demo link or a
+  // device choice can never switch its screen guard off, whatever the build's environment is named.
+  if (shared?.trim().toLowerCase() === "true") return true;
   const environment = wardEnvironment(configured, nodeEnv);
   if (environment === "production") return true;
   return nodeEnv === "production" && environment !== configured?.trim().toLowerCase();

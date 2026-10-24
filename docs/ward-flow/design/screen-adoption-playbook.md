@@ -1,5 +1,9 @@
 # Adopting the Board design language on a screen
 
+> **Historical record, September 2026.** Written for the drawing-era and second-edition build. It is not current guidance, and its paths, line counts and design rules may no longer match the code. The rendered app is the current design authority: start at the [Ward Flow entry point](../README.md) and the [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 What it actually costs to move one React screen off its own private styling and onto the shared
 Ward Board vocabulary, written from doing it to `search` on 2026-09-04 (commit `0a30d5508`).
 

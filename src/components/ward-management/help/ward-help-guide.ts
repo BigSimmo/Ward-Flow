@@ -226,7 +226,11 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
         how: "Choose a reason, then close the ward to admissions. Reopen it when it can take patients.",
         go: "wards",
       },
-      { job: "Bed meeting", how: "Use Open on TV and Meeting agenda. Mark agreed actions Done.", go: "bed-meeting" },
+      {
+        job: "Bed meeting",
+        how: "Use Open on TV on Capacity to show your site's beds. The coordinator runs the meeting agenda.",
+        go: "home",
+      },
     ],
     limits: [
       "Accepting, placing and discharging stay with the ward and the coordinator.",

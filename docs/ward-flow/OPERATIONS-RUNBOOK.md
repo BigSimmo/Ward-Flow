@@ -1,5 +1,7 @@
 # Ward Flow operations runbook
 
+<!-- last-checked: 2026-10-24 -->
+
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
 _Updated 2026-10-24 - first plain-English runbook for the hosted prototype; Documentation owns._
@@ -20,7 +22,7 @@ Ward Flow holds synthetic data only. Nothing here authorises real patient data.
 | Shared backend       | Same Railway project and environment         | `ward-flow-backend` | Node server. `/healthz` (no sign-in), `/readyz` (signed in). Never sleeps            |
 | Database and sign-in | Supabase project **Ward Flow**, Sydney       | schema `ward_flow`  | Backend logs in as the restricted `wardflow_backend` role, never the administrator   |
 | Uptime check         | GitHub Actions, `backend-uptime.yml`         | backend uptime      | Every 30 minutes asks `/healthz`. Opens a `backend-down` issue that emails the owner |
-| Source               | GitHub `BigSimmo/Ward-Flow`, branch `main`   | -                   | All three Railway services follow `main`                                             |
+| Source               | GitHub `BigSimmo/Ward-Flow`, branch `live`   | -                   | Railway follows `live`; the daily release moves it from CI-passed `main`             |
 
 Railway runs in Singapore, so this hosting is offshore and synthetic-only. Addresses and resource
 IDs are in [hosting.md](../hosting.md). The Supabase project ID and how to pick the right connector
@@ -45,8 +47,8 @@ in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently
 - **Anything billable needs spending approval first**: a new Supabase project, PITR, bigger
   compute, a paid alert or monitor. See the spending section of
   [shared-context-and-memory.md](../agents/shared-context-and-memory.md).
-- Merging to `main` is itself a deploy (next section). Treat a merge with app changes as a live
-  change.
+- Merging to `main` no longer deploys. The daily release (6 am Perth) moves `live`, and that is the
+  deploy (next section). A manual release run needs Josh's "release now"; never push to `live` by hand.
 - Never use PsychSift's Supabase project, Railway service or credentials.
 
 ## Routine checks
@@ -69,7 +71,8 @@ Weekly, or before a demonstration. All read-only.
 
 ## How a deploy happens
 
-- A merge to `main` triggers Railway's GitHub integration for each service whose **watch paths**
+- Since 24 October 2026, a move of the `live` branch (by the
+  [daily release workflow](../../.github/workflows/daily-release.yml)) triggers Railway's GitHub integration for each service whose **watch paths**
   include a changed file. Documentation-only changes are SKIPPED on purpose.
 - **Wait for CI** is on: the deploy waits for the GitHub checks on that exact commit and only
   goes ahead if they pass. Recorded as turned on for `ward-flow` on 4 October and for

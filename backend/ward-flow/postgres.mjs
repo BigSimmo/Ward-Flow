@@ -139,6 +139,9 @@ export function createWorkspaceStore(
   const unusedBefore = (at) => new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000);
   // D-80: a role's end date is at most 12 months away.
   const tooLong = (expiresAt, at) => expiresAt.getTime() > at.getTime() + engine.ACCESS_MAX_TERM_MINUTES * 60_000;
+  // A role reads as ended 12 months after it was given, whatever end date it was stored with, so a
+  // grant made before the ceiling was checked stops there too (RA-06). A whole number, so safe inline.
+  const MAX_TERM = `interval '${Math.trunc(Number(engine.ACCESS_MAX_TERM_MINUTES))} minutes'`;
   /**
    * The place each desk (a membership a phone was turned on from) works across, as the viewer
    * builds it: a nurse in charge's own ward plus any ward cover that account holds, so night cover
@@ -678,6 +681,7 @@ export function createWorkspaceStore(
   /** Resolve through the caller's connection so locked writes never use a stale joined scope. */
   async function resolveViewer(actorId, { bootstrap = false, workingAs = null }, connection, at, version) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
+    let needsService = false;
     if (version >= ROLE_ACCESS_MIGRATION) {
       // From 9, a role not worked as for the set time is switched off (cover is too short to go
       // unused), and cover is a membership of its own kind.
@@ -685,8 +689,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? "SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
-            : "SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -696,9 +700,13 @@ export function createWorkspaceStore(
       const roles = [];
       const wardCovers = [];
       for (const row of rows) {
-        // A row the access table would not allow is skipped, never widened.
+        // A row the access table would not allow is skipped, never widened. One that names no
+        // health service is noted, so the account is told why it has no role (RA-02).
         const access = engine.parseAccess(row.role, row.scope);
-        if (!access) continue;
+        if (!access) {
+          if (engine.accessNeedsService(row.role, row.scope)) needsService = true;
+          continue;
+        }
         if (row.kind === "cover" && access.role === "ward")
           wardCovers.push({
             membershipId: row.id,
@@ -745,7 +753,9 @@ export function createWorkspaceStore(
             status: "choose",
             choices: choices.map((choice) => ({ workingAs: choice.membershipId ?? "bootstrap", ...choice.access })),
           }
-        : { status: "none" };
+        : needsService && !choices.length
+          ? { status: "none", needsService: true }
+          : { status: "none" };
     let grants = [];
     let recentGrant = false;
     const writeEvery = new Date(at.getTime() - LAST_USED_EVERY_MS);
@@ -1167,12 +1177,16 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
       };
+      // A role that names no health service gives nothing and has no place to filter by, so only a
+      // statewide access admin sees it, marked to be given again with a service (RA-02).
+      const statewide = view.access.scope.kind === "statewide";
+      const needsGrant = (row) => statewide && engine.accessNeedsService(row.role, row.scope);
       // The place filter runs here, so read oldest grant first a page at a time until this admin's
       // own 500 are found: roles elsewhere never crowd them out.
       const memberships = await pagedMemberships(
         "workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2",
         [workspaceId, at],
-        inside,
+        (row) => inside(row) || needsGrant(row),
       );
       const requests =
         view.version >= ACCESS_COVER_MIGRATION
@@ -1186,7 +1200,9 @@ export function createWorkspaceStore(
       return {
         status: 200,
         body: {
-          memberships: memberships.map((row) => presentMembership(row, at)),
+          memberships: memberships.map((row) =>
+            needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
+          ),
           requests: requests.filter(inside).map((row) => presentRequest(row, at)),
         },
       };

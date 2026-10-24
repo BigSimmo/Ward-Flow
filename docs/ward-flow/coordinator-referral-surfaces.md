@@ -1,5 +1,11 @@
 # Where a referral reaches the coordinator — every surface, measured
 
+> **Historical measurement — labelled 24 October 2026.** Measured on 1 September 2026 against trees
+> that no longer exist. The Command screen is now Home (`/ward-flow`), the Network screen is retired
+> (`/network` redirects to Home, #443) and the module paths and line numbers below have moved. Keep it
+> as the record behind the 1 September community-referral ruling; check current source before relying
+> on any surface listed here.
+
 **Task:** `WF-BUILD2-001` half one. **Measured by:** Ward Builder Two, 2026-09-01, on
 `claude/ward-builder-two`, first at `6df4f86fd`. **Nothing in the app was changed** — half one is a
 measurement, and that remains true.
