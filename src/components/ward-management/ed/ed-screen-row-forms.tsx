@@ -69,6 +69,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     communityPurposeChoice,
     setCommunityPurposeChoice,
     examinationOutcome,
+    examinationFieldsDisabled,
+    examinationSaveDisabled,
+    examinationSaveMessage,
     setExaminationOutcome,
     setEdOutcomeOpenFor,
     urgencyDraft,
@@ -76,6 +79,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     legalStatusDraft,
     setLegalStatusDraft,
     legalFormExpiryDraft,
+    legalFormExpiryFieldsDisabled,
+    legalFormExpiryCommandDisabled,
+    legalFormExpirySaveMessage,
     setLegalFormExpiryDraft,
     receiptCorrectionReasonDraft,
     setReceiptCorrectionReasonDraft,
@@ -245,7 +251,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitExamination(event, movement.id)}
           data-testid={`ward-ed-examine-form-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset}>
+          <fieldset className={styles.declineFieldset} disabled={examinationFieldsDisabled}>
             <legend className={styles.declineLegend}>Examination outcome for {patientInfo.displayName}</legend>
             {(
               [
@@ -275,14 +281,31 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                             an empty choice. */}
           <button
             type="submit"
-            aria-disabled={examinationOutcome ? undefined : "true"}
-            aria-describedby={examinationOutcome ? undefined : `ward-ed-examine-choose-${movement.id}`}
-            title={examinationOutcome ? undefined : "Choose an outcome first"}
+            aria-disabled={examinationOutcome && !examinationSaveDisabled ? undefined : "true"}
+            aria-describedby={
+              examinationSaveMessage
+                ? `ward-ed-examine-message-${movement.id}`
+                : examinationOutcome
+                  ? undefined
+                  : `ward-ed-examine-choose-${movement.id}`
+            }
+            title={
+              examinationSaveDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : examinationOutcome
+                  ? undefined
+                  : "Choose an outcome first"
+            }
             className={styles.declineSubmit}
-            onClick={examinationOutcome ? undefined : ignoreUnavailableActivation}
+            onClick={examinationOutcome && !examinationSaveDisabled ? undefined : ignoreUnavailableActivation}
           >
             Confirm examination outcome
           </button>
+          {examinationSaveMessage ? (
+            <p role="status" id={`ward-ed-examine-message-${movement.id}`}>
+              {examinationSaveMessage}
+            </p>
+          ) : null}
           {examinationOutcome ? null : (
             <span id={`ward-ed-examine-choose-${movement.id}`} className="sr-only">
               Choose an outcome first
@@ -503,7 +526,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitLegalFormExpiry(event, movement.id, movement.legalForm?.dueAt)}
           data-testid={`ward-ed-legal-form-expiry-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset}>
+          <fieldset className={styles.declineFieldset} disabled={legalFormExpiryFieldsDisabled}>
             <legend className={styles.declineLegend}>
               {legalFormExpiryIsExtension
                 ? `Extension written on the form for ${patientInfo.displayName}`
@@ -542,16 +565,31 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={legalFormExpirySaveBlocked ? "true" : undefined}
-            onClick={legalFormExpirySaveBlocked ? ignoreUnavailableActivation : undefined}
-            aria-describedby={
-              legalFormExpirySaveBlocked ? `ward-ed-legal-form-expiry-reason-${movement.id}` : undefined
+            aria-disabled={legalFormExpirySaveBlocked || legalFormExpiryCommandDisabled ? "true" : undefined}
+            onClick={
+              legalFormExpirySaveBlocked || legalFormExpiryCommandDisabled ? ignoreUnavailableActivation : undefined
             }
-            title={legalFormExpirySaveBlockedReason}
+            aria-describedby={
+              legalFormExpirySaveMessage
+                ? `ward-ed-legal-form-expiry-message-${movement.id}`
+                : legalFormExpirySaveBlocked
+                  ? `ward-ed-legal-form-expiry-reason-${movement.id}`
+                  : undefined
+            }
+            title={
+              legalFormExpiryCommandDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : legalFormExpirySaveBlockedReason
+            }
             data-testid={`ward-ed-legal-form-expiry-save-${movement.id}`}
           >
             {legalFormExpiryIsExtension ? "Save extension" : "Save expiry"}
           </button>
+          {legalFormExpirySaveMessage ? (
+            <p role="status" id={`ward-ed-legal-form-expiry-message-${movement.id}`}>
+              {legalFormExpirySaveMessage}
+            </p>
+          ) : null}
           {legalFormExpirySaveBlocked ? (
             <span id={`ward-ed-legal-form-expiry-reason-${movement.id}`} className="sr-only">
               {legalFormExpirySaveBlockedReason}
