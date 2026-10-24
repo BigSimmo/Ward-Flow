@@ -329,6 +329,30 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [
     2,
     (state, random) => {
+      const accepted = state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (arm.destination.kind !== "psychiatric_ward" || arm.state !== "accepted" || arm.withdrawnAt !== undefined)
+            return [];
+          const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
+          return unitId ? [{ referral, unitId }] : [];
+        }),
+      );
+      const target = chance(random, 0.85) ? pick(random, accepted) : undefined;
+      const referral = target?.referral ?? referralFor(state, random);
+      const unitId = target?.unitId ?? (referral ? addressedUnit(state, random, referral) : undefined) ?? MISSING_ID;
+      return {
+        type: "HOLD_REFERRAL_BED",
+        role: answeringRole(random),
+        referralId: referral?.id ?? MISSING_ID,
+        unitId,
+        actingUnitId: unitId,
+        bedNumber: bedOn(state, random, unitId),
+      };
+    },
+  ],
+  [
+    2,
+    (state, random) => {
       const referral = referralFor(state, random);
       if (!referral) return null;
       const community = chance(random, 0.2);
