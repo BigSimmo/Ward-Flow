@@ -125,6 +125,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
     activeModalType,
     setActiveModalType,
     contactRecord,
+    contactSaveMessage,
+    contactSaveDisabled,
     handleSaveClinicalContact,
     noteModalRef,
     noteModalOverlayRef,
@@ -213,21 +215,33 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   type="button"
                   className={styles.btnSmPrimary}
                   data-testid="ward-community-contact-save"
-                  aria-disabled={clinicalContactCanSave() ? undefined : "true"}
-                  title={clinicalContactCanSave() ? undefined : "Clinical contact is not recorded yet."}
-                  onClick={clinicalContactCanSave() ? handleSaveClinicalContact : ignoreUnavailableActivation}
+                  aria-disabled={clinicalContactCanSave() && !contactSaveDisabled ? undefined : "true"}
+                  aria-describedby={contactSaveMessage ? "ward-community-contact-message" : undefined}
+                  title={
+                    contactSaveDisabled ? "Wait for confirmation or use Retry before submitting again." : undefined
+                  }
+                  onClick={
+                    clinicalContactCanSave() && !contactSaveDisabled
+                      ? handleSaveClinicalContact
+                      : ignoreUnavailableActivation
+                  }
                 >
                   Save contact
                 </button>
               </div>
+              {contactSaveMessage ? (
+                <p role="status" id="ward-community-contact-message" className={styles.footnote}>
+                  {contactSaveMessage}
+                </p>
+              ) : null}
               <p
                 className={styles.footnote}
                 data-testid="ward-community-contact-save-status"
                 data-recorded={contactRecord ? "true" : "false"}
               >
                 {contactRecord
-                  ? `Contact recorded as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
-                  : "Clinical contact is not recorded yet."}
+                  ? `Last confirmed contact in this session as ${contactRecord.role} for this team at ${formatInstantWithDay(contactRecord.at, now)}.`
+                  : "No contact has been confirmed in this session."}
               </p>
             </div>
           )}

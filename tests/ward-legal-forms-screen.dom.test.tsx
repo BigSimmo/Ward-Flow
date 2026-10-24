@@ -45,6 +45,16 @@ function renderScreen() {
 }
 
 describe("the Forms screen", () => {
+  it("keeps the visible time-entry wording in each contextual button name", () => {
+    renderScreen();
+    const actions = screen.getAllByRole("button", { name: /^Add the time for / });
+    expect(actions.length).toBeGreaterThan(0);
+    for (const action of actions) {
+      expect(action).toHaveTextContent("Add the time");
+      expect(action).toHaveAccessibleName(/^Add the time for /);
+    }
+  });
+
   it("has a population to render, or the assertions below are vacuous", () => {
     expect(rows.length).toBeGreaterThan(0);
   });

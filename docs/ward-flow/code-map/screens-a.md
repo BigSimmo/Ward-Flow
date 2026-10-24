@@ -1,5 +1,20 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+_Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
+
+## ED examination save recovery — 23 October 2026
+
+The ED examination form delegates to `ed/use-ed-examination-save.ts`, on the network sweep's
+`8c2ff460` main base. The hook retains the selected outcome until acceptance, guards repeated
+submissions and uses the existing command completion and Undo feedback. An unconfirmed shared
+save disables a fresh submission while the existing Retry remains available in the active sheet.
+Shared Retry uses the command's private definitive completion, so acceptance remains confirmed
+when a replay carries a newer examination. Record, time and history matching is reserved for
+legacy local void dispatch. A refused Retry retains the draft and its own refusal. Undo follows
+the definitive answer while preserving the original command lifetime and its own step metadata.
+World, command lifetime, movement and selection checks stop old replies clearing a newer draft.
+`ward-ed-examination-save.dom.test.tsx` covers these save and recovery paths.
+
 ## Confirmed usability fixes — 19 October 2026
 
 Referral `Field` associates hints and errors with native controls, including controls inside

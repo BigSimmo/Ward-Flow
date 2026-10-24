@@ -1293,7 +1293,7 @@ function FormRow({
               <button
                 type="button"
                 className={styles.rowLink}
-                aria-label={`Record time written for ${name}`}
+                aria-label={`Add the time for ${name}`}
                 onClick={() => onAddTime(movement)}
               >
                 Add the time

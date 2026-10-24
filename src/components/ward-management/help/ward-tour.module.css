@@ -148,7 +148,7 @@
 }
 
 .canTitle {
-  color: var(--wf-success);
+  color: var(--wf-success-ink);
 }
 
 .askTitle {
@@ -225,7 +225,7 @@
   margin-left: auto;
   border-color: var(--wf-accent);
   background: var(--wf-accent);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
 }
 
 .secondary:disabled {
@@ -268,4 +268,18 @@
   .layer {
     display: none;
   }
+}
+
+.layer[data-device="phone"] .close {
+  position: relative;
+}
+
+.layer[data-device="phone"] .close::after {
+  position: absolute;
+  content: "";
+  inset-block: 0;
+  left: 50%;
+  width: 100%;
+  min-width: var(--wf-touch);
+  transform: translateX(-50%);
 }
