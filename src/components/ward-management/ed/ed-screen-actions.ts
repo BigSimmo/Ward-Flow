@@ -9,6 +9,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { type EdStepEvent } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
+import type { useEdRecordSave } from "./use-ed-record-save";
 
 export function edScreenActions({
   raise,
@@ -16,6 +17,7 @@ export function edScreenActions({
   thisEdId,
   recordEdStep,
   submitLegalFormExpiry,
+  recordSave,
   panels,
 }: {
   raise: WardRaise;
@@ -28,20 +30,17 @@ export function edScreenActions({
     movementId: string,
     currentDueAt: Instant | undefined,
   ) => void;
+  recordSave: Pick<
+    ReturnType<typeof useEdRecordSave>,
+    "submitUrgencyChange" | "submitLegalStatusChange" | "submitReceiptCorrection"
+  >;
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
   const {
     examinationOutcome,
     setExaminationOpenFor,
     setExaminationOutcome,
-    urgencyDraft,
-    setUrgencyChangeOpenFor,
-    legalStatusDraft,
-    setLegalStatusChangeOpenFor,
     setWithdrawOpenFor,
-    receiptCorrectionReasonDraft,
-    setReceiptCorrectionOpenFor,
-    setReceiptCorrectionReasonDraft,
     transportDraft,
     closeTransportDialog,
   } = panels;
@@ -54,49 +53,9 @@ export function edScreenActions({
     setExaminationOutcome(undefined);
   }
 
-  function submitUrgencyChange(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises.
-    if (urgencyDraft.reason === undefined) return;
-    raise("CHANGE_URGENCY", {
-      movementId,
-      urgency: urgencyDraft.urgency,
-      reason: urgencyDraft.reason,
-    });
-    setUrgencyChangeOpenFor(undefined);
-  }
-
-  function submitLegalStatusChange(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // This IS a real <form>, so Enter inside a field submits it whatever the button advertises —
-    // the same bypass the raise-referral form guards. An `aria-disabled` control alone would not
-    // catch it, and the reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
-    if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
-    raise("CHANGE_LEGAL_STATUS", {
-      movementId,
-      legalStatus: legalStatusDraft.legalStatus,
-      reason: legalStatusDraft.reason,
-    });
-    setLegalStatusChangeOpenFor(undefined);
-  }
-
   function confirmWithdrawReferral(movementId: string) {
     raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
-  }
-
-  function submitReceiptCorrection(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises, the same
-    // bypass every other panel on this screen guards against — the reducer requires a reason, so
-    // an unguarded Enter would dispatch `undefined`.
-    if (receiptCorrectionReasonDraft === undefined) return;
-    raise("CORRECT_LEGAL_FORM_RECEIPT", {
-      movementId,
-      reason: receiptCorrectionReasonDraft,
-    });
-    setReceiptCorrectionOpenFor(undefined);
-    setReceiptCorrectionReasonDraft(undefined);
   }
 
   function submitBookTransport(movementId: string) {
@@ -127,11 +86,9 @@ export function edScreenActions({
 
   return {
     submitExamination,
-    submitUrgencyChange,
-    submitLegalStatusChange,
     confirmWithdrawReferral,
     submitLegalFormExpiry,
-    submitReceiptCorrection,
     submitBookTransport,
+    ...recordSave,
   };
 }

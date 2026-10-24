@@ -1,0 +1,202 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useOptionalWardFlowSelect, type WardFlowContextValue } from "../ward-flow-provider";
+import type { WardFlowEvent } from "../ward-flow-events";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
+import type { useEdRowPanels } from "./use-ed-screen-state";
+
+type Kind = "urgency" | "legalStatus" | "receipt";
+type Panels = ReturnType<typeof useEdRowPanels>;
+type Correction = Extract<
+  WardFlowEvent,
+  { type: "CHANGE_URGENCY" | "CHANGE_LEGAL_STATUS" | "CORRECT_LEGAL_FORM_RECEIPT" }
+>;
+type Draft = { movementId: string | undefined; values: readonly (string | number | undefined)[] };
+type Attempt = {
+  kind: Kind;
+  event: Correction;
+  world: number | undefined;
+  sequence: number;
+  draft: Draft;
+  completion?: WardCommandOutcome;
+};
+function readDraft(kind: Kind, panels: Panels): Draft {
+  if (kind === "urgency")
+    return {
+      movementId: panels.urgencyChangeOpenFor,
+      values: [panels.urgencyDraft.urgency, panels.urgencyDraft.reason],
+    };
+  if (kind === "legalStatus")
+    return {
+      movementId: panels.legalStatusChangeOpenFor,
+      values: [panels.legalStatusDraft.legalStatus, panels.legalStatusDraft.reason],
+    };
+  return { movementId: panels.receiptCorrectionOpenFor, values: [panels.receiptCorrectionReasonDraft] };
+}
+
+/** Keep each correction's selections until that command, including its same-id Retry, accepts. */
+export function useEdRecordSave({
+  dispatch,
+  now,
+  panels,
+}: Pick<WardFlowContextValue, "dispatch" | "now"> & { panels: Panels }) {
+  const context = useOptionalWardFlowSelect("worldGeneration", "shared", "eventLog");
+  const world = context?.worldGeneration;
+  const shared = context?.shared;
+  const [attempt, setAttempt] = useState<Attempt>();
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string>();
+  const [messageFor, setMessageFor] = useState<{ kind: Kind; movementId: string }>();
+  const current = useRef<Attempt | undefined>(undefined);
+  const latestPanels = useRef(panels);
+  useEffect(
+    () => () => {
+      current.current = undefined;
+    },
+    [],
+  );
+  useEffect(() => {
+    latestPanels.current = panels;
+  }, [panels]);
+  const completeCommand = useWardCommandCompletion(setMessage);
+  const finish = useCallback((said?: string) => {
+    current.current = undefined;
+    setAttempt(undefined);
+    setPending(false);
+    setMessage(said);
+  }, []);
+  const accepted = useCallback(
+    (saved: Attempt) => {
+      if (current.current !== saved) return;
+      const latest = latestPanels.current;
+      const draft = readDraft(saved.kind, latest);
+      if (
+        draft.movementId === saved.event.movementId &&
+        draft.values.every((value, index) => value === saved.draft.values[index])
+      ) {
+        if (saved.kind === "urgency") latest.setUrgencyChangeOpenFor(undefined);
+        else if (saved.kind === "legalStatus") latest.setLegalStatusChangeOpenFor(undefined);
+        else {
+          latest.setReceiptCorrectionOpenFor(undefined);
+          latest.setReceiptCorrectionReasonDraft(undefined);
+        }
+      }
+      finish();
+    },
+    [finish],
+  );
+
+  useEffect(() => {
+    if (!attempt) return;
+    if (attempt.world !== world || (attempt.completion?.isCurrent && !attempt.completion.isCurrent())) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- The external workspace ended this attempt's lifetime.
+      finish();
+      return;
+    }
+    if (attempt.completion?.status !== "failed") return;
+    // Polls and other desks' matching records cannot supply this command's own receipt.
+    const receipt = context?.eventLog?.find(
+      (entry) =>
+        entry.sequence > attempt.sequence &&
+        Reflect.get(entry, "commandId") === attempt.completion?.commandId &&
+        entry.type === attempt.event.type &&
+        entry.movementId === attempt.event.movementId &&
+        entry.role === "ed" &&
+        entry.now === attempt.event.now,
+    );
+    if (!receipt || (shared?.enabled && shared.status !== "ready")) return;
+    if (receipt.accepted) accepted(attempt);
+    else finish(shared?.error ?? "Not recorded. Review the current record before trying again.");
+  }, [attempt, world, context?.eventLog, shared?.enabled, shared?.status, shared?.error, accepted, finish]);
+
+  const disabled = pending || !!(shared?.enabled && shared.status !== "ready");
+  function save(kind: Kind, event: Correction) {
+    if (disabled || (current.current && !current.current.completion)) return;
+    let started: Attempt;
+    completeCommand(
+      wardCommandKey("ed-record-correction", event.movementId),
+      () => {
+        started = {
+          kind,
+          event,
+          world,
+          sequence: context?.eventLog?.at(-1)?.sequence ?? -1,
+          draft: readDraft(kind, panels),
+        };
+        current.current = started;
+        setAttempt(started);
+        setPending(true);
+        setMessageFor({ kind, movementId: event.movementId });
+        setMessage(undefined);
+        const outcome = dispatch(event);
+        if (!outcome || !("then" in outcome)) return outcome;
+        return outcome.then((answer) => {
+          if (current.current === started && answer.isCurrent && !answer.isCurrent()) finish();
+          return answer;
+        });
+      },
+      (outcome) => {
+        if (current.current !== started) return;
+        if (outcome?.status === "accepted") accepted(started);
+        else if (outcome?.status === "failed") {
+          const failed = { ...started, completion: outcome };
+          current.current = failed;
+          setAttempt(failed);
+          setPending(false);
+          setMessage(wardCommandFailure(outcome));
+        } else finish(wardCommandFailure(outcome) ?? "Save is not confirmed. Review the board before trying again.");
+      },
+    );
+  }
+  function submitUrgencyChange(event: FormEvent<HTMLFormElement>, movementId: string) {
+    event.preventDefault();
+    if (panels.urgencyDraft.reason === undefined) return;
+    save("urgency", {
+      type: "CHANGE_URGENCY",
+      role: "ed",
+      now,
+      movementId,
+      urgency: panels.urgencyDraft.urgency,
+      reason: panels.urgencyDraft.reason,
+    });
+  }
+  function submitLegalStatusChange(event: FormEvent<HTMLFormElement>, movementId: string) {
+    event.preventDefault();
+    if (panels.legalStatusDraft.legalStatus === undefined || panels.legalStatusDraft.reason === undefined) return;
+    save("legalStatus", {
+      type: "CHANGE_LEGAL_STATUS",
+      role: "ed",
+      now,
+      movementId,
+      legalStatus: panels.legalStatusDraft.legalStatus,
+      reason: panels.legalStatusDraft.reason,
+    });
+  }
+  function submitReceiptCorrection(event: FormEvent<HTMLFormElement>, movementId: string) {
+    event.preventDefault();
+    if (panels.receiptCorrectionReasonDraft === undefined) return;
+    save("receipt", {
+      type: "CORRECT_LEGAL_FORM_RECEIPT",
+      role: "ed",
+      now,
+      movementId,
+      reason: panels.receiptCorrectionReasonDraft,
+    });
+  }
+  function recordSaveState(kind: Kind, movementId: string) {
+    return {
+      disabled,
+      message:
+        messageFor?.kind === kind &&
+        messageFor.movementId === movementId &&
+        readDraft(kind, panels).movementId === movementId
+          ? pending
+            ? "Saving change…"
+            : message
+          : undefined,
+    };
+  }
+  return { submitUrgencyChange, submitLegalStatusChange, submitReceiptCorrection, recordSaveState };
+}

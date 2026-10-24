@@ -47,6 +47,7 @@ import {
 } from "./use-ed-screen-state";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { useEdExpirySave } from "./use-ed-expiry-save";
+import { useEdRecordSave } from "./use-ed-record-save";
 
 /*
  * Fix list 2.5 and 9.6 (15 Oct 2026): this screen was one 6,500 line file. It is now split into
@@ -133,6 +134,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const boardDrafts = useEdBoardDrafts();
   const rowPanels = useEdRowPanels();
   const expirySave = useEdExpirySave({ dispatch, now, dayZero, panels: rowPanels });
+  const recordSave = useEdRecordSave({ dispatch, now, panels: rowPanels });
   const { arrivalPlanOpenFor, setArrivalPlanOpenFor, transportOpenFor, closeTransportDialog, toggleBookTransport } =
     rowPanels;
   /**
@@ -283,6 +285,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     recordEdStep,
     panels: rowPanels,
     submitLegalFormExpiry: expirySave.submitLegalFormExpiry,
+    recordSave,
   });
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
@@ -385,6 +388,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...derived,
     ...actions,
     ...expirySave,
+    ...recordSave,
   };
 
   const boardSplit = waitingSplit(patients);
