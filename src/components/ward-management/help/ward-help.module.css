@@ -221,3 +221,26 @@
   color: var(--wf-ink-1);
   font-weight: 600;
 }
+
+.goLink {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.75rem;
+  margin-top: 0.125rem;
+  color: var(--wf-accent-strong);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.goLink::after {
+  content: " \2192";
+  margin-left: 0.25rem;
+}
+
+.goLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}

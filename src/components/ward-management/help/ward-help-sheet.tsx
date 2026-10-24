@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -7,11 +8,13 @@ import { Sheet } from "@/components/wf/sheet";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
+import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { filterGlossary, screenHelpFor } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
+import { useTourFacts } from "./ward-tour-facts";
 import styles from "./ward-help.module.css";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
@@ -19,6 +22,25 @@ const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
   { id: "screen", label: "This screen" },
   { id: "glossary", label: "Glossary" },
 ];
+
+type GoLink = { href: string; label: string };
+
+/**
+ * Where a guide job's "Go to" link leads: the desk's own home, or a rail page this desk can open.
+ * A page the desk cannot open gets no link, so Help never offers a door the guard would shut.
+ */
+function goLink(
+  go: string,
+  role: WardTourRole,
+  home: { href: string | undefined; name: string },
+  entries: readonly { id: string; href: string; label: string }[],
+): GoLink | undefined {
+  if (go === "home") return home.href ? { href: home.href, label: home.name } : undefined;
+  const entry = entries.find((candidate) => candidate.id === go);
+  const screen = entry ? screenForPath(entry.href)?.screen : undefined;
+  if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;
+  return { href: entry.href, label: entry.label };
+}
 
 function deskLabel(role: WardTourRole): string {
   return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
@@ -41,14 +63,16 @@ export function WardHelpSheet({
   const pathname = usePathname() ?? "";
   const role = useTourRole();
   const guide = DESK_GUIDES[role];
+  const { home, deskHome } = useTourFacts(role);
   // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
+  const entries = useMemo(() => railEntries(), []);
   const help = useMemo(
     () =>
       screenHelpFor(
         pathname,
-        railEntries().filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
+        entries.filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
       ),
-    [pathname],
+    [entries, pathname],
   );
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query);
@@ -110,11 +134,28 @@ export function WardHelpSheet({
           <p className={styles.text}>{guide.startsAt}</p>
           <h4 className={styles.subTitle}>Jobs you do most</h4>
           <ol className={styles.jobs}>
-            {guide.jobs.map((item) => (
-              <li key={item.job}>
-                <b className={styles.job}>{item.job}.</b> {item.how}
-              </li>
-            ))}
+            {guide.jobs.map((item) => {
+              const link = goLink(item.go, role, { href: deskHome ?? home, name: guide.homeName }, entries);
+              return (
+                <li key={item.job}>
+                  <b className={styles.job}>{item.job}.</b> {item.how}
+                  {link ? (
+                    <>
+                      {" "}
+                      <Link
+                        href={link.href}
+                        className={styles.goLink}
+                        onClick={onClose}
+                        aria-label={`${item.job}: go to ${link.label}`}
+                        data-testid="ward-help-go"
+                      >
+                        Go to {link.label}
+                      </Link>
+                    </>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
           <h4 className={styles.subTitle}>Good to know</h4>
           <ul className={styles.list}>

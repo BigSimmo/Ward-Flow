@@ -23,6 +23,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
+  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+}));
+
 import {
   GLOSSARY,
   SCREEN_HELP,
@@ -142,6 +146,17 @@ describe("help sheet", () => {
     expect(desk.textContent).toContain(DESK_GUIDES.coordinator.summary);
     for (const item of DESK_GUIDES.coordinator.jobs) expect(desk.textContent).toContain(item.how);
     expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
+  });
+
+  it("links each job to the screen where it is done, and closes Help on the way", () => {
+    const onClose = vi.fn();
+    render(<WardHelpSheet view="desk" onView={vi.fn()} onClose={onClose} />);
+    const links = screen.getAllByTestId("ward-help-go");
+    expect(links).toHaveLength(DESK_GUIDES.coordinator.jobs.length);
+    const decide = screen.getByRole("link", { name: "Decide a referral: go to Referrals" });
+    expect(decide.getAttribute("href")).toBe("/ward-flow/referrals");
+    fireEvent.click(decide);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("gives every desk a plain guide that never ranks, scores or calls an incoming bed held", () => {
