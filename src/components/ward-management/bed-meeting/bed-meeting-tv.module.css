@@ -360,6 +360,20 @@
   background: var(--wf-ink-3);
 }
 
+/* R7-09 (device sweep): the tile meters keep a drawn track and fill in forced colours. */
+@media (forced-colors: active) {
+  .tileMeter {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .tileMeter > span,
+  .tile[data-tone="neutral"] .tileMeter > span {
+    background: CanvasText;
+  }
+}
+
 .tileDetail {
   margin: var(--wf-s-1) 0 0;
   color: var(--wf-ink-2);
@@ -390,6 +404,9 @@
 /* A laptop preview beside the side menu: the table takes the full width, the rest pair up below. */
 @container (max-width: 90rem) {
   .panels[data-layout="meeting"] {
+    /* L23 (device sweep): dense, so Longest ED waits and Delays fill the row beside Beds that fit
+     * instead of leaving it a third filled while the full-width Brief drops below. */
+    grid-auto-flow: row dense;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
