@@ -195,8 +195,8 @@ export const WORK_ORDER: WorkStatus[] = ["blocked", "confirmed", "expected", "de
  * Item 4 (usability, 24 Oct 2026): one line saying why the list is in its order, read from the
  * sorts that build it (`use-discharge-workspace-state.tsx`). Barriers: largest group first, with
  * highlighted people first in each. Records: by `WORK_ORDER`, then soonest expected date, or one
- * list by expected date under Due first. Releases: by `GROUP_ORDER`, then by release band, or by
- * expected time under Due first. A highlight puts the highlighted rows first.
+ * list by expected date under Due first. Releases: by `GROUP_ORDER`, then by release band (rows in one band keep their stored order, so no
+ * time order is promised inside it), or by expected time under Due first. A highlight puts the highlighted rows first.
  */
 export function dischargeOrderLine({
   population,
@@ -227,7 +227,7 @@ export function dischargeOrderLine({
       ? "Soonest expected date first"
       : sortMode === "due-first"
         ? "Earliest expected time first"
-        : "Soonest expected first";
+        : "Soonest time band first";
   return allStatuses ? `${lead}Blocked first, then by stage. ${within} in each.` : `${lead}${within}`;
 }
 

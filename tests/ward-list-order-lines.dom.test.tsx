@@ -67,16 +67,16 @@ describe("list order lines", () => {
         highlighted: false,
         ...overrides,
       });
-    expect(line({})).toBe("Blocked first, then by stage. Soonest expected first in each.");
+    expect(line({})).toBe("Blocked first, then by stage. Soonest time band first in each.");
     expect(line({ sortMode: "due-first" })).toBe("Blocked first, then by stage. Earliest expected time first in each.");
     expect(line({ population: "records" })).toBe("Blocked first, then by stage. Soonest expected date first in each.");
     expect(line({ population: "records", sortMode: "due-first" })).toBe(
       "Soonest expected date first. Departed and undated last.",
     );
     // One status shown: there is no stage order left to state.
-    expect(line({ allStatuses: false })).toBe("Soonest expected first");
+    expect(line({ allStatuses: false })).toBe("Soonest time band first");
     expect(line({ highlighted: true })).toBe(
-      "Highlighted people first in each group. Blocked first, then by stage. Soonest expected first in each.",
+      "Highlighted people first in each group. Blocked first, then by stage. Soonest time band first in each.",
     );
     expect(line({ population: "records", highlighted: true, allStatuses: false })).toBe(
       "Highlighted people first. Soonest expected date first",
@@ -101,7 +101,7 @@ describe("list order lines", () => {
   it("Discharges says its order and follows the Sort and the Barriers view", () => {
     inProvider(<DischargeBoard />);
     expect(screen.getByTestId("ward-discharge-order-note")).toHaveTextContent(
-      "Blocked first, then by stage. Soonest expected first in each.",
+      "Blocked first, then by stage. Soonest time band first in each.",
     );
     fireEvent.change(screen.getByTestId("ward-discharges-sort"), { target: { value: "due-first" } });
     expect(screen.getByTestId("ward-discharge-order-note")).toHaveTextContent(
