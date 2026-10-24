@@ -193,8 +193,11 @@ export const config = {
   // runs script, so the per-request nonce does nothing for them. The service
   // worker script and the offline page stay in: the worker runs under the CSP
   // its own script was sent with, which keeps its fetches same-origin.
+  // The icon and screenshot skips name the real file shapes, not the folders:
+  // an unknown /icons/x or /screenshots/x renders the app's 404 page, which
+  // must still get the CSP.
   matcher: [
     "/api/:path*",
-    "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$|icons/|apple-icon$|screenshots/|manifest\\.webmanifest$).*)",
+    "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$|icons/(?:(?:icon|maskable|monochrome)-\\d+|startup-\\d+x\\d+)$|apple-icon$|screenshots/[a-z0-9-]+\\.webp$|manifest\\.webmanifest$).*)",
   ],
 };
