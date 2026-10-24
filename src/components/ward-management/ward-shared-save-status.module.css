@@ -1,0 +1,42 @@
+.host {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  flex: none;
+  max-block-size: 45dvh;
+  overflow-y: auto;
+}
+
+.recovery {
+  display: grid;
+  gap: 0.75rem;
+  flex: none;
+  padding: 1rem;
+  margin-block-end: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--wf-r-ctl, 0.5rem);
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+}
+
+.recovery p {
+  margin: 0;
+}
+
+.retry {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--wf-r-ctl, 0.5rem);
+  color: var(--surface);
+  background: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

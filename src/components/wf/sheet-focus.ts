@@ -117,6 +117,11 @@ export function hasOpenSheet() {
   return openSheets.length > 0;
 }
 
+/** The active overlay's root, including a late-mounted portal; subscribe with subscribeToSheetStack. */
+export function topSheetRoot(): HTMLElement | null {
+  return openSheets[openSheets.length - 1]?.root ?? null;
+}
+
 /**
  * The open sheets, bottom first, as handles that stay the same while each one is open. The shared
  * board uses them to remember what it held when each popup opened (audit CS-19).

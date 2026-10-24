@@ -69,6 +69,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     communityPurposeChoice,
     setCommunityPurposeChoice,
     examinationOutcome,
+    examinationFieldsDisabled,
+    examinationSaveDisabled,
+    examinationSaveMessage,
     setExaminationOutcome,
     setEdOutcomeOpenFor,
     urgencyDraft,
@@ -248,7 +251,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitExamination(event, movement.id)}
           data-testid={`ward-ed-examine-form-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset}>
+          <fieldset className={styles.declineFieldset} disabled={examinationFieldsDisabled}>
             <legend className={styles.declineLegend}>Examination outcome for {patientInfo.displayName}</legend>
             {(
               [
@@ -278,14 +281,31 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                             an empty choice. */}
           <button
             type="submit"
-            aria-disabled={examinationOutcome ? undefined : "true"}
-            aria-describedby={examinationOutcome ? undefined : `ward-ed-examine-choose-${movement.id}`}
-            title={examinationOutcome ? undefined : "Choose an outcome first"}
+            aria-disabled={examinationOutcome && !examinationSaveDisabled ? undefined : "true"}
+            aria-describedby={
+              examinationSaveMessage
+                ? `ward-ed-examine-message-${movement.id}`
+                : examinationOutcome
+                  ? undefined
+                  : `ward-ed-examine-choose-${movement.id}`
+            }
+            title={
+              examinationSaveDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : examinationOutcome
+                  ? undefined
+                  : "Choose an outcome first"
+            }
             className={styles.declineSubmit}
-            onClick={examinationOutcome ? undefined : ignoreUnavailableActivation}
+            onClick={examinationOutcome && !examinationSaveDisabled ? undefined : ignoreUnavailableActivation}
           >
             Confirm examination outcome
           </button>
+          {examinationSaveMessage ? (
+            <p role="status" id={`ward-ed-examine-message-${movement.id}`}>
+              {examinationSaveMessage}
+            </p>
+          ) : null}
           {examinationOutcome ? null : (
             <span id={`ward-ed-examine-choose-${movement.id}`} className="sr-only">
               Choose an outcome first

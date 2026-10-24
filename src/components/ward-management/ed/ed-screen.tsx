@@ -47,6 +47,7 @@ import {
 } from "./use-ed-screen-state";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { useEdExpirySave } from "./use-ed-expiry-save";
+import { useEdExaminationSave } from "./use-ed-examination-save";
 
 /*
  * Fix list 2.5 and 9.6 (15 Oct 2026): this screen was one 6,500 line file. It is now split into
@@ -144,6 +145,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  const examinationSave = useEdExaminationSave({ dispatch, movements, rejections, now, panels: rowPanels, offerStep });
   // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
   // ids held before the raise; the new one is announced with a toast that opens its row.
   const raisePendingRef = useRef<Set<string> | null>(null);
@@ -280,9 +282,9 @@ export function EdScreen({ edId }: EdScreenProps) {
     now,
     dayZero,
     thisEdId,
-    recordEdStep,
-    panels: rowPanels,
+    submitExamination: examinationSave.submitExamination,
     submitLegalFormExpiry: expirySave.submitLegalFormExpiry,
+    panels: rowPanels,
   });
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
@@ -383,6 +385,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     ...boardView,
     ...inboxDecline,
     ...derived,
+    ...examinationSave,
     ...actions,
     ...expirySave,
   };
