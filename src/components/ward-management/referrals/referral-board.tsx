@@ -302,8 +302,15 @@ export function ReferralBoard({
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
+  // Audit 24-1 B-03: the queued referral on screen, by id and name, so one decided at another desk
+  // closes with a notice naming them rather than handing the panel to the next person in the queue.
+  const [watchedReferral, setWatchedReferral] = useState<{ id: string; name: string }>();
+  const [decidedHereId, setDecidedHereId] = useState<string>();
+  const [leftNotice, setLeftNotice] = useState<string>();
+
   const handleSelect = useCallback((referralId: string) => {
     triggerRef.current = document.activeElement as HTMLElement | null;
+    setLeftNotice(undefined);
     setSelectedReferralId(referralId);
     setInspectorTab("place");
   }, []);
@@ -370,6 +377,26 @@ export function ReferralBoard({
   // length names how many rows are shown and cannot name how many have been decided.
   const allDecided = decidedReferrals(referrals);
   const decidedTotal = allDecided.length;
+  const selectedInQueue = selectedReferralId
+    ? queued.find((referral) => referral.id === selectedReferralId)
+    : undefined;
+  if (watchedReferral && !queued.some((referral) => referral.id === watchedReferral.id)) {
+    // Decided here, the detail stays on them (CS-15); decided elsewhere, nobody is selected. A
+    // default selection (nobody chose yet) would otherwise slide to the new first in queue.
+    const stillShown = chosenReferralId === undefined || watchedReferral.id === selectedReferralId;
+    if (stillShown && watchedReferral.id !== decidedHereId) {
+      setSelectedReferralId(null);
+      setLeftNotice(`${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`);
+    }
+    setWatchedReferral(undefined);
+  } else if (selectedInQueue) {
+    if (watchedReferral?.id !== selectedInQueue.id)
+      setWatchedReferral({ id: selectedInQueue.id, name: nameOf(selectedInQueue) });
+  } else if (watchedReferral) {
+    setWatchedReferral(undefined);
+  }
+  // Any later choice (row, keyboard, link) replaces the notice.
+  if (leftNotice && selectedReferralId) setLeftNotice(undefined);
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
@@ -431,6 +458,7 @@ export function ReferralBoard({
   // soon as the decided one left the queue; the next is opened only when the coordinator picks it.
   const decide = (referral: Referral) => (title: string, completion: ReturnType<WardCommandDispatch>) => {
     setSelectedReferralId(referral.id);
+    setDecidedHereId(referral.id);
     watchDecision(referral.id, `${title} · ${nameOf(referral)}`, completion);
   };
 
@@ -1199,6 +1227,11 @@ export function ReferralBoard({
                     }
                     meta={`${queued.length} awaiting decision · ${decidedTotal} decided`}
                   />
+                  {leftNotice ? (
+                    <p role="status" data-testid="ward-referral-decided-elsewhere">
+                      {leftNotice}
+                    </p>
+                  ) : null}
                 </section>
               </Card>
             )}
