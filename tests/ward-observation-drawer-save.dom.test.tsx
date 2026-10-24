@@ -39,12 +39,13 @@ function commands() {
   >((_event, commit) => new Promise<WardCommandOutcome>((finish) => pending.push({ finish, commit })));
   return {
     record,
-    async accept() {
+    /** Commit through the real provider but keep the response held; call the result to release it. */
+    async commitHeld() {
       const next = pending.shift()!;
       const outcome = await next.commit();
       if (!outcome) throw new Error("The real provider did not return a command outcome");
       expect(outcome.status).toBe("accepted");
-      next.finish(outcome);
+      return () => next.finish(outcome);
     },
     refuse(status: "refused" | "failed") {
       pending.shift()!.finish({ commandId: "delayed", status, message: "Review the shared board" });
@@ -98,6 +99,8 @@ describe("Ward bed drawer — observation level save (D-72 item 5)", () => {
     const control = commands();
     mount(control);
     selectOccupiedBoardBed();
+    const drawerText = () => screen.getByTestId("bed-telemetry-drawer").textContent ?? "";
+    expect(drawerText()).not.toMatch(/Two staff/);
     saveTwoStaff();
 
     expect(control.record).toHaveBeenCalledTimes(1);
@@ -105,13 +108,19 @@ describe("Ward bed drawer — observation level save (D-72 item 5)", () => {
     expect(event.type).toBe("RECORD_OBSERVATION_LEVEL");
     if (event.type !== "RECORD_OBSERVATION_LEVEL") throw new Error("unreachable");
     expect(event.target).toMatchObject({ kind: "admission", actingUnitId: UNIT });
-    expect(event.target.kind === "admission" && event.target.admissionId).toEqual(expect.any(String));
     expect(event.observation).toMatchObject({ level: "two_staff", intervalMinutes: null });
     // Pending: nothing announced yet.
     expect(screen.queryByText(RECORDED)).toBeNull();
 
-    await act(async () => control.accept());
+    // Committed by the engine but the response still held: still nothing announced.
+    const release = await act(async () => control.commitHeld());
+    expect(screen.queryByText(RECORDED)).toBeNull();
+    await act(async () => release());
     expect(screen.getByText(RECORDED)).toHaveTextContent("Observation level recorded: Two staff");
+    // The open drawer's own bed now reads the new level, so the command named this bed's
+    // admission and not another occupant's.
+    expect(screen.getByTestId("bed-telemetry-drawer").querySelector("[data-testid=ward-observation-level]")).toBeNull();
+    expect(drawerText()).toMatch(/Two staff/);
   });
 
   it("does not announce a refused change and says nothing was changed", async () => {
