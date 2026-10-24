@@ -18,9 +18,8 @@
   height: 100dvh;
   min-height: 44rem;
   grid-template-columns: auto minmax(0, 1fr);
-  /* Task 9 Ruling 4: the nav row this used to reserve for the horizontal `WardModeNavigation`
-     strip is gone — those eight links now live inside `ClinicalRail` (grid-column 1), so
-     `.modeContent` is the second and last row. */
+  /* The former horizontal `WardModeNavigation` strip is gone; navigation belongs to the
+     shared shell. `.modeContent` is the second and last row. */
   grid-template-rows: 4rem minmax(0, 1fr);
   overflow: hidden;
   /* The shell owns the ground — do not reintroduce a background here in any spelling

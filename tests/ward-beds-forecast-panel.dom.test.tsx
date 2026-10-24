@@ -6,6 +6,8 @@ import "@testing-library/jest-dom/vitest";
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import { BedsForecastPanel } from "@/components/ward-management/capacity/beds-forecast-panel";
 import type { BedRelease } from "@/components/ward-management/ward-model";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 describe("bed forecast disclosure", () => {
@@ -22,6 +24,59 @@ describe("bed forecast disclosure", () => {
 });
 
 describe("where beds are coming from", () => {
+  it.each(
+    [
+      { recordedAt: 10 * 60 + 30, recordedBy: "Ward manager" as const, label: "plan date set by Ward manager, 10:30" },
+      { recordedAt: 10 * 60 + 30, recordedBy: null, label: "plan date recorded 10:30 (role not recorded)" },
+      {
+        recordedAt: null,
+        recordedBy: "Ward manager" as const,
+        label: "plan date set by Ward manager (time not recorded)",
+      },
+      { recordedAt: 0, recordedBy: "Ward manager" as const, label: "plan date set by Ward manager, 00:00" },
+      { recordedAt: null, recordedBy: null, label: "plan date update details not recorded" },
+    ].flatMap((provenance) =>
+      [14 * 60, NOW_ANCHOR + 3 * MINUTES_PER_DAY].map((reportedAt) => ({ ...provenance, reportedAt })),
+    ),
+  )(
+    "separates current plan and release provenance ($label, release $reportedAt)",
+    async ({ recordedAt, recordedBy, label, reportedAt }) => {
+      const unit = allUnits()[0]!;
+      const stay = {
+        ...wardAdmissions.find((admission) => admission.state === "occupied")!,
+        id: "AD-RESCHEDULED",
+        unitId: unit.id,
+        expectedDischargeAt: 14 * 60,
+        dischargeDateSetAt: recordedAt,
+        dischargeDateSetBy: recordedBy,
+      };
+      const flagged: BedRelease = {
+        id: "WR-RESCHEDULED",
+        unitId: unit.id,
+        admissionId: stay.id,
+        state: "confirmed",
+        expectedAt: reportedAt,
+        waitingOn: null,
+        blocker: null,
+        blockedBy: null,
+        preparing: false,
+        preparationNote: null,
+        confirmedAt: 9 * 60 + 10,
+        confirmedBy: "NUM Original Unit",
+      };
+      render(<BedsForecastPanel forecast={bedsForecast([unit], [flagged], [stay], [], NOW_ANCHOR)} />);
+      await userEvent.click(screen.getByText("Where beds are coming from"));
+      const row = within(screen.getByTestId("ward-capacity-beds-forecast-sources-this_shift")).getByText(
+        /^14:00 · Current discharge plan/u,
+      );
+      expect(row).toHaveTextContent(label);
+      expect(row).toHaveTextContent("release last reported by NUM Original Unit, 09:10");
+      expect(row).not.toHaveTextContent("said by NUM Original Unit");
+      expect(flagged.expectedAt).toBe(reportedAt);
+      expect(flagged.confirmedAt).toBe(9 * 60 + 10);
+    },
+  );
+
   it("lists each ward's flagged discharges by shift with who said it, and flags a ward with no update", async () => {
     const units = allUnits().slice(0, 2);
     const [first, second] = units;
