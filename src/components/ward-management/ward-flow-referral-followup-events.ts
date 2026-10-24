@@ -109,6 +109,10 @@ export function reduceReferralFollowUpEvent(
     }
 
     case "MARK_REFERRAL_INFORMATION_MET": {
+      // D-80: a ward ticks off only what a ward sent, never the copy it is answering.
+      if (event.role === "ward" && referral.source !== "psychiatric_ward") {
+        return reject(state, event, `only the desk that sent referral ${referral.id} ticks its items off`);
+      }
       // Once the ward has answered, or the referrer has withdrawn, the ask is closed, as for raising one.
       if (!awaitingAnswer(addressing)) {
         return reject(state, event, `referral ${referral.id} is no longer waiting on this ward's answer`);

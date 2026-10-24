@@ -1115,6 +1115,10 @@ export function reduceReferralSendEvent(
           );
         }
       }
+      // D-80: a ward corrects only what a ward sent, never a referral it is answering.
+      if (event.role === "ward" && referral.source !== "psychiatric_ward") {
+        return reject(state, event, `only the desk that sent referral ${referral.id} may add corrections`);
+      }
       if (event.role === "community" && event.actingPlaceId !== undefined) {
         if (
           referral.sendingTeamName === undefined ||

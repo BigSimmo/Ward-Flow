@@ -58,7 +58,7 @@ describe("who may raise which event", () => {
     ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.
-    ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+    ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
     ADVANCE_CLOCK: ["demo"],
     BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     // CHANGED 2026-08-30 under TR-D6 (owner), and this row is a NARROWING plus a widening, not
@@ -279,7 +279,7 @@ describe("who may raise which event", () => {
     // for fixed-list items before deciding, and the referrer side ticking them off.
     MARK_REFERRAL_OPENED: ["ward", "coordinator"],
     REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
-    MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+    MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "ward", "coordinator"],
     // Fix plan item 4 (21 Oct 2026): the coordinator assigns to any listed desk, an ED or community
     // desk takes a referral for itself; the same desks log calls about it.
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
