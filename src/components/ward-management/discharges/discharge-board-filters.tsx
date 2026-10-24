@@ -142,7 +142,7 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
           }}
         >
           Now
-          <span className="sr-only">, anonymous releases {bedReleases.length}</span>
+          <span className="sr-only">, bed releases {bedReleases.length}</span>
         </button>
         <button
           type="button"

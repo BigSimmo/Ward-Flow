@@ -827,7 +827,7 @@ export function PatientNowScreen({
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`,
         }
       : undefined,
     transportHref:

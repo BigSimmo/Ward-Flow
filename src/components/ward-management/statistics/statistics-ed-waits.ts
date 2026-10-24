@@ -1,5 +1,6 @@
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -50,16 +51,16 @@ export type EdWaitingEntry = {
 };
 
 export type EdWaitFigures = {
-  /** Physical ED inpatient-bed wait population — the base for every waiting figure below. */
+  /** The caller's selected population: physical inpatient waits or open ED-origin journeys. */
   readonly departmentMovements: readonly Movement[];
-  /** Everyone still in this department awaiting an inpatient bed right now. */
+  /** The selected population's total. */
   readonly onTheList: number;
-  /** Of the physically waiting population, those flagged urgent. */
+  /** Of the selected population, those flagged urgent. */
   readonly urgent: number;
-  /** Of the physically waiting population, those no ward has accepted yet. */
+  /** Of the selected population, those no ward has accepted yet. */
   readonly unplaced: number;
   /**
-   * The physically waiting population paired with elapsed waits, longest first. Never a second definition of who
+   * The selected population paired with elapsed time since opening, longest first. Never a second definition of who
    * is waiting — this is the same list `onTheList` counts.
    */
   readonly waitingMovements: readonly EdWaitingEntry[];
@@ -71,7 +72,7 @@ export type EdWaitFigures = {
   readonly over24h: number;
   /** Waiting at least forty-eight hours — a SUBSET of `over24h`, not a band above it. */
   readonly over48h: number;
-  /** The longest-waiting entry, or `undefined` when nobody is physically waiting here. */
+  /** The longest-open entry, or `undefined` when the selected population is empty. */
   readonly longestWait: EdWaitingEntry | undefined;
   /** EVERY movement this department has ever originated, open or closed. See the module comment. */
   readonly allDepartmentMovements: readonly Movement[];
@@ -82,7 +83,21 @@ export type EdWaitFigures = {
  * and lets a test place a movement exactly on a boundary.
  */
 export function edWaitFigures(movements: readonly Movement[], edId: string, now: Instant): EdWaitFigures {
-  const departmentMovements = movements.filter((movement) => movement.originEdId === edId && isWaitingInEd(movement));
+  return edPopulationFigures(movements, edId, now, isWaitingInEd);
+}
+
+/** Journey reporting includes transport while the operational physical ED wait stays separate. */
+export function edJourneyWaitFigures(movements: readonly Movement[], edId: string, now: Instant): EdWaitFigures {
+  return edPopulationFigures(movements, edId, now, (movement) => isOpen(movement) && isEdOriginJourney(movement));
+}
+
+function edPopulationFigures(
+  movements: readonly Movement[],
+  edId: string,
+  now: Instant,
+  population: (movement: Movement) => boolean,
+): EdWaitFigures {
+  const departmentMovements = movements.filter((movement) => movement.originEdId === edId && population(movement));
 
   /*
    * `Math.max(..., 0)` reproduces the screen's own guard: a movement whose `openedAt` sits after
@@ -147,7 +162,14 @@ export type EdWaitBand = {
  */
 export function edWaitBands(movements: readonly Movement[], edId: string, now: Instant): readonly EdWaitBand[] {
   const { waitingMovements } = edWaitFigures(movements, edId, now);
+  return waitBands(waitingMovements);
+}
 
+export function edJourneyWaitBands(movements: readonly Movement[], edId: string, now: Instant): readonly EdWaitBand[] {
+  return waitBands(edJourneyWaitFigures(movements, edId, now).waitingMovements);
+}
+
+function waitBands(waitingMovements: readonly EdWaitingEntry[]): readonly EdWaitBand[] {
   return ED_WAIT_BANDS.map((band, index) => {
     const ceiling = ED_WAIT_BANDS[index + 1]?.fromMinutes ?? Number.POSITIVE_INFINITY;
     return {

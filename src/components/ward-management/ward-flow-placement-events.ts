@@ -8,7 +8,12 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
+import {
+  lockedBedsFree,
+  openBedsFree,
+  numberedBedKind,
+  numberedBedKindRefusal,
+} from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
@@ -284,6 +289,13 @@ export function reducePlacementEvent(
        */
       const secureBedNeeded = movement.security === "Secure";
       const reservedBed = movementBedReservation(movement, state.referrals, unit.id).bedNumber;
+      if (reservedBed !== undefined) {
+        const numberedRefusal =
+          helpers.bedNumberRefusal(state, unit, reservedBed, undefined) ??
+          helpers.heldBedRefusal(state, unit, reservedBed, movement.id, movement.referralId) ??
+          numberedBedKindRefusal(unit, reservedBed, secureBedNeeded);
+        if (numberedRefusal) return reject(state, event, numberedRefusal);
+      }
       const reservedKind = reservedBed === undefined ? undefined : numberedBedKind(unit, reservedBed);
       if (reservedBed !== undefined && reservedKind === undefined)
         return reject(state, event, "The numbered bed reservation is outside this ward.");
@@ -372,6 +384,7 @@ export function reducePlacementEvent(
         // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
         // See `Admission.bedKind`.
         bedKind: bedKindTaken,
+        ...(reservedBed === undefined ? {} : { bedNumber: reservedBed }),
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,

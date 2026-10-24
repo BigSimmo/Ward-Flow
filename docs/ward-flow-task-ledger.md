@@ -385,3 +385,39 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
+
+## §7.83 — Live product review and resolution (23–24 October 2026)
+
+Task: `wardflow-live-product-review-20261023`. Owner: Codex review-resolution coordinator.
+Repository: `BigSimmo/Ward-Flow`. Original base `5875823b5322f0b4ed2f5239628f88d40ea0195e`.
+Candidate: `codex/ward-review-pr-20261024`, based on current main
+`b0d0cf722d2430aebeda50a264bb31e749bce626`. Original fixes remain in `8ca15c46f`;
+the original checkout and unfinished merge are retained. Josh approved the exact A–C
+scope and opening a PR. The clean current-main candidate carries only the review changes,
+avoiding unrelated incoming-main ownership checks. Status: local validation in progress.
+No PR is open yet.
+
+Three main-based author ports preserve current record storage, report owners, command
+completion, bed-kind revision guards, physical ED measures and current routes. Independent
+review reproduced and repaired a legacy held-bed Undo collision and a delayed manual
+snapshot that could replace a retained report after a shared outage began. Reporting
+retains all open ED-origin journeys through transit and recorded outcomes, with physical
+presence separate and complementary suppression on screen and CSV. Bed-release labels
+acknowledge linked identifiers. Recovery stores command identity only and never replays.
+
+Fresh local evidence: backend TypeScript passes; offline backend has 215 passes and
+17 explicit database skips. The bed/Undo regression batch has 27 passes in two files;
+outage/scheduling/discharge/population batch has 57 passes in five files; Statistics
+screen/export/suppression batch has 54 passes in six files. These overlapping focused
+batches are not a full-suite verdict. Current dependencies match the exact updated lock.
+The earlier whole-project TypeScript, docs and browser results are historical old-base
+proof, not updated-main acceptance. Full current gates and production browser/device
+acceptance remain pending. Internal HealthPoint policy, service-owner endorsement and
+actual SHOC/Beds Live/PaTCH interface ownership remain external acceptance boundaries.
+
+Canonical private checkpoint and exact evidence:
+`C:/Users/joshs/Documents/Codex/Reviews/Ward-Flow-20261023/RESOLUTION.md` and its labelled
+manifests/logs. The abandoned old lease has disappeared; no peer lock was removed.
+Next: complete selected local gates and production browser checks on the current-main
+candidate, then publish one PR against main. No main merge or deployment is authorised.
+Notion is unsynced. Last verified: 24 October 2026 against these fresh named artifacts.

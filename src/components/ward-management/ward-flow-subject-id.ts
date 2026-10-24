@@ -72,6 +72,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "END_COMMUNITY_TREATMENT_ORDER":
       return event.patientId;
     case "ACCEPT_REFERRAL":
+    case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "RECORD_LOCAL_BED_SOUGHT":
     // Referral-scoped with no `movementId`: the `default` branch would stamp a rejection whose

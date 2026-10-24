@@ -1,5 +1,5 @@
 // @ts-check
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -7,6 +7,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROUTES = new Map([
   ["/v1/workspace", "workspace"],
   ["/v1/workspace/commands", "workspace_commands"],
+  ["/v1/workspace/receipt", "workspace_receipt"],
   ["/v1/workspace/audit", "workspace_audit"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
@@ -314,6 +315,14 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          accessUntil: Math.min(
+            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Date.now(),
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+          receiptScope: createHash("sha256")
+            .update(JSON.stringify([config.workspaceId, actorId, view.membershipId, session.sessionId ?? started]))
+            .digest("hex"),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
@@ -339,12 +348,22 @@ export function createSharedHandler({
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
         return reply(200, { ...workspace(), data, snapshot });
       }
+      if (path === "/v1/workspace/receipt" && request.method === "GET") {
+        const commandId = new URL(request.url).searchParams.get("commandId");
+        if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
+        return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
+      }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
         // them all; the access admin reads role changes only. Nobody else reads the audit.
         if (!whole && view.access.role !== "admin")
           return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
-        return reply(200, { events: await store.audit(view) });
+        const cursor = new URL(request.url).searchParams.get("before");
+        if (cursor !== null && (!/^[1-9][0-9]{0,18}$/.test(cursor) || BigInt(cursor) > 9223372036854775807n))
+          return reply(400, { error: "Invalid audit cursor" });
+        const events = cursor === null ? await store.audit(view) : await store.audit(view, cursor);
+        const complete = events.length < 200;
+        return reply(200, { events, complete, nextCursor: complete ? null : String(events.at(-1).sequence) });
       }
       if (path === "/v1/workspace/record-access") {
         // Every desk logs the records it opens. Only the statewide coordinator reads the log.

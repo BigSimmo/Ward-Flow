@@ -285,7 +285,7 @@ export function CapacityScreen() {
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // shell-1: the hero's figures are all whole-network, whatever service is chosen.
-  const heroScopeLabel = service === null ? "Statewide" : `Statewide, not only ${service}`;
+  const heroScopeLabel = service === null ? "Modelled network" : `Modelled network, not only ${service}`;
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = useMemo(
     () =>
@@ -1149,7 +1149,7 @@ export function CapacityScreen() {
         />
         <WardPrototypeFooter
           testId="ward-capacity-governance"
-          note="Statewide bed capacity · Not approved for clinical use"
+          note="Modelled network bed capacity · Limited synthetic demo coverage: CAHS inpatient wards are not modelled; private live feeds are unavailable · Not approved for clinical use"
         />
       </main>
     </div>

@@ -1451,6 +1451,15 @@ export type WardFlowEvent =
       tentativeDiagnosis?: TentativeDiagnosisBlock;
     }
   | {
+      type: "HOLD_REFERRAL_BED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      actingUnitId: string;
+      bedNumber: number;
+    }
+  | {
       type: "ACCEPT_REFERRAL";
       role: WardFlowRole;
       now: Instant;

@@ -931,7 +931,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             </Link>
                           ) : (
                             <Link
-                              href={`/ward-flow/board/${targetWardUnitId}`}
+                              href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                               title={`Open ${targetWard?.name ?? "ward"} bed board`}
                               data-testid="ward-referral-hold-bed"

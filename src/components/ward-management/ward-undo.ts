@@ -46,6 +46,8 @@ export type BedPlacementUndo = {
   role: WardFlowRole;
   /** The bed number before the placement; `null` when none was recorded. */
   beforeBed: number | null;
+  beforeMovementBed?: number | null;
+  beforeReferralBed?: number | null;
   afterBed: number;
   /** Absent on older saves. Null preserves a seed's unrecorded historical bed kind on Undo. */
   bedKindChange?: {

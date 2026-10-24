@@ -18,23 +18,25 @@ import { useDowntimePackAccess } from "./downtime-pack-context";
  */
 export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | null }) => void {
   const now = useWardFlowClock();
-  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration, shared } = useWardFlowSelect(
     "units",
     "admissions",
     "bedReleases",
     "leaveBeds",
     "movements",
     "worldGeneration",
+    "shared",
   );
   const patientOf = usePatientOf();
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
+  const canTake = !shared?.enabled || shared.status === "ready";
   useEffect(() => {
-    if (online) noteDowntimeSync(now, worldGeneration);
-  }, [online, now, worldGeneration]);
+    if (online && canTake) noteDowntimeSync(now, worldGeneration);
+  }, [online, canTake, now, worldGeneration]);
   return useCallback(
     (options?: { shiftChangeAt?: Instant | null }): void => {
-      if (!ready) return;
+      if (!ready || !canTake) return;
       const pack = downtimePack({
         units,
         admissions,
@@ -55,6 +57,19 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         owner,
       );
     },
-    [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready, online],
+    [
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      movements,
+      now,
+      patientOf,
+      worldGeneration,
+      owner,
+      ready,
+      online,
+      canTake,
+    ],
   );
 }

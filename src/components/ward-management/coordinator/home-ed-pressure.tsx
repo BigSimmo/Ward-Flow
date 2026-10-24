@@ -39,7 +39,7 @@ type HomeEdPressureProps = {
  * strip is. Pressing a department filters the priority queue to it, the same toggle the old strip
  * carried (`aria-pressed`, `ward-ed-<id>`).
  *
- * The Network screen keeps its own `PressureStrip`; this card is Home's own layout.
+ * These tiles measure physical inpatient-bed waits; Home's hero separately retains open journeys through transit.
  */
 export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
@@ -62,7 +62,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   const rows = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
 
   return (
-    <Card className={styles.edCard} aria-label="Emergency department pressure">
+    <Card className={styles.edCard} aria-label="Emergency department pressure: physically waiting for an inpatient bed">
       <h2 className="sr-only">ED pressure</h2>
       <ul className={styles.edGrid}>
         {rows.map((row) => {
