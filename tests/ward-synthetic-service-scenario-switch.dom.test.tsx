@@ -64,7 +64,7 @@ it("keeps the synthetic disclosure accurate for both naming conventions", () => 
     expect(mark).toHaveTextContent("Synthetic prototype");
     expect(mark).toHaveAttribute(
       "title",
-      expect.stringContaining("Service names depend on the selected demonstration scenario"),
+      expect.stringContaining("service names depend on the selected demonstration scenario"),
     );
     expect(mark.getAttribute("title")).not.toContain("names are real");
   }

@@ -3,11 +3,11 @@
 import { clearanceChecklistWords, referralNeedsWords, type ReferralIntakeDetails } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import styles from "./ward-referral-drawer.module.css";
-import { useWardFlowSelect } from "../ward-flow-provider";
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 
 export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetails }) {
-  const { dayZero } = useWardFlowSelect("dayZero");
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   if (!intake) return null;
   return (
     <details className={styles.refCard}>

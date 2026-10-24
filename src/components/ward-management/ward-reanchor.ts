@@ -214,8 +214,13 @@ function shift(value: unknown, offsetMinutes: number, path: string[] = []): unkn
       offsetMinutes !== 0 &&
       Number.isFinite(Date.parse(entry))
     ) {
-      result[key] = new Date(Date.parse(entry) + offsetMinutes * 60_000).toISOString();
-      continue;
+      // An offset that carries the date outside the representable range leaves the text as written
+      // rather than throwing: the numeric instants beside it simply become large numbers.
+      const moved = new Date(Date.parse(entry) + offsetMinutes * 60_000);
+      if (Number.isFinite(moved.getTime())) {
+        result[key] = moved.toISOString();
+        continue;
+      }
     }
     result[key] =
       INSTANT_FIELDS.has(key) && typeof entry === "number"

@@ -1,7 +1,6 @@
 import { DEMONSTRATION_DAY_LABEL } from "./ward-sites";
-import { formatInstantWithDay } from "./ward-clock";
+import { formatInstantWithDay, PERTH_UTC_OFFSET_MS } from "./ward-clock";
 
-const PERTH_OFFSET_MS = 8 * 60 * 60_000;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** Parse explicit ISO dates without accepting a device-local zone or normalising impossible dates. */
@@ -32,7 +31,7 @@ function explicitIsoTime(raw: unknown): number | undefined {
 export function isSyntheticReferralTimelineBase(value: unknown): value is string {
   const at = explicitIsoTime(value);
   if (at === undefined) return false;
-  const perth = new Date(at + PERTH_OFFSET_MS);
+  const perth = new Date(at + PERTH_UTC_OFFSET_MS);
   return (
     perth.getUTCHours() === 0 &&
     perth.getUTCMinutes() === 0 &&
@@ -57,21 +56,23 @@ export function seededReferralTimelineBase(): string {
 export function formatReferralIntakeTime(
   raw: string | undefined,
   target: { syntheticTimelineBase?: string },
-  dayZero: Date,
+  dayZero: Date | undefined,
   relativeTo?: number,
 ): string {
   const at = explicitIsoTime(raw);
   if (at === undefined) return "Time not recorded";
+  if (target.syntheticTimelineBase !== undefined && !isSyntheticReferralTimelineBase(target.syntheticTimelineBase))
+    return "Time not recorded";
+  // A reader outside the provider has no moved clock: it falls back to the canonical demonstration day.
+  const zero = dayZero instanceof Date ? dayZero : new Date(seededReferralTimelineBase());
+  if (!Number.isFinite(zero.getTime())) return "Time not recorded";
   let displayed = at;
-  if (target.syntheticTimelineBase !== undefined) {
-    if (!isSyntheticReferralTimelineBase(target.syntheticTimelineBase) || !Number.isFinite(dayZero.getTime()))
-      return "Time not recorded";
-    displayed = dayZero.getTime() + (at - Date.parse(target.syntheticTimelineBase));
-  }
+  if (target.syntheticTimelineBase !== undefined)
+    displayed = zero.getTime() + (at - Date.parse(target.syntheticTimelineBase));
   const date = new Date(displayed);
   if (!Number.isFinite(date.getTime())) return "Time not recorded";
   if (relativeTo !== undefined)
-    return `${formatInstantWithDay((displayed - dayZero.getTime()) / 60_000, relativeTo)} AWST`;
+    return `${formatInstantWithDay((displayed - zero.getTime()) / 60_000, relativeTo)} AWST`;
   const dateWords = date.toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",

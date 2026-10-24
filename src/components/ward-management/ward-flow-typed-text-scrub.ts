@@ -136,9 +136,11 @@ function matchesRule(path: readonly string[], rule: PathRule): boolean {
 
 /**
  * Every scenario's seeded world, supplied by the caller (the provider passes its own seeds), so this
- * module imports neither the reducer nor the scenarios.
+ * module imports neither the reducer nor the scenarios. With an offset, the same worlds seeded onto a
+ * clock moved by that many minutes, through the caller's one safe door (`seedWardFlowStateAt`): this
+ * module never shifts an instant itself.
  */
-export type FixtureWorlds = () => readonly WardFlowState[];
+export type FixtureWorlds = (offsetMinutes?: number) => readonly WardFlowState[];
 
 interface FixtureText {
   /** Every seeded string with where it sits: what pass 1 keeps. */
@@ -147,7 +149,7 @@ interface FixtureText {
   strings: ReadonlySet<string>;
 }
 
-let fixtureText: { from: FixtureWorlds; text: FixtureText } | undefined;
+let fixtureText: { from: FixtureWorlds; text: FixtureText; worlds: readonly WardFlowState[] } | undefined;
 
 /** An array entry's place: its record `id` where it has one, so an insertion cannot shift it. */
 function entryPlace(entry: unknown, index: number): string {
@@ -174,11 +176,53 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
     else if (value && typeof value === "object")
       for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
   };
-  for (const world of worlds()) visit(world, []);
+  const seeded = worlds();
+  for (const world of seeded) visit(world, []);
   const text = { places, strings };
-  fixtureText = { from: worlds, text };
+  fixtureText = { from: worlds, text, worlds: seeded };
   return text;
 }
+
+let reanchoredText: { from: FixtureWorlds; scenario: string; offset: number; places: ReadonlySet<string> } | undefined;
+
+/**
+ * The fixture's own text once the session clock has moved it. A re-anchored session (a reset or a
+ * scenario switch after the clock has run) holds the seeded referral targets shifted by the same
+ * whole offset as its other instants, so they no longer equal the offset-zero fixture strings. The
+ * offset is read from a referral the state shares with its scenario's fixture, and only strings the
+ * fixture itself would carry at that offset count: a typed time that is not exactly that figure
+ * stays replaceable. Empty when the session sits on the fixture's own anchor.
+ */
+function reanchoredFixturePlaces(state: WardFlowState, worlds: FixtureWorlds): ReadonlySet<string> {
+  fixtureEntries(worlds);
+  const world = fixtureText?.worlds.find((candidate) => candidate.scenario === state.scenario);
+  if (!world) return NO_PLACES;
+  let offset: number | undefined;
+  for (const referral of state.referrals) {
+    const seeded = world.referrals.find((candidate) => candidate.id === referral.id);
+    if (seeded && Number.isFinite(referral.raisedAt) && Number.isFinite(seeded.raisedAt)) {
+      offset = referral.raisedAt - seeded.raisedAt;
+      break;
+    }
+  }
+  if (offset === undefined || offset === 0) return NO_PLACES;
+  if (reanchoredText?.from === worlds && reanchoredText.scenario === state.scenario && reanchoredText.offset === offset)
+    return reanchoredText.places;
+  const places = new Set<string>();
+  const visit = (value: unknown, place: string[]): void => {
+    if (typeof value === "string") places.add(placed(place, value));
+    else if (Array.isArray(value)) value.forEach((entry, index) => visit(entry, [...place, entryPlace(entry, index)]));
+    else if (value && typeof value === "object")
+      for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
+  };
+  const moved = worlds(offset).find((candidate) => candidate.scenario === state.scenario);
+  if (!moved) return NO_PLACES;
+  visit({ referrals: moved.referrals }, []);
+  reanchoredText = { from: worlds, scenario: state.scenario, offset, places };
+  return places;
+}
+
+const NO_PLACES: ReadonlySet<string> = new Set();
 
 /**
  * Pass 1 alone: every typed field that is not fixture text becomes the placeholder. `loadedWorld`
@@ -187,11 +231,13 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
 export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds, loadedWorld = false): WardFlowState {
   const rules = loadedWorld ? [...HUMAN_ONLY_RULES, ...MIXED_RULES] : HUMAN_ONLY_RULES;
   const fixture = fixtureEntries(worlds).places;
+  const reanchored = reanchoredFixturePlaces(state, worlds);
   // Fixture text where the fixture put it ships in the bundle, and a fixed-list discharge criterion
   // is chosen, not typed.
   const keptAsIs = (value: string, path: readonly string[], place: readonly string[]): boolean =>
     value.trim() === "" ||
     fixture.has(placed(place, value)) ||
+    reanchored.has(placed(place, value)) ||
     (path.at(-1) === "criterion" && isDischargeCriterion(value));
   // `path` matches the field rules (`[]` for any array position); `place` finds the fixture's own text.
   const visit = (value: unknown, path: string[], place: string[]): unknown => {
