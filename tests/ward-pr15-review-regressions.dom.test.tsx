@@ -375,9 +375,12 @@ describe("PR15 discharge and referral provenance", () => {
   });
 
   it("keeps absent referring practitioner and service contact details explicit", () => {
-    const referral = seed.referrals.find((item) =>
+    // The seeded referrals now carry authored contact details, so drop the intake to model a referral
+    // that records none: the card must say so rather than show a stale or invented number.
+    const { intake: _authoredIntake, ...referral } = seed.referrals.find((item) =>
       item.destinations.some((destination) => destination.state === "queued"),
     )!;
+    void _authoredIntake;
     renderFlow(<ReferralBoard />, { referrals: [referral] });
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${referral.id}`));
     // Option A (9 Oct 2026): the dossier is the Patient tab and the facts are a labelled grid

@@ -122,21 +122,17 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
 
   it.each([409, 422, 401])("removes the warning after a definite HTTP %i refusal", async (status) => {
     const heldSave = deferredResponse();
+    const refusal = () =>
+      Response.json({ error: "Synthetic refusal", ...(status === 401 ? {} : { snapshot: snapshot(1) }) }, { status });
+    let writes = 0;
+    // A 401 is asked once more with a fresh token (Audit 4 A4-03); the second answer is refused too.
     const { client, view } = setup(async (_url, init) =>
-      init?.body ? heldSave.promise : Response.json({ snapshot: snapshot(1) }),
+      init?.body ? (++writes === 1 ? heldSave.promise : refusal()) : Response.json({ snapshot: snapshot(1) }),
     );
     await client.refresh();
     const save = client.dispatch(event);
     expect(reloadIsGuarded()).toBe(true);
-    heldSave.resolve(
-      Response.json(
-        {
-          error: "Synthetic refusal",
-          ...(status === 401 ? {} : { snapshot: snapshot(1) }),
-        },
-        { status },
-      ),
-    );
+    heldSave.resolve(refusal());
     await expect(save).resolves.toMatchObject({ status: "refused" });
     expect(view()?.unconfirmedSave).toBe(false);
     expect(reloadIsGuarded()).toBe(false);

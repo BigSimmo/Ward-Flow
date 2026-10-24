@@ -180,6 +180,8 @@ function contactTargets(item: InboxItem, movement: Movement, units: readonly Uni
 
 const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
   coordinator: "Bed coordinator",
+  // D-80: the task rows the bed manager owns are its own.
+  bed_manager: "Bed manager",
   ward: "Ward",
   ed: "Emergency department",
   community: "Community team",

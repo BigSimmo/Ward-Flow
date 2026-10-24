@@ -8,8 +8,11 @@ import { createContext } from "react";
 export type RecordViewSurface = "patient" | "movement" | "referral";
 
 export type SharedSession = {
-  /** Signs out here and on the server, so the sign-in's token is refused at once (review item 8). */
-  signOut: () => void;
+  /**
+   * Signs out here and on the server, so the sign-in's token is refused at once (review item 8).
+   * With a `reason`, only this tab signs out and the sign-in screen says why.
+   */
+  signOut: (reason?: string) => void;
   /** Tells the server this desk opened a patient's record (review item 9). Best effort. */
   logRecordView: (patientId: string, surface: RecordViewSurface) => void;
 };

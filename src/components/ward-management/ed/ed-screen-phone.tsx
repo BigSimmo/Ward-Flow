@@ -31,7 +31,7 @@ export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
           onChange={setPhonePane}
           items={[
             { id: "board" as const, label: "Board", count: patients.length },
-            { id: "needs" as const, label: "Needs you", count: needsYouItems.length },
+            { id: "needs" as const, label: "My list", count: needsYouItems.length },
             { id: "lists" as const, label: "Lists" },
           ]}
         />
