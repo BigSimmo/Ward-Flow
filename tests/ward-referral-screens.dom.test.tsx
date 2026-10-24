@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
@@ -247,11 +247,29 @@ function renderBoard() {
 }
 
 /** Option A (9 Oct 2026): decided referrals live behind the board's History tab. */
-function openHistory() {
+// The tab lives in the address (usability review, 24 Oct 2026), announced a microtask later.
+async function openHistory() {
   fireEvent.click(screen.getByRole("tab", { name: /^History/ }));
+  await act(async () => {});
 }
 
 describe("ReferralBoard", () => {
+  // Usability review, 24 Oct 2026: the view lives in the address, so Back from a record returns to it.
+  it("opens on the view the address names and writes a fixed id when the view changes", async () => {
+    window.history.replaceState(null, "", "/ward-flow/referrals?tab=history");
+    renderBoard();
+    await act(async () => {});
+    expect(screen.getByRole("tab", { name: /^History/ })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Queue/ }));
+    await act(async () => {});
+    expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
+    expect(screen.getByRole("tab", { name: /^Queue/ })).toHaveAttribute("aria-selected", "true");
+
+    await openHistory();
+    expect(new URLSearchParams(window.location.search).get("tab")).toBe("history");
+  });
+
   it("renders the real fixture's queued referrals longest wait first (Decision D-32)", () => {
     renderBoard();
     // Raised before the anchor: RF-015 4,500 min, RF-014 150, RF-RD06 55 (rulings demo overlay),
@@ -391,7 +409,7 @@ describe("ReferralBoard", () => {
     ).not.toContain("arriv");
   });
 
-  it("renders the real fixture's nine decided referrals, most recently decided first", () => {
+  it("renders the real fixture's nine decided referrals, most recently decided first", async () => {
     renderBoard();
     // Real fixture decidedAt offsets from NOW_ANCHOR: RF-002 -10, RF-003 -15, RF-004 -25,
     // RF-006 -5, RF-007 -8, RF-008 -45 (Phase 8 Task 2's added out-of-area seed) — most recent
@@ -414,7 +432,7 @@ describe("ReferralBoard", () => {
     // RF-021 -35. RF-019(-20), RF-004/RF-020(tied -25, RF-004 wins the tie by original array
     // order), RF-018(-30) and RF-021(-35) all sit more recently than RF-008(-45), so they now
     // displace RF-012/RF-013/RF-010/RF-RGHS-01 off the visible cap entirely.
-    openHistory();
+    await openHistory();
     const table = screen.getByTestId("ward-referral-board-decided-table");
     const rows = within(table).getAllByRole("row").slice(1);
     // D-39: the first cell names the person by UMRN; the referral number stays in the test id only.
@@ -456,10 +474,10 @@ describe("ReferralBoard", () => {
     ]);
   });
 
-  it("offers the search on the Queue tab only, since it narrows queue rows", () => {
+  it("offers the search on the Queue tab only, since it narrows queue rows", async () => {
     renderBoard();
     expect(screen.getByRole("searchbox", { name: "Filter referrals" })).toBeInTheDocument();
-    openHistory();
+    await openHistory();
     expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
   });
 
@@ -1022,7 +1040,7 @@ function ManyDecidedHarness() {
 }
 
 describe("ReferralBoard — recently decided caps at ten (owner ruling, 2026-09-02)", () => {
-  it("shows exactly the ten most recently decided referrals, never the first ten in array order", () => {
+  it("shows exactly the ten most recently decided referrals, never the first ten in array order", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ManyDecidedHarness />
@@ -1046,7 +1064,7 @@ describe("ReferralBoard — recently decided caps at ten (owner ruling, 2026-09-
         "assertion below would prove nothing about the cap",
     ).toBeGreaterThan(10);
 
-    openHistory();
+    await openHistory();
     const table = screen.getByTestId("ward-referral-board-decided-table");
     const rows = within(table).getAllByRole("row").slice(1); // drop the header row
     expect(rows).toHaveLength(10);

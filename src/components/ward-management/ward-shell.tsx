@@ -35,6 +35,9 @@ export function WardGround({ children }: { children: ReactNode }) {
   const mounted = useRef(false);
   const historyPath = useRef<string | null>(null);
   const currentPath = useRef(pathname);
+  // Usability review, 24 Oct 2026: the link last opened and the page it was on, so Back can put focus on it
+  // rather than on <body>. Memory only: never stored, logged or put in the address.
+  const opened = useRef<{ path: string; href: string } | null>(null);
 
   useEffect(() => {
     const onHistory = () => {
@@ -67,6 +70,7 @@ export function WardGround({ children }: { children: ReactNode }) {
         frame = window.requestAnimationFrame(() => {
           frame = 0;
           scroller.scrollTop = top;
+          restoreOpenedLinkFocus(scroller, opened.current, pathname);
         });
       });
     }
@@ -97,11 +101,43 @@ export function WardGround({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const ground = groundRef.current;
+    if (!ground) return undefined;
+    const onClick = (event: MouseEvent) => {
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      const href = link?.getAttribute("href");
+      if (href) opened.current = { path: currentPath.current, href };
+    };
+    ground.addEventListener("click", onClick, true);
+    return () => ground.removeEventListener("click", onClick, true);
+  }, []);
+
   return (
     <div ref={groundRef} className={styles.shell} data-ward-ground>
       {children}
     </div>
   );
+}
+
+/**
+ * Usability review, 24 Oct 2026: after Back, focus returns to the link the user opened, unless
+ * something else already holds focus. A link that is no longer on the page is left alone.
+ */
+function restoreOpenedLinkFocus(
+  scroller: HTMLElement,
+  opened: { path: string; href: string } | null,
+  pathname: string,
+) {
+  if (opened?.path !== pathname) return;
+  const active = document.activeElement;
+  if (active !== null && active !== document.body) return;
+  const link = scroller.querySelector<HTMLElement>(`[data-ward-ground] a[href="${CSS.escape(opened.href)}"]`);
+  if (!link?.isConnected) return;
+  link.focus({ preventScroll: true });
+  const box = scroller.getBoundingClientRect();
+  const rect = link.getBoundingClientRect();
+  if (rect.top < box.top || rect.bottom > box.bottom) link.scrollIntoView?.({ block: "nearest" });
 }
 
 /**

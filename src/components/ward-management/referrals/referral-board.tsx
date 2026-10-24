@@ -9,7 +9,7 @@ import { acceptedWardOf } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -96,6 +96,7 @@ import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -226,6 +227,8 @@ function readLinkedReferralId(): string | null {
   return recordIdFromParam(new URLSearchParams(window.location.search).get("referral"));
 }
 
+const REFERRAL_VIEWS = ["queue", "history"] as const;
+
 /**
  * Option A (Josh, 9 October 2026): the statewide referral queue as a dense table with a decision
  * panel beside it. The hero carries the page's own tools: highlight pills, the waiting runway,
@@ -275,7 +278,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           ? queued[0]?.id
           : undefined
       : (chosenReferralId ?? undefined);
-  const [view, setView] = useState<"queue" | "history">("queue");
+  // Usability review, 24 Oct 2026: the view lives in the address, so Back from a record returns to it.
+  const [view, setView] = useAddressTab("tab", REFERRAL_VIEWS, "queue");
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
@@ -290,7 +294,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const handleSelect = useCallback((referralId: string) => {
-    triggerRef.current = document.activeElement as HTMLElement | null;
+    // Usability review, 24 Oct 2026: Safari leaves focus on <body> after a tap, so take the shared
+    // opener (the last pressed control stands in) rather than the active element alone.
+    triggerRef.current = overlayOpener();
     setSelectedReferralId(referralId);
     setInspectorTab("place");
   }, []);
@@ -298,7 +304,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
-    if (triggerRef.current && typeof triggerRef.current.focus === "function") {
+    if (triggerRef.current?.isConnected && typeof triggerRef.current.focus === "function") {
       triggerRef.current.focus();
     }
   }, []);
