@@ -809,7 +809,7 @@ export function useWardReferralDrawerState({
       return 'Find a registered patient, add a new patient, or choose "Not yet identified".';
     if (!patientRecord && !unidentified?.trim()) return "Describe the unidentified person.";
     if (heldBedUnitId)
-      return `This person already holds a bed on ${heldBedWardName}, so they cannot be sent as a new admission.`;
+      return `This person already has a bed, or a pulled bed, on ${heldBedWardName}, so they cannot be sent as a new admission.`;
     if (sendingWard && notOnSendingWard && !notOnWardReason)
       return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
     if (!effectiveCohort) return "Choose the age band.";

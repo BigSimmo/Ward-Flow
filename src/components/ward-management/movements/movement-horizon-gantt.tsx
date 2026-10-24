@@ -391,7 +391,7 @@ export function MovementHorizonGantt({
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true" />
-                Bed hold passed
+                Pull time limit passed
               </li>
             </ul>
           </div>

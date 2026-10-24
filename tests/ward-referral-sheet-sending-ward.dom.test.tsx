@@ -226,11 +226,13 @@ describe("the New referral sheet on a ward page", () => {
     route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OTHER_WARD_UMRN);
     expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
-      `They already hold a bed on ${heldBedWard.name}`,
+      `They already have a bed, or a pulled bed, on ${heldBedWard.name}`,
     );
     expect(screen.queryByLabelText("Why is the ward referring them?")).toBeNull();
     next("Next, referral");
-    expect(screen.getByRole("alert")).toHaveTextContent(`This person already holds a bed on ${heldBedWard.name}`);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      `This person already has a bed, or a pulled bed, on ${heldBedWard.name}`,
+    );
     expect(screen.queryByLabelText(/Patient story/)).not.toBeVisible();
     // A community team takes no ward bed, so the same person is only asked why.
     fireEvent.click(screen.getByTestId("ward-referral-refer-to-community"));

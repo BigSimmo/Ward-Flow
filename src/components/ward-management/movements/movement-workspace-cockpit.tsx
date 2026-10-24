@@ -1337,7 +1337,7 @@ export function MovementWorkspaceCockpit({
                 <p className={styles.actionSay}>
                   {orphanedJob.kind === "pull_released"
                     ? `The bed this job was booked against has been given back to the ward. ${orphanedJob.provider} is still recorded as collecting this patient, and nothing has told them otherwise. A replacement cannot be booked until this job is cancelled.`
-                    : `The recorded stage has been moved back behind the booking. Correcting a stage does not release a bed, so the ward may still be holding one — check with them before cancelling ${orphanedJob.provider}.`}
+                    : `The recorded stage has been moved back behind the booking. Correcting a stage does not release a bed, so the ward may still have a bed pulled — check with them before cancelling ${orphanedJob.provider}.`}
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
