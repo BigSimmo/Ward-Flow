@@ -1,0 +1,8 @@
+# Design brief: six coordinator screens (D-72 item 4)
+
+- **Purpose:** try the layout of owner decision D-72 item 4 as a mock-up before any app change. Six core coordinator screens (Home with Alerts as its drawer, Referrals, Beds, Movements, Discharges, Handover); everything else becomes a secondary screen under More.
+- **Output:** `design/third-edition-mockups/coordinator-six-screens-mockup.html` (one self-contained file, v9 tokens copied from `one-ward-page-mockup.html`). Mock-up only, synthetic data, not built.
+- **Source commit (D-75):** screenshots of the running local app at `2d6f926`, 3 commits behind `main` `64beeda1`, taken 24 October 2026 at 1440 × 900, light theme, choice tour skipped.
+- **What was looked at:** 14 screenshots in `screenshots/`: Home (`/ward-flow`), Referrals, Waiting, Capacity, All wards, stays and discharges board (`/board/rph-adult-secure`, Dabakarn), Movements, Transport desk (`/transport/officer`), Out of area, Discharges, Handover, Bed meeting TV, Alerts, Places (`/hub`). Also the sidebar roster in `src/components/ward-management/ward-nav.ts` and the redirect stubs for Command, Constellation, Network, Queue, Exceptions, Escalation and Delays.
+- **Rules kept:** never-build list (no scores, no suggested ward or bed, no automatic placement, lists in wait order with filter-only views, no computed Mental Health Act times, no automatic hold release, no patient details in emails). Where today's screens offer another order (By blocker, Most ready, Next action, meeting order) the mock-up leaves it out and says so.
+- **Open questions:** listed at the end of the mock-up (Governance, On-call, Seclusion, Places directory, Delays as a view, the queue's "Fit" count, My list default).
