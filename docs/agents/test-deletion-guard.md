@@ -1,5 +1,7 @@
 # Deleting tests, or letting a tool delete them for you
 
+_Updated 2026-10-24 - removed a pointer to a test file that does not exist; Documentation owns._
+
 > **Ward Flow scope note (3 October 2026):** `npm run check:diff-integrity` runs in `BigSimmo/Ward-Flow` (via `scripts/ward-ci-public/changed-checks.mjs` in the `Ward Flow static checks` CI job and local readiness gates). Per Prototype Operating Mode §3 in [`AGENTS.md`](../../AGENTS.md), test-count floor drops are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor), while truncation artefacts and an unreadable before-state always fail. References below to `tests/ui-smoke.spec.ts`, `tests/ui-tools.spec.ts`, `static-pr`, and `tests/playwright-pr-shards.test.ts` are historical PsychSift provenance.
 
 On 2026-08-31 a commit on PR #2481 titled "test(ui): compare answer status surfaces" changed
@@ -36,8 +38,10 @@ merge commit's own resolution. On 2026-08-17 merge commit `ab7c5134f` (PR #2025)
 conflict in `tests/ui-tools.spec.ts` by dropping the 320 px low-confidence `AccessibleTable`
 journey that PR #2006 had added the day before; no non-merge commit ever removed it, so no PR
 diff ever showed the loss, and it went unnoticed until the 2026-09-02 audit (M31). A journey
-that must survive is therefore pinned **by name** in a unit test as well (in PsychSift, `tests/playwright-pr-shards.test.ts`; in Ward Flow, `tests/ward-ci-public.test.ts` and `scripts/ward-flow/journey-durations.json`) — because a spec no matcher names is a
-spec that can vanish without anything failing. Prefer a dedicated spec file over a case
+that must survive should therefore be pinned **by name** in a unit test as well (in PsychSift, `tests/playwright-pr-shards.test.ts`) — because a spec no matcher names is a
+spec that can vanish without anything failing. Ward Flow has no such by-name journey pin today:
+`scripts/ward-flow/journey-durations.json` is a timing baseline (an unmeasured spec just counts as
+the median), not a pin. Adding one is an open gap. Prefer a dedicated spec file over a case
 appended to a large shared spec when a conflict there is likely.
 
 Known limitation, deliberately accepted: a `test()` inside a `for (const viewport of …)` loop

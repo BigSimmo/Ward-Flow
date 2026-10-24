@@ -1,5 +1,9 @@
 # Ward Flow Phase 3 — every decision made on the product owner's behalf
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **73 rulings**, made across three sessions while executing the 12-task plan. Each was a judgement
 the plan did not settle, made rather than waiting, and recorded with what it costs if wrong.
 

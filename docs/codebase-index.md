@@ -1,6 +1,6 @@
 # Ward Flow — current architecture orientation
 
-_Updated 2026-10-19 - shared backend role and scope orientation corrected; Documentation owns._
+_Updated 2026-10-24 - `.github/` and `bench/` rows match the actual workflows (there is no CodSpeed workflow); Documentation owns._
 
 `BigSimmo/Ward-Flow` is a synthetic prototype built with Next 16 and React 19. The approved app
 governs appearance; current engine/source/tests govern behaviour. Start with the
@@ -18,22 +18,22 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 ## Ward repository layout
 
-| Path            | Current role                                                        |
-| --------------- | ------------------------------------------------------------------- |
-| `.design/`      | Design briefs, reviews and screenshot evidence; not runtime modules |
-| `.githooks/`    | Local commit/push hooks                                             |
-| `.github/`      | Ward Flow CI and CodSpeed workflows and repository metadata         |
-| `backend/`      | Separate synthetic shared-workspace backend                         |
-| `bench/`        | CodSpeed/Vitest performance benchmarks (`npm run bench`)            |
-| `data/`         | Reference datasets and generated source snapshots                   |
-| `design/`       | Figma mapping, sync metadata and tokens; not an appearance mandate  |
-| `docs/`         | Maintained guidance and explicitly preserved historical records     |
-| `eslint-rules/` | Repository-specific lint rules                                      |
-| `mockups/`      | Route notes and retirement evidence                                 |
-| `public/`       | Static assets and reference forms                                   |
-| `scripts/`      | Local development, documentation, verification and recovery tooling |
-| `src/`          | Next.js routes, Ward engine/screens and shared support              |
-| `tests/`        | Unit, DOM, browser and tooling contracts                            |
+| Path            | Current role                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `.design/`      | Design briefs, reviews and screenshot evidence; not runtime modules                       |
+| `.githooks/`    | Local commit/push hooks                                                                   |
+| `.github/`      | Ward Flow CI, audit, release-tag, uptime and policy workflows; Dependabot                 |
+| `backend/`      | Separate synthetic shared-workspace backend                                               |
+| `bench/`        | Vitest benchmarks (`npm run bench`); the CodSpeed plugin is inert, as no workflow runs it |
+| `data/`         | Reference datasets and generated source snapshots                                         |
+| `design/`       | Figma mapping, sync metadata and tokens; not an appearance mandate                        |
+| `docs/`         | Maintained guidance and explicitly preserved historical records                           |
+| `eslint-rules/` | Repository-specific lint rules                                                            |
+| `mockups/`      | Route notes and retirement evidence                                                       |
+| `public/`       | Static assets and reference forms                                                         |
+| `scripts/`      | Local development, documentation, verification and recovery tooling                       |
+| `src/`          | Next.js routes, Ward engine/screens and shared support                                    |
+| `tests/`        | Unit, DOM, browser and tooling contracts                                                  |
 
 ## Ward route groups
 

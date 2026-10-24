@@ -146,6 +146,7 @@ for synthetic data only.
 
 ## Post-merge verification and recovery
 
+For day-to-day checks, rollback and restore steps, start with the [operations runbook](ward-flow/OPERATIONS-RUNBOOK.md).
 The [operations readiness record](ward-flow/operations-readiness.md) records the deployed
 revision, browser acceptance status, rollback candidates and isolated-restore procedure. Use it
 for current verification work; the dated setup observations above remain historical evidence.

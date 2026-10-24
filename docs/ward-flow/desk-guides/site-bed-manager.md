@@ -1,5 +1,7 @@
 # Desk guide: Site bed manager
 
+<!-- last-checked: 2026-10-24 -->
+
 You look after bed flow for one hospital site. You see your own site in detail and other sites as
 bed counts only.
 

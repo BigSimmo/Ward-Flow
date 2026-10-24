@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-21 - shared build inputs and deployment watch contract checked against source; Documentation owns._
+_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -19,8 +19,9 @@ These source files do not establish a current hosted connection or deployment.
 ## How the UI connects
 
 - **Local mode (default):** with `NEXT_PUBLIC_WARD_SHARED_ENABLED` unset or `false`, the app runs
-  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). Saving stops
-  for the rest of the session once typed free text is dispatched (D-18).
+  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). After typed
+  text is dispatched it saves a scrubbed copy with typed values removed, and stops saving only if
+  a safe copy cannot be made (D-72, which replaced D-18's stop).
 - **Shared mode (opt in):** with `WARD_SHARED_ENABLED=true` and
   `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, the UI signs in through `use-ward-supabase-shared.ts`
   and talks to this backend's `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`

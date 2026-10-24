@@ -66,7 +66,7 @@ verdict it names that document.
 
 | You want…                             | Look in                                                                                                                                                           |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What an action does and who may do it | `ward-flow-events.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                                                                                |
+| What an action does and who may do it | `ward-flow-events.ts`, `ward-flow-event-roles.ts` (`EVENT_ROLE`), `ward-flow-reducer.ts` — [Engine](engine.md)                                                    |
 | A type (Movement, Referral, Unit…)    | `ward-model.ts`, `ward-patients.ts`, `ward-admissions.ts`                                                                                                         |
 | A figure shown on a screen            | The selector in `ward-derivations.ts` or a domain file — [Data and rules](data-and-rules.md)                                                                      |
 | Seed patients, wards, sites           | `ward-sites.ts`, `ward-movements.ts` (seed fixtures despite the name), `ward-*-seed.ts`                                                                           |

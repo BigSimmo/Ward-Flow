@@ -1,5 +1,9 @@
 # Movements, Network and Discharges — Q004 visual acceptance
 
+> **Historical evidence, 13 September 2026.** A dated visual-acceptance record for the drawing-era build. It is not current acceptance. For current visual checks see [building-ui.md](../../../agents/building-ui.md) and the [active screen checklist](../../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Reviewed 2026-09-13 under the active lean visual policy. **All three routes are recommended for scoped canonical Q004 acceptance.** No numerical score is assigned.
 
 ## Movements

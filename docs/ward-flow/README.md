@@ -1,18 +1,24 @@
 # Ward Flow — start here
 
+<!-- last-checked: 2026-10-24 -->
+
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
 
 _Updated 2026-10-21 - audience navigation and task/history boundaries; Documentation owns._
 
-| Reader or task                      | Next page                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------- |
-| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates        |
-| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                               |
-| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)         |
-| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md) |
-| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                     |
-| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                         |
+_Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
+
+| Reader or task                      | Next page                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates            |
+| Staff testing a desk                | [Desk guides](desk-guides/README.md) and [what's new for staff](STAFF-RELEASE-NOTES.md) |
+| Giving a demonstration              | [Demo script](DEMO-SCRIPT.md)                                                           |
+| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                                   |
+| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)             |
+| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md)     |
+| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                         |
+| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                             |
 
 ## What Ward Flow is
 

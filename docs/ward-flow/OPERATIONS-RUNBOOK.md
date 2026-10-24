@@ -1,5 +1,7 @@
 # Ward Flow operations runbook
 
+<!-- last-checked: 2026-10-24 -->
+
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
 _Updated 2026-10-24 - first plain-English runbook for the hosted prototype; Documentation owns._
