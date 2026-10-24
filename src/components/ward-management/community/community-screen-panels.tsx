@@ -456,7 +456,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 4:30pm</span>
               </div>
               <span className={styles.roomDetail}>RN C. Davis · Long-acting injections, ECG, metabolic monitoring</span>
             </div>
