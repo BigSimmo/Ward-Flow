@@ -641,11 +641,9 @@ function edReferralCopy(referral: Referral): Referral {
     return referral;
   return {
     ...referral,
-    destinations: referral.destinations.map((line) => {
-      if (line.destination.kind !== "psychiatric_ward" || line.declineReason === undefined) return line;
-      const { declineReason: _reason, ...rest } = line;
-      return rest;
-    }),
+    destinations: referral.destinations.map(({ declineReason, ...line }) =>
+      declineReason === undefined || line.destination.kind === "psychiatric_ward" ? line : { ...line, declineReason },
+    ),
   };
 }
 
