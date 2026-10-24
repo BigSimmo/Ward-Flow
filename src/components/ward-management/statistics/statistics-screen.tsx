@@ -10,6 +10,7 @@ import {
   Badge,
   BarList,
   Button,
+  Card,
   CardBody,
   CardFoot,
   ColumnChart,
@@ -18,6 +19,7 @@ import {
   HeroChips,
   Icon,
   StackBar,
+  Spinner,
   StatusGlyph,
   TextInput,
   buttonClass,
@@ -42,6 +44,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   calendarDateOf,
+  formatSheetMoment,
   dayOf,
   formatInstant,
   splitDuration,
@@ -65,13 +68,25 @@ import {
 import { FlushRow, Follow } from "./statistics-layout";
 import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
 
+function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
+  return (
+    <Card id={view} data-testid={`ward-statistics-${view}-loading`}>
+      <CardBody className={styles.viewLoading}>
+        <Spinner />
+        <p role="status">Loading {view} view…</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView), {
   ssr: false,
+  loading: () => <StatisticsViewLoading view="journey" />,
 });
 
 const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
   ssr: false,
-  loading: () => <p role="status">Loading map view…</p>,
+  loading: () => <StatisticsViewLoading view="map" />,
 });
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -214,6 +229,7 @@ export function StatisticsScreen({
   const now = live.now;
   const service = useServiceScope();
   const { countsOnly } = useStatisticsCounts();
+  const isPhone = useIsPhone();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
   const sourceReferrals = referrals ?? liveReferrals;
@@ -326,6 +342,7 @@ export function StatisticsScreen({
   ).length;
 
   const filteredAndSortedWards = useMemo(() => {
+    if (isPhone) return [];
     let list = allPressureWards.slice();
     const q = wardSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
@@ -347,11 +364,12 @@ export function StatisticsScreen({
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
+    if (isPhone) return [];
     let list = emergencyDepts.slice();
     const q = edSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
@@ -375,7 +393,7 @@ export function StatisticsScreen({
       return a.site.localeCompare(b.site);
     });
     return list;
-  }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -402,6 +420,7 @@ export function StatisticsScreen({
 
   // Pull to arrival, banded. The same measured gaps `pullToArrival` averages.
   const arrivalBands = useMemo(() => {
+    if (isPhone) return [];
     const gaps = sourceAdmissions
       .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
       .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
@@ -412,32 +431,39 @@ export function StatisticsScreen({
       label: band.label,
       value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
     }));
-  }, [sourceAdmissions, configuration.pullHoldMinutes]);
+  }, [isPhone, sourceAdmissions, configuration.pullHoldMinutes]);
 
   const finderLists = useMemo(
-    () => ({
-      ward: units
-        .map((u) => ({
-          id: u.id,
-          name: u.name,
-          code: u.siteCode,
-          meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
-          ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
-        }))
-        .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} open ED journeys` })),
-      service: HEALTH_SERVICES.map((svc) => {
-        const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
-        return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
-      }),
-      team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-    }),
-    [units, sourceAdmissions, sourceBedReleases, emergencyDepts],
+    () =>
+      isPhone
+        ? { ward: [], ed: [], service: [], team: [] }
+        : {
+            ward: units
+              .map((u) => ({
+                id: u.id,
+                name: u.name,
+                code: u.siteCode,
+                meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
+                ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+              }))
+              .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
+            ed: emergencyDepts.map((d) => ({
+              id: d.id,
+              name: d.name,
+              code: d.site,
+              meta: `${d.waiting} open ED journeys`,
+            })),
+            service: HEALTH_SERVICES.map((svc) => {
+              const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
+              return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
+            }),
+            team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+          },
+    [isPhone, units, sourceAdmissions, sourceBedReleases, emergencyDepts],
   );
 
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
-  const isPhone = useIsPhone();
 
   if (isPhone) {
     return (
@@ -582,6 +608,7 @@ export function StatisticsScreen({
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
                 <StatisticsCapacityChart
+                  asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                   units={units}
                   bedReleases={sourceBedReleases}
                   admissions={sourceAdmissions}

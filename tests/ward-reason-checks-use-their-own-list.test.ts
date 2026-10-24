@@ -40,6 +40,8 @@ const REDUCERS = [
   "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
   // 15 Oct 2026: the RECORD_* and UNDO_* cases moved out of the main reducer unchanged.
   "src/components/ward-management/ward-flow-record-events.ts",
+  // 23 Oct 2026: RECORD_LEGAL_FORM_EXPIRY's correction reason check lives in the legal-form record cases.
+  "src/components/ward-management/ward-flow-record-legal-events.ts",
   "src/components/ward-management/ward-flow-undo-events.ts",
   // 16 Oct 2026: the referral, placement, transport and bed cases moved out the same way.
   "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -85,6 +87,8 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   DischargeDelayClearReason: "DISCHARGE_DELAY_CLEAR_REASONS",
   // Smart features idea 7 (19 Oct 2026): CLOSE_WARD_TO_ADMISSIONS's fixed closure reasons.
   WardClosureReason: "WARD_CLOSURE_REASON_IDS",
+  // RECORD_LEGAL_FORM_EXPIRY's optional `correction.reason` (23 Oct 2026): fixed paper-correction reasons.
+  LegalFormExpiryCorrectionReason: "PAPER_EXPIRY_CORRECTION_REASONS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */
@@ -115,7 +119,7 @@ function reasonChecks(): Array<{ event: string; list: string }> {
     const lines = stripComments(readFileSync(path, "utf8")).split("\n");
     const cases = reducerCasesIn(path);
     lines.forEach((text, index) => {
-      const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
+      const match = /!([A-Z][A-Z0-9_]*)\.includes\((?:event|correction)\.reason\)/u.exec(text);
       if (!match) return;
       const owning = [...cases].reverse().find((entry) => entry.line < index);
       checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
@@ -260,7 +264,9 @@ describe("reason membership checks", () => {
         readFileSync(path, "utf8")
           .split("\n")
           .filter(
-            (line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line),
+            (line) =>
+              !line.trim().startsWith("*") &&
+              /!([A-Z][A-Z0-9_]*)\.includes\((?:event|correction)\.reason\)/u.test(line),
           ),
       ).length,
     );

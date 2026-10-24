@@ -9,6 +9,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -532,6 +533,13 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       dueAt: Instant;
+      /** Explicit transcription correction; ordinary expiry entries remain later-only extensions. */
+      correction?: {
+        expectedFormCode: string;
+        expectedFormWrittenAt: Instant | null;
+        expectedDueAt: Instant;
+        reason: LegalFormExpiryCorrectionReason;
+      };
     }
   | {
       /**

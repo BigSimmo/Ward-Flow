@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState, useReducer } from "react";
 import { Copy, Search, Star } from "lucide-react";
 
 import { StatusGlyph } from "@/components/wf";
@@ -50,7 +50,10 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
   const [query, setQuery] = useState("");
   const [favourites, setFavourites] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useReducer(
+    (previous: { text: string; revision: number }, text: string) => ({ text, revision: previous.revision + 1 }),
+    { text: "", revision: 0 },
+  );
 
   const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
@@ -117,7 +120,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
         <Search aria-hidden="true" strokeWidth={1.75} />
         <input
           type="search"
-          aria-label="Search contacts"
+          aria-label="Search a team, ward or role"
           placeholder="Search a team, ward or role"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -202,7 +205,7 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
         <p className={styles.note}>Showing 12 of {rows.length}. Search to narrow, or open On-call for the full list.</p>
       ) : null}
       <p className={styles.liveNote} role="status">
-        {notice}
+        <span key={notice.revision}>{notice.text}</span>
       </p>
       <Link className={styles.moreLink} href={onCallHref()} onClick={onNavigate}>
         Open On-call

@@ -447,6 +447,10 @@
 
 /* Phone: Registers sits beside the list switch, so it keeps the touch size. */
 @media (max-width: 48rem) {
+  .showMore {
+    min-height: var(--wf-touch);
+  }
+
   .headLink {
     min-height: var(--wf-touch);
   }

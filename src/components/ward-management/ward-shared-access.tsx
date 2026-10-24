@@ -28,6 +28,8 @@ import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
+import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
+import { WardSharedSaveStatus } from "./ward-shared-save-status";
 
 const UNAVAILABLE_ACCESS_MESSAGE =
   "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
@@ -436,6 +438,17 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     connection.enabled && connection.signedIn && connection.snapshot && packAccessContext === null
       ? "Your current access must be confirmed before a downtime snapshot can be taken. Reconnect and try again."
       : null;
+  const unconfirmedSave =
+    connection.status === "saving" || ("unconfirmedSave" in connection && connection.unconfirmedSave === true);
+  // Stable, so recovery consumers do not re-render on every poll; it still calls the latest retry.
+  const retryLatest = useCallback(() => latest.current.retry(), []);
+  const saveRecovery = useMemo<WardSharedSave | null>(
+    () =>
+      connection.enabled && connection.signedIn
+        ? { unconfirmedSave, status: connection.status, error: connection.error, retry: retryLatest }
+        : null,
+    [connection.enabled, connection.signedIn, connection.status, connection.error, retryLatest, unconfirmedSave],
+  );
   return (
     <DowntimePackBoundary
       identity={packIdentity}
@@ -472,9 +485,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                     </section>
                   )}
                   <div hidden={showLiveInfo} inert={showLiveInfo}>
-                    <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                      {children}
-                    </WardSharedWorkspaceContent>
+                    <WardSharedSaveContext.Provider value={saveRecovery}>
+                      <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
+                        {children}
+                      </WardSharedWorkspaceContent>
+                    </WardSharedSaveContext.Provider>
                   </div>
                 </DataModeContext.Provider>
               </DataModeSlotContext.Provider>
@@ -544,6 +559,7 @@ function WardSharedWorkspaceContent({
   access: WardAccess | null;
   children: ReactNode;
 }) {
+  "use no memo";
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   useEffect(() => {
     if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
@@ -610,28 +626,11 @@ function WardSharedWorkspaceContent({
   const blocked = connection.status !== "ready" && !outage;
   return (
     <>
-      <div role="status" aria-live="polite">
-        {connection.status === "saving"
-          ? "Saving shared changes…"
-          : connection.status === "unavailable"
-            ? "Connection unavailable — changes are disabled."
-            : `${access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"} · shared synthetic workspace`}
-        {connection.error && <span> {connection.error}</span>}
-        {connection.recovery && <span role="alert"> {connection.recovery}</span>}
-        {connection.canSwitch && connection.switchRole && (
-          <button type="button" onClick={connection.switchRole}>
-            Switch role
-          </button>
-        )}
-        {connection.status === "unavailable" && (
-          <button type="button" onClick={connection.retry}>
-            Retry
-          </button>
-        )}
-        <button type="button" onClick={connection.signOut}>
-          Sign out
-        </button>
-      </div>
+      <WardSharedSaveStatus
+        connection={connection}
+        deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
+      />
+      {connection.recovery && <span role="alert"> {connection.recovery}</span>}
       <FocusKeepingInert
         key={JSON.stringify([
           connection.actorId,
