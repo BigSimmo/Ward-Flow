@@ -10,6 +10,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
+import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
 import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
@@ -394,29 +395,7 @@ export function WardHomeTab({
   const shiftChecks = [capacityConfirmedThisShift, morningRollupConfirmed, referralsClear];
   const checksDone = shiftChecks.filter(Boolean).length;
 
-  type LogRow = {
-    key: string;
-    at: number;
-    timeLabel: string;
-    title: string;
-    detail: string;
-    status: string;
-    nested?: Array<{ key: string; detail: string }>;
-  };
-  const logRows: LogRow[] = [];
-  // A later date edit changes the current plan, not what the earlier stage report said.
-  // Only the matching stay date can supply that edit's time and recorded author.
-  const laterReleasePlans = new Map(
-    pendingBedReleases.flatMap((release) => {
-      const stay = admissions.find((admission) => admission.id === release.admissionId);
-      return stay &&
-        stay.expectedDischargeAt === release.expectedAt &&
-        stay.dischargeDateSetAt !== null &&
-        stay.dischargeDateSetAt > release.confirmedAt
-        ? [[release.id, stay] as const]
-        : [];
-    }),
-  );
+  const logRows: WardShiftLogRow[] = [];
   if (capacityConfirmed && unit.allocatable.confirmedAt !== undefined) {
     logRows.push({
       key: "capacity",
@@ -427,45 +406,7 @@ export function WardHomeTab({
       status: "Verified",
     });
   }
-  if (pendingBedReleases.length === 1) {
-    const release = pendingBedReleases[0];
-    logRows.push({
-      key: release.id,
-      at: release.confirmedAt,
-      timeLabel: formatInstantWithDay(release.confirmedAt, now),
-      title: "Bed expected out",
-      detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : `Departure ${formatInstant(release.expectedAt)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
-      status: release.state === "confirmed" ? "Confirmed" : "Expected",
-    });
-  } else if (pendingBedReleases.length > 1) {
-    const ordered = [...pendingBedReleases].sort((left, right) => left.expectedAt - right.expectedAt);
-    const next = ordered[0];
-    logRows.push({
-      key: "releases",
-      at: Math.max(...pendingBedReleases.map((release) => release.confirmedAt)),
-      timeLabel: formatInstantWithDay(Math.max(...pendingBedReleases.map((release) => release.confirmedAt)), now),
-      title: `${pendingBedReleases.length} beds expected out`,
-      detail:
-        laterReleasePlans.size > 0
-          ? "Current departure plan shown separately"
-          : `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
-      status: "Expected",
-      nested: ordered.map((release) => ({
-        key: release.id,
-        detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
-      })),
-    });
-  }
-  for (const [releaseId, stay] of laterReleasePlans) {
-    logRows.push({
-      key: `date-${releaseId}`,
-      at: stay.dischargeDateSetAt!,
-      timeLabel: formatInstantWithDay(stay.dischargeDateSetAt!, now),
-      title: "Expected departure updated",
-      detail: `Departure ${formatInstant(stay.expectedDischargeAt!)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
-      status: "Updated",
-    });
-  }
+  logRows.push(...pendingDepartureLogRows(pendingBedReleases, admissions, now));
   for (const release of dischargedBedReleases) {
     logRows.push({
       key: `clean-${release.id}`,
