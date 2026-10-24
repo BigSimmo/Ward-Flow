@@ -4,7 +4,7 @@
 // (fix list 2.5 and 9.6, 15 Oct 2026). `EdScreen` calls these hooks in the order their state was
 // declared there, so every effect still runs in the same order.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { holdOpenForm } from "@/components/wf/sheet-focus";
+import { hasOpenSheet, holdOpenForm } from "@/components/wf/sheet-focus";
 import type {
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
@@ -354,6 +354,8 @@ export function useEdEscapeKey({
 }) {
   useEffect(() => {
     function onKeyDown(e: globalThis.KeyboardEvent) {
+      // URE-04: Escape that a sheet on top (the person sheet) already took is not this screen's.
+      if (e.defaultPrevented || hasOpenSheet()) return;
       if (e.key === "Escape") {
         if (arrivalPlanOpenFor !== undefined) {
           setArrivalPlanOpenFor(undefined);
@@ -361,7 +363,8 @@ export function useEdEscapeKey({
           closeTransportDialog();
         } else if (selectedPatientId !== null) {
           setSelectedPatientId(null);
-        } else if (fullscreenBoard) {
+        } else if (fullscreenBoard && !document.querySelector("dialog[open]")) {
+          // A native dialog (the presentation editor) closes itself on this Escape; the board stays.
           setFullscreenBoard(false);
         }
       }

@@ -1,6 +1,7 @@
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState } from "react";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { type LeavingDestination } from "@/components/ward-management/ward-admissions";
@@ -321,6 +322,8 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   };
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // USC-04: Escape that closed a sheet on top must not also close the drawer and drop its draft.
+      if (event.defaultPrevented || hasOpenSheet()) return;
       if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
         closeDrawer();
       }
