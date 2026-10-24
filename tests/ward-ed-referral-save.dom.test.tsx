@@ -308,3 +308,37 @@ describe("ED accepted raise announcement", () => {
     expect(push).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("ED referral scope lifetime", () => {
+  it("does not clear the next department's draft after a late accepted answer", async () => {
+    intercepted.select = { worldGeneration: 1, shared: { enabled: true, status: "ready", error: null }, eventLog: [] };
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const h = renderHook(
+      ({ scope }) => {
+        const state = useEdReferralDraft();
+        return { state, ...useEdReferralSave(state, scope) };
+      },
+      { initialProps: { scope: "synthetic-ed-one" } },
+    );
+    act(() => {
+      h.result.current.state.setReferralOpen(true);
+      h.result.current.state.setDraft({ ...DEFAULT_DRAFT, sex: "Female" });
+    });
+    act(() => {
+      h.result.current.saveReferral(
+        () =>
+          new Promise<WardCommandOutcome>((resolve) => {
+            finish = resolve;
+          }),
+        642,
+      );
+    });
+    h.rerender({ scope: "synthetic-ed-two" });
+    act(() => h.result.current.state.setDraft({ ...DEFAULT_DRAFT, sex: "Male" }));
+    await act(async () => finish({ commandId: "synthetic-one", status: "accepted" }));
+    expect(h.result.current.state.referralOpen).toBe(true);
+    expect(h.result.current.state.draft.sex).toBe("Male");
+    expect(h.result.current.accepted).toBe(0);
+    expect(h.result.current.referralFieldsDisabled).toBe(false);
+  });
+});

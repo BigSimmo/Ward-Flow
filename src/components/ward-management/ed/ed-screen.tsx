@@ -143,7 +143,7 @@ export function EdScreen({ edId }: EdScreenProps) {
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
-  const referralSave = useEdReferralSave(referralDraft);
+  const referralSave = useEdReferralSave(referralDraft, edId);
   function recordEdStep(event: EdStepEvent) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {

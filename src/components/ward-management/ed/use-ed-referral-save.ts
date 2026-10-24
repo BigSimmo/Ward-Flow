@@ -17,10 +17,11 @@ type Attempt = {
   local?: boolean;
   shared: boolean;
   before?: ReadonlySet<string>;
+  scope?: string;
 };
 
 /** An accepted command confirms a raise; a newly visible movement alone never does. */
-export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDraft>) {
+export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDraft>, scope?: string) {
   const snapshot = useOptionalWardFlowSelect("worldGeneration", "shared", "eventLog");
   const { draft, raisingFromReferralId, setDraft, setReferralOpen, setRaisingFromReferralId } = draftState;
   const [attempt, setAttempt] = useState<Attempt | null>(null);
@@ -30,6 +31,7 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
   const active = useRef<Attempt | null>(null);
   const latest = useRef({ draft, raisingFromReferralId });
   const world = useRef(snapshot?.worldGeneration);
+  const scopeLifetime = useRef(scope);
   const mounted = useRef(true);
   useEffect(() => {
     latest.current = { draft, raisingFromReferralId };
@@ -37,6 +39,9 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
   useEffect(() => {
     world.current = snapshot?.worldGeneration;
   }, [snapshot?.worldGeneration]);
+  useEffect(() => {
+    scopeLifetime.current = scope;
+  }, [scope]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -46,7 +51,11 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
 
   function finish(started: Attempt, outcome: WardCommandOutcome) {
     if (!mounted.current || active.current !== started) return;
-    if (world.current !== started.world || (outcome.isCurrent && !outcome.isCurrent())) {
+    if (
+      world.current !== started.world ||
+      scopeLifetime.current !== started.scope ||
+      (outcome.isCurrent && !outcome.isCurrent())
+    ) {
       active.current = null;
       setAttempt(null);
       setMessage(undefined);
@@ -78,7 +87,11 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
   useEffect(() => {
     const started = active.current;
     if (!started) return;
-    if (started.world !== snapshot?.worldGeneration || (started.outcome?.isCurrent && !started.outcome.isCurrent())) {
+    if (
+      started.world !== snapshot?.worldGeneration ||
+      started.scope !== scope ||
+      (started.outcome?.isCurrent && !started.outcome.isCurrent())
+    ) {
       active.current = null;
       // The external workspace ended this save's lifetime.
       setAttempt(null);
@@ -107,6 +120,7 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
     // eslint-disable-next-line react-hooks/exhaustive-deps -- finish uses this render's setters; receipt/world changes drive reconciliation.
   }, [
     attempt,
+    scope,
     snapshot?.worldGeneration,
     snapshot?.eventLog,
     snapshot?.shared?.enabled,
@@ -124,6 +138,7 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
       now,
       shared: snapshot?.shared?.enabled === true,
       before,
+      scope,
     };
     active.current = started;
     setAttempt(started);
