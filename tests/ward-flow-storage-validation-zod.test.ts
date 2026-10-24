@@ -1,6 +1,8 @@
 // Equivalence harness for the stored-state fence (fix list 9.7, zod rewrite). The verdicts in
-// `fixtures/ward-flow-storage-validation-verdicts.json` were recorded against the hand-written
-// validator before it was rewritten with zod; the rewrite must reproduce every one of them.
+// `fixtures/ward-flow-storage-validation-verdicts.json` began with the hand-written validator.
+// Complete seed intakes deliberately expand and reorder the swept paths. The 24 Oct 2026
+// refresh compared all 25,068 mutations with the pre-recovery-fix validator (f74094fcf):
+// no accept/refuse verdict changed. Regenerate through the recorder, never by hand.
 // Re-record only for a deliberate, reviewed behaviour change: WARD_STORAGE_VERDICTS_RECORD=1.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
