@@ -1,5 +1,13 @@
 # Ward Flow — roadmap
 
+_Updated 2026-10-23 - qualify the dated AWOL pause against current source defaults; Documentation owns._
+
+> **Current source correction — 23 October 2026:** D-65's [20 October subsequent note](decisions.md#d-65-criteria-led-discharge-on-in-production-typed-patient-specific-criteria-and-the-awol-bed-hold-review-paused-17-october-2026)
+> ends the absent without leave bed hold review warning's pause. The `awol-bed-hold-review`
+> defaults in `src/components/ward-management/ward-feature-flags.ts` are now on in development,
+> demo and production. The 17 October summary below retains the earlier pause as dated history.
+> Source defaults do not establish current hosted configuration or observed deployment.
+
 ## Current programme — 17 October 2026
 
 For current repository status, completed local verification, and active open work, see

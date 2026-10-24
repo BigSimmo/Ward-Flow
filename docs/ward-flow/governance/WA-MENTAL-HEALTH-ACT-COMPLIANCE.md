@@ -1,8 +1,10 @@
 # Ward Flow: WA Mental Health Act forms review pack
 
-**Version:** 1.1, corrected 8 October 2026. **Status:** draft for qualified review;
+**Version:** 1.2, corrected 23 October 2026. **Status:** draft for qualified review;
 not legal approval or a compliance certificate. **Scope:** synthetic form-recording
 and bed-flow demonstration. Signed statutory forms remain authoritative.
+
+_Updated 2026-10-23 - correct Form 3D against the official forms list; Documentation owns._
 
 ## Source and terminology
 
@@ -16,16 +18,22 @@ before any clinical review; a dated source check is not legal advice.
 | ------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | 1A           | Referral for examination by a psychiatrist        | Record what the signed form states.                                                   |
 | 3A / 3B / 3C | Official further-examination/detention form group | Use each official form's complete name and conditions; do not infer equivalence.      |
+| 3D           | Reception and detention for further examination   | Record the signed order; do not infer a period or substitute another form.            |
 | 4A           | Transport order                                   | Record supplied form and transport facts; software does not authorise transport.      |
 | 5A           | Community treatment order                         | **Not an involuntary inpatient treatment order.**                                     |
 | 5B           | Continuation of community treatment order         | Do not represent it as an inpatient order.                                            |
 | 6A / 6B      | Involuntary inpatient treatment order forms       | Inpatient placement and authorised-hospital requirements need qualified legal review. |
 
 The earlier draft incorrectly named Form 5A as an inpatient order and attributed
-an extension to Form 3D. The official register reviewed did not establish a Form
-3D. Historical synthetic records may retain that code; it has **no verified period
-or legal meaning here** and must not be represented as an approved statutory form.
-This correction does not silently convert existing records to another form.
+an extension to Form 3D. The Mental Health Commission's [official list of forms
+(December 2022)](https://www.mhc.wa.gov.au/awcontent/Web/Documents/Mental%20Health%20Act/mental-health-act-2014-list-of-forms_22-68661_dec2022_final-print.pdf)
+names Form 3D **“Order authorising reception and detention in an authorised hospital
+for further examination”**. Form 3D is not an extension form. This dated list
+supports the purpose above, not a current period, authority or compliance claim.
+The Chief Psychiatrist forms register was unavailable during the 23 October 2026
+source check; its current form wording and guidance still need verification.
+This correction does not convert historical records, introduce a period or add a
+recording workflow for Form 3D.
 
 ## Time and placement controls
 

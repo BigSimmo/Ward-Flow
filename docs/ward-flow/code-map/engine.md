@@ -1,5 +1,18 @@
 # Engine: reducer, events, state and persistence
 
+_Updated 2026-10-23 - current saving and sign-in pointers checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+
+## Current persistence boundary — 23 October 2026
+
+D-72 item 1 replaces the blanket submitted-state saving stop described in earlier
+entries below. `ward-flow-provider.tsx` saves a device copy made by
+`ward-flow-typed-text-scrub.ts`, replacing typed values with “Typed text not kept on this
+device”. If no safe, valid copy can be made, saving stops. Imported scenarios use the
+same scrubbed-copy path. D-67 remains a separate, bounded synthetic form-draft exception
+for human review. See [current persistence guidance](../STATUS.md#remaining-work-and-local-remediation).
+The earlier dates, counts and run receipts below remain historical evidence. This
+source comparison establishes no fresh runtime, hosted CI or deployment verdict.
+
 ## Audit repair boundaries — 20 October 2026
 
 `ward-access-state.ts` authorises global configuration, full broadcast audiences, ED origins and
@@ -60,7 +73,8 @@ provider/auth cleanup imports only that small module. `referral-draft-cache.ts` 
 projections through `referral-draft-validation.ts`, while `referral-draft-hooks.ts` owns recovery
 and autosave. The existing `referral-draft-store.ts` entry point retains current caller APIs. The referral draft store remains its form's single autosave owner and omits chart
 bytes from recovery. Provider world adoption, reset and local auth cleanup invalidate outgoing
-writes without removing the general typed-event state privacy lock. Legal form saves clear a
+writes while preserving the exclusion of original typed values from submitted-state saves.
+D-72 later permits a scrubbed submitted-state copy, as described above. Legal form saves clear a
 draft only after command acceptance. Focused coverage: `tests/ward-draft-recovery.test.ts`,
 `tests/ward-draft-recovery.dom.test.tsx` and existing guard, drawer, auth and provider privacy suites.
 
@@ -86,6 +100,11 @@ bed. Focused coverage lives in `tests/ward-cld-turnaround-priority.test.ts` and 
 event-permission, referral-model and reanchor tests.
 
 ## Shared coordinator implementation — 7 October 2026
+
+**Later provider change (D-55, 15 October 2026):** the sign-in description below is
+historical. Current shared sign-in uses Supabase Auth; [DATABASE.md](../DATABASE.md)
+is the maintained provider authority. `ward-shared-access.tsx` selects only that shipped
+provider. This is a source statement, not a hosted sign-in verification.
 
 The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)
 through `ward-shared-client.ts` (polling, pending commands, conflict and retry state). Shared mode
