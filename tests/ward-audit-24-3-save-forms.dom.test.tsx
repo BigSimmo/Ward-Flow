@@ -545,6 +545,23 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     expectSaid("ward-observation-error", mode);
   });
 
+  it("an answer to a save from an earlier opening does not close the reopened control", async () => {
+    let answer: (outcome: WardCommandOutcome) => void = () => {};
+    const onSave = vi.fn(() => new Promise<WardCommandOutcome>((resolve) => (answer = resolve)));
+    render(<WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} onSave={onSave} />);
+    fireEvent.click(screen.getByTestId("ward-observation-change"));
+    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
+    await press(screen.getByTestId("ward-observation-save"));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByTestId("ward-observation-change"));
+    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "within_sight" } });
+    await act(async () => {
+      answer({ commandId: "c-1", status: "accepted" });
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("ward-observation-level")).toHaveValue("within_sight");
+  });
+
   it("sends the version seen on opening, so a colleague's later change is refused, not overwritten", async () => {
     const onSave = vi.fn(() => outcomeFor("accepted"));
     const view = render(

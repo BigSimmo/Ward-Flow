@@ -25,6 +25,9 @@ export function useWardFormSave(scope: string) {
     };
   }, [scopeToken]);
   const inFlight = useRef(false);
+  // Each opening of a form that stays mounted (`forget` on open and Cancel): a late answer to an
+  // earlier opening's save neither closes nor clears the new one.
+  const generation = useRef(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ scope: object; message: string }>();
   // A save that may yet be confirmed by the status bar's Retry (same command id). The form stays
@@ -44,7 +47,9 @@ export function useWardFormSave(scope: string) {
     setError(undefined);
     if (held.current) hold(null);
     const submittedScope = scopeToken;
+    const submittedGeneration = generation.current;
     const answer = (outcome?: WardCommandOutcome | void) => {
+      if (generation.current !== submittedGeneration) return;
       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
         setError(undefined);
         onAccepted();
@@ -88,6 +93,10 @@ export function useWardFormSave(scope: string) {
     pending: pending || holding(heldView),
     error: error?.scope === scopeToken ? error.message : undefined,
     clearError: () => setError(undefined),
+    forget: () => {
+      generation.current += 1;
+      setError(undefined);
+    },
     submit,
   };
 }

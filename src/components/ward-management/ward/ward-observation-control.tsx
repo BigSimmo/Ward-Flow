@@ -120,7 +120,7 @@ export function WardObservationControl({
             setReviewDay(review.day);
             setReviewEdited(false);
             setError(null);
-            recording.clearError();
+            recording.forget();
             setOpenedToken(editingToken);
             setOpen(true);
           }}
@@ -210,7 +210,14 @@ export function WardObservationControl({
             >
               Record level
             </Button>
-            <Button variant="sec" className={styles.pill} onClick={() => setOpen(false)}>
+            <Button
+              variant="sec"
+              className={styles.pill}
+              onClick={() => {
+                recording.forget();
+                setOpen(false);
+              }}
+            >
               Cancel
             </Button>
           </div>
