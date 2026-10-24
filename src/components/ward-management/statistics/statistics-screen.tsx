@@ -10,6 +10,7 @@ import {
   Badge,
   BarList,
   Button,
+  Card,
   CardBody,
   CardFoot,
   ColumnChart,
@@ -18,6 +19,7 @@ import {
   HeroChips,
   Icon,
   StackBar,
+  Spinner,
   StatusGlyph,
   TextInput,
   buttonClass,
@@ -66,13 +68,25 @@ import {
 import { FlushRow, Follow } from "./statistics-layout";
 import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
 
+function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
+  return (
+    <Card id={view} data-testid={`ward-statistics-${view}-loading`}>
+      <CardBody className={styles.viewLoading}>
+        <Spinner />
+        <p role="status">Loading {view} view…</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView), {
   ssr: false,
+  loading: () => <StatisticsViewLoading view="journey" />,
 });
 
 const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
   ssr: false,
-  loading: () => <p role="status">Loading map view…</p>,
+  loading: () => <StatisticsViewLoading view="map" />,
 });
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";

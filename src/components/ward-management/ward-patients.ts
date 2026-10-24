@@ -193,9 +193,6 @@ export function activeCommunityTreatmentOrder(patient: Patient | undefined): Com
   return order && order.endedAt === undefined ? order : undefined;
 }
 
-/** Alias for patient safety governance and cross-service typing */
-export type WardPatient = Patient;
-
 /**
  * The field names, at runtime, so the guard can check the SHAPE rather than the type — a type-only
  * check passes `vitest run` with no `tsc` involved and would let a field through on any run that

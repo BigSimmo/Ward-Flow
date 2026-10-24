@@ -586,3 +586,12 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
 export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean {
   return isFormDue(row, thresholds);
 }
+
+/**
+ * Item 4 (usability, 24 Oct 2026): one line saying why the table is in its order. Longest wait is
+ * one list sorted by wait alone. By blocker keeps the cause order, whose first two groups are the
+ * form times, and sorts each group by wait. Neither order ranks anybody clinically.
+ */
+export function waitingOrderLine(flat: boolean): string {
+  return flat ? "Longest wait first" : "Form times first, then other blockers. Longest wait first in each.";
+}

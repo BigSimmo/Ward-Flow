@@ -10,6 +10,7 @@
  * ward-to-ward example is a Referral, which is where that field lives.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { completeSyntheticReferralIntakes } from "./ward-referral-intake-seed";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   ARRIVAL_LATE_AFTER_MINUTES,
@@ -399,7 +400,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     ],
     movements: [rd01, rd02, rd03, rd05, rd10, rd11, rd12, ...clockMovements],
     admissions: [rd04],
-    referrals: [rd06],
+    referrals: completeSyntheticReferralIntakes([rd06]),
     patients: [patient("PT-RD04", "Neris", "Quellane", "Female"), patient("PT-RD06", "Orla", "Vallowen", "Female")],
     leaveBeds: [leaveOffWard, leaveMedical],
     skipped: SKIPPED,

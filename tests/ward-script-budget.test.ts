@@ -56,6 +56,13 @@ describe("phone script budget", () => {
     expect(scriptSources(html)).toEqual(["/_next/static/chunks/a.js", "/_next/static/chunks/b.js"]);
   });
 
+  it("skips nomodule scripts that modern phones never download", () => {
+    const html =
+      '<script src="/_next/static/chunks/polyfills.js" noModule=""></script>' +
+      '<script nomodule src="/_next/static/chunks/legacy.js"></script><script src="/_next/static/chunks/main.js"></script>';
+    expect(scriptSources(html)).toEqual(["/_next/static/chunks/main.js"]);
+  });
+
   it("reports only the routes over their budget", () => {
     expect(overBudget({ "/a": 500, "/b": 611 }, { "/a": 585, "/b": 610 })).toEqual([
       { route: "/b", kb: 611, limit: 610 },

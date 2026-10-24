@@ -17,6 +17,9 @@ const PHONE_UA =
 export function scriptSources(html) {
   const sources = [];
   for (const match of html.matchAll(/<script\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi)) {
+    // A `nomodule` script runs only in browsers without ES modules (Next's polyfills). Modern phones
+    // never download it, so counting it overstated every route by about 39 KB until 24 October 2026.
+    if (/\snomodule(?:[\s=>]|$)/i.test(match[0])) continue;
     const src = (match[1] ?? match[2] ?? match[3]).replace(/&amp;|&#38;|&#x26;/gi, "&");
     if (!src.startsWith("/_next/static/")) continue;
     const url = new URL(src, "http://local.invalid");

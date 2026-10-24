@@ -31,6 +31,9 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       the [owner-rulings index](OWNER-RULINGS.md) with
       `node scripts/ward-flow/owner-rulings-index.mjs` and its `--check` mode. Never edit the generated
       index by hand or manufacture clinical approval.
+- [ ] **Staff are told about changes they will see.** If the change alters what staff see or do,
+      add a plain-English line to [`STAFF-RELEASE-NOTES.md`](STAFF-RELEASE-NOTES.md). If it changes
+      a step on screen, update the matching [desk guide](desk-guides/README.md) too.
 
 ## Integration is a separate stage
 

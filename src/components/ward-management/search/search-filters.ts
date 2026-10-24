@@ -34,18 +34,22 @@ export const QUICK_CHIPS = [
   { label: "Waiting > 24h", query: "over24" },
 ] as const;
 
-// Site lookup maps
+// Rebuild only when the scenario changes network identity, never on a clock tick.
+let indexedSites: readonly Site[] | undefined;
 const siteByCode = new Map<string, Site>();
 const siteByEdId = new Map<string, Site>();
 const siteByUnitId = new Map<string, Site>();
 
-for (const site of wardSites) {
-  siteByCode.set(site.code, site);
-  if (site.emergencyDepartment) {
-    siteByEdId.set(site.emergencyDepartment.id, site);
-  }
-  for (const unit of site.units) {
-    siteByUnitId.set(unit.id, site);
+function indexActiveSites(): void {
+  if (indexedSites === wardSites) return;
+  indexedSites = wardSites;
+  siteByCode.clear();
+  siteByEdId.clear();
+  siteByUnitId.clear();
+  for (const site of wardSites) {
+    siteByCode.set(site.code, site);
+    if (site.emergencyDepartment) siteByEdId.set(site.emergencyDepartment.id, site);
+    for (const unit of site.units) siteByUnitId.set(unit.id, site);
   }
 }
 
@@ -54,6 +58,7 @@ export function waitedHours(movement: Movement, now: number): number {
 }
 
 export function matchesService(result: PatientSearchResult, service: string): boolean {
+  indexActiveSites();
   if (service === "all") return true;
 
   if (result.kind === "movement") {
@@ -94,6 +99,7 @@ export function matchesSetting(
   setting: string,
   admissions: readonly Admission[] = [],
 ): boolean {
+  indexActiveSites();
   if (setting === "all") return true;
 
   if (result.kind === "movement") {

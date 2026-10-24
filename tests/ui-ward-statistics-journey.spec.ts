@@ -14,12 +14,13 @@ import { expect, test } from "playwright/test";
  *
  * ⚠️ **THIS FILE RUNS IN NEITHER DEFAULT LOOP, AND ITS NAME HAD TO BE ADDED TO TWO PATTERNS.**
  * `verify:ui` selects the `chromium` project (`productionSpecPattern`, which names no ward spec) and
- * then `--grep-invert`s `@mockup` — so it excludes this file twice over. It runs only under:
+ * then `--grep-invert`s `@mockup` — so it excludes this file twice over. It runs under:
  *
  *     node scripts/run-playwright.mjs --project=chromium-mockups tests/ui-ward-statistics-journey.spec.ts
  *
- * and in CI only when `vars.WARD_JOURNEYS_BLOCKING` is set, which is unset by default. **A spec
- * added here passes forever by never running unless somebody runs it on purpose.**
+ * and in CI by the blocking browser journeys job (`npm run test:e2e:ward-journeys`, which selects
+ * `chromium-mockups`). Audit 24-2 (24 Oct 2026) replaced an older note about a
+ * `WARD_JOURNEYS_BLOCKING` setting that no workflow reads any more.
  *
  * ✅ **SO HERE IS THIS FILE ACTUALLY RUNNING, 2026-09-07, rather than an assurance that it would:**
  *

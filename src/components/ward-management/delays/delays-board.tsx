@@ -57,6 +57,7 @@ import {
   ownerTiles,
   runwayBins,
   wardSummary,
+  waitingOrderLine,
   waitTone,
   type BoardFilters,
   type BoardRow,
@@ -1076,6 +1077,9 @@ export function DelaysBoard({
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
+                <span className={styles.meta} data-testid="delays-order-note">
+                  {waitingOrderLine(flat)}
+                </span>
                 <span className={styles.wlegend} aria-hidden="true">
                   <span>
                     <i className={styles.lgAct} />

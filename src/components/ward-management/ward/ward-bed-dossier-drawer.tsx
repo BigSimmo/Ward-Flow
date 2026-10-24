@@ -21,6 +21,11 @@ import { deriveAfternoonDischarges } from "@/components/ward-management/ward-der
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import {
+  openJourneyFromStay,
+  SentJourneyChanges,
+  useStayJourneyIsMine,
+} from "@/components/ward-management/movements/sent-journey-changes";
 import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
 import {
   criteriaLedDepartureNote,
@@ -180,10 +185,11 @@ export function WardBedDossierDrawer({
   criteriaEligibility,
   onSetCriteria,
 }: WardBedDossierDrawerProps) {
-  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlowSelect(
+  const { admissions, bedReleases, resolvePatientIdentity, movements } = useWardFlowSelect(
     "admissions",
     "bedReleases",
     "resolvePatientIdentity",
+    "movements",
   );
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
@@ -215,6 +221,11 @@ export function WardBedDossierDrawer({
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
+  // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
+  const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;
+  const sentJourneyControls = useStayJourneyIsMine(sentJourney) ? (
+    <SentJourneyChanges key={sentJourney!.id} movement={sentJourney!} patientWho={occupantAlias} />
+  ) : null;
   const tone = bedTone(bedItem, isReady);
 
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
@@ -500,6 +511,7 @@ export function WardBedDossierDrawer({
           planRows={barrierRow}
           planNote={prepNote}
           planCriteria={criteriaCard}
+          sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
         />
@@ -771,6 +783,11 @@ export function WardBedDossierDrawer({
                     ) : null}
                   </Section>
                   {criteriaCard}
+                  {sentJourneyControls ? (
+                    <Section title="Journey this ward sent">
+                      <div className={styles.cardInner}>{sentJourneyControls}</div>
+                    </Section>
+                  ) : null}
                   {isOccupied && bedItem?.admissionId ? (
                     <Section title="Going to">
                       <div className={styles.cardInner}>
@@ -1036,6 +1053,8 @@ interface PhoneBedSheetProps {
   /** Top 25: a short note under Plan to leave (flagged). */
   planNote?: ReactNode;
   planCriteria?: ReactNode;
+  /** D-80: the urgency and legal status controls for the journey this ward sent. */
+  sentJourney?: ReactNode;
   /** D-64: the criteria led discharge note beside "Record that they have left". Warns, never blocks. */
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
@@ -1086,6 +1105,7 @@ function PhoneBedSheet({
   planRows,
   planNote,
   planCriteria,
+  sentJourney,
   leavingCriteriaNote,
   readyNote,
 }: PhoneBedSheetProps) {
@@ -1263,6 +1283,12 @@ function PhoneBedSheet({
                 </div>
               ) : null}
               {planCriteria}
+              {sentJourney ? (
+                <>
+                  <h3 className={styles.phoneSec}>Journey this ward sent</h3>
+                  {sentJourney}
+                </>
+              ) : null}
               <h3 className={styles.phoneSec}>Timeline</h3>
               {timeline.length > 0 ? (
                 <ul className={styles.timeline}>

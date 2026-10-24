@@ -1,11 +1,38 @@
 # Dependency security follow-up
 
-Current advisory review: 21 October 2026, from main
-`67ace3940b17a422a574dfab5d28a9def4bf0ad7` and the npm registry. This is the canonical record for
-the remaining advisory. The dated installation evidence below is retained separately. This record
-covers dependency maintenance for synthetic local development; it does not approve clinical use.
+Current advisory review: 24 October 2026 (AWST), from the public GitHub advisory record. This is
+the canonical status record for SEC-003, also R43 and QF-10. The dated npm, mitigation and
+installation evidence below is historical. This record covers dependency maintenance for synthetic
+local development; it does not approve clinical use.
 
-## Open upstream advisory: braces
+<a id="open-upstream-advisory-braces"></a>
+
+## Closed by upstream withdrawal: braces
+
+- **Tracking:** SEC-003, R43 and QF-10 are aliases of
+  [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), one finding.
+- **Current status:** withdrawn by upstream and closed on that basis. GitHub records
+  `withdrawn_at: 2026-10-23T12:53:02Z` and `updated_at: 2026-10-23T12:53:05Z`. The advisory's
+  withdrawal explanation says the reported issue is not practically exploitable.
+- **Closure basis:** upstream withdrawal, not a patched release or dependency upgrade. The record
+  retains `first_patched_version: null` and the historical vulnerable range `<= 3.0.3`; those
+  retained fields do not override the withdrawal status. No package or lockfile change is required
+  to close this advisory.
+- **Follow-up:** cancel the conditional 5 November 2026 review for this withdrawn advisory.
+  Routine dependency audits still apply, including review of any new advisory or relevant tooling
+  configuration change. The literal-pattern mitigation recorded below remains useful tooling
+  guidance; it is no longer an open exception awaiting a patch for this advisory.
+- **Evidence limits:** this review checks the advisory's status. It does not claim a fresh npm
+  audit, package-registry query, installation, test run or hosted result. Earlier audit counts
+  below remain dated evidence, not a statement of current audit output.
+
+## Historical upstream advisory review — 21 October 2026
+
+The following open/upstream-blocked assessment and its follow-up dates describe the evidence
+available on 21 October, before the withdrawal above. They are retained as history and are
+superseded by the current closure status and cancellation of the 5 November review.
+
+Review source: main `67ace3940b17a422a574dfab5d28a9def4bf0ad7` and the npm registry.
 
 - **Tracking:** SEC-003, also R43 and QF-10;
   [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). These are aliases of

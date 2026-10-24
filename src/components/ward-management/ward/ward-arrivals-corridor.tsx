@@ -43,6 +43,8 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
+import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
+import { wardCopyReadmission } from "@/components/ward-management/ward-readmission-copy";
 
 export { pullBlockedReason };
 
@@ -161,6 +163,7 @@ export function WardArrivalsCorridor({
             const transportMode = movement.arrivalDetails?.mode;
             const notice = restrictionNotice(movement, unit);
             const eligibilityIssue = eligibilityWarning(movement, unit, now);
+            const readmission = wardCopyReadmission(movement);
             const canPull = movement.stage === "accepted_awaiting_bed";
             const blocked = canPull ? pullBlockedReason(movement, unit, patientInfo.displayName) : undefined;
             const canRelease = movement.stage === "pulled" && movement.transport === undefined;
@@ -242,6 +245,14 @@ export function WardArrivalsCorridor({
                     <span className={styles.statusTag} data-type="mode">
                       {transportMode ? ARRIVAL_MODE_LABELS[transportMode] : "Transit Stream"}
                     </span>
+                    {/* D-80: the ward's copy carries the flag once it has accepted the person. */}
+                    {readmission ? (
+                      <ReadmissionFlag
+                        flag={readmission}
+                        wardCopy
+                        testId={`ward-accepted-readmission-${movement.id}`}
+                      />
+                    ) : null}
                   </div>
                   {notice ? (
                     <span
