@@ -40,6 +40,19 @@ export function decide(pr, run, jobs, since) {
   return { action: "rerun", jobId: build.id };
 }
 
+/**
+ * Every open pull request into main, across all pages (GitHub returns at most 100 per page).
+ * `api(path)` resolves to the parsed JSON for a repository-relative path.
+ */
+export async function listOpenPullRequests(api) {
+  const prs = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await api(`/pulls?state=open&base=main&per_page=100&page=${page}`);
+    prs.push(...batch);
+    if (batch.length < 100) return prs;
+  }
+}
+
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPOSITORY;
@@ -68,7 +81,7 @@ async function main() {
   const since = only ? Date.parse((await api("/commits/main")).commit.committer.date) : Date.now();
   const prs = only
     ? [await api(`/pulls/${only}`)].filter((pr) => pr.state === "open" && pr.base.ref === "main")
-    : (await api("/pulls?state=open&base=main&per_page=100")).filter((pr) => pr.base.repo.full_name === repo);
+    : await listOpenPullRequests(api);
   let pending = prs;
   let failures = 0;
   // Runs still building when main moved cannot have a job re-run until they finish; wait up to 10 min.
