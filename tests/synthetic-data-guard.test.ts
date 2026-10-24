@@ -115,6 +115,21 @@ describe("synthetic-data-guard", () => {
     }
   });
 
+  it("detects landlines outside WA and Medicare numbers with the card position digit (A4-1)", () => {
+    for (const note of [
+      "Sister on 02 9876 5432",
+      "Call (03) 9123 4567",
+      "Office 07 3123 4567",
+      "Clinic +61 2 9876 5432",
+      "Clinic +61 (3) 9123 4567",
+      "Medicare 29501234561",
+      "Medicare 2950 12345 6 1",
+    ])
+      expect(checkSyntheticPayload({ note }).safe, note).toBe(false);
+    for (const phone of ["02 5550 0142", "(03) 7010 1234", "+61 7 5550 0100"])
+      expect(checkSyntheticPayload({ referrer: { phone } }).safe, phone).toBe(true);
+  });
+
   it("handles circular references gracefully without crashing", () => {
     const circularObj: Record<string, unknown> = { name: "Safe Patient" };
     circularObj.self = circularObj;

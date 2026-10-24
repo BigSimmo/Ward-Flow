@@ -385,3 +385,50 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
+
+## §7.85 — Open-item sweep against `main` (24 October 2026)
+
+Every item still listed as open in §7.78 and §7.79 was re-checked against source and tests on
+`main` at `64beeda1` (PR #671), not against earlier "Resolved" labels. Claude thread "Clear the
+task ledger", branch `claude/project-thread-s5g5ad`. Local checks only; no hosted CI or deployment
+claim. §7.83 (PR #675) and §7.84 (PR #677) are separate open work and are not repeated here.
+
+**Done already (evidence in source or tests):** items 4–8; L1-01, L1-02, L1-04, L1-05, L1-06,
+L1-08, L1-09; L2-01 to L2-04, L2-06, L2-07, L2-09, L2-10; L3-01 to L3-05 (L3-02 and L3-03 have
+no dedicated timestamp/revision test); L4-02 to L4-06, L4-11, L4-12; L6-01, L6-05 to L6-09;
+M-DEAD (both files are gone).
+
+**Stale or no longer true:** L1-07 (the 36px sibling button is gone; New referral is one
+button); L4-09 (all 28 statistics CSS modules are imported); L4-10 (no `ward-flow-v6-tokens.css`
+exists); L4-13 (no `WardFlowClockProvider` exists); L6-02 (`MOCKUP_IGNORES` no longer matches
+`src/app/ward-flow/**`); L6-03 and L6-04 rest on old line counts (the reducer is 2,407 lines;
+only `ward-movements.ts`, 3,275 lines, is still over 3,000).
+
+**Fixed on this branch:**
+
+- **L2-08 / A4-1:** the synthetic-data guard now refuses landlines in every Australian area code
+  and Medicare numbers with the card position digit, matching `privacy.ts`; fictitious 5550/7010
+  ranges still pass in every area code. Test: `tests/synthetic-data-guard.test.ts`.
+- **Item 9 / L1-11 / L4-07:** `code-map/shell-and-shared.md` now lists every route (adds
+  `/bed-meeting`, `/bed-meeting/agenda`, `/waiting`, `/network`, `/seclusion`, the root redirect;
+  `/delays` is a redirect), with the count corrected to 56.
+- **L1-13 leftovers:** comments in `ward-nav.ts` and `ward-role-switcher.tsx` no longer describe
+  the retired header as live. `tests/ui-ward-chrome-header.spec.ts` is kept: it tests the current
+  `WardBar` under its old name.
+
+**Carried by other open PRs:** L2-05 / L3-07 null legal expiry and L1-03 `ClinicalRail` comments
+(PR #677, §7.84); L1-10 `STATUS.md` header (PR #681).
+
+**Still open, not started here:**
+
+- **L3-06 shared close helper:** about nine movement-closure sites build their closure by hand;
+  the diversion bed release in `ward-flow-placement-events.ts` does not clear referral fields the
+  way `ward-flow-record-events.ts` does. Needs a reducer owner; that file is claimed today by the
+  Audit 24-7 thread.
+- **L1-12 / M-TOKENS:** five local `.btnPrimary` rules remain (§7.79 wrongly says Resolved). They
+  already read colour tokens, so this is tidy-up only, part of the deferred buttons refactor
+  (DA-18), which waits for Josh to name it.
+- **L6-03 / L6-04 large-file splits:** deferred refactor F-17, waits for Josh to name it.
+
+**Need Josh:** item 3 / L4-01 physical iPhone Safari check; item 10 / L4-08 hosted two-person
+save, reload and conflict test (test accounts only, per his 24 October approval).
