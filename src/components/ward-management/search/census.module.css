@@ -105,7 +105,7 @@
 }
 
 .searchForm input::placeholder {
-  color: color-mix(in srgb, var(--wf-hero-2) 55%, transparent);
+  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
   font-weight: 400;
 }
 
