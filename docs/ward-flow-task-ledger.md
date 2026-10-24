@@ -394,8 +394,9 @@ Candidate: `codex/ward-review-pr-20261024`, based on current main
 `b0d0cf722d2430aebeda50a264bb31e749bce626`. Original fixes remain in `8ca15c46f`;
 the original checkout and unfinished merge are retained. Josh approved the exact A–C
 scope and opening a PR. The clean current-main candidate carries only the review changes,
-avoiding unrelated incoming-main ownership checks. Status: local validation in progress.
-No PR is open yet.
+avoiding unrelated incoming-main ownership checks. Source and regression repairs are
+committed in `d4135fdaa` and `5b29fa518`. Status: focused checks pass; full checks wait
+for the exact owned stopped-lease recovery approval described below. No PR is open yet.
 
 Three main-based author ports preserve current record storage, report owners, command
 completion, bed-kind revision guards, physical ED measures and current routes. Independent
@@ -405,19 +406,37 @@ retains all open ED-origin journeys through transit and recorded outcomes, with 
 presence separate and complementary suppression on screen and CSV. Bed-release labels
 acknowledge linked identifiers. Recovery stores command identity only and never replays.
 
-Fresh local evidence: backend TypeScript passes; offline backend has 215 passes and
-17 explicit database skips. The bed/Undo regression batch has 27 passes in two files;
-outage/scheduling/discharge/population batch has 57 passes in five files; Statistics
-screen/export/suppression batch has 54 passes in six files. These overlapping focused
-batches are not a full-suite verdict. Current dependencies match the exact updated lock.
-The earlier whole-project TypeScript, docs and browser results are historical old-base
-proof, not updated-main acceptance. Full current gates and production browser/device
-acceptance remain pending. Internal HealthPoint policy, service-owner endorsement and
-actual SHOC/Beds Live/PaTCH interface ownership remain external acceptance boundaries.
+Fresh current-candidate evidence at `d4135fdaa`: exact-lock root/backend installation,
+installed-tree parity, full lint, full frontend/backend TypeScript, documentation maintenance
+and offline backend tests (215 passes, 17 explicit database skips) pass. Three recovery,
+confirmation and community suites pass 54 tests. The local app starts and its project
+identity was verified; its owned preview server was stopped. Chromium and WebKit are
+installed. These source results remain applicable to the unchanged application code.
+
+The full unit run was stopped after six completed 100-file batches. Four UI files expected
+old labels and the engine-safety contract found the new hold action absent from its random
+event generator. Corrected six UI test files and the shared generator without weakening
+the invariant/coverage assertions. The corrected seven-file batch passes 52 tests; the
+generator's other two test callers pass seven tests. Both commits pass their staged lint
+and TypeScript checks. Change-integrity passes (25 test files, 243 to 287 cases). This is
+focused evidence; the incomplete full run is not a full-suite verdict. The shared fixture
+change requires a fresh full run, followed by production build and browser checks.
+
+A separate role-privacy owner reports a real local PostgreSQL/HTTP reproduction of old
+receipt-denial metadata after the same account narrows its role. That repair is separate
+and remains pending; this work does not claim to clear every privacy path. Internal
+HealthPoint policy, service-owner endorsement and actual SHOC/Beds Live/PaTCH interface
+ownership remain external acceptance boundaries, alongside physical-device and full
+screen-reader acceptance.
 
 Canonical private checkpoint and exact evidence:
 `C:/Users/joshs/Documents/Codex/Reviews/Ward-Flow-20261023/RESOLUTION.md` and its labelled
-manifests/logs. The abandoned old lease has disappeared; no peer lock was removed.
-Next: complete selected local gates and production browser checks on the current-main
-candidate, then publish one PR against main. No main merge or deployment is authorised.
-Notion is unsynced. Last verified: 24 October 2026 against these fresh named artifacts.
+manifests/logs. Stopping the owned full-run process tree left lease
+`3acac7e9-4a64-4def-9cf6-56c5e8bb559f` with an incomplete child receipt. Its holder,
+guardian and child were observed absent. The local protection hook blocked preserving
+that exact lease outside active admission and requires explicit approval; that question
+is pending. No peer process or lease was changed and no completion record was fabricated.
+Next: receive that approval, re-verify the owned stopped lease, preserve it, then complete
+the fresh full gate and production browser checks and publish one PR against main.
+No main merge or deployment is authorised. Notion is unsynced. Last verified:
+24 October 2026 against these fresh named artifacts.
