@@ -176,6 +176,8 @@ interface WardHomeTabProps {
   lastActionRejection: Rejection | null | undefined;
   overrideReasonForm: (movementId: string) => React.ReactNode;
   onAcceptInPrinciple?: (movementId: string, unitId: string) => void;
+  /** Why this desk may not answer the ward's referrals at all, such as the site bed manager (D-80). */
+  answerBlockedReason?: string;
   liveFormAlerts: Array<{
     key: string;
     title: string;
@@ -272,6 +274,7 @@ export function WardHomeTab({
   lastActionRejection,
   overrideReasonForm,
   onAcceptInPrinciple,
+  answerBlockedReason,
   liveFormAlerts,
   morningRollupConfirmed = false,
   morningRollupTimeLabel = "09:30",
@@ -1293,7 +1296,7 @@ export function WardHomeTab({
               ) : (
                 <ul className={styles.awaitingList}>
                   {visibleIncoming.map((movement) => {
-                    const blocked = referralAnswerBlocked(movement, unit);
+                    const blocked = answerBlockedReason ?? referralAnswerBlocked(movement, unit);
                     const notice = restrictionNotice(movement, unit);
                     const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
                     const wardLine = wardStateLine(fit, now, unit);
@@ -2076,7 +2079,7 @@ export function WardHomeTab({
             identity={resolvePatientIdentity(detailMovement)}
             onClose={() => setReferralDetailFor(null)}
             onUpdateBeds={onOpenConfirmNumbers}
-            blocked={referralAnswerBlocked(detailMovement, unit)}
+            blocked={answerBlockedReason ?? referralAnswerBlocked(detailMovement, unit)}
             onDecline={() => {
               setReferralDetailFor(null);
               if (declineOpenFor !== detailMovement.id) toggleDecline(detailMovement.id);

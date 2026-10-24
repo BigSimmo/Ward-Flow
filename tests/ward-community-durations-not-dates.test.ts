@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
  * exact-count stamps in `DELIBERATE_DATE_STAMPS` below): it renders
  * DURATIONS — "3 days", "day 4 of this demonstration" — and never a calendar date. Verified here:
  * `ward-clock.ts` exports exactly two calendar-date-producing functions, `calendarDateOf` and
- * `formatSheetMoment`, and `handover-page.tsx` genuinely calls `formatSheetMoment` to print one
+ * `formatSheetMoment`, and `handover-print-sheet.tsx` genuinely calls `formatSheetMoment` to print one
  * (this file's positive control). No file under `community/` references either function, or any
  * of the raw `Date` APIs that could print one directly.
  *
@@ -46,6 +46,9 @@ const DELIBERATE_DATE_STAMPS: Readonly<Record<string, number>> = {
   // stamped from the device clock with `new Date().toLocaleString`, because a directory is
   // reference data rather than a held ward snapshot.
   [`${COMMUNITY_DIR}/community-index.tsx`]: 2,
+  // Catchment MDT summary print (Josh approved the saved-output stamps, PR #632): the "As at"
+  // line uses formatSheetMoment, imported once and called once.
+  [`${COMMUNITY_DIR}/community-screen-modals.tsx`]: 2,
 };
 
 /** Calendar-date-producing identifiers: the two named exports from `ward-clock.ts`, plus the
@@ -127,10 +130,10 @@ describe("the community route prints durations, never calendar dates", () => {
 
   describe("controls — a guard nobody has watched fail is not known to be a guard", () => {
     it("reports MORE THAN ZERO against a file that genuinely prints a calendar date (positive control)", () => {
-      // handover-page.tsx imports and calls formatSheetMoment to print a real calendar date on
-      // the printed handover sheet — the strongest control available, because it proves the
+      // handover-print-sheet.tsx imports and calls formatSheetMoment to print a real calendar date
+      // on the printed handover sheet — the strongest control available, because it proves the
       // detector distinguishes the community route from a file that really does the thing.
-      const path = "src/components/ward-management/handover/handover-page.tsx";
+      const path = "src/components/ward-management/handover/handover-print-sheet.tsx";
 
       expect(dateConstructCount(readFileSync(path, "utf8"), path)).toBeGreaterThan(0);
     });

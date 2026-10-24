@@ -118,8 +118,8 @@
 
 .paper {
   box-sizing: border-box;
-  width: 1123px;
-  height: 794px;
+  width: 297mm;
+  height: 210mm;
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);
@@ -135,13 +135,13 @@
 }
 
 .port {
-  width: 794px;
-  height: 1123px;
+  width: 210mm;
+  height: 297mm;
 }
 
 .ph {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--wf-s-4);
   padding-bottom: var(--wf-s-2);
   border-bottom: 1.5px solid var(--wf-ink-1);
@@ -159,18 +159,18 @@
 .meta {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .stamp {
   max-width: 60%;
   margin-left: auto;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   text-align: right;
   font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .stamp span {
@@ -187,6 +187,7 @@
 
 .sum {
   display: flex;
+  flex-wrap: wrap;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
   overflow: hidden;
@@ -199,13 +200,12 @@
 }
 
 .sum div {
-  flex: 1;
+  flex: 1 0 100px;
   min-width: 0;
   padding: var(--wf-s-1) 10px;
   border-left: 1px solid var(--wf-line-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .sum div:first-child {
@@ -215,6 +215,10 @@
 .sum b {
   font: 700 var(--wf-fs-14) var(--wf-mono);
   margin-right: 6px;
+}
+
+.paper > * {
+  flex-shrink: 0;
 }
 
 .paper table {
@@ -228,19 +232,17 @@
   text-align: left;
   padding: 3px 6px;
   border-bottom: 1.5px solid var(--wf-ink-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .paper td {
-  height: 22px;
+  height: auto;
   padding: 3px 6px;
   border-bottom: 1px solid var(--wf-line);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
 }
 
 .paper h3 {
@@ -294,9 +296,8 @@
   all: unset;
   display: block;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
   border-radius: var(--wf-r-xs);
 }
@@ -326,12 +327,13 @@
 .pf {
   margin-top: auto;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--wf-s-3);
   padding-top: 6px;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   border-top: 1px solid var(--wf-line-2);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .spacer {
@@ -410,15 +412,10 @@
   }
 
   .paper {
-    height: 792px;
     border-radius: 0;
     box-shadow: none;
     break-after: page;
     page-break-after: always;
-  }
-
-  .port {
-    height: 1120px;
   }
 
   .frame:last-child .paper {

@@ -1,4 +1,5 @@
 import { finiteInstant, type AuditDecision } from "./ward-audit";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -76,6 +77,10 @@ export function reduceTransportEvent(
     case "HANDOVER_READY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may ready its handover`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot ready a handover for a closed movement (${movement.closure.reason})`);
       }
@@ -649,9 +654,10 @@ export function reduceTransportEvent(
       }
       if (event.role === "ward" && event.actingUnitId !== undefined) {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        // The stay a journey leaves names its sender first, as in the access check (review on PR #617).
         const sendingWard =
-          referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
           (movement as { originUnitId?: string }).originUnitId;
         if (sendingWard) {
           if (event.actingUnitId !== sendingWard) {
