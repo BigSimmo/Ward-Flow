@@ -573,7 +573,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     try {
       downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
         asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
-        scope: "Out-of-area admissions; matching rows in this desk's view",
+        scope:
+          "Out-of-area admissions; the complete current ledger, regardless of search, highlights or the selected tab",
       });
     } catch {
       setToolNote("Export is not available in this browser");

@@ -11,6 +11,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import { formatSheetMoment, perthMidnight } from "@/components/ward-management/ward-clock";
@@ -117,4 +118,25 @@ it("searched roster export names matching rows without repeating the typed searc
   expect(lines[2]).not.toContain("all roster rows");
   expect(lines).toHaveLength(7);
   expect(lines[6]).toContain(admission.id);
+});
+
+it("capacity export names the alert-line highlight while still exporting every matching row", async () => {
+  render(
+    <StatisticsCapacityChart units={allUnits().slice(0, 2)} bedReleases={[]} asAt="Fri, 1 Jan 2027, 00:05 AWST" />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /At or over the alert line/u }));
+  const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
+  expect(csv).toMatch(/all matching rows; all services highlighted, only rows at or above the \d+% alert line;/u);
+});
+
+it("out-of-area export names the complete current ledger rather than the visible view", async () => {
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <OutOfAreaBoard />
+    </WardFlowProvider>,
+  );
+  const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Export list as CSV" })));
+  const scope = csv.split("\r\n").find((line) => line.startsWith('"Scope"'));
+  expect(scope).toContain("complete current ledger");
+  expect(scope).not.toContain("matching rows");
 });

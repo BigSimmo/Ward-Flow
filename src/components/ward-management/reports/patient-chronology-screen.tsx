@@ -134,8 +134,6 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
  */
 const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.givenName}`;
 
-const clockOrMissing = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatInstant(instant));
-
 /**
  * PIR CHRONOLOGY (D-37). Choose one synthetic person and read every recorded event for them
  * in time order: occurred and recorded time, role, action, before and after, and any override or
@@ -819,7 +817,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                               className={cx(styles.eventRow, selected && styles.eventSelected)}
                               aria-selected={selected}
                             >
-                              <td className={styles.time}>{clockOrMissing(row.occurredAt)}</td>
+                              <td className={styles.time}>{chronologyTime(row.occurredAt, dayZero)}</td>
                               <td className={styles.time} data-chronology-recorded="">
                                 {chronologyTime(row.recordedAt, dayZero)}
                               </td>
