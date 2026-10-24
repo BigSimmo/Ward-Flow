@@ -1,5 +1,9 @@
 # Shell review: the owner's universal header and rail against the third edition
 
+> **Historical drawing-era record, September 2026.** Written while the third-edition drawings were being built. It is not current guidance for app screens. The rendered app is the current design authority; start at the [Ward Flow entry point](../../../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Reviewed: `inputs/rail.html` (the owner's artifact, "Ward Flow Rail"), in both themes at 1920 by
 1080, and the header at 1440, 1280 and 1100. Crops are under
 `third-edition-shots/shell-review/` and were taken by

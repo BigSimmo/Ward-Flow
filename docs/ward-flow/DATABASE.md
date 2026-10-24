@@ -1,5 +1,7 @@
 # Ward Flow database: the one source of truth
 
+<!-- last-checked: 2026-10-24 -->
+
 _Updated 2026-10-24 - align runtime compatibility with migration 13; migration grants commit with the schema; Documentation owns._
 
 **Current database and sign-in: Supabase** (decision [D-55](decisions.md), 15 October 2026).

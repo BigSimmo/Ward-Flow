@@ -9,7 +9,7 @@
 
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →
-committed tests → `.design-sync/conventions.md` → this set. Where this set contradicts a
+committed tests → `.design-sync/conventions.md` (no longer in this repository) → this set. For Ward Flow's current written standard see [design-system-v9.md](../../design/v9/design-system-v9.md). Where this set contradicts a
 higher source, the higher source wins and the contradiction is a defect here.
 
 For current Ward work, start at the [Ward entry point](../ward-flow/README.md), agreed task

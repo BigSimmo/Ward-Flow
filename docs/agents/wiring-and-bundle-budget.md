@@ -1,5 +1,7 @@
 # Page Wiring and Bundle Budget
 
+_Updated 2026-10-24 - navigation file reference matches current source; Documentation owns._
+
 ## Current Ward Flow wiring and browser proof
 
 Follow the [Ward entry point](../ward-flow/README.md), current source and accepted app.

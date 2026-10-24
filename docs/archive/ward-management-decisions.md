@@ -1,5 +1,9 @@
 # Ward Flow — architecture decisions
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Decisions for the ward-management context that are hard to reverse, surprising without
 context, and the result of a real trade-off. Vocabulary lives in
 `ward-management-context.md` (`docs/archive/ward-management-context.md`, removed in the 15 Oct 2026 docs trim); routes and roles live in

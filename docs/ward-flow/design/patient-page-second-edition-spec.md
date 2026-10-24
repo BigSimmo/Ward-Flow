@@ -1,5 +1,9 @@
 # The individual patient page, second edition — what may change and what may not
 
+> **Historical record, September 2026.** Written for the drawing-era and second-edition build. It is not current guidance, and its paths, line counts and design rules may no longer match the code. The rendered app is the current design authority: start at the [Ward Flow entry point](../README.md) and the [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Ward Lead, 2026-09-05.** The owner asked for a "massive overhaul" of the individual patient page.
 This spec's first job is to say plainly which half of that is available.
 

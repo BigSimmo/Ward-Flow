@@ -1,5 +1,7 @@
 # Ward Flow — local first run
 
+<!-- last-checked: 2026-10-24 -->
+
 _Updated 2026-10-24 - unit test example uses the run-vitest wrapper; Documentation owns._
 
 **Audience:** anyone opening the Ward Flow UI on their own machine (Windows, macOS or Linux).

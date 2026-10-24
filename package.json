@@ -90,6 +90,7 @@
     "docs:maintain": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --write",
     "docs:maintain:check": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --check",
     "docs:facts": "node scripts/doc-facts.mjs",
+    "docs:freshness": "node scripts/check-living-docs-freshness.mjs",
     "docs:facts:write": "node scripts/doc-facts.mjs --write",
     "typecheck:backend": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow run typecheck",
     "test:backend:integration": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow run test:integration",

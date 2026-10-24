@@ -231,10 +231,13 @@ it. **The two halves of that rule are one sentence apart and it is easy to reach
 supports the change you already want** — which is exactly why the addition is recorded rather than
 carried as though the drawing asked for it. **Josh can veto it knowing it was never drawn.**
 
+<!-- docs-script-refs:historical-start -->
+
 ⚠️ **Nothing on that screen may describe placement as gender-driven.** Measured: `genderEligibility`
 has no production caller, `"gender"` is not in `ELIGIBILITY_GATES`, and placement runs on
 `movement.sex` through `sex_designation` and `sex_mix`. **The ruling is modelled and not in force**,
 and a screen saying otherwise would promise behaviour that does not exist.
+<!-- docs-script-refs:historical-end -->
 
 ### D6 · 🔴 The Documents tab carries NO COUNT — a departure from the drawing, logged as mine
 
