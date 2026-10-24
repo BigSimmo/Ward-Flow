@@ -41,6 +41,8 @@ export type SharedView = {
   error: string | null;
   /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
   unconfirmedSave?: boolean;
+  /** Audit 24-3 SM-4: `unavailable` only because a save waits on Retry; the board itself is current. */
+  boardCurrent?: boolean;
   eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
@@ -280,7 +282,7 @@ export class SharedWorkspaceClient {
   constructor(
     private readonly options: {
       baseUrl: string;
-      token: () => Promise<string>;
+      token: (options?: { refresh?: boolean }) => Promise<string>;
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
@@ -343,7 +345,12 @@ export class SharedWorkspaceClient {
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
     this.syncUnloadWarning();
-    this.view = { ...this.view, ...update, unconfirmedSave: this.pending !== null || this.queue.length > 0 };
+    this.view = {
+      ...this.view,
+      boardCurrent: false,
+      ...update,
+      unconfirmedSave: this.pending !== null || this.queue.length > 0,
+    };
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
@@ -400,7 +407,8 @@ export class SharedWorkspaceClient {
     await loadSharedStateCheck();
     let token: string;
     try {
-      token = await this.options.token();
+      // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
+      token = await (retried ? this.options.token({ refresh: true }) : this.options.token());
     } catch (error) {
       if (this.disposed || roleSignal.aborted) throw error;
       if (
@@ -517,11 +525,8 @@ export class SharedWorkspaceClient {
     if (response.status === 401 || response.status === 403) {
       if (typeof value?.error !== "string") throw new Error("Workspace unavailable");
       if (response.status === 401 && !retried) throw FRESH_TOKEN;
-      throw denied(
-        response.status === 403
-          ? "Sign in with an account assigned a Ward Flow role."
-          : "Signed out. Sign in again to carry on.",
-      );
+      // Audit 24-3 SV-6: the server's own reason, as for `signed-out` and `session-limit` above.
+      throw denied(value.error);
     }
     // The server holds more than one role for this account and needs to be told which.
     if (response.status === 409 && value?.code === "choose-role") {
@@ -583,7 +588,11 @@ export class SharedWorkspaceClient {
       }
       this.publish({
         ...(this.pending
-          ? { status: "unavailable" as const, error: "Connection is back. Press Retry to send your change." }
+          ? {
+              status: "unavailable" as const,
+              boardCurrent: true,
+              error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
+            }
           : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
         access: value.access,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,

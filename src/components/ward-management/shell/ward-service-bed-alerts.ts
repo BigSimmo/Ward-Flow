@@ -16,6 +16,7 @@ import {
 import { wardSites } from "@/components/ward-management/ward-sites";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   OCCUPANCY_ALERT_PERCENT,
@@ -55,8 +56,10 @@ export interface ServiceBedAlert {
 
 export interface ServiceBedAlertsSummary {
   services: ServiceBedAlert[];
-  /** Sum of each row's freeBeds — must equal the header. */
+  /** Sum of each row's freeBeds (`readyBedsNow`) — must equal the header. */
   totalFreeBeds: number;
+  /** Released beds still being made ready (`bedsPendingPreparation`); a note, already inside the ward figures. */
+  totalBeingMadeReady: number;
   /** Occupied/total for the three metro services only; null when they have no beds. */
   metroOccupancyPercent: number | null;
   /** Every service's wards together, the same count as `wardOccupancy` (`ward-occupancy.ts`). */
@@ -116,7 +119,7 @@ function roundOneDecimal(value: number): number {
 
 /**
  * Group live wards by the health service already stored on each site.
- * Free beds use `openBedsNow` (same as the rest of the app). Occupied = total − free (≥ 0).
+ * Free beds are the one ready figure, `readyBedsNow` (Audit 24-4 NA2-08). Occupied is the board's buckets.
  * Optionally accepts `movements` and `now` to track ED capacity warnings and hospital codes.
  */
 export function deriveServiceBedAlerts(
@@ -159,7 +162,7 @@ export function deriveServiceBedAlerts(
       occupiedBeds: s.occupiedBeds,
       totalBeds: s.totalBeds,
       freeBeds: s.remainingBeds,
-      escalation: `${s.remainingBeds} free · ${s.occupiedBeds} occupied`,
+      escalation: `${s.remainingBeds} ready · ${s.occupiedBeds} occupied`,
       hospitalCodes: s.hospitalCodes,
       remainingCapacityPercent: s.remainingCapacityPercent,
       hospitals: s.hospitals,
@@ -169,6 +172,10 @@ export function deriveServiceBedAlerts(
   }
 
   const totalFreeBeds = services.reduce((sum, row) => sum + row.freeBeds, 0);
+  const siteCodes = new Set(sites.map((site) => site.code));
+  const totalBeingMadeReady = units
+    .filter((unit) => siteCodes.has(unit.siteCode))
+    .reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, [...bedReleases]), 0);
 
   let metroOccupied = 0;
   let metroTotal = 0;
@@ -196,6 +203,7 @@ export function deriveServiceBedAlerts(
   return {
     services,
     totalFreeBeds,
+    totalBeingMadeReady,
     metroOccupancyPercent,
     statewideOccupancyPercent: report.totalBeds > 0 ? report.statewideOccupancyPercent : null,
     metroRemainingCapacityPercent,

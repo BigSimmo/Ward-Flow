@@ -21,6 +21,7 @@ import {
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
+import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
 function Choice({ label, values }: { label: string; values: readonly string[] }) {
@@ -44,6 +45,8 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [cohort, setCohort] = useState("adult");
+  // Audit 24-3 SV-5: a shared refusal reaches only the outcome, so it is said here too.
+  const careSave = useWardFormSave(record.admissionId);
   const care = record.careJourney;
   const editable =
     record.identity.kind === "linked" &&
@@ -63,18 +66,23 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
     }
     setLocalError(null);
     setSubmitted(rejections.length);
-    dispatch({
-      type: "RECORD_ADMISSION_CARE",
-      role: actor.role,
-      now,
-      ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
-      ...(actor.role === "community" ? { actingTeamId: actor.actingTeamId } : {}),
-      admissionId: record.admissionId,
-      patientId: record.identity.patient.id,
-      expectedGeneration: record.generation,
-      expectedRevision: record.revision,
-      change: value,
-    });
+    const patientId = record.identity.patient.id;
+    careSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_ADMISSION_CARE",
+          role: actor.role,
+          now,
+          ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
+          ...(actor.role === "community" ? { actingTeamId: actor.actingTeamId } : {}),
+          admissionId: record.admissionId,
+          patientId,
+          expectedGeneration: record.generation,
+          expectedRevision: record.revision,
+          change: value,
+        }),
+      () => {},
+    );
   }
   const section = (title: string, children: ReactNode, change: (data: FormData) => unknown) => (
     <details>
@@ -102,12 +110,14 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       </p>
       {localError && <p role="alert">{localError}</p>}
       {submitted !== null &&
-        rejections.length > submitted &&
-        rejections.at(-1)?.attempted === "RECORD_ADMISSION_CARE" && (
-          <p role="alert">
-            {rejections.at(-1)?.reason ?? "Care action was not recorded."} Reopen the current record before retrying.
-          </p>
-        )}
+      rejections.length > submitted &&
+      rejections.at(-1)?.attempted === "RECORD_ADMISSION_CARE" ? (
+        <p role="alert">
+          {rejections.at(-1)?.reason ?? "Care action was not recorded."} Reopen the current record before retrying.
+        </p>
+      ) : careSave.error ? (
+        <p role="alert">{careSave.error}</p>
+      ) : null}
       <dl>
         <dt>Responsible clinician and appointment</dt>
         <dd>
