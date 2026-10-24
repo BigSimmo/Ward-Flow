@@ -25,6 +25,8 @@ import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
 import { unitInScope } from "../ward-role-access";
 import { canDispatch } from "../ward-role-permissions";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
@@ -143,6 +145,14 @@ function WardCard({
   const acting = { unitId: ward.id, ...(role === "ward" ? { actingUnitId: ward.id } : {}) };
   const recorded = room.kind === "recorded" ? room : room.kind === "in_use" ? room.recorded : undefined;
   const roomStatus = recorded?.status;
+  // Audit 24-3 SV-5: a refused room status is said beside these buttons, not only in the status line.
+  const roomSave = useWardFormSave(ward.id);
+  const markRoom = (status: "available" | "out_of_service") =>
+    roomStatus !== status &&
+    roomSave.submit(
+      () => raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status }),
+      () => {},
+    );
   const recordedLine = recorded
     ? `${recorded.status === "available" ? "Available" : "Out of service"} · recorded by ${recorded.by} ${formatInstantWithDay(recorded.at, now)}`
     : undefined;
@@ -165,9 +175,7 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "available" ? "true" : undefined}
-              onClick={() => {
-                if (roomStatus !== "available") raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status: "available" });
-              }}
+              onClick={() => markRoom("available")}
               data-testid="seclusion-room-available"
             >
               Mark available
@@ -176,15 +184,13 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "out_of_service" ? "true" : undefined}
-              onClick={() => {
-                if (roomStatus !== "out_of_service")
-                  raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status: "out_of_service" });
-              }}
+              onClick={() => markRoom("out_of_service")}
               data-testid="seclusion-room-out-of-service"
             >
               Mark out of service
             </Button>
           </div>
+          <SaveAnswer save={roomSave} testId="seclusion-room-failure" />
         </section>
 
         <section className={styles.section} aria-labelledby={`${ward.id}-use`}>
@@ -273,6 +279,21 @@ function useTypedTime(now: Instant, after?: Instant) {
   return { text, setText, at, refusal };
 }
 
+/** Audit 24-3 SV-1: a save still out, or why it was not recorded. What was typed stays in the form. */
+function SaveAnswer({ save, testId }: { save: WardFormSave; testId: string }) {
+  if (save.pending && !save.error)
+    return (
+      <p className={`${styles.note} ${styles.formReason}`} role="status">
+        Saving…
+      </p>
+    );
+  return save.error ? (
+    <p className={`${styles.note} ${styles.formReason}`} role="alert" data-testid={testId}>
+      {save.error}
+    </p>
+  ) : null;
+}
+
 /**
  * A typed end time a few minutes ahead of the clock reads as yesterday, so it lands before the start.
  * Say it is later than now when today's reading is the nearer one.
@@ -306,11 +327,12 @@ function EpisodeRow({
   name: string;
   now: Instant;
   /** Left out where this desk may not record the end (D-80). */
-  onEnd?: (endedAt: Instant) => void;
+  onEnd?: (endedAt: Instant) => ReturnType<WardCommandDispatch>;
 }) {
   const [ending, setEnding] = useState(false);
   const formId = useId();
   const time = useTypedTime(now, episode.startedAt);
+  const save = useWardFormSave(episode.id);
   return (
     <li className={styles.episode} data-testid="seclusion-episode">
       <div className={styles.row}>
@@ -341,12 +363,15 @@ function EpisodeRow({
           <Button
             size="sm"
             variant="pri"
-            aria-disabled={time.refusal ? "true" : undefined}
+            aria-disabled={time.refusal || save.pending ? "true" : undefined}
             aria-describedby={time.refusal ? `${formId}-reason` : undefined}
             onClick={() => {
-              if (time.refusal || time.at === undefined) return;
-              onEnd(time.at);
-              setEnding(false);
+              const endedAt = time.at;
+              if (time.refusal || endedAt === undefined) return;
+              save.submit(
+                () => onEnd(endedAt),
+                () => setEnding(false),
+              );
             }}
             data-testid="seclusion-episode-end"
           >
@@ -357,6 +382,7 @@ function EpisodeRow({
               <DisabledReason id={`${formId}-reason`}>{time.refusal}</DisabledReason>
             </div>
           ) : null}
+          <SaveAnswer save={save} testId="seclusion-episode-end-failure" />
         </div>
       ) : null}
     </li>
@@ -370,7 +396,7 @@ function StartForm({
 }: {
   ward: Unit;
   now: Instant;
-  onStart: (admissionId: string, practice: RestrictivePractice, startedAt: Instant) => void;
+  onStart: (admissionId: string, practice: RestrictivePractice, startedAt: Instant) => ReturnType<WardCommandDispatch>;
 }) {
   const { admissions } = useWardFlowSelect("admissions");
   const patientOf = usePatientOf();
@@ -378,6 +404,7 @@ function StartForm({
   const [admissionId, setAdmissionId] = useState("");
   const [practice, setPractice] = useState<RestrictivePractice | "">("");
   const time = useTypedTime(now);
+  const save = useWardFormSave(ward.id);
   const stays = admissions.filter((stay) => stay.unitId === ward.id && stay.state === "occupied");
   const refusal =
     admissionId === "" ? "Choose the patient first." : practice === "" ? "Choose what is in use." : time.refusal;
@@ -415,14 +442,20 @@ function StartForm({
       <Button
         size="sm"
         variant="pri"
-        aria-disabled={refusal ? "true" : undefined}
+        aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}
         onClick={() => {
-          if (refusal || practice === "" || time.at === undefined) return;
-          onStart(admissionId, practice, time.at);
-          setAdmissionId("");
-          setPractice("");
-          time.setText("");
+          const startedAt = time.at;
+          if (refusal || practice === "" || startedAt === undefined) return;
+          // Cleared only once the record is accepted, so a refused or unconfirmed start keeps its answers.
+          save.submit(
+            () => onStart(admissionId, practice, startedAt),
+            () => {
+              setAdmissionId("");
+              setPractice("");
+              time.setText("");
+            },
+          );
         }}
         data-testid="seclusion-start"
       >
@@ -433,6 +466,7 @@ function StartForm({
           <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason>
         </div>
       ) : null}
+      <SaveAnswer save={save} testId="seclusion-start-failure" />
     </div>
   );
 }
@@ -442,11 +476,12 @@ function IncidentForm({
   onRecord,
 }: {
   now: Instant;
-  onRecord: (category: WardIncidentCategory, at: Instant) => void;
+  onRecord: (category: WardIncidentCategory, at: Instant) => ReturnType<WardCommandDispatch>;
 }) {
   const formId = useId();
   const [category, setCategory] = useState<WardIncidentCategory | "">("");
   const time = useTypedTime(now);
+  const save = useWardFormSave("incident");
   const refusal = category === "" ? "Choose the kind of incident first." : time.refusal;
   return (
     <div className={styles.form} data-testid="seclusion-incident-form">
@@ -468,13 +503,18 @@ function IncidentForm({
       <Button
         size="sm"
         variant="pri"
-        aria-disabled={refusal ? "true" : undefined}
+        aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}
         onClick={() => {
-          if (refusal || category === "" || time.at === undefined) return;
-          onRecord(category, time.at);
-          setCategory("");
-          time.setText("");
+          const at = time.at;
+          if (refusal || category === "" || at === undefined) return;
+          save.submit(
+            () => onRecord(category, at),
+            () => {
+              setCategory("");
+              time.setText("");
+            },
+          );
         }}
         data-testid="seclusion-incident-record"
       >
@@ -485,6 +525,7 @@ function IncidentForm({
           <DisabledReason id={`${formId}-reason`}>{refusal}</DisabledReason>
         </div>
       ) : null}
+      <SaveAnswer save={save} testId="seclusion-incident-failure" />
     </div>
   );
 }

@@ -183,18 +183,18 @@ describe("rail bed alerts (live figures)", () => {
       trigger.click();
     });
 
-    // v6 rail (board 03b, 7 October 2026): the header chip reads "N unoccupied beds" and each
-    // service row reads "N of M free", in place of the earlier "N unoccupied (o/t)".
+    // Audit 24-4 NA2-08: the header chip reads "N beds ready" (`readyBedsNow`, Capacity's word) and
+    // each service row "N of M ready", in place of v6's "N unoccupied beds" / "N of M free".
     const header = screen.getByTestId("ward-rail-bed-alerts-free");
-    expect(header).toHaveTextContent(`${expected.totalFreeBeds} unoccupied beds`);
-    expect(header).not.toHaveTextContent("18 unoccupied beds");
+    expect(header).toHaveTextContent(`${expected.totalFreeBeds} beds ready`);
+    expect(header).not.toHaveTextContent("unoccupied");
 
     const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
     expect(rows).toHaveLength(expected.services.length);
     for (const row of expected.services) {
       const match = rows.find((element) => element.textContent?.includes(row.name));
       expect(match, `no Bed alerts row for ${row.name}`).toBeDefined();
-      expect(match).toHaveTextContent(`${row.freeBeds} of ${row.totalBeds} free`);
+      expect(match).toHaveTextContent(`${row.freeBeds} of ${row.totalBeds} ready`);
     }
   });
 

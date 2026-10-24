@@ -117,8 +117,9 @@ export function journeyStages({
   return [
     {
       id: "waiting",
-      label: "Waiting in ED",
-      caption: "No ward has answered",
+      // Audit 24-4 NA2-05 (Josh, 24 Oct 2026): "Waiting in ED" is the hero's figure; this stage is narrower.
+      label: "No ward has answered yet",
+      caption: "A bed has been asked for",
       tone: "neutral",
       count: waiting.length,
       breakdown: [

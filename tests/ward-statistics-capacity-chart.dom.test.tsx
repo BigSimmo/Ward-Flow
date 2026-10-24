@@ -105,7 +105,7 @@ describe("current-capacity explorer", () => {
     fireEvent.click(screen.getByRole("radio", { name: "%" }));
     expect(smallBar).toHaveStyle({ width: "100%" });
     // Fiona Stanley is 100% occupied, the only row at or over the 85% alert line.
-    const overChip = screen.getByRole("button", { name: /At or over the alert line/ });
+    const overChip = screen.getByRole("button", { name: /at or over the alert line/i });
     expect(overChip).toHaveTextContent("1");
     // The chip highlights that row and dims the rest; every row stays.
     fireEvent.click(overChip);

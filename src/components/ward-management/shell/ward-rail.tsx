@@ -279,6 +279,7 @@ function WardFlowMark({ className }: { className?: string }) {
 const NO_BED_ALERTS: ServiceBedAlertsSummary = {
   services: [],
   totalFreeBeds: 0,
+  totalBeingMadeReady: 0,
   metroOccupancyPercent: null,
   statewideOccupancyPercent: null,
   mostPressing: null,
@@ -877,10 +878,11 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                   <strong className={styles.alertsDropdownTitle}>Bed alerts</strong>
                   <p className={styles.alertsDropdownSub}>
                     {bedAlerts.services.length} health {bedAlerts.services.length === 1 ? "service" : "services"}
+                    {bedAlerts.totalBeingMadeReady ? ` · ${bedAlerts.totalBeingMadeReady} being made ready` : ""}
                   </p>
                 </div>
                 <span className={styles.alertsTotalBadge} data-testid="ward-rail-bed-alerts-free">
-                  <span className={styles.alertsTotalValue}>{bedAlerts.totalFreeBeds}</span> unoccupied beds
+                  <span className={styles.alertsTotalValue}>{bedAlerts.totalFreeBeds}</span> beds ready
                 </span>
               </div>
 
@@ -910,7 +912,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                           )}
                         </span>
                         <span className={styles.alertBeds}>
-                          {svc.freeBeds} of {svc.totalBeds} free
+                          {svc.freeBeds} of {svc.totalBeds} ready
                           {waiting > 0 ? ` · ED ${waiting} waiting` : ""}
                         </span>
                       </span>

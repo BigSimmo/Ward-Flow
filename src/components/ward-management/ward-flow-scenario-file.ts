@@ -126,12 +126,14 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
   const syntheticCheck = checkSyntheticPayload(parsed);
   if (!syntheticCheck.safe) return { ok: false, reason: DAMAGED };
 
-  // The same v6 -> v7 migration as a browser restore, and only into the version this build writes.
+  // The same migration as a browser restore, and only into the version this build writes. A
+  // same-version file goes through it too: that step also reads pre-21-Oct observation rows
+  // (production audit 24 Oct 2026, ENG-03).
   const stored =
-    file.stateVersion === stateVersion
-      ? file.state
-      : stateVersion === WARD_FLOW_STORED_STATE_VERSION
-        ? migrateStoredWardFlowState(file.state, file.stateVersion)
+    stateVersion === WARD_FLOW_STORED_STATE_VERSION
+      ? migrateStoredWardFlowState(file.state, file.stateVersion)
+      : file.stateVersion === stateVersion
+        ? file.state
         : null;
   if (stored === null) return { ok: false, reason: WRONG_VERSION };
   const now = file.now;
