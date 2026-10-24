@@ -99,7 +99,7 @@ test("a named coordinator can read audit events without reading or commanding th
   const { calls, handler } = setup();
   const response = await handler(request("/audit"));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { events: [auditEvent] });
+  assert.deepEqual(await response.json(), { events: [auditEvent], complete: true, nextCursor: null });
   assert.deepEqual(calls, [["audit", { ...STATEWIDE_VIEW, actorId: coordinator }]]);
 });
 test("another tenant account cannot read audit events or reach the workspace", async () => {

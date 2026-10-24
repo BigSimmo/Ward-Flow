@@ -32,6 +32,23 @@ import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 
+const UNAVAILABLE_ACCESS_MESSAGE =
+  "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
+/** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
+const unavailableAccessApi: SharedAccessApi = {
+  listAccess: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  listCovers: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  grantAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  revokeAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  giveCover: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  decideRequest: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  breakGlass: async () => UNAVAILABLE_ACCESS_MESSAGE,
+};
+
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
 // The Demo menu (change 8) loads only when the Synthetic pill opens it.
@@ -380,8 +397,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   );
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
   const sharedAccess = useMemo(
-    () => (connected && accessApi ? { api: accessApi, actorId } : null),
-    [connected, accessApi, actorId],
+    () =>
+      connection.enabled
+        ? { api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi, actorId }
+        : null,
+    [connection.enabled, connection.recovering, connected, accessApi, actorId],
   );
   // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
   useEffect(() => {
@@ -544,6 +564,12 @@ function WardSharedWorkspaceContent({
   children: ReactNode;
 }) {
   "use no memo";
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
+    const timer = setTimeout(() => setCheckedAt(Date.now()), Math.max(0, connection.accessUntil! - Date.now()));
+    return () => clearTimeout(timer);
+  }, [connection.accessUntil, checkedAt]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
@@ -597,7 +623,11 @@ function WardSharedWorkspaceContent({
         )}
       </main>
     );
-  const blocked = connection.status !== "ready";
+  const outage =
+    connection.status === "unavailable" &&
+    Number.isFinite(connection.accessUntil) &&
+    connection.accessUntil! > checkedAt;
+  const blocked = connection.status !== "ready" && !outage;
   return (
     <>
       <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
@@ -605,7 +635,18 @@ function WardSharedWorkspaceContent({
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
       />
-      <FocusKeepingInert blocked={blocked}>{children}</FocusKeepingInert>
+      {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+      <FocusKeepingInert
+        key={JSON.stringify([
+          connection.actorId,
+          connection.workingAs,
+          connection.access,
+          connection.snapshot?.accessContext,
+        ])}
+        blocked={blocked}
+      >
+        {children}
+      </FocusKeepingInert>
     </>
   );
 }

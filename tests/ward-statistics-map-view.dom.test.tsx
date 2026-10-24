@@ -16,7 +16,7 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 
 beforeAll(() => {
   // The ED wait field under the ED lens measures its card; jsdom has no ResizeObserver.
@@ -87,7 +87,7 @@ describe("Summary, Map view", () => {
     renderView();
     fireEvent.click(screen.getByRole("radio", { name: /^ED waits/ }));
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Most waiting in ED" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Most open ED journeys" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
     for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);

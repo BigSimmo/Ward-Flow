@@ -110,7 +110,7 @@ describe("Statistics phone computation work", () => {
     );
     expect(patients).toBe(362);
     expect(observed.phone?.wardCount).toBe(22);
-    expect(screen.getByRole("button", { name: /ED waits for a bed/u })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Open ED journeys/u })).toBeInTheDocument();
     console.info(
       "Statistics phone work",
       JSON.stringify({

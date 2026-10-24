@@ -1283,6 +1283,27 @@ export function candidateEvents(
             unitId,
           })),
         );
+    case "HOLD_REFERRAL_BED":
+      // A hold answers an already accepted ward arm; let the reducer check every physical number.
+      return state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (arm.state !== "accepted" || arm.withdrawnAt !== undefined || arm.destination.kind !== "psychiatric_ward")
+            return [];
+          const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
+          const unit = state.units.find((candidate) => candidate.id === unitId);
+          return unit
+            ? Array.from({ length: unit.beds }, (_, index) => ({
+                type,
+                role,
+                now,
+                referralId: referral.id,
+                unitId: unit.id,
+                actingUnitId: unit.id,
+                bedNumber: index + 1,
+              }))
+            : [];
+        }),
+      );
     case "DECLINE_REFERRAL":
       // Every queued referral crossed with every real decline reason, same "offer every
       // legitimate candidate" reasoning as ACCEPT_REFERRAL above.
@@ -2124,6 +2145,63 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
   // satisfies the "Non-vacuity 3" check below rather than sidestepping it.
   for (const code of codes) {
     const accepted = coverage.get(code)!;
+    // A direct accepted referral has no movement of its own. Exercise its hold beside a real
+    // movement carrying this form, so both expiry modes retain the same provenance check.
+    const forHold = buildHeldMovementFor(code, NOW_ANCHOR);
+    if (supplyDueAt) {
+      forHold.state = wardFlowReducer(forHold.state, {
+        type: "RECORD_LEGAL_FORM_EXPIRY",
+        role: "ed",
+        now: NOW_ANCHOR,
+        movementId: forHold.movementId,
+        dueAt: suppliedDueAt(NOW_ANCHOR + 900_000),
+      });
+      expect(forHold.state.rejections, `Hold fixture expiry refused (${code})`).toEqual([]);
+      offenders.push(...offendingFormsIn(forHold.state, `HOLD_REFERRAL_BED fixture expiry(${code})`));
+    }
+    const receivedForHold = wardFlowReducer(forHold.state, {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now: NOW_ANCHOR,
+      ...RECEIVE_REFERRAL_CANDIDATE,
+    });
+    expect(receivedForHold.rejections, `Hold fixture referral refused (${code})`).toEqual([]);
+    offenders.push(...offendingFormsIn(receivedForHold, `HOLD_REFERRAL_BED fixture receive(${code})`));
+    const holdReferralId = receivedForHold.referrals.at(-1)!.id;
+    const holdUnitId = "scgh-adult-open";
+    const acceptedForHold = wardFlowReducer(receivedForHold, {
+      type: "ACCEPT_REFERRAL",
+      role: "ward",
+      now: NOW_ANCHOR,
+      referralId: holdReferralId,
+      destinationKind: "psychiatric_ward",
+      unitId: holdUnitId,
+      actingUnitId: holdUnitId,
+    });
+    expect(acceptedForHold.rejections, `Hold fixture acceptance refused (${code})`).toEqual([]);
+    offenders.push(...offendingFormsIn(acceptedForHold, `HOLD_REFERRAL_BED fixture acceptance(${code})`));
+    const beforeHold = acceptedForHold.referrals.find((referral) => referral.id === holdReferralId)!;
+    expect(beforeHold.destinations[0]!.state).toBe("accepted");
+    expect(beforeHold.destinations[0]!.heldBedNumber).toBeUndefined();
+    let held: { applied: WardFlowState; event: Extract<WardFlowEvent, { type: "HOLD_REFERRAL_BED" }> } | undefined;
+    for (const event of candidateEvents("HOLD_REFERRAL_BED", acceptedForHold, NOW_ANCHOR)) {
+      if (event.type !== "HOLD_REFERRAL_BED" || event.referralId !== holdReferralId) continue;
+      const applied = wardFlowReducer(acceptedForHold, event);
+      if (applied.rejections.length === acceptedForHold.rejections.length) {
+        held = { applied, event };
+        break;
+      }
+    }
+    expect(held, `HOLD_REFERRAL_BED was never accepted (${code})`).toBeDefined();
+    expect(held!.applied.referrals.find((referral) => referral.id === holdReferralId)!.destinations[0]).toEqual({
+      ...beforeHold.destinations[0]!,
+      heldBedNumber: held!.event.bedNumber,
+    });
+    expect(held!.applied.movements).toEqual(acceptedForHold.movements);
+    expect(held!.applied.admissions).toEqual(acceptedForHold.admissions);
+    expect(held!.applied.units).toEqual(acceptedForHold.units);
+    accepted.add("HOLD_REFERRAL_BED");
+    offenders.push(...offendingFormsIn(held!.applied, `HOLD_REFERRAL_BED(${code}) / supplyDueAt=${supplyDueAt}`));
 
     // Staging needs a waiting request AND a different occupied patient's confirmed departure.
     // The cyclic traversal cannot reliably keep both windows live; construct them via real

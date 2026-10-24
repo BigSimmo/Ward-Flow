@@ -303,6 +303,8 @@ describe("numbered bed designation integrity", () => {
 
   it("pulls the kind of the numbered reservation instead of the Open request preference", () => {
     const { state, unit, current, occupiedLocked } = bench();
+    // An Open request may use locked fallback only when no Open capacity remains.
+    unit.allocatable.value = unit.allocatableLocked;
     const source = state.movements.find((row) => row.security === "Open" && row.cohort === unit.cohort)!;
     const movement = {
       ...source,
@@ -356,6 +358,8 @@ describe("numbered bed designation integrity", () => {
 
   it("uses the accepted referral's numbered reservation when the ED movement has no separate bed number", () => {
     const { state, unit, occupiedLocked } = bench();
+    // Keep this a legal locked fallback while proving the referral reservation is consumed.
+    unit.allocatable.value = unit.allocatableLocked;
     const heldBed = occupiedLocked + 1;
     let next = send(state, {
       type: "RECEIVE_REFERRAL",

@@ -1841,6 +1841,7 @@ export function reduceClinicalEvent(
     case "DECLINE":
     case "RECEIVE_REFERRAL":
     case "ACCEPT_REFERRAL":
+    case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
       return reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);
@@ -2338,6 +2339,8 @@ const PLACEMENT_EVENT_HELPERS = {
   OVERRIDE_REASON_REQUIRED,
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
+  bedNumberRefusal,
+  heldBedRefusal,
   eligibilityRefusal,
   findMovement,
   findUnit,
@@ -2359,6 +2362,7 @@ const TRANSPORT_EVENT_HELPERS = {
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
   bedNumberRefusal,
+  heldBedRefusal,
   departAdmission,
   findAdmission,
   findMovement,

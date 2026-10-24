@@ -209,7 +209,7 @@ export function StatisticsSummaryPhone({
           figures={[
             // Phone review F-26: the big figure says what it counts, with its share beside it.
             { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
-            { id: "ed", value: waitingInEd, label: "Waiting in ED" },
+            { id: "ed", value: waitingInEd, label: "Open ED journeys" },
             { id: "ended", value: endedToday, label: "Ended today" },
           ]}
           eyebrow="Statistics · Network now"
@@ -353,7 +353,7 @@ export function StatisticsSummaryPhone({
             className={styles.navRow}
             onClick={() =>
               setSheet({
-                title: "ED waits for a bed",
+                title: "Open ED journeys",
                 body: (
                   <ul className={styles.list}>
                     {eds.map((ed) => (
@@ -361,9 +361,9 @@ export function StatisticsSummaryPhone({
                         key={ed.id}
                         as="li"
                         name={ed.name}
-                        meta={ed.longest === null ? "Nobody waiting" : `Longest ${durMinutes(ed.longest)}`}
+                        meta={ed.longest === null ? "No open ED journeys" : `Longest ${durMinutes(ed.longest)}`}
                         value={ed.waiting}
-                        time="waiting"
+                        time="open ED journeys"
                         href={edStatisticsHref(ed.id)}
                       />
                     ))}
@@ -374,13 +374,13 @@ export function StatisticsSummaryPhone({
           >
             <IconTile icon={Clock} />
             <span className={styles.navText}>
-              <b>ED waits for a bed</b>
+              <b>Open ED journeys</b>
               <span>
                 {longestEd === null ? (
-                  `${edsWaiting.length} of ${eds.length} departments with someone waiting`
+                  `${edsWaiting.length} of ${eds.length} departments with open ED journeys`
                 ) : (
                   <>
-                    Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {waitingInEd} waiting in{" "}
+                    Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {waitingInEd} open journeys from{" "}
                     {edsWaiting.length} of {eds.length}
                   </>
                 )}

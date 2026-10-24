@@ -1,5 +1,7 @@
 "use client";
 
+import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-derivations";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users } from "lucide-react";
@@ -26,7 +28,11 @@ import {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
-import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import {
+  ED_WAIT_BANDS,
+  edJourneyWaitBands as edWaitBands,
+  edJourneyWaitFigures as edWaitFigures,
+} from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
@@ -132,6 +138,8 @@ export function StatisticsEdScreen({
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
+  const edJourneys = edJourneySummaries(movements, now).find((summary) => summary.ed.id === department.id)!;
+  const [stillInEdShown, inTransitShown] = parts([edJourneys.stillInEd, edJourneys.inTransit]);
   // The bands add up to the Waiting figure in the hero, so a hidden band hides a second one with it.
   const bandShown = parts(bands.map((band) => band.count));
   // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
@@ -236,7 +244,9 @@ export function StatisticsEdScreen({
         stem: department.id,
         scope: department.name,
         figures: () => [
-          ["Waiting", small(onTheList)],
+          ["Open ED journeys", small(onTheList)],
+          ["Still in ED", stillInEdShown],
+          ["In transit or recorded departure", inTransitShown],
           ["Longest wait", longestWait ? splitDuration(longestWait.waitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
           ["Urgent", small(urgent)],
@@ -250,7 +260,10 @@ export function StatisticsEdScreen({
         sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} urgent`,
         stats: (
           <>
-            <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>} label="Waiting" />
+            <HeroStat
+              value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
+              label="Open ED journeys"
+            />
             <HeroStat
               value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
               label="Longest"
@@ -268,7 +281,10 @@ export function StatisticsEdScreen({
       }}
       stats={
         <>
-          <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>} label="Waiting" />
+          <HeroStat
+            value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
+            label="Open ED journeys"
+          />
           <HeroStat
             value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
             label={
@@ -290,6 +306,10 @@ export function StatisticsEdScreen({
         </>
       }
     >
+      <p className={styles.muted} data-testid="ward-statistics-ed-population">
+        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
+        accountability until arrival. The physical split includes recorded ED outcomes; times run from journey opening.
+      </p>
       {isPhone && countsOnly ? (
         <PhoneBody testId="ward-statistics-ed-phone">
           <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />
@@ -432,7 +452,7 @@ export function StatisticsEdScreen({
                   <StatisticsEdSwarm
                     rows={swarmRows}
                     labelWidth={176}
-                    label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
+                    label={`Each open ED journey, by time since opening, ${department.name} first`}
                   />
                   <p className={detail.note}>
                     {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h
@@ -452,7 +472,7 @@ export function StatisticsEdScreen({
           >
             <div className={styles.tableWrap}>
               <table className={`${tableClasses.table} ${styles.table}`}>
-                <caption className={styles.srOnly}>Open placement waits in every emergency department</caption>
+                <caption className={styles.srOnly}>Open ED journeys from every emergency department</caption>
                 <thead>
                   <tr>
                     <th scope="col">Department</th>
@@ -618,7 +638,7 @@ function EdPhone({
           {shown.length === 0 ? (
             <p className={phone.note}>Nobody matches this filter</p>
           ) : (
-            <PhoneList label="Open placement waits, longest first">
+            <PhoneList label="Open ED journeys, longest first">
               {shown.map(({ movement, waitMinutes }) => {
                 const tone =
                   waitMinutes >= VERY_LONG_WAIT_MINUTES
@@ -757,15 +777,15 @@ function Waits({
   return (
     <StatCard
       icon={Clock}
-      title="Open placement waits"
-      aside={onTheList === 0 ? undefined : `${waitingText} waiting`}
+      title="Open ED journeys"
+      aside={onTheList === 0 ? undefined : `${waitingText} open ED journeys`}
       id="ed-waiting"
       data-testid="ward-statistics-ed-wait"
     >
       {onTheList === 0 ? (
         <CardBody>
           <p className={styles.muted} data-testid="ward-stat-ed-wait-empty">
-            Nobody from this department has an open placement
+            Nobody from this department has an open ED journey
           </p>
         </CardBody>
       ) : countsOnly ? (
@@ -813,7 +833,7 @@ function Waits({
           <div className={ed.waitChart} data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
             <div className={cx(styles.tableWrap, ed.waitScroll)}>
               <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-stat-ed-wait-table">
-                <caption className={styles.srOnly}>Open placement waits from this department, synthetic</caption>
+                <caption className={styles.srOnly}>Open ED journeys from this department, synthetic</caption>
                 <thead>
                   <tr>
                     <th scope="col">Urgency</th>

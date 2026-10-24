@@ -386,6 +386,61 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
 
+## §7.83 — Live product review and resolution (23–24 October 2026)
+
+Task: `wardflow-live-product-review-20261023`. Owner: Codex review-resolution coordinator.
+Repository: `BigSimmo/Ward-Flow`. Original base `5875823b5322f0b4ed2f5239628f88d40ea0195e`.
+Candidate: `codex/ward-review-pr-20261024`, based on current main
+`b0d0cf722d2430aebeda50a264bb31e749bce626`. Original fixes remain in `8ca15c46f`;
+the original checkout and unfinished merge are retained. Josh approved the exact A–C
+scope and opening a PR. The clean current-main candidate carries only the review changes,
+avoiding unrelated incoming-main ownership checks. Source and regression repairs are
+committed in `d4135fdaa` and `5b29fa518`. Status: focused checks pass; full checks wait
+for the exact owned stopped-lease recovery approval described below. No PR is open yet.
+
+Three main-based author ports preserve current record storage, report owners, command
+completion, bed-kind revision guards, physical ED measures and current routes. Independent
+review reproduced and repaired a legacy held-bed Undo collision and a delayed manual
+snapshot that could replace a retained report after a shared outage began. Reporting
+retains all open ED-origin journeys through transit and recorded outcomes, with physical
+presence separate and complementary suppression on screen and CSV. Bed-release labels
+acknowledge linked identifiers. Recovery stores command identity only and never replays.
+
+Fresh current-candidate evidence at `d4135fdaa`: exact-lock root/backend installation,
+installed-tree parity, full lint, full frontend/backend TypeScript, documentation maintenance
+and offline backend tests (215 passes, 17 explicit database skips) pass. Three recovery,
+confirmation and community suites pass 54 tests. The local app starts and its project
+identity was verified; its owned preview server was stopped. Chromium and WebKit are
+installed. These source results remain applicable to the unchanged application code.
+
+The full unit run was stopped after six completed 100-file batches. Four UI files expected
+old labels and the engine-safety contract found the new hold action absent from its random
+event generator. Corrected six UI test files and the shared generator without weakening
+the invariant/coverage assertions. The corrected seven-file batch passes 52 tests; the
+generator's other two test callers pass seven tests. Both commits pass their staged lint
+and TypeScript checks. Change-integrity passes (25 test files, 243 to 287 cases). This is
+focused evidence; the incomplete full run is not a full-suite verdict. The shared fixture
+change requires a fresh full run, followed by production build and browser checks.
+
+A separate role-privacy owner reports a real local PostgreSQL/HTTP reproduction of old
+receipt-denial metadata after the same account narrows its role. That repair is separate
+and remains pending; this work does not claim to clear every privacy path. Internal
+HealthPoint policy, service-owner endorsement and actual SHOC/Beds Live/PaTCH interface
+ownership remain external acceptance boundaries, alongside physical-device and full
+screen-reader acceptance.
+
+Canonical private checkpoint and exact evidence:
+`C:/Users/joshs/Documents/Codex/Reviews/Ward-Flow-20261023/RESOLUTION.md` and its labelled
+manifests/logs. Stopping the owned full-run process tree left lease
+`3acac7e9-4a64-4def-9cf6-56c5e8bb559f` with an incomplete child receipt. Its holder,
+guardian and child were observed absent. The local protection hook blocked preserving
+that exact lease outside active admission and requires explicit approval; that question
+is pending. No peer process or lease was changed and no completion record was fabricated.
+Next: receive that approval, re-verify the owned stopped lease, preserve it, then complete
+the fresh full gate and production browser checks and publish one PR against main.
+No main merge or deployment is authorised. Notion is unsynced. Last verified:
+24 October 2026 against these fresh named artifacts.
+
 ## §7.84 — Remaining-ledger reconciliation and source fixes (24 October 2026)
 
 Task/source identity: conversation `01a1684a-2d0a-7343-b88b-3e8c570335d0`, `BigSimmo/Ward-Flow`, branch `codex/ledger-integration-20261024`. This is a contribution to the existing ledger. Canonical Notion reconciliation remains pending; earlier completed and decided records are retained.

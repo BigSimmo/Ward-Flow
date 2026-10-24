@@ -124,6 +124,14 @@ export function createWorkspaceStore(
     demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
     revision: Number(row.revision),
     ...accessContext(at, view),
+    ...(view
+      ? {
+          accessUntil: Math.min(
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+        }
+      : {}),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
   });
@@ -677,8 +685,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
-            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
+            ? "SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
+            : "SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -692,7 +700,12 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         if (!access) continue;
         if (row.kind === "cover" && access.role === "ward")
-          wardCovers.push({ membershipId: row.id, access, lastUsed: row.last_used_at ?? null });
+          wardCovers.push({
+            membershipId: row.id,
+            access,
+            lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
+          });
         // Cover gives no place of its own, so it can never be passed on (own: null).
         else
           roles.push({
@@ -700,6 +713,7 @@ export function createWorkspaceStore(
             access,
             own: row.kind === "cover" ? null : access,
             lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
           });
       }
       // Cover of a ward joins a nurse in charge's own ward, so night cover of two wards is one desk.
@@ -710,6 +724,7 @@ export function createWorkspaceStore(
           choice.access.role === "ward" && wardCovers.length
             ? {
                 ...choice,
+                accessUntil: Math.min(choice.accessUntil, ...wardCovers.map((cover) => cover.accessUntil)),
                 access: engine.withCover(
                   choice.access,
                   wardCovers.map((cover) => cover.access.scope),
@@ -782,6 +797,7 @@ export function createWorkspaceStore(
       actorId,
       version,
       membershipId: chosen.membershipId,
+      accessUntil: "accessUntil" in chosen && typeof chosen.accessUntil === "number" ? chosen.accessUntil : Infinity,
       access: chosen.access,
       // The role as granted, before any cover joined it: what this desk may give cover of. `null`
       // when the desk is working as cover, which is never given on.
@@ -1100,20 +1116,43 @@ export function createWorkspaceStore(
      * access admin reads only role changes inside their own place, never which patient was opened.
      * The HTTP layer refuses everyone else before this runs.
      */
-    async audit(view) {
+    async audit(view, cursor = null) {
       const whole = !view || engine.wholeNetwork(view.access);
       const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
+      const statewide = whole || view.access.scope.kind === "statewide";
+      let payload;
+      if (!statewide) {
+        payload = (await readWorld(pool, "payload"))?.payload;
+        if (!payload || !engine.validWorld(payload)) return [];
+      }
+      // Keyset-page the retained history, applying scope before the public 200-row cap.
+      // Sequence stays as the database's bigint text: never round a cursor through Number.
+      const selected = [];
+      let before = cursor;
+      for (;;) {
+        const { rows } = await pool.query(
+          `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+          before === null ? [workspaceId] : [workspaceId, before],
+        );
+        for (const row of rows) {
+          const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
+          if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+          if (selected.length === 200) return selected;
+        }
+        if (rows.length < 200) return selected;
+        before = rows.at(-1).sequence;
+      }
+    },
+    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
+    async receipt(actorId, commandId) {
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"} ORDER BY sequence DESC LIMIT 200`,
-        [workspaceId],
+        "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
+        [workspaceId, actorId, commandId],
       );
-      if (whole || view.access.scope.kind === "statewide") return rows;
-      const payload = (await readWorld(pool, "payload"))?.payload;
-      if (!payload || !engine.validWorld(payload)) return [];
-      return rows.filter((row) => {
-        const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
-        return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
-      });
+      const row = rows[0];
+      return row
+        ? { outcome: row.status === 200 ? "accepted" : "refused", commandRevision: row.result.commandRevision }
+        : null;
     },
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each
@@ -1514,7 +1553,7 @@ export function createWorkspaceStore(
      * reply carries only its part of the workspace. `options.seen` maps record tokens to the later
      * revision the sender has seen each at (CS-19 follow-up, `conflicts` in records.mjs); an
      * accepted reply names the records it checked as `covered`.
-     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, accessUntil?: number, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view, seen = null } = options;

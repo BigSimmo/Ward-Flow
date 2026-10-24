@@ -17,6 +17,7 @@ import type {
   Cohort,
   HomeRegion,
   LegalStatus,
+  Movement,
   MovementId,
   RecordedSex,
   ReferralGender,
@@ -780,6 +781,22 @@ export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_P
  */
 export function bedIsOccupied(admission: Admission): boolean {
   return admission.state === "pulled" || admission.state === "occupied";
+}
+
+/** Seeded stays may be joined only by Movement.admissionId; conflicting or multiple live joins stay unresolved. */
+export function liveMovementForAdmission(admission: Admission, movements: readonly Movement[]): Movement | undefined {
+  const matches = movements.filter(
+    (movement) =>
+      !movement.closure &&
+      movement.stage !== "arrived" &&
+      movement.acceptedUnitId === admission.unitId &&
+      (movement.id === admission.movementId || movement.admissionId === admission.id),
+  );
+  if (matches.length !== 1) return undefined;
+  const movement = matches[0]!;
+  if (admission.movementId !== null && movement.id !== admission.movementId) return undefined;
+  if (movement.admissionId !== undefined && movement.admissionId !== admission.id) return undefined;
+  return movement;
 }
 
 /**

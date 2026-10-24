@@ -727,6 +727,10 @@ describe("ward override-surface guard", () => {
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
+      // PR #675 (24 Oct 2026): HOLD_REFERRAL_BED rechecks an accepted referral's suitability with a
+      // synthetic ACCEPT_REFERRAL that carries the override already recorded at acceptance
+      // (`arm.acceptOverrideReason`); it is a check, not a new acceptance surface.
+      "src/components/ward-management/ward-flow-referral-answer-events.ts::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason

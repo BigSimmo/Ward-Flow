@@ -788,7 +788,8 @@ function WardFlowWorld({
       };
     },
   );
-  const state = container.world;
+  // Scope changes must be visible in this render, before the adoption effect copies the new desk.
+  const state = shared.enabled && shared.snapshot ? shared.snapshot.payload.state : container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   const broadcastInstanceIdRef = useRef("");
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
