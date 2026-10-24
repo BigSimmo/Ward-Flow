@@ -2864,14 +2864,15 @@
   vertical-align: middle;
 }
 
+/* Device sweep R2-01 (24 Oct 2026): a two-line clamp still hid the chip on a 390px phone when the
+ * words took both lines, so the eyebrow takes as many lines as it needs and the observation chip
+ * always shows. A 20px line fits the chip without the double gap a 24px line left. */
 @media (max-width: 48rem) {
   .v6Hero :has(> .phMoveEyebrow) {
-    display: -webkit-box;
-    overflow: hidden;
-    line-height: 24px;
+    display: block;
+    overflow: visible;
+    line-height: 20px;
     white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
   }
 }
 
@@ -3100,6 +3101,22 @@
   .pulledOverdueAlert::before {
     background: CanvasText;
     forced-color-adjust: none;
+  }
+  /* Device sweep R7-07/R7-09 (24 Oct 2026): the selected record tab and the recorded and current
+   * stage marks kept only a background and a shadow, which forced colours drop. */
+  .v6Tab[aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .v6Step[data-s="recorded"] .v6StepMark {
+    forced-color-adjust: none;
+    background: CanvasText;
+    color: Canvas;
+  }
+  .v6Step[data-s="now"] .v6StepMark {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
   }
 }
 

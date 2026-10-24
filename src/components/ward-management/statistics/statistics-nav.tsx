@@ -54,8 +54,13 @@ function scrollActiveIntoView(node: HTMLAnchorElement | null) {
     if (!row) return;
     const rowBox = row.getBoundingClientRect();
     const chipBox = node.getBoundingClientRect();
-    if (chipBox.left < rowBox.left) row.scrollLeft += chipBox.left - rowBox.left;
-    else if (chipBox.right > rowBox.right) row.scrollLeft += chipBox.right - rowBox.right;
+    // Device sweep R1-16/R2-09 (24 Oct 2026): stop at the row's own padding, so the current chip
+    // keeps the page gutter beside it rather than sitting flush against the screen edge.
+    const rowStyle = getComputedStyle(row);
+    const startInset = parseFloat(rowStyle.paddingLeft) || 0;
+    const endInset = parseFloat(rowStyle.paddingRight) || 0;
+    if (chipBox.left < rowBox.left + startInset) row.scrollLeft += chipBox.left - rowBox.left - startInset;
+    else if (chipBox.right > rowBox.right - endInset) row.scrollLeft += chipBox.right - rowBox.right + endInset;
   };
   reveal();
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(reveal);
