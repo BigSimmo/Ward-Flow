@@ -1060,7 +1060,10 @@ describe("shared workspace connection", () => {
       changed: (next) => {
         view = next;
       },
-      fetch: async () => (++calls <= 2 ? Response.json({ snapshot: snapshot(1) }) : Response.json({}, { status: 403 })),
+      fetch: async () =>
+        ++calls <= 2
+          ? Response.json({ snapshot: snapshot(1) })
+          : Response.json({ error: "Origin not allowed" }, { status: 403 }),
     });
     await client.refresh();
     client.dispatch(event);
