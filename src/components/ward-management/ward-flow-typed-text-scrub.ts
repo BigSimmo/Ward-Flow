@@ -204,10 +204,15 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
     if (value && typeof value === "object") {
       // An undo step keeps copies of support notification rows, which the anchored reason rule must reach.
       const rebased = supportUndoPaths(path, value);
+      const referralCopies = referralUndoPlaces(path, value);
       return Object.fromEntries(
         Object.entries(value).map(([key, entry]) => [
           key,
-          visit(entry, rebased?.[key] ?? [...path, key], [...place, key]),
+          visit(
+            entry,
+            referralCopies?.[key] ? ["referrals", "[]"] : (rebased?.[key] ?? [...path, key]),
+            referralCopies?.[key] ?? [...place, key],
+          ),
         ]),
       );
     }
@@ -234,6 +239,18 @@ function supportUndoPaths(path: readonly string[], value: object): Readonly<Reco
   return change.mode === "whole" ? SUPPORT_UNDO_LIST_PATHS : SUPPORT_UNDO_ROW_PATHS;
 }
 
+/** Decision snapshots keep the same referral identity, so only its own exact fixture text stays. */
+function referralUndoPlaces(path: readonly string[], value: object): Readonly<Record<string, string[]>> | undefined {
+  if (path.length !== 2 || path[0] !== "undoRecords" || path[1] !== "[]") return undefined;
+  const undo = value as { kind?: unknown; before?: { id?: unknown }; after?: { id?: unknown } };
+  if (undo.kind !== "referral-decision" || typeof undo.before?.id !== "string" || typeof undo.after?.id !== "string")
+    return undefined;
+  return {
+    before: ["referrals", `#${undo.before.id}`],
+    after: ["referrals", `#${undo.after.id}`],
+  };
+}
+
 /** Optional intake times and file contents: a placeholder cannot stand in for these, so they go. */
 const OPTIONAL_PATTERNED_INTAKE = [
   ["medicalClearance", "expectedAt"],
@@ -247,31 +264,38 @@ const OPTIONAL_PATTERNED_INTAKE = [
  * itself is kept. Its fixed-list facts go with it until the restore fence accepts the placeholder.
  */
 function keepHoldableIntakes(state: WardFlowState): WardFlowState {
-  const referrals = state.referrals.map((referral) => {
-    const intake = (referral as { intake?: Record<string, unknown> }).intake;
-    if (!intake || referralIntakeError(intake as unknown as ReferralIntakeDetails) === null) return referral;
-    const trimmed: Record<string, unknown> = { ...intake };
-    for (const [group, field] of OPTIONAL_PATTERNED_INTAKE) {
-      const inner = trimmed[group] as Record<string, unknown> | undefined;
-      if (inner?.[field] !== TYPED_TEXT_NOT_KEPT) continue;
-      const { [field]: _dropped, ...rest } = inner;
-      void _dropped;
-      trimmed[group] = rest;
-    }
-    if (Array.isArray(trimmed.charts))
-      trimmed.charts = trimmed.charts.map((chart: Record<string, unknown>) => {
-        if (chart.base64 !== TYPED_TEXT_NOT_KEPT) return chart;
-        const { base64: _content, ...rest } = chart;
-        void _content;
-        return rest;
-      });
-    if (referralIntakeError(trimmed as unknown as ReferralIntakeDetails) === null)
-      return { ...referral, intake: trimmed } as typeof referral;
-    const { intake: _intake, ...rest } = referral as typeof referral & { intake?: unknown };
-    void _intake;
-    return rest as typeof referral;
-  });
-  return { ...state, referrals };
+  const referrals = state.referrals.map(keepHoldableIntake);
+  const undoRecords = state.undoRecords?.map((undo) =>
+    undo.kind === "referral-decision"
+      ? { ...undo, before: keepHoldableIntake(undo.before), after: keepHoldableIntake(undo.after) }
+      : undo,
+  );
+  return { ...state, referrals, ...(undoRecords === undefined ? {} : { undoRecords }) };
+}
+
+function keepHoldableIntake<T extends { intake?: ReferralIntakeDetails }>(referral: T): T {
+  const intake = (referral as { intake?: Record<string, unknown> }).intake;
+  if (!intake || referralIntakeError(intake as unknown as ReferralIntakeDetails) === null) return referral;
+  const trimmed: Record<string, unknown> = { ...intake };
+  for (const [group, field] of OPTIONAL_PATTERNED_INTAKE) {
+    const inner = trimmed[group] as Record<string, unknown> | undefined;
+    if (inner?.[field] !== TYPED_TEXT_NOT_KEPT) continue;
+    const { [field]: _dropped, ...rest } = inner;
+    void _dropped;
+    trimmed[group] = rest;
+  }
+  if (Array.isArray(trimmed.charts))
+    trimmed.charts = trimmed.charts.map((chart: Record<string, unknown>) => {
+      if (chart.base64 !== TYPED_TEXT_NOT_KEPT) return chart;
+      const { base64: _content, ...rest } = chart;
+      void _content;
+      return rest;
+    });
+  if (referralIntakeError(trimmed as unknown as ReferralIntakeDetails) === null)
+    return { ...referral, intake: trimmed } as T;
+  const { intake: _intake, ...rest } = referral as T & { intake?: unknown };
+  void _intake;
+  return rest as T;
 }
 
 function matchesLedger(value: string, ledger: readonly string[]): boolean {
