@@ -1,5 +1,16 @@
 # Routes, shell, navigation and shared UI
 
+## Phone page preparation — 24 October 2026
+
+The phone dock and the phone menu's page and outstanding-work links request full Next.js
+prefetching while visible. Ward routes render dynamically, so the default prefetch prepares
+the route tree and loading shell without the destination's page code. Full prefetch lets a
+ready destination open without another navigation request; its figures still read the current
+client store. The existing loading state remains available for an early tap or a failed prefetch.
+`tests/ui-ward-chrome-header.spec.ts` checks touch navigation to Referrals and Capacity against
+the production build, including navigation with destination requests blocked after preparation.
+This changes background page preparation, not the screen design, access rules or script budgets.
+
 ## Shared save recovery — 23 October 2026
 
 `ward-shared-access.tsx` publishes memory-only save recovery through
