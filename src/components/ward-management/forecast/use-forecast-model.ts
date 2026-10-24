@@ -6,7 +6,7 @@
 // Home, Capacity, ED, the bed meeting, Alerts and Statistics all call this hook with their own clock,
 // so the same records give the same figure on every screen. Pure engine calls only; nothing here
 // writes a record.
-import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import { demoDayZero, type Instant } from "@/components/ward-management/ward-clock";
@@ -36,6 +36,12 @@ import {
   recordForecastHistory,
 } from "./forecast-history";
 import { blockerGroups, forecastLevers, notYetCounted } from "./forecast-levers";
+import {
+  FORECAST_MISS_REASONS_STORAGE_KEY,
+  parseForecastMissReasons,
+  recordForecastMissReason,
+  type ForecastMissReasonEntry,
+} from "./forecast-miss-reasons";
 
 /** "Peel ED" style name for an emergency department id; never a different department. */
 export function forecastEdName(edId: string): string {
@@ -233,4 +239,42 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
     window.dispatchEvent(new Event(HISTORY_EVENT));
   }, [key, entry]);
   return useMemo(() => ({ history, record: forecastTrackRecord(history) }), [history]);
+}
+
+// Closing-the-loop features (Josh, 24 Oct 2026): reasons a person records for forecast misses.
+const MISS_REASONS_EVENT = "ward-flow-forecast-miss-reasons-change";
+
+function subscribeMissReasons(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(MISS_REASONS_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(MISS_REASONS_EVENT, onChange);
+  };
+}
+
+/**
+ * The reasons recorded against the track record's missed days, kept under the same person,
+ * scenario and reseed as the snapshots they explain. Only `record` writes, and only when a person
+ * chooses a reason; nothing here assigns one.
+ */
+export function useForecastMissReasons() {
+  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
+  const account = useContext(SharedAccessContext);
+  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
+  const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
+  const entries = useMemo(() => parseForecastMissReasons(stored), [stored]);
+  const record = useCallback(
+    (entry: ForecastMissReasonEntry) => {
+      const next = recordForecastMissReason(parseForecastMissReasons(readLocal(key)), entry);
+      try {
+        window.localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        // Private windows and full storage keep no reasons, the same as the snapshots.
+      }
+      window.dispatchEvent(new Event(MISS_REASONS_EVENT));
+    },
+    [key],
+  );
+  return { entries, record };
 }
