@@ -30,6 +30,6 @@ You give staff access to the right desk and place. You never see patients.
   page and press **Retry**. Do not reload. Reloading loses the unconfirmed change.
 - A message saying a change was not recorded means nothing changed. Read the reason and try again.
 
-Before any real data, a second approver will be needed for role grants. This is not built yet.
+Grants work straight away in this prototype. Extra controls on role grants before any real data are still to be decided.
 
 _Prototype on synthetic data. Not for real patients._
