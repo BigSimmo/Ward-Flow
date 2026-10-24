@@ -212,9 +212,7 @@ export function WardHelpSheet({
               data-testid="ward-help-glossary-filter"
             />
           </label>
-          <p className={styles.note} aria-live="polite">
-            {terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}
-          </p>
+          <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
           {terms.length === 0 ? (
             <p className={styles.text}>No word or code matches.</p>
           ) : (
