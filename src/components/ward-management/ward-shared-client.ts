@@ -40,8 +40,7 @@ export type SharedView = {
   error: string | null;
   /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
   unconfirmedSave?: boolean;
-  /** Command replies retain their opaque ID so forms can recognise a terminal same-ID Retry. */
-  eventLog?: readonly (EventLogEntry & { commandId?: string })[];
+  eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
   /** The membership id worked as, or "bootstrap" for a WARD_COORDINATOR_USER_IDS account. */
@@ -82,6 +81,9 @@ export type SharedChangeResult = string | null;
 export type WardCommandOutcome = WardCommandMetadata & {
   commandId: string;
   status: "accepted" | "refused" | "failed" | "cancelled";
+  /** This command's definitive answer, including after an uncertain response and same-ID Retry.
+   * Memory only: scoped forms need no access to another command's event history. */
+  confirmation?: Promise<WardCommandOutcome>;
   message?: string;
   /**
    * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
@@ -175,6 +177,7 @@ export class SharedWorkspaceClient {
     this.unloadWarningActive = needed;
   }
   private completions = new Map<string, (outcome: WardCommandOutcome) => void>();
+  private confirmations = new Map<string, (outcome: WardCommandOutcome) => void>();
   private roleLifetime = new AbortController();
   private settle(
     commandId: string,
@@ -184,15 +187,20 @@ export class SharedWorkspaceClient {
     metadata?: WardCommandMetadata,
     partly?: string,
   ) {
-    this.completions.get(commandId)?.({
+    const outcome: WardCommandOutcome = {
       commandId,
       status,
       message,
       undoRecords,
       undoStep: metadata?.undoStep,
       ...(partly ? { partly } : {}),
-    });
+    };
+    this.completions.get(commandId)?.(outcome);
     this.completions.delete(commandId);
+    if (status !== "failed") {
+      this.confirmations.get(commandId)?.(outcome);
+      this.confirmations.delete(commandId);
+    }
   }
   private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
@@ -593,17 +601,23 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
+      const worldEpoch = this.worldEpoch;
+      return {
+        ...outcome,
+        isCurrent: () =>
+          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+        canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+      };
+    };
+    const confirmation = new Promise<WardCommandOutcome>((resolve) =>
+      this.confirmations.set(commandId, (outcome) => resolve(currentOutcome(outcome))),
+    );
     const completion = new Promise<WardCommandOutcome>((resolve) =>
       this.completions.set(commandId, (outcome) => {
-        const worldEpoch = this.worldEpoch;
         resolve({
-          ...outcome,
-          isCurrent: () =>
-            !this.disposed &&
-            !roleSignal.aborted &&
-            generation === this.viewGeneration &&
-            this.worldEpoch === worldEpoch,
-          canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
+          ...currentOutcome(outcome),
+          confirmation,
         });
       }),
     );
@@ -716,7 +730,6 @@ export class SharedWorkspaceClient {
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
-          commandId: command.commandId,
           sequence: (previousLog.at(-1)?.sequence ?? -1) + 1,
         };
         this.publish({
