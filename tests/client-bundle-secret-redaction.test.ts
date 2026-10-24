@@ -114,6 +114,15 @@ describe("client secret diagnostics", () => {
       const output = leaked.stdout + leaked.stderr;
       expect(output).toContain(".next/static/chunks/app/page.js:1 [AWS Access Key]");
       expect(output).not.toContain(invented);
+
+      // A credential URL split across lines by a template literal is still caught, at its first line.
+      const split = "postgres://" + "invented:secret\n@db.example.test";
+      writeFileSync(join(root, ".next/static/chunks/app/page.js"), `var a=1;\nvar u=\`${split}\`;\n`);
+      const multiline = run();
+      expect(multiline.status).toBe(1);
+      expect(multiline.stdout + multiline.stderr).toContain(
+        ".next/static/chunks/app/page.js:2 [Database URL with credentials]",
+      );
     } finally {
       rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }

@@ -84,12 +84,13 @@ for (const chunk of chunks) {
     unreadable.push(chunk);
     continue;
   }
-  text.split("\n").forEach((line, index) => {
-    for (const pattern of SECRET_PATTERNS) {
-      pattern.regex.lastIndex = 0;
-      if (pattern.regex.test(line)) violations.push({ file: chunk, line: index + 1, rule: pattern.name });
+  // Whole-chunk matching: a template literal can split a credential URL across lines.
+  for (const pattern of SECRET_PATTERNS) {
+    for (const match of text.matchAll(pattern.regex)) {
+      const line = text.slice(0, match.index).split("\n").length;
+      violations.push({ file: chunk, line, rule: pattern.name });
     }
-  });
+  }
 }
 const bundleSummary =
   chunks.length > 0

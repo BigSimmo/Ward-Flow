@@ -193,11 +193,12 @@ export const config = {
   // runs script, so the per-request nonce does nothing for them. The service
   // worker script and the offline page stay in: the worker runs under the CSP
   // its own script was sent with, which keeps its fetches same-origin.
-  // The icon and screenshot skips name the real file shapes, not the folders:
+  // The icon and screenshot skips name the real files, not their shapes (keep them in step
+  // with src/app/icons and public/screenshots; tests/ward-pwa-manifest.test.ts checks):
   // an unknown /icons/x or /screenshots/x renders the app's 404 page, which
   // must still get the CSP.
   matcher: [
     "/api/:path*",
-    "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$|icons/(?:(?:icon|maskable|monochrome)-\\d+|startup-\\d+x\\d+)$|apple-icon$|screenshots/[a-z0-9-]+\\.webp$|manifest\\.webmanifest$).*)",
+    "/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|icon\\.svg$|icons/(?:icon-(?:96|192|512)|(?:maskable|monochrome)-(?:192|512)|startup-(?:1170x2532|1284x2778|1179x2556|1290x2796|1206x2622|1320x2868|750x1334))$|apple-icon$|screenshots/(?:home|referrals|ward)-narrow\\.webp$|manifest\\.webmanifest$).*)",
   ],
 };
