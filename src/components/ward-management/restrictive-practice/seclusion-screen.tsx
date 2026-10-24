@@ -145,6 +145,14 @@ function WardCard({
   const acting = { unitId: ward.id, ...(role === "ward" ? { actingUnitId: ward.id } : {}) };
   const recorded = room.kind === "recorded" ? room : room.kind === "in_use" ? room.recorded : undefined;
   const roomStatus = recorded?.status;
+  // Audit 24-3 SV-5: a refused room status is said beside these buttons, not only in the status line.
+  const roomSave = useWardFormSave(ward.id);
+  const markRoom = (status: "available" | "out_of_service") =>
+    roomStatus !== status &&
+    roomSave.submit(
+      () => raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status }),
+      () => {},
+    );
   const recordedLine = recorded
     ? `${recorded.status === "available" ? "Available" : "Out of service"} · recorded by ${recorded.by} ${formatInstantWithDay(recorded.at, now)}`
     : undefined;
@@ -167,9 +175,7 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "available" ? "true" : undefined}
-              onClick={() => {
-                if (roomStatus !== "available") raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status: "available" });
-              }}
+              onClick={() => markRoom("available")}
               data-testid="seclusion-room-available"
             >
               Mark available
@@ -178,15 +184,13 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "out_of_service" ? "true" : undefined}
-              onClick={() => {
-                if (roomStatus !== "out_of_service")
-                  raise("SET_SECLUSION_ROOM_STATUS", { ...acting, status: "out_of_service" });
-              }}
+              onClick={() => markRoom("out_of_service")}
               data-testid="seclusion-room-out-of-service"
             >
               Mark out of service
             </Button>
           </div>
+          <SaveAnswer save={roomSave} testId="seclusion-room-failure" />
         </section>
 
         <section className={styles.section} aria-labelledby={`${ward.id}-use`}>

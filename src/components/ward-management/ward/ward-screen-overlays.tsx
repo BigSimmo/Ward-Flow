@@ -256,6 +256,15 @@ export function WardScreenBedDrawer({
       // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
       if (outcome?.status === "refused") setToastMessage(notRecordedMessage(outcome.message));
       else setToastMessage(wardCommandFailure(outcome) ?? success);
+      // Audit 24-3 SV-7: a Retry that saves replaces this save's "not confirmed" message, not a newer one.
+      const unconfirmed = outcome?.status === "failed" ? wardCommandFailure(outcome) : undefined;
+      void outcome?.confirmation?.then(
+        (later) => {
+          if (unconfirmed && later.status === "accepted" && later.isCurrent?.() !== false)
+            setToastMessage((shown) => (shown === unconfirmed ? success : shown));
+        },
+        () => {},
+      );
     });
   }
   return selectedBed !== null
