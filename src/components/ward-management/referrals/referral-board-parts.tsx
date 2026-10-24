@@ -40,6 +40,8 @@ import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
 import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
 import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
+import { ReferralCommitments } from "./referral-commitments-lazy";
+import { referralCommitmentStepLabel } from "./referral-commitments";
 import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
@@ -679,6 +681,11 @@ export function ReferralPatientTab({
         <ReferralOwnerAndCalls referral={referral} now={now} readOnly={readOnly} />
       </Section>
 
+      {/* Closing-the-loop package A (24 Oct 2026): what each ward agreed to, and when to ring again. */}
+      <Section title="Response commitments">
+        <ReferralCommitments referral={referral} now={now} readOnly={readOnly} />
+      </Section>
+
       <Section title="Recorded legal information" aside="For the receiving unit">
         <p className={styles.pMuted}>
           Referral details do not establish consent, detention authority or a register check.
@@ -743,6 +750,13 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
       const item = referralInformationNeedLabel(entry.need);
       entries.push({ at: entry.at, tone: "neutral", text: `${where} asked for: ${item}` });
       if (entry.metAt !== undefined) entries.push({ at: entry.metAt, tone: "success", text: `${item} provided` });
+    }
+    // Closing-the-loop package A: commitment steps and callbacks. Never an answer.
+    for (const entry of arm.commitments ?? []) {
+      const ward = units.find((unit) => unit.id === entry.unitId)?.name ?? "Ward not recorded";
+      const what = entry.step ? referralCommitmentStepLabel(entry.step) : "Next callback booked";
+      const callback = entry.step && entry.nextCallbackAt !== undefined ? ", next callback booked" : "";
+      entries.push({ at: entry.at, tone: "neutral", text: `${ward}: ${what}${callback} (${entry.by})` });
     }
     if (arm.decidedAt === undefined) continue;
     if (arm.state === "accepted") {

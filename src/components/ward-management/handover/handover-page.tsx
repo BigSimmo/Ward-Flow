@@ -103,6 +103,8 @@ import {
 import { HandoverFlowPanel, HandoverSignOffPanel, type SignOffCheck } from "./handover-panels";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
+// Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
+import { HandoverOpenPromises } from "./handover-open-promises";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
@@ -815,6 +817,7 @@ export function HandoverPage() {
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
+        <HandoverOpenPromises referrals={referrals} units={units} now={now} handoverAt={shiftAt} />
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -1412,6 +1415,7 @@ export function HandoverPage() {
       {hero}
       {pastBanner}
       {sheetOpen ? null : sinceStrip}
+      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} handoverAt={shiftAt} />}
       {sheetOpen ? null : toolbar}
       {body}
       {wide && !portrait ? (

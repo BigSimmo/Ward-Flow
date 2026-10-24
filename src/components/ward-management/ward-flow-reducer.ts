@@ -159,6 +159,7 @@ import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
 import { reduceReferralAskEvent } from "./ward-flow-referral-ask-events";
 import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
+import { reduceReferralCommitmentEvent } from "./ward-flow-referral-commitment-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
@@ -1851,6 +1852,9 @@ export function reduceClinicalEvent(
     case "ASSIGN_REFERRAL":
     case "LOG_REFERRAL_CONTACT":
       return reduceReferralOwnerEvent(state, event, decision, { findReferral, reject, replaceReferral });
+    // Closing-the-loop package A (24 Oct 2026): response commitments.
+    case "RECORD_REFERRAL_COMMITMENT":
+      return reduceReferralCommitmentEvent(state, event, decision, { findReferral, reject, replaceReferral });
     case "ASK_MORE_WARDS":
       return reduceReferralAskEvent(state, event, decision, { findReferral, findUnit, reject, replaceReferral });
     case "CLOSE_WARD_TO_ADMISSIONS":

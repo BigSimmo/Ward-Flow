@@ -17,6 +17,8 @@ import type {
   ReferralOwnerDesk,
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
+// Closing-the-loop package A (24 Oct 2026): response commitments.
+import type { ReferralCommitmentStep } from "@/components/ward-management/referrals/referral-commitments";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
@@ -749,6 +751,28 @@ export type WardFlowEvent =
       referralId: string;
       contact: ReferralContactTarget;
       outcome: ReferralContactOutcome;
+    }
+  // ── Closing-the-loop package A (24 Oct 2026): response commitments ──
+  | {
+      /**
+       * Record a commitment on one ward's copy of a referral still waiting on its answer: a step
+       * from `REFERRAL_COMMITMENT_STEPS` (response requested, acknowledged, promised by a time,
+       * resolved), a next callback time, or both. Appends to `ReferralAddressing.commitments`.
+       * Steps only move forward; a promise may be re-recorded with a new time. The coordinator
+       * records any step; a ward records acknowledged or promised for its own copy. Never typed,
+       * never an answer: `state` and the decision clock are untouched.
+       */
+      type: "RECORD_REFERRAL_COMMITMENT";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      step?: ReferralCommitmentStep;
+      /** Required with `step: "promised"`, refused otherwise. */
+      promisedFor?: Instant;
+      nextCallbackAt?: Instant;
     }
   | {
       /**

@@ -13,6 +13,7 @@ import { rolesOnlyReason } from "../ward-role-permissions";
 import { referralInboxName } from "./referral-inbox";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-lazy";
+import { WardCommitmentControls } from "./referral-commitments-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
@@ -273,6 +274,10 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 actingUnitId={actingUnitId}
                 refusal={roleRefusal}
               />
+            ) : null}
+            {/* Closing-the-loop package A: the ward acknowledges and promises an answer by a time. */}
+            {live ? (
+              <WardCommitmentControls entry={entry} unitId={unitId} actingUnitId={actingUnitId} refusal={roleRefusal} />
             ) : null}
           </article>
         );

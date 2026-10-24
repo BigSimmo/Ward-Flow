@@ -85,6 +85,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "MARK_REFERRAL_INFORMATION_MET":
     case "ASSIGN_REFERRAL":
     case "LOG_REFERRAL_CONTACT":
+    case "RECORD_REFERRAL_COMMITMENT":
     case "ASK_MORE_WARDS":
       return event.referralId;
     case "RECORD_BED_MEETING_ACTION":

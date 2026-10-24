@@ -76,6 +76,7 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { REFERRAL_INFORMATION_NEED_IDS } from "@/components/ward-management/referrals/referral-information-needs";
+import { REFERRAL_COMMITMENT_STEP_IDS } from "@/components/ward-management/referrals/referral-commitments";
 import {
   REFERRAL_CONTACT_OUTCOME_IDS,
   REFERRAL_OWNER_DESKS,
@@ -1519,6 +1520,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         referralId: id(referral),
         contact,
         outcome: pick(random, REFERRAL_CONTACT_OUTCOME_IDS) ?? "no_answer",
+      };
+    },
+  ],
+  // Closing-the-loop package A: a commitment step, a callback time or both, on a ward's copy.
+  [
+    0.5,
+    (state, random) => {
+      const unitId = id(pick(random, state.units));
+      const step = pick(random, [...REFERRAL_COMMITMENT_STEP_IDS, undefined]);
+      return {
+        type: "RECORD_REFERRAL_COMMITMENT",
+        referralId: id(referralFor(state, random)),
+        unitId,
+        actingUnitId: unitId,
+        ...(step === undefined ? {} : { step }),
+        ...(step === "promised" ? { promisedFor: currentNow + int(random, 0, 480) } : {}),
+        ...(step === undefined || chance(random, 0.5) ? { nextCallbackAt: currentNow + int(random, 0, 480) } : {}),
       };
     },
   ],

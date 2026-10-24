@@ -6,6 +6,8 @@ import type {
   ReferralOwnerDesk,
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
+// Closing-the-loop package A (24 Oct 2026): response commitments. A type-only import of closed lists.
+import type { ReferralCommitmentEntry } from "@/components/ward-management/referrals/referral-commitments";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
@@ -1461,6 +1463,9 @@ export type ReferralAddressing = {
   /** Fix plan item 16 (D-76): the ROLE that added this ward to an open referral with
    *  `ASK_MORE_WARDS`. Absent on every destination the referrer chose when raising it. */
   addedBy?: string;
+  /** Closing-the-loop package A: response commitments on this ward copy (`RECORD_REFERRAL_COMMITMENT`),
+   *  oldest first, append-only. See `ReferralCommitmentEntry`. Never an answer. */
+  commitments?: ReadonlyArray<ReferralCommitmentEntry>;
 };
 
 /** One item a ward asked for on a referral. `by` and `metBy` are ROLES, never people. */
