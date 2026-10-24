@@ -47,7 +47,13 @@ function toControlledMinutes(val: string | Instant): number {
   return Math.floor(parsed / 60_000);
 }
 
+/**
+ * Minutes left. A board Instant expiry is read only against a board clock, never against real time
+ * (audit 24-6 TC-08): with neither a `now` nor a board clock it counts as ended. A date-string expiry
+ * is real time, so real time is its fallback.
+ */
 function computeControlledRemainingMinutes(expiresAt: string | Instant, now?: string | Instant): number {
+  if (now === undefined && typeof expiresAt === "number") return 0;
   const expMin = toControlledMinutes(expiresAt);
   const nowMin = now !== undefined ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
   return expMin - nowMin;
@@ -83,17 +89,21 @@ function ControlledBroadcastBanner({
   onExtend?: () => void;
   onClear?: () => void;
 }) {
+  // An Instant expiry with no `now` passed reads the board clock (NaN when there is none).
+  const boardNow = useWardFlowClock(Number.NaN);
+  const referenceNow =
+    now ?? (typeof activeAlert?.expiresAt === "number" && Number.isFinite(boardNow) ? boardNow : undefined);
   const [, setClockTick] = useState(0);
   useEffect(() => {
-    if (now !== undefined || !activeAlert) return;
+    if (referenceNow !== undefined || !activeAlert) return;
     const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
     return () => window.clearInterval(timer);
-  }, [activeAlert, now]);
+  }, [activeAlert, referenceNow]);
 
   if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
     return null;
   }
-  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now);
+  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, referenceNow);
   if (remainingMinutes <= 0) {
     return null;
   }

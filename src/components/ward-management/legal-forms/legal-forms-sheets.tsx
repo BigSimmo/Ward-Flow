@@ -35,13 +35,20 @@ const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
 /**
- * The time typed from the paper form, today. A blank, malformed, out-of-range or future time is
- * refused (null): Ward Flow records only times a person typed, never the save moment standing in
- * for one, and a form cannot have been written after now.
+ * The time typed from the paper form, on the date typed beside it (blank date = today). A blank,
+ * malformed, out-of-range or future time is refused (null): Ward Flow records only times a person
+ * typed, never the save moment standing in for one, and a form cannot have been written after now.
+ * The date lets a form written at 23:50 be recorded at 00:10 (audit 24-6 TC-03); it is read on the
+ * Perth calendar through `instantFromDateAndTimeInputs`, the same reading the extend sheet uses.
  */
-function parseWrittenInstant(value: string, now: Instant): Instant | null {
+export function parseWrittenInstant(value: string, now: Instant, date = "", dayZero?: Date): Instant | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
+  if (date !== "") {
+    if (!dayZero || !/^\d{1,2}:\d{2}$/.test(trimmed)) return null;
+    const dated = instantFromDateAndTimeInputs(date, trimmed, dayZero);
+    return dated === undefined || dated > now ? null : dated;
+  }
   const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
   if (!match) return null;
   const hours = Number(match[1]);
@@ -190,17 +197,19 @@ export function RecordFormSheet({
   // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
   const [formKey, setFormKey] = useState(0);
   const [timeOnForm, setTimeOnForm] = useState("");
+  const [dateOnForm, setDateOnForm] = useState("");
   const [saving, setSaving] = useState(false);
   const submissionVersion = useRef(0);
-  const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration");
+  const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration", "dayZero");
+  const dayZero = world?.dayZero;
   const scenario = world?.scenario ?? "standard";
   const [storageKey] = useState(() =>
     sessionDraftKey(`${scenario}/${world?.worldGeneration ?? 0}`, "legal-record", "new"),
   );
   const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
     storageKey: world && !world.sessionAdopted ? undefined : storageKey,
-    isDirty: !!timeOnForm || !!draft.movement,
-    value: JSON.stringify({ ...draft, timeOnForm }),
+    isDirty: !!timeOnForm || !!dateOnForm || !!draft.movement,
+    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm }),
     onRestore: (raw) => {
       try {
         const restored: unknown = JSON.parse(raw);
@@ -220,6 +229,8 @@ export function RecordFormSheet({
         if (targetMovement && restored.movement !== targetMovement) return false;
         onDraft({ movement: restored.movement, form: restored.form });
         setTimeOnForm(restored.timeOnForm);
+        // A draft saved before the date field existed has no date: blank means today.
+        setDateOnForm("dateOnForm" in restored && typeof restored.dateOnForm === "string" ? restored.dateOnForm : "");
         return true;
       } catch {
         return false; /* A damaged form draft never becomes a legal record. */
@@ -232,13 +243,14 @@ export function RecordFormSheet({
       submissionVersion.current += 1;
       clearDraft();
       setTimeOnForm("");
+      setDateOnForm("");
       setSaving(false);
     }
     priorMovement.current = draft.movement;
   }, [draft.movement, clearDraft]);
   const typeRef = useRef<HTMLSelectElement | null>(null);
   const baseId = useId();
-  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now);
+  const parsedWrittenAt = parseWrittenInstant(timeOnForm, now, dayZero ? dateOnForm : "", dayZero);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
   // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
   const dismiss = onClose;
@@ -254,7 +266,9 @@ export function RecordFormSheet({
           : draft.form === "3C" && movementRefuses3C(selectedMovement)
             ? "Form 3C is refused when the person arrived on a Form 3D."
             : parsedWrittenAt === null
-              ? "Enter the time written on the form as HH:MM, no later than now."
+              ? dayZero && dateOnForm !== ""
+                ? "Enter the date and time written on the form, no later than now."
+                : "Enter the time written on the form as HH:MM, no later than now."
               : undefined);
   return (
     <Sheet
@@ -275,6 +289,7 @@ export function RecordFormSheet({
               clearDraft();
               onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
               setTimeOnForm("");
+              setDateOnForm("");
               setFormKey((key) => key + 1);
             }}
           >
@@ -300,6 +315,7 @@ export function RecordFormSheet({
                 if (accepted) {
                   clearDraft();
                   setTimeOnForm("");
+                  setDateOnForm("");
                   onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
                   onClose();
                 }
@@ -344,6 +360,7 @@ export function RecordFormSheet({
             onChange={(event) => {
               clearDraft();
               setTimeOnForm("");
+              setDateOnForm("");
               onDraft({ ...draft, movement: event.target.value });
             }}
           >
@@ -372,6 +389,22 @@ export function RecordFormSheet({
             />
           </Field>
         </div>
+        {dayZero ? (
+          <Field
+            label="Date on form"
+            id={`${baseId}-legal-forms-new-date`}
+            help="Leave blank for today. Use it for a form written before midnight."
+          >
+            <TextInput
+              type="date"
+              data-testid="ward-legal-forms-new-date"
+              autoComplete="off"
+              disabled={saving}
+              value={dateOnForm}
+              onChange={(event) => setDateOnForm(event.target.value)}
+            />
+          </Field>
+        ) : null}
         <Field label="Notes" id={`${baseId}-legal-forms-new-notes`}>
           <Textarea
             readOnly
