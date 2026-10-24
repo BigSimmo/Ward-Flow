@@ -37,12 +37,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
-import {
-  isConstantObservation,
-  observationLevelName,
-  observationRatio,
-  observationSummary,
-} from "@/components/ward-management/ward-observation";
+import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 /* ------------------------------------------------------------------ shifts */
@@ -359,10 +354,9 @@ export function obsLong(row: HandoverRow): string {
   return row.obs === "Urgent" ? `Flagged urgent, ${level}` : level;
 }
 
-/** The Obs column's short form: the level name, or its ratio for a constant level, or "Urgent". */
+/** The separate Obs column preserves the recorded level, interval/ratio and urgent flag. */
 export function obsShort(row: HandoverRow): string {
-  if (row.obs === "Urgent") return "Urgent";
-  return observationRatio(row.movement.observation.level) ?? observationLevelName(row.movement.observation.level);
+  return obsLong(row);
 }
 
 export function destinationText(row: HandoverRow): string {

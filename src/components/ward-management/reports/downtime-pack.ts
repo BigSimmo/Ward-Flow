@@ -10,6 +10,7 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
  * DOWNTIME PACK — a frozen, printable snapshot of the network for when the system is unavailable:
@@ -41,6 +42,7 @@ type DowntimeEdLine = {
   legalStatus: string;
   stage: string;
   acceptedWard: string;
+  observation: string;
 };
 
 type DowntimeMoveLine = {
@@ -51,6 +53,7 @@ type DowntimeMoveLine = {
   stage: string;
   plannedAt: Instant | null;
   transportEta: Instant | null;
+  observation: string;
 };
 
 type DowntimeLegalLine = {
@@ -156,6 +159,7 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
       legalStatus: movement.legalStatus,
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       acceptedWard: unitName(movement.acceptedUnitId),
+      observation: observationSummary(movement.observation),
     }))
     .sort((a, b) => a.ed.localeCompare(b.ed) || b.waitedMinutes - a.waitedMinutes);
 
@@ -169,6 +173,7 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
       stage: stageCopy[movement.stage]?.label ?? movement.stage,
       plannedAt: finiteOrNull(movement.plannedMoveAt),
       transportEta: finiteOrNull(movement.transport?.estimatedAt),
+      observation: observationSummary(movement.observation),
     }))
     .sort((a, b) => (a.plannedAt ?? Infinity) - (b.plannedAt ?? Infinity) || a.to.localeCompare(b.to));
 

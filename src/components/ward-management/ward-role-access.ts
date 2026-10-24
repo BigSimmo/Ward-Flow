@@ -156,6 +156,7 @@ const EVERY_SCREEN_ALL: ScreenTable = Object.fromEntries(WARD_SCREEN_IDS.map((id
 export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
   coordinator: EVERY_SCREEN_ALL,
   bed_manager: {
+    // D-80: its own site in detail, and other sites as bed counts only (place information, no patient).
     capacity: "own",
     wards: "own",
     hub: "own",

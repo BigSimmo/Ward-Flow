@@ -161,15 +161,20 @@ export function calendarDateOf(instant: Instant, dayZero: Date): Date {
  *
  * Takes `dayZero` because an `Instant` is an offset, not a moment — see `calendarDateOf`.
  */
-export function formatSheetMoment(instant: Instant, dayZero: Date): string {
+export function formatSheetMoment(
+  instant: Instant,
+  dayZero: Date,
+  options: { includeYearAndZone?: boolean } = {},
+): string {
   const date = calendarDateOf(instant, dayZero);
   const day = date.toLocaleDateString("en-AU", {
     weekday: "short",
     day: "numeric",
     month: "short",
+    ...(options.includeYearAndZone ? { year: "numeric" as const } : {}),
     timeZone: "Australia/Perth",
   });
-  return `${day}, ${formatInstant(instant)}`;
+  return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? " AWST" : ""}`;
 }
 
 export function formatInstantWithDay(instant: Instant, now: Instant): string {

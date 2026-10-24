@@ -43,6 +43,9 @@ const OUT_OF_AREA_PHONE_META = "Far from home, or by air";
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
+const OCCUPIED_TIME_LABEL = "Recorded occupied bed time";
+const OCCUPIED_TIME_DEFINITION =
+  "Recorded occupied stay time divided by the current total bed count and counted time. Closed beds stay in the denominator; time pulled for arrival is excluded. Historical bed capacity and pull times are not reconstructed.";
 
 function weekLabel(week: ReportWeek, dayZero: Date): string {
   const range = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
@@ -111,6 +114,7 @@ export function WeeklyReportScreen() {
   const targetText = `over ${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const occupancyText = report.occupancy.averagePercent === null ? "—" : `${report.occupancy.averagePercent}%`;
   const weekRange = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
+  const outputMoment = (at: Instant) => formatSheetMoment(at, dayZero, { includeYearAndZone: true });
   // Phone wording in whole hours ("24h"), as the v10 phone drawing reads.
   const longHoursLabel = `${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const phoneTargetText = `over ${longHoursLabel}`;
@@ -156,10 +160,7 @@ export function WeeklyReportScreen() {
                 <HeroStat value={report.edWaits.count} label={`New ED waits ${longHoursLabel}+`} />
                 {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
                 <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-                <HeroStat
-                  value={occupancyText}
-                  label={offset === 0 ? "Average in use, last full week" : "Average in use, this week so far"}
-                />
+                <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
               </>
             ),
           }}
@@ -185,12 +186,17 @@ export function WeeklyReportScreen() {
               <HeroStat value={report.edWaits.count} label={`New ED waits ${targetText}`} />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
               <HeroStat value={delayedDays} label="Delayed discharge days" />
-              <HeroStat value={occupancyText} label="Average occupancy" />
+              <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
             </>
           }
           paused={paused}
           onTogglePause={togglePause}
         />
+
+        <p className={styles.disclosure} data-testid="ward-weekly-period">
+          Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
+          {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
+        </p>
 
         {isPhone ? (
           <PhoneBody testId="ward-weekly-phone">
@@ -206,7 +212,7 @@ export function WeeklyReportScreen() {
               ]}
             />
             <p className={phone.note} data-testid="ward-weekly-range">
-              {weekLabel(week, dayZero)} · generated {formatSheetMoment(now, dayZero)}
+              {weekLabel(week, dayZero)} · generated {outputMoment(now)}
             </p>
             <PhoneCard
               icon={Clock}
@@ -276,14 +282,22 @@ export function WeeklyReportScreen() {
                 ]}
               />
             </PhoneCard>
-            <PhoneCard icon={BedDouble} title="Beds in use" aside={`${report.occupancy.beds} beds`}>
+            <PhoneCard icon={BedDouble} title="Occupancy" aside={`${report.occupancy.beds} current total beds`}>
               <PhoneFacts
                 flush
                 facts={[
-                  { id: "average", label: "Average in week", value: occupancyText, testId: "ward-weekly-occupancy" },
+                  {
+                    id: "average",
+                    label: OCCUPIED_TIME_LABEL,
+                    value: occupancyText,
+                    testId: "ward-weekly-occupancy",
+                  },
                   { id: "now", label: "In use now", value: report.occupancy.now.inUse },
                 ]}
               />
+              <p className={phone.note} data-testid="ward-weekly-occupancy-definition">
+                {OCCUPIED_TIME_DEFINITION}
+              </p>
             </PhoneCard>
             <PhoneGroup
               title={`Waits first passing ${phoneTargetText}`}
@@ -357,7 +371,7 @@ export function WeeklyReportScreen() {
                   where the picker prints as an empty box (UX audit 21 Oct 2026). */}
               <p className={styles.stamp} data-testid="ward-weekly-range">
                 <span className={styles.printOnlyInline}>Week: {weekLabel(week, dayZero)} · </span>
-                Generated {formatSheetMoment(now, dayZero)}
+                Generated {outputMoment(now)}
               </p>
             </div>
 
@@ -431,10 +445,10 @@ export function WeeklyReportScreen() {
               >
                 <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
               </StatCard>
-              <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} beds`}>
+              <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} current total beds`}>
                 <dl className={styles.figures}>
                   <div className={styles.figure}>
-                    <dt>Average in week</dt>
+                    <dt>{OCCUPIED_TIME_LABEL}</dt>
                     <dd data-testid="ward-weekly-occupancy">{occupancyText}</dd>
                     <dd className={styles.figureNote}>{report.occupancy.occupiedBedDays} occupied bed days</dd>
                   </div>
@@ -446,6 +460,12 @@ export function WeeklyReportScreen() {
                     <dd className={styles.figureNote}>{report.occupancy.now.pulled} pulled for arrival</dd>
                   </div>
                 </dl>
+                <p
+                  className={`${styles.disclosure} ${styles.cardFootNote}`}
+                  data-testid="ward-weekly-occupancy-definition"
+                >
+                  {OCCUPIED_TIME_DEFINITION}
+                </p>
               </StatCard>
             </div>
 
@@ -478,9 +498,7 @@ export function WeeklyReportScreen() {
                         <tr key={row.movement.id}>
                           <th scope="row">{admissionLabel(row.movement.id)}</th>
                           <td>{originName(row.movement) ?? row.movement.originEdId}</td>
-                          <td className={styles.time}>
-                            {formatSheetMoment(row.movement.openedAt as Instant, dayZero)}
-                          </td>
+                          <td className={styles.time}>{outputMoment(row.movement.openedAt as Instant)}</td>
                           <td className={styles.num}>{splitDuration(row.waitedMinutes)}</td>
                           <td>{row.stillWaiting ? "Still waiting" : "Left the ED"}</td>
                         </tr>

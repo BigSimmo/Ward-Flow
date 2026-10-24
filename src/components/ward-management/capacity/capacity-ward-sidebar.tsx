@@ -3,6 +3,7 @@
 // The side panel for one ward on the capacity screen, with its tabs and discharge record facts.
 // Split out of `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
@@ -229,7 +230,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
               <h3>Confirmed beds</h3>
               <WardFreshness
                 confirmedAt={row.confirmedAt}
-                confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
+                confirmedByRole={capacityConfirmer(row.unit)}
                 derived={row.unit.allocatable.source !== "ward"}
                 now={now}
               />
