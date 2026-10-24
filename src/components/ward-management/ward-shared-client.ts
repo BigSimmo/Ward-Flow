@@ -40,7 +40,8 @@ export type SharedView = {
   error: string | null;
   /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
   unconfirmedSave?: boolean;
-  eventLog?: readonly EventLogEntry[];
+  /** Command replies retain their opaque ID so forms can recognise a terminal same-ID Retry. */
+  eventLog?: readonly (EventLogEntry & { commandId?: string })[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
   /** The membership id worked as, or "bootstrap" for a WARD_COORDINATOR_USER_IDS account. */
@@ -715,6 +716,7 @@ export class SharedWorkspaceClient {
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
+          commandId: command.commandId,
           sequence: (previousLog.at(-1)?.sequence ?? -1) + 1,
         };
         this.publish({

@@ -405,7 +405,7 @@ describe("shared view response ordering", () => {
     const outcome = await completion;
     expect(outcome).toMatchObject({ status: "accepted", undoRecords: accepted.payload.state.undoRecords });
     await vi.waitFor(() => expect(view?.status).toBe("ready"));
-    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
+    expect(view?.eventLog).toEqual([{ ...eventLogEntryFor(event, true), commandId: outcome.commandId }]);
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
     expect(reads).toBe(2);
@@ -556,7 +556,14 @@ describe("shared workspace connection", () => {
     client.dispatch(typedEvent);
     await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
     expect(view?.eventLog).toEqual([
-      { type: "DISPATCH_BROADCAST_ALERT", role: "coordinator", now: 642, accepted: status === 200, sequence: 0 },
+      {
+        type: "DISPATCH_BROADCAST_ALERT",
+        role: "coordinator",
+        now: 642,
+        accepted: status === 200,
+        sequence: 0,
+        commandId: expect.any(String),
+      },
     ]);
     expect(view?.snapshot?.revision).toBe(status === 400 ? 1 : 2);
     client.dispose();
@@ -1020,9 +1027,9 @@ describe("shared workspace connection", () => {
     expect(commandId).toHaveBeenCalledOnce();
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.status).toBe("ready");
-    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
+    expect(view?.eventLog).toEqual([{ ...eventLogEntryFor(event, true), commandId: "test-id-1" }]);
     await client.refresh();
-    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
+    expect(view?.eventLog).toEqual([{ ...eventLogEntryFor(event, true), commandId: "test-id-1" }]);
     client.dispose();
   });
   it("shows committed winner state after a conflict and does not silently retry", async () => {
