@@ -869,11 +869,12 @@ describe("phone alert service worker", () => {
 
   it("shows the server's words, and links only inside Ward Flow", async () => {
     const worker = loadWorker([]);
-    const data = { json: () => ({ title: "Ward Flow: 2 act-now items", url: "/mockups/ward-flow-digest" }) };
+    // A title the server builds (pushPayload); other words are replaced by the fallback (PS-13).
+    const data = { json: () => ({ title: "Ward Flow: 2 new act now items", url: "/mockups/ward-flow-digest" }) };
     await worker.fire("push", { data });
     expect(worker.shown).toEqual([
       {
-        title: "Ward Flow: 2 act-now items",
+        title: "Ward Flow: 2 new act now items",
         options: expect.objectContaining({ tag: "ward-flow-act-now", data: { url: "/ward-flow/alerts" } }),
       },
     ]);

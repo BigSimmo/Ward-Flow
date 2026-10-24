@@ -304,12 +304,20 @@ export function DisplayPane({
 
           <Card aria-labelledby="help-title" data-setting="help">
             <CardHead iconPlain id="help-title" icon={CircleHelp} title="Help and tour" />
-            <SettingRow setting="help-screen" title="Help" sub="What each screen is for, and a glossary">
-              <Button variant="ghost" size="sm" onClick={() => openWardHelp("screen")} data-testid="settings-open-help">
+            <SettingRow
+              setting="help-screen"
+              title="Help"
+              sub="Your desk's guide, what each screen is for, and a glossary"
+            >
+              <Button variant="ghost" size="sm" onClick={() => openWardHelp("desk")} data-testid="settings-open-help">
                 Open help
               </Button>
             </SettingRow>
-            <SettingRow setting="tour" title="First-run tour" sub="A short walk through this desk's menu">
+            <SettingRow
+              setting="tour"
+              title="First-run tour"
+              sub="Starts by itself once on this device. Replay it here or from Help."
+            >
               <Button variant="ghost" size="sm" onClick={() => openWardHelp("tour")} data-testid="settings-replay-tour">
                 Replay the tour
               </Button>

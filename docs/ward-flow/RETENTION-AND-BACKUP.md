@@ -1,6 +1,6 @@
 # Ward Flow retention, correction and backup plan
 
-_Updated 2026-10-19 - source correction appended to the dated restore receipt; Documentation owns._
+_Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
 _Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->13<!-- /fact --> migrations, latest <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
 
@@ -16,22 +16,22 @@ Anything marked **unconfirmed** could not be checked from the repository or a pu
 All tables are in the `ward_flow` schema of the Supabase database named in
 [DATABASE.md](DATABASE.md). Today every row is synthetic.
 
-| Table                | What it holds, in plain words                                                                                                                | Identifiers once real?                                  |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `workspaces`         | The board's version and settings. Before migration 10, the whole board as one saved record                                                   | Yes. Patient details and clinical notes                 |
-| `workspace_records`  | From migration 10, the live board itself: each patient, referral, movement, bed and delay as its own row                                     | Yes. Patient details and clinical notes                 |
-| `audit`              | One row per change or refused change: who, role, place, when, and the before and after values                                                | Yes. The before and after values copy patient details   |
-| `record_access`      | One row each time someone opens a patient, movement or (from migration 13) referral record: who, role, place, patient ID, which screen, when | Yes. Patient ID and staff ID                            |
-| `break_glass`        | One row each time someone opens a record outside their own care, with the reason and end time                                                | Yes. Patient ID and staff ID                            |
-| `memberships`        | Which staff member holds which role at which place, who granted it, when it ends                                                             | Staff only                                              |
-| `access_requests`    | Requests for a role from staff who have none, and the decision                                                                               | Staff only                                              |
-| `commands`           | Receipts that stop a resent button press being applied twice. Outcome and version number only                                                | Staff ID only. No patient content                       |
-| `push_subscriptions` | Phone alert addresses and their encryption keys, per staff member                                                                            | Staff only                                              |
-| `push_deliveries`    | Which alert is still waiting to reach which phone                                                                                            | Board item IDs only                                     |
-| `push_baselines`     | The list of urgent items already announced, one row per board                                                                                | Board item IDs only                                     |
-| `session_sign_outs`  | Signed-out sign-ins, kept until the token would have expired anyway                                                                          | Staff ID only                                           |
-| `migrations`         | Which database changes have been applied                                                                                                     | No                                                      |
-| Supabase Auth        | Staff sign-in accounts (email, password hash), held by Supabase outside `ward_flow`                                                          | Staff only. Supabase's own log retention is unconfirmed |
+| Table                | What it holds, in plain words                                                                                                                           | Identifiers once real?                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `workspaces`         | The board's version and settings. Before migration 10, the whole board as one saved record                                                              | Yes. Patient details and clinical notes                 |
+| `workspace_records`  | From migration 10, the live board itself: each patient, referral, movement, bed and delay as its own row                                                | Yes. Patient details and clinical notes                 |
+| `audit`              | One row per change or refused change: who, role, place, when, and the before and after values                                                           | Yes. The before and after values copy patient details   |
+| `record_access`      | One row each time someone opens a patient or movement page or, from migration 13, a referral's detail: who, role, place, patient ID, which screen, when | Yes. Patient ID and staff ID                            |
+| `break_glass`        | One row each time someone opens a record outside their own care, with the reason and end time                                                           | Yes. Patient ID and staff ID                            |
+| `memberships`        | Which staff member holds which role at which place, who granted it, when it ends                                                                        | Staff only                                              |
+| `access_requests`    | Requests for a role from staff who have none, and the decision                                                                                          | Staff only                                              |
+| `commands`           | Receipts that stop a resent button press being applied twice. Outcome and version number only                                                           | Staff ID only. No patient content                       |
+| `push_subscriptions` | Phone alert addresses and their encryption keys, per staff member                                                                                       | Staff only                                              |
+| `push_deliveries`    | Which alert is still waiting to reach which phone                                                                                                       | Board item IDs only                                     |
+| `push_baselines`     | The list of urgent items already announced, one row per board                                                                                           | Board item IDs only                                     |
+| `session_sign_outs`  | Signed-out sign-ins, kept until the token would have expired anyway                                                                                     | Staff ID only                                           |
+| `migrations`         | Which database changes have been applied                                                                                                                | No                                                      |
+| Supabase Auth        | Staff sign-in accounts (email, password hash), held by Supabase outside `ward_flow`                                                                     | Staff only. Supabase's own log retention is unconfirmed |
 
 `record_access` and `session_sign_outs` arrive with migration 11 (readiness items 8 and 9).
 Migration 12 adds indexes only, and migration 13 lets `record_access` log a referral view (D-80).
@@ -220,13 +220,17 @@ Do these in the Ward Flow project only, after checking the project name and ID m
    dashboards, Authentication, Policies or Password security): set the minimum password length to
    15 and turn on leaked password protection if your plan offers it. The app's new password form
    asks for 15 characters to match.
-7. **Migration 11 and its grants (items 8 and 9).** Once this pull request and the saving one
-   (migration 10) are merged, apply migrations 10 and 11 to the live database and re-run `infra/supabase-runtime-role.sql`, the same way
-   migration 9 was applied. Until then the backend keeps working, but opening a record is not
-   logged and a sign-out takes effect only when its token expires. The undo is
-   `infra/rollback-011-record-access-and-sign-out.sql`. Migrations 12 and 13 came later and need
-   the same step. Which migrations the live database has applied is a live check, not something
-   the source can show.
+7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
+   `npm --prefix backend/ward-flow run migrate:supabase` (see
+   [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
+   migration through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact --> in one
+   transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
+   Until then the backend keeps working, but opening a record is not logged and a sign-out takes
+   effect only when its token expires. The undo runs one step at a time, newest first:
+   `infra/rollback-013-referral-record-views.sql`, then `infra/rollback-012-foreign-key-indexes.sql`,
+   then `infra/rollback-011-record-access-and-sign-out.sql`. Each rollback refuses unless the
+   database is at exactly its version, and rollback 13 also refuses once a referral opening has
+   been logged.
 
 ## Open questions for a records manager or privacy officer
 

@@ -38,10 +38,8 @@ merge commit's own resolution. On 2026-08-17 merge commit `ab7c5134f` (PR #2025)
 conflict in `tests/ui-tools.spec.ts` by dropping the 320 px low-confidence `AccessibleTable`
 journey that PR #2006 had added the day before; no non-merge commit ever removed it, so no PR
 diff ever showed the loss, and it went unnoticed until the 2026-09-02 audit (M31). A journey
-that must survive should therefore be pinned **by name** in a unit test as well (in PsychSift, `tests/playwright-pr-shards.test.ts`) — because a spec no matcher names is a
-spec that can vanish without anything failing. Ward Flow has no such by-name journey pin today:
-`scripts/ward-flow/journey-durations.json` is a timing baseline (an unmeasured spec just counts as
-the median), not a pin. Adding one is an open gap. Prefer a dedicated spec file over a case
+that must survive is therefore pinned **by name** as well (in PsychSift, `tests/playwright-pr-shards.test.ts`). In Ward Flow only the release-gate journeys are pinned: `npm run test:e2e:release-gate` passes `--require-release-gate`, and `scripts/run-playwright.mjs` fails unless every journey listed in `scripts/ward-flow/browser-run-contract.mjs` ran on both release-gate projects. Nothing pins the other `tests/ui-ward-*.spec.ts` journeys; `scripts/ward-flow/journey-durations.json` is only a shard-balancing timing hint, and a missing spec there fails nothing. A spec no matcher names is a
+spec that can vanish without anything failing. Prefer a dedicated spec file over a case
 appended to a large shared spec when a conflict there is likely.
 
 Known limitation, deliberately accepted: a `test()` inside a `for (const viewport of …)` loop

@@ -3,6 +3,9 @@ import { LATEST_MIGRATION } from "./migrations.mjs";
 
 // This module only reads catalogues and the bounded migration-version ledger.
 // A reserved but empty namespace is deliberately not treated as a fresh database.
+// The catalogue read is bounded so a crowded namespace cannot make it unbounded; every object must
+// still match the expected set exactly. The bound leaves room for schema growth (55 objects at 13).
+export const NAMESPACE_OBJECT_LIMIT = 128;
 const CATALOG = `WITH namespace AS (
   SELECT oid, pg_catalog.pg_get_userbyid(nspowner) AS owner FROM pg_catalog.pg_namespace WHERE nspname = 'ward_flow'
 ), objects AS (
@@ -18,7 +21,7 @@ const CATALOG = `WITH namespace AS (
       FROM pg_catalog.pg_attribute a LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
       WHERE a.attrelid=c.oid AND a.attnum > 0 AND NOT a.attisdropped ORDER BY a.attnum LIMIT 129
     ) a) AS columns
-  FROM pg_catalog.pg_class c JOIN namespace n ON n.oid=c.relnamespace ORDER BY c.relname LIMIT 65
+  FROM pg_catalog.pg_class c JOIN namespace n ON n.oid=c.relnamespace ORDER BY c.relname LIMIT ${NAMESPACE_OBJECT_LIMIT + 1}
 ) SELECT (SELECT owner FROM namespace) AS owner,
   coalesce((SELECT jsonb_agg(to_jsonb(o)) FROM objects o), '[]'::jsonb) AS objects,
   coalesce((SELECT jsonb_agg(to_jsonb(k)) FROM (
@@ -605,7 +608,7 @@ export async function verifyPostgresNamespace(pool, { runtimeRole = "wardflow_ba
   }
   if (catalog.owner === null) return;
   for (const [key, maximum] of /** @type {[string, number][]} */ ([
-    ["objects", 64],
+    ["objects", NAMESPACE_OBJECT_LIMIT],
     ["constraints", 128],
     ["functions", 64],
     ["triggers", 64],

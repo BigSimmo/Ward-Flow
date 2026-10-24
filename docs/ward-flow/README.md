@@ -5,7 +5,7 @@
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
 
-_Updated 2026-10-21 - audience navigation and task/history boundaries; Documentation owns._
+_Updated 2026-10-24 - daily loop type check works on any OS; gate-tsc cache warning; Documentation owns._
 
 _Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
 
@@ -95,8 +95,13 @@ node scripts/ward-flow/serve-mockups.mjs         # serve the drawings to look at
 node scripts/run-vitest.mjs run <test-file>      # explicit test-file filters, one completed run
 npm run test:related -- --base <actual-task-base> --dry-run  # preview changed-source selection
 npm run test:related -- --base <actual-task-base>            # execute the related selection
-node scripts/ward-flow/gate-tsc.mjs               # when changed source or types require it
+npm run typecheck                                # when changed source or types require it (any OS)
 ```
+
+`node scripts/ward-flow/gate-tsc.mjs` is the faster incremental type check, but its cache defaults
+to `D:/Repos/ward-flow-logs/tsc-cache`. On macOS or Linux that writes a literal `D:` folder into
+the checkout, so set `WARD_TSC_CACHE_DIR` to a folder outside the repository first, or use
+`npm run typecheck`.
 
 Vitest positional arguments filter test filenames; they do not select importers of source files.
 `test:related` follows imports from changed sources and reports its fan-out cap and fallback scope.

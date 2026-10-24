@@ -5,8 +5,8 @@ _Updated 2026-10-24 - navigation file reference matches current source; Document
 ## Current Ward Flow wiring and browser proof
 
 Follow the [Ward entry point](../ward-flow/README.md), current source and accepted app.
-Navigation is defined by `src/components/ward-management/ward-nav.ts` and rendered by the shell
-in `src/components/ward-management/shell/` (for example `ward-rail.tsx`); routes live in
+Navigation is defined by `src/components/ward-management/ward-nav.ts` and drawn by
+`shell/ward-rail.tsx` (desktop) and `shell/ward-phone-menu*.tsx` (phone); routes live in
 `src/app/ward-flow/`.
 Every offered action must work, or expose its unavailable reason accessibly. Preserve focus,
 keyboard use and status meaning; do not copy a foreign route catalogue or widen lint exemptions.

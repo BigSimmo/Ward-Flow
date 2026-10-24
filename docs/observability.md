@@ -16,12 +16,13 @@ the local metadata contract, not delivery to a deployed log service.
 
 ## Existing seams and required setup
 
-Optional server-side Sentry reporting exists in source (`src/lib/sentry-server.ts`,
-started from `src/instrumentation.ts`, using the lean `@sentry/core` client and
-`registerSentryLogForwarder`). It stays off unless `SENTRY_DSN` is set, sends only
-the error type, stack frames and the allowlisted tags, and adds no browser SDK, so
-the browser CSP remains same-origin. No DSN has been configured or observed sending;
-see [operations readiness](ward-flow/operations-readiness.md#server-error-reporting-sentry).
+Server-side Sentry reporting is in the code but off by default: `src/instrumentation.ts`
+always calls `startServerSentry()` (`src/lib/sentry-server.ts`), which starts the
+`@sentry/core` server client only when `SENTRY_DSN` is set, and then sends server errors
+and, unless `SENTRY_ENABLE_LOGS=false`, logger warn and error lines. See
+[Server error reporting (Sentry)](ward-flow/operations-readiness.md#server-error-reporting-sentry).
+No DSN, Sentry project or alert is configured or observed in this repository. The
+browser has no Sentry client and its CSP remains same-origin.
 
 The [backend uptime workflow](../.github/workflows/backend-uptime.yml) asks the hosted
 backend's `/healthz` every 30 minutes and opens a GitHub issue that notifies the owner
