@@ -1,0 +1,310 @@
+import { createRef, useState } from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
+import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { CommunityScreenView } from "@/components/ward-management/community/community-screen";
+import { CommunityScreenNoteModal } from "@/components/ward-management/community/community-screen-modals";
+import { useCommunityContactSave } from "@/components/ward-management/community/use-community-contact-save";
+
+vi.mock("@/components/ward-management/ward-flow-provider", () => ({
+  useOptionalWardFlowSelect: () => undefined,
+}));
+
+const at = 640 as Instant;
+const ready = { enabled: true, status: "ready" as const, error: null };
+const unavailable = { enabled: true, status: "unavailable" as const, error: "Save is not confirmed." };
+const answer = (status: WardCommandOutcome["status"], message?: string): WardCommandOutcome => ({
+  commandId: "synthetic-contact-command",
+  status,
+  message,
+});
+function deferred() {
+  let resolve!: (outcome: WardCommandOutcome) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<WardCommandOutcome>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+function receipt(accepted: boolean, commandId = "synthetic-contact-command", sequence = 1): EventLogEntry {
+  const entry = {
+    commandId,
+    sequence,
+    type: "RECORD_CLINICAL_CONTACT" as const,
+    role: "community" as const,
+    now: at,
+    accepted,
+  };
+  return entry;
+}
+
+type HarnessProps = {
+  dispatch: WardCommandDispatch;
+  shared?: WardFlowContextValue["shared"];
+  eventLog?: readonly EventLogEntry[];
+  teamId?: string;
+  generation?: number;
+  onAccepted?: (source: string) => void;
+};
+function Harness({
+  dispatch,
+  shared = ready,
+  eventLog = [],
+  teamId = "synthetic-team",
+  generation = 1,
+  onAccepted,
+}: HarnessProps) {
+  const [modal, setModal] = useState<"contact" | null>("contact");
+  const [quick, setQuick] = useState("");
+  const save = useCommunityContactSave({
+    dispatch,
+    now: at,
+    teamId,
+    generation,
+    shared,
+    eventLog,
+    onAccepted: (source) => {
+      onAccepted?.(source);
+      if (source === "modal") setModal(null);
+      else setQuick("Team contact logged.");
+    },
+    onQuickMessage: setQuick,
+  });
+  const view = {
+    now: at,
+    team: { name: "Synthetic team" },
+    teamConfig: { name: "Synthetic team" },
+    activeModalType: modal,
+    setActiveModalType: setModal,
+    contactRecord: save.contactRecord,
+    contactSaveMessage: save.contactSaveMessage,
+    contactSaveDisabled: save.contactSaveDisabled,
+    handleSaveClinicalContact: () => save.saveContact("modal"),
+    noteModalRef: createRef<HTMLDivElement>(),
+    noteModalOverlayRef: createRef<HTMLDivElement>(),
+    waitingReferrals: [],
+    caseloadRows: [],
+    recordedCtoCount: 0,
+  } as unknown as CommunityScreenView;
+  return (
+    <>
+      <CommunityScreenNoteModal view={view} />
+      <button onClick={() => save.saveContact("quick")}>Contacted quick action</button>
+      <span data-testid="confirmed-contact">{save.contactRecord ? "recorded" : "not recorded"}</span>
+      <p data-testid="quick-feedback">{quick}</p>
+    </>
+  );
+}
+const saveButton = () => screen.getByTestId("ward-community-contact-save");
+const confirmed = () => screen.getByTestId("confirmed-contact");
+
+describe("community contact command confirmation", () => {
+  it("keeps the real dialog open until acceptance and blocks repeated modal and quick submits", async () => {
+    const pending = deferred(),
+      dispatch = vi.fn(() => pending.promise);
+    render(<Harness dispatch={dispatch} />);
+    fireEvent.click(saveButton());
+    fireEvent.click(saveButton());
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+    expect(confirmed()).toHaveTextContent("not recorded");
+    await act(async () => pending.resolve(answer("accepted")));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(confirmed()).toHaveTextContent(/^recorded$/);
+  });
+
+  it.each(["refused", "cancelled"] as const)(
+    "retains an editable dialog and no recorded claim for %s",
+    async (status) => {
+      render(<Harness dispatch={() => Promise.resolve(answer(status, "Synthetic contact was not applied."))} />);
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(saveButton()).not.toHaveAttribute("aria-disabled", "true"));
+      expect(screen.getByRole("dialog")).toBeVisible();
+      expect(screen.getByRole("status")).toHaveTextContent("Synthetic contact was not applied.");
+      expect(screen.getByTestId("ward-community-contact-save-status")).toHaveAttribute("data-recorded", "false");
+    },
+  );
+
+  it("retains a failed draft and confirms original-ID Retry from its own receipt", async () => {
+    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+    const props = { dispatch, shared: unavailable };
+    const { rerender } = render(<Harness dispatch={dispatch} />);
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+    rerender(<Harness {...props} />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(saveButton());
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(confirmed()).toHaveTextContent(/^recorded$/);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not infer acceptance from another command's same-minute contact receipt or a poll", async () => {
+    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+    const { rerender } = render(<Harness dispatch={dispatch} />);
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true, "other-contact-command")]} />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(confirmed()).toHaveTextContent("not recorded");
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+    rerender(
+      <Harness dispatch={dispatch} eventLog={[receipt(true, "other-contact-command"), receipt(true, undefined, 2)]} />,
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("makes a refused Retry terminal, preserving its draft through later matching contacts", async () => {
+    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+    const { rerender } = render(<Harness dispatch={dispatch} />);
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+    rerender(
+      <Harness
+        dispatch={dispatch}
+        shared={{ ...ready, error: "Contact was refused. Nothing changed." }}
+        eventLog={[receipt(false)]}
+      />,
+    );
+    await waitFor(() => expect(saveButton()).not.toHaveAttribute("aria-disabled", "true"));
+    rerender(<Harness dispatch={dispatch} eventLog={[receipt(false), receipt(true, "other-command", 2)]} />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(confirmed()).toHaveTextContent("not recorded");
+    expect(screen.getByRole("status")).toHaveTextContent("Contact was refused.");
+  });
+
+  it("does not use an older same-ID receipt as the new attempt's confirmation", async () => {
+    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+    const { rerender } = render(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(confirmed()).toHaveTextContent("not recorded");
+  });
+
+  it("only announces quick-action success after acceptance and reports quick failures", async () => {
+    const pending = deferred(),
+      onAccepted = vi.fn(),
+      dispatch = vi.fn(() => pending.promise);
+    render(<Harness dispatch={dispatch} onAccepted={onAccepted} />);
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Saving contact");
+    expect(onAccepted).not.toHaveBeenCalled();
+    await act(async () => pending.resolve(answer("refused", "Synthetic refusal")));
+    expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Synthetic refusal");
+    expect(onAccepted).not.toHaveBeenCalled();
+    expect(confirmed()).toHaveTextContent("not recorded");
+  });
+
+  it("confirms quick-action success without closing an unrelated contact dialog", async () => {
+    const pending = deferred();
+    render(<Harness dispatch={() => pending.promise} />);
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    await act(async () => pending.resolve(answer("accepted")));
+    expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Team contact logged.");
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(confirmed()).toHaveTextContent(/^recorded$/);
+  });
+
+  it.each(["team", "world"] as const)("ignores delayed acceptance after the %s changes", async (changed) => {
+    const pending = deferred(),
+      onAccepted = vi.fn(),
+      dispatch = vi.fn(() => pending.promise);
+    const { rerender } = render(<Harness dispatch={dispatch} onAccepted={onAccepted} />);
+    fireEvent.click(saveButton());
+    rerender(
+      <Harness
+        dispatch={dispatch}
+        onAccepted={onAccepted}
+        teamId={changed === "team" ? "other-synthetic-team" : undefined}
+        generation={changed === "world" ? 2 : 1}
+      />,
+    );
+    await act(async () => pending.resolve(answer("accepted")));
+    expect(onAccepted).not.toHaveBeenCalled();
+    expect(confirmed()).toHaveTextContent("not recorded");
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
+
+  it("ignores an answer from an ended command lifetime", async () => {
+    const pending = deferred(),
+      onAccepted = vi.fn();
+    render(<Harness dispatch={() => pending.promise} onAccepted={onAccepted} />);
+    fireEvent.click(saveButton());
+    await act(async () => pending.resolve({ ...answer("accepted"), isCurrent: () => false }));
+    expect(onAccepted).not.toHaveBeenCalled();
+    expect(confirmed()).toHaveTextContent("not recorded");
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
+  });
+
+  it.each(["throw", "reject", "void"] as const)(
+    "reports %s dispatch failure without a recorded claim",
+    async (kind) => {
+      const dispatch: WardCommandDispatch = () => {
+        if (kind === "throw") throw new Error("Synthetic failure");
+        if (kind === "reject") return Promise.reject(new Error("Synthetic failure"));
+        return undefined;
+      };
+      render(<Harness dispatch={dispatch} shared={{ enabled: false, status: "ready", error: null }} />);
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+      expect(screen.getByRole("dialog")).toBeVisible();
+      expect(confirmed()).toHaveTextContent("not recorded");
+      expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
+    },
+  );
+
+  it("confirms a failed quick action only from its own Retry receipt", async () => {
+    const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
+    const { rerender } = render(<Harness dispatch={dispatch} />);
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    await waitFor(() => expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Save is not confirmed."));
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    rerender(<Harness dispatch={dispatch} eventLog={[receipt(true)]} />);
+    await waitFor(() => expect(screen.getByTestId("quick-feedback")).toHaveTextContent("Team contact logged."));
+    expect(confirmed()).toHaveTextContent(/^recorded$/);
+  });
+
+  it("ignores Retry receipts after the failed command lifetime ends", async () => {
+    let current = true;
+    const dispatch = vi.fn(() => Promise.resolve({ ...answer("failed"), isCurrent: () => current }));
+    const onAccepted = vi.fn();
+    const { rerender } = render(<Harness dispatch={dispatch} onAccepted={onAccepted} />);
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+    current = false;
+    rerender(<Harness dispatch={dispatch} onAccepted={onAccepted} eventLog={[receipt(true)]} />);
+    expect(onAccepted).not.toHaveBeenCalled();
+    expect(confirmed()).toHaveTextContent("not recorded");
+  });
+
+  it("does not run acceptance callbacks after unmount", async () => {
+    const pending = deferred(),
+      onAccepted = vi.fn();
+    const { unmount } = render(<Harness dispatch={() => pending.promise} onAccepted={onAccepted} />);
+    fireEvent.click(saveButton());
+    unmount();
+    await act(async () => pending.resolve(answer("accepted")));
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+
+  it("does not issue a new command while the shared board is unavailable", () => {
+    const dispatch = vi.fn();
+    render(<Harness dispatch={dispatch} shared={unavailable} />);
+    fireEvent.click(saveButton());
+    fireEvent.click(screen.getByText("Contacted quick action"));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(confirmed()).toHaveTextContent("not recorded");
+  });
+});
