@@ -164,6 +164,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     board: "own",
     discharges: "own",
     "bed-meeting": "own",
+    // D-80: read only, its own wards' incoming lines. The board offers it no action and the server
+    // refuses every referral change from it (no bed manager in EVENT_ROLE for one).
+    referrals: "own",
     patient: "own",
     movements: "own",
     delays: "own",
