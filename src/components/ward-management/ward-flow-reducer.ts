@@ -1050,7 +1050,25 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
         }
       : {}),
   };
-  const withUnit = replaceUnit(state, unit.id, releasedUnit);
+  // Audit 24-1 CS2-03: the deleted stay's span stays in the bed replay, so a later pull keeps its bed.
+  const pulledAt = heldAdmission?.pulledAt;
+  const releasedSpan =
+    heldAdmission === undefined || pulledAt == null
+      ? undefined
+      : {
+          admissionId: heldAdmission.id,
+          pulledAt,
+          leftAt: Math.max(now, pulledAt),
+          ...(heldAdmission.bedKind === undefined ? {} : { bedKind: heldAdmission.bedKind }),
+          ...(heldAdmission.bedNumber === undefined ? {} : { bedNumber: heldAdmission.bedNumber }),
+        };
+  const withUnit = replaceUnit(
+    state,
+    unit.id,
+    releasedSpan === undefined
+      ? releasedUnit
+      : { ...releasedUnit, releasedPullSpans: [...(unit.releasedPullSpans ?? []), releasedSpan] },
+  );
   if (movement.admissionId === undefined) return withUnit;
   return {
     ...withUnit,

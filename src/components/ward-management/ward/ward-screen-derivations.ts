@@ -333,9 +333,16 @@ export function wardBedRoster({
     ) as [string, number][],
   );
   // Audit A1-1: every stay keeps a fixed bed, so a departure or absence never renumbers others.
+  // Audit 24-1 CS2-03: a released pull's span still held its bed, so later stays keep theirs.
+  const releasedSpans = (unit.releasedPullSpans ?? []).map((span) => ({
+    ...span,
+    id: `released:${span.admissionId}`,
+    state: "released",
+    arrivedAt: null,
+  }));
   const seatedBeds = seatStays(
     unit.beds,
-    (admissions ?? []).filter((admission) => admission.unitId === unit.id),
+    [...(admissions ?? []).filter((admission) => admission.unitId === unit.id), ...releasedSpans],
     isMixed ? lockedBeds : 0,
   );
   const bedNumbers = layoutBedNumbers(

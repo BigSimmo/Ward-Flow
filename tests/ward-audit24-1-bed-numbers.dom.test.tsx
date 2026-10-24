@@ -15,6 +15,8 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 
 /**
  * Audit 24-1 (24 Oct 2026), B-01 and B-02: a person's displayed bed number never changes unless
@@ -238,17 +240,13 @@ describe("bed numbers stay put (audit 24-1)", () => {
     }
 
     expect(applied, "the sweep actually changed records").toBeGreaterThan(10);
-    // The one known shift is the engine fault pinned in the `it.fails` below. Anything else, or
-    // this one going away, fails here so the list is kept honest.
-    expect(failures).toEqual([
-      "sjgm-adult-open withdrawal of WF-016: pulled:PulledBramwen Ridgeholt26 · Male: bed 14 -> 13",
-    ]);
+    // CS2-03 (fixed): this list held one shift, the later pulled person after WF-016's withdrawal.
+    expect(failures).toEqual([]);
   }, 240_000);
 
-  // Known engine fault, reported not fixed here (file scope): withdrawing a referral deletes its
-  // pulled admission (`releasePulledBedAndAdmission`) instead of ending it with `leftAt`, so the
-  // seat replay forgets that it held a bed and a later pull is re-seated one bed lower.
-  it.fails("withdrawing the earlier of two pulled beds leaves the later pulled person in her bed", () => {
+  // CS2-03: withdrawing a referral deletes its pulled admission, so the seat replay forgot that it
+  // held a bed and re-seated a later pull one bed lower. The unit now keeps the released span.
+  it("withdrawing the earlier of two pulled beds leaves the later pulled person in her bed", () => {
     const unit = "sjgm-adult-open";
     renderWard(unit);
     const earlier = latest.api!.movements.find((movement) => movement.id === "WF-016")!;
@@ -256,5 +254,17 @@ describe("bed numbers stay put (audit 24-1)", () => {
     dispatch({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: earlier.id, actingPlaceId: earlier.originEdId });
     expect(latest.api!.movements.find((movement) => movement.id === earlier.id)?.closure).toBeDefined();
     expect(movedStays(before, [])).toEqual([]);
+    // The engine keeps the released span, and a world carrying it still passes the reload check.
+    const after = wardFlowReducer(seedWardFlowState(), {
+      type: "WITHDRAW_REFERRAL",
+      role: "ed",
+      movementId: earlier.id,
+      actingPlaceId: earlier.originEdId!,
+      now: NOW_ANCHOR,
+    });
+    expect(after.units.find((candidate) => candidate.id === unit)?.releasedPullSpans).toEqual([
+      expect.objectContaining({ admissionId: earlier.admissionId, leftAt: NOW_ANCHOR }),
+    ]);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...after, rejections: [] })))).toBe(true);
   });
 });

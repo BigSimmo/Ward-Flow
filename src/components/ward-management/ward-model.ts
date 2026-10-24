@@ -391,6 +391,15 @@ export type Unit = {
     allocatableLockedBefore: number;
     lockedBedReleased: boolean;
   }[];
+  /** Audit 24-1 CS2-03: a released pull's span (its admission is deleted), kept so the bed replay
+   * (`seatStays`) still knows the bed was held and never re-seats a later stay. Seat history only. */
+  releasedPullSpans?: {
+    admissionId: string;
+    pulledAt: Instant;
+    leftAt: Instant;
+    bedKind?: "locked" | "open";
+    bedNumber?: number;
+  }[];
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;
