@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useContext, useEffect, useState, type ReactNode } from "react";
 
 import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
@@ -493,6 +494,14 @@ export function WardReferralDetailDrawer({
   const intake = wardReferralInbox(unit.id).find((entry) => entry.id === movement.referralId)?.intake;
   const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
   const ageYears = identity.patient ? patientAgeYears(identity.patient, calendarDateOf(now, dayZero)) : undefined;
+  // Since D-79 this shows the name, UMRN and documents, so opening it is a record view (D-80).
+  // Logged on the server in the signed-in shared workspace only; nothing in the local demo.
+  const session = useContext(SharedSessionContext);
+  // The patient this drawer already names, not the journey's link (D-14).
+  const patientId = identity.patient?.id;
+  useEffect(() => {
+    if (patientId) session?.logRecordView(patientId, "referral");
+  }, [session, patientId]);
   return (
     <Drawer
       open
