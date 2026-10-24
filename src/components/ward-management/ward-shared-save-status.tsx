@@ -62,6 +62,12 @@ export function WardSharedSaveStatus({
   const showRecovery = connection.status === "saving" || connection.status === "unavailable";
   const host = useRecoveryHost(showRecovery);
   const saving = connection.status === "saving";
+  const recoveryRef = useRef<HTMLElement>(null);
+  // Retry disappears while the save runs. Park focus on the persistent status, still inside the sheet.
+  const retry = () => {
+    recoveryRef.current?.focus({ preventScroll: true });
+    connection.retry();
+  };
   const message = saving
     ? "Saving shared changes…"
     : connection.status === "unavailable"
@@ -94,11 +100,18 @@ export function WardSharedSaveStatus({
       </div>
       {host &&
         createPortal(
-          <section className={styles.recovery} role="status" aria-live="polite" data-testid="ward-shared-recovery">
+          <section
+            ref={recoveryRef}
+            tabIndex={-1}
+            className={styles.recovery}
+            role="status"
+            aria-live="polite"
+            data-testid="ward-shared-recovery"
+          >
             <p>{message}</p>
             {detail}
             {!saving && (
-              <button type="button" className={styles.retry} onClick={connection.retry}>
+              <button type="button" className={styles.retry} onClick={retry}>
                 Retry
               </button>
             )}
