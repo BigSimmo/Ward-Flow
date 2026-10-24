@@ -14,6 +14,7 @@ import type { useEdInboxDecline } from "./use-ed-screen-decline";
 import type { useEdBoardDrafts, useEdBoardView, useEdReferralDraft, useEdRowPanels } from "./use-ed-screen-state";
 import type { useEdExpirySave } from "./use-ed-expiry-save";
 import type { useEdRecordSave } from "./use-ed-record-save";
+import type { useEdExaminationSave } from "./use-ed-examination-save";
 
 type EdScreenRecords = {
   thresholds: DueSoonThresholds;
@@ -45,6 +46,7 @@ export type EdScreenContext = EdScreenRecords &
   ReturnType<typeof useEdRowPanels> &
   ReturnType<typeof useEdBoardView> &
   ReturnType<typeof useEdInboxDecline> &
+  ReturnType<typeof useEdExaminationSave> &
   ReturnType<typeof deriveEdScreen> &
   ReturnType<typeof edScreenActions> &
   ReturnType<typeof useEdExpirySave> &
