@@ -37,7 +37,7 @@ export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): st
     case "team":
       return scope.teamName;
     case "jobs":
-      return "Assigned transport jobs";
+      return scope.service === undefined ? "Assigned transport jobs" : `Transport jobs, ${scope.service}`;
   }
 }
 
@@ -57,7 +57,8 @@ export function placeOptions(
   const options: WardAccessScope[] = [];
   for (const kind of ROLE_SCOPE_KINDS[role]) {
     if (kind === "statewide") options.push({ kind: "statewide" });
-    if (kind === "jobs") options.push({ kind: "jobs" });
+    // A granted officer always names its service (D-80 item 7).
+    if (kind === "jobs") for (const service of HEALTH_SERVICES) options.push({ kind: "jobs", service });
     if (kind === "service") for (const service of HEALTH_SERVICES) options.push({ kind: "service", service });
     if (kind === "site")
       for (const siteCode of [...new Set(units.map((unit) => unit.siteCode))]) options.push({ kind: "site", siteCode });

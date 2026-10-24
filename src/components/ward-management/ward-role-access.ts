@@ -41,7 +41,12 @@ export type WardAccessScope =
   | { readonly kind: "ward"; readonly unitIds: readonly string[] }
   | { readonly kind: "ed"; readonly edId: string }
   | { readonly kind: "team"; readonly teamName: string }
-  | { readonly kind: "jobs" };
+  /**
+   * A transport officer's jobs. A granted officer holds its own health service's jobs only (D-80
+   * item 7); the server refuses a membership without one. The local demo's officer desk has no
+   * service and sees every open job.
+   */
+  | { readonly kind: "jobs"; readonly service?: HealthService };
 
 export type WardAccess = { readonly role: WardAccessRole; readonly scope: WardAccessScope };
 
