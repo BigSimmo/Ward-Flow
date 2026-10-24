@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 import { COMMUNITY_TEAM_PAGES, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
@@ -178,5 +179,36 @@ describe("an ED's own Statistics page reads its stripped copy (D-80)", () => {
     expect(screen.getByTestId("ward-stat-ed-comparison")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ed-all-eds")).toBeTruthy();
     expect(screen.getByRole("button", { name: /change ed/iu })).toBeTruthy();
+  });
+});
+
+describe("a counts grant shows no list of people (D-80)", () => {
+  function Probe() {
+    const { countsOnly, small } = useStatisticsCounts();
+    return <p data-testid="probe">{`${countsOnly}:${String(small(2))}`}</p>;
+  }
+
+  function probeAs(access: WardAccess) {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(access);
+    });
+    const view = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    const text = screen.getByTestId("probe").textContent;
+    view.unmount();
+    return text;
+  }
+
+  it("is counts only for the ward, ED and team desks, with exact small counts", () => {
+    for (const desk of [wardDesk, edDesk, teamDesk]) expect(probeAs(desk), desk.role).toBe("true:2");
+  });
+
+  it("keeps the executive on small numbers and the coordinator on lists", () => {
+    expect(probeAs({ role: "executive", scope: { kind: "statewide" } })).toBe("true:fewer than 5");
+    expect(probeAs({ role: "coordinator", scope: { kind: "statewide" } })).toBe("false:2");
   });
 });
