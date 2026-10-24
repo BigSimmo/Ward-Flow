@@ -21,19 +21,14 @@ const TERM_NAMES: Readonly<Record<string, string>> = {
   NIC: "Nurse in charge",
 };
 
-const CODE_NAMES: ReadonlyMap<string, string> = new Map([
-  ...siteDirectory.map((site) => [site.code, site.name] as const),
-  ...Object.entries(TERM_NAMES),
-]);
-
 /** The full name for a code the app knows, or `undefined`. */
 export function codeName(code: string): string | undefined {
-  return CODE_NAMES.get(code);
+  return siteDirectory.find((site) => site.code === code)?.name ?? TERM_NAMES[code];
 }
 
 /** `text` as written, with each known code marked up and spelt out (see the note above). */
 export function SpelledCodes({ text }: { text: string }) {
-  const parts = text.split(/\b([A-Z]{2,6})\b/u);
+  const parts = text.split(/\b(SYN-[A-Z]+|[A-Z]{2,6})\b/u);
   if (parts.length === 1) return <>{text}</>;
   return (
     <>

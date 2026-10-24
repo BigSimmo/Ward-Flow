@@ -10,7 +10,8 @@ import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-rol
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
-import { filterGlossary, screenHelpFor } from "./ward-help-content";
+import { filterGlossary, glossaryForSites, screenHelpFor } from "./ward-help-content";
+import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
 import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
@@ -61,6 +62,7 @@ export function WardHelpSheet({
   onClose: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  const { sites } = useWardNetwork();
   const role = useTourRole();
   const guide = DESK_GUIDES[role];
   const { home, deskHome } = useTourFacts(role);
@@ -75,7 +77,7 @@ export function WardHelpSheet({
     [entries, pathname],
   );
   const [query, setQuery] = useState("");
-  const terms = filterGlossary(query);
+  const terms = filterGlossary(query, glossaryForSites(sites));
 
   return (
     <Sheet
