@@ -28,26 +28,10 @@ export function isChunkLoadError(error: unknown): boolean {
   return typeof message === "string" && CHUNK_MESSAGE.test(message);
 }
 
-/** Session key holding the time of the last automatic reload, so a reload can never loop. */
-export const CHUNK_RELOAD_KEY = "chunk-load-recovery-reloaded-at";
-const RELOAD_GUARD_MS = 30_000;
-
-function reloadOnce(): void {
-  const now = Date.now();
-  try {
-    const last = Number(window.sessionStorage.getItem(CHUNK_RELOAD_KEY));
-    if (Number.isFinite(last) && now - last < RELOAD_GUARD_MS) return;
-    window.sessionStorage.setItem(CHUNK_RELOAD_KEY, String(now));
-  } catch {
-    // Storage blocked: still reload once; the listener below is removed first, so it cannot repeat.
-  }
-  window.location.reload();
-}
-
 /**
  * While `active`, reports whether the browser is online and reloads the page once when the
- * connection comes back. It never reloads on mount, only on an `online` event, and at most once
- * every 30 seconds per tab.
+ * connection comes back. It never reloads on mount, only on an `online` event, and the listener is
+ * removed before the reload, so a reload cannot loop: another needs the connection to drop again.
  */
 export function useReloadWhenOnline(active: boolean): boolean {
   const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
@@ -57,7 +41,7 @@ export function useReloadWhenOnline(active: boolean): boolean {
     const handleOnline = () => {
       setOnline(true);
       window.removeEventListener("online", handleOnline);
-      reloadOnce();
+      window.location.reload();
     };
     const handleOffline = () => setOnline(false);
     window.addEventListener("online", handleOnline);

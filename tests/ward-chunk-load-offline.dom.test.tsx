@@ -81,16 +81,6 @@ describe("the application shell boundary", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it("does not reload again within 30 seconds of the last automatic reload, so it cannot loop", () => {
-    window.sessionStorage.setItem("chunk-load-recovery-reloaded-at", String(Date.now()));
-    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
-    render(<AppShellErrorBoundary error={chunkError()} reset={vi.fn()} />);
-
-    goOnline();
-    expect(reload).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Reload page" })).toBeTruthy();
-  });
-
   it("asks for a reload, without reloading by itself, when the file failed while online", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
     render(<AppShellErrorBoundary error={chunkError()} reset={vi.fn()} />);
