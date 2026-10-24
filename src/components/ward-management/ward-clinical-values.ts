@@ -478,6 +478,13 @@ export const CLINICAL_VALUES = {
     value: 12,
     unit: "hours",
   },
+  sessionWarning: {
+    ...SIGNED_BY_JOSH_21_OCT,
+    name: "The shared site warns that the sign-in limit is near, before it ends, by",
+    group: "Access and privacy",
+    value: 10,
+    unit: "minutes",
+  },
   stepUpWindow: {
     ...SIGNED_BY_JOSH_16_OCT,
     name: "Granting access or opening a record outside your care needs a sign-in within the last",

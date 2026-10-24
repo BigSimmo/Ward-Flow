@@ -106,6 +106,22 @@ describe("the ward flow error panel refuses to swallow the error", () => {
     expect(screen.getByTestId("ward-flow-error-message").textContent).toBe("no stage position for admission state");
   });
 
+  it("keeps the message and stack off screen in production, showing a fixed sentence and the digest (PS-05)", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      renderPanel({
+        message: "Synthetic Person Example has no bed",
+        stack: "Error: boom\n    at aNamedFrame (a.ts:1:1)",
+      });
+      expect(document.body.textContent).not.toContain("Synthetic Person Example");
+      expect(screen.queryByTestId("ward-flow-error-stack")).toBeNull();
+      expect(screen.getByTestId("ward-flow-error-message").textContent).toContain("Quote the digest");
+      expect(screen.getByTestId("ward-flow-error-digest").textContent).toContain("digest-for-the-server-log");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("logs the error OBJECT, so the stack is reachable in the console in every environment", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { error } = renderPanel();
