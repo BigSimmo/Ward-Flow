@@ -38,6 +38,8 @@ type EdScreenRecords = {
   needsRailSlides: boolean;
   recordEdStep: (event: EdStepEvent) => void;
   submitReferral: (event: FormEvent<HTMLFormElement>) => void;
+  referralFieldsDisabled?: boolean;
+  referralSaveMessage?: string;
 };
 
 export type EdScreenContext = EdScreenRecords &
