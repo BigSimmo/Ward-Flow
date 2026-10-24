@@ -3,6 +3,7 @@ import type { WardCommandMetadata } from "./ward-command-metadata";
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 
@@ -869,10 +870,10 @@ export class SharedWorkspaceClient {
   }
   /**
    * Readiness review item 9: tells the server this desk opened a patient's record, on the patient
-   * or movement page. The server keeps it in a log nobody can change. Best effort: a failure never
+   * or movement page or in a referral's full detail (D-80). The server keeps it in a log nobody can change. Best effort: a failure never
    * stops the page, and the server ignores a repeat within a minute.
    */
-  async logRecordView(patientId: string, surface: "patient" | "movement"): Promise<void> {
+  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<void> {
     try {
       await this.request("/v1/workspace/record-access", { patientId, surface });
     } catch {

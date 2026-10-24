@@ -6,6 +6,7 @@ import {
   MINIMUM_RUNTIME_MIGRATION,
   RECORDS_MIGRATION,
   RECORD_ACCESS_MIGRATION,
+  REFERRAL_VIEW_MIGRATION,
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
@@ -1368,6 +1369,9 @@ export function createWorkspaceStore(
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
+      // Before 13 the log's check takes a patient or movement page only.
+      if (surface === "referral" && !(view.version >= REFERRAL_VIEW_MIGRATION))
+        return { status: 200, body: { logged: false } };
       const at = clock();
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
@@ -1375,7 +1379,10 @@ export function createWorkspaceStore(
       const visible =
         surface === "patient"
           ? state.patients.some((patient) => patient.id === patientId)
-          : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
+          : surface === "referral"
+            ? state.referrals.some((referral) => referral.patientId === patientId) ||
+              state.movements.some((movement) => movement.patientId === patientId && movement.referralId !== undefined)
+            : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
       return transaction(async (client, loggedAt) => {
         // Serialize each account's check and insert. A separate lock statement gives the
