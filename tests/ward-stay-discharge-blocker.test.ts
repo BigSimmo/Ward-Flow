@@ -37,9 +37,9 @@ function record(state: WardFlowState, admissionId: string, actingUnitId: string,
 }
 
 describe("a stay-level discharge blocker, recorded before any bed release exists", () => {
-  it("is allowed for the ward and the coordinator only", () => {
-    expect(EVENT_ROLE.RECORD_STAY_DISCHARGE_BLOCKER).toEqual(["ward", "coordinator"]);
-    expect(EVENT_ROLE.CLEAR_STAY_DISCHARGE_BLOCKER).toEqual(["ward", "coordinator"]);
+  it("is allowed for the ward, the site bed manager (D-80) and the coordinator only", () => {
+    expect(EVENT_ROLE.RECORD_STAY_DISCHARGE_BLOCKER).toEqual(["ward", "bed_manager", "coordinator"]);
+    expect(EVENT_ROLE.CLEAR_STAY_DISCHARGE_BLOCKER).toEqual(["ward", "bed_manager", "coordinator"]);
   });
 
   it("writes the chosen reason onto the stay and moves no bed figure", () => {

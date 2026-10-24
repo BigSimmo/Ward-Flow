@@ -26,6 +26,7 @@ import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-ma
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
@@ -157,7 +158,8 @@ export function WardBoard({
     "dispatch",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("ward");
+  // D-80: a site bed manager blocks a release in its own name; the scope check keeps it to its wards.
+  const raise = useWardRaise(useRouteRole() === "bed_manager" ? "bed_manager" : "ward");
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
   // Audit r1 item 4: an arrival with no transport leg and fit to travel open, waiting on a reason.

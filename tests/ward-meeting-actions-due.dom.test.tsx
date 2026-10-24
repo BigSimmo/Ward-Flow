@@ -190,6 +190,33 @@ describe("bed meeting actions due on a record", () => {
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 
+  it("lets the site bed manager mark a ward's action done, and shows another site's nothing (D-80)", () => {
+    const site = seed.units.find((unit) => unit.id === ownerWard)!.siteCode;
+    const otherSite = seed.units.find((unit) => unit.siteCode !== site)!.siteCode;
+    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode: otherSite } });
+    const { unmount } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordAtMeeting subject={MOVEMENT} owner="ward" />
+        <MeetingActionsDue subject={MOVEMENT} />
+      </WardFlowProvider>,
+    );
+    recordAction();
+    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+    unmount();
+
+    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode: site } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordAtMeeting subject={MOVEMENT} owner="ward" />
+        <MeetingActionsDue subject={MOVEMENT} />
+      </WardFlowProvider>,
+    );
+    recordAction();
+    fireEvent.click(screen.getByRole("button", { name: "Mark done: Book transport" }));
+    expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+  });
+
   it("shows nothing while the bed meeting actions switch is off", () => {
     act(() => setWardFeatureFlagOnDevice("bed-meeting-actions", false));
     render(

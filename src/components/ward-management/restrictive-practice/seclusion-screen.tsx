@@ -24,6 +24,7 @@ import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
 import { unitInScope } from "../ward-role-access";
+import { canDispatch } from "../ward-role-permissions";
 import {
   RESTRICTIVE_PRACTICES,
   WARD_INCIDENT_CATEGORIES,
@@ -133,6 +134,9 @@ function WardCard({
   nameOf: (admissionId: string) => string;
 }) {
   const raise = useWardRaise(role);
+  // D-80: a record about one patient on one ward is made by the ward that is present. The site's bed
+  // manager keeps this view and the room status, so it is offered no recording form.
+  const mayRecord = canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_START");
   const room = seclusionRoomView(ward.restrictivePractice);
   const open = openEpisodes(ward.restrictivePractice);
   const incidents = recentIncidents(ward.restrictivePractice, now);
@@ -197,20 +201,29 @@ function WardCard({
                   episode={episode}
                   name={nameOf(episode.admissionId)}
                   now={now}
-                  onEnd={(endedAt) =>
-                    raise("RECORD_RESTRICTIVE_PRACTICE_END", { ...acting, episodeId: episode.id, endedAt })
+                  onEnd={
+                    mayRecord
+                      ? (endedAt) =>
+                          raise("RECORD_RESTRICTIVE_PRACTICE_END", { ...acting, episodeId: episode.id, endedAt })
+                      : undefined
                   }
                 />
               ))}
             </ul>
           )}
-          <StartForm
-            ward={ward}
-            now={now}
-            onStart={(admissionId, practice, startedAt) =>
-              raise("RECORD_RESTRICTIVE_PRACTICE_START", { ...acting, admissionId, practice, startedAt })
-            }
-          />
+          {mayRecord ? (
+            <StartForm
+              ward={ward}
+              now={now}
+              onStart={(admissionId, practice, startedAt) =>
+                raise("RECORD_RESTRICTIVE_PRACTICE_START", { ...acting, admissionId, practice, startedAt })
+              }
+            />
+          ) : (
+            <p className={styles.note} data-testid="seclusion-recorded-by-ward">
+              Recorded by the ward.
+            </p>
+          )}
         </section>
 
         <section className={styles.section} aria-labelledby={`${ward.id}-incidents`}>
@@ -233,10 +246,12 @@ function WardCard({
               ))}
             </ul>
           )}
-          <IncidentForm
-            now={now}
-            onRecord={(category, at) => raise("RECORD_WARD_INCIDENT", { ...acting, category, at })}
-          />
+          {mayRecord ? (
+            <IncidentForm
+              now={now}
+              onRecord={(category, at) => raise("RECORD_WARD_INCIDENT", { ...acting, category, at })}
+            />
+          ) : null}
         </section>
       </CardBody>
     </Card>
@@ -290,7 +305,8 @@ function EpisodeRow({
   episode: RestrictivePracticeEpisode;
   name: string;
   now: Instant;
-  onEnd: (endedAt: Instant) => void;
+  /** Left out where this desk may not record the end (D-80). */
+  onEnd?: (endedAt: Instant) => void;
 }) {
   const [ending, setEnding] = useState(false);
   const formId = useId();
@@ -306,18 +322,20 @@ function EpisodeRow({
             Since {formatInstantWithDay(episode.startedAt, now)} · recorded by {episode.recordedBy}
           </span>
         </span>
-        <Button
-          size="sm"
-          variant="light"
-          aria-expanded={ending}
-          aria-controls={formId}
-          onClick={() => setEnding((value) => !value)}
-          data-testid="seclusion-episode-end-open"
-        >
-          {ending ? "Cancel" : "Record end"}
-        </Button>
+        {onEnd ? (
+          <Button
+            size="sm"
+            variant="light"
+            aria-expanded={ending}
+            aria-controls={formId}
+            onClick={() => setEnding((value) => !value)}
+            data-testid="seclusion-episode-end-open"
+          >
+            {ending ? "Cancel" : "Record end"}
+          </Button>
+        ) : null}
       </div>
-      {ending ? (
+      {ending && onEnd ? (
         <div id={formId} className={styles.form}>
           <TimeField label="Ended at" time={time} testId="seclusion-episode-end-time" />
           <Button
