@@ -4,9 +4,14 @@ import { describe, expect, it } from "vitest";
 import { edDepartmentTimelineEvents } from "../src/components/ward-management/ed/ed-screen-timeline";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
-import { seedWardFlowState, type WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "../src/components/ward-management/ward-model";
 import type { WardAccess } from "../src/components/ward-management/ward-role-access";
+import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /** D-80: other wards' decline reasons stay with the coordinator; an ED sees only that a ward declined. */
@@ -84,5 +89,55 @@ describe("ED decline reasons kept to the coordinator (D-80)", () => {
     expect(text).toHaveLength(2);
     expect(text.find((line) => line.includes(declined.name))).toMatch(/declined$/);
     expect(text.join(" ")).not.toMatch(/acuity/i);
+  });
+
+  it("keeps the reason out of the stage change and notice a reducer decline writes", () => {
+    const raised = wardFlowReducer(seedWardFlowState(), {
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW_ANCHOR,
+      edId: "jhc-ed",
+      draft: {
+        cohort: "Adult",
+        security: "Secure",
+        sex: "Male",
+        gender: "Male",
+        observation: GENERAL_OBSERVATION,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+    const movementId = raised.movements[raised.movements.length - 1].id;
+    const referred = wardFlowReducer(raised, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId,
+      unitIds: ["rph-adult-secure"],
+    });
+    const world = wardFlowReducer(referred, {
+      type: "DECLINE",
+      role: "ward",
+      now: NOW_ANCHOR + 1,
+      movementId,
+      unitId: "rph-adult-secure",
+      reason: "belongs_to_another_service",
+    });
+    expect(world.rejections).toHaveLength(0);
+    const edAccess: WardAccess = { role: "ed", scope: { kind: "ed", edId: "jhc-ed" } };
+    const copy = scopeWardFlowState(world, edAccess, {
+      now: NOW_ANCHOR + 1,
+      places: wardPlaceLookup(world.units),
+    }).state;
+    const movement = copy.movements.find((candidate) => candidate.id === movementId)!;
+    expect(movement.declines.every((decline) => decline.reason === undefined)).toBe(true);
+    expect(movement.stageChanges.some((change) => change.reason === "belongs_to_another_service")).toBe(false);
+    const declinedNotices = copy.notices.filter((notice) => notice.kind === "referral_declined");
+    expect(declinedNotices.length).toBeGreaterThan(0);
+    expect(JSON.stringify(copy)).not.toMatch(/belongs.to.another.service/i);
+    // The coordinator's whole view still carries the reason.
+    expect(JSON.stringify(world)).toMatch(/belongs_to_another_service/);
   });
 });
