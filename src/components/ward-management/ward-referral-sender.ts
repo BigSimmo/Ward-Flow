@@ -55,9 +55,11 @@ export function referralSentByDesk(
 export { routeSentKind };
 
 /**
- * Did this desk send this journey (D-80). A ward sent it when the sending ward (the referral's
- * origin, else the stay it left) is one of its own; any other desk asks `referralSentByDesk` of the
- * journey's referral. The server's write check and the legal forms screen share it.
+ * Did this desk send this journey (D-80). A journey leaving a stay was sent by that stay's ward,
+ * even when the stay itself began from another place's referral (a repatriation copies both
+ * links). Otherwise a ward sent it when the referral's origin is one of its own, and any other
+ * desk asks `referralSentByDesk` of the journey's referral. The server's write check and the legal
+ * forms screen share it.
  */
 export function journeySentByDesk(
   records: { referrals: readonly Referral[]; admissions: readonly Pick<Admission, "id" | "unitId">[] },
@@ -69,12 +71,17 @@ export function journeySentByDesk(
   const referral = movement.referralId
     ? records.referrals.find((candidate) => candidate.id === movement.referralId)
     : undefined;
+  const leftStay = movement.sourceAdmissionId !== undefined;
   if (access.role === "ward") {
+    const stayWard = leftStay
+      ? records.admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId
+      : undefined;
     const sendingWard =
-      referral?.originUnitId ??
-      records.admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId ??
+      stayWard ??
+      (leftStay ? undefined : referral?.originUnitId) ??
       (movement as { originUnitId?: string }).originUnitId;
     return sendingWard !== undefined && unitInScope(access.scope, sendingWard, places);
   }
+  if (leftStay && access.role === "community") return false;
   return referral !== undefined && referralSentByDesk(referral, access, places);
 }

@@ -83,4 +83,19 @@ describe("the sender's own journey tools (D-80)", () => {
     expect(commandScopeRefusal(state, ownTeam, ready, options)).toBeNull();
     expect(commandScopeRefusal(state, otherTeam, ready, options)).not.toBeNull();
   });
+
+  it("names the ward a return journey leaves as its sender, not the ward that first referred the stay", () => {
+    // A repatriation copies the stay's referral onto the journey beside the stay itself.
+    const stay = { ...seed.admissions[0]!, id: "ADM-D80-STAY", unitId: receiving!.id };
+    const back = { ...journey("WF-D80-BACK", wardSent.id), sourceAdmissionId: stay.id };
+    const returning: WardFlowState = {
+      ...state,
+      admissions: [stay, ...state.admissions],
+      movements: [back, ...state.movements],
+    };
+    expect(commandScopeRefusal(returning, receivingWard, urgency("ward", back.id), options)).toBeNull();
+    expect(commandScopeRefusal(returning, sendingWard, urgency("ward", back.id), options)).not.toBeNull();
+    expect(journeySentByKind(returning.referrals, back, "ward")).toBe(true);
+    expect(journeySentByKind([teamSent], { ...back, referralId: teamSent.id }, "community")).toBe(false);
+  });
 });

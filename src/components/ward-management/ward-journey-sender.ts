@@ -23,7 +23,8 @@ export function journeySentByKind(
   role: string,
 ): boolean {
   if (role !== "ward" && role !== "community") return true;
-  if (role === "ward" && movement.sourceAdmissionId !== undefined) return true;
+  // A journey leaving a stay was sent by its ward, whoever referred the stay (a repatriation).
+  if (movement.sourceAdmissionId !== undefined) return role === "ward";
   const referral = movement.referralId
     ? referrals.find((candidate) => candidate.id === movement.referralId)
     : undefined;
