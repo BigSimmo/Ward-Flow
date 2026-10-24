@@ -60,7 +60,7 @@ interface WardBedDossierDrawerProps {
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
   /** Records a new observation level for the stay (fix plan item 10). Absent where this desk may not. */
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (admissionId: string, observation: Observation) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   /** Steps to the bed before this one. The arrow shows only when the parent passes it. */
@@ -682,6 +682,7 @@ export function WardBedDossierDrawer({
                     </dl>
                     {bedItem?.observation && bedItem.admissionId ? (
                       <WardObservationControl
+                        key={bedItem.admissionId}
                         observation={bedItem.observation}
                         now={now}
                         showCurrent={false}
@@ -995,7 +996,7 @@ interface PhoneBedSheetProps {
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (admissionId: string, observation: Observation) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
@@ -1161,6 +1162,7 @@ function PhoneBedSheet({
               </dl>
               {bedItem?.observation && admissionId ? (
                 <WardObservationControl
+                  key={admissionId}
                   observation={bedItem.observation}
                   now={now}
                   showCurrent={false}

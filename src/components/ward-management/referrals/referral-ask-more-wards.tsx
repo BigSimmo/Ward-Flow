@@ -17,6 +17,7 @@ import {
 import { isAwaitingAnswer, referralWithdrawn } from "@/components/ward-management/ward-referrals";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
 import ph from "./referral-match-phone.module.css";
 import styles from "./referral-ask-more-wards.module.css";
@@ -52,6 +53,8 @@ export function useAskMoreWards({
   const [query, setQuery] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [attemptedAt, setAttemptedAt] = useState<number | null>(null);
+  // Audit 24-3 SV-3: the list and its ticks stay until the ask is accepted, with the reason if not.
+  const save = useWardFormSave(referral.id);
 
   const wardArms = referral.destinations.filter(
     (addressing): addressing is WardArm => addressing.destination.kind === "psychiatric_ward",
@@ -104,6 +107,7 @@ export function useAskMoreWards({
           .findLast((entry) => entry.attempted === "ASK_MORE_WARDS" && entry.movementId === referral.id);
 
   function close() {
+    save.clearError();
     setOpen(false);
     setPicked([]);
     setQuery("");
@@ -124,6 +128,9 @@ export function useAskMoreWards({
     query,
     showReview,
     rejection,
+    // A refusal this desk already lists as a rejection is said once, by that line.
+    failure: rejection ? undefined : save.error,
+    pending: save.pending,
     setQuery,
     setShowReview,
     start() {
@@ -135,10 +142,12 @@ export function useAskMoreWards({
       setPicked((current) => (on ? [...current, unitId] : current.filter((id) => id !== unitId)));
     },
     ask() {
-      if (chosen.length === 0 || chosen.length > slots) return;
+      if (chosen.length === 0 || chosen.length > slots || save.pending) return;
       setAttemptedAt(rejections.length);
-      wardRaise(dispatch, "coordinator", now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen });
-      close();
+      save.submit(
+        () => wardRaise(dispatch, "coordinator", now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen }),
+        close,
+      );
     },
   };
 }
@@ -184,6 +193,11 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
       {ask.rejection ? (
         <p className={styles.hint} role="alert" data-testid="ward-referral-ask-rejection">
           Not asked: {ask.rejection.reason}
+        </p>
+      ) : null}
+      {ask.failure ? (
+        <p className={styles.hint} role="alert" data-testid="ward-referral-ask-failure">
+          {ask.failure}
         </p>
       ) : null}
       {ask.open ? (
@@ -314,7 +328,13 @@ export function AskMoreWardsFoot({ ask }: { ask: AskMoreWards }) {
   // A ward can start waiting elsewhere while the list is open, so the ticks can outgrow the slots.
   const over = n > ask.slots;
   const reason =
-    n === 0 ? "Tick at least one ward that fits." : over ? `Only ${ask.slots} more can be waiting now.` : undefined;
+    n === 0
+      ? "Tick at least one ward that fits."
+      : over
+        ? `Only ${ask.slots} more can be waiting now.`
+        : ask.pending
+          ? "Still asking the wards ticked."
+          : undefined;
   return (
     <>
       <Button variant="sec" size="md" type="button" data-testid="ward-referral-ask-cancel" onClick={ask.close}>

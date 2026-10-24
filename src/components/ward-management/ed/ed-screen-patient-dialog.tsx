@@ -216,6 +216,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
             <section className={styles.pxBlock} data-testid="ward-ed-observation">
               <h3>Observation level</h3>
               <EdObservationControl
+                key={selectedPatient.id}
                 observation={selectedPatient.observation}
                 now={now}
                 onSave={(observation) =>
