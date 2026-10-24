@@ -40,7 +40,7 @@ export type ForecastSourceEntry = {
   /** The role that last reported this discharge, never a personal name. */
   saidBy: string;
   saidAt: Instant;
-  /** A current admission plan differs from the release estimate; neither replaces the release report. */
+  /** Current admission-plan attribution is separate from the release-stage report. */
   planDate?: { recordedAt: Instant | null; recordedBy: string | null };
 };
 
@@ -155,7 +155,7 @@ export function bedsForecastSources(
         ...release,
         expectedAt,
         planDate:
-          expectedAt === release.expectedAt
+          admission?.expectedDischargeAt == null
             ? undefined
             : {
                 recordedAt: admission?.dischargeDateSetAt ?? null,
