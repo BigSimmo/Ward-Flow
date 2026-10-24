@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush, rememberPhonePushOwnership } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
-import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data";
+import { endWardFlowBrowserSession, endWardFlowTabSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
@@ -360,8 +360,21 @@ export function useWardSupabaseShared(
               disconnect();
               // Another tab is in use: only this tab signs out, and the shared session stays.
               if (await otherTabInUse()) {
-                await auth!.signOut(true);
-                if (!closed) setView({ ...emptyView, status: "ready", error: reason ?? null });
+                let failure: string | null = null;
+                try {
+                  await auth!.signOut(true);
+                } catch (error) {
+                  failure =
+                    error instanceof WardAuthError
+                      ? error.message
+                      : "Sign-out cleanup could not be confirmed. Clear this site's browser data before sharing the device.";
+                }
+                // This tab's saved data goes too, so a reload here reopens nothing (audit 24-3 SM-1).
+                endWardFlowTabSession();
+                if (!closed) {
+                  setView({ ...emptyView, status: "ready", error: reason ?? null });
+                  if (failure) setForm({ open: true, recovery: false, busy: false, message: failure });
+                }
                 return;
               }
             }

@@ -358,9 +358,21 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   async signOut(thisTabOnly = false) {
     const token = this.session?.access_token;
     this.invalidate();
-    // Audit 24-3 SM-1: another tab on this sign-in is in use, so its saved session stays.
+    // Audit 24-3 SM-1: another tab on this sign-in is in use, so the server session stays for it.
+    // This tab's own saved copy still goes (session storage is per tab), so a reload here cannot
+    // restore the workspace without a password. No server sign-out and no session-ended sweep:
+    // both would reach the other tab. The caller clears this tab's other Ward Flow data.
     if (thisTabOnly) {
       this.session = null;
+      this.email = null;
+      try {
+        this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
+      } catch {
+        throw new WardAuthError(
+          "unavailable",
+          "Signed out here, but this browser could not remove saved sign-in details. Clear this site's browser data before sharing the device.",
+        );
+      }
       return;
     }
     const removed = this.clear();

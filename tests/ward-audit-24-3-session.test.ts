@@ -114,4 +114,42 @@ describe("audit 24-3 session fixes", () => {
     expect(view()).toMatchObject({ status: "unavailable", boardCurrent: true });
     shared.dispose();
   });
+
+  it("SM-1: a this-tab-only sign-out removes this tab's saved session, so a reload restores nothing", async () => {
+    const saved = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => void saved.set(key, value),
+      removeItem: (key: string) => void saved.delete(key),
+    };
+    const fetcher = vi.fn(async (u: RequestInfo | URL) =>
+      Response.json(
+        String(u).endsWith("/user")
+          ? user
+          : { access_token: "access-1", refresh_token: "refresh-1", expires_in: 3600, user },
+      ),
+    );
+    const ended = vi.fn();
+    const options = {
+      url: "https://zakzoemeedfepxcstsou.supabase.co",
+      publishableKey: "sb_publishable_test",
+      fetch: fetcher,
+      storage,
+      onSessionEnded: ended,
+    };
+    const auth = new SupabaseWardAuth(options);
+    await auth.signIn("synthetic@example.invalid", "private-test-password");
+    expect(saved.size).toBe(1);
+    ended.mockClear();
+    await auth.signOut(true);
+    expect(auth.userId).toBeNull();
+    expect(saved.size).toBe(0);
+    // No server sign-out and no device-wide sweep: the other tab's session stays.
+    expect(fetcher.mock.calls.some(([u]) => String(u).includes("/logout"))).toBe(false);
+    expect(ended).not.toHaveBeenCalled();
+    // Reloading this tab builds a new adapter over the same per-tab storage.
+    const reloaded = new SupabaseWardAuth(options);
+    await reloaded.restore();
+    expect(reloaded.userId).toBeNull();
+  });
 });

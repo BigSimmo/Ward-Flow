@@ -281,7 +281,7 @@ function useTypedTime(now: Instant, after?: Instant) {
 
 /** Audit 24-3 SV-1: a save still out, or why it was not recorded. What was typed stays in the form. */
 function SaveAnswer({ save, testId }: { save: WardFormSave; testId: string }) {
-  if (save.pending)
+  if (save.pending && !save.error)
     return (
       <p className={`${styles.note} ${styles.formReason}`} role="status">
         Saving…

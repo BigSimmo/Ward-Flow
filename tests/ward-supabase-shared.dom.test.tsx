@@ -528,7 +528,7 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
     expect(result.current.error).toBe("Signed out after 15 minutes without use. Sign in again to carry on.");
     expect(channels[0].posted).not.toContain("signed-out");
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("/logout"))).toBe(false);
-    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).not.toBeNull();
+    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   });
 
   it("says it is in use only for the same sign-in, used within the idle time (audit 24-3 SM-1)", async () => {
