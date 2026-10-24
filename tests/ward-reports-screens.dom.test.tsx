@@ -16,6 +16,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import {
+  downtimePack,
   forgetDowntimePack,
   lastDowntimePack,
   rememberDowntimePack,
@@ -36,6 +37,7 @@ import { WardAccessScope } from "@/components/ward-management/shell/ward-access"
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
 
 // The ward layout wraps every route in the shared wf ToastProvider; the screens rely on it.
 function InitialPack({ pack, generation = null }: { pack: DowntimePack; generation?: number | null }) {
@@ -372,6 +374,101 @@ describe("read-only report screens", () => {
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });
 
+  it("keeps recorded observations in both printable tables", () => {
+    route.pathname = "/ward-flow/reports/downtime";
+    const world = seedWardFlowState();
+    const pack = downtimePack({ ...world, now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    inProvider(<DowntimePackScreen />, { pack });
+    for (const [testId, lines] of [
+      ["ward-downtime-ed", pack.edQueue],
+      ["ward-downtime-moves", pack.pendingMoves],
+    ] as const) {
+      const table = within(screen.getByTestId(testId));
+      expect(table.getByRole("columnheader", { name: "Recorded observations" })).toBeTruthy();
+      const rows = table.getAllByRole("row").slice(1);
+      expect(rows).toHaveLength(lines.length);
+      for (const [index, line] of lines.entries()) {
+        expect(within(rows[index]).getByRole("cell", { name: line.observation })).toBeTruthy();
+      }
+    }
+  });
+
+  it("names the pack year and zone, including the year on rows from an earlier year", () => {
+    route.pathname = "/ward-flow/reports/downtime";
+    const pack: DowntimePack = {
+      ...OLD_PACK,
+      generatedAt: NOW_ANCHOR,
+      legalForms: [
+        {
+          movementId: "WF-SYNTHETIC",
+          person: "Synthetic person",
+          form: "Recorded form",
+          legalStatus: "Voluntary",
+          madeAt: -4 * 24 * 60,
+          receivedAt: null,
+          typedExpiryAt: null,
+        },
+      ],
+    };
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={perthMidnight(2026, 0, 2).getTime()}>
+          <InitialPack pack={pack} />
+          <DowntimePackScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(/2026.*AWST/u);
+    const previousYear = within(screen.getByTestId("ward-downtime-legal"))
+      .getAllByRole("cell")
+      .find((cell) => cell.textContent?.includes("2025"));
+    expect(previousYear?.textContent).toContain("AWST");
+  });
+
+  it("keeps the offline warning and last sync in the complete print provenance", () => {
+    route.pathname = "/ward-flow/reports/downtime";
+    const pack: DowntimePack = {
+      ...OLD_PACK,
+      generatedAt: NOW_ANCHOR,
+      offline: { lastSyncAt: NOW_ANCHOR - 30 },
+    };
+    inProvider(<DowntimePackScreen />, { pack });
+    expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(
+      /Taken offline .* AWST · last sync .* AWST/u,
+    );
+  });
+
+  it("includes recorded observations in phone ED and pending-move detail sheets", () => {
+    route.pathname = "/ward-flow/reports/downtime";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    const world = seedWardFlowState();
+    const pack = downtimePack({ ...world, now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    try {
+      inProvider(<DowntimePackScreen />, { pack });
+      for (const [label, observation] of [
+        [/^ED/u, pack.edQueue[0].observation],
+        [/^Moves/u, pack.pendingMoves[0].observation],
+      ] as const) {
+        fireEvent.click(screen.getByRole("radio", { name: label }));
+        fireEvent.click(screen.getAllByRole("button", { name: /Synthetic person/u })[0]);
+        const sheet = within(screen.getByRole("dialog", { name: "Synthetic person" }));
+        expect(sheet.getByText("Recorded observations")).toBeTruthy();
+        expect(sheet.getByText(observation)).toBeTruthy();
+        fireEvent.click(sheet.getByRole("button", { name: "Close" }));
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("on a phone prints all four full tables, whichever section is open", () => {
     route.pathname = "/ward-flow/reports/downtime";
     vi.stubGlobal(
@@ -397,6 +494,12 @@ describe("read-only report screens", () => {
       const ed = printPack.getByTestId("ward-downtime-ed");
       expect(within(ed).getAllByRole("row")).toHaveLength(pack!.edQueue.length + 1);
       expect(within(ed).getByRole("columnheader", { name: "Legal status" })).toBeTruthy();
+      expect(within(ed).getByRole("columnheader", { name: "Recorded observations" })).toBeTruthy();
+      expect(
+        within(printPack.getByTestId("ward-downtime-moves")).getByRole("columnheader", {
+          name: "Recorded observations",
+        }),
+      ).toBeTruthy();
       expect(within(printPack.getByTestId("ward-downtime-moves")).getAllByRole("row")).toHaveLength(
         pack!.pendingMoves.length + 1,
       );
