@@ -39,6 +39,7 @@ import {
   unitInScope,
   type PlaceLookup,
   type WardAccess,
+  type WardAccessScope,
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
@@ -248,7 +249,11 @@ const COLLECTION_FIELDS = [
  * reaches the officer. The required histories it never reads are empty, and only cancelled
  * transports are kept from the unwind trail.
  */
-function collectionMovement(movement: Movement): Movement {
+function collectionMovement(
+  movement: Movement,
+  riskFlags: Movement["collectionRiskFlags"],
+  fromUnitId: string | undefined,
+): Movement {
   const trimmed: Record<string, unknown> = {
     id: movement.id,
     originEdId: movement.originEdId,
@@ -276,6 +281,12 @@ function collectionMovement(movement: Movement): Movement {
     blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
   };
   for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
+  // The browser scopes the server's officer copy again, with no referrals or stays left to read,
+  // so a copy keeps what the first pass found (review on PR #637).
+  const flags = riskFlags ?? movement.collectionRiskFlags;
+  if (flags?.length) trimmed.collectionRiskFlags = [...flags];
+  const from = fromUnitId ?? movement.collectionFromUnitId;
+  if (from !== undefined) trimmed.collectionFromUnitId = from;
   return trimmed as Movement;
 }
 
@@ -526,6 +537,26 @@ export function communityTeamKey(name: string | undefined): string {
     .replace(/[^a-z0-9]+/gu, " ")
     .trim()
     .replace(/ community team$/u, "");
+}
+
+/**
+ * Whether a job belongs to the officer's own health service (D-80 item 7): it leaves from an ED or
+ * ward of the service, or goes to one. An officer with no service (the local demo desk) has every job.
+ */
+function officerJobInService(
+  workspace: ScopableWorkspace,
+  scope: WardAccessScope,
+  places: PlaceLookup,
+): (movement: Movement) => boolean {
+  const service = scope.kind === "jobs" ? scope.service : undefined;
+  if (service === undefined) return () => true;
+  const admissionUnits = new Map(workspace.admissions.map((admission) => [admission.id, admission.unitId]));
+  const unitIn = (unitId: string | undefined) => unitId !== undefined && places.unitService(unitId) === service;
+  return (movement) =>
+    (movement.originEdId !== undefined && places.edService(movement.originEdId) === service) ||
+    unitIn(movement.acceptedUnitId) ||
+    (movement.sourceAdmissionId !== undefined && unitIn(admissionUnits.get(movement.sourceAdmissionId))) ||
+    unitIn(movement.collectionFromUnitId);
 }
 
 /** A patient with only what a transport officer needs: who to collect and how to keep them safe. */
@@ -894,15 +925,26 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       break;
     }
     case "officer": {
+      const inService = officerJobInService(workspace, scope, places);
+      const admissionUnits = new Map(workspace.admissions.map((admission) => [admission.id, admission.unitId]));
       movements = workspace.movements.filter(
         (movement) =>
           movement.transport !== undefined &&
           movement.transport.arrivedAt === undefined &&
-          movement.closure === undefined,
+          movement.closure === undefined &&
+          inService(movement),
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
-      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026).
-      movements = movements.map(collectionMovement);
+      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026). The
+      // referral's risk categories ride on the job as flags (D-80 item 7).
+      const riskFlags = new Map(workspace.referrals.map((referral) => [referral.id, referral.intake?.riskFlags]));
+      movements = movements.map((movement) =>
+        collectionMovement(
+          movement,
+          movement.referralId === undefined ? undefined : riskFlags.get(movement.referralId),
+          movement.sourceAdmissionId === undefined ? undefined : admissionUnits.get(movement.sourceAdmissionId),
+        ),
+      );
       officer = true;
       break;
     }
@@ -978,7 +1020,15 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   if (officer) patients = patients.map(officerPatient);
   if (anonymise) patients = workspace.patients.filter((patient) => patientIds.has(patient.id)).map(anonymousPatient);
 
-  const notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  let notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  // A service's officer hears only about its own service's jobs, including ones since cancelled.
+  if (officer) {
+    const inService = officerJobInService(workspace, scope, places);
+    const outside = new Set(workspace.movements.filter((movement) => !inService(movement)).map(({ id }) => id));
+    notices = notices.filter(
+      (notice) => notice.about.movementId === undefined || !outside.has(notice.about.movementId),
+    );
+  }
 
   const visibleOnlyByGrant = new Set<string>();
   for (const id of grantIds) if (!ownPatientIds.has(id)) visibleOnlyByGrant.add(id);

@@ -45,7 +45,7 @@ import type {
   ExaminationOutcome,
   GenderPlacement,
   MovementId,
-  MovementOrigin,
+  MovementRoot,
   MovementReferralAbsence,
   MovementTransportNeed,
   Override,
@@ -478,7 +478,7 @@ export type MovementClosure = {
   reason: string;
 };
 
-type MovementBase = MovementOrigin & LegalFormExpiryMetadata;
+type MovementBase = MovementRoot & LegalFormExpiryMetadata;
 
 export type Movement = MovementBase & {
   turnaroundPriority?: TurnaroundPriority;
