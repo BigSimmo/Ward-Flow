@@ -1101,12 +1101,12 @@ function WardFlowWorld({
           const restoredElapsed =
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
-          // reload) only moves the clock; the screens keep their nodes and their state.
+          // reload) only moves the clock; the screens keep their nodes and their state. Nothing was
+          // lost, so there is no restore notice (usability audit, 24 Oct 2026).
           const isSameWorld =
             !current.preAdoptionEvents?.length &&
             JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
-          if (isSameWorld)
-            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined, recoveryNotice };
+          if (isSameWorld) return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
