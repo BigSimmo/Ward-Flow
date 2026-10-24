@@ -1396,6 +1396,13 @@
       "after": 0,
       "reason": "Unfinished features sweep, approved by Josh on 23 Oct 2026 (decision card 13:07Z, and 14:59Z \"Yes go ahead with all recommendations\"). escalationBoard had no production caller and its nowhereEligible list counted movements already holding a bed (A3-3). The PR deletes the function and this suite; the no eligible bed ruling test keeps its own inline check.",
       "approvedOn": "2026-10-23"
+    },
+    {
+      "path": "tests/ward-transport-pickup.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "helper unused, deleted with its only test",
+      "approvedOn": "2026-10-23"
     }
   ]
 }
