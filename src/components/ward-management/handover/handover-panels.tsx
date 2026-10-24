@@ -10,6 +10,8 @@ import { useId } from "react";
 import { Check, ClipboardCopy, Clock, Route, Truck, UserRound, X } from "lucide-react";
 import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
@@ -308,6 +310,10 @@ export function HandoverSignOffPanel({
   onUndoSignOff: () => void;
 }) {
   const baseId = useId();
+  // B6-10 (device sweep): name the desk that signs, the same role the page records the sign-off
+  // under, rather than always the flow coordinator. The coordinator keeps its event label.
+  const signerRole = useRouteRole();
+  const signer = signerRole === "coordinator" ? "Flow coordinator" : CHROME_ROLE_LABELS[signerRole];
   return (
     <Card
       as="section"
@@ -342,7 +348,7 @@ export function HandoverSignOffPanel({
         <span className={styles.sectionHead}>Handed over by</span>
         <div className={styles.who}>
           <Icon icon={UserRound} size={14} />
-          <b>Flow coordinator</b>
+          <b>{signer}</b>
           <span>you</span>
         </div>
       </div>
@@ -350,7 +356,7 @@ export function HandoverSignOffPanel({
         <div className={styles.section}>
           <div className={styles.signed} data-testid="ward-handover-sign-off-visible-status" role="status">
             <StatusGlyph tone="success" size={9} />
-            Signed off at {formatInstantWithDay(signedAt, now)} as flow coordinator. Recorded in History.
+            Signed off at {formatInstantWithDay(signedAt, now)} as {signer.toLowerCase()}. Recorded in History.
           </div>
         </div>
       ) : null}
