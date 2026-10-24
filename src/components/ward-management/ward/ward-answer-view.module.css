@@ -2550,3 +2550,12 @@ details[open] > summary > .phoneFoldChevron {
     grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
   }
 }
+
+/* DR-05: Accept, Decline and Confirm decline keep the owner's 48 px floor on any touch screen,
+ * touch tablets included, not only in the phone width block above. */
+@media (pointer: coarse) {
+  .decisionArea > button,
+  .declineForm button[type="submit"] {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

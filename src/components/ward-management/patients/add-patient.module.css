@@ -753,6 +753,17 @@
     border-color: var(--wf-line-2);
   }
 
+  /* DR-04: while the on-screen keyboard is up the card stops sticking, so it no longer covers the
+     field being typed in; it waits at the foot of the form. The scroll padding keeps a focused
+     field clear of the screen's bottom edge. */
+  :global(html[data-wf-keyboard="open"]) .main[data-phone-form="true"] .submitBar.submitBar {
+    position: static;
+  }
+
+  :global(html[data-wf-keyboard="open"]):has(.main[data-phone-form="true"]) {
+    scroll-padding-bottom: var(--wf-s-4);
+  }
+
   /* The three buttons wrap rather than set a row wider than the phone (F-03): Reset and Register
      share a line when they fit, and Add patient takes its own full line. */
   .main[data-phone-form="true"] .submitActions {
