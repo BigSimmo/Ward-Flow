@@ -25,10 +25,9 @@ import { cn, primaryControl } from "@/components/ui-primitives";
  * `console.error` (so the stack is in the browser console in every environment), the message is
  * rendered on screen, and the stack is put behind a disclosure in development.
  *
- * ⚠️ **SHOWING `error.message` IS SAFE HERE AND WOULD NOT BE EVERYWHERE.** Every patient, bed,
- * referral and instant this prototype holds is invented, so a guard that interpolates part of the
- * failing record into its message cannot leak anything real. `src/proxy.ts` also blocks every
- * `/mockups/**` path in production. Do not copy this decision onto a route serving real data.
+ * ⚠️ **THE MESSAGE IS SHOWN ONLY OUTSIDE PRODUCTION.** Audit 5 PS-05: a guard can quote part of
+ * the failing record in its message, and the signed-in shared site is a production build, so there
+ * the panel shows a fixed sentence and the digest instead. The full error is still in the console.
  *
  * ⚠️ **"TRY AGAIN" IS HONEST BUT LIMITED, AND THE COPY SAYS SO.** `retry()` re-renders this
  * segment; it does not re-create `WardFlowProvider`, which lives in the layout ABOVE every boundary
@@ -68,8 +67,8 @@ export function WardFlowErrorPanel({
   }, [error, logLabel]);
 
   // Evaluated at build time by the bundler, so the stack disclosure is not shipped to a production
-  // client at all. These routes 404 in production regardless; this is belt and braces.
-  const showStack = process.env.NODE_ENV !== "production";
+  // client at all, and neither is the message (audit PS-05).
+  const showDetail = process.env.NODE_ENV !== "production";
 
   return (
     <div
@@ -101,13 +100,14 @@ export function WardFlowErrorPanel({
           {description}
         </p>
 
-        {/* The message itself, never a stand-in for it. A boundary that hides what threw is the
-            defect this file exists to remove. */}
+        {/* The message itself outside production; there, the console and the digest carry it. */}
         <pre
           className="mt-4 overflow-x-auto rounded-lg bg-[color:var(--surface-subtle)] p-3 text-left font-mono text-xs whitespace-pre-wrap text-[color:var(--text)]"
           data-testid="ward-flow-error-message"
         >
-          {error.message || "The error carried no message."}
+          {showDetail
+            ? error.message || "The error carried no message."
+            : "The details are kept out of view so nothing from a record is shown here. Quote the digest below when you report this."}
         </pre>
 
         {error.digest && (
@@ -116,7 +116,7 @@ export function WardFlowErrorPanel({
           </p>
         )}
 
-        {showStack && error.stack && (
+        {showDetail && error.stack && (
           <details className="mt-3 text-left" data-testid="ward-flow-error-stack">
             <summary className="cursor-pointer text-xs text-[color:var(--text-muted)]">
               Stack trace (development only)

@@ -293,7 +293,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                 <div className={styles.dutyCard}>
                   <div className={styles.dutyRole}>Duty Consultant</div>
                   <div className={styles.dutyName}>{teamConfig.consultant} (MBBS, FRANZCP)</div>
-                  <div className={styles.microMuted}>Direct Mobile: 0411 902 441</div>
+                  <div className={styles.microMuted}>Direct Mobile: 0491 570 110</div>
                 </div>
                 <div className={styles.dutyCard}>
                   <div className={styles.dutyRole}>Crisis Clinical Specialist</div>

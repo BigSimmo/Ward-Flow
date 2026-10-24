@@ -333,7 +333,7 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
 it("stops polling and signs out the view when the workspace refuses access", async () => {
   const fetcher = vi.fn(async (url: string | URL | Request) =>
     String(url).includes("/v1/workspace")
-      ? Response.json({}, { status: 403 })
+      ? Response.json({ error: "Origin not allowed" }, { status: 403 })
       : String(url).endsWith("/user")
         ? Response.json(user)
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
