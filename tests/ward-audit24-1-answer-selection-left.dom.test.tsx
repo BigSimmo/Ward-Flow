@@ -40,12 +40,12 @@ function Harness({
   return <WardFlowOverride value={{ ...state, dispatch, movements }}>{children}</WardFlowOverride>;
 }
 
-function renderAnswer(unitId: string, start: Adjust = (movements) => movements) {
+function renderAnswer(unitId: string, start: Adjust = (movements) => movements, initialMovementId?: string) {
   const dispatch = vi.fn<(event: WardFlowEvent) => void>();
   const tree = (adjust: Adjust) => (
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Harness dispatch={dispatch} adjust={adjust}>
-        <WardAnswerView unitId={unitId} />
+        <WardAnswerView unitId={unitId} initialMovementId={initialMovementId} />
       </Harness>
     </WardFlowProvider>
   );
@@ -69,7 +69,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     act(() => setAdjust((movements) => withSecond(movements).filter((movement) => movement.id !== id)));
 
     expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(
-      `${name}’s request was answered or withdrawn elsewhere. Choose the next request.`,
+      `${name}’s request was answered or withdrawn elsewhere.`,
     );
     expect(screen.queryByTestId(/^ward-incoming-/)).not.toBeInTheDocument();
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
@@ -79,6 +79,63 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     fireEvent.click(screen.getByRole("button", { name: /^Show request 1 of / }));
     expect(screen.queryByTestId("ward-answer-selection-left")).not.toBeInTheDocument();
     expect(shownId()).not.toBe(id);
+  });
+
+  it("does not open someone else when a linked request has already left", () => {
+    renderAnswer(UNIT, withSecond, "WF-AUDIT-GONE");
+    expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(
+      "This patient’s request was answered or withdrawn elsewhere.",
+    );
+    expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
+  });
+
+  it("names the linked person when their request leaves elsewhere", () => {
+    renderAnswer(UNIT, withSecond, "WF-AUDIT-NEXT");
+    expect(shownId()).toBe("WF-AUDIT-NEXT");
+    act(() => setAdjust((movements) => withSecond(movements).filter((movement) => movement.id !== "WF-AUDIT-NEXT")));
+    expect(screen.getByTestId("ward-answer-selection-left")).toBeInTheDocument();
+    expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
+  });
+
+  it("treats a refused accept as no answer, so a later answer elsewhere is still named", () => {
+    const dispatch = vi.fn<(event: WardFlowEvent) => void>();
+    let refuse = false;
+    function Refusing({ children }: { children: ReactNode }) {
+      const state = useWardFlow();
+      const movements = withSecond(state.movements);
+      const id = movements.find((movement) => movement.referredUnitIds.includes(UNIT))!.id;
+      const shown = refuse ? movements.filter((movement) => movement.id !== id) : movements;
+      const rejections = refuse
+        ? [
+            ...state.rejections,
+            {
+              id: "WF-R",
+              at: NOW_ANCHOR,
+              movementId: id,
+              attempted: "ACCEPT_IN_PRINCIPLE" as const,
+              reason: "Refused.",
+            },
+          ]
+        : state.rejections;
+      return (
+        <WardFlowOverride value={{ ...state, dispatch, movements: shown, rejections }}>{children}</WardFlowOverride>
+      );
+    }
+    const tree = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Refusing>
+          <WardAnswerView unitId={UNIT} />
+        </Refusing>
+      </WardFlowProvider>
+    );
+    const view = render(tree());
+    const id = shownId();
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    // The engine refused it, then another desk answered the same request.
+    refuse = true;
+    act(() => view.rerender(tree()));
+    expect(screen.getByTestId("ward-answer-selection-left")).toBeInTheDocument();
+    expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
   });
 
   it("still lands on the next request after this desk's own answer", () => {

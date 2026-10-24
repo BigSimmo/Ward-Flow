@@ -121,9 +121,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  // Audit 1, Josh 20 Oct (CS-08): the request on screen is held by its journey id, never its list
-  // position, so a request answered elsewhere or a new one sorting ahead cannot swap the person.
-  // `index` is only where to land when the held request leaves the list.
+  // Audit 1, Josh 20 Oct (CS-08): held by journey id, never list position; `index` is where to land after answering.
   // Notices option A (22 Oct 2026): a Notices row names its request, so the view opens on that patient.
   const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({
     id: initialMovementId,
@@ -319,15 +317,16 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
-  // Audit 24-1 D-01: a request shown that leaves at another desk never hands its place (and its
-  // one-step Accept) to whoever now sits there; the panel names who left and the user chooses.
-  // Only a first landing or this desk's own answer (`answeredHereId`) falls back to a position.
-  const selectionLeft = heldIndex < 0 && answerSelection.name !== undefined && answerSelection.id !== answeredHereId;
+  // Audit 24-1 D-01: a shown or linked request that leaves elsewhere keeps its place (no swap).
+  const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
+  const linked = initialMovementId !== undefined && answerSelection.id === initialMovementId;
+  const selectionLeft = heldIndex < 0 && (answerSelection.name !== undefined || linked) && !answeredHere;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) =>
     setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
   if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
+    setAnsweredHereId(undefined);
     pick(index);
     setHoldChoice(undefined);
   };
@@ -382,11 +381,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         setDeclineReason(undefined);
         triggerToast("Referral declined.");
       } else {
+        setAnsweredHereId(undefined);
         triggerToast(
           outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
         );
       }
     } catch {
+      setAnsweredHereId(undefined);
       triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.");
     } finally {
       declinePendingRef.current = false;
@@ -749,7 +750,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             ) : selectionLeft && incoming.length > 0 ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
                 <p role="status">
-                  {answerSelection.name}&rsquo;s request was answered or withdrawn elsewhere. Choose the next request.
+                  {answerSelection.name ?? "This patient"}&rsquo;s request was answered or withdrawn elsewhere.
                 </p>
                 <button
                   type="button"
@@ -779,9 +780,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 // FD-23: a ward-only view reads no referral records, so the shared reader gets none and
                 // returns the movement's own recorded clearance (recording one writes it here too).
                 const clearance = recordedMovementMedicalClearance(activeMovement, []);
-                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only. The fixed history, risk and
-                // "medically stabilised" text and the "Admit to" recommendation were invented for every
-                // referral and are gone; an absent fact reads "Not recorded".
+                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only; the invented history, risk,
+                // "medically stabilised" and "Admit to" text is gone. An absent fact reads "Not recorded".
                 const sbarSections = (
                   <>
                     <div className={styles.sbarSection}>

@@ -166,7 +166,10 @@ export function WardReferralDetail({
       ? [{ label: "On the referral", detail: intake.legalStatus }]
       : []),
     // Audit 24-1 A-04: recorded-only wording. Ward Flow computes no Act time or expiry.
-    { label: "CTO", detail: cto && cto.endedAt === undefined ? `Form ${cto.form} in force` : "None recorded" },
+    {
+      label: "CTO",
+      detail: !cto ? "None recorded" : cto.endedAt === undefined ? `Form ${cto.form} in force` : "No CTO in force",
+    },
     ...(dossier?.legal ?? []),
   ];
 

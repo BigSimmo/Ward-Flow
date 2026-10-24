@@ -217,9 +217,8 @@ export function WardBedDossierDrawer({
   // actions must not carry over to whoever is there now, so any open confirm closes.
   const personGone =
     shownBed === selectedBed &&
-    openedFor.admissionId !== undefined &&
     personKey !== openedFor.admissionId &&
-    departedHere !== openedFor.admissionId;
+    (openedFor.admissionId === undefined || departedHere !== openedFor.admissionId);
   if (personGone && (confirmStep !== null || quickBlockerOpen)) {
     setConfirmStep(null);
     setQuickBlockerOpen(false);
@@ -522,8 +521,10 @@ export function WardBedDossierDrawer({
           </header>
           <div className={styles.drawerBody}>
             <p role="status" className={cx(styles.card, styles.goneNotice)} data-testid="ward-drawer-person-gone">
-              {openedFor.alias ?? "The person you opened"} is no longer in {bedWords}. Close and reopen the bed to see
-              who is there now.
+              {openedFor.admissionId === undefined
+                ? `Someone has been placed in ${bedWords}.`
+                : `${openedFor.alias ?? "The person you opened"} is no longer in ${bedWords}.`}{" "}
+              Close and reopen the bed to see who is there now.
             </p>
           </div>
           <footer className={styles.drawerFoot}>

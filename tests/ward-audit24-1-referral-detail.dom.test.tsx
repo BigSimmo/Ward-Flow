@@ -18,14 +18,14 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const state = seedWardFlowState();
 const unit = state.units[0];
 
-function renderDetail(movement: Movement) {
+function renderDetail(movement: Movement, identity = resolveSubjectPatient(movement, state)) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardReferralDetailDrawer
         movement={movement}
         unit={unit}
         now={NOW_ANCHOR}
-        identity={resolveSubjectPatient(movement, state)}
+        identity={identity}
         onClose={() => {}}
         blocked={undefined}
         onDecline={() => {}}
@@ -87,5 +87,16 @@ describe("Audit 24-1 A-04: legal rows use recorded-only wording", () => {
     expect(legal).toHaveTextContent(`${movement.legalStatus}. No form recorded.`);
     expect(legal).toHaveTextContent(/CTO\s*None recorded/);
     expect(legal).not.toHaveTextContent("No forms in force");
+  });
+
+  it("says an ended CTO is not in force, not that none is recorded", () => {
+    const movement = state.movements.find((candidate) => resolveSubjectPatient(candidate, state).patient)!;
+    const identity = resolveSubjectPatient(movement, state);
+    const order = { form: "5A" as const, recordedAt: NOW_ANCHOR - 86_400_000, recordedBy: "Synthetic" };
+    const legalOf = (communityTreatmentOrder: typeof order & { endedAt?: number }) =>
+      within(
+        renderDetail(movement, { ...identity, patient: { ...identity.patient!, communityTreatmentOrder } }),
+      ).getByRole("region", { name: "Legal" });
+    expect(legalOf({ ...order, endedAt: NOW_ANCHOR - 3_600_000 })).toHaveTextContent(/CTO\s*No CTO in force/);
   });
 });

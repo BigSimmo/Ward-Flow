@@ -116,6 +116,24 @@ describe.each([
     expect(screen.getByRole("status")).toHaveTextContent("Synthetic Person X is no longer in bed 03.");
   });
 
+  it("says so when someone is placed in the bed it was opened on empty", () => {
+    setup();
+    const empty = {
+      ...occupant("adm-x", "Synthetic Person X"),
+      patientAlias: undefined,
+      admissionId: undefined,
+      stayAdmissionId: undefined,
+      status: "ready",
+    } as BedItem;
+    const { rerender } = render(drawer(empty));
+    rerender(drawer(occupant("adm-y", "Synthetic Person Y")));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Someone has been placed in bed 03. Close and reopen the bed to see who is there now.",
+    );
+    expect(screen.queryByText("Synthetic Person Y")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record that they have left" })).not.toBeInTheDocument();
+  });
+
   it("keeps showing the same person when nothing moved", () => {
     setup();
     const { rerender } = render(drawer(occupant("adm-x", "Synthetic Person X")));
