@@ -337,6 +337,52 @@ describe("ScrollRow", () => {
     Object.defineProperty(element, "scrollLeft", { configurable: true, writable: true, value: scrollLeft });
   }
 
+  it.each([1, -1])("updates fades only when an edge changes (scroll direction %s)", async (direction) => {
+    render(
+      <ScrollRow role="group" aria-label="Scroll choices" dir={direction === -1 ? "rtl" : "ltr"}>
+        <span>Choice</span>
+      </ScrollRow>,
+    );
+    const track = screen.getByRole("group", { name: "Scroll choices" });
+    const wrapper = track.parentElement!;
+    const scrollTo = async (position: number, width = 600) => {
+      setScroll(track, { scrollWidth: width, clientWidth: 300, scrollLeft: direction * position });
+      fireEvent.scroll(track);
+      await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    };
+    await scrollTo(100);
+    expect(wrapper).toHaveAttribute("data-fade-start", "true");
+    expect(wrapper).toHaveAttribute("data-fade-end", "true");
+
+    const writes: string[] = [];
+    const observer = new MutationObserver((records) => {
+      writes.push(...records.map((record) => record.attributeName!));
+    });
+    observer.observe(wrapper, { attributes: true, attributeFilter: ["data-fade-start", "data-fade-end"] });
+    try {
+      await scrollTo(150);
+      await scrollTo(200);
+      expect(writes).toEqual([]);
+
+      await scrollTo(300);
+      expect(wrapper).toHaveAttribute("data-fade-start", "true");
+      expect(wrapper).not.toHaveAttribute("data-fade-end");
+      expect(writes.splice(0)).toEqual(["data-fade-end"]);
+
+      await scrollTo(0);
+      expect(wrapper).not.toHaveAttribute("data-fade-start");
+      expect(wrapper).toHaveAttribute("data-fade-end", "true");
+      expect(writes.splice(0).sort()).toEqual(["data-fade-end", "data-fade-start"]);
+
+      await scrollTo(0, 300);
+      expect(wrapper).not.toHaveAttribute("data-fade-start");
+      expect(wrapper).not.toHaveAttribute("data-fade-end");
+      expect(writes).toEqual(["data-fade-end"]);
+    } finally {
+      observer.disconnect();
+    }
+  });
+
   it("keeps its chips on one row and fades only the edge with more content", async () => {
     render(
       <ScrollRow role="group" aria-label="Services" data-testid="track">
