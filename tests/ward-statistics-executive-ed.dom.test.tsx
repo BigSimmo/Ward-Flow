@@ -132,7 +132,7 @@ describe("one ED on the executive desk, counts only", () => {
     renderEd();
 
     const wait = screen.getByTestId("ward-statistics-ed-wait");
-    expect(within(wait).getByText("Open placement waits")).toBeTruthy();
+    expect(within(wait).getByText("Open ED journeys")).toBeTruthy();
     expect(within(wait).queryByTestId("ward-stat-ed-wait-table")).toBeNull();
     expect(within(wait).getByTestId("ward-statistics-ed-wait-not-listed")).toBeTruthy();
     expect(screen.queryByTestId("ward-stat-ed-wait-row-WF-x1")).toBeNull();
