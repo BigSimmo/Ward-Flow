@@ -216,7 +216,7 @@ describe("the scoped workspace", () => {
     expect(seen?.destinations[0].destination).toMatchObject({ unitId });
   });
 
-  it("never restores another destination through a receiving referral's placement history", () => {
+  it("never restores another destination through a receiving referral's placement or contact history", () => {
     const source = state.referrals[0];
     const other = state.units.find((unit) => unit.id !== unitId)!;
     for (const destinations of [[unitId], [unitId, other.id]]) {
@@ -250,15 +250,28 @@ describe("the scoped workspace", () => {
             wardChecked: true,
           },
         ],
+        contactLog: [unitId, other.id].map((id) => ({
+          contact: { kind: "psychiatric_ward", unitId: id },
+          at: NOW_ANCHOR,
+          by: "ward",
+          outcome: "no_answer",
+        })),
       };
-      const workspace = { ...state, referrals: [referral] };
-      const [seen] = scopeWorkspace(workspace, wardDesk, { now: NOW_ANCHOR, places }).referrals;
-      expect(seen.genderPlacements?.map((placement) => placement.unitIds)).toEqual([[unitId]]);
-      expect(JSON.stringify(seen)).not.toContain(other.id);
-      expect(seen.destinations.map((line) => line.destination)).toEqual([referral.destinations[0].destination]);
-      expect(referral.genderPlacements?.[0].unitIds).toEqual([unitId, other.id]);
-      const projected = scopeWardFlowState(workspace, wardDesk, { now: NOW_ANCHOR, places }).state;
-      expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(projected)))).toBe(true);
+      for (const candidate of [referral, { ...referral, genderPlacements: undefined }]) {
+        const workspace = { ...state, referrals: [candidate] };
+        const before = JSON.stringify(candidate);
+        const [seen] = scopeWorkspace(workspace, wardDesk, { now: NOW_ANCHOR, places }).referrals;
+        expect(seen.contactLog?.map(({ contact }) => contact.kind === "psychiatric_ward" && contact.unitId)).toEqual([
+          unitId,
+        ]);
+        if (candidate.genderPlacements)
+          expect(seen.genderPlacements?.map((placement) => placement.unitIds)).toEqual([[unitId]]);
+        expect(JSON.stringify(seen)).not.toContain(other.id);
+        expect(seen.destinations.map((line) => line.destination)).toEqual([referral.destinations[0].destination]);
+        expect(JSON.stringify(candidate)).toBe(before);
+        const projected = scopeWardFlowState(workspace, wardDesk, { now: NOW_ANCHOR, places }).state;
+        expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(projected)))).toBe(true);
+      }
     }
   });
 
