@@ -443,4 +443,12 @@ export type CapacityFigure = {
   revision?: number;
   /** DEC-L5-04: how many times the ward has confirmed it; only `CONFIRM_CAPACITY` moves it on. */
   confirmations?: number;
+  /**
+   * Which desk confirmed a `ward` figure: the ward itself, the site bed manager or the coordinator
+   * (D-80). Absent on figures recorded before it existed, which were the ward's own.
+   */
+  confirmedBy?: CapacityConfirmer;
 };
+
+/** The desks that may confirm a ward's bed figure, as `EVENT_ROLE.CONFIRM_CAPACITY` allows. */
+export type CapacityConfirmer = "ward" | "bed_manager" | "coordinator";

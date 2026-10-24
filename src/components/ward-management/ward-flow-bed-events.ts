@@ -16,6 +16,7 @@ import { leaveBedNeedsOpenWarning } from "@/components/ward-management/ward-lega
 import {
   BED_RELEASE_WAITING_ON,
   type BedRelease,
+  type CapacityConfirmer,
   type Movement,
   type Notice,
   type Unit,
@@ -303,6 +304,8 @@ export function reduceBedEvent(
           ...unit.allocatable,
           value: event.value,
           source: "ward",
+          // The role check above limits this to a desk `CONFIRM_CAPACITY` allows.
+          confirmedBy: event.role as CapacityConfirmer,
           confirmedAt: event.now,
           revision: (unit.allocatable.revision ?? 0) + 1,
           confirmations: (unit.allocatable.confirmations ?? 0) + 1,
