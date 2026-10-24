@@ -555,9 +555,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     );
   }
 
-  // Fix plan item 10: incoming patients on a constant observation level, accepted here.
+  // Fix plan item 10: incoming patients on a constant observation level, accepted here and still open
+  // (audit 24-4 NA2-12: a closed journey is no longer incoming).
   const activeSpeciallingCount = movements.filter(
-    (m) => isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
+    (m) => isOpen(m) && isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
   ).length;
 
   return (
