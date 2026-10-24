@@ -610,8 +610,8 @@ function WardSharedWorkspaceContent({
   );
 }
 
-/** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced ten minutes before it ends. */
-const SESSION_WARNING_MS = 10 * 60_000;
+/** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced before it ends (`sessionWarning`). */
+const SESSION_WARNING_MS = CLINICAL_VALUES.sessionWarning.value * 60_000;
 
 export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   // Wall-clock time, not the demonstration clock: the server measures the limit in real time.
