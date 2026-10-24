@@ -1,5 +1,9 @@
 # Ward Flow design audit resolution implementation plan
 
+> **Dated plan record, 17 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Goal:** Resolve the reviewed usability defects across the design system, shell and pages, with explicit outcomes for SYS-01..08, SHL-01..06 and PG-01..24.
 
 **Architecture:** Keep the current Next.js routes, shared state and reusable components. Correct presentation at its owning component or token layer; retain existing features where the original audit diagnosis was disproved. Independent agents own disjoint file sets in one isolated worktree.

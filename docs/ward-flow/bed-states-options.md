@@ -1,5 +1,11 @@
 # Six bed states — what is possible today, and three ways to get there
 
+> **Historical options paper — labelled 24 October 2026.** Measured at `5205e6e81` before the bed
+> model settled. The app now uses four bed states, Ready, Pulled, Closed and Occupied, with beds
+> held for a patient on leave counted inside Occupied and "being made ready" as a marker
+> (`src/components/ward-management/ward-bed-states.ts`, #58). Keep this paper for the reasoning; do
+> not treat its "what is possible today" as current.
+
 **Written for the owner. No recommendation is made here; the three options are laid out so you can
 choose.**
 

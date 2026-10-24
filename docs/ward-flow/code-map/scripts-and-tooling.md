@@ -16,6 +16,14 @@ _Updated 2026-10-23 - distinguish ruling-index navigation from decision authorit
 > Entries below that describe them are history. `serve-mockups.mjs` and `audit-all-screens-visual.mjs`
 > are kept. Ward CI selection is `scripts/ward-ci-public/plan.mjs`.
 
+> **Current-tree check, 24 October 2026 (`main` at `899b232e`).** These entries below also name
+> files that are no longer in the repository: `scripts/check-ward-citations.mjs`,
+> `scripts/ci-change-scope.mjs` (and its `check:ci-scope` command), `scripts/production-readiness.ts`,
+> `scripts/issues-report.mjs`, `scripts/playwright-pr-shards.mjs`, `scripts/list-database-skills.mjs`,
+> `scripts/check-docs-links.mjs`, `scripts/design-system-contract-baseline.json` and the
+> `mutate`/`mutate:self-test` commands. Read those entries as history. The doc-link command is
+> `npm run docs:check-links` (`scripts/check-maintained-doc-links.mjs`).
+
 Current doc-link checks: `npm run docs:check-links` checks every tracked Markdown file with
 `--file`, so paired historical sections are excluded. Run `node scripts/ward-flow/check-doc-links.mjs`
 with no `--file` to check the Ward tree including history.
@@ -303,13 +311,11 @@ browser-stabilisation helpers from the adversarial audit — not part of the fol
 | `ward:test:sync:check`            | `node scripts/ward-flow/design-test-sync.mjs --check`                          | Gate mode.                                                                                                                                                                                    |
 | `ward:governance:check`           | `node scripts/ward-flow/check-clinical-governance-gate.mjs`                    | Synthetic-only / no-live-endpoint / disclaimer / sign-off gate.                                                                                                                               |
 
-⚠️ **Not npm-wired at all**, despite being real gates run by hand or by `folded.sh`/pre-commit-style
-workflows: `scripts/check-ward-data.mjs`, `scripts/run-ward-tests.mjs`,
-`scripts/ward-flow/check-drawing-rules.mjs`, `scripts/ward-flow/check-live-state.mjs`,
-`scripts/ward-flow/chat-control.mjs`, `scripts/ward-flow/whois.mjs`, `scripts/ward-flow/folded.sh`,
-`scripts/ward-flow/role-map.py`, and every file in the "manual visual audits" and `audit/` groups
-above. Each is invoked directly with `node`/`python`/`bash`, per its own header comment's usage
-line.
+⚠️ **Not npm-wired at all**, despite being real checks run by hand: `scripts/check-ward-data.mjs`,
+`scripts/run-ward-tests.mjs`, `scripts/ward-flow/serve-mockups.mjs` and
+`scripts/ward-flow/audit-all-screens-visual.mjs`. Each is invoked directly with `node`, per its own
+header comment's usage line. (The drawing-rules, live-state, chat-control, whois, folded, role-map
+and audit scripts this list once named were retired on 15 and 18 October 2026.)
 
 ## Other `scripts/` files that mention Ward Flow (outside `scripts/ward-flow/`)
 
@@ -384,9 +390,9 @@ line.
   mockup surfaces (as it was before 19 October 2026) a naive retirement policy would wrongly delete, and `check-type-scale.mjs`'s own
   comment names the Ward Flow 12px floor as the reason its off-scale findings on ward CSS are
   grandfathered rather than enforced there.
-- **`scripts/check-docs-links.mjs`** (626 lines) — npm: `docs:check-links`. The **repository-wide**
-  doc-link checker (all of `docs/`, not just `docs/ward-flow/`). Genuinely different tooling from
-  `scripts/ward-flow/check-doc-links.mjs`; see the naming-collision pitfall below.
+- **`scripts/check-docs-links.mjs`** (removed) — the former repository-wide doc-link checker.
+  `npm run docs:check-links` now runs `scripts/check-maintained-doc-links.mjs`, which uses the
+  parser in `scripts/ward-flow/check-doc-links.mjs`; see the first pitfall below.
 - **`scripts/design-system-contract-baseline.json`** (225 lines) — A whole-repo design-token
   contract-violation baseline; several `src/components/ward-management/**` files appear in it
   alongside every other component directory. Not Ward-owned tooling — a data file for
@@ -575,25 +581,24 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 
 ## Generated files and their generators
 
-| Generated doc                                                          | Generator                                        | Check command                                                                                                                   |
-| ---------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/ward-management/reference/ward-reference-registry.ts`  | `build-reference-registry.mjs`                   | `npm run check:ward-reference`                                                                                                  |
-| `src/components/ward-management/reference/ward-reference-distances.ts` | `build-reference-distances.mjs`                  | `npm run check:ward-reference`                                                                                                  |
-| `src/components/ward-management/reference/ward-reference-teams.ts`     | `build-reference-teams.mjs`                      | (no dedicated `--check`; regenerate and diff by hand — `check-ward-reference.mjs` checks only the registry and distances files) |
-| `design/third-edition-mockups/MANIFEST.json`                           | `mockup-manifest.mjs`                            | `node scripts/ward-flow/mockup-manifest.mjs --check`                                                                            |
-| `docs/ward-flow/OWNER-RULINGS.md`                                      | `owner-rulings-index.mjs`                        | `node scripts/ward-flow/owner-rulings-index.mjs --check`                                                                        |
-| `docs/ward-flow/RULES.md`                                              | `rules-index.mjs`                                | `node scripts/ward-flow/rules-index.mjs --check`                                                                                |
-| `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                                 | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
-| `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                        | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
-| `design/third-edition-mockups/CONTACT-SHEET.html`                      | `contact-sheet.mjs`                              | none (visual reference page, not a gate)                                                                                        |
-| `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                              | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
-| `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)        | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
-| `docs/ward-flow/journey/ward-journey.bpmn`                             | `build-bpmn.mjs` (via `ward:journey`)            | part of `npm run ward:journey`                                                                                                  |
-| `docs/ward-flow/journey/MAP-INVENTORY.md`                              | `make-inventory.mjs` (via `ward:journey`)        | part of `npm run ward:journey`                                                                                                  |
-| `docs/ward-flow/journey/WHAT-CHANGED.md` + `map-snapshot.json`         | `what-changed.mjs` (via `ward:journey`)          | part of `npm run ward:journey`                                                                                                  |
-| `docs/ward-flow/journey/refusal-coverage.json`                         | `refusal-coverage.mjs` (via `ward:journey`)      | part of `npm run ward:journey`; silently writes nothing if no lcov report exists                                                |
-| `docs/ward-flow/audit-artefacts/stabilisation-suite-report.json`       | `scripts/ward-flow/audit/measure-ward-suite.mjs` | none — explicitly not a fold gate, a restored aside                                                                             |
-| `text-size-floor-baseline.json` count                                  | `check-text-size-floor.mjs --update-baseline`    | `npm run check:ward-text-size` (ratchet, not regenerate-and-diff)                                                               |
+| Generated doc                                                          | Generator                                     | Check command                                                                                                                   |
+| ---------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/ward-management/reference/ward-reference-registry.ts`  | `build-reference-registry.mjs`                | `npm run check:ward-reference`                                                                                                  |
+| `src/components/ward-management/reference/ward-reference-distances.ts` | `build-reference-distances.mjs`               | `npm run check:ward-reference`                                                                                                  |
+| `src/components/ward-management/reference/ward-reference-teams.ts`     | `build-reference-teams.mjs`                   | (no dedicated `--check`; regenerate and diff by hand — `check-ward-reference.mjs` checks only the registry and distances files) |
+| `design/third-edition-mockups/MANIFEST.json`                           | `mockup-manifest.mjs`                         | `node scripts/ward-flow/mockup-manifest.mjs --check`                                                                            |
+| `docs/ward-flow/OWNER-RULINGS.md`                                      | `owner-rulings-index.mjs`                     | `node scripts/ward-flow/owner-rulings-index.mjs --check`                                                                        |
+| `docs/ward-flow/RULES.md`                                              | `rules-index.mjs`                             | `node scripts/ward-flow/rules-index.mjs --check`                                                                                |
+| `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                              | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
+| `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                     | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
+| `design/third-edition-mockups/CONTACT-SHEET.html`                      | `contact-sheet.mjs`                           | none (visual reference page, not a gate)                                                                                        |
+| `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                           | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
+| `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)     | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
+| `docs/ward-flow/journey/ward-patient-journey.bpmn`                     | `build-bpmn.mjs` (via `ward:journey`)         | part of `npm run ward:journey`                                                                                                  |
+| `docs/ward-flow/journey/MAP-INVENTORY.md`                              | `make-inventory.mjs` (via `ward:journey`)     | part of `npm run ward:journey`                                                                                                  |
+| `docs/ward-flow/journey/WHAT-CHANGED.md` + `map-snapshot.json`         | `what-changed.mjs` (via `ward:journey`)       | part of `npm run ward:journey`                                                                                                  |
+| `docs/ward-flow/journey/refusal-coverage.json`                         | `refusal-coverage.mjs` (via `ward:journey`)   | part of `npm run ward:journey`; silently writes nothing if no lcov report exists                                                |
+| `text-size-floor-baseline.json` count                                  | `check-text-size-floor.mjs --update-baseline` | `npm run check:ward-text-size` (ratchet, not regenerate-and-diff)                                                               |
 
 ## Fold gates in order
 
@@ -602,10 +607,12 @@ generator `--check`s only when their own source changed.
 
 1. **Every commit** (automatic, `.githooks/pre-commit`): the five generated-index `--check`s
    (`screen-map`, `rules-index`, `owner-rulings-index`, `mockup-manifest`, `screen-verification`),
-   each fired only if its declared source is staged; and the local-`main` Ward Flow fold guard.
-2. **Every push** (automatic, `scripts/guard-push.mjs` Guard 0): blocks any push of Ward Flow
-   files or from a Ward Flow branch to `origin/main` or any other remote branch, without an
-   explicit `CONFIRM_WARD_FLOW_*` override.
+   each fired only if its declared source is staged; and the guard that asks for explicit
+   confirmation before a direct commit on local `main`.
+2. **Every push** (automatic, `scripts/guard-push.mjs` via `.githooks/pre-push`): checks the
+   remote is `BigSimmo/Ward-Flow` and blocks a push while a required CI run is active on the
+   branch (24 October 2026 correction: the pre-split rule that blocked every Ward Flow push to
+   `origin/main` is history).
 3. **Before declaring a task done** (manual, run yourself):
    - `node scripts/check-ward-expected-reds.mjs` — full offline ward suite; required for any
      engine change.
@@ -633,9 +640,10 @@ generator `--check`s only when their own source changed.
    runs the parser in `scripts/ward-flow/check-doc-links.mjs` over every tracked Markdown file,
    with anchors. The separate Ward-only `check:ward-doc-links` command was retired on
    15 October 2026; run the parser directly with `--file` for a single file.
-2. **Most `scripts/ward-flow/` files are not npm-wired.** `chat-control.mjs`, `whois.mjs`,
-   `folded.sh`, `role-map.py`, `check-drawing-rules.mjs`, `check-live-state.mjs`, every "manual
-   visual audit" script, and everything in `audit/` are run directly with `node`/`python`/`bash`.
+2. **Many `scripts/ward-flow/` files are not npm-wired.** `serve-mockups.mjs`,
+   `audit-all-screens-visual.mjs`, `scripts/check-ward-data.mjs` and `scripts/run-ward-tests.mjs`
+   are run directly with `node`. (The other scripts this pitfall once named were retired on
+   15 and 18 October 2026.)
    Grepping `package.json` for a script name before assuming it is wired will save a wasted search.
 3. **The generated indexes are self-checking but their `--check` only fires when their OWN source
    is staged** (`.githooks/pre-commit`). A commit that edits `screen-pairs.mjs` in a way that

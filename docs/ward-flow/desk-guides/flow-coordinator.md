@@ -1,5 +1,7 @@
 # Desk guide: Flow coordinator
 
+<!-- last-checked: 2026-10-24 -->
+
 You see the whole network (statewide) or your own health service. You decide referrals and keep
 patients moving from referral to arrival.
 

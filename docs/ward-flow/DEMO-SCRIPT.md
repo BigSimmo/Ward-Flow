@@ -1,5 +1,7 @@
 # Ward Flow demonstration script
 
+<!-- last-checked: 2026-10-24 -->
+
 **What this is:** an 11-minute walk-through of one synthetic patient journey, from the morning bed
 meeting to arrival on the ward, then a short look at what is new.  
 **Audience:** clinical and operational leaders who coordinate psychiatric beds.  

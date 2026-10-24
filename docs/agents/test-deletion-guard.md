@@ -1,5 +1,7 @@
 # Deleting tests, or letting a tool delete them for you
 
+_Updated 2026-10-24 - removed a pointer to a test file that does not exist; Documentation owns._
+
 > **Ward Flow scope note (3 October 2026):** `npm run check:diff-integrity` runs in `BigSimmo/Ward-Flow` (via `scripts/ward-ci-public/changed-checks.mjs` in the `Ward Flow static checks` CI job and local readiness gates). Per Prototype Operating Mode §3 in [`AGENTS.md`](../../AGENTS.md), test-count floor drops are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor), while truncation artefacts and an unreadable before-state always fail. References below to `tests/ui-smoke.spec.ts`, `tests/ui-tools.spec.ts`, `static-pr`, and `tests/playwright-pr-shards.test.ts` are historical PsychSift provenance.
 
 On 2026-08-31 a commit on PR #2481 titled "test(ui): compare answer status surfaces" changed

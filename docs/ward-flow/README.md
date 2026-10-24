@@ -1,18 +1,24 @@
 # Ward Flow — start here
 
+<!-- last-checked: 2026-10-24 -->
+
 **This is the product and design overview.** Use the [documentation portal](../README.md) to find the
 page for your task; [`AGENTS.md`](../../AGENTS.md) remains the repository instruction root.
 
 _Updated 2026-10-24 - daily loop type check works on any OS; gate-tsc cache warning; Documentation owns._
 
-| Reader or task                      | Next page                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------- |
-| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates        |
-| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                               |
-| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)         |
-| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md) |
-| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                     |
-| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                         |
+_Updated 2026-10-24 - added desk guides, staff notes and demo script to the reader table; Documentation owns._
+
+| Reader or task                      | Next page                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| Coordinator exploring the prototype | [Coordinator guide](coordinator-guide-v2.md), with its stated evidence dates            |
+| Staff testing a desk                | [Desk guides](desk-guides/README.md) and [what's new for staff](STAFF-RELEASE-NOTES.md) |
+| Giving a demonstration              | [Demo script](DEMO-SCRIPT.md)                                                           |
+| First local run                     | [Local first run](LOCAL-FIRST-RUN.md)                                                   |
+| Builder                             | [Workflow](HOW-WE-WORK.md) and [current architecture](../codebase-index.md)             |
+| Returning to a task                 | [Task/receipt contract](../task-receipts.md) and [plan navigation](plans/README.md)     |
+| Looking for history                 | [Archive and restoration record](../ARCHIVE.md)                                         |
+| Running the hosted prototype        | [Operations runbook](OPERATIONS-RUNBOOK.md)                                             |
 
 ## What Ward Flow is
 
@@ -28,6 +34,8 @@ repository belong to the earlier shared-history arrangement; do not use them as 
   from that repository. Verify `git remote get-url origin`, the branch and `git log -1` in your
   checkout before making changes. The verified Ward Flow `main` tip identifies published source.
   Confirm a deployed revision and its runtime separately before calling it the current hosted build.
+  The live site follows the `live` branch, moved daily from CI-passed `main`, so new `main` work is
+  not live until the next release.
 - **Find the affected source:** use the [current architecture orientation](../codebase-index.md)
   and relevant source/tests. The [code map](code-map/README.md) preserves a dated detailed snapshot;
   open only the sections needed for the task and verify relevant drift.

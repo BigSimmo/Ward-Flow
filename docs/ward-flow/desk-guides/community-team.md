@@ -1,5 +1,7 @@
 # Desk guide: Community clinician
 
+<!-- last-checked: 2026-10-24 -->
+
 You work for one community mental health team. You send referrals and answer the ones sent to
 your team.
 
