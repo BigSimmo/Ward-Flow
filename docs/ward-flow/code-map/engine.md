@@ -143,6 +143,13 @@ when unavailable). `public/ward-flow-push-sw.js` shows the notification and open
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
 and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
 
+Since D-80 (24 Oct 2026) transport officers and community teams hear alerts too. `ward-role-alerts.ts`
+gives an officer one id per open job, new whenever the booking changes, and a community team ids
+for its referral answered and a client admitted or leaving, each held for 12 hours. `actNowAlerts`
+returns every item with its `kind`; `scopedActNowAlerts` gives each desk only its own kind, and a
+bootstrap coordinator is queued act-now rows only. `pushPayload` words each kind, and a job alert
+opens Transport jobs. Tests: `tests/ward-role-alerts.test.ts` and the payload case in `push.test.mjs`.
+
 ## Role access, later pass — 16 October 2026
 
 Behind the `role-access` flag. `ward-access-admin.ts` holds the one set of rules (grant, approve,

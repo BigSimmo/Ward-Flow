@@ -221,6 +221,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // D-80: the team books transport for its own journeys (D-76), so it follows them here.
+    movements: "own",
     delays: "own",
     "legal-forms": "own",
     search: "own",

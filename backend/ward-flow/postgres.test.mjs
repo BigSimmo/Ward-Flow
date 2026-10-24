@@ -1657,7 +1657,10 @@ test(
       const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
       assert.equal((await store.command(lead, randomUUID(), 1, jump)).status, 200);
       const after = (await store.read(lead, leadView)).payload;
-      const freshAll = engine.actNowAlerts(after, at).some((alert) => !redBefore.has(alert.id));
+      // A coordinator hears act-now rows, never an officer's jobs or a team's updates (D-80).
+      const freshAll = engine
+        .actNowAlerts(after, at)
+        .some((alert) => alert.kind === "act-now" && !redBefore.has(alert.id));
       const freshWard = engine
         .scopedActNowAlerts(after, { role: "ward", scope: wardA }, at)
         .some((alert) => !redBefore.has(alert.id));

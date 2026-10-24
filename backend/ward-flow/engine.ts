@@ -1,5 +1,6 @@
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
+import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
   PUSH_ROLES,
@@ -483,14 +484,19 @@ export function revokeRefusal(
 /** Who hears phone alerts by role (feature 10). One list, in the access admin's rules. */
 export { PUSH_ROLES };
 
-/** The act-now rows this desk may hear about: `actNowAlerts` on its own scoped workspace. */
-export function scopedActNowAlerts(
-  world: SharedWorld,
-  access: WardAccess,
-  at: Date,
-): { id: string; site: string | null }[] {
+/**
+ * What this desk may hear about: `actNowAlerts` on its own scoped workspace. An officer hears its
+ * jobs and a community team its own updates, never act-now rows; every other desk hears act-now
+ * rows only (D-80).
+ */
+export function scopedActNowAlerts(world: SharedWorld, access: WardAccess, at: Date): PushAlert[] {
   if (!validWorld(world) || !PUSH_ROLES.includes(access.role)) return [];
-  return accessIsWholeNetwork(access) ? actNowAlerts(world, at) : actNowAlerts(scopeWorld(world, access, at), at);
+  const heard: PushAlert["kind"] =
+    access.role === "officer" ? "job" : access.role === "community" ? "community" : "act-now";
+  const alerts = accessIsWholeNetwork(access)
+    ? actNowAlerts(world, at)
+    : actNowAlerts(scopeWorld(world, access, at), at);
+  return alerts.filter((alert) => alert.kind === heard);
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
@@ -620,9 +626,17 @@ function refusalReason(reason: unknown): string {
  * may carry. Only the row's inbox id (for deduplication, never sent) and the hospital site the
  * movement started at. No title, detail, movement id, name, UMRN or typed text leaves here.
  */
-export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: string | null }[] {
+/**
+ * Everything a phone may be told about, each with its kind: act-now rows for the coordinator and
+ * place desks, and the officer and community updates (`ward-role-alerts.ts`). The push service keeps
+ * one baseline of these ids and gives each desk the kind it hears.
+ */
+export type PushAlert = { id: string; site: string | null; kind: "act-now" | RoleAlertKind };
+
+export function actNowAlerts(world: SharedWorld, at: Date): PushAlert[] {
   if (!validWorld(world)) return [];
   const state = world.state;
+  const now = worldNow(world, at);
   const sites = scenarioNetwork(state.scenario)?.sites ?? STANDARD_WARD_SITES;
   const siteByOrigin = new Map<string, string>();
   for (const candidate of sites) {
@@ -637,8 +651,17 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
   const origins = new Map<string, string | undefined>(
     state.movements.map((movement) => [movement.id, movement.originEdId ?? movement.originCommunity?.siteCode]),
   );
-  return activeActNowItems(state, worldNow(world, at)).map((item) => {
-    const origin = origins.get(item.movementId);
-    return { id: item.id, site: (origin ? siteByOrigin.get(origin) : undefined) ?? null };
-  });
+  const siteOf = (movementId: string | undefined) => {
+    const origin = movementId === undefined ? undefined : origins.get(movementId);
+    return (origin ? siteByOrigin.get(origin) : undefined) ?? null;
+  };
+  return [
+    ...activeActNowItems(state, now).map((item) => ({
+      id: item.id,
+      site: siteOf(item.movementId),
+      kind: "act-now" as const,
+    })),
+    ...jobAlerts(state).map((alert) => ({ id: alert.id, site: siteOf(alert.movementId), kind: alert.kind })),
+    ...communityAlerts(state, now).map((alert) => ({ id: alert.id, site: null, kind: alert.kind })),
+  ];
 }

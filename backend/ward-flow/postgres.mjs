@@ -425,7 +425,13 @@ export function createWorkspaceStore(
     // An item that left and came back red is announced again, as the open-tab notifier does.
     const queued = await client.query(
       `INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL${byRole ? " AND s.membership_id IS NULL" : ""} AND s.actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL`,
-      [workspaceId, push.coordinatorIds, excludeActorId, fresh.map((alert) => alert.id)],
+      // A bootstrap coordinator hears act-now rows only, never an officer's or a team's updates.
+      [
+        workspaceId,
+        push.coordinatorIds,
+        excludeActorId,
+        fresh.filter((alert) => alert.kind === "act-now").map((alert) => alert.id),
+      ],
     );
     let count = queued.rowCount;
     if (byRole) {
