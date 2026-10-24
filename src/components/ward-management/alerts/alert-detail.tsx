@@ -419,7 +419,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           )}
         </div>
@@ -556,7 +557,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           </div>
         )}
