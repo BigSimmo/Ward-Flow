@@ -35,11 +35,11 @@ export type WardBrowserAuthAdapter = {
   restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
   signUp(email: string, password: string, redirectTo?: string): Promise<void>;
   signIn(email: string, password: string): Promise<void>;
-  token(): Promise<string>;
+  token(options?: { refresh?: boolean }): Promise<string>;
   recover(email: string, redirectTo: string): Promise<void>;
   updatePassword(password: string): Promise<void>;
   captureAccessTokenForSignOut(): string | null;
-  signOut(): Promise<void>;
+  signOut(thisTabOnly?: boolean): Promise<void>;
   dispose(): void;
 };
 export class SupabaseWardAuth implements WardBrowserAuthAdapter {
@@ -287,8 +287,8 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     );
     await this.verify(this.readSession(value, false), generation);
   }
-  private async refreshIfNeeded() {
-    if (!this.session || this.session.expiresAt > Date.now() + 60000) return;
+  private async refreshIfNeeded(force = false) {
+    if (!this.session || (!force && this.session.expiresAt > Date.now() + 60000)) return;
     if (this.refreshTask) return this.refreshTask;
     const session = this.session;
     const generation = this.generation;
@@ -313,11 +313,12 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       if (this.refreshTask === task) this.refreshTask = null;
     }
   }
-  async token() {
+  /** `refresh` forces one refresh, for the single retry after a Ward Flow server 401 (audit 24-3 SM-2). */
+  async token(options: { refresh?: boolean } = {}) {
     this.assert(this.generation);
     if (!this.session || this.isRecovery)
       throw new WardAuthError("session", "Complete sign-in or password recovery first.");
-    await this.refreshIfNeeded();
+    await this.refreshIfNeeded(options.refresh);
     if (!this.session) throw new WardAuthError("session", "Sign in again.");
     return this.session.access_token;
   }
@@ -354,9 +355,14 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       ? this.session.access_token
       : null;
   }
-  async signOut() {
+  async signOut(thisTabOnly = false) {
     const token = this.session?.access_token;
     this.invalidate();
+    // Audit 24-3 SM-1: another tab on this sign-in is in use, so its saved session stays.
+    if (thisTabOnly) {
+      this.session = null;
+      return;
+    }
     const removed = this.clear();
     let logoutFailure: unknown;
     try {

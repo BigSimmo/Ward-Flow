@@ -145,3 +145,31 @@ it("logs the person a patient or movement page shows, and nothing on other pages
   });
   expect(recordViewFor(screenForPath("/ward-flow/capacity"), movements)).toBeUndefined();
 });
+
+it("says '1 second', and signs out at once when woken after the deadline (audit 24-3 SM-5)", () => {
+  const signOut = vi.fn();
+  const tree = (
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>
+  );
+  const { unmount } = render(tree);
+  act(() => vi.advanceTimersByTime(IDLE_MS - 1_000));
+  expect(screen.getByTestId("ward-idle-countdown")).toHaveTextContent(/signed out in 1 second\.$/);
+  unmount();
+  render(tree);
+  vi.setSystemTime(Date.now() + IDLE_MS + 5_000);
+  act(() => vi.advanceTimersByTime(IDLE_MS - 60_000));
+  expect(signOut).toHaveBeenCalledTimes(1);
+  expect(screen.queryByTestId("ward-idle-countdown")).toBeNull();
+});
+
+it("stays unlocked after 'Carry on' and the next tap, then locks again after a new idle time", () => {
+  render(<WardIdleLock />);
+  act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
+  fireEvent.click(screen.getByTestId("ward-idle-unlock"));
+  fireEvent.pointerDown(window);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
+  expect(screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` })).toBeVisible();
+});
