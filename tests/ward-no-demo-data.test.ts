@@ -71,6 +71,7 @@ describe("a live shared build carries no demo records", () => {
     expectTypeOf(standIn.generatedOccupantPatients).toEqualTypeOf(AdmissionsSeed.generatedOccupantPatients);
     expectTypeOf(standIn.combineWardPatients).toEqualTypeOf(PatientsSeed.combineWardPatients);
     expectTypeOf(standIn.applyRulingsDemoOverlay).toEqualTypeOf(RulingsDemo.applyRulingsDemoOverlay);
+    expectTypeOf(standIn.rulingsDemoOverlay).toEqualTypeOf(RulingsDemo.rulingsDemoOverlay);
     expectTypeOf(standIn.withDemoPlannedMoveTimes).toEqualTypeOf(DemoPlannedMoves.withDemoPlannedMoveTimes);
   });
 

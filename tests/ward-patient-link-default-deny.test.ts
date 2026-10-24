@@ -224,6 +224,20 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "(D-14, this task) derives Admission.patientId from the movement's own linked referral. This " +
       "IS the plumbing the guard exists to sit downstream of, not a screen.",
   },
+  // Josh as Ward Lead, 24 Oct 2026 (decision card, PR #657): two synthetic seed builders.
+  {
+    file: "ward-wa-synthetic-network.ts",
+    reason:
+      "Seed authoring for the optional WA-like synthetic network: copies a donor patient while it " +
+      "builds extra synthetic stays. Writes the link into seed data and consumes it for no screen.",
+  },
+  {
+    file: "ward-referral-dossier-seed.ts",
+    reason:
+      "Seed authoring for the seeded referral dossiers: compares the dossier's own patient with the " +
+      "seeded journey's patient so a dossier never shows against the wrong person. It never tells a " +
+      "ward where else a patient has been.",
+  },
   {
     file: "ward-flow-record-events.ts",
     reason:
@@ -442,7 +456,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 48 → 47 on 2026-10-20: that matcher now asks openRequestsByPerson, so it reads no patient link itself.
     // 47 → 48 on 2026-10-21: D-77 group A moved the community team's sent list into its own Sent tab file.
     // 48 → 49 on 2026-10-22: the reducer's protected record path moved to its own slice file, unchanged.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(49);
+    // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(51);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

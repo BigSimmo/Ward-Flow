@@ -13,10 +13,11 @@
  */
 import type { REFERRAL_RISK_FLAGS } from "./referrals/referral-submission";
 import type { Movement } from "./ward-model";
-import { wardMovements } from "./ward-movements";
+// The @/ paths let a live shared build swap the demo modules for empty stand-ins (next.config.ts).
+import { wardMovements } from "@/components/ward-management/ward-movements";
 import { demoNetwork, type DemoNetworkVariant } from "./ward-demo-network";
 import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
-import { rulingsDemoOverlay } from "./ward-rulings-demo";
+import { rulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 import { NOW_ANCHOR } from "./ward-sites";
 import { syntheticMovementReferralDossier } from "./ward-referral-intake-seed";
 
