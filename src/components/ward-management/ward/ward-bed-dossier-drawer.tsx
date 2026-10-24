@@ -2,7 +2,7 @@
 
 import type { WardCommandDispatch } from "../ward-shared-client";
 
-import React, { useRef, useState, type ReactNode } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
@@ -196,6 +196,13 @@ export function WardBedDossierDrawer({
   const tabRefs = useRef<TabButtons>(new Map());
   const isPhone = useIsPhone();
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
+  // Audit 24-1 B-04: the drawer follows the person it was opened for, not the bed number. A pulled
+  // stay keeps the same admission when it arrives, so the stay's id is the key.
+  const personKey = bedItem?.stayAdmissionId ?? bedItem?.admissionId;
+  const [openedFor, setOpenedFor] = useState({ admissionId: personKey, alias: bedItem?.patientAlias });
+  // The departure this drawer recorded itself, which closes it on success and is not a surprise.
+  const [departedHere, setDepartedHere] = useState<string | null>(null);
+  const goneCloseRef = useRef<HTMLButtonElement | null>(null);
 
   // Stepping to another bed keeps the open tab but drops anything half-done on the last bed.
   if (shownBed !== selectedBed) {
@@ -203,9 +210,25 @@ export function WardBedDossierDrawer({
     setQuickBlockerOpen(false);
     setConfirmStep(null);
     setSelectedBlocker(recordedBlocker(bedItem?.blockReason));
+    setOpenedFor({ admissionId: personKey, alias: bedItem?.patientAlias });
+  }
+
+  // Another tab or a refresh moved the person out of this bed while the drawer was open. Their
+  // actions must not carry over to whoever is there now, so any open confirm closes.
+  const personGone =
+    shownBed === selectedBed &&
+    openedFor.admissionId !== undefined &&
+    personKey !== openedFor.admissionId &&
+    departedHere !== openedFor.admissionId;
+  if (personGone && (confirmStep !== null || quickBlockerOpen)) {
+    setConfirmStep(null);
+    setQuickBlockerOpen(false);
   }
 
   useWardModalFocus(true, bedDrawerRef, onClose);
+  useEffect(() => {
+    if (personGone) goneCloseRef.current?.focus();
+  }, [personGone]);
 
   const bedLabel = `Bed ${String(selectedBed).padStart(2, "0")}`;
   const isReady = bedItem?.status === "ready";
@@ -452,7 +475,10 @@ export function WardBedDossierDrawer({
           const step = confirmStep;
           setConfirmStep(null);
           if (step === "ed") onMarkAtEd?.(selectedBed);
-          else if (bedItem?.admissionId) onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
+          else if (bedItem?.admissionId) {
+            setDepartedHere(personKey ?? null);
+            onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
+          }
         },
       }}
       data-testid="ward-drawer-confirm"
@@ -463,6 +489,52 @@ export function WardBedDossierDrawer({
       </p>
     </Dialog>
   );
+
+  if (personGone) {
+    const bedWords = `bed ${String(selectedBed).padStart(2, "0")}`;
+    return (
+      <>
+        <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the Close button */}
+        <aside
+          ref={bedDrawerRef}
+          className={`${styles.drawer} ${styles.show}`}
+          data-testid="bed-telemetry-drawer"
+          aria-labelledby="drawer-bed-title"
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          onKeyDown={(event) => {
+            onKeyDown(event);
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          }}
+        >
+          <div className={styles.grab} aria-hidden="true" />
+          <header className={styles.drawerHead}>
+            <div className={styles.drawerHeading}>
+              <h2 id="drawer-bed-title" className={styles.drawerTitle}>
+                {bedLabel}
+              </h2>
+            </div>
+          </header>
+          <div className={styles.drawerBody}>
+            <p role="status" className={cx(styles.card, styles.goneNotice)} data-testid="ward-drawer-person-gone">
+              {openedFor.alias ?? "The person you opened"} is no longer in {bedWords}. Close and reopen the bed to see
+              who is there now.
+            </p>
+          </div>
+          <footer className={styles.drawerFoot}>
+            <Button ref={goneCloseRef} variant="pri" size="lg" className={styles.pill} onClick={onClose}>
+              Close
+            </Button>
+          </footer>
+        </aside>
+      </>
+    );
+  }
 
   if (isPhone) {
     return (
