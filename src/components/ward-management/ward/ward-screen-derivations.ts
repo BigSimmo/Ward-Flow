@@ -274,9 +274,10 @@ export function wardBedRoster({
       legalStatusLabel,
       criteriaLedChip,
       admissionId: admission?.id,
-      stayAdmissionId:
-        admission?.id ??
-        (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
+      // Audit 24-1, B-02: the pulled admission this slot belongs to, linked from either side
+      // (`pulledBy`). Matching `movementId` alone missed a pull its movement names, so that tile had
+      // no seat and moved bed when another pulled bed ended.
+      stayAdmissionId: admission?.id ?? pulledSlot?.admission.id,
       heldFor: undefined as string | undefined,
       preparing: false,
       /** The discharged release this bed is being made ready for, set once bed numbers are known. */

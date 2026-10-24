@@ -40,7 +40,7 @@ import {
   type WardFlowEvent,
 } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { STAGE_TRANSITION_BLOCKERS, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import {
   ABSENCE_STEPS,
   ARRIVAL_MODES,
@@ -57,6 +57,13 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import { referralState } from "@/components/ward-management/ward-referrals";
+import { eligibility } from "@/components/ward-management/ward-eligibility";
+import {
+  movementHasOpenTurnaroundRequest,
+  turnaroundEligibilityAllows,
+  unitTurnaroundSource,
+} from "@/components/ward-management/ward-turnaround-priority";
+import { dailyCheckId } from "@/components/ward-management/coordinator/daily-check";
 import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
@@ -94,7 +101,7 @@ import {
   TRANSPORT_MODES,
 } from "@/components/ward-management/ward-care-journey";
 import { DISCHARGE_CRITERIA } from "@/components/ward-management/ward-discharge-criteria";
-import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
+import { INBOX_CATEGORIES, inboxItemCompletionState } from "@/components/ward-management/ward-inbox-reducer";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { GENDERS } from "@/components/ward-management/ward-patients";
@@ -256,6 +263,21 @@ const bedReleaseEvent = (type: WardFlowEvent["type"], extra?: Extra): Builder =>
     return { type, releaseId: release.id, actingUnitId: release.unitId, ...(extra?.(state, random) ?? {}) };
   };
 };
+
+/** A waiting, unplaced movement and a unit it could take a turnaround preference for, if any. */
+function turnaroundPair(state: WardFlowState, random: Random) {
+  const pairs: { movement: Movement; unit: WardFlowState["units"][number] }[] = [];
+  for (const unit of state.units) {
+    if (!unitTurnaroundSource(state, unit.id, currentNow)) continue;
+    for (const movement of state.movements) {
+      if (movement.closure || movement.stage === "arrived" || movement.acceptedUnitId) continue;
+      if (movement.turnaroundPriority?.unitId === unit.id) continue;
+      if (!movementHasOpenTurnaroundRequest(state, movement, unit.id)) continue;
+      if (turnaroundEligibilityAllows(eligibility(movement, unit, currentNow), unit)) pairs.push({ movement, unit });
+    }
+  }
+  return pick(random, pairs);
+}
 
 /**
  * One builder per event the generator sends, weighted towards the events that move a bed or a
@@ -484,7 +506,22 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       whereabouts: pick(random, TRANSPORT_WHEREABOUTS),
     })),
   ],
-  [1, movementEvent("RELEASE_HELD_BED", ["pulled", "handover_ready", "moving"])],
+  // Audit 24-1 E-19: STOP_TRANSPORT closes the journey but keeps its bed held, and `movementFor`
+  // only looks at open journeys, so most draws aim at a stopped journey that still holds a bed.
+  [
+    1,
+    (state, random) => {
+      const stopped = state.movements.filter(
+        (movement) =>
+          movement.transport?.stoppedAt !== undefined &&
+          (movement.admissionId !== undefined ||
+            movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease),
+      );
+      const movement = chance(random, 0.7) ? pick(random, stopped) : undefined;
+      if (movement) return { type: "RELEASE_HELD_BED", movementId: movement.id, actingUnitId: movement.acceptedUnitId };
+      return movementEvent("RELEASE_HELD_BED", ["pulled", "handover_ready", "moving"])(state, random);
+    },
+  ],
   [
     1,
     movementEvent("RECORD_DIVERSION", ["moving"], (_state, random) => ({
@@ -566,11 +603,19 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   [1, movementEvent("RAISE_PULL_NOW", ["accepted_awaiting_bed"])],
   // CLD turnaround priority (handover, 17 Oct 2026): a coordinator prefers a unit whose CLD-ready
   // admission or confirmed departure will free a bed. The reducer derives the source itself.
+  // Audit 24-1 E-19: its four gates (a waiting, unplaced movement, a unit with a turnaround source,
+  // an open request to that unit and passing gates) almost never meet by chance, so most draws aim
+  // at a pair the engine's own helpers say qualifies. The rest send a random unit for the refusals.
   [
     1,
-    movementEvent("FLAG_MOVEMENT_TURNAROUND_PRIORITY", undefined, (state, random) => ({
-      unitId: pick(random, state.units)?.id,
-    })),
+    (state, random) => {
+      const pair = chance(random, 0.7) ? turnaroundPair(state, random) : undefined;
+      if (pair)
+        return { type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY", movementId: pair.movement.id, unitId: pair.unit.id };
+      return movementEvent("FLAG_MOVEMENT_TURNAROUND_PRIORITY", undefined, (current, inner) => ({
+        unitId: pick(inner, current.units)?.id,
+      }))(state, random);
+    },
   ],
   [
     1,
@@ -1579,11 +1624,36 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   // Fix plan item 16 (D-76): the coordinator asks one or two more wards on a referral.
   [
     0.5,
-    (state, random) => ({
-      type: "ASK_MORE_WARDS",
-      referralId: id(referralFor(state, random)),
-      unitIds: [id(pick(random, state.units)), ...(chance(random, 0.3) ? [id(pick(random, state.units))] : [])],
-    }),
+    (state, random) => {
+      // Audit 24-1 E-19: only a community referral whose ward requests all name a ward can ask
+      // more, so most draws aim at one and at an open ward of its age band not yet asked.
+      const named = (referral: WardFlowState["referrals"][number]) =>
+        referral.destinations.flatMap((arm) =>
+          arm.destination.kind === "psychiatric_ward" ? [arm.destination.unitId] : [],
+        );
+      const askable = state.referrals.filter(
+        (referral) =>
+          referral.source === "community" &&
+          named(referral).length > 0 &&
+          named(referral).every((unitId) => unitId !== undefined),
+      );
+      const referral = chance(random, 0.7) ? pick(random, askable) : undefined;
+      const unit = referral
+        ? pick(
+            random,
+            state.units.filter(
+              (candidate) =>
+                !candidate.isClosed && candidate.cohort === referral.ageBand && !named(referral).includes(candidate.id),
+            ),
+          )
+        : undefined;
+      if (referral && unit) return { type: "ASK_MORE_WARDS", referralId: referral.id, unitIds: [unit.id] };
+      return {
+        type: "ASK_MORE_WARDS",
+        referralId: id(referralFor(state, random)),
+        unitIds: [id(pick(random, state.units)), ...(chance(random, 0.3) ? [id(pick(random, state.units))] : [])],
+      };
+    },
   ],
   // Referral follow-up: opened, information asked for and met, corrections, ward intake codes.
   [
@@ -1710,8 +1780,26 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     },
   ],
   [1, inboxEvent("ACKNOWLEDGE_INBOX_ITEM")],
-  [0.5, inboxEvent("COMPLETE_INBOX_ITEM")],
-  [0.5, inboxEvent("REOPEN_INBOX_ITEM", (state) => state.inboxCompletions)],
+  // Audit 24-1 E-19: only a commitment row can be ticked off, and the only one is the coordinator's
+  // daily check, so most draws name today's check (as the screen does) and the rest a random row.
+  [
+    0.5,
+    (state, random) =>
+      chance(random, 0.6)
+        ? { type: "COMPLETE_INBOX_ITEM", inboxItemId: dailyCheckId(currentNow) }
+        : inboxEvent("COMPLETE_INBOX_ITEM")(state, random),
+  ],
+  // Reopening needs a row that is complete now, so prefer one (a reopened row is refused).
+  [
+    0.5,
+    inboxEvent("REOPEN_INBOX_ITEM", (state) =>
+      Object.fromEntries(
+        Object.entries(state.inboxCompletions ?? {}).filter(
+          ([, history]) => inboxItemCompletionState(history) === "complete",
+        ),
+      ),
+    ),
+  ],
   [1, inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")],
   [
     1,
