@@ -1,6 +1,10 @@
 "use client";
 
-import { readyBedsAllPromised, readyBedsPromisedSentence } from "@/components/ward-management/ward-ready-bed-promises";
+import {
+  acceptedReferralIdsAt,
+  readyBedsAllPromised,
+  readyBedsPromisedSentence,
+} from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -800,7 +804,14 @@ export function ReferralMatchView({
   /* Audit 2 E-07: says when this ward's Ready beds are all promised to earlier yeses. Refuses nothing. */
   const pickPromised =
     pick !== undefined && turnaroundState
-      ? readyBedsAllPromised(turnaroundState, pick.unit, { referralId: referral.id })
+      ? readyBedsAllPromised(
+          {
+            movements: turnaroundState.movements,
+            acceptedReferralIds: acceptedReferralIdsAt(turnaroundState.referrals, pick.unit.id),
+          },
+          pick.unit,
+          { referralId: referral.id },
+        )
       : undefined;
   /* A ward that fits, or fails only its gender designation, and still needs the gender placement
      check accepts through that one form (the same test `MatchRow` applies). */

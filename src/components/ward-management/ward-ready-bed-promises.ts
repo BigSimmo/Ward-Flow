@@ -13,10 +13,25 @@ import { boundedBedAvailability } from "@/components/ward-management/ward-ready-
 /** Stages at which the bed is already reserved and so already subtracted from `allocatable`. */
 const RESERVED_STAGES = new Set<Movement["stage"]>(["pulled", "handover_ready", "moving", "arrived"]);
 
+/**
+ * `acceptedReferralIds` are the front-door referrals this ward has said yes to. A ward-only screen
+ * passes them from its own inbox entries, never the full referral list (FD-23).
+ */
 type PromiseSources = {
   readonly movements: readonly Movement[];
-  readonly referrals: readonly Referral[];
+  readonly acceptedReferralIds: readonly string[];
 };
+
+/** Referrals with a live yes from this ward, for screens allowed to read every referral. */
+export function acceptedReferralIdsAt(referrals: readonly Referral[], unitId: string): string[] {
+  return referrals
+    .filter((referral) =>
+      referral.destinations.some(
+        (arm) => arm.state === "accepted" && arm.withdrawnAt === undefined && arm.acceptedUnitId === unitId,
+      ),
+    )
+    .map((referral) => referral.id);
+}
 
 /** What is being accepted now, so it is not counted against itself. */
 export type ReadyBedPromiseSubject = { referralId?: string; movementId?: string };
@@ -35,13 +50,8 @@ export function readyBedsPromised(sources: PromiseSources, unitId: string, subje
       !RESERVED_STAGES.has(movement.stage) &&
       movement.pullExpiresAt === undefined,
   ).length;
-  const referrals = sources.referrals.filter(
-    (referral) =>
-      referral.id !== subject.referralId &&
-      !sources.movements.some((movement) => movement.referralId === referral.id) &&
-      referral.destinations.some(
-        (arm) => arm.state === "accepted" && arm.withdrawnAt === undefined && arm.acceptedUnitId === unitId,
-      ),
+  const referrals = sources.acceptedReferralIds.filter(
+    (id) => id !== subject.referralId && !sources.movements.some((movement) => movement.referralId === id),
   ).length;
   return movements + referrals;
 }

@@ -24,16 +24,14 @@ import styles from "./ward-referral-drawer.module.css";
  * D-30 transfers from another hospital and a gender placement that needs a recorded reason.
  */
 export function WardReferralInbox({ unitId }: { unitId: string }) {
-  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units, movements, referrals } =
-    useWardFlowSelect(
-      "wardReferralInbox",
-      "resolvePatientIdentity",
-      "dispatch",
-      "rejections",
-      "units",
-      "movements",
-      "referrals",
-    );
+  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units, movements } = useWardFlowSelect(
+    "wardReferralInbox",
+    "resolvePatientIdentity",
+    "dispatch",
+    "rejections",
+    "units",
+    "movements",
+  );
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";
@@ -57,6 +55,10 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   const newestRejection = attempt && rejections.length > attempt.count ? rejections.at(-1) : undefined;
   const lastError = newestRejection?.movementId === attempt?.id ? newestRejection?.reason : null;
   const entries = wardReferralInbox?.(unitId) ?? [];
+  // This ward's own yeses, from its own entries: a ward screen never reads the full referral list (FD-23).
+  const acceptedReferralIds = entries
+    .filter((entry) => entry.state === "accepted" && entry.withdrawnAt === undefined)
+    .map((entry) => entry.id);
   const [reasons, setReasons] = useState<Record<string, ReferralDeclineReason | "">>({});
   // A ward undoes its own decision by naming itself (UNDO_REFERRAL_DECISION, v10 pass 2).
   const watchDecision = useReferralDecisionUndo(routeRole, isCoordinator ? undefined : unitId);
@@ -96,7 +98,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         // Audit 2 E-07: say when this ward's Ready beds are already promised. Refuses nothing.
         const promised =
           live && thisUnit
-            ? readyBedsAllPromised({ movements, referrals }, thisUnit, { referralId: entry.id })
+            ? readyBedsAllPromised({ movements, acceptedReferralIds }, thisUnit, { referralId: entry.id })
             : undefined;
         const genderReason = genderReasons[entry.id] ?? "";
         const genderTicked = genderChecked[entry.id] === true;

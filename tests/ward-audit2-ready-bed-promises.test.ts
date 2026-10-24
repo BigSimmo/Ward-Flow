@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import {
+  acceptedReferralIdsAt,
   readyBedsAllPromised,
   readyBedsPromised,
   readyBedsPromisedSentence,
@@ -11,33 +12,38 @@ import { boundedBedAvailability } from "../src/components/ward-management/ward-r
 // Audit 2 E-07: a ward's yes uses up one of its Ready beds. Warn only; nothing is refused.
 describe("Ready beds already promised to earlier yeses", () => {
   const state = seedWardFlowState();
+  const sources = (unitId: string) => ({
+    movements: state.movements,
+    acceptedReferralIds: acceptedReferralIdsAt(state.referrals, unitId),
+  });
 
   it("finds seed wards whose Ready beds are all promised, and never warns at Ready 0", () => {
-    const warned = state.units.filter((unit) => readyBedsAllPromised(state, unit, {}) !== undefined);
+    const warned = state.units.filter((unit) => readyBedsAllPromised(sources(unit.id), unit, {}) !== undefined);
     expect(warned.length).toBeGreaterThan(0);
     for (const unit of warned) {
-      const figures = readyBedsAllPromised(state, unit, {})!;
+      const figures = readyBedsAllPromised(sources(unit.id), unit, {})!;
       expect(figures.ready).toBe(boundedBedAvailability(unit).available);
       expect(figures.ready).toBeGreaterThan(0);
       expect(figures.promised).toBeGreaterThanOrEqual(figures.ready);
     }
     for (const unit of state.units.filter((u) => boundedBedAvailability(u).available === 0)) {
-      expect(readyBedsAllPromised(state, unit, {})).toBeUndefined();
+      expect(readyBedsAllPromised(sources(unit.id), unit, {})).toBeUndefined();
     }
   });
 
   it("does not count the acceptance being made against itself", () => {
-    const unit = state.units.find((u) => readyBedsPromised(state, u.id, {}) > 0)!;
-    const own = state.referrals.find(
-      (referral) =>
-        !state.movements.some((movement) => movement.referralId === referral.id) &&
-        referral.destinations.some(
-          (arm) => arm.state === "accepted" && arm.withdrawnAt === undefined && arm.acceptedUnitId === unit.id,
-        ),
+    const unit = state.units.find((u) =>
+      acceptedReferralIdsAt(state.referrals, u.id).some(
+        (id) => !state.movements.some((movement) => movement.referralId === id),
+      ),
     );
-    if (own) {
-      expect(readyBedsPromised(state, unit.id, { referralId: own.id })).toBe(readyBedsPromised(state, unit.id, {}) - 1);
-    }
+    expect(unit).toBeDefined();
+    const own = acceptedReferralIdsAt(state.referrals, unit!.id).find(
+      (id) => !state.movements.some((movement) => movement.referralId === id),
+    )!;
+    expect(readyBedsPromised(sources(unit!.id), unit!.id, { referralId: own })).toBe(
+      readyBedsPromised(sources(unit!.id), unit!.id, {}) - 1,
+    );
   });
 
   it("words the warning plainly", () => {
