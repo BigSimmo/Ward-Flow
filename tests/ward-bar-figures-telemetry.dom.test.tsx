@@ -100,7 +100,7 @@ describe("Figures in the Tools sheet", () => {
   it("searches contacts without losing the On-call link", async () => {
     const tools = await openTools();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-contacts"));
-    const search = within(tools).getByRole("searchbox", { name: "Search contacts" });
+    const search = within(tools).getByRole("searchbox", { name: "Search a team, ward or role" });
     fireEvent.change(search, { target: { value: "no-such-team" } });
     expect(within(tools).getByText("No contact matches.")).toBeVisible();
     expect(within(tools).getByRole("link", { name: "Open On-call" })).toBeVisible();

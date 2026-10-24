@@ -52,6 +52,16 @@ import {
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
+
+/** The referral drawer's own risk wording (`RISK_FLAG_LABELS`), kept here so the phone bundle stays small. */
+const RISK_FLAG_WORDS: Record<ReferralIntakeDetails["riskFlags"][number], string> = {
+  aggression: "Aggression",
+  absconding: "Absconding",
+  medical: "Acute medical",
+  vulnerable: "Vulnerable adult",
+  suicide: "Suicide or self-harm",
+};
 
 /** The `OfficerScreen` state and handlers the job panel's helpers read, passed in on every render. */
 export type OfficerJobDetailContext = {
@@ -429,6 +439,13 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <dt>Escort required</dt>
             <dd>{transport.escortRequired ? "Yes" : "No"}</dd>
           </div>
+          {/* D-80 item 7: the referral's risk categories. Shown only when the referrer recorded some. */}
+          {movement.collectionRiskFlags?.length ? (
+            <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
+              <dt>Risk flags</dt>
+              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_WORDS[flag]).join(", ")}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Form named at booking</dt>
             <dd>{formRequiredLabel(transport)}</dd>

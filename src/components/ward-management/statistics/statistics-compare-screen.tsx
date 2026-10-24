@@ -40,6 +40,7 @@ import { allWardStatistics, wardStatistics, type WardStatistics } from "@/compon
 
 import { axisMax } from "./statistics-axis";
 import { downloadCsv } from "./statistics-csv";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool } from "./statistics-hero-tools";
@@ -89,6 +90,7 @@ export function StatisticsCompareScreen({
   const live = useStatisticsLive();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = live.state;
   const now = live.now;
+  const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true });
   const isPhone = useIsPhone();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
@@ -203,10 +205,10 @@ export function StatisticsCompareScreen({
           {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
           <FlushRow layout="lead2" className={compare.grid}>
             <Follow className={detail.followBody}>
-              <WardComparison rows={wardRows} />
+              <WardComparison rows={wardRows} asAt={asAt} />
             </Follow>
             <FlushStack>
-              <EdComparison rows={edRows} />
+              <EdComparison rows={edRows} asAt={asAt} />
               <PinnedWards rows={wardRows} />
             </FlushStack>
           </FlushRow>
@@ -426,7 +428,7 @@ function wardMetricValue(statistics: WardStatistics, metric: WardMetric): number
   return statistics.longStays;
 }
 
-function WardComparison({ rows }: { rows: WardRow[] }) {
+function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<WardMetric>("stay");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -467,14 +469,18 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
   for (const key of Object.keys(GROUP_LABELS) as WardGroup[]) counts[key] = rows.filter((r) => r.group === key).length;
 
   function exportCsv() {
-    downloadCsv("ward-flow-synthetic-ward-comparison.csv", [
-      ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
-      ...shown.map((row) => [
-        row.unit.name,
-        row.unit.siteCode,
-        ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
-      ]),
-    ]);
+    downloadCsv(
+      "ward-flow-synthetic-ward-comparison.csv",
+      [
+        ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
+        ...shown.map((row) => [
+          row.unit.name,
+          row.unit.siteCode,
+          ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
+        ]),
+      ],
+      { asAt, scope: "Ward comparison; wards shown" },
+    );
   }
 
   return (
@@ -612,7 +618,7 @@ function edMetricValue(entry: EdCompareRow, metric: EdMetric): number {
   return Math.round((entry.longestMinutes / 60) * 10) / 10;
 }
 
-function EdComparison({ rows }: { rows: EdCompareRow[] }) {
+function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<EdMetric>("open");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -631,15 +637,19 @@ function EdComparison({ rows }: { rows: EdCompareRow[] }) {
   }));
 
   function exportCsv() {
-    downloadCsv("ward-flow-synthetic-ed-comparison.csv", [
-      ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
-      ...rows.map((entry) => [
-        entry.department.name,
-        entry.department.siteCode,
-        ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
-        entry.longestMinutes,
-      ]),
-    ]);
+    downloadCsv(
+      "ward-flow-synthetic-ed-comparison.csv",
+      [
+        ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
+        ...rows.map((entry) => [
+          entry.department.name,
+          entry.department.siteCode,
+          ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
+          entry.longestMinutes,
+        ]),
+      ],
+      { asAt, scope: "ED comparison; all departments in this view" },
+    );
   }
 
   return (

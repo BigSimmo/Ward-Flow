@@ -83,6 +83,22 @@ function checkingList() {
 }
 
 describe("the Alerts screen reports on every condition it watches, firing or not", () => {
+  it("retains visible wording in acknowledged alert action names", () => {
+    renderScreen();
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
+    const more = screen.getByTestId("alerts-more-actions");
+    more.setAttribute("open", "");
+    const acknowledge = within(more).getByRole("button", { name: /^Acknowledge / });
+    fireEvent.click(acknowledge);
+    const seen = within(more).getByRole("button", { name: /^Seen: / });
+    expect(seen).toHaveTextContent("Seen");
+    expect(seen).toHaveAttribute("aria-disabled", "true");
+    const take = screen.queryByRole("button", { name: /^Take / });
+    if (take) fireEvent.click(take);
+    const yours = screen.getByRole("button", { name: /^Yours: / });
+    expect(yours).toHaveTextContent("Yours");
+  });
+
   it("renders every named condition, including the ones with nothing to show", () => {
     renderScreen();
     for (const condition of CONDITIONS) {

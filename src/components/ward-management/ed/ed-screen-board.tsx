@@ -87,7 +87,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           </button>
           {boardTable && needsRailSlides ? (
             <PortraitRail
-              title="Needs you"
+              title="My list"
               summary={String(needsYouItems.length)}
               open={needsRailOpen}
               onOpenChange={setNeedsRailOpen}

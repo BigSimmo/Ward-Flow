@@ -91,10 +91,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "confirmedAt",
   "decidedAt",
   "dueAt",
+  "previousDueAt",
   "enRouteAt",
   "expectedAt",
   "expectedReturn",
   "formedAt",
+  "formWrittenAt",
   "openedAt",
   "raisedAt",
   /**

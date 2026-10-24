@@ -35,7 +35,8 @@ describe("document metadata and modal lifecycle", () => {
     expect(dialog).toHaveTextContent("File contents are not stored or sent");
     const submit = screen.getByTestId("confirm-upload-form-button");
     expect(submit).toHaveAttribute("aria-disabled", "true");
-    const input = within(dialog).getByLabelText("Upload document file");
+    const input = within(dialog).getByLabelText("Select a file to record its details");
+    expect(input).toHaveAccessibleName("Select a file to record its details");
     fireEvent.change(input, { target: { files: [new File([], "empty.pdf", { type: "application/pdf" })] } });
     fireEvent.submit(submit.closest("form")!);
     expect(screen.getByTestId("metadata")).toHaveTextContent("[]");

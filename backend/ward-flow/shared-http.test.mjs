@@ -669,6 +669,13 @@ test("every desk logs the records it opens; only the statewide coordinator reads
   const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
   assert.deepEqual(await opened.json(), { logged: true });
   assert.deepEqual(logged, [["ward", "PT-1001", "movement"]]);
+  // The full referral detail is a screen of its own (D-80).
+  assert.equal(
+    (await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "referral" }))).status,
+    200,
+  );
+  assert.deepEqual(logged.at(-1), ["ward", "PT-1001", "referral"]);
+  logged.pop();
   assert.equal((await ward.handler(request("/record-access"))).status, 403);
   for (const bad of [
     { patientId: "Jane Citizen", surface: "patient" },

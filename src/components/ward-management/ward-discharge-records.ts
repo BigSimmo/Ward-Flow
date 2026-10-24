@@ -10,6 +10,9 @@ export type WardRecordActor =
   | { role: "coordinator" }
   | { role: "ward"; actingUnitId: string }
   | { role: "community"; actingTeamId?: string }
+  // D-80: the site bed manager reads its own site's records. Its site comes from its access scope,
+  // which narrows the records it is given and the commands it may send, as for its other actions.
+  | { role: "bed_manager" }
   | { role: "ed" | "officer" | "demo" };
 export type RecordRead<T> = { status: "allowed"; value: T } | { status: "denied" };
 export type DischargeOpenHandle = Readonly<{ generation: number; requestId: number; requestNamespace?: string }>;
@@ -70,7 +73,10 @@ export function validRecordActor(actor: unknown): actor is WardRecordActor {
       typeof actor.actingUnitId === "string" &&
       actor.actingUnitId.length > 0
     );
-  return keys.join() === "role" && ["coordinator", "ed", "officer", "community", "demo"].includes(String(actor.role));
+  return (
+    keys.join() === "role" &&
+    ["coordinator", "bed_manager", "ed", "officer", "community", "demo"].includes(String(actor.role))
+  );
 }
 
 /** Earlier saves retain the authoritative status on the converted booking rather than the stay. */
@@ -144,7 +150,7 @@ export function dischargeIdentity(state: WardFlowState, admission: Admission): D
 function readableScope(state: WardFlowState, actor: WardRecordActor, unitId?: string): boolean {
   if (!validRecordActor(actor) || !safeCounter(state.worldGeneration)) return false;
   if (unitId !== undefined && !uniqueRecord(state.units, unitId)) return false;
-  if (actor.role === "coordinator") return true;
+  if (actor.role === "coordinator" || actor.role === "bed_manager") return true;
   if (actor.role === "community") return !!actor.actingTeamId && !!communityTeamById(actor.actingTeamId);
   return (
     actor.role === "ward" &&
@@ -154,14 +160,15 @@ function readableScope(state: WardFlowState, actor: WardRecordActor, unitId?: st
 }
 
 /**
- * Typed patient specific criteria (D-65) stay with the ward and the coordinator. A community reader
- * sees each one only as a numbered placeholder, so the count and tick times still match the ward's.
+ * Typed patient specific criteria (D-65) stay with the ward and the coordinator. A community or
+ * bed manager reader (D-80) sees each one only as a numbered placeholder, so the count and tick
+ * times still match the ward's.
  */
 function criteriaFor(
   actor: WardRecordActor,
   record: Admission["dischargeCriteria"],
 ): DischargeRecord["dischargeCriteria"] {
-  if (!record || actor.role !== "community") return record ?? null;
+  if (!record || (actor.role !== "community" && actor.role !== "bed_manager")) return record ?? null;
   return communityDischargeCriteria(record);
 }
 

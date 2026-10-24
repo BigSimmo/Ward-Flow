@@ -203,7 +203,6 @@ const checks = {
     `actor_role = ANY (${ACCESS_ROLES})`,
     "jsonb_typeof(actor_scope) = 'object' AND octet_length(actor_scope::text) <= 4096",
     "length(patient_id) >= 1 AND length(patient_id) <= 100",
-    "surface = ANY (ARRAY['patient','movement'])",
   ],
   session_sign_outs: ["data_mode = 'prototype'", "until > signed_out_at"],
 };
@@ -338,6 +337,14 @@ function expectedConstraints(version, tables) {
     for (const check of [
       ...((version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? []),
       ...(version >= 9 && table === "memberships" ? membershipChecksFrom9 : []),
+      // Migration 13 added the referral detail to the screens a record view names.
+      ...(table === "record_access"
+        ? [
+            version >= 13
+              ? "surface = ANY (ARRAY['patient','movement','referral'])"
+              : "surface = ANY (ARRAY['patient','movement'])",
+          ]
+        : []),
     ])
       result.push({ table, type: "c", check: expression("CHECK (" + check + ")") });
   }

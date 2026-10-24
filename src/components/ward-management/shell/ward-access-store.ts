@@ -127,8 +127,15 @@ export function parseStoredAccess(raw: string | null): WardAccess | null {
   let parsed: WardAccess["scope"] | null = null;
   switch (s.kind) {
     case "statewide":
-    case "jobs":
       parsed = { kind: s.kind };
+      break;
+    case "jobs":
+      if (s.service === undefined) parsed = { kind: "jobs" };
+      else
+        parsed =
+          typeof s.service === "string" && (HEALTH_SERVICES as readonly string[]).includes(s.service)
+            ? { kind: "jobs", service: s.service as (typeof HEALTH_SERVICES)[number] }
+            : null;
       break;
     case "service":
       parsed =

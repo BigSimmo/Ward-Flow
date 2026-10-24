@@ -6,10 +6,11 @@ import {
   MINIMUM_RUNTIME_MIGRATION,
   RECORDS_MIGRATION,
   RECORD_ACCESS_MIGRATION,
+  REFERRAL_VIEW_MIGRATION,
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
-import { assembleWorld, conflicts, coveredRecords, markerKind, planSave } from "./records.mjs";
+import { assembleWorld, conflicts, coveredRecords, markerKind, planSave, recordToken, splitWorld } from "./records.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
 /** Desks with a phone turned on, read a page at a time when new alerts are queued. */
@@ -425,7 +426,13 @@ export function createWorkspaceStore(
     // An item that left and came back red is announced again, as the open-tab notifier does.
     const queued = await client.query(
       `INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL${byRole ? " AND s.membership_id IS NULL" : ""} AND s.actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL`,
-      [workspaceId, push.coordinatorIds, excludeActorId, fresh.map((alert) => alert.id)],
+      // A bootstrap coordinator hears act-now rows only, never an officer's or a team's updates.
+      [
+        workspaceId,
+        push.coordinatorIds,
+        excludeActorId,
+        fresh.filter((alert) => alert.kind === "act-now").map((alert) => alert.id),
+      ],
     );
     let count = queued.rowCount;
     if (byRole) {
@@ -1368,6 +1375,9 @@ export function createWorkspaceStore(
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
+      // Before 13 the log's check takes a patient or movement page only.
+      if (surface === "referral" && !(view.version >= REFERRAL_VIEW_MIGRATION))
+        return { status: 200, body: { logged: false } };
       const at = clock();
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
@@ -1375,7 +1385,11 @@ export function createWorkspaceStore(
       const visible =
         surface === "patient"
           ? state.patients.some((patient) => patient.id === patientId)
-          : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
+          : surface === "referral"
+            ? // A ward bed request needs no front-door referral link to be opened.
+              state.referrals.some((referral) => referral.patientId === patientId) ||
+              state.movements.some((movement) => movement.patientId === patientId)
+            : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
       return transaction(async (client, loggedAt) => {
         // Serialize each account's check and insert. A separate lock statement gives the
@@ -1492,9 +1506,10 @@ export function createWorkspaceStore(
       });
     },
     /**
-     * `options.revisionOnly`: an accepted command (or its replay) answers without the snapshot.
+     * `options.revisionOnly`: an accepted command (or a replay still authorised in the same desk)
+     * answers without the snapshot.
      * The client asks for this when more of its commands are queued, and reads the board once at
-     * the end. A refused or stale command always carries the snapshot. `options.view` is the
+     * the end. A refused, stale or access-changed replay carries the current snapshot. `options.view` is the
      * sender's desk from `viewer()`: the command is checked against its role and place, and the
      * reply carries only its part of the workspace. `options.seen` maps record tokens to the later
      * revision the sender has seen each at (CS-19 follow-up, `conflicts` in records.mjs); an
@@ -1542,12 +1557,51 @@ export function createWorkspaceStore(
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },
             };
+          // A receipt confirms what already happened; it cannot lend the desk its earlier access.
+          // Context includes the selected membership, joined cover and active record openings.
+          // Permission alone is insufficient: a still-visible target may have wider related details
+          // in its old partial-referral reason, checked records or Undo completion. Legacy receipts
+          // have no provenance, so their details cannot safely be attributed to this desk either.
+          const { receiptAccessContext, ...recordedResult } = receipt.result;
+          const sameAccess =
+            Object.hasOwn(receipt.result, "receiptAccessContext") &&
+            receiptAccessContext === (accessContext(at, view).accessContext ?? null);
+          const detailsAllowed =
+            sameAccess && (!view || !engine.commandRefusal(row.payload, view.access, event, at, view.grants));
+          // A command can create related records whose ids were absent from the request. Those
+          // records may later move outside this unchanged desk while the original request remains
+          // permitted (for example, moving a new planned booking to another service). Checked
+          // record tokens must therefore name only records still in the desk's current projection.
+          let replaySnapshot;
+          if (detailsAllowed && Array.isArray(recordedResult.covered)) {
+            replaySnapshot = snapshot(row, at, view);
+            const visible = new Set([...splitWorld(replaySnapshot.payload).parts.keys()].map(recordToken));
+            recordedResult.covered = recordedResult.covered.filter((token) => visible.has(token));
+          }
+          const replayResult = detailsAllowed
+            ? recordedResult
+            : {
+                outcome: recordedResult.outcome,
+                commandRevision: recordedResult.commandRevision,
+                ...(receipt.status !== 200
+                  ? {
+                      error: "This earlier command was not applied. Its details are unavailable in your current role.",
+                    }
+                  : recordedResult.outcome === "partly"
+                    ? {
+                        error:
+                          "Part of this change was saved. The remaining details are unavailable in your current role.",
+                      }
+                    : {}),
+              };
           return {
             status: receipt.status,
             body: {
-              ...receipt.result,
+              ...replayResult,
               replayed: true,
-              ...(revisionOnly && receipt.status === 200 ? {} : { snapshot: snapshot(row, at, view) }),
+              ...(detailsAllowed && revisionOnly && receipt.status === 200
+                ? {}
+                : { snapshot: replaySnapshot ?? snapshot(row, at, view) }),
             },
           };
         }
@@ -1657,7 +1711,17 @@ export function createWorkspaceStore(
         });
         await client.query(
           "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6)",
-          [workspaceId, actorId, commandId, fingerprint, status, result],
+          [
+            workspaceId,
+            actorId,
+            commandId,
+            fingerprint,
+            status,
+            {
+              ...result,
+              receiptAccessContext: accessContext(at, view).accessContext ?? null,
+            },
+          ],
         );
         return {
           status,
