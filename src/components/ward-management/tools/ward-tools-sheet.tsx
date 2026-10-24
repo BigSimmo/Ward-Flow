@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState, useReducer } from "react";
 import {
   BarChart3,
   BedDouble,
@@ -173,7 +173,10 @@ function BedSummary() {
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
   const text = bedSummaryText({ units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network });
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useReducer(
+    (previous: { text: string; revision: number }, text: string) => ({ text, revision: previous.revision + 1 }),
+    { text: "", revision: 0 },
+  );
   return (
     <div className={styles.toolBody} data-testid="ward-tools-bed-summary">
       <pre className={styles.summaryText}>{text}</pre>
@@ -195,7 +198,7 @@ function BedSummary() {
         </button>
       </div>
       <p className={styles.liveNote} role="status">
-        {status}
+        <span key={status.revision}>{status.text}</span>
       </p>
     </div>
   );
