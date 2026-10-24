@@ -11,7 +11,7 @@ Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 ## Boundaries
 
 - Host the synthetic prototype on Railway in its own **Ward Flow** project.
-- Connect only `BigSimmo/Ward-Flow`, branch `main`.
+- Connect only `BigSimmo/Ward-Flow`, branch `live` (since 24 October 2026; before that `main`). The daily release workflow moves `live` to CI-passed `main` ([HOW-WE-WORK §4](ward-flow/HOW-WE-WORK.md#4-integration-in-the-dedicated-repository)).
 - **Ward Flow must never connect to PsychSift's Supabase or Railway resources**, database, services or credentials.
 - For Ward Flow's optional shared prototype workspace (the separate `backend/ward-flow/` server's `/v1/workspace*` routes), it uses Ward Flow's **dedicated synthetic-only Supabase project**, operating exclusively on 100% synthetic data. The current provider and how to change it are recorded in [DATABASE.md](ward-flow/DATABASE.md). No shared backend was created by this initial Railway hosting task; see [the backend guide](../backend/ward-flow/README.md). Those guides do not establish current hosted provider state.
 - The default browser-local state is not a shared database. There is no production identity or access-control system for real patients; use invented data only.
@@ -19,15 +19,15 @@ Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
 ## Railway target
 
-| Item           | Value                                                 |
-| -------------- | ----------------------------------------------------- |
-| Public app     | https://ward-flow-production.up.railway.app/          |
-| Project        | `Ward Flow` (`8d748288-549b-4614-a4c3-30d1dbf3081d`)  |
-| Environment    | `production` (`c52294d0-9ae8-46bc-b8cb-522d5f703f11`) |
-| Service        | `ward-flow` (`a45ea3c2-cc8d-4d4b-a76d-1c89f5a79896`)  |
-| Source         | `BigSimmo/Ward-Flow`, `main`                          |
-| Runtime region | Singapore (`asia-southeast1-eqsg3a`)                  |
-| Networking     | Railway HTTPS domain routed to container port `8080`  |
+| Item           | Value                                                  |
+| -------------- | ------------------------------------------------------ |
+| Public app     | https://ward-flow-production.up.railway.app/           |
+| Project        | `Ward Flow` (`8d748288-549b-4614-a4c3-30d1dbf3081d`)   |
+| Environment    | `production` (`c52294d0-9ae8-46bc-b8cb-522d5f703f11`)  |
+| Service        | `ward-flow` (`a45ea3c2-cc8d-4d4b-a76d-1c89f5a79896`)   |
+| Source         | `BigSimmo/Ward-Flow`, `live` (was `main` until 24 Oct) |
+| Runtime region | Singapore (`asia-southeast1-eqsg3a`)                   |
+| Networking     | Railway HTTPS domain routed to container port `8080`   |
 
 These identifiers are resource references, not credentials. Check the exact target before making changes. Hosting here does not establish suitability for real clinical data.
 
@@ -70,7 +70,7 @@ regression passing. Broad gates were not repeated after this final fix at the ow
 
 Owner approved hosting the shared backend (16 October 2026) so live sign-in and saving can be
 tested. Two services were added to the same Ward Flow project and environment, Singapore region,
-both following `BigSimmo/Ward-Flow` `main`. The open public demo (`ward-flow`) is unchanged and
+both following `BigSimmo/Ward-Flow` `main` at the time (now `live`). The open public demo (`ward-flow`) is unchanged and
 stays in local mode, because shared mode puts a sign-in screen in front of every page.
 
 | Item     | Backend                                                                                                | Signed-in site                                              |
@@ -112,7 +112,7 @@ Backend settings (Railway dashboard):
   is built from a file outside it. Change the Railway setting whenever that list changes.
 
 Both services wait for CI: the owner turned on Railway's **Wait for CI** for `ward-flow-backend`
-and `ward-flow-shared` on 19 October 2026, so a push to `main` deploys only after its GitHub
+and `ward-flow-shared` on 19 October 2026, so a deploy (now a move of `live`) goes ahead only after its GitHub
 checks pass. Still pending, deferred by the owner on 19 October 2026: in Supabase, under
 Authentication, then Sign In / Providers, turn off **Allow new users to sign up**, so only invited
 accounts can register.

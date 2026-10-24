@@ -34,6 +34,8 @@ repository belong to the earlier shared-history arrangement; do not use them as 
   from that repository. Verify `git remote get-url origin`, the branch and `git log -1` in your
   checkout before making changes. The verified Ward Flow `main` tip identifies published source.
   Confirm a deployed revision and its runtime separately before calling it the current hosted build.
+  The live site follows the `live` branch, moved daily from CI-passed `main`, so new `main` work is
+  not live until the next release.
 - **Find the affected source:** use the [current architecture orientation](../codebase-index.md)
   and relevant source/tests. The [code map](code-map/README.md) preserves a dated detailed snapshot;
   open only the sections needed for the task and verify relevant drift.
