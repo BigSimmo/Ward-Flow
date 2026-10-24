@@ -11,7 +11,12 @@ import { flushSync } from "react-dom";
 import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
 import { WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
   groupOf,
@@ -24,6 +29,16 @@ import {
   type HeldDischarge,
   type RowGroup,
 } from "./handover-model";
+import {
+  extraEntryKey,
+  paperItemKey,
+  paginateHandoverItems,
+  paginateHandoverExtras,
+  type ExtraEntry,
+  type ExtraSection,
+  type PaperItem,
+  type PaperMeasurements,
+} from "./handover-print-pagination";
 import styles from "./handover-print-sheet.module.css";
 
 /* ------------------------------------------------------------------ options */
@@ -48,16 +63,11 @@ export const DEFAULT_PRINT_OPTIONS: PrintOptions = {
 
 /** A4 in CSS pixels at 96 dpi. */
 const PAPER = {
-  landscape: { width: 1123, height: 794 },
-  portrait: { width: 794, height: 1123 },
+  landscape: { width: (297 / 25.4) * 96, height: (210 / 25.4) * 96 },
+  portrait: { width: (210 / 25.4) * 96, height: (297 / 25.4) * 96 },
 } as const;
 
 /* ------------------------------------------------------------------ pagination */
-
-type PaperItem =
-  | { kind: "group"; group: RowGroup; continued: boolean }
-  | { kind: "row"; row: HandoverRow }
-  | { kind: "isbar"; row: HandoverRow };
 
 function paperItems(
   groups: RowGroup[],
@@ -84,94 +94,6 @@ function paperItems(
 /** Page header allowance in px: title, stamp and the printed-by line, which may wrap. */
 const PAGE_HEADER_HEIGHT = 80;
 
-const itemHeight = (item: PaperItem) => (item.kind === "group" ? 22 : item.kind === "isbar" ? 20 : 23);
-
-/**
- * Split the items into pages, as the approved mockup estimates them: page height less the margins,
- * header, footer and table head, balanced so the last page is not a stub. A group that carries over
- * repeats its header marked "continued"; an ISBAR line stays with its patient.
- */
-function paginate(items: PaperItem[], orientation: PrintOptions["orientation"], firstPageNote = 0): PaperItem[][] {
-  const height = PAPER[orientation].height;
-  const avail = height - 30 - 24 - PAGE_HEADER_HEIGHT - 34 - 22;
-  const total = items.reduce((sum, item) => sum + itemHeight(item), 34 + firstPageNote);
-  const count = Math.max(1, Math.ceil(total / avail));
-  const target = Math.min(avail, Math.ceil(total / count) + 30);
-  const pages: PaperItem[][] = [[]];
-  let used = 34 + firstPageNote;
-  let current: RowGroup | null = null;
-  items.forEach((item, index) => {
-    if (item.kind === "group") current = item.group;
-    const next = items[index + 1];
-    const need =
-      itemHeight(item) + (item.kind === "group" ? 23 : item.kind === "row" && next?.kind === "isbar" ? 20 : 0);
-    const page = pages[pages.length - 1]!;
-    if (item.kind !== "isbar" && used + need > target && page.length > 0) {
-      pages.push([]);
-      used = 0;
-      if (item.kind !== "group" && current !== null) {
-        pages[pages.length - 1]!.push({ kind: "group", group: current, continued: true });
-        used += 22;
-      }
-    }
-    pages[pages.length - 1]!.push(item);
-    used += itemHeight(item);
-  });
-  return pages;
-}
-
-type ExtraEntry =
-  { kind: "ward"; ward: HandoverWard } | { kind: "hold"; hold: HeldDischarge } | { kind: "noHolds" } | { kind: "sigs" };
-type ExtraSectionId = "beds" | "holds" | "sigs";
-type ExtraSection = { id: ExtraSectionId; entries: ExtraEntry[]; continued: boolean };
-
-const EXTRA_SECTION: Record<ExtraEntry["kind"], ExtraSectionId> = {
-  ward: "beds",
-  hold: "holds",
-  noHolds: "holds",
-  sigs: "sigs",
-};
-/* Heading plus table head, one table row, and the two signature lines with their heading. */
-const EXTRA_HEAD = 50;
-const extraHeight = (entry: ExtraEntry) => (entry.kind === "sigs" ? 105 : 23);
-
-/**
- * Flow Beds by ward, Discharges held up and the signature lines over as many pages as they need.
- * Landscape keeps two columns (beds left, holds and signatures right); portrait stacks them. A
- * section that carries over repeats its heading marked "continued". Returns pages of columns.
- */
-function paginateExtra(streams: ExtraEntry[][], orientation: PrintOptions["orientation"]): ExtraSection[][][] {
-  const avail = PAPER[orientation].height - 30 - 24 - PAGE_HEADER_HEIGHT - 22;
-  const columns = streams.map((stream) => {
-    const pages: ExtraSection[][] = [[]];
-    const seen = new Set<ExtraSectionId>();
-    let used = 0;
-    for (const entry of stream) {
-      const id = EXTRA_SECTION[entry.kind];
-      let page = pages[pages.length - 1]!;
-      let section = page[page.length - 1]?.id === id ? page[page.length - 1]! : null;
-      const need = (section ? 0 : EXTRA_HEAD) + extraHeight(entry);
-      if (used + need > avail && page.length > 0) {
-        page = [];
-        pages.push(page);
-        section = null;
-        used = 0;
-      }
-      if (section === null) {
-        section = { id, entries: [], continued: seen.has(id) };
-        seen.add(id);
-        page.push(section);
-        used += EXTRA_HEAD;
-      }
-      section.entries.push(entry);
-      used += extraHeight(entry);
-    }
-    return pages;
-  });
-  const count = Math.max(...columns.map((pages) => pages.length));
-  return Array.from({ length: count }, (_, index) => columns.map((pages) => pages[index] ?? []));
-}
-
 const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   act: "danger",
   urg: "danger",
@@ -182,24 +104,17 @@ const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   mov: "info",
 };
 
-/** Paper column widths in pixels; the route column takes what is left. */
-function paperWidth(column: HandoverColumn, landscape: boolean): string | undefined {
-  switch (column.id) {
-    case "route":
-      return undefined;
-    case "next":
-      return `${landscape ? 180 : 140}px`;
-    case "lo":
-      return `${landscape ? 136 : 104}px`;
-    case "pt":
-      return `${landscape ? 210 : 170}px`;
-    case "st":
-      return `${landscape ? 146 : 130}px`;
-    case "due":
-      return `${landscape ? 112 : 96}px`;
-    default:
-      return `${Math.round(column.width * (landscape ? 0.82 : 0.6))}px`;
-  }
+/** Relative widths always leave every selected column, including the route, usable space. */
+function paperWidth(column: HandoverColumn, columns: HandoverColumn[]): string {
+  const weight = (entry: HandoverColumn) => {
+    if (entry.id === "pt") return 180;
+    if (entry.id === "route" || entry.id === "next") return 160;
+    if (entry.id === "lo") return 150;
+    if (entry.id === "obs") return 130;
+    return entry.width;
+  };
+  const total = columns.reduce((sum, entry) => sum + weight(entry), 0);
+  return `${(weight(column) / total) * 100}%`;
 }
 
 /* ------------------------------------------------------------------ component */
@@ -217,7 +132,10 @@ export type HandoverPrintSheetProps = {
   scopeLabel: string;
   shiftLabel: string;
   densityLabel: string;
-  sheetDate: string;
+  /** Calendar origin for a complete, unambiguous paper timestamp. */
+  dayZero?: Date;
+  /** Legacy fixture/date label; real sheets supply dayZero. */
+  sheetDate?: string;
   options: PrintOptions;
   onOptionsChange: (next: PrintOptions) => void;
   controls: ReactNode;
@@ -249,7 +167,8 @@ export function HandoverPrintSheet({
   scopeLabel,
   shiftLabel,
   densityLabel,
-  sheetDate,
+  dayZero,
+  sheetDate = "",
   options,
   onOptionsChange,
   controls,
@@ -267,6 +186,7 @@ export function HandoverPrintSheet({
   /* Fit the A4 pages to the preview width. Scale with a transform, never zoom. */
   const stackRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState<number | null>(null);
+  const [measurements, setMeasurements] = useState<PaperMeasurements | null>(null);
   useEffect(() => {
     const node = stackRef.current;
     if (node === null || typeof ResizeObserver === "undefined") return;
@@ -285,8 +205,14 @@ export function HandoverPrintSheet({
     ? 4 + 16 * Math.ceil(((outsideText.length + 28) * 6.5) / (PAPER[options.orientation].width - 60))
     : 0;
   const pages = useMemo(
-    () => paginate(paperItems(groups, options, isHighlighted, anyHighlight), options.orientation, outsideHeight),
-    [groups, options, isHighlighted, anyHighlight, outsideHeight],
+    () =>
+      paginateHandoverItems(
+        paperItems(groups, options, isHighlighted, anyHighlight),
+        paper.height - 30 - 24 - PAGE_HEADER_HEIGHT - 34 - 22,
+        34 + outsideHeight,
+        measurements,
+      ),
+    [groups, options, isHighlighted, anyHighlight, outsideHeight, paper.height, measurements],
   );
   const extraPages = useMemo(() => {
     if (!options.beds && !options.holds && !options.signatures) return [];
@@ -299,8 +225,12 @@ export function HandoverPrintSheet({
         : []),
       ...(options.signatures ? [{ kind: "sigs" } as const] : []),
     ];
-    return paginateExtra(landscape ? [beds, rest] : [[...beds, ...rest]], options.orientation);
-  }, [options.beds, options.holds, options.signatures, options.orientation, landscape, wards, held]);
+    return paginateHandoverExtras(
+      landscape ? [beds, rest] : [[...beds, ...rest]],
+      paper.height - 30 - 24 - PAGE_HEADER_HEIGHT - 22,
+      measurements,
+    );
+  }, [options.beds, options.holds, options.signatures, landscape, wards, held, paper.height, measurements]);
   const totalPages = pages.length + extraPages.length;
 
   const rows = useMemo(() => {
@@ -320,7 +250,9 @@ export function HandoverPrintSheet({
     ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],
   ];
 
-  const prepared = formatInstantWithDay(preparedAt ?? now, now);
+  const prepared = dayZero
+    ? formatSheetMoment(preparedAt ?? now, dayZero, { includeYearAndZone: true })
+    : `${formatInstantWithDay(preparedAt ?? now, now)} ${sheetDate} AWST`.trim();
   const meta = `${scopeLabel} · ${shiftLabel} · ${densityLabel} columns${anyHighlight ? " · highlighted rows marked" : ""}`;
 
   const header = (pageNumber: number) => (
@@ -331,7 +263,7 @@ export function HandoverPrintSheet({
       </div>
       <div className={styles.stamp}>
         {/* Until a copy is prepared (onPrintPrepared), the open sheet is a preview, never a prepared copy. */}
-        {preparedAt === null ? "Preview" : "Prepared"} {prepared} {sheetDate} AWST
+        {preparedAt === null ? "Preview" : "Prepared"} {prepared}
         <span>
           Page {pageNumber} of {totalPages} · Synthetic data, not a medical record
         </span>
@@ -390,7 +322,7 @@ export function HandoverPrintSheet({
     <thead>
       <tr>
         {columns.map((column) => (
-          <th key={column.id} scope="col" style={{ width: paperWidth(column, landscape) }}>
+          <th key={column.id} scope="col" style={{ width: paperWidth(column, columns) }}>
             {column.header}
           </th>
         ))}
@@ -401,7 +333,7 @@ export function HandoverPrintSheet({
   const renderItem = (item: PaperItem, index: number) => {
     if (item.kind === "group") {
       return (
-        <tr key={`g-${item.group.id}-${index}`} className={styles.pg}>
+        <tr key={`g-${item.group.id}-${index}`} data-paper-item={paperItemKey(item)} className={styles.pg}>
           <td colSpan={columns.length}>
             {item.group.tone ? <StatusGlyph tone={GROUP_TONE[item.group.tone]} size={9} className={styles.gl} /> : null}
             {item.group.title} · {item.group.rows.length}
@@ -412,7 +344,7 @@ export function HandoverPrintSheet({
     }
     if (item.kind === "isbar") {
       return (
-        <tr key={`i-${item.row.id}`} className={styles.ib2}>
+        <tr key={`i-${item.row.id}`} data-paper-item={paperItemKey(item)} className={styles.ib2}>
           <td colSpan={columns.length}>
             {isbarLines(item.row, ctx.now, ctx.readyBeds)
               .slice(1)
@@ -431,6 +363,7 @@ export function HandoverPrintSheet({
     return (
       <tr
         key={`r-${row.id}`}
+        data-paper-item={paperItemKey(item)}
         className={cx(styles.patientRow, marked && styles.hlr)}
         onClick={() => onOpenPatient(row.id)}
       >
@@ -451,7 +384,7 @@ export function HandoverPrintSheet({
     >
       {header(index + 1)}
       {index === 0 ? (
-        <div className={styles.sum}>
+        <div className={styles.sum} data-paper-summary="">
           {summary.map(([label, value]) => (
             <div key={label}>
               <b>{value}</b>
@@ -461,7 +394,7 @@ export function HandoverPrintSheet({
         </div>
       ) : null}
       {index === 0 && outsideAct.length ? (
-        <p className={styles.outside}>
+        <p className={styles.outside} data-paper-outside="">
           <b>Act now outside this scope:</b> {outsideText}
         </p>
       ) : null}
@@ -485,7 +418,7 @@ export function HandoverPrintSheet({
   const renderSection = (section: ExtraSection) => {
     if (section.id === "beds") {
       return (
-        <div key="beds">
+        <div key="beds" data-extra-section="beds">
           <h3>{continued(section, "Beds by ward")}</h3>
           <table>
             <thead>
@@ -511,7 +444,7 @@ export function HandoverPrintSheet({
             <tbody>
               {section.entries.map((entry) =>
                 entry.kind === "ward" ? (
-                  <tr key={entry.ward.id}>
+                  <tr key={entry.ward.id} data-extra-entry={extraEntryKey(entry)}>
                     <td>{entry.ward.name}</td>
                     <td className={styles.mn}>
                       {entry.ward.occupied}/{entry.ward.beds}
@@ -530,7 +463,7 @@ export function HandoverPrintSheet({
     }
     if (section.id === "holds") {
       return (
-        <div key="holds">
+        <div key="holds" data-extra-section="holds">
           <h3>{continued(section, "Discharges held up")}</h3>
           <table>
             <thead>
@@ -547,11 +480,11 @@ export function HandoverPrintSheet({
             <tbody>
               {section.entries.map((entry) =>
                 entry.kind === "noHolds" ? (
-                  <tr key="none">
+                  <tr key="none" data-extra-entry="noHolds">
                     <td colSpan={3}>No discharges held up</td>
                   </tr>
                 ) : entry.kind === "hold" ? (
-                  <tr key={entry.hold.admission.id}>
+                  <tr key={entry.hold.admission.id} data-extra-entry={extraEntryKey(entry)}>
                     <td>
                       {entry.hold.name} <span className={styles.mnInline}>{entry.hold.umrn}</span>
                     </td>
@@ -566,7 +499,7 @@ export function HandoverPrintSheet({
       );
     }
     return (
-      <div key="sigs">
+      <div key="sigs" data-extra-entry="sigs">
         <h3>Handover</h3>
         {[0, 1].map((line) => (
           <div key={line} className={styles.sig}>
@@ -598,8 +531,79 @@ export function HandoverPrintSheet({
     );
   });
 
+  const readMeasurements = (): PaperMeasurements | null => {
+    const stack = stackRef.current;
+    const first = stack?.querySelector<HTMLElement>("article");
+    if (!stack || !first || first.offsetHeight === 0) return null;
+    const style = getComputedStyle(first);
+    const gap = Number.parseFloat(style.rowGap) || 0;
+    const padding = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+    const heightOf = (selector: string) =>
+      Math.max(0, ...Array.from(stack.querySelectorAll<HTMLElement>(selector), (node) => node.offsetHeight));
+    // Leave 4px for fractional CSS-pixel rounding at the A4 physical page boundary.
+    const extraBudget =
+      paper.height - padding - heightOf("article > header") - heightOf("article > footer") - 2 * gap - 4;
+    const itemHeights: Record<string, number> = {};
+    const extraHeights: Record<string, number> = {};
+    const extraHeads: Record<string, number> = {};
+    for (const node of stack.querySelectorAll<HTMLElement>("[data-paper-item]")) {
+      const key = node.dataset.paperItem!;
+      itemHeights[key] = Math.max(itemHeights[key] ?? 0, node.offsetHeight);
+    }
+    for (const node of stack.querySelectorAll<HTMLElement>("[data-extra-entry]")) {
+      extraHeights[node.dataset.extraEntry!] = node.offsetHeight;
+    }
+    for (const node of stack.querySelectorAll<HTMLElement>("[data-extra-section]")) {
+      const rows = Array.from(node.querySelectorAll<HTMLElement>("[data-extra-entry]"));
+      const ownMargin = Number.parseFloat(getComputedStyle(node.firstElementChild!).marginTop) || 0;
+      extraHeads[node.dataset.extraSection!] = Math.max(
+        extraHeads[node.dataset.extraSection!] ?? 0,
+        node.offsetHeight - rows.reduce((sum, row) => sum + row.offsetHeight, 0) + ownMargin,
+      );
+    }
+    const summary = first.querySelector<HTMLElement>("[data-paper-summary]");
+    const outside = first.querySelector<HTMLElement>("[data-paper-outside]");
+    return {
+      mainBudget: extraBudget - heightOf("article > table > thead"),
+      extraBudget,
+      firstPageCost: (summary ? summary.offsetHeight + gap : 0) + (outside ? outside.offsetHeight + gap : 0),
+      itemHeights,
+      extraHeights,
+      extraHeads,
+    };
+  };
+
+  useEffect(() => {
+    let active = true;
+    let frame: number;
+    const update = () => {
+      const next = readMeasurements();
+      if (active && next) setMeasurements((old) => (JSON.stringify(old) === JSON.stringify(next) ? old : next));
+    };
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    stackRef.current
+      ?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]")
+      .forEach((node) => observer?.observe(node));
+    schedule();
+    void document.fonts?.ready.then(() => {
+      if (active) schedule();
+    });
+    return () => {
+      active = false;
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  });
+
   const print = () => {
     flushSync(() => onPrintPrepared(now));
+    // Read synchronously as well: a quick click or a changed header must use its actual new size.
+    const next = readMeasurements();
+    if (next) flushSync(() => setMeasurements(next));
     window.print();
   };
 

@@ -1,5 +1,7 @@
 import { communityTeamKey } from "@/components/ward-management/ward-access-scope";
-import type { Referral } from "@/components/ward-management/ward-model";
+import { routeSentKind } from "@/components/ward-management/ward-journey-sender";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import {
   accessIsWholeNetwork,
   unitInScope,
@@ -50,13 +52,36 @@ export function referralSentByDesk(
   }
 }
 
+export { routeSentKind };
+
 /**
- * A route desk sends only its own kind of referral, so a ward never acts as sender on one it is
- * answering. The screens ask this with `referralSentByDesk`, since a demo desk may have no scope.
+ * Did this desk send this journey (D-80). A journey leaving a stay was sent by that stay's ward,
+ * even when the stay itself began from another place's referral (a repatriation copies both
+ * links). Otherwise a ward sent it when the referral's origin is one of its own, and any other
+ * desk asks `referralSentByDesk` of the journey's referral. The server's write check and the legal
+ * forms screen share it.
  */
-export function routeSentKind(routeRole: string, source: Referral["source"]): boolean {
-  if (routeRole === "ward") return source === "psychiatric_ward";
-  if (routeRole === "ed") return source === "ed_medical";
-  if (routeRole === "community") return source !== "psychiatric_ward" && source !== "ed_medical";
-  return true;
+export function journeySentByDesk(
+  records: { referrals: readonly Referral[]; admissions: readonly Pick<Admission, "id" | "unitId">[] },
+  movement: Pick<Movement, "referralId" | "sourceAdmissionId">,
+  access: WardAccess,
+  places: PlaceLookup,
+): boolean {
+  if (accessIsWholeNetwork(access)) return true;
+  const referral = movement.referralId
+    ? records.referrals.find((candidate) => candidate.id === movement.referralId)
+    : undefined;
+  const leftStay = movement.sourceAdmissionId !== undefined;
+  if (access.role === "ward") {
+    const stayWard = leftStay
+      ? records.admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId
+      : undefined;
+    const sendingWard =
+      stayWard ??
+      (leftStay ? undefined : referral?.originUnitId) ??
+      (movement as { originUnitId?: string }).originUnitId;
+    return sendingWard !== undefined && unitInScope(access.scope, sendingWard, places);
+  }
+  if (leftStay && access.role === "community") return false;
+  return referral !== undefined && referralSentByDesk(referral, access, places);
 }
