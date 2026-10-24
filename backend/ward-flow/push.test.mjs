@@ -39,10 +39,11 @@ const env = {
 const browserKeys = { p256dh: keys.publicKey, auth: Buffer.alloc(16, 3).toString("base64url") };
 const offCurve = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString("base64url");
 
-test("phone push is off with no VAPID settings and refuses a partial set", () => {
+test("phone push is off unless all three VAPID settings are present", () => {
+  const quiet = () => {};
   assert.equal(readPushConfig({}), null);
-  assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: "" }), /phone push/);
-  assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "  " }), /phone push/);
+  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: "" }, quiet), null);
+  assert.equal(readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "  " }, quiet), null);
   assert.deepEqual(readPushConfig(env), {
     publicKey: keys.publicKey,
     privateKey: keys.privateKey,

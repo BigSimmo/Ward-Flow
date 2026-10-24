@@ -25,15 +25,19 @@ function decodedLength(value) {
 }
 
 /**
- * Null (feature off) when none of the three settings is set; throws when only some are set, or when
- * they are set but malformed, so a missing or misspelt setting cannot turn phone alerts off silently.
+ * Null (feature off) unless all three settings are set; throws when they are set but malformed.
+ * When only some are set, push stays off and one startup warning says so (setting name only, never
+ * a value), so a missing or misspelt setting is visible without stopping the backend from starting.
  */
-export function readPushConfig(env = process.env) {
+export function readPushConfig(env = process.env, log = (event) => console.error(JSON.stringify(event))) {
   const publicKey = env.WARD_FLOW_VAPID_PUBLIC_KEY?.trim();
   const privateKey = env.WARD_FLOW_VAPID_PRIVATE_KEY?.trim();
   const subject = env.WARD_FLOW_VAPID_SUBJECT?.trim();
-  if (!publicKey && !privateKey && !subject) return null;
-  if (!publicKey || !privateKey || !subject) throw new Error("Invalid phone push configuration");
+  if (!publicKey || !privateKey || !subject) {
+    if (publicKey || privateKey || subject)
+      log({ event: "ward_backend_config_warning", setting: "WARD_FLOW_VAPID", outcome: "push_off" });
+    return null;
+  }
   const publicBytes = decodedLength(publicKey);
   if (
     publicBytes !== 65 ||

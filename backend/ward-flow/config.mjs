@@ -26,6 +26,7 @@ const PLACEHOLDER_IDS = new Set([
 ]);
 
 export function readConfig(env = process.env, dependencies = {}) {
+  const log = dependencies.log ?? ((event) => console.error(JSON.stringify(event)));
   const databaseProvider = env.WARD_DATABASE_PROVIDER || DEFAULT_DATABASE_PROVIDER;
   const authProvider = env.WARD_AUTH_PROVIDER || DEFAULT_AUTH_PROVIDER;
   if (!Object.hasOwn(DATABASE_PROVIDERS, databaseProvider) || !Object.hasOwn(AUTH_PROVIDERS, authProvider))
@@ -42,14 +43,15 @@ export function readConfig(env = process.env, dependencies = {}) {
   }
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
-  const trustedProxyAddresses = (env.WARD_TRUSTED_PROXY_ADDRESSES || "")
+  const proxyEntries = (env.WARD_TRUSTED_PROXY_ADDRESSES || "")
     .split(",")
     .map((address) => address.trim().replace(/^::ffff:/i, ""))
     .filter(Boolean);
-  // A socket address is always a literal IP, so a CIDR range or host name would never match and every
-  // client would quietly share the proxy's sign-in check limit.
-  if (trustedProxyAddresses.some((address) => address !== "*" && !isIP(address)))
-    throw new Error("Invalid trusted proxy configuration");
+  // A socket address is always a literal IP, so a CIDR range or host name can never match. Such an
+  // entry is ignored with one startup warning (setting name only) rather than stopping startup.
+  const trustedProxyAddresses = proxyEntries.filter((address) => address === "*" || isIP(address));
+  if (trustedProxyAddresses.length !== proxyEntries.length)
+    log({ event: "ward_backend_config_warning", setting: "WARD_TRUSTED_PROXY_ADDRESSES", outcome: "entry_ignored" });
   const shared = env.WARD_SHARED_ENABLED === "true";
   // The demonstration controls (advance clock, reset or set scenario) on the shared workspace.
   const sharedDemoEvents = env.WARD_SHARED_DEMO_EVENTS === "true";
@@ -84,7 +86,7 @@ export function readConfig(env = process.env, dependencies = {}) {
     // Sign-in settings sit under the provider's own name, for example `config.supabase`.
     [authProvider]: AUTH_PROVIDERS[authProvider](env),
     // Phone push needs the shared workspace (subscriptions and act-now state live in PostgreSQL).
-    push: shared ? readPushConfig(env) : null,
+    push: shared ? readPushConfig(env, log) : null,
     origin,
     trustedProxyAddresses,
     host: env.HOST || "127.0.0.1",
