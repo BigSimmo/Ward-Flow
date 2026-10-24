@@ -420,12 +420,14 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
       : null;
   const unconfirmedSave =
     connection.status === "saving" || ("unconfirmedSave" in connection && connection.unconfirmedSave === true);
+  // Stable, so recovery consumers do not re-render on every poll; it still calls the latest retry.
+  const retryLatest = useCallback(() => latest.current.retry(), []);
   const saveRecovery = useMemo<WardSharedSave | null>(
     () =>
       connection.enabled && connection.signedIn
-        ? { unconfirmedSave, status: connection.status, error: connection.error, retry: connection.retry }
+        ? { unconfirmedSave, status: connection.status, error: connection.error, retry: retryLatest }
         : null,
-    [connection.enabled, connection.signedIn, connection.status, connection.error, connection.retry, unconfirmedSave],
+    [connection.enabled, connection.signedIn, connection.status, connection.error, retryLatest, unconfirmedSave],
   );
   return (
     <DowntimePackBoundary
