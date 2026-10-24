@@ -22,6 +22,7 @@ import {
   type PlannedAdmission,
   type PlannedAdmissionCancelReason,
   type PlannedAdmissionReason,
+  type Admission,
 } from "@/components/ward-management/ward-admissions";
 import {
   MINUTES_PER_DAY,
@@ -45,9 +46,15 @@ import {
   type LegalStatus,
   type RecordedSex,
   type ReferralGender,
+  type Movement,
 } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { patientCohort, patientDisplayName, type PatientId } from "@/components/ward-management/ward-patients";
+import {
+  patientCohort,
+  patientDisplayName,
+  type Patient,
+  type PatientId,
+} from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { plannedAdmissionAgenda } from "./planned-admissions";
@@ -64,6 +71,44 @@ import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-dem
 type Draft = PlannedAdmissionDraft;
 
 type FormState = { mode: "book" } | { mode: "change"; id: string } | { mode: "cancel"; id: string } | null;
+
+const bookablePatientLists = new WeakMap<
+  readonly Patient[],
+  {
+    admissions: readonly Admission[];
+    movements: readonly Movement[] | undefined;
+    plannedAdmissions: readonly PlannedAdmission[];
+    available: Patient[];
+  }
+>();
+
+/** Only called by Book and its chooser; unchanged immutable records share the same list. */
+function bookablePatientsFor(
+  patients: readonly Patient[],
+  admissions: readonly Admission[],
+  movements: readonly Movement[] | undefined,
+  plannedAdmissions: readonly PlannedAdmission[],
+): Patient[] {
+  const cached = bookablePatientLists.get(patients);
+  if (
+    cached?.admissions === admissions &&
+    cached.movements === movements &&
+    cached.plannedAdmissions === plannedAdmissions
+  )
+    return cached.available;
+  const busy = new Set<string>();
+  for (const admission of admissions)
+    if (admission.patientId && (admission.state === "pulled" || admission.state === "occupied"))
+      busy.add(admission.patientId);
+  for (const movement of movements ?? []) if (movement.patientId && isOpen(movement)) busy.add(movement.patientId);
+  for (const planned of plannedAdmissions)
+    if (planned.patientId && planned.state === "booked") busy.add(planned.patientId);
+  const available = patients
+    .filter((patient) => !busy.has(patient.id))
+    .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
+  bookablePatientLists.set(patients, { admissions, movements, plannedAdmissions, available });
+  return available;
+}
 
 /** A linked patient's recorded sex, kept as recorded; anything unlisted reads as not recorded. */
 function recordedSexOf(sex: string | undefined): RecordedSex {
@@ -115,18 +160,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
-  const bookablePatients = useMemo(() => {
-    const busy = new Set<string>();
-    for (const admission of admissions)
-      if (admission.patientId && (admission.state === "pulled" || admission.state === "occupied"))
-        busy.add(admission.patientId);
-    for (const movement of movements ?? []) if (movement.patientId && isOpen(movement)) busy.add(movement.patientId);
-    for (const planned of plannedAdmissions)
-      if (planned.patientId && planned.state === "booked") busy.add(planned.patientId);
-    return patients
-      .filter((patient) => !busy.has(patient.id))
-      .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
-  }, [admissions, movements, patients, plannedAdmissions]);
+  const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedAdmissions);
 
   const sharedEnabled = shared?.enabled === true;
   const sharedStatus = shared?.status;
@@ -179,6 +213,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const changing = form?.mode === "change" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
 
   function openBook() {
+    const bookablePatients = getBookablePatients();
     setRefusal(null);
     setSubmittedInForm(false);
     setDraft({
@@ -480,7 +515,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     }}
                     data-testid="ward-planned-who"
                   >
-                    <option value="patient" disabled={bookablePatients.length === 0}>
+                    <option value="patient" disabled={getBookablePatients().length === 0}>
                       Existing patient
                     </option>
                     <option value="initials">Initials only</option>
@@ -495,7 +530,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       }}
                       data-testid="ward-planned-patient"
                     >
-                      {bookablePatients.map((patient) => (
+                      {getBookablePatients().map((patient) => (
                         <option key={patient.id} value={patient.id}>
                           {patientDisplayName(patient)}
                         </option>

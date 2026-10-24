@@ -244,3 +244,61 @@
     display: none;
   }
 }
+
+/* These buttons carry report content. Restore only their text on paper; action controls stay hidden. */
+.printFacts {
+  display: none;
+}
+
+.outputPage [data-chronology-recorded] {
+  white-space: normal;
+}
+
+@media print {
+  .outputPage .row {
+    display: grid !important;
+    break-inside: avoid;
+  }
+
+  .outputPage .who {
+    display: inline-flex !important;
+  }
+
+  .outputPage [data-chronology-event-action] {
+    display: inline !important;
+  }
+
+  .outputPage [data-chronology-event-detail],
+  .outputPage .action,
+  .outputPage .meta,
+  .outputPage .whoName {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .outputPage .rows > li {
+    break-inside: avoid;
+  }
+
+  .outputPage .printFacts {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0 var(--wf-s-3) var(--wf-s-3);
+    font-size: var(--wf-fs-12);
+  }
+
+  .printFacts > div {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  .printFacts dt,
+  .printFacts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
