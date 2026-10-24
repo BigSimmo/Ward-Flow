@@ -48,47 +48,103 @@ function harness() {
   };
 }
 
-describe("shared command reply attribution", () => {
+describe("private shared command confirmation", () => {
+  it.each(["accepted", "refused"] as const)("confirms only this failed command after a %s Retry", async (terminal) => {
+    const h = harness();
+    try {
+      await h.client.refresh();
+      h.mode("drop");
+      const original = await h.client.dispatchConfirmed(event);
+      expect(original.status).toBe("failed");
+      expect(original.confirmation).toBeDefined();
+      let settled = false;
+      void original.confirmation!.then(() => {
+        settled = true;
+      });
+      await h.client.refresh();
+      expect(settled).toBe(false);
+      h.mode(terminal);
+      await h.client.retry();
+      const final = await original.confirmation!;
+      expect(final).toMatchObject({ commandId: original.commandId, status: terminal });
+      expect(final.isCurrent?.()).toBe(true);
+      expect(h.sent.every((id) => id === original.commandId)).toBe(true);
+      expect(original.status).toBe("failed");
+      expect(final.confirmation).toBeUndefined();
+      expect(h.view().eventLog?.at(-1)).not.toHaveProperty("commandId");
+    } finally {
+      h.client.dispose();
+    }
+  });
+
+  it("does not confirm a command while repeated Retry responses remain uncertain", async () => {
+    const h = harness();
+    try {
+      await h.client.refresh();
+      h.mode("drop");
+      const original = await h.client.dispatchConfirmed(event);
+      expect(original.confirmation).toBeDefined();
+      let settled = false;
+      void original.confirmation!.then(() => {
+        settled = true;
+      });
+      await h.client.retry();
+      expect(settled).toBe(false);
+      h.mode("accepted");
+      await h.client.retry();
+      await expect(original.confirmation).resolves.toMatchObject({ status: "accepted", commandId: original.commandId });
+    } finally {
+      h.client.dispose();
+    }
+  });
+
   it.each(["accepted", "refused"] as const)(
-    "ties a %s Retry receipt to the original failed command",
+    "also resolves a direct %s answer without exposing a shared log",
     async (terminal) => {
       const h = harness();
       try {
         await h.client.refresh();
-        h.mode("drop");
-        const original = await h.client.dispatch(event);
-        expect(original.status).toBe("failed");
-        expect(h.view().eventLog ?? []).toHaveLength(0);
         h.mode(terminal);
-        await h.client.retry();
-        const receipt = h.view().eventLog?.at(-1);
-        expect(h.sent.every((id) => id === original.commandId)).toBe(true);
-        expect(receipt && Reflect.get(receipt, "commandId")).toBe(original.commandId);
-        expect(receipt?.accepted).toBe(terminal === "accepted");
-        expect(original.status).toBe("failed"); // Retry does not re-settle the original Promise.
-        await h.client.refresh();
-        expect(h.view().eventLog).toHaveLength(1);
+        const answer = await h.client.dispatchConfirmed(event);
+        expect(answer.confirmation).toBeDefined();
+        await expect(answer.confirmation).resolves.toMatchObject({ commandId: answer.commandId, status: terminal });
       } finally {
         h.client.dispose();
       }
     },
   );
 
-  it("distinguishes two identical same-minute actions by command ID", async () => {
+  it("keeps identical same-minute commands' definitive answers separate", async () => {
     const h = harness();
     try {
       await h.client.refresh();
-      const first = await h.client.dispatch(event);
-      const second = await h.client.dispatch(event);
-      expect(first.status).toBe("accepted");
-      expect(second.status).toBe("accepted");
+      const first = await h.client.dispatchConfirmed(event);
+      h.mode("refused");
+      const second = await h.client.dispatchConfirmed(event);
       expect(first.commandId).not.toBe(second.commandId);
-      expect(h.view().eventLog?.map((entry) => Reflect.get(entry, "commandId"))).toEqual([
-        first.commandId,
-        second.commandId,
-      ]);
+      await expect(first.confirmation).resolves.toMatchObject({ commandId: first.commandId, status: "accepted" });
+      await expect(second.confirmation).resolves.toMatchObject({ commandId: second.commandId, status: "refused" });
     } finally {
       h.client.dispose();
     }
   });
+
+  it.each(["dispose", "switchRole"] as const)(
+    "ends unresolved confirmation when %s retires its command",
+    async (action) => {
+      const h = harness();
+      try {
+        await h.client.refresh();
+        h.mode("drop");
+        const original = await h.client.dispatchConfirmed(event);
+        expect(original.confirmation).toBeDefined();
+        h.client[action]();
+        const ended = await original.confirmation!;
+        expect(ended).toMatchObject({ commandId: original.commandId, status: "cancelled" });
+        expect(ended.isCurrent?.()).toBe(false);
+      } finally {
+        h.client.dispose();
+      }
+    },
+  );
 });
