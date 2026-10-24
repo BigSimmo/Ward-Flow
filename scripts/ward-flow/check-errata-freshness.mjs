@@ -101,9 +101,12 @@ const CLAIMS = [
     // 2026-10-18: nineteen. Repository clean-up item 20 retired
     // tests/ward-capacity-network-row-de-emphasis.test.ts, a CSS-text pin. Same rule: the count must
     // match and every named addition must still be present.
+    //
+    // 2026-10-24: twenty. The scroll-performance regression adds
+    // tests/ward-capacity-scroll-performance.dom.test.tsx; require that named addition too.
     claim:
-      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; nineteen now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18), which does not make the plan's figure right",
+      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; twenty now for unrelated " +
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18, scroll-performance regression on 2026-10-24), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length
@@ -114,10 +117,12 @@ const CLAIMS = [
       const capacityForm = existsSync(p("tests/ward-capacity.dom.test.tsx"));
       const review = existsSync(p("tests/ward-capacity-review.dom.test.tsx"));
       const tableView = existsSync(p("tests/ward-capacity-table-view.dom.test.tsx"));
+      const scrollPerformance = existsSync(p("tests/ward-capacity-scroll-performance.dom.test.tsx"));
       // Every half, so this cannot pass by a DIFFERENT file arriving or a named one being renamed.
       return {
-        ok: n === 19 && absorbed && controls && serviceScope && capacityForm && review && tableView,
-        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}, table-view addition ${tableView ? "present" : "ABSENT"}`,
+        ok:
+          n === 20 && absorbed && controls && serviceScope && capacityForm && review && tableView && scrollPerformance,
+        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}, table-view addition ${tableView ? "present" : "ABSENT"}, scroll-performance addition ${scrollPerformance ? "present" : "ABSENT"}`,
       };
     },
   },
