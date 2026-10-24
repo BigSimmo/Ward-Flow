@@ -615,7 +615,15 @@ function ServiceGroup({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [activeWardIndex, setActiveWardIndex] = useState(0);
+  const activeWardIndexRef = useRef(0);
   const [visibleWardEnd, setVisibleWardEnd] = useState(Math.min(3, group.wards.length));
+
+  // The zero-width fallback needs the latest index without replacing the track ref and observer
+  // whenever scrolling changes the visible ward. Update the state and its callback snapshot together.
+  const updateActiveWardIndex = useCallback((index: number) => {
+    activeWardIndexRef.current = index;
+    setActiveWardIndex(index);
+  }, []);
 
   const cardStep = (el: HTMLDivElement) => {
     const cards = el.children;
@@ -646,8 +654,8 @@ function ServiceGroup({
     if (isJSDOM) {
       const overflow = group.wards.length > 2;
       setHasOverflow(overflow);
-      setCanScrollLeft(activeWardIndex > 0);
-      setCanScrollRight(activeWardIndex < group.wards.length - 1);
+      setCanScrollLeft(activeWardIndexRef.current > 0);
+      setCanScrollRight(activeWardIndexRef.current < group.wards.length - 1);
       return;
     }
 
@@ -663,9 +671,9 @@ function ServiceGroup({
     const origin = cards[0]?.offsetLeft ?? 0;
     const first = cards.findIndex((card) => card.offsetLeft - origin + card.offsetWidth > el.scrollLeft + 4);
     const end = cards.filter((card) => card.offsetLeft - origin < el.scrollLeft + el.clientWidth - 4).length;
-    setActiveWardIndex(Math.max(0, first));
+    updateActiveWardIndex(Math.max(0, first));
     setVisibleWardEnd(end);
-  }, [group.wards.length, activeWardIndex, layout]);
+  }, [group.wards.length, layout, updateActiveWardIndex]);
 
   const attachTrack = useCallback(
     (element: HTMLDivElement | null) => {
@@ -721,8 +729,9 @@ function ServiceGroup({
       }
     }
     if (el.clientWidth === 0) {
-      setActiveWardIndex((prev) => Math.max(0, prev - 1));
-      setCanScrollLeft(activeWardIndex > 1);
+      const index = Math.max(0, activeWardIndexRef.current - 1);
+      updateActiveWardIndex(index);
+      setCanScrollLeft(index > 0);
       setCanScrollRight(true);
     }
   };
@@ -747,9 +756,10 @@ function ServiceGroup({
       }
     }
     if (el.clientWidth === 0) {
-      setActiveWardIndex((prev) => Math.min(group.wards.length - 1, prev + 1));
+      const index = Math.min(group.wards.length - 1, activeWardIndexRef.current + 1);
+      updateActiveWardIndex(index);
       setCanScrollLeft(true);
-      setCanScrollRight(activeWardIndex < group.wards.length - 2);
+      setCanScrollRight(index < group.wards.length - 1);
     }
   };
 

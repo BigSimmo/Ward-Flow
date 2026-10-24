@@ -120,7 +120,16 @@ const MISSING_FIELD_TEST_IDS: Record<ReferralDraftField, string> = {
  * button and moves focus to the first, as the registration form does. Nothing is filed.
  */
 function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
-  const { setReferralOpen, setRaisingFromReferralId, draft, setDraft, registryPatients, submitReferral } = ctx;
+  const {
+    setReferralOpen,
+    setRaisingFromReferralId,
+    draft,
+    setDraft,
+    registryPatients,
+    submitReferral,
+    referralFieldsDisabled,
+    referralSaveMessage,
+  } = ctx;
   const formRef = useRef<HTMLFormElement>(null);
   const [attempted, setAttempted] = useState(false);
   const answers = { ...draft, patientFound: draft.patientId !== undefined };
@@ -167,7 +176,11 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
         }}
         data-testid="ward-ed-referral-form"
       >
-        <div className={styles.referralGrid}>
+        <fieldset
+          className={`${styles.declineFieldset} ${styles.referralGrid} ${missingStyles.saveFields}`}
+          disabled={referralFieldsDisabled}
+          aria-label="Referral details"
+        >
           <EdReferralPatientField
             patients={registryPatients}
             patientId={draft.patientId}
@@ -512,21 +525,31 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             </label>
             {groupMissingNote("highAcuity")}
           </fieldset>
-        </div>
+        </fieldset>
         <div className={styles.actionRow}>
           <button
             type="submit"
             data-testid="ward-ed-referral-submit"
             className={styles.acceptButton}
-            aria-disabled={referralBlocked ? "true" : undefined}
-            aria-describedby={referralBlocked ? "ward-ed-referral-blocked" : undefined}
-            title={referralBlocked ?? undefined}
+            aria-disabled={referralBlocked || referralFieldsDisabled ? "true" : undefined}
+            aria-describedby={
+              referralSaveMessage
+                ? "ward-ed-referral-save-message"
+                : referralBlocked
+                  ? "ward-ed-referral-blocked"
+                  : undefined
+            }
+            title={
+              referralFieldsDisabled
+                ? "Wait for confirmation or use Retry before submitting again."
+                : (referralBlocked ?? undefined)
+            }
             onClick={
-              referralBlocked
+              referralBlocked || referralFieldsDisabled
                 ? (event) => {
                     // Greyed, so nothing is filed: the click shows what is still unanswered.
                     event.preventDefault();
-                    showMissingFields();
+                    if (!referralFieldsDisabled) showMissingFields();
                   }
                 : undefined
             }
@@ -544,6 +567,11 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
           >
             Cancel
           </button>
+          {referralSaveMessage ? (
+            <p role="status" id="ward-ed-referral-save-message">
+              {referralSaveMessage}
+            </p>
+          ) : null}
           {referralBlocked ? (
             // A2-10 (audit 13 Oct 2026): the reason shows beside the greyed button, not
             // only to a screen reader or on hover; its first sentence fits one line.

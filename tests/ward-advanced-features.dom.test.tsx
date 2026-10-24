@@ -62,7 +62,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       setForceDynamicLoading(false);
       view.rerender(page());
       const opened = await screen.findByRole("dialog", { name: /Record document details/i });
-      expect(within(opened).getByLabelText("Upload document file") !== null).toBe(true);
+      expect(within(opened).getByLabelText("Select a file to record its details") !== null).toBe(true);
       expect(opened.contains(document.activeElement)).toBe(true);
       fireEvent.keyDown(document.activeElement!, { key: "Escape" });
       await waitFor(() => expect(document.activeElement === trigger).toBe(true));
@@ -83,7 +83,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       const kind = within(dialog).getByRole("combobox") as HTMLSelectElement;
       const initialKind = kind.value;
       fireEvent.change(kind, { target: { value: kind.options[1]!.value } });
-      fireEvent.change(within(dialog).getByLabelText("Upload document file"), {
+      fireEvent.change(within(dialog).getByLabelText("Select a file to record its details"), {
         target: { files: [new File(["synthetic"], "synthetic-draft.pdf", { type: "application/pdf" })] },
       });
       expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBeNull();
@@ -94,7 +94,9 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       const reopened = await screen.findByRole("dialog", { name: /Record document details/i });
       expect((within(reopened).getByRole("combobox") as HTMLSelectElement).value === initialKind).toBe(true);
       expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBe("true");
-      expect((within(reopened).getByLabelText("Upload document file") as HTMLInputElement).value).toBe("");
+      expect((within(reopened).getByLabelText("Select a file to record its details") as HTMLInputElement).value).toBe(
+        "",
+      );
     });
     it("renders Pulled Bed Banner with action buttons on a pulled bed movement (WF-004)", () => {
       render(
@@ -161,7 +163,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       // Submit form
       const submitBtn = screen.getByTestId("confirm-upload-form-button");
       expect(submitBtn).toHaveAttribute("aria-disabled", "true");
-      fireEvent.change(within(dialog).getByLabelText("Upload document file"), {
+      fireEvent.change(within(dialog).getByLabelText("Select a file to record its details"), {
         target: { files: [new File(["synthetic"], "synthetic-transfer.pdf", { type: "application/pdf" })] },
       });
       expect(submitBtn).not.toHaveAttribute("aria-disabled", "true");

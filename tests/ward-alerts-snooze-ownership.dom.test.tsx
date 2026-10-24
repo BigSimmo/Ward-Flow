@@ -67,7 +67,7 @@ describe("alerts: ownership and snooze", () => {
     expect(screen.getByText(/^You own "/)).toBeInTheDocument();
 
     expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
-    expect(within(panel).getByRole("button", { name: /^You own / })).toHaveAttribute("aria-disabled", "true");
+    expect(within(panel).getByRole("button", { name: /^Yours: / })).toHaveAttribute("aria-disabled", "true");
     expect(within(panel).getByText(/Owned by Flow coordinator since/)).toBeInTheDocument();
   });
 

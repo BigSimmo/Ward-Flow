@@ -330,7 +330,7 @@ describe("PIR chronology: one person's records", () => {
     };
     const row = patientChronology(inputFor(state)).rows.find((r) => r.action === "Form receipt time corrected");
     expect(row).toMatchObject({
-      before: formatSheetMoment(received, DAY_ZERO),
+      before: formatSheetMoment(received, DAY_ZERO, { includeYearAndZone: true }),
       after: "Cleared",
       who: "Flow coordinator",
       reason: legalFormReceiptCorrectionReasonLabels.recorded_in_error,
@@ -491,8 +491,12 @@ describe("PIR chronology CSV", () => {
     const csv = chronologyCsv(rows, DAY_ZERO, NOW_ANCHOR);
     const lines = csv.trimEnd().split("\r\n");
     expect(lines[0]).toMatch(/^"Synthetic demo data\. Not a clinical record\."/u);
-    expect(lines[1]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
-    expect(lines).toHaveLength(rows.length + 2);
+    expect(lines[0]).toContain("2026");
+    expect(lines[0]).toContain("AWST");
+    expect(lines[1]).toBe(`"Scope","Selected patient's retained chronology"`);
+    expect(lines[2]).toContain('"Period"');
+    expect(lines[3]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
+    expect(lines).toHaveLength(rows.length + 4);
     expect(csv).toContain(`"'=HYPERLINK(1)"`);
     expect(csv).toContain(OVERRIDE_REASONS[1]);
   });
@@ -501,6 +505,6 @@ describe("PIR chronology CSV", () => {
     const chronology = patientChronology(inputFor(seedWardFlowState()));
     const lines = chronologyCsv(chronology.rows, DAY_ZERO, NOW_ANCHOR, "Sample Person · 1000001").split("\r\n");
     expect(lines[1]).toBe(`"Patient","Sample Person · 1000001"`);
-    expect(lines[2]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
+    expect(lines[4]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
   });
 });
