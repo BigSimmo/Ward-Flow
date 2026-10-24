@@ -1,5 +1,5 @@
 import type { Admission } from "../ward-admissions";
-import { formatInstant, formatInstantWithDay, type Instant } from "../ward-clock";
+import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { BedRelease } from "../ward-model";
 
 export type WardShiftLogRow = {
@@ -39,7 +39,7 @@ export function pendingDepartureLogRows(
       at: release.confirmedAt,
       timeLabel: formatInstantWithDay(release.confirmedAt, now),
       title: "Bed expected out",
-      detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : `Departure ${formatInstant(release.expectedAt)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+      detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : `Departure ${formatInstantWithDay(release.expectedAt, now)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       status: release.state === "confirmed" ? "Confirmed" : "Expected",
     });
   } else if (pendingBedReleases.length > 1) {
@@ -57,7 +57,7 @@ export function pendingDepartureLogRows(
       status: "Expected",
       nested: ordered.map((release) => ({
         key: release.id,
-        detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+        detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : formatInstantWithDay(release.expectedAt, now)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       })),
     });
   }
@@ -67,7 +67,7 @@ export function pendingDepartureLogRows(
       at: stay.dischargeDateSetAt!,
       timeLabel: formatInstantWithDay(stay.dischargeDateSetAt!, now),
       title: "Expected departure updated",
-      detail: `Departure ${formatInstant(stay.expectedDischargeAt!)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
+      detail: `Departure ${formatInstantWithDay(stay.expectedDischargeAt!, now)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
       status: "Updated",
     });
   }
