@@ -44,6 +44,11 @@ describe("closing the loop on screen", () => {
     const list = await screen.findByTestId("ward-closure-transition");
     expect(list.textContent ?? "").not.toMatch(/\b(WF|RF|PT|AD|WR)-\d/);
     expect(list.textContent ?? "").not.toMatch(/suggest|recommend|best/i);
+    // CT-19: each risky mark names the ward at the button.
+    expect(screen.getByTestId("ward-closure-item-done-0")).toHaveAccessibleName(
+      /dealt with for Graylands Older Adult$/,
+    );
+    expect(screen.getByTestId("ward-closure-reopen")).toHaveTextContent("Reopen Graylands Older Adult to admissions");
     fireEvent.click(screen.getByTestId("ward-closure-item-done-0"));
     expect(
       within(screen.getByTestId("ward-closure-item-0")).getByText(/Dealt with · Flow coordinator/),
@@ -69,6 +74,9 @@ describe("closing the loop on screen", () => {
     fireEvent.change(screen.getByTestId("ward-restriction-review-after-intake_constraints"), {
       target: { value: "24" },
     });
+    expect(screen.getByTestId("ward-restriction-review-save-intake_constraints")).toHaveTextContent(
+      "Save review for Graylands Adult Secure",
+    );
     fireEvent.click(screen.getByTestId("ward-restriction-review-save-intake_constraints"));
     expect(screen.getByText(/Review by Consultant psychiatrist due/)).toBeInTheDocument();
   });
