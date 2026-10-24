@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { globSync } from "node:fs";
+import { globSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { childProcessExitCode } from "./child-process-result.mjs";
 import { offlineTestEnvironment } from "./test-environment.mjs";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
@@ -131,7 +131,23 @@ export async function main() {
   process.exit(exitCode);
 }
 
-const isEntrypoint = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+// Compared through real paths, case-insensitively on Windows: a raw string compare fails when the
+// drive-letter case differs or a junction is involved, and `npm test` then exits 0 having run
+// nothing. Same fix as isDirectInvocation in scripts/run-ward-tests.mjs and
+// scripts/check-ward-expected-reds.mjs (audit 24-2, TH-05).
+const realPath = (p) => {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+};
+const isEntrypoint = (() => {
+  if (!process.argv[1]) return false;
+  const invoked = realPath(path.resolve(process.argv[1]));
+  const self = realPath(fileURLToPath(import.meta.url));
+  return process.platform === "win32" ? invoked.toLowerCase() === self.toLowerCase() : invoked === self;
+})();
 if (isEntrypoint) {
   await main();
 }
