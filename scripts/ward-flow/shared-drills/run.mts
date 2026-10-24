@@ -53,12 +53,17 @@ if (!databaseUrl || !["localhost", "127.0.0.1", "[::1]"].includes(new URL(databa
   throw new Error("Set WARD_TEST_DATABASE_URL to a loopback PostgreSQL reserved for tests");
 
 // ---------------------------------------------------------------- results
-type Check = { part: string; name: string; pass: boolean; detail: string };
+type Check = { part: string; name: string; pass: boolean; skipped: boolean; detail: string };
 const checks: Check[] = [];
 const report: Record<string, unknown> = {};
 function check(part: string, name: string, pass: boolean, detail = "") {
-  checks.push({ part, name, pass, detail });
+  checks.push({ part, name, pass, skipped: false, detail });
   console.log(`${pass ? "PASS" : "FAIL"} [${part}] ${name}${detail ? ` - ${detail}` : ""}`);
+}
+/** Not run: never counted as passed (AGENTS.md hard rule 11). */
+function skip(part: string, name: string, detail: string) {
+  checks.push({ part, name, pass: true, skipped: true, detail });
+  console.log(`SKIP [${part}] ${name} - ${detail}`);
 }
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function percentile(values: number[], p: number) {
@@ -431,13 +436,7 @@ async function twoPerson(serverA: BackendProcess, serverB: BackendProcess) {
       }
     }
     if (pair) await race(`${kind}, conflicting steps same patient`, [A, pair[0]], [B, pair[1]], "one");
-    else
-      check(
-        "two-person",
-        `${kind}: found conflicting steps on one patient`,
-        true,
-        "no conflicting pair on this board; skipped",
-      );
+    else skip("two-person", `${kind}, conflicting steps same patient`, "no conflicting pair on this board");
     // 3. Different patients at the same moment: both must keep.
     world = (await serverWorld()).world as World;
     const pool = sample(world, new Set(types), 30, seed++);
@@ -478,11 +477,10 @@ async function twoPerson(serverA: BackendProcess, serverB: BackendProcess) {
     }
     if (pair) await race("last bed, two different patients", [A, pair[0]], [B, pair[1]], "one");
     else
-      check(
+      skip(
         "two-person",
-        "last bed: found a ward with one bed and two waiting",
-        true,
-        "none on this board; covered by backend test 'two accounts competing for the last bed'",
+        "last bed, two different patients",
+        "no ward with one bed and two waiting on this board; the backend test 'two accounts competing for the last bed' covers it",
       );
   }
   // 5. Two nurses on one ward, on two computers, both accept the same referral.
@@ -659,6 +657,13 @@ async function busyShift(server: BackendProcess) {
     end.revision - startRevision === counts.accepted && keptIds.size === counts.accepted,
     `${end.revision - startRevision} revisions, ${counts.accepted} accepted`,
   );
+  // A run where nearly every save is refused would prove nothing about saving.
+  check(
+    "load",
+    "enough saves were kept to test saving (at least 20% of those sent)",
+    counts.accepted >= Math.max(50, load.outcomes.length * 0.2),
+    `${counts.accepted} of ${load.outcomes.length} kept`,
+  );
   check("load", "no server errors (5xx)", errors5xx === 0, `${errors5xx} of ${serverLogs.length} requests`);
   check(
     "load",
@@ -784,7 +789,7 @@ async function drills(server: BackendProcess) {
     await restartDrill(server, "database restart", async () => {
       execFileSync("pg_ctlcluster", ["16", "main", "restart"], { stdio: "ignore" });
     });
-  else check("drills", "database restart", true, "not run (pass --db-restart to run it on a drill-only cluster)");
+  else skip("drills", "database restart", "pass --db-restart to run it on a drill-only cluster");
 }
 async function restartDrill(server: BackendProcess, label: string, outage: () => Promise<void>) {
   timings.length = 0;
@@ -805,7 +810,11 @@ async function restartDrill(server: BackendProcess, label: string, outage: () =>
   }
   // A desk left on "Press Retry" presses it, as a person would.
   const waitingOnRetry = load.people.filter((person) => person.view?.error?.includes("Press Retry")).length;
-  for (const person of load.people) if (person.view?.status === "unavailable") await person.client.retry();
+  // Retry is ignored while that desk is mid-refresh, so press again, as a person would.
+  for (let press = 0; press < 3; press += 1) {
+    for (const person of load.people) if (person.view?.status === "unavailable") await person.client.retry();
+    await sleep(1000);
+  }
   await sleep(15_000);
   await load.stop();
   const { counts, problems, keptIds } = await reconcile(load.outcomes);
@@ -857,8 +866,9 @@ try {
   await Promise.all(servers.map((server) => server.stop("SIGTERM")));
   await db.end().catch(() => undefined);
   const failed = checks.filter((entry) => !entry.pass);
+  const skipped = checks.filter((entry) => entry.skipped).length;
   report.checks = checks;
   if (args.out) writeFileSync(args.out, `${JSON.stringify(report, null, 2)}\n`);
-  console.log(`\n${checks.length - failed.length} passed, ${failed.length} failed`);
+  console.log(`\n${checks.length - failed.length - skipped} passed, ${failed.length} failed, ${skipped} not run`);
   process.exit(failed.length ? 1 : 0);
 }
