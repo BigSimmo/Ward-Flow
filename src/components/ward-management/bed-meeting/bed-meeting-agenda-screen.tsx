@@ -1,17 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useId, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
-import { useWardFeatureFlag, useWardFeatureFlags } from "../shell/ward-feature-flag-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
-import { WARD_CAPACITY_HREF } from "../ward-nav";
 import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
 import {
@@ -30,25 +27,10 @@ import styles from "./bed-meeting-agenda.module.css";
 /**
  * Smart features idea 5 (19 Oct 2026): the bed meeting's agenda, built from fixed rules, and its
  * action log. The chair records an action from a pick-list against a person on the agenda, with an
- * owner and a due time; the next meeting opens with what was done and what is overdue. Behind the
- * `bed-meeting-actions` switch, and coordinator only (an address the access table does not list).
+ * owner and a due time; the next meeting opens with what was done and what is overdue. Coordinator
+ * only (an address the access table does not list). Its feature switch was removed on 24 Oct 2026.
  */
 export function BedMeetingAgendaScreen() {
-  const enabled = useWardFeatureFlag("bed-meeting-actions");
-  const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
-  if (!enabled) {
-    return (
-      <main id="main-content" className={styles.off} data-testid="bed-meeting-agenda-off">
-        <h1 className={styles.title}>The bed meeting agenda is switched off</h1>
-        <p>
-          {deviceCanChange
-            ? "Turn it on in Settings, under Data and about, Feature flags."
-            : "It is switched off on this site."}
-        </p>
-        <Link href={WARD_CAPACITY_HREF}>Open Capacity</Link>
-      </main>
-    );
-  }
   return <BedMeetingAgenda />;
 }
 
