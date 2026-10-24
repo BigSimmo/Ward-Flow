@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useOptionalWardFlowSelect, type WardFlowContextValue } from "../ward-flow-provider";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
@@ -9,9 +9,7 @@ import type { useEdRowPanels } from "./use-ed-screen-state";
 
 type Attempt = {
   movementId: string;
-  at: number;
   world: number | undefined;
-  sequence: number;
   draft: { date: string; time: string };
   completion?: WardCommandOutcome;
 };
@@ -25,7 +23,7 @@ export function useEdExpirySave({
 }: Pick<WardFlowContextValue, "dispatch" | "now" | "dayZero"> & {
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
-  const context = useOptionalWardFlowSelect("worldGeneration", "shared", "eventLog");
+  const context = useOptionalWardFlowSelect("worldGeneration", "shared");
   const world = context?.worldGeneration;
   const shared = context?.shared;
   const [attempt, setAttempt] = useState<Attempt>();
@@ -40,9 +38,11 @@ export function useEdExpirySave({
     [],
   );
   const latestPanels = useRef(panels);
-  useEffect(() => {
+  const latestWorld = useRef(world);
+  useLayoutEffect(() => {
     latestPanels.current = panels;
-  }, [panels]);
+    latestWorld.current = world;
+  }, [panels, world]);
   const completeCommand = useWardCommandCompletion(setMessage);
 
   const finish = useCallback((said?: string) => {
@@ -54,6 +54,10 @@ export function useEdExpirySave({
   const accepted = useCallback(
     (saved: Attempt) => {
       if (current.current !== saved) return;
+      if (saved.world !== latestWorld.current) {
+        finish();
+        return;
+      }
       const latest = latestPanels.current;
       if (
         latest.legalFormExpiryOpenFor === saved.movementId &&
@@ -75,28 +79,9 @@ export function useEdExpirySave({
       finish();
       return;
     }
-    if (attempt.completion?.status !== "failed") return;
-    // Workspace polls never append this log: only this tab's command replies do. Match the
-    // opaque command id too; another desk's matching expiry is not this save's acceptance.
-    const receipt = context?.eventLog?.find(
-      (entry) =>
-        entry.sequence > attempt.sequence &&
-        Reflect.get(entry, "commandId") === attempt.completion?.commandId &&
-        entry.type === "RECORD_LEGAL_FORM_EXPIRY" &&
-        entry.movementId === attempt.movementId &&
-        entry.role === "ed" &&
-        entry.now === attempt.at,
-    );
-    if (!receipt) return;
-    if (shared?.enabled && shared.status !== "ready") return;
-    if (!receipt.accepted) {
-      finish(shared?.error ?? "Not recorded. Review the current expiry before trying again.");
-    } else if (shared?.status === "ready") {
-      accepted(attempt);
-    }
-  }, [attempt, world, context?.eventLog, shared?.enabled, shared?.status, shared?.error, accepted, finish]);
+  }, [attempt, world, shared?.enabled, shared?.status, finish]);
 
-  const recovering = attempt?.completion?.status === "failed" && shared?.enabled && shared.status !== "ready";
+  const recovering = attempt?.completion?.status === "failed" && !!attempt.completion.commandId;
   const legalFormExpiryFieldsDisabled = pending || !!recovering;
   const legalFormExpiryCommandDisabled =
     legalFormExpiryFieldsDisabled || !!(shared?.enabled && shared.status !== "ready");
@@ -107,7 +92,11 @@ export function useEdExpirySave({
     currentDueAt: number | undefined,
   ) {
     event.preventDefault();
-    if (legalFormExpiryCommandDisabled) return;
+    if (
+      legalFormExpiryCommandDisabled ||
+      (current.current && (!current.current.completion || current.current.completion.commandId))
+    )
+      return;
     const draft = panels.legalFormExpiryDraft;
     const dueAt = instantFromDateAndTimeInputs(draft.date, draft.time, dayZero);
     // Keep the form's existing completeness and later-than guard; the reducer owns legal rules.
@@ -118,9 +107,7 @@ export function useEdExpirySave({
       () => {
         started = {
           movementId,
-          at: now,
           world,
-          sequence: context?.eventLog?.at(-1)?.sequence ?? -1,
           draft: { ...draft },
         };
         current.current = started;
@@ -137,6 +124,10 @@ export function useEdExpirySave({
       },
       (outcome) => {
         if (current.current !== started) return;
+        if (started.world !== latestWorld.current) {
+          finish();
+          return;
+        }
         if (outcome?.status === "accepted") accepted(started);
         else if (outcome?.status === "failed") {
           const failed = { ...started, completion: outcome };
@@ -144,6 +135,26 @@ export function useEdExpirySave({
           setAttempt(failed);
           setPending(false);
           setMessage(wardCommandFailure(outcome));
+          // This command's private promise survives a lost response without exposing the
+          // scoped-away event log. A board refresh or another desk cannot resolve it.
+          void outcome.confirmation?.then(
+            (answer) => {
+              if (current.current !== failed || answer.commandId !== outcome.commandId) return;
+              if (
+                failed.world !== latestWorld.current ||
+                (answer.isCurrent && !answer.isCurrent()) ||
+                (outcome.isCurrent && !outcome.isCurrent())
+              ) {
+                finish();
+                return;
+              }
+              if (answer.status === "accepted") accepted(failed);
+              else if (answer.status === "refused" || answer.status === "cancelled") finish(wardCommandFailure(answer));
+            },
+            () => {
+              if (current.current === failed) setMessage("Save is not confirmed. Use Retry before submitting again.");
+            },
+          );
         } else {
           finish(wardCommandFailure(outcome) ?? "Save is not confirmed. Review the board before trying again.");
         }
