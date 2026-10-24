@@ -11,6 +11,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import type { Observation } from "@/components/ward-management/ward-observation";
 
 function packFor(now = NOW_ANCHOR) {
   const state = seedWardFlowState();
@@ -67,6 +68,33 @@ describe("downtimePack", () => {
     const { state, pack } = packFor();
     const accepted = state.movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId !== undefined);
     expect(pack.pendingMoves.map((line) => line.movementId).sort()).toEqual(accepted.map((m) => m.id).sort());
+  });
+
+  it.each<[{ level: Observation["level"]; intervalMinutes: number | null }, string]>([
+    [{ level: "general", intervalMinutes: null }, "General, hourly"],
+    [{ level: "intermittent", intervalMinutes: 15 }, "Intermittent, every 15 minutes"],
+    [{ level: "intermittent", intervalMinutes: 30 }, "Intermittent, every 30 minutes"],
+    [{ level: "within_sight", intervalMinutes: null }, "Constant within sight (1:1)"],
+    [{ level: "arms_length", intervalMinutes: null }, "Constant within arm's length (1:1)"],
+    [{ level: "two_staff", intervalMinutes: null }, "Two staff constant (2:1)"],
+  ])("retains the recorded observation detail %j in ED and pending-move rows", (recorded, expected) => {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0],
+      stage: "pulled" as const,
+      closure: undefined,
+      leftDepartmentAt: undefined,
+      acceptedUnitId: state.units[0].id,
+      flaggedUrgent: true,
+      observation: { ...recorded, reviewAt: NOW_ANCHOR + 30 },
+    };
+    const pack = downtimePack({ ...state, movements: [movement], now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    expect(pack.edQueue[0].observation).toBe(expected);
+    expect(pack.pendingMoves[0].observation).toBe(expected);
+    // A later change in the live record must not alter a pack already taken.
+    movement.observation.level = recorded.level === "general" ? "two_staff" : "general";
+    expect(pack.edQueue[0].observation).toBe(expected);
+    expect(pack.pendingMoves[0].observation).toBe(expected);
   });
 
   it("carries legal forms with recorded or typed times only, in the legal forms screen's order", () => {

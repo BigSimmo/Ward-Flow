@@ -28,7 +28,7 @@ type WardScreenTabSectionsProps = {
   rollupConfirmation: { confirmedAt: number; confirmedByRole: string; expectedDischarges: number };
   releasesCountedToday: BedRelease[];
   handleConfirmMorningRollup: () => void;
-  intakeDecisions: { id: `WF-${string}`; title: string; onAccept: () => void }[];
+  intakeDecisions: { id: `WF-${string}`; title: string; onAccept?: () => void }[];
   departureDecisions: {
     id: string;
     title: string;

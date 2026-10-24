@@ -3535,3 +3535,36 @@ button.searchBox:hover {
   border: 1px solid var(--line);
   border-radius: var(--r2);
 }
+
+/* The existing MDT summary prints alone and flows naturally on A4. */
+@media print {
+  .main:has(:global(#handoverModal)) > :not(.modalOverlay) {
+    display: none !important;
+  }
+
+  .main:has(:global(#handoverModal)) .modalOverlay {
+    position: static;
+    inset: auto;
+    display: block;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .modalBox:global(#handoverModal) {
+    position: static;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .modalBox:global(#handoverModal) .modalCloseBtn,
+  .modalBox:global(#handoverModal) .modalFoot {
+    display: none !important;
+  }
+}

@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
+import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { useEffect, useId, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -94,6 +98,12 @@ export function PatientTransitOperations({
   const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
   const handoverGate = gate("HANDOVER_READY");
+  // D-80: a team readies only a journey it sent, never one it was asked to take (the server agrees).
+  const access = useEffectiveWardAccess();
+  const handoverMine =
+    routeRole !== "community" ||
+    (journeySentByKind(referrals, movement, routeRole) &&
+      journeySentByDesk({ referrals, admissions }, movement, access, wardPlaceLookup(units)));
   const acceptedGate = gate("TRANSPORT_ACCEPTED");
   const enRouteGate = gate("TRANSPORT_EN_ROUTE");
   const collectedGate = gate("PATIENT_COLLECTED");
@@ -704,7 +714,7 @@ export function PatientTransitOperations({
               </div>
             </form>
           )}
-          {open && movement.stage === "pulled" && (activeJob || noTransport) && (
+          {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && (
             <button
               type="button"
               className={styles.primary}
@@ -719,7 +729,7 @@ export function PatientTransitOperations({
               Mark handover ready · sending team
             </button>
           )}
-          {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverGate.note}
+          {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && handoverGate.note}
           {open && movement.stage === "handover_ready" && activeJob && (
             <div className={styles.actionStack}>
               <p className={styles.deckHint}>Transport officer · record each confirmed milestone.</p>

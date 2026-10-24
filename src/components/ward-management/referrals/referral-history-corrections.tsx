@@ -2,9 +2,15 @@
 
 import { useId, useState, type Dispatch } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS, type Referral } from "@/components/ward-management/ward-model";
+import { referralSentByDesk, routeSentKind } from "@/components/ward-management/ward-referral-sender";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import styles from "./referrals.module.css";
 
 /**
@@ -15,13 +21,9 @@ import styles from "./referrals.module.css";
  * `tests/ward-referral-history-immutable.test.ts` for the reducer-level proof that
  * `ADD_REFERRAL_CORRECTION` never touches `history`.
  *
- * 🔴 **DISPATCHES AS `coordinator`, NOT A SELECTED VIEWER ROLE — AND THAT IS THIS SCREEN, NOT THE
- * EVENT.** `EVENT_ROLE.ADD_REFERRAL_CORRECTION` permits `community`/`ed`/`coordinator`, but every
- * OTHER dispatch already in this file (`ACCEPT_REFERRAL`, `DECLINE_REFERRAL`,
- * `RECORD_LOCAL_BED_SOUGHT`) hardcodes `role: "coordinator"` too — `ReferralMatchView` has exactly
- * one mount site (`referral-board.tsx`'s coordinator register, itself the whole app's only render
- * of this component) and carries no viewer-role concept to select from. `community`/`ed` are for a
- * DIFFERENT screen — an ED's or a community team's own — that does not exist yet.
+ * D-80: dispatches as the route desk, and offers the control only to the desk that sent the
+ * referral (`referralSentByDesk`, the rule the server's write check uses), so a ward answering a
+ * referral never adds a correction to it. The coordinator acts for every sender.
  *
  * Owns its own hooks (the draft note), independent of `ReferralMatchView`'s own strict hook order,
  * so it can be called from any of that component's three return branches without disturbing it.
@@ -29,12 +31,22 @@ import styles from "./referrals.module.css";
 export function ReferralHistoryAndCorrections({
   referral,
   now,
-  dispatch,
+  dispatch: dispatchProp,
 }: {
   referral: Referral;
   now: Instant;
-  dispatch: Dispatch<WardFlowEvent>;
+  /** Used only outside a provider (the match view's own tests); inside one the panel raises through it. */
+  dispatch?: Dispatch<WardFlowEvent>;
 }) {
+  const routeRole = useRouteRole();
+  const flow = useOptionalWardFlowSelect("dispatch", "units");
+  const dispatch = flow?.dispatch ?? dispatchProp;
+  const raise = wardRaise(dispatch ?? (() => undefined), routeRole, useWardFlowClock(now));
+  const access = useEffectiveWardAccess();
+  const sent =
+    dispatch !== undefined &&
+    routeSentKind(routeRole, referral.source) &&
+    referralSentByDesk(referral, access, wardPlaceLookup(flow?.units ?? []));
   const [note, setNote] = useState("");
   const noteId = useId();
   const trimmedNote = note.trim();
@@ -50,13 +62,7 @@ export function ReferralHistoryAndCorrections({
    */
   function handleAddCorrection() {
     if (trimmedNote.length === 0) return;
-    dispatch({
-      type: "ADD_REFERRAL_CORRECTION",
-      role: "coordinator",
-      now,
-      referralId: referral.id,
-      note,
-    });
+    raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note });
     setNote("");
   }
 
@@ -94,46 +100,48 @@ export function ReferralHistoryAndCorrections({
             ))}
           </ul>
         )}
-        <div className={styles.correctionControlsWrap} data-testid="ward-referral-correction-controls">
-          <label className={styles.fieldLegend} htmlFor={noteId}>
-            Add a correction note
-          </label>
-          <textarea
-            id={noteId}
-            data-testid="ward-referral-correction-note"
-            className={styles.correctionNote}
-            value={note}
-            maxLength={REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS}
-            placeholder="Document clinical addendum or update..."
-            onChange={(event) => setNote(event.target.value)}
-            rows={2}
-            data-gramm="false"
-            data-enable-grammarly="false"
-            spellCheck={false}
-            autoComplete="off"
-          />
-          <div className={styles.correctionActionRow}>
-            <button
-              type="button"
-              className={styles.addCorrectionBtn}
-              data-testid="ward-referral-add-correction"
-              aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
-              aria-describedby={trimmedNote.length === 0 ? `${noteId}-ward-referral-correction-blocked` : undefined}
-              title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
-              onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
-            >
-              Add a correction
-            </button>
-            <span className={styles.correctionDisclaimer}>
-              Corrections are added as new notes. The history sent with the referral is never changed.
-            </span>
+        {sent ? (
+          <div className={styles.correctionControlsWrap} data-testid="ward-referral-correction-controls">
+            <label className={styles.fieldLegend} htmlFor={noteId}>
+              Add a correction note
+            </label>
+            <textarea
+              id={noteId}
+              data-testid="ward-referral-correction-note"
+              className={styles.correctionNote}
+              value={note}
+              maxLength={REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS}
+              placeholder="Document clinical addendum or update..."
+              onChange={(event) => setNote(event.target.value)}
+              rows={2}
+              data-gramm="false"
+              data-enable-grammarly="false"
+              spellCheck={false}
+              autoComplete="off"
+            />
+            <div className={styles.correctionActionRow}>
+              <button
+                type="button"
+                className={styles.addCorrectionBtn}
+                data-testid="ward-referral-add-correction"
+                aria-disabled={trimmedNote.length === 0 ? "true" : undefined}
+                aria-describedby={trimmedNote.length === 0 ? `${noteId}-ward-referral-correction-blocked` : undefined}
+                title={trimmedNote.length === 0 ? "Write a note before adding a correction." : undefined}
+                onClick={trimmedNote.length === 0 ? ignoreUnavailableActivation : handleAddCorrection}
+              >
+                Add a correction
+              </button>
+              <span className={styles.correctionDisclaimer}>
+                Corrections are added as new notes. The history sent with the referral is never changed.
+              </span>
+            </div>
+            {trimmedNote.length === 0 ? (
+              <span id={`${noteId}-ward-referral-correction-blocked`} className="sr-only">
+                Write a note before adding a correction.
+              </span>
+            ) : null}
           </div>
-          {trimmedNote.length === 0 ? (
-            <span id={`${noteId}-ward-referral-correction-blocked`} className="sr-only">
-              Write a note before adding a correction.
-            </span>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </section>
   );

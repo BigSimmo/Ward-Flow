@@ -58,7 +58,7 @@ describe("who may raise which event", () => {
     ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.
-    ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
+    ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],
     ADVANCE_CLOCK: ["demo"],
     BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     // CHANGED 2026-08-30 under TR-D6 (owner), and this row is a NARROWING plus a widening, not
@@ -128,15 +128,15 @@ describe("who may raise which event", () => {
     // when the job carries no `community` booker at all. Asserted in
     // `tests/ward-transport-cancel-permission.test.ts`.
     CANCEL_TRANSPORT: ["coordinator", "ed", "ward", "community"],
-    CHANGE_LEGAL_STATUS: ["coordinator", "ed"],
-    CHANGE_URGENCY: ["coordinator", "ed"],
+    CHANGE_LEGAL_STATUS: ["coordinator", "ed", "ward", "community"],
+    CHANGE_URGENCY: ["coordinator", "ed", "ward", "community"],
     CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
     CONFIRM_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
     CONFIRM_CAPACITY: ["ward", "bed_manager", "coordinator"],
     // T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
     // who can say a receipt was recorded in error.
-    CORRECT_LEGAL_FORM_RECEIPT: ["ed", "coordinator"],
+    CORRECT_LEGAL_FORM_RECEIPT: ["ed", "ward", "community", "coordinator"],
     DECLINE: ["ward", "coordinator"],
     // `ed` added 2026-08-30 under FD-3 AS SUPERSEDED BY THE OWNER: "every referral is
     // declinable, and NO CODE PATH MAY RENDER A REFERRAL WITH NO DECLINE AFFORDANCE". The ED
@@ -161,7 +161,7 @@ describe("who may raise which event", () => {
     DECLINE_REFERRAL: ["ward", "coordinator", "ed", "community"],
     END_LEAVE_BED: ["ward", "coordinator"],
     FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
-    HANDOVER_READY: ["ed", "coordinator"],
+    HANDOVER_READY: ["ed", "community", "coordinator"],
     /* Widened from ["ward"] on 2026-09-01 by owner ruling: a pull is a person's act, from the ward
      * menu OR the coordinator. Named here deliberately rather than widened by accident, per this
      * file's own instruction. */
@@ -181,7 +181,7 @@ describe("who may raise which event", () => {
     /* Ruling 1: ED marks Form 1A as received. CORRECTED 2026-09-17, T2r fix round, finding 10:
      * "starting the 24h statutory clock" is now false — that computed clock was deleted by T2 on
      * owner answer 1, and this event still records only the receipt instant. */
-    RECORD_LEGAL_FORM_RECEIVED: ["ed", "coordinator"],
+    RECORD_LEGAL_FORM_RECEIVED: ["ed", "ward", "community", "coordinator"],
     // T2 (2026-09-17 build plan), owner answer 1 and item 5 (regional extensions). `ed` on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department holding the form reads the
     // expiry off it. `coordinator` joins it here for extensions specifically — item 5 names "the
@@ -279,7 +279,7 @@ describe("who may raise which event", () => {
     // for fixed-list items before deciding, and the referrer side ticking them off.
     MARK_REFERRAL_OPENED: ["ward", "coordinator"],
     REQUEST_REFERRAL_INFORMATION: ["ward", "coordinator"],
-    MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "coordinator"],
+    MARK_REFERRAL_INFORMATION_MET: ["ed", "community", "ward", "coordinator"],
     // Fix plan item 4 (21 Oct 2026): the coordinator assigns to any listed desk, an ED or community
     // desk takes a referral for itself; the same desks log calls about it.
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],

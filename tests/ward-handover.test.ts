@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { handoverSnapshot, isOpen, transportLeg } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement } from "../src/components/ward-management/ward-model";
+import { obsShort, toHandoverRow } from "../src/components/ward-management/handover/handover-model";
+import type { Observation } from "../src/components/ward-management/ward-observation";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const { movements, units } = seedWardFlowState();
@@ -178,5 +180,23 @@ describe("RECORD_HANDOVER_SIGN_OFF", () => {
     });
     expect(next.handoverSignOffs).toEqual([{ at: NOW_ANCHOR, by: "coordinator" }]);
     expect(next.rejections).toHaveLength(0);
+  });
+});
+
+describe("handover observation detail", () => {
+  it.each<[Observation, string]>([
+    [{ level: "general", intervalMinutes: null, reviewAt: null }, "General, hourly"],
+    [{ level: "intermittent", intervalMinutes: 15, reviewAt: null }, "Intermittent, every 15 minutes"],
+    [{ level: "intermittent", intervalMinutes: 30, reviewAt: null }, "Intermittent, every 30 minutes"],
+    [{ level: "within_sight", intervalMinutes: null, reviewAt: null }, "Constant within sight (1:1)"],
+    [{ level: "arms_length", intervalMinutes: null, reviewAt: null }, "Constant within arm's length (1:1)"],
+    [{ level: "two_staff", intervalMinutes: null, reviewAt: null }, "Two staff constant (2:1)"],
+  ])("retains the recorded level and interval/ratio, including when flagged urgent: %j", (observation, label) => {
+    const state = seedWardFlowState();
+    for (const flaggedUrgent of [false, true]) {
+      const movement = { ...state.movements[0]!, observation, flaggedUrgent };
+      const row = toHandoverRow(movement, state.units, state.patients, state.referrals);
+      expect(obsShort(row)).toBe(flaggedUrgent ? `Flagged urgent, ${label}` : label);
+    }
   });
 });

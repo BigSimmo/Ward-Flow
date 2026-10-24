@@ -1,4 +1,5 @@
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { type AuditDecision } from "./ward-audit";
 import { uniqueRecord } from "./ward-discharge-records";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -366,6 +367,10 @@ export function reduceReferralSendEvent(
     case "CORRECT_LEGAL_FORM_RECEIPT": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may correct its form receipt`);
+      }
       if (movement.closure) {
         return reject(
           state,
@@ -1115,6 +1120,10 @@ export function reduceReferralSendEvent(
           );
         }
       }
+      // D-80: a ward corrects only what a ward sent, never a referral it is answering.
+      if (event.role === "ward" && referral.source !== "psychiatric_ward") {
+        return reject(state, event, `only the desk that sent referral ${referral.id} may add corrections`);
+      }
       if (event.role === "community" && event.actingPlaceId !== undefined) {
         if (
           referral.sendingTeamName === undefined ||
@@ -1154,6 +1163,10 @@ export function reduceReferralSendEvent(
     case "CHANGE_URGENCY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may change its urgency`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot change urgency for a closed movement (${movement.closure.reason})`);
       }
@@ -1184,6 +1197,10 @@ export function reduceReferralSendEvent(
     case "CHANGE_LEGAL_STATUS": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may change its legal status`);
+      }
       if (movement.closure) {
         return reject(state, event, `cannot change legal status for a closed movement (${movement.closure.reason})`);
       }

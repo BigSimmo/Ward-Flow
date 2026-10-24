@@ -1,4 +1,5 @@
 import { type AuditDecision, finiteInstant } from "./ward-audit";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import type {
   appendNotices,
   departAdmission,
@@ -232,9 +233,10 @@ export function reduceRecordedFactEvent(
       }
       if (event.role === "ward") {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        // The stay a journey leaves names its sender first, as in the access check (review on PR #617).
         const sendingWard =
-          referral?.originUnitId ??
           movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
           (movement as { originUnitId?: string }).originUnitId;
         // Audit 2 E-20: with no sending ward (an ED or community start), no ward desk records the
         // transport need, named or not; the origin and coordinator do. With a sending ward, an
@@ -458,6 +460,10 @@ export function reduceRecordedFactEvent(
     case "RECORD_LEGAL_FORM_RECEIVED": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // D-80: a ward or team acts here only on a journey its kind of desk sent (scope is the server's).
+      if (!journeySentByKind(state.referrals, movement, event.role)) {
+        return reject(state, event, `only the desk that sent movement ${movement.id} may mark its form received`);
+      }
       if (movement.closure) {
         return reject(
           state,

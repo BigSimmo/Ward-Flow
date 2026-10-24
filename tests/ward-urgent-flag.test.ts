@@ -196,9 +196,12 @@ describe("the urgent flag — the mechanism the owner asked for and nobody could
    * a tier could put a patient above every tier 1 while being unable to move them to tier 1. This
    * asserts the two lists against each other rather than restating one of them.
    */
-  it("permits exactly the roles that may already move an urgency tier, and no more", () => {
-    expect([...EVENT_ROLE.FLAG_MOVEMENT_URGENT]).toEqual([...EVENT_ROLE.CHANGE_URGENCY]);
-    expect([...EVENT_ROLE.CLEAR_MOVEMENT_URGENT_FLAG]).toEqual([...EVENT_ROLE.CHANGE_URGENCY]);
+  it("permits only roles that may already move an urgency tier", () => {
+    // D-80: never wider than CHANGE_URGENCY. Sending wards and teams move their own tier; the flag stays narrower.
+    for (const role of [...EVENT_ROLE.FLAG_MOVEMENT_URGENT, ...EVENT_ROLE.CLEAR_MOVEMENT_URGENT_FLAG]) {
+      expect(EVENT_ROLE.CHANGE_URGENCY).toContain(role);
+    }
+    expect([...EVENT_ROLE.CLEAR_MOVEMENT_URGENT_FLAG]).toEqual([...EVENT_ROLE.FLAG_MOVEMENT_URGENT]);
     expect([...EVENT_ROLE.FLAG_MOVEMENT_URGENT]).toEqual(["coordinator", "ed"]);
 
     const state = seedWardFlowState();
