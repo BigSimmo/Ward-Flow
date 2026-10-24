@@ -21,6 +21,23 @@ type Attempt = {
   completion?: WardCommandOutcome;
 };
 
+/** Keep Undo tied to the command that accepted, even if a replay includes a newer board. */
+function confirmationForUndo(outcome: WardCommandOutcome): WardCommandOutcome | Promise<WardCommandOutcome> {
+  if (outcome.status !== "failed" || !outcome.confirmation) return outcome;
+  return outcome.confirmation.then(
+    (terminal) => ({
+      ...terminal,
+      ...(outcome.isCurrent || terminal.isCurrent
+        ? { isCurrent: () => (outcome.isCurrent?.() ?? true) && (terminal.isCurrent?.() ?? true) }
+        : {}),
+      ...(outcome.canUndo || terminal.canUndo
+        ? { canUndo: () => (outcome.canUndo?.() ?? true) && (terminal.canUndo?.() ?? true) }
+        : {}),
+    }),
+    () => outcome,
+  );
+}
+
 /** Keep the examination draft until this save, including a same-ID Retry, is confirmed. */
 export function useEdExaminationSave({
   dispatch,
@@ -80,24 +97,13 @@ export function useEdExaminationSave({
       finishAttempt();
       return;
     }
-    if (
-      attempt.completion?.status === "failed" &&
-      shared?.status === "ready" &&
-      !shared.unconfirmedSave &&
-      shared.error
-    ) {
-      // Retry may return another desk's winning snapshot with a definitive refusal. Its matching
-      // values are not acceptance of this command, and a later poll must not reclassify it.
-      finishAttempt(shared.error);
-      return;
-    }
     const movement = movements.find((row) => row.id === attempt.event.movementId);
     const recorded = movement?.examination;
-    // A failed response has already settled its Promise. The same-ID Retry can still commit;
-    // only the changed, matching record confirms it. A refused/cancelled command cannot do so.
+    // Legacy local void dispatch has no command outcome. Its own newly committed record or
+    // refusal can settle it. Shared saves use their private confirmation, never a polled value.
     if (
-      ((attempt.local && !attempt.completion) ||
-        (attempt.completion?.status === "failed" && shared?.status === "ready" && !shared.unconfirmedSave)) &&
+      attempt.local &&
+      !attempt.completion &&
       recorded &&
       (recorded.at !== attempt.previous?.at ||
         recorded.outcome !== attempt.previous?.outcome ||
@@ -116,19 +122,10 @@ export function useEdExaminationSave({
         finishAttempt(`Not recorded: ${refusal.reason}`);
       }
     }
-  }, [
-    attempt,
-    movements,
-    rejections,
-    world,
-    shared?.status,
-    shared?.unconfirmedSave,
-    shared?.error,
-    closeAccepted,
-    finishAttempt,
-  ]);
+  }, [attempt, movements, rejections, world, closeAccepted, finishAttempt]);
 
-  const unresolved = shared?.unconfirmedSave === true;
+  const awaitingConfirmation = attempt?.completion?.status === "failed" && !!attempt.completion.confirmation;
+  const unresolved = shared?.unconfirmedSave === true || awaitingConfirmation;
   const savingThisForm = pendingFor !== undefined && pendingFor === panels.examinationOpenFor;
   const examinationFieldsDisabled = savingThisForm || unresolved;
   const examinationSaveDisabled = examinationFieldsDisabled || (shared !== null && shared.status !== "ready");
@@ -136,7 +133,13 @@ export function useEdExaminationSave({
 
   function submitExamination(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
-    if (!panels.examinationOutcome || unresolved || (shared !== null && shared.status !== "ready")) return;
+    if (
+      !panels.examinationOutcome ||
+      unresolved ||
+      (currentAttempt.current?.completion?.status === "failed" && currentAttempt.current.completion.confirmation) ||
+      (shared !== null && shared.status !== "ready")
+    )
+      return;
     const recordedEvent: ExaminationEvent = {
       type: "RECORD_EXAMINATION",
       role: "ed",
@@ -180,13 +183,23 @@ export function useEdExaminationSave({
                 return outcome;
               })
             : dispatched;
+        const undoCompletion =
+          completion && "then" in completion
+            ? completion.then(confirmationForUndo, () => ({
+                commandId: "",
+                status: "failed" as const,
+                message: "Save is not confirmed. Review the board before trying again.",
+              }))
+            : completion
+              ? confirmationForUndo(completion)
+              : completion;
         offerStep(
           {
             success: "Examination recorded",
             undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, movementId }),
             undone: "Undone. Back as it was.",
           },
-          { completion },
+          { completion: undoCompletion },
         );
         return completion;
       },
@@ -200,6 +213,24 @@ export function useEdExaminationSave({
           const finished = { ...started, completion };
           currentAttempt.current = finished;
           setAttempt(finished);
+          if (completion.status === "failed" && completion.confirmation) {
+            void completion.confirmation.then(
+              (terminal) => {
+                if (!mounted.current || currentAttempt.current?.event !== finished.event) return;
+                if (
+                  (completion.isCurrent && !completion.isCurrent()) ||
+                  (terminal.isCurrent && !terminal.isCurrent())
+                ) {
+                  finishAttempt();
+                } else if (terminal.status === "accepted") closeAccepted(finished);
+                else if (terminal.status !== "failed") finishAttempt(wardCommandFailure(terminal));
+              },
+              () => {
+                if (mounted.current && currentAttempt.current?.event === finished.event)
+                  setMessage("Save is not confirmed. Use Retry before recording another examination.");
+              },
+            );
+          }
         }
       },
     );

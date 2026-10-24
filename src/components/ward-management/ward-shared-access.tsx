@@ -537,6 +537,7 @@ function WardSharedWorkspaceContent({
   access: WardAccess | null;
   children: ReactNode;
 }) {
+  "use no memo";
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
