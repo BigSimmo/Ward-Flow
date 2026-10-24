@@ -115,7 +115,6 @@ export function useCommunityContactSave(options: Options) {
     };
     active.current = started; // Synchronous: a second click cannot enqueue another command.
     setAttempt(started);
-    setRecorded(null);
     say(started, "Saving contact…");
     const finish = (outcome: WardCommandOutcome) => {
       if (!current(started)) return;
@@ -129,7 +128,7 @@ export function useCommunityContactSave(options: Options) {
         return;
       }
       say(started, wardCommandFailure(outcome));
-      if (outcome.status === "failed" && latest.current.shared?.enabled) {
+      if (outcome.status === "failed" && outcome.commandId && latest.current.shared?.enabled) {
         const failed = { ...started, outcome };
         active.current = failed;
         setAttempt(failed);

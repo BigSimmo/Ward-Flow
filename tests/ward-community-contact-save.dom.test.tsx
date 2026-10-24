@@ -264,6 +264,45 @@ describe("community contact command confirmation", () => {
     },
   );
 
+  it.each(["throw", "reject", "void"] as const)(
+    "releases a shared %s failure with no command ID so the retained form can be submitted again",
+    async (kind) => {
+      const dispatch = vi.fn<WardCommandDispatch>(() => {
+        if (kind === "throw") throw new Error("Synthetic failure");
+        if (kind === "reject") return Promise.reject(new Error("Synthetic failure"));
+        return undefined;
+      });
+      render(<Harness dispatch={dispatch} />);
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Save is not confirmed."));
+      expect(screen.getByRole("dialog")).toBeVisible();
+      expect(confirmed()).toHaveTextContent("not recorded");
+      expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(dispatch).toHaveBeenCalledTimes(2));
+    },
+  );
+
+  it.each(["failed", "refused"] as const)(
+    "keeps the last confirmed contact after a second same-minute contact is %s",
+    async (status) => {
+      const dispatch = vi
+        .fn<WardCommandDispatch>()
+        .mockReturnValueOnce(answer("accepted"))
+        .mockResolvedValueOnce(answer(status, "Second contact was not applied."));
+      render(<Harness dispatch={dispatch} />);
+      fireEvent.click(screen.getByText("Contacted quick action"));
+      expect(confirmed()).toHaveTextContent(/^recorded$/);
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Second contact was not applied."));
+      expect(confirmed()).toHaveTextContent(/^recorded$/);
+      const last = screen.getByTestId("ward-community-contact-save-status");
+      expect(last).toHaveAttribute("data-recorded", "true");
+      expect(last).toHaveTextContent("Last confirmed contact");
+      expect(screen.getByRole("dialog")).toBeVisible();
+    },
+  );
+
   it("confirms a failed quick action only from its own Retry receipt", async () => {
     const dispatch = vi.fn(() => Promise.resolve(answer("failed")));
     const { rerender } = render(<Harness dispatch={dispatch} />);
