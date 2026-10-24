@@ -11,6 +11,7 @@ const RELOAD_WARNING = "Reloading now will lose this unconfirmed action. Stay on
 
 /** Keep recovery inside the top overlay's focus trap, without reopening or closing any record. */
 function useRecoveryHost(show: boolean): HTMLElement | null {
+  "use no memo";
   const root = useSyncExternalStore(subscribeToSheetStack, topSheetRoot, () => null);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const focusedInHost = useRef(false);
@@ -55,6 +56,8 @@ export function WardSharedSaveStatus({
   connection: WardSharedConnection;
   deskLabel: string;
 }) {
+  // Compiler caches add download weight to this small shared recovery surface.
+  "use no memo";
   const save = useWardSharedSave();
   const showRecovery = connection.status === "saving" || connection.status === "unavailable";
   const host = useRecoveryHost(showRecovery);
