@@ -83,6 +83,7 @@ export function useEdReferralSave(draftState: ReturnType<typeof useEdReferralDra
             if (!mounted.current || active.current !== started || confirmed.commandId !== outcome.commandId) return;
             if (confirmed.status === "accepted") {
               started.confirmed = confirmed;
+              setMessage("Referral saved. Reconnect to refresh the board.");
               setAttempt({ ...started });
             } else if (confirmed.status !== "failed") finish(started, confirmed);
           },

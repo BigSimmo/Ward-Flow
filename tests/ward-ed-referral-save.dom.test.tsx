@@ -182,6 +182,33 @@ describe("ED referral save attribution and lifetime", () => {
     expect(h.result.current.state.referralOpen).toBe(false);
     expect(h.result.current.accepted).toBe(1);
   });
+  it("reports a confirmed Retry truthfully while reconnecting to adopt the board", async () => {
+    const h = hookSetup();
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
+    });
+    const record = vi.fn(() =>
+      Promise.resolve({ commandId: "synthetic-one", status: "failed" as const, confirmation }),
+    );
+    await act(async () => {
+      h.result.current.saveReferral(record, 642);
+    });
+    h.snapshot.shared.status = "unavailable";
+    h.rerender();
+    await act(async () => confirm({ commandId: "synthetic-one", status: "accepted" }));
+    expect(h.result.current.referralSaveMessage).toBe("Referral saved. Reconnect to refresh the board.");
+    expect(h.result.current.state.referralOpen).toBe(true);
+    expect(h.result.current.referralFieldsDisabled).toBe(true);
+    act(() => {
+      expect(h.result.current.saveReferral(record, 642)).toBe(false);
+    });
+    expect(record).toHaveBeenCalledTimes(1);
+    h.snapshot.shared.status = "ready";
+    h.rerender();
+    expect(h.result.current.state.referralOpen).toBe(false);
+    expect(h.result.current.accepted).toBe(1);
+  });
   it("keeps a refused Retry terminal after later reads clear the global error", async () => {
     const h = hookSetup();
     const draft = h.result.current.state.draft;
