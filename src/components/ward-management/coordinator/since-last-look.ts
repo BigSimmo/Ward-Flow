@@ -7,6 +7,7 @@ import {
   BED_RELEASE_STATES,
 } from "@/components/ward-management/ward-model";
 import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
  * Smart feature 9, "What changed since you last looked" (owner request, 4 Oct 2026).
@@ -15,6 +16,11 @@ import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-man
  * last left it: new referrals, beds that became ready, new delays and new escalations. It is a
  * comparison of two pictures of the synthetic world — the one remembered when they last left, and
  * the one on screen now — and nothing else. It decides nothing and ranks nothing.
+ *
+ * Closing-the-loop features (24 Oct 2026, package E) add two recorded changes: an acceptance
+ * withdrawn (`WITHDRAW_ACCEPTANCE`, an `"acceptance_withdrawn"` unwind) and a discharge date moved
+ * (`UPDATE_EXPECTED_DISCHARGE`, `Admission.dischargeDateMoves`). The picture remembers only how many
+ * of each a record had (record id to count), the same ids-and-counts rule as everything else here.
  *
  * 🔒 **THE REMEMBERED PICTURE HOLDS RECORD IDS, WARD IDS, COUNTS AND ONE DEMO INSTANT. NEVER A
  * NAME, A NOTE OR ANY TYPED TEXT.** It is kept in `sessionStorage`, the same place and lifetime as
@@ -40,6 +46,12 @@ export type LastLookSnapshot = {
   /** `movementId:cause` for every open movement sitting in a delay group. */
   delayKeys: string[];
   escalatedMovementIds: string[];
+  // Closing-the-loop (package E): record id -> count, only for records with a count above 0. Absent
+  // on a picture taken before these were remembered, which then reports neither change.
+  /** Movement id -> how many `"acceptance_withdrawn"` unwinds it carried. */
+  acceptanceWithdrawnByMovement?: Record<string, number>;
+  /** Admission id -> `dischargeDateMoves` at the time. */
+  dischargeMovesByAdmission?: Record<string, number>;
 };
 
 export type LastLookWorld = {
@@ -50,10 +62,20 @@ export type LastLookWorld = {
   movements: readonly Movement[];
   units: readonly Unit[];
   bedReleases: readonly BedRelease[];
+  /** Read for "discharge date moved" only. Optional so hand-built worlds need not supply it. */
+  admissions?: readonly LastLookAdmission[];
 };
+
+export type LastLookAdmission = Pick<
+  Admission,
+  "id" | "unitId" | "state" | "dischargeDateMoves" | "dischargeDateSetAt"
+>;
 
 type BedsFreed = { unitId: string; unitName: string; count: number };
 type NewDelay = { movementId: string; title: string };
+/** Which ward's "yes" was withdrawn; `unitId` absent when the record did not say. */
+export type AcceptanceWithdrawnChange = { movementId: string; unitId?: string; unitName?: string };
+export type DischargeDateMovedChange = { admissionId: string; unitId: string; unitName?: string };
 
 export type ChangesSinceLastLook = {
   since: Instant;
@@ -69,7 +91,61 @@ export type ChangesSinceLastLook = {
   bedsFreed: BedsFreed[];
   newDelays: NewDelay[];
   newEscalationIds: string[];
+  /** Closing-the-loop (package E). Present only when there is at least one. */
+  acceptanceWithdrawn?: AcceptanceWithdrawnChange[];
+  /** Closing-the-loop (package E). Present only when there is at least one. */
+  dischargeDatesMoved?: DischargeDateMovedChange[];
 };
+
+function withdrawnAcceptances(movement: Movement) {
+  return movement.unwinds.filter((unwind) => unwind.kind === "acceptance_withdrawn");
+}
+
+/** Only records with a count above 0, so the picture stays small. */
+function countsById<T extends { id: string }>(records: readonly T[], count: (record: T) => number) {
+  const counts: Record<string, number> = {};
+  for (const record of records) {
+    const n = count(record);
+    if (n > 0) counts[record.id] = n;
+  }
+  return counts;
+}
+
+function liveAdmissions(world: Pick<LastLookWorld, "admissions">): readonly LastLookAdmission[] {
+  return (world.admissions ?? []).filter((admission) => admission.state !== "departed");
+}
+
+function optionalChanges(
+  acceptanceWithdrawn: AcceptanceWithdrawnChange[],
+  dischargeDatesMoved: DischargeDateMovedChange[],
+): Pick<ChangesSinceLastLook, "acceptanceWithdrawn" | "dischargeDatesMoved"> {
+  return {
+    ...(acceptanceWithdrawn.length > 0 ? { acceptanceWithdrawn } : {}),
+    ...(dischargeDatesMoved.length > 0 ? { dischargeDatesMoved } : {}),
+  };
+}
+
+/** A ward's name for the row's label, when the world carries its units. */
+function unitNamer(units: readonly Unit[] | undefined) {
+  const names = new Map((units ?? []).map((unit) => [unit.id, unit.name]));
+  return (unitId: string | undefined) => {
+    const unitName = unitId === undefined ? undefined : names.get(unitId);
+    return unitName ? { unitName } : {};
+  };
+}
+
+function withdrawnRow(
+  movement: Movement,
+  unwinds: Movement["unwinds"],
+  nameOf: ReturnType<typeof unitNamer>,
+): AcceptanceWithdrawnChange {
+  const unitId = unwinds.at(-1)?.unitId;
+  return { movementId: movement.id, ...(unitId ? { unitId, ...nameOf(unitId) } : {}) };
+}
+
+function movedRow(admission: LastLookAdmission, nameOf: ReturnType<typeof unitNamer>): DischargeDateMovedChange {
+  return { admissionId: admission.id, unitId: admission.unitId, ...nameOf(admission.unitId) };
+}
 
 export function takeLastLookSnapshot(
   world: LastLookWorld,
@@ -98,6 +174,13 @@ export function takeLastLookSnapshot(
     readyByUnit,
     delayKeys,
     escalatedMovementIds: open.filter((movement) => movement.escalation !== undefined).map((movement) => movement.id),
+    // Coordinator picture only: a scoped Ward/ED picture compares its own records instead.
+    ...(scopeKey
+      ? {}
+      : {
+          acceptanceWithdrawnByMovement: countsById(world.movements, (m) => withdrawnAcceptances(m).length),
+          dischargeMovesByAdmission: countsById(liveAdmissions(world), (a) => a.dischargeDateMoves),
+        }),
   };
 }
 
@@ -109,7 +192,7 @@ export function takeLastLookSnapshot(
 export function changesSinceLastLook(
   previous: LastLookSnapshot | undefined,
   current: LastLookSnapshot,
-  world: Pick<LastLookWorld, "movements" | "units">,
+  world: Pick<LastLookWorld, "movements" | "units" | "admissions">,
 ): ChangesSinceLastLook | undefined {
   if (
     !previous ||
@@ -134,6 +217,7 @@ export function changesSinceLastLook(
   });
   const bedsFreed = bedsFreedRows(world.units, previous, current);
   const newDelays = newDelayRows(current.delayKeys, seenDelays);
+  const nameOf = unitNamer(world.units);
 
   return {
     since: previous.at,
@@ -142,7 +226,25 @@ export function changesSinceLastLook(
     bedsFreed,
     newDelays,
     newEscalationIds: current.escalatedMovementIds.filter((id) => !seenEscalations.has(id)),
+    ...optionalChanges(
+      world.movements
+        .filter((m) => countRose(previous.acceptanceWithdrawnByMovement, current.acceptanceWithdrawnByMovement, m.id))
+        .map((m) => withdrawnRow(m, withdrawnAcceptances(m), nameOf)),
+      liveAdmissions(world)
+        .filter((a) => countRose(previous.dischargeMovesByAdmission, current.dischargeMovesByAdmission, a.id))
+        .map((a) => movedRow(a, nameOf)),
+    ),
   };
+}
+
+/** A count that went up between the two pictures; never true when either picture lacks the map. */
+function countRose(
+  before: Record<string, number> | undefined,
+  after: Record<string, number> | undefined,
+  id: string,
+): boolean {
+  if (!before || !after) return false;
+  return (after[id] ?? 0) > (before[id] ?? 0);
 }
 
 /**
@@ -155,10 +257,11 @@ export function changesSinceLastLook(
  * Handover's "Since you looked" strip should read this too, with its own window start.
  */
 export function changesSinceInstant(
-  world: Pick<LastLookWorld, "referrals" | "movements">,
+  world: Pick<LastLookWorld, "referrals" | "movements" | "admissions"> & { units?: readonly Unit[] },
   since: Instant,
   now: Instant,
 ): ChangesSinceLastLook {
+  const nameOf = unitNamer(world.units);
   const within = (at: Instant | undefined) => at !== undefined && at >= since && at <= now;
   const newReferralIds = world.referrals.filter((referral) => within(referral.raisedAt)).map((referral) => referral.id);
   const countedReferrals = new Set(newReferralIds);
@@ -181,6 +284,18 @@ export function changesSinceInstant(
     newEscalationIds: world.movements
       .filter((movement) => isOpen(movement) && within(movement.escalation?.at))
       .map((movement) => movement.id),
+    // Closing-the-loop (package E): read from recorded times, as the rows above are.
+    ...optionalChanges(
+      world.movements.flatMap((movement) => {
+        const inWindow = withdrawnAcceptances(movement).filter((unwind) => within(unwind.at));
+        return inWindow.length > 0 ? [withdrawnRow(movement, inWindow, nameOf)] : [];
+      }),
+      // `dischargeDateSetAt` is when the date was last set; with a move on record, a set inside the
+      // window is read as that move (the same reading as the ward board's "dates moved").
+      liveAdmissions(world)
+        .filter((a) => a.dischargeDateMoves > 0 && within(a.dischargeDateSetAt ?? undefined))
+        .map((a) => movedRow(a, nameOf)),
+    ),
   };
 }
 
@@ -195,6 +310,8 @@ export function hasAnyChange(changes: ChangesSinceLastLook): boolean {
       changes.bedsFreed.length +
       changes.newDelays.length +
       changes.newEscalationIds.length +
+      (changes.acceptanceWithdrawn?.length ?? 0) +
+      (changes.dischargeDatesMoved?.length ?? 0) +
       (changes.updates?.length ?? 0) >
     0
   );
@@ -254,9 +371,16 @@ function snapshotHeaderInvalid(v: Record<string, unknown>): boolean {
 function snapshotListsInvalid(v: Record<string, unknown>): boolean {
   return ![v.referralIds, v.movementIds, v.delayKeys, v.escalatedMovementIds].every(stringArray);
 }
+function countMapInvalid(field: unknown): boolean {
+  if (typeof field !== "object" || field === null || Array.isArray(field)) return true;
+  return !Object.values(field).every((count) => Number.isSafeInteger(count) && (count as number) >= 0);
+}
 function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
-  if (typeof v.readyByUnit !== "object" || v.readyByUnit === null || Array.isArray(v.readyByUnit)) return true;
-  return !Object.values(v.readyByUnit).every((count) => Number.isSafeInteger(count) && (count as number) >= 0);
+  return (
+    countMapInvalid(v.readyByUnit) ||
+    (v.acceptanceWithdrawnByMovement !== undefined && countMapInvalid(v.acceptanceWithdrawnByMovement)) ||
+    (v.dischargeMovesByAdmission !== undefined && countMapInvalid(v.dischargeMovesByAdmission))
+  );
 }
 function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {
   if (typeof value !== "object" || value === null) return undefined;

@@ -49,6 +49,7 @@ function synthetic(overrides: Partial<DirectoryEntry> & Pick<DirectoryEntry, "id
     sendWith: [],
     note: "",
     checkedDaysAgo: 1,
+    checkedBy: "coordinator",
     rostered: false,
     ...overrides,
   };

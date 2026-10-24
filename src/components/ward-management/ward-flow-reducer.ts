@@ -1,5 +1,9 @@
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
 import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
+// Closing-the-loop (package E): return requested vs home service agreed.
+import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
+import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
+import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -365,6 +369,16 @@ export type WardFlowState = WardAuditState & {
    * job. One record per admission; a second is refused.
    */
   repatriations: RepatriationRecord[];
+  /**
+   * Closing-the-loop (package E): return requested and the home service's answer, one per stay
+   * (`RECORD_HOME_SERVICE_RETURN`). Optional: absent in older saves, read as none.
+   */
+  homeServiceReturns?: HomeServiceReturnRecord[];
+  /**
+   * Closing-the-loop (package E): the latest recorded check of each on-call directory entry
+   * (`RECORD_DIRECTORY_CHECK`). Entry id, time and desk only. Optional: absent in older saves.
+   */
+  directoryChecks?: DirectoryCheckRecord[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
@@ -496,7 +510,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     frontDoorReferralSequence: 0,
     patients: structuredClone(network?.patients ?? wardPatients),
     patientSequence: 0,
-    admissions: structuredClone(network?.admissions ?? wardAdmissions),
+    // Closing-the-loop (package E): one discharge date moved this shift, standard night only.
+    admissions: network ? structuredClone(network.admissions) : withDischargeMoveDemo(structuredClone(wardAdmissions)),
     admissionSequence: 0,
     inboxAcknowledgements: {},
     inboxCompletions: {},
@@ -2233,6 +2248,11 @@ export function reduceClinicalEvent(
     }
     case "RECORD_WARD_DIAGNOSIS":
       return reduceWardDiagnosis(state, event, reject);
+    // Closing-the-loop (package E).
+    case "RECORD_HOME_SERVICE_RETURN":
+      return reduceHomeServiceReturn(state, event, reject);
+    case "RECORD_DIRECTORY_CHECK":
+      return reduceDirectoryCheck(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;

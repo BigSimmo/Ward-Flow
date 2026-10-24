@@ -527,6 +527,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
+  // Closing-the-loop (package E): the out-of-area return plan, the coordinator's tool as above.
+  RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+  // Closing-the-loop (package E): any desk with the on-call directory open may record a check.
+  RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
   // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],

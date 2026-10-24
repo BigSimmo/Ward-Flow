@@ -64,6 +64,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
+  // Closing-the-loop (package E).
+  RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
+  RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },

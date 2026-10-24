@@ -282,6 +282,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
   // the reducer. No typed text.
   "RECORD_WARD_DIAGNOSIS",
+  // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
+  "RECORD_HOME_SERVICE_RETURN",
+  // Closing-the-loop (package E): a directory entry id only. No typed text.
+  "RECORD_DIRECTORY_CHECK",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
@@ -458,6 +462,11 @@ type WardFlowReviewedStringOrUnknownKey =
   | "calendarDate"
   // v10 pass 2: `UNDO_AUDIT_REVIEW` names an `AuditReview.id`; the reducer finds the review or refuses.
   | "reviewId"
+  // Closing-the-loop (package E): `RECORD_HOME_SERVICE_RETURN.homeHospital` is a site code the
+  // reducer membership-checks; `RECORD_DIRECTORY_CHECK.entryId` names a mock directory entry and the
+  // reducer refuses anything but a short slug. Neither is about a person; neither is typed.
+  | "homeHospital"
+  | "entryId"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";

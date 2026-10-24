@@ -73,6 +73,8 @@ import {
   type QueueEntry,
   type QueueHandlers,
 } from "./alerts-queue";
+import { groupLinkedAlerts, type LinkedQueueItem } from "./alert-linked-groups";
+import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TodayChart } from "./alerts-visuals";
 import { alertChecks } from "./alerts-checks";
@@ -837,21 +839,52 @@ function AlertsWorkspace() {
       : "No alert needs you";
 
   // ---- Queue views ----
-  const rows = (list: QueueEntry[]) =>
+  const rowFor = (entry: QueueEntry) =>
     isPhone ? (
-      <ul className={styles.phoneRows}>
-        {list.map((entry) => (
-          <AlertPhoneRow key={entry.item.id} entry={entry} now={now} handlers={queueHandlers} />
-        ))}
-      </ul>
+      <AlertPhoneRow key={entry.item.id} entry={entry} now={now} handlers={queueHandlers} />
     ) : (
-      <ul className={styles.rows}>
-        {list.map((entry) => (
-          <AlertRow key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
-        ))}
-      </ul>
+      <AlertRow key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
     );
-  const groupSection = (key: string, label: string, list: QueueEntry[], head: ReactNode, empty?: string) => (
+  // Closing-the-loop (package E): alerts naming one record show as one grouped item. Recorded order,
+  // no re-sorting; every alert keeps its own row inside the item. See `alert-linked-groups.ts`.
+  const linkedItems = (
+    items: LinkedQueueItem<QueueEntry>[],
+    listClassName: string,
+    sectionLabels: readonly string[],
+    renderEntry: (entry: QueueEntry) => ReactNode,
+  ) =>
+    items.map((queued) =>
+      queued.kind === "single" ? (
+        renderEntry(queued.entry)
+      ) : (
+        <LinkedAlertItem
+          key={queued.key}
+          item={queued}
+          sectionLabels={sectionLabels}
+          listClassName={listClassName}
+          renderEntry={renderEntry}
+        />
+      ),
+    );
+  const linkedNote = (count: number) =>
+    count > 0 ? (
+      <p className={styles.groupEmpty}>
+        {count === 1 ? "1 alert here is" : `${count} alerts here are`} shown earlier, grouped with the other alerts on
+        the same record.
+      </p>
+    ) : null;
+  const rows = (items: LinkedQueueItem<QueueEntry>[], sectionLabels: readonly string[]) => {
+    const listClassName = isPhone ? styles.phoneRows : styles.rows;
+    return <ul className={listClassName}>{linkedItems(items, listClassName, sectionLabels, rowFor)}</ul>;
+  };
+  const groupSection = (
+    key: string,
+    label: string,
+    list: QueueEntry[],
+    head: ReactNode,
+    empty?: string,
+    linked?: { items: LinkedQueueItem<QueueEntry>[]; shownEarlier: number; sectionLabels: readonly string[] },
+  ) => (
     <section
       key={key}
       className={styles.group}
@@ -859,9 +892,28 @@ function AlertsWorkspace() {
       data-testid={key === "snoozed" ? "ward-alerts-snoozed" : undefined}
     >
       {head}
-      {list.length > 0 ? rows(list) : <p className={styles.groupEmpty}>{empty}</p>}
+      {list.length === 0 ? (
+        <p className={styles.groupEmpty}>{empty}</p>
+      ) : linked ? (
+        <>
+          {linked.items.length > 0 ? rows(linked.items, linked.sectionLabels) : null}
+          {linkedNote(linked.shownEarlier)}
+        </>
+      ) : (
+        rows(
+          list.map((entry) => ({ kind: "single", entry })),
+          [label],
+        )
+      )}
     </section>
   );
+  const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
+  const urgencyLinked = groupLinkedAlerts([actEntries, waitEntries, runningEntries]);
+  const urgencyLink = (section: number) => ({
+    items: urgencyLinked.sections[section] ?? [],
+    shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
+    sectionLabels: urgencyLabels,
+  });
   const urgencyView = (
     <>
       {groupSection(
@@ -870,6 +922,7 @@ function AlertsWorkspace() {
         actEntries,
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
         "None firing now. The conditions checked are named in the header.",
+        urgencyLink(0),
       )}
       {access.role === "coordinator" ? (
         <ForecastAlertsGroup
@@ -884,6 +937,7 @@ function AlertsWorkspace() {
         waitEntries,
         <GroupHead tone="warning" label="Waiting" count={waitEntries.length} />,
         "Nothing is waiting on a transport leg or a planned arrival.",
+        urgencyLink(1),
       )}
       {runningEntries.length > 0
         ? groupSection(
@@ -896,6 +950,8 @@ function AlertsWorkspace() {
               count={runningEntries.length}
               aside="listed, not counted"
             />,
+            undefined,
+            urgencyLink(2),
           )
         : null}
       {snoozedEntries.length > 0
@@ -913,15 +969,19 @@ function AlertsWorkspace() {
         : null}
     </>
   );
+  const laneLists: [string, string, WfTone, QueueEntry[]][] = [
+    ["act", "Act now", "danger", actEntries],
+    ["wait", "Waiting", "warning", [...waitEntries, ...runningEntries]],
+    ["snoozed", "Snoozed", "neutral", snoozedEntries],
+  ];
+  // Snoozed alerts are set aside on purpose, so only Act now and Waiting are grouped.
+  const laneLinked = groupLinkedAlerts([actEntries, [...waitEntries, ...runningEntries]]);
+  const cardFor = (entry: QueueEntry) => (
+    <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
+  );
   const lanesView = (
     <div className={styles.lanes}>
-      {(
-        [
-          ["act", "Act now", "danger", actEntries],
-          ["wait", "Waiting", "warning", [...waitEntries, ...runningEntries]],
-          ["snoozed", "Snoozed", "neutral", snoozedEntries],
-        ] as [string, string, WfTone, QueueEntry[]][]
-      ).map(([key, label, tone, list]) => (
+      {laneLists.map(([key, label, tone, list], lane) => (
         <section
           key={key}
           className={styles.lane}
@@ -930,11 +990,14 @@ function AlertsWorkspace() {
         >
           <GroupHead tone={tone} label={label} count={list.length} />
           {list.length > 0 ? (
-            <ul className={styles.cards}>
-              {list.map((entry) => (
-                <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
-              ))}
-            </ul>
+            <>
+              <ul className={styles.cards}>
+                {lane < 2
+                  ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
+                  : list.map(cardFor)}
+              </ul>
+              {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
+            </>
           ) : (
             <p className={styles.groupEmpty}>None now</p>
           )}
@@ -954,6 +1017,8 @@ function AlertsWorkspace() {
         count={list.length}
         aside={`${actCount} act now`}
       />,
+      undefined,
+      { items: groupLinkedAlerts([list]).sections[0] ?? [], shownEarlier: 0, sectionLabels: [owner] },
     );
   });
   const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;

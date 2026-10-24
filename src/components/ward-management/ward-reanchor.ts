@@ -185,6 +185,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "metAt",
   // The criteria status's derived lapse time. Never stored, but declared as an Instant beside them.
   "lapsesAt",
+  // Closing-the-loop (package E): a home service return's request, answer and review day.
+  "requestedAt",
+  "answeredAt",
+  "nextReviewAt",
 ]);
 
 /**

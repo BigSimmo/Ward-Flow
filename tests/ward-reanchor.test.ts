@@ -39,6 +39,8 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-patients.ts",
   // D-60: discharge criteria on an admission hold when they were set and when each was met.
   "src/components/ward-management/ward-discharge-criteria.ts",
+  // Closing-the-loop (package E): a home service return records when it was asked, answered and next reviewed.
+  "src/components/ward-management/out-of-area/home-service-return.ts",
 ];
 
 /**
