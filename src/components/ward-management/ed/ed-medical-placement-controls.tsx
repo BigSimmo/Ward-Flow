@@ -93,7 +93,11 @@ export function EdMedicalPlacementControls({
       commandId: attempt.outcome?.commandId ?? "",
       status: reply.accepted ? "accepted" : "refused",
       ...(!reply.accepted
-        ? { message: shared?.error ?? "The action was not applied. Review the current board before trying again." }
+        ? {
+            message:
+              (shared?.status === "ready" ? shared.error : null) ??
+              "The action was not applied. Review the current board before trying again.",
+          }
         : {}),
       ...(attempt.outcome?.isCurrent ? { isCurrent: attempt.outcome.isCurrent } : {}),
     };
