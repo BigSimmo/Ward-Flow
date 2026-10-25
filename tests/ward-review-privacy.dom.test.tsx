@@ -838,3 +838,154 @@ describe("review privacy boundaries", () => {
     expect(connection.dispatch).not.toHaveBeenCalled();
   });
 });
+
+describe("shared recovery alert lifetime", () => {
+  const commandId = "11111111-1111-4111-8111-111111111111";
+  function recoveryClient(outcome: "accepted" | "refused" | "unavailable", accessUntil = Date.now() + 60_000) {
+    const storage = new Map([
+      [WARD_COMMAND_RECOVERY_KEY, JSON.stringify({ commandId, receiptScope: "current", expiresAt: accessUntil })],
+    ]);
+    let current: SharedView | undefined;
+    let phase: "ready" | "choose-role" | "no-role" | "denied" = "ready";
+    let unreadable = false;
+    let receiptReads = 0;
+    let posts = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "synthetic",
+      changed: (next) => {
+        current = next;
+      },
+      recoveryStorage: {
+        getItem: (key) => {
+          if (unreadable) throw new Error("Synthetic storage refusal");
+          return storage.get(key) ?? null;
+        },
+        setItem: (key, value) => {
+          storage.set(key, value);
+        },
+        removeItem: (key) => {
+          storage.delete(key);
+        },
+      },
+      fetch: async (url, init) => {
+        if (init?.method === "POST") posts++;
+        if (String(url).includes("/receipt?")) {
+          receiptReads++;
+          if (outcome === "unavailable") throw new Error("Synthetic receipt outage");
+          return Response.json({ receipt: { outcome, commandRevision: 1 } });
+        }
+        if (phase === "choose-role") return Response.json({ code: "choose-role", choices: [] }, { status: 409 });
+        if (phase === "no-role") return Response.json({ code: "no-role" }, { status: 403 });
+        if (phase === "denied")
+          return Response.json({ code: "signed-out", error: "Synthetic session ended" }, { status: 401 });
+        return Response.json({ snapshot, receiptScope: "current", accessUntil });
+      },
+    });
+    return {
+      client,
+      storage,
+      view: () => current,
+      receiptReads: () => receiptReads,
+      posts: () => posts,
+      phase: (next: typeof phase) => {
+        phase = next;
+      },
+      refuseStorage: () => {
+        unreadable = true;
+      },
+    };
+  }
+
+  it.each(["accepted", "refused"] as const)(
+    "keeps a %s receipt outcome during ordinary same-desk polls",
+    async (outcome) => {
+      const h = recoveryClient(outcome);
+      try {
+        await h.client.refresh();
+        const message = h.view()?.recovery;
+        expect(message).toMatch(outcome === "accepted" ? /was accepted/ : /was not applied/);
+        expect(h.storage.has(WARD_COMMAND_RECOVERY_KEY)).toBe(false);
+        await h.client.refresh();
+        await h.client.refresh();
+        expect(h.view()?.recovery).toBe(message);
+        expect(h.view()?.recovering).toBe(false);
+        expect(h.receiptReads()).toBe(1);
+        expect(h.posts()).toBe(0);
+      } finally {
+        h.client.dispose();
+      }
+    },
+  );
+
+  it.each(["chooseRole", "switchRole", "choose-role", "no-role", "denied", "expiry"] as const)(
+    "drops an outgoing recovery outcome on %s",
+    async (transition) => {
+      vi.useFakeTimers();
+      const h = recoveryClient("accepted", Date.now() + 1000);
+      try {
+        await h.client.refresh();
+        expect(h.view()?.recovery).toMatch(/was accepted/);
+        if (transition === "expiry") await vi.advanceTimersByTimeAsync(1001);
+        else if (transition === "chooseRole" || transition === "switchRole") {
+          h.phase("choose-role");
+          if (transition === "chooseRole") h.client.chooseRole("22222222-2222-4222-8222-222222222222");
+          else h.client.switchRole();
+          await vi.advanceTimersByTimeAsync(0);
+        } else {
+          h.phase(transition);
+          await h.client.refresh();
+        }
+        expect(h.view()?.snapshot === null).toBe(true);
+        expect(h.view()?.recovery).toBeUndefined();
+        expect(h.view()?.recovering).toBe(false);
+        expect(h.view()?.unconfirmedSave).toBe(false);
+      } finally {
+        h.client.dispose();
+      }
+    },
+  );
+
+  it.each(["missing", "malformed", "mismatched", "invalid", "unreadable", "expired"] as const)(
+    "retires a pending checking alert after a %s recovery entry without replay",
+    async (entry) => {
+      const h = recoveryClient("unavailable");
+      try {
+        await h.client.refresh();
+        expect(h.view()?.recovery).toMatch(/Checking the previous uncertain save/);
+        expect(h.view()?.recovering).toBe(true);
+        await expect(
+          h.client.dispatch({
+            type: "REQUEST_CAPACITY_REFRESH",
+            role: "coordinator",
+            now: 642,
+            unitId: "synthetic-ward",
+          }),
+        ).resolves.toMatchObject({ status: "cancelled" });
+        if (entry === "missing") h.storage.delete(WARD_COMMAND_RECOVERY_KEY);
+        else if (entry === "malformed") h.storage.set(WARD_COMMAND_RECOVERY_KEY, "{");
+        else if (entry === "unreadable") h.refuseStorage();
+        else
+          h.storage.set(
+            WARD_COMMAND_RECOVERY_KEY,
+            JSON.stringify({
+              commandId: entry === "invalid" ? "invalid" : commandId,
+              receiptScope: entry === "mismatched" ? "other" : "current",
+              expiresAt: Date.now() + (entry === "expired" ? -1 : 60_000),
+            }),
+          );
+        await h.client.refresh();
+        if (entry === "expired") expect(h.view()?.recovery).toMatch(/receipt has expired/);
+        else expect(h.view()?.recovery).toBeUndefined();
+        expect(h.view()?.status).toBe("ready");
+        expect(h.view()?.recovering).toBe(false);
+        expect(h.view()?.unconfirmedSave).toBe(false);
+        expect(h.storage.has(WARD_COMMAND_RECOVERY_KEY)).toBe(false);
+        expect(h.receiptReads()).toBe(1);
+        expect(h.posts()).toBe(0);
+      } finally {
+        h.client.dispose();
+      }
+    },
+  );
+});

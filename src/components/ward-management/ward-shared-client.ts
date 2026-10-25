@@ -240,14 +240,14 @@ export class SharedWorkspaceClient {
       if (!raw) {
         if (this.recoveryPending) {
           this.recoveryPending = false;
-          this.publish({});
+          this.publish({ recovery: undefined });
         }
         return;
       }
       held = JSON.parse(raw);
     } catch {
       this.clearRecovery();
-      this.publish({});
+      this.publish({ recovery: undefined });
       return;
     }
     if (
@@ -259,6 +259,7 @@ export class SharedWorkspaceClient {
     ) {
       this.clearRecovery();
       this.publish({
+        recovery: undefined,
         ...(held &&
         held.receiptScope === this.view.receiptScope &&
         Number.isFinite(held.expiresAt) &&
@@ -572,7 +573,7 @@ export class SharedWorkspaceClient {
     if (this.disposed) return;
     if (update.snapshot === null) {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
-      update = { accessUntil: undefined, ...update };
+      update = { accessUntil: undefined, recovery: undefined, ...update };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
@@ -894,7 +895,8 @@ export class SharedWorkspaceClient {
       }
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
       try {
-        this.recoveryPending = !this.pending && !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY);
+        this.recoveryPending =
+          !this.pending && (this.recoveryPending || !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY));
       } catch {
         /* Storage unavailable. */
       }
