@@ -111,4 +111,3 @@ export function leaveBedNeedsOpenWarning(
   if (openWarningAt !== undefined) return false;
   return now - confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES;
 }
-

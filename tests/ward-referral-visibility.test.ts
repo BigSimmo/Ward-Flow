@@ -1998,9 +1998,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
       const withEdArm = seededReferrals.filter((referral) =>
         referral.destinations.some((addressing) => addressing.destination.kind === "emergency_department"),
       );
-      expect(projections.length, "the projection lost or duplicated an ED-addressed referral").toBe(
-        withEdArm.length,
-      );
+      expect(projections.length, "the projection lost or duplicated an ED-addressed referral").toBe(withEdArm.length);
 
       // POSITIVE CONTROL — at least one seeded ED referral must sit beside another destination, or
       // the destination-summary half of these field sets is never exercised against real data.
