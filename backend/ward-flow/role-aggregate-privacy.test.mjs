@@ -243,3 +243,160 @@ test("refused commands and replay use the same bound response factory without pe
   assert.equal(JSON.stringify(world), before);
   assert.equal(released, 2);
 });
+
+function senderAlertFixture() {
+  let { world, id, access } = fixture("queued");
+  const targets = ["rph-adult-secure", "fsh-adult-secure", "rgh-adult-secure"];
+  for (const unitId of targets) {
+    if (unitId !== targets[0])
+      world = step(world, { type: "REFER_TO_UNITS", role: "coordinator", movementId: id, unitIds: [unitId] });
+    world = step(world, {
+      type: "DECLINE",
+      role: "ward",
+      movementId: id,
+      unitId,
+      reason: "belongs_to_another_service",
+    });
+  }
+  return { world, id, access, targets };
+}
+
+test("a sender still hears the existing multiple-decline alert after its wire copy hides foreign answers", () => {
+  const { world, id, access, targets } = senderAlertFixture();
+  const before = JSON.stringify(world);
+  const wire = engine.scopeWorld(world, access, at);
+  assert.deepEqual(wire.state.movements.find((row) => row.id === id).declines, []);
+  const expected = engine.actNowAlerts(world, at).find((row) => row.id === `declines-${id}`);
+  assert.ok(expected, "The actual command-produced full world has the existing alert");
+  assert.deepEqual(
+    engine.scopedActNowAlerts(world, access, at).find((row) => row.id === expected.id),
+    expected,
+  );
+  assert.deepEqual(Object.keys(expected).sort(), ["id", "kind", "site"]);
+  for (const unitId of targets)
+    assert.equal(JSON.stringify(engine.scopedActNowAlerts(world, access, at)).includes(unitId), false);
+  assert.equal(JSON.stringify(world), before);
+});
+
+test("a sender still hears an overdue referral-decision alert while foreign pending units remain masked", () => {
+  const { world, id, access } = fixture("queued");
+  const later = new Date(at.getTime() + (world.state.configuration.referralDecisionTargetMinutes + 1) * 60_000);
+  const before = JSON.stringify(world);
+  const wire = engine.scopeWorld(world, access, later);
+  assert.deepEqual(wire.state.movements.find((row) => row.id === id).referredUnitIds, []);
+  const expected = engine.actNowAlerts(world, later).find((row) => row.id === `target-referral-decision-${id}`);
+  assert.ok(expected, "The real pending request reaches its configured target");
+  assert.deepEqual(
+    engine.scopedActNowAlerts(world, access, later).find((row) => row.id === expected.id),
+    expected,
+  );
+  assert.equal(JSON.stringify(world), before);
+});
+
+test("receiving desks and other roles keep their ordinary scoped alert population", () => {
+  let { world, id } = senderAlertFixture();
+  world = step(world, {
+    type: "REFER_TO_UNITS",
+    role: "coordinator",
+    movementId: id,
+    unitIds: ["bty-adult-secure"],
+  });
+  const receiver = { role: "ward", scope: { kind: "ward", unitIds: ["bty-adult-secure"] } };
+  assert.equal(
+    engine.partialViewForWorld(world, receiver, at).movements.find((row) => row.id === id)?.kind,
+    "restricted",
+  );
+  const places = engine.accessPlaces(world);
+  const site = places.unitSiteCode("bty-adult-secure");
+  for (const access of [
+    receiver,
+    { role: "bed_manager", scope: { kind: "site", siteCode: site } },
+    { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
+    { role: "ed", scope: { kind: "ed", edId: "jhc-ed" } },
+    { role: "officer", scope: { kind: "jobs", service: "North Metro" } },
+  ]) {
+    const expected = engine
+      .actNowAlerts(engine.scopeWorld(world, access, at), at)
+      .filter((alert) => alert.kind === (access.role === "officer" ? "job" : "act-now"));
+    assert.deepEqual(engine.scopedActNowAlerts(world, access, at), expected);
+  }
+  assert.equal(
+    engine.scopedActNowAlerts(world, receiver, at).some((row) => row.id === `declines-${id}`),
+    false,
+  );
+  assert.deepEqual(engine.scopedActNowAlerts(world, { role: "executive", scope: { kind: "statewide" } }, at), []);
+});
+
+test("sender alert restoration ends with its actual source-stay entitlement while a receiving row survives", () => {
+  const fixture = senderAlertFixture();
+  const world = structuredClone(fixture.world);
+  const template = world.state.admissions.find((row) => row.patientId && !fixture.targets.includes(row.unitId));
+  assert.ok(template, "The synthetic world supplies a joined own stay outside the foreign targets");
+  const now = engine.worldNow(world, at);
+  const leftAt = now - 1;
+  const stay = {
+    ...template,
+    id: "AD-SYNTHETIC-ALERT-SOURCE",
+    state: "departed",
+    pulledAt: leftAt - 30,
+    arrivedAt: leftAt - 20,
+    leftAt,
+    movementId: null,
+    referralId: null,
+  };
+  delete stay.bedNumber;
+  world.state.admissions.push(stay);
+  const movement = world.state.movements.find((row) => row.id === fixture.id);
+  Object.assign(movement, { patientId: stay.patientId, sourceAdmissionId: stay.id, referredUnitIds: [stay.unitId] });
+  const access = { role: "ward", scope: { kind: "ward", unitIds: [stay.unitId] } };
+  assert.equal(engine.validWorld(world), true);
+  const before = JSON.stringify(world);
+  const alertId = `declines-${fixture.id}`;
+  const summary = engine.partialViewForWorld(world, access, at).movements.find((row) => row.id === fixture.id);
+  assert.equal(summary?.kind, "sender");
+  assert.equal(typeof summary.visibleUntil, "number");
+  const boundary = new Date(at.getTime() + (summary.visibleUntil - now) * 60_000);
+  assert.ok(engine.scopedActNowAlerts(world, access, boundary).some((row) => row.id === alertId));
+  const after = new Date(boundary.getTime() + 60_000);
+  assert.equal(
+    engine.scopeWorld(world, access, after).state.movements.some((row) => row.id === fixture.id),
+    true,
+  );
+  assert.equal(
+    engine.partialViewForWorld(world, access, after).movements.find((row) => row.id === fixture.id)?.kind,
+    "restricted",
+  );
+  assert.equal(
+    engine.scopedActNowAlerts(world, access, after).some((row) => row.id === alertId),
+    false,
+  );
+  assert.equal(JSON.stringify(world), before);
+});
+
+test("sender alert parity retains existing snooze and target boundary rules", () => {
+  const { world, id, access } = senderAlertFixture();
+  const now = engine.worldNow(world, at);
+  const alertId = `declines-${id}`;
+  world.state.inboxSnoozes[alertId] = [
+    { at: now, by: "coordinator", kind: "snoozed", until: now + 10, reason: "awaiting_call_back" },
+  ];
+  assert.equal(engine.validWorld(world), true);
+  assert.equal(
+    engine.scopedActNowAlerts(world, access, at).some((row) => row.id === alertId),
+    false,
+  );
+  const returns = new Date(at.getTime() + 10 * 60_000);
+  assert.ok(engine.scopedActNowAlerts(world, access, returns).some((row) => row.id === alertId));
+  const pending = fixture("queued");
+  const due = new Date(at.getTime() + pending.world.state.configuration.referralDecisionTargetMinutes * 60_000);
+  const decisionId = `target-referral-decision-${pending.id}`;
+  assert.equal(
+    engine.scopedActNowAlerts(pending.world, pending.access, due).some((row) => row.id === decisionId),
+    false,
+  );
+  assert.ok(
+    engine
+      .scopedActNowAlerts(pending.world, pending.access, new Date(due.getTime() + 60_000))
+      .some((row) => row.id === decisionId),
+  );
+});
