@@ -1,21 +1,26 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 /*
  * Until the PsychSift removal pass (25 September 2026), the mockups layout wrapped every mockup in
- * PsychSift's search shell and had to skip Ward Flow's routes by name; this test rendered that
- * client wrapper and proved the skip. With PsychSift gone the layout renders its children directly
- * and no host search shell exists, so the guard is now that the layout never brings one back.
+ * PsychSift's search shell and had to skip Ward Flow's routes by name. The layout then rendered its
+ * children directly and has since been removed, so the guard is now that nothing under the mockups
+ * routes brings a host search shell back.
  */
-const REPO_ROOT = path.resolve(__dirname, "..");
-const layout = readFileSync(path.join(REPO_ROOT, "src", "app", "mockups", "layout.tsx"), "utf8");
+const MOCKUPS_ROOT = path.resolve(__dirname, "..", "src", "app", "mockups");
+const sources = readdirSync(MOCKUPS_ROOT, { recursive: true, withFileTypes: true })
+  .filter((entry) => entry.isFile() && /\.(tsx?|css)$/u.test(entry.name))
+  .map((entry) => path.join(entry.parentPath, entry.name));
 
 describe("Ward Flow standalone layout boundary", () => {
   it("renders every mockup route, Ward Flow's included, without a host search shell", () => {
-    expect(layout).toMatch(/return children;/u);
-    for (const forbidden of ["SearchShell", "clinical-dashboard", "mockups-layout-client", "MockupsLayoutClient"]) {
-      expect(layout, forbidden).not.toContain(forbidden);
+    expect(sources.length).toBeGreaterThan(0);
+    for (const file of sources) {
+      const text = readFileSync(file, "utf8");
+      for (const forbidden of ["SearchShell", "clinical-dashboard", "mockups-layout-client", "MockupsLayoutClient"]) {
+        expect(text, `${path.relative(MOCKUPS_ROOT, file)}: ${forbidden}`).not.toContain(forbidden);
+      }
     }
   });
 });
