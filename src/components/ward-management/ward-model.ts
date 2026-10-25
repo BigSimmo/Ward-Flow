@@ -6,7 +6,6 @@ import type {
   ReferralOwnerDesk,
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
-// Closing-the-loop features (24 Oct 2026): type-only imports for the optional records below.
 import type { ReferralCommitmentEntry } from "@/components/ward-management/referrals/referral-commitments";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import type * as LoopChecks from "@/components/ward-management/loop-checks/ward-loop-checks";
@@ -268,8 +267,7 @@ export type WardAdmissionsClosure = {
   /** The role label of whoever closed it, as history records it. */
   by: string;
   until?: Instant;
-  /** Closing the loop D4: transition items a person marked dealt with. Cleared with the closure. */
-  transitionMarks?: LoopChecks.ClosureTransitionMark[];
+  transitionMarks?: LoopChecks.ClosureTransitionMark[]; // Closing the loop D4: marked dealt with; cleared with the closure.
 };
 
 export type Unit = {
@@ -443,8 +441,7 @@ export type Unit = {
    * limiting intake is recorded".
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
-  /** Closing the loop D3: who reviews each temporary restriction, and when. Absent when none. */
-  restrictionReviews?: LoopChecks.WardRestrictionReview[];
+  restrictionReviews?: LoopChecks.WardRestrictionReview[]; // Closing the loop D3: reviewer and review time.
   homeRegion?: HomeRegion;
 };
 
