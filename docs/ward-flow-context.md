@@ -410,7 +410,7 @@ This is a Next.js 16 App Router project, React 19, TypeScript 6 strict, CSS Modu
 | Gate          | Command                                                                                   |
 | ------------- | ----------------------------------------------------------------------------------------- |
 | Typecheck     | `npx tsc --noEmit -p tsconfig.json`                                                       |
-| Units         | `npx vitest run tests/<files>`                                                            |
+| Units         | `node scripts/run-vitest.mjs run tests/<files>`                                           |
 | Lint          | `npm run lint`                                                                            |
 | Design system | `npm run check:design-system-contract`                                                    |
 | Dev server    | `npm run ensure` — prints the URL; **never assume a port**                                |

@@ -78,6 +78,8 @@ A dated summary of merge commits after `90e92444`, through `main` at `d1e61c1` (
 
 ## Decision status (D-numbers)
 
+**This table, with the "Waiting on Josh" list after it, is the one place for what is left** (Josh, 24 October 2026). Record a new owner question here, and his answer in decisions.md or a dated `owner-answers-*.md` file. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
+
 Status of every decision in [decisions.md](decisions.md), D-1 to D-80, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026; D-15, D-21, D-23, D-26, D-30, D-45, D-48, D-50 and D-51 re-checked against source at `899b232e` the same day. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 is only the next free number (`next-decision` in [FACTS.md](../FACTS.md)); no D-81 entry exists yet.
 
 | No.  | Short title                                   | Status                | Evidence                                                                      |
@@ -162,6 +164,23 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-80, read from
 | D-78 | One decline list                              | Built                 | #579                                                                          |
 | D-79 | Wards see the full referral first             | Built                 | #588                                                                          |
 | D-80 | Role access plan version 2                    | Partly built          | PRs 1 to 4 merged; PR 5 in part; item 14 mock-ups and item 17 (pilot) pending |
+
+### Waiting on Josh
+
+As recorded in project notes on 24 October 2026; not re-verified against providers. Remove a line when it is answered.
+
+- Approve or change the access log mock-up (D-80 item 14).
+- In Supabase, turn off "Allow new users to sign up", so only invited test accounts can register.
+- Choose the Sentry organisation for server error reporting (PR #686).
+- Say when the hosted backend last deployed, so database migration 13 can be applied.
+- Turn on Remote Control on his computer for the backup-restore drill and the hosted two-person run.
+- Test sign-ins: new test passwords, and renewal before the current logins expire (about 16 November).
+- Set limits on who can grant administrator access.
+- Name the privacy officer and the clinical safety owner.
+- Decide the D-71 names question.
+- Turn on Dependabot security updates in GitHub settings.
+- Arrange the clinician trial.
+- Before any real data (deferred by Josh): point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.
 
 ## What is built
 

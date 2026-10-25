@@ -148,7 +148,7 @@ message, for deleted or missing paths and for any change under `tests/`, `script
 `package.json`, `package-lock.json`, `tsconfig*`, `vitest.config`, `next.config` or `eslint*`.
 When it refuses, run the full suite; that refusal is the gate working.
 
-In `BigSimmo/Ward-Flow`, for fast local unit testing during development, run `npx vitest run <path/to/test.ts>` directly (~250ms, executing in isolation without waiting on machine-wide heavy locks or `test:focused` selector restrictions, per [`AGENTS.md`](../AGENTS.md)). When you want a coordinator-managed shared lease across multiple test files or pre-push verification, use `node scripts/run-vitest.mjs run <files>`, `npm run test:focused`, or `npm run verify:pr-local`.
+In `BigSimmo/Ward-Flow`, for fast local unit testing during development, run `node scripts/run-vitest.mjs run <path/to/test.ts>`. The wrapper strips provider credentials and applies the offline defaults and the shared run lock, which raw `npx vitest` skips ([checks-and-evidence.md](agents/checks-and-evidence.md)). For a changed-file selection or pre-push verification, use `npm run test:focused` or `npm run verify:pr-local`.
 
 ### 3.2 Two traps in the selectors
 

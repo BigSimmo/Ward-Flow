@@ -17,8 +17,8 @@ _Updated 2026-10-23 - align saving guidance and mockup navigation with D-72, D-7
 1. Read [`README.md`](README.md), then the agreed task scope and existing task/checkpoint
    under [`../task-receipts.md`](../task-receipts.md). Use the ledger
    [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) and relevant [`plans/`](plans/README.md)
-   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md) is dated historical evidence,
-   not today's implementation state; verify current source before reviving an old task.
+   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md)'s decision table and "Waiting on Josh" list are the one
+   record of what is left; its older sections are dated history. Verify current source before reviving an old task.
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
    touch are modified or staged, preserve them and resolve ownership before writes. Former
    Database fold-debt hooks are historical and are not part of this repository's startup.
@@ -68,8 +68,7 @@ mockup only after Josh explicitly approves that mockup. See the [recorded decisi
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. Follow [AGENTS.md](../../AGENTS.md) for the single-user interactive exception:
-  `SKIP_SIGNOUT_GUARD=1` is an explicit normal per-commit opt-in (`SKIP_SIGNOUT_GUARD=1 git commit ...`), never a hook default and never used for concurrent multi-agent work or bare-publication admission.
+  append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. The single-user interactive exception (`SKIP_SIGNOUT_GUARD=1`, an explicit per-commit opt-in) is defined in [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch
@@ -94,7 +93,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   destination and applicable authority before any push.
 - Do not merge other task branches into your branch or rebase your branch. An already-authorised
   merge of current main into a task branch follows the narrower exception in
-  [AGENTS.md hard rules](../../AGENTS.md#hard-rules). Preserve its ownership, confirmation and
+  [git-publication.md](../agents/git-publication.md#normal-pushes-and-prs). Preserve its ownership, confirmation and
   auto-merge restrictions; this exception does not grant general integration or history-rewrite authority.
 - The pre-commit checks inspect a disposable staged snapshot. Unrelated unstaged or untracked
   files do not by themselves block an owned commit. Preserve peers' files. If a real ownership
@@ -109,9 +108,8 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 
 - Before integrating, verify the target is `BigSimmo/Ward-Flow`, inspect the exact branch and diff,
   and run the selected checks on the candidate tree (§5). Reuse valid checks on identical inputs.
-- Keep integration serial, backed up and reviewable. Follow the current `AGENTS.md` instructions for
-  any lock, queue and preflight steps that still apply in the dedicated repository. Never run an old
-  local-line fold command from an archived handover.
+- Integration is a reviewed pull request into `main` with green CI. This repository has no
+  integration lock or fold queue; never run an old local-line fold command from an archived handover.
 - A local commit, pull request, merge and deployment are distinct states. Obtain the applicable
   authority for each consequential action, and report which state was actually reached.
 - After a pause, refresh the branch and target state before integrating. Preserve other threads'
@@ -205,7 +203,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
   and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
   disclosure and understandable status. Compact badges still need meaningful accessible labels.
-- New events go in EVENT_ROLE (`ward-flow-events.ts`) and `tests/ward-event-permissions.test.ts`.
+- New events go in EVENT_ROLE (`ward-flow-event-roles.ts`) and `tests/ward-event-permissions.test.ts`.
 
 ## 7. Model tiers for helpers and reviews
 
@@ -221,18 +219,18 @@ would add overhead, and distinguish requested routing from observed execution.
   sentences, as few lines as will do, and only what he needs to know, do or decide. Include source,
   paths, commands and uncertainty when they help him assess the result or act. Give the result first.
 - The thread that needs the answer asks, in its own thread, as **one numbered list**. Each question is one line in plain English with **one
-  recommendation** and a one-word reply he can send. See [`how-to-write-to-the-owner.md`](how-to-write-to-the-owner.md).
+  recommendation** and a one-word reply he can send. AGENTS.md "Writing to Josh" governs; older writing guides are archived.
 - Record his reply **verbatim** in a dated file, `owner-answers-YYYY-MM-DD.md`. A second round on the
   same day is appended under its own heading, numbered `R2-n`. The asking thread's reading of each answer
   follows, marked as a reading.
 - In the same commit, add a one-line "Superseded <date> by <file> item N" under every earlier ruling
   it overrides, in that ruling's own maintained file. Update the existing task record/receipt;
-  preserve historical `STATUS.md` rather than treating it as a live question queue.
+  add or clear the matching line in STATUS.md's decision table or "Waiting on Josh" list.
 - An item the owner has deferred and told us not to raise again is never re-asked.
 
 ## 9. Superseding a document
 
-Never delete a document. Put this banner at the top:
+Delete or move a document only with Josh's yes, recorded in [ARCHIVE.md](../ARCHIVE.md) (§10). Otherwise keep it and put this banner at the top:
 
 > SUPERSEDED on <date> by <path>. Kept for history; do not follow.
 
