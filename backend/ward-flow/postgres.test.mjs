@@ -950,7 +950,7 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 13);
+      assert.equal(tables.length, 14);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
@@ -1073,10 +1073,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-010-workspace-records.sql"), /not at migration 10/);
       await assert.rejects(rollBack("./infra/rollback-011-record-access-and-sign-out.sql"), /not at migration 11/);
       await assert.rejects(rollBack("./infra/rollback-012-foreign-key-indexes.sql"), /not at migration 12/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 13);
+      await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 14);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-014-archived-records.sql", 13],
         ["./infra/rollback-013-referral-record-views.sql", 12],
         ["./infra/rollback-012-foreign-key-indexes.sql", 11],
         ["./infra/rollback-011-record-access-and-sign-out.sql", 10],
@@ -1505,11 +1507,14 @@ test(
         /role-ended/,
       );
       assert.equal((await store.revokeAccess(adminView, nurseView.membershipId)).status, 404);
-      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (013,
+      // Audit rows are never removed, so 008 cannot be rolled back once a role has acted (014, 013,
       // 012, 011, 010 and 009, which keep every audit row, go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-013-referral-record-views.sql", import.meta.url), "utf8"),
         );

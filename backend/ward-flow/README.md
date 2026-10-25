@@ -13,7 +13,7 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
@@ -125,7 +125,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -182,7 +182,14 @@ These source files do not establish a current hosted connection or deployment.
     policy changes. Before 13 a referral opening is not logged.
     `infra/rollback-013-referral-record-views.sql` takes a database back to 12, and refuses once a
     referral opening has been logged, because the log is append-only. Reapply runtime grants after 13.
-    The backend accepts versions 5 to 13.
+  - `014-archived-records.sql`: closed movements, referrals and alerts older than 30 days leave the
+    live workspace for `archived_records` (Josh, 25 Oct 2026, after the stress test's size finding).
+    The backend looks every 20 saves, and on every save once the workspace passes 6 MiB, and logs
+    `ward_backend_workspace_size_warning` past 6 MiB. A record any live record still names stays
+    live. History reads the archive through `GET /v1/workspace/archive` (newest 5,000, scoped to
+    the desk as its live workspace is). `infra/rollback-014-archived-records.sql` puts the current
+    generation's archived records back first, then drops the table. Reapply runtime grants after 14.
+    The backend accepts versions 5 to 14.
 
 ## Boundaries
 
