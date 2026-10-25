@@ -517,7 +517,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
  *  journey that has none, which the referral view shows as "not recorded on this referral". */
 export function seededReferralDossier(movementId: string, movement?: Movement): ReferralDossier | undefined {
   const seeded = movement ? knownSeedMovement(movementId) : undefined;
-  if (movement && (movement.id !== movementId || !seeded || seeded.patientId !== movement.patientId)) return undefined;
+  if (
+    movement &&
+    (movement.id !== movementId ||
+      !seeded ||
+      seeded.patientId !== movement.patientId ||
+      seeded.referralId !== movement.referralId)
+  )
+    return undefined;
   const original = SEEDED_DOSSIERS[movementId];
   const dossier =
     original ??
