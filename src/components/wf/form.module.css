@@ -472,7 +472,9 @@
 /* Phone (8 Oct 2026): text fields reach a 44px tap height. The input also runs over the box's 1px
    top and bottom border (13 Oct 2026), so the whole 44px takes the tap, not just the 42px inside. */
 @media (max-width: 48rem) {
-  .in {
+  /* Not a textarea box: it grows with its rows and counter (a fixed 44px pushed the counter onto
+     the border, 25 Oct 2026). */
+  .in:not(.area) {
     height: 2.75rem;
   }
 

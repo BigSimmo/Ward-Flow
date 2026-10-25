@@ -134,7 +134,12 @@
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
 }
 
+/* Inline-flex so a link centres its words in the 48px tap box as a button does (a link at the end
+   of a row used to stack under its label and run over it, Josh's iPhone, 25 Oct 2026). */
 .phLink {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
   min-height: 48px;
   margin: calc(-1 * var(--wf-s-2)) 0;
   padding: 0 var(--wf-s-1);

@@ -1006,18 +1006,20 @@ button.taskLabel[aria-pressed="true"] {
   width: 100%;
 }
 
-/* Footer buttons keep their whole labels. A disabled Save's reason takes the rest of the row and
-   wraps its words, dropping under Clear when the sheet is narrow. */
+/* Footer buttons keep their whole labels. A disabled Save's reason gets its own full-width line
+   above Clear and Save, so it is never squeezed into a narrow column between them (Josh's iPhone,
+   25 Oct 2026). The reason stays tied to Save by aria-describedby. */
 .sheetFoot button {
   flex-shrink: 0;
 }
 
 .sheetFoot > span:has(> button) {
-  flex: 1 1 14rem;
-  justify-content: flex-end;
+  display: contents;
 }
 
 .sheetFoot > span:has(> button) > span {
+  order: -1;
+  flex: 1 1 100%;
   white-space: normal;
 }
 

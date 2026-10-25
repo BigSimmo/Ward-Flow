@@ -1,3 +1,4 @@
+import { X509Certificate } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
@@ -23,7 +24,19 @@ describe("weekly receipt clean-up (limits audit, 25 Oct 2026)", () => {
     expect(backendPackage.scripts["prune:receipts:supabase-pruner"]).toContain("prune-receipts.mjs supabase-pruner");
   });
 
-  it("connects only when both secrets are set", () => {
+  it("trusts the public Supabase Root 2021 CA the pooler chains to", () => {
+    expect(workflow).toContain("WARD_SUPABASE_CA_CERT_FILE: infra/supabase-root-2021-ca.crt");
+    const ca = new X509Certificate(
+      readFileSync(new URL("../backend/ward-flow/infra/supabase-root-2021-ca.crt", import.meta.url)),
+    );
+    expect(ca.ca).toBe(true);
+    expect(ca.subject).toContain("CN=Supabase Root 2021 CA");
+    expect(ca.fingerprint256).toBe(
+      "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA",
+    );
+  });
+
+  it("connects only when the secret is set", () => {
     const gated = [...workflow.matchAll(/^      - name: .+\n(?:        .+\n)*/gmu)].slice(1);
     expect(gated.length).toBeGreaterThan(0);
     for (const step of gated) expect(step[0]).toContain("if: ${{ steps.secrets.outputs.ready == 'true' }}");
