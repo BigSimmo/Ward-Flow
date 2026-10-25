@@ -27,7 +27,7 @@ import { useSharedRecordViews, type RecordOpening } from "./access-shared-source
 import styles from "./access-settings.module.css";
 
 /** The screen each kind of opening happened on, in words. */
-export const OPENED_ON: Record<string, string> = {
+const OPENED_ON: Record<string, string> = {
   patient: "Patient record",
   movement: "Movement",
   referral: "Referral detail",
@@ -52,7 +52,7 @@ function agoText(at: Instant | null, now: Instant): string {
 }
 
 /** Made-up openings for the local demo, placed around `now`, by the demo staff in the roles list. */
-export function demoOpenings(patientIds: readonly string[], now: Instant): RecordOpening[] {
+function demoOpenings(now: Instant): RecordOpening[] {
   const desks: Pick<RecordOpening, "actorId" | "access" | "surface">[] = [
     {
       actorId: "demo-staff-a",
@@ -71,25 +71,21 @@ export function demoOpenings(patientIds: readonly string[], now: Instant): Recor
       surface: "patient",
     },
   ];
-  const ids = patientIds.slice(0, 3);
-  if (ids.length === 0) return [];
+  // Made-up record ids that name no record in the demo: no patient is joined to anyone (D-14).
+  const ids = ["PT-DEMO-1", "PT-DEMO-2", "PT-DEMO-3"];
   return [12, 47, 95, 180, 410, 1500].map((minutesAgo, index) => ({
     ...desks[index % desks.length],
     id: `demo-opening-${index}`,
-    patientId: ids[index % ids.length],
+    recordId: ids[index % ids.length],
     at: now - minutesAgo,
   }));
 }
 
 /** The Access log card. */
 export function AccessLog() {
-  const { units, now, movements } = useUnscopedWardFlow();
+  const { units, now } = useUnscopedWardFlow();
   const shared = useSharedRecordViews(useContext(SharedAccessContext), now, true);
-  const patientIds = useMemo(
-    () => [...new Set(movements.flatMap((movement) => (movement.patientId ? [movement.patientId] : [])))],
-    [movements],
-  );
-  const demo = useMemo(() => (shared ? [] : demoOpenings(patientIds, now)), [shared, patientIds, now]);
+  const demo = useMemo(() => (shared ? [] : demoOpenings(now)), [shared, now]);
   const openings = shared ? shared.openings : demo;
   const label = shared ? shared.label : demoStaffLabel;
   const [filter, setFilter] = useState("");
@@ -97,7 +93,7 @@ export function AccessLog() {
   const shown = wanted
     ? openings.filter(
         (opening) =>
-          opening.patientId.toLowerCase().includes(wanted) || label(opening.actorId).toLowerCase().includes(wanted),
+          opening.recordId.toLowerCase().includes(wanted) || label(opening.actorId).toLowerCase().includes(wanted),
       )
     : openings;
 
@@ -138,7 +134,7 @@ export function AccessLog() {
               <li key={opening.id} className={styles.row} data-testid="ward-access-log-row">
                 <span className={styles.who}>
                   <span className={styles.name}>
-                    {opening.patientId}, {OPENED_ON[opening.surface] ?? "Record"}
+                    {opening.recordId}, {OPENED_ON[opening.surface] ?? "Record"}
                   </span>
                   <span className={styles.meta}>
                     {label(opening.actorId)}

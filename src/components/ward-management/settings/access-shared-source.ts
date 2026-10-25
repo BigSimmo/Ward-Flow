@@ -27,7 +27,7 @@ import type { StepUpResult } from "@/components/ward-management/shell/ward-step-
 const NOT_REACHED = "The server was not reached. Nothing was confirmed.";
 
 /** An account in words: "You", or the start of its id. Names are not held by Ward Flow. */
-export function accountLabel(actorId: string, self: string | null): string {
+function accountLabel(actorId: string, self: string | null): string {
   return actorId === self ? "You" : `Account ${actorId.slice(0, 8)}`;
 }
 
@@ -224,7 +224,7 @@ export type RecordOpening = {
   readonly actorId: string;
   /** The desk the account was working as, or null when the server sent one this table refuses. */
   readonly access: WardAccess | null;
-  readonly patientId: string;
+  readonly recordId: string;
   readonly surface: string;
   readonly at: Instant | null;
 };
@@ -236,13 +236,13 @@ export type SharedRecordViewSource = {
   readonly label: (actorId: string) => string;
 };
 
-export function sharedRecordOpening(row: SharedRecordView, now: Instant): RecordOpening | null {
+function sharedRecordOpening(row: SharedRecordView, now: Instant): RecordOpening | null {
   if (typeof row?.actor_id !== "string" || typeof row.patient_id !== "string") return null;
   return {
     id: String(row.id),
     actorId: row.actor_id,
     access: accessOf(row.actor_role, row.actor_scope),
-    patientId: row.patient_id,
+    recordId: row.patient_id,
     surface: row.surface,
     at: typeof row.minutes === "number" ? now + row.minutes : null,
   };
