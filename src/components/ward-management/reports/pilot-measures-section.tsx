@@ -169,8 +169,8 @@ export function PilotMeasuresSection({
       key="holds"
       isPhone={isPhone}
       icon={BedDouble}
-      title="Bed holds"
-      meta={`${holds.held} held`}
+      title="Pulled beds"
+      meta={`${holds.held} pulled`}
       testId="ward-pilot-holds"
       figures={[
         {
