@@ -255,6 +255,7 @@ test("outage authorisation ends no later than session, membership, cover or temp
       grants: [{ until: new Date(until) }],
     }),
     read: async () => ({ dataMode: "prototype" }),
+    receipt: async () => null,
   })(httpRequest(""));
   const body = await response.json();
   assert.equal(body.accessUntil, until);

@@ -335,7 +335,7 @@ export function createSharedHandler({
             view.accessUntil ?? Infinity,
             ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
           ),
-          ...(receiptIdentity === undefined
+          ...(receiptIdentity === undefined || typeof store.receipt !== "function"
             ? {}
             : {
                 receiptScope: createHash("sha256")
@@ -370,6 +370,7 @@ export function createSharedHandler({
       if (path === "/v1/workspace/receipt" && request.method === "GET") {
         const commandId = new URL(request.url).searchParams.get("commandId");
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
+        if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
         return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {

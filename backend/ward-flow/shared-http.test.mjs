@@ -750,6 +750,7 @@ test("History's archive is read with the desk's own view, and a store without on
 test("an older store without session identity omits receipt scope even with finite access expiry", async () => {
   const { handler } = setup(coordinator, "prototype", {
     sessionLimitMinutes: null,
+    receipt: async () => null,
     viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
   });
   const response = await handler(request("", undefined, "Bearer unknown"));
@@ -766,6 +767,7 @@ async function workspaceWithSessionIdentity(identity) {
       viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
       sessionLimitMinutes: null,
       read: async () => ({ dataMode: "prototype", revision: 1 }),
+      receipt: async () => null,
     },
     authenticate: async (_token, { session }) => {
       Object.assign(session, identity);
@@ -807,4 +809,17 @@ test("usable session identities preserve the original receipt hash bytes", async
     scopes.push(value.receiptScope);
   }
   assert.equal(new Set(scopes).size, cases.length);
+});
+
+test("an adapter without receipts does not advertise recovery", async () => {
+  const { handler } = setup(coordinator, "prototype", { sessionLimitMinutes: null });
+  const response = await handler(request());
+  assert.equal(response.status, 200);
+  assert.equal(Object.hasOwn(await response.json(), "receiptScope"), false);
+});
+
+test("an unsupported receipt lookup returns not found rather than an internal error", async () => {
+  const { handler } = setup(coordinator, "prototype", { sessionLimitMinutes: null });
+  const receipt = await handler(request(`/receipt?commandId=${commandId}`));
+  assert.equal(receipt.status, 404);
 });

@@ -422,9 +422,18 @@ Evidence identities and limits:
   verdict: the new fixes still require publication, fresh required CI and formal review release.
 
 Internal HealthPoint policy, service feeds and integration ownership, hosted-provider acceptance,
-physical devices and full screen-reader acceptance remain external follow-ups. No hosted migration or
+physical devices and full acceptance for screen-reader use remain external follow-ups. No hosted migration or
 deployment was executed. Notion remains unsynced. Last verified: 26 October 2026 against
 `2b1fd2cac` and the explicitly named previous-head CI run above.
+
+Follow-up to review of `fdf734251`: an adapter without receipt support no longer advertises
+reload recovery, and a valid unsupported receipt lookup returns 404. Identity/hash and outage
+expiry assertions retain receipt-capable fixtures. Two new regressions first failed against
+`fdf734251`. `node scripts/run-backend-tests.mjs --offline` then passed 252 tests with 25
+database-dependent skips and zero failures; `node scripts/run-heavy.mjs --npm-script typecheck:backend`
+passed. Independent source/test review found no further actionable defect in the compatibility
+fix or the complete saved formal review. Fresh final-head hosted CI and formal review release
+remain pending; this receipt does not infer either from the earlier checks.
 
 <details>
 <summary>Historical reported checkpoint, 24 October 2026</summary>
