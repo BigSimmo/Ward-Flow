@@ -49,6 +49,11 @@ export const SAVE_PROBLEMS = {
     "Part of this return was saved, but the other step is not confirmed.",
     "Check the board, then record only the missing step.",
   ],
+  /** A return that saves two records, where the other one was refused or cancelled. */
+  partlyRefused: [
+    "Part of this return was saved, but the other step was not.",
+    "Check the board, then record only the missing step.",
+  ],
   /** The shared workspace cannot be reached, so changes are switched off. */
   connectionUnavailable: ["Connection unavailable, so changes are switched off.", "Press Retry, or check the network."],
   /** A queued action dropped because an earlier one was refused or lost. */
@@ -69,8 +74,6 @@ export const SAVE_PROBLEMS = {
   sessionEnded: unsent("The session ended", "Sign in again, then make the change."),
   /** The page closed its connection (sign-out, leaving shared mode) before this action ran. */
   connectionClosed: unsent("The connection closed"),
-  /** The community desk's "Take for this team" did not save. */
-  notAssigned: ["Not assigned. The change was not saved.", "Try again, or press Retry in the status bar."],
 } as const satisfies Record<string, SaveProblem>;
 
 export type SaveProblemKind = keyof typeof SAVE_PROBLEMS;
