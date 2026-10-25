@@ -579,7 +579,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
                     {ed ? (
                       <span className={styles.mini}>
                         {ed.pastTarget ? <StatusGlyph tone="danger" /> : null}
-                        <span className={styles.mono}>{ed.waiting}</span> open ED journeys
+                        <span className={styles.mono}>{ed.waiting}</span> awaiting bed in ED
                       </span>
                     ) : null}
                     {wards.length ? (
@@ -669,7 +669,7 @@ function groupByService(sites: { site: string; service?: string; desks: Desk[] }
 }
 
 function statewideLine(desk: Desk): string {
-  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} open ED journeys`;
+  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} awaiting bed in ED`;
 }
 
 /** The ED access target as people say it: `24h`, or `5h 30m` when it is not whole hours. */
