@@ -401,7 +401,9 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
       expect(addedNotices.filter((n) => n.kind === "examination_revoked_ward")).toHaveLength(0);
     });
 
-    it("reports bed released if a bed was held before revoked examination", () => {
+    // Audit 24-1 decision 3 (owner): a revoked examination no longer releases a held bed, so the
+    // ward notice now says the bed stays held, never that it was released.
+    it("reports the bed stays held if a bed was held before revoked examination", () => {
       const state = seeded();
       // Refer, accept, and pull WF-001 to scgh-adult-open
       const referred = wardFlowReducer(state, {
@@ -443,7 +445,8 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
       const addedNotices = revoked.notices.slice(beforeCount);
       const revokedNotice = addedNotices.find((n) => n.kind === "examination_revoked_ward");
       expect(revokedNotice).toBeDefined();
-      expect(revokedNotice!.sentence).toContain("the bed has been released");
+      expect(revokedNotice!.sentence).toContain("The bed stays held until a person decides whether to release it.");
+      expect(revokedNotice!.sentence).not.toContain("has been released");
     });
   });
 });

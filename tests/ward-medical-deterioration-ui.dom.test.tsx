@@ -69,7 +69,8 @@ describe("ED medical placement controls through the real provider", () => {
     expect(after.movement.medicalDeterioration.resumedAt).toBeUndefined();
     expect(after.movement.acceptedUnitId).toBeUndefined();
     expect(after.unit.allocatable.value).toBe(before.unit.allocatable.value + 1);
-    expect(after.unit.empty).toEqual(before.unit.empty);
+    // Audit 24-1 B-02: this seeded pull sat outside the empty count, so releasing it frees the bed.
+    expect(after.unit.empty.value).toBe(before.unit.empty.value + 1);
     expect(within(controls).getByRole("status")).toHaveTextContent("Allocation cancelled; referral paused");
     expect(within(controls).queryByRole("button", { name: "Record medical deterioration" })).not.toBeInTheDocument();
   });

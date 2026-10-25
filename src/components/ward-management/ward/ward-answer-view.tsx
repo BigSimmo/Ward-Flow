@@ -121,14 +121,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  // Audit 1, Josh 20 Oct (CS-08): the request on screen is held by its journey id, never its list
-  // position, so a request answered elsewhere or a new one sorting ahead cannot swap the person.
-  // `index` is only where to land when the held request leaves the list.
+  // Audit 1, Josh 20 Oct (CS-08): held by journey id, never list position; `index` is where to land after answering.
   // Notices option A (22 Oct 2026): a Notices row names its request, so the view opens on that patient.
-  const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number }>({
+  const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({
     id: initialMovementId,
     index: 0,
   });
+  const [answeredHereId, setAnsweredHereId] = useState<string>();
   // Phone (v10): its own layout. The facts show four until asked, the ISBAR summary and the
   // ward's gates fold, and the beds, census and answers are rows that open in place.
   const isPhone = useIsPhone();
@@ -318,9 +317,18 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
-  const activeMovement = incoming[activeAnswerIndex];
+  // Audit 24-1 D-01: a shown or linked request that leaves elsewhere keeps its place (no swap).
+  const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
+  const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
+  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).displayName);
+  const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
+  const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
+  const pick = (index: number, movement = incoming[index]) =>
+    setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
+  if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
-    setAnswerSelection({ id: incoming[index]?.id, index });
+    setAnsweredHereId(undefined);
+    pick(index);
     setHoldChoice(undefined);
   };
   // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
@@ -359,6 +367,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       return;
     }
     setDeclineNudge(false);
+    setPriorRejectionCount(rejections.length);
+    setAnsweredHereId(movementId);
     declinePendingRef.current = true;
     setDeclinePending(true);
     try {
@@ -373,11 +383,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         setDeclineReason(undefined);
         triggerToast("Referral declined.");
       } else {
+        setAnsweredHereId(undefined);
         triggerToast(
           outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
         );
       }
     } catch {
+      setAnsweredHereId(undefined);
       triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.");
     } finally {
       declinePendingRef.current = false;
@@ -387,9 +399,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
 
   function handleAccept(movementId: string, withExtendedHold = false) {
     setPriorRejectionCount(rejections.length);
+    setAnsweredHereId(movementId);
     const unitIdHere = currentUnit.id;
+    const accepted = incoming.find((movement) => movement.id === movementId);
     // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
-    // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
+    // Owner, 26 Sept 2026: no WF journey number in a person-facing toast; it names the person (24-1 B-08).
     runStep(
       {
         type: "ACCEPT_IN_PRINCIPLE",
@@ -401,7 +415,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         ...(withExtendedHold ? { extendedHold: true as const } : {}),
       },
       {
-        success: "Accepted in principle.",
+        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).displayName} ` : ""}in principle.`,
         undo: (at) => ({
           type: "UNDO_ACCEPT_IN_PRINCIPLE",
           role: "ward",
@@ -425,6 +439,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
     if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
     setPriorRejectionCount(rejections.length);
+    setAnsweredHereId(movementId);
 
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
       raise("ACCEPT_IN_PRINCIPLE", {
@@ -721,7 +736,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 <div className={styles.panelHeaderLeft}>
                   <h2 className={styles.panelTitle}>Bed request</h2>
                 </div>
-                <span className={styles.panelSub}>none waiting</span>
+                <span className={styles.panelSub}>{selectionLeft ? "choose a request" : "none waiting"}</span>
               </div>
             )}
 
@@ -734,6 +749,17 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 <p className={styles.phoneClearText}>
                   No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
                 </p>
+              </div>
+            ) : selectionLeft ? (
+              <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
+                <p role="status">{leftName}&rsquo;s request was answered or withdrawn elsewhere.</p>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={() => selectAnswer(activeAnswerIndex)}
+                >
+                  Show request {activeAnswerIndex + 1} of {incoming.length}
+                </button>
               </div>
             ) : incoming.length === 0 ? (
               <div className={styles.sbarCard}>
@@ -755,9 +781,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 // FD-23: a ward-only view reads no referral records, so the shared reader gets none and
                 // returns the movement's own recorded clearance (recording one writes it here too).
                 const clearance = recordedMovementMedicalClearance(activeMovement, []);
-                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only. The fixed history, risk and
-                // "medically stabilised" text and the "Admit to" recommendation were invented for every
-                // referral and are gone; an absent fact reads "Not recorded".
+                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only; absent reads "Not recorded".
                 const sbarSections = (
                   <>
                     <div className={styles.sbarSection}>

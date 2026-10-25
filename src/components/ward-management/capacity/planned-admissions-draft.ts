@@ -9,8 +9,10 @@ import {
   PLANNED_ADMISSION_WINDOW_DAYS,
   type PlannedAdmissionReason,
 } from "../ward-admissions";
+import type { OverrideReason } from "../ward-change-reasons";
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "../ward-clock";
-import type { Cohort, LegalStatus, RecordedSex, ReferralGender } from "../ward-model";
+import { requiresAuthorisedDestination } from "../ward-eligibility";
+import type { Cohort, LegalStatus, RecordedSex, ReferralGender, Unit } from "../ward-model";
 
 export type PlannedAdmissionDraft = {
   who: "patient" | "initials";
@@ -28,7 +30,25 @@ export type PlannedAdmissionDraft = {
   legalStatus: LegalStatus;
   /** Recorded for an initials-only booking; derived from the record for a linked patient. */
   ageBand: Cohort;
+  /**
+   * Audit 24-1 CS2-19: the reason chosen from `OVERRIDE_REASONS` when the ward is not authorised
+   * for the legal status; absent until one is picked. Sent only while the ward still needs it.
+   */
+  overrideReason?: OverrideReason;
 };
+
+/**
+ * Whether this legal status on this ward needs a recorded override reason (Audit 24-1 CS2-19): the
+ * status needs an authorised bed and the ward is not authorised. The same rule the reducer's
+ * authorisation gate reads (`requiresAuthorisedDestination`), so the form asks exactly when the
+ * reducer would refuse.
+ */
+export function authorisationReasonNeeded(
+  legalStatus: LegalStatus,
+  unit: Pick<Unit, "authorised"> | undefined,
+): boolean {
+  return unit !== undefined && requiresAuthorisedDestination(legalStatus) && !unit.authorised;
+}
 
 /** Merges an edit into the open draft; with no draft open there is nothing to change. */
 export function applyDraftPatch(
