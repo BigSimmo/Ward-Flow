@@ -25,7 +25,7 @@ import { HEALTH_SERVICES, type HealthService } from "@/components/ward-managemen
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
-import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
@@ -162,7 +162,7 @@ export function StatisticsServicesIndexScreen() {
           <>
             <HeroStat value={services.length} label="Services" />
             <HeroStat value={totalBeds} label="Beds" />
-            <HeroStat value={totalWaiting} label="Waiting in ED" />
+            <HeroStat value={totalWaiting} label="Open ED journeys" />
           </>
         ),
       }}
@@ -212,13 +212,13 @@ export function StatisticsServicesIndexScreen() {
                     {entry.departments === 0 ? <span className={phone.word}>No ED</span> : entry.waiting}
                   </span>
                 }
-                time={entry.departments === 0 ? undefined : "in ED"}
+                time={entry.departments === 0 ? undefined : "open ED journeys"}
                 href={serviceStatisticsHref(entry.service)}
               />
             ))}
           </PhoneList>
           <PhoneDotKey testId="ward-statistics-services-dot-key">
-            {`Amber dot: someone has waited in ED past ${LONG_WAIT_HOURS} hours`}
+            {`Amber dot: an open ED journey is past ${LONG_WAIT_HOURS} hours`}
           </PhoneDotKey>
           <PhoneSheetRow
             icon={Send}
@@ -328,7 +328,7 @@ export function StatisticsServicesIndexScreen() {
                     <div>
                       <dt>
                         {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                        Waiting in ED
+                        Open ED journeys
                       </dt>
                       <dd>
                         {entry.departments === 0 ? "No ED" : entry.waiting}
@@ -411,13 +411,13 @@ export function StatisticsServicesIndexScreen() {
               icon={Clock}
               id="ed-waits"
               className={index.anchorTarget}
-              title="Waiting in ED, by service"
-              aside={<span className={styles.muted}>{totalWaiting} waiting</span>}
+              title="Open ED journeys, by service"
+              aside={<span className={styles.muted}>{totalWaiting} open ED journeys</span>}
               data-testid="ward-statistics-services-ed-waits"
             >
               <CardBody>
                 <BarList
-                  label="People waiting in an emergency department, by health service"
+                  label="Open ED journeys, by originating health service"
                   track
                   labelWidth="8rem"
                   rows={services.map((entry) => ({

@@ -79,7 +79,7 @@ function hoursLabel(minutes: number): string {
 }
 
 /**
- * Everyone waiting in ED, one row per department and one mark per person along a 0 to 72 hour line,
+ * Open ED journeys, one row per department and one mark per person along a 0 to 72 hour line,
  * with the 24 and 48 hour lines drawn. Shape carries the state: a filled dot has a ward, a ring has
  * none yet, an amber dot is past the long wait line and a triangle past the very long one. A row grows to fit its marks, so
  * they never overlap. Sized to its card, so the marks keep their size at every width.
@@ -87,7 +87,7 @@ function hoursLabel(minutes: number): string {
 export function StatisticsEdSwarm({
   rows,
   labelWidth = 168,
-  label = "Each person waiting in ED, by how long they have waited",
+  label = "Each open ED journey, by time since opening",
   testId = "ward-statistics-ed-swarm",
 }: {
   rows: readonly EdSwarmRow[];

@@ -1,5 +1,5 @@
 // @ts-check
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -7,6 +7,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROUTES = new Map([
   ["/v1/workspace", "workspace"],
   ["/v1/workspace/commands", "workspace_commands"],
+  ["/v1/workspace/receipt", "workspace_receipt"],
   ["/v1/workspace/audit", "workspace_audit"],
   ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/push-key", "push_key"],
@@ -313,6 +314,13 @@ export function createSharedHandler({
       }
       const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
+        // Missing session identity must not become a shared JSON-null recovery binding.
+        const receiptIdentity =
+          typeof session.sessionId === "string" && session.sessionId.trim().length > 0
+            ? session.sessionId
+            : Number.isFinite(started)
+              ? started
+              : undefined;
         // A locked store read can refresh this request's role and joined cover.
         const workspace = () => ({
           role: view.access.role,
@@ -320,6 +328,20 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          // No session limit configured means no sign-in deadline (a set limit with no start time was
+          // already refused above), so only a role or grant expiry can bound access here.
+          accessUntil: Math.min(
+            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Infinity,
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+          ...(receiptIdentity === undefined || typeof store.receipt !== "function"
+            ? {}
+            : {
+                receiptScope: createHash("sha256")
+                  .update(JSON.stringify([config.workspaceId, actorId, view.membershipId, receiptIdentity]))
+                  .digest("hex"),
+              }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
@@ -345,6 +367,12 @@ export function createSharedHandler({
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
         return reply(200, { ...workspace(), data, snapshot });
       }
+      if (path === "/v1/workspace/receipt" && request.method === "GET") {
+        const commandId = new URL(request.url).searchParams.get("commandId");
+        if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
+        if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
+        return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
+      }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
         // History's closed records older than 30 days (migration 14), each desk's own part only,
         // as its live workspace is. A store without an archive answers with an empty list.
@@ -356,7 +384,13 @@ export function createSharedHandler({
         // them all; the access admin reads role changes only. Nobody else reads the audit.
         if (!whole && view.access.role !== "admin")
           return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
-        return reply(200, { events: await store.audit(view) });
+        const cursor = new URL(request.url).searchParams.get("before");
+        if (cursor !== null && (!/^[1-9][0-9]{0,18}$/.test(cursor) || BigInt(cursor) > 9223372036854775807n))
+          return reply(400, { error: "Invalid audit cursor" });
+        if (typeof store.auditPage === "function") return reply(200, await store.auditPage(view, cursor));
+        const events = cursor === null ? await store.audit(view) : await store.audit(view, cursor);
+        const complete = events.length < 200;
+        return reply(200, { events, complete, nextCursor: complete ? null : String(events.at(-1).sequence) });
       }
       if (path === "/v1/workspace/record-access") {
         // Every desk logs the records it opens. The statewide coordinator reads the whole log; the

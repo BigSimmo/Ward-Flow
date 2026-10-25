@@ -1,3 +1,4 @@
+import { numberedBedKind } from "./ward-bed-designation";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
@@ -58,6 +59,7 @@ export function reduceTransportEvent(
     STAGE_TRANSITION_BLOCKERS,
     appendNotices,
     bedNumberRefusal,
+    heldBedRefusal,
     departAdmission,
     findAdmission,
     findMovement,
@@ -432,15 +434,19 @@ export function reduceTransportEvent(
       ) {
         return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
       }
-      const { referralArm: heldReferral, bedNumber: heldBed } = movementBedReservation(
+      const { referralArm: heldReferral, bedNumber: reservedBed } = movementBedReservation(
         movement,
         state.referrals,
         unit.id,
       );
       // The patient lands in the bed held for them; if that bed has since been taken they still
       // arrive, with no bed recorded, rather than being refused at the door.
+      const heldBed = reservedBed ?? linkedAdmission?.bedNumber;
       const heldBedNumber =
-        heldBed !== undefined && bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null
+        heldBed !== undefined &&
+        bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null &&
+        heldBedRefusal(state, unit, heldBed, movement.id, movement.referralId) === null &&
+        linkedAdmission?.bedKind === numberedBedKind(unit, heldBed)
           ? heldBed
           : undefined;
       // A seeded pulled stay (`movementId` null) is already counted as a taken bed and in the sex
@@ -546,8 +552,10 @@ export function reduceTransportEvent(
       let withPerson: WardFlowState;
       // Audit §3 items 2, 5, 6: an absent admission is left alone, never invented.
       if (pulledAdmission && pulledAdmission.state === "pulled") {
+        const { bedNumber: _previousNumber, ...withoutBedNumber } = pulledAdmission;
+        void _previousNumber;
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
-          ...pulledAdmission,
+          ...withoutBedNumber,
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
@@ -584,7 +592,7 @@ export function reduceTransportEvent(
                 arm.state !== "accepted" ||
                 arm.heldBedNumber === undefined ||
                 arm.destination.kind !== "psychiatric_ward" ||
-                arm.destination.unitId !== unit.id
+                (arm.acceptedUnitId ?? arm.destination.unitId) !== unit.id
               )
                 return arm;
               const { heldBedNumber: _heldBed, ...releasedArm } = arm;

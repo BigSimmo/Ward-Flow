@@ -1,7 +1,7 @@
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -12,11 +12,15 @@ vi.mock("next/link", () => ({
 }));
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
+import * as statisticsHero from "@/components/ward-management/statistics/statistics-hero";
+import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
  * 🔴 **EVERY DEPARTMENT GETS A ROW, INCLUDING THE ONES WITH NOBODY IN THEM — and that is the whole
@@ -41,6 +45,11 @@ function specimen(changes: Partial<Movement>): Movement {
   expect(TEMPLATE, "the seed holds no movements, so every case here would assert nothing").toBeDefined();
   return {
     ...structuredClone(TEMPLATE!),
+    sourceAdmissionId: undefined,
+    transport: undefined,
+    stageChanges: [],
+    edOutcome: undefined,
+    leftDepartmentAt: undefined,
     acceptedUnitId: undefined,
     closure: undefined,
     stage: "placement_requested",
@@ -59,6 +68,153 @@ function renderEd(movements: Movement[]) {
 }
 
 describe("comparison across departments", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      window.sessionStorage.clear();
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("prevents the executive population split revealing a suppressed complement in the screen and CSV", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    renderEd(
+      Array.from({ length: 10 }, (_, index) =>
+        specimen({
+          id: `WF-population-${index}`,
+          originEdId: DEPARTMENTS[0]!.id,
+          leftDepartmentAt: undefined,
+          ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
+        }),
+      ),
+    );
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("10");
+    expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent(
+      "not shown still in ED · fewer than 5 in transit",
+    );
+    let exported: Blob | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: (blob: Blob) => {
+        exported = blob;
+        return "blob:synthetic-counts";
+      },
+      revokeObjectURL: vi.fn(),
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    try {
+      fireEvent.click(screen.getByTestId("ward-statistics-export"));
+      const csv = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsText(exported!);
+      });
+      expect(csv).toContain('"Open ED journeys","10"');
+      expect(csv).toContain('"Still in ED","not shown"');
+      expect(csv).toContain('"In transit or recorded departure","fewer than 5"');
+    } finally {
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("also suppresses the complementary split on the executive all-ED page", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    const originalLive = statisticsHero.useStatisticsLive;
+    vi.spyOn(statisticsHero, "useStatisticsLive").mockImplementation(() => {
+      const live = originalLive();
+      return {
+        ...live,
+        state: {
+          ...live.state,
+          movements: Array.from({ length: 10 }, (_, index) =>
+            specimen({
+              id: `WF-network-population-${index}`,
+              originEdId: DEPARTMENTS[0]!.id,
+              leftDepartmentAt: undefined,
+              ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
+            }),
+          ),
+        },
+      };
+    });
+    render(
+      <WardFlowProvider>
+        <StatisticsEdsIndexScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId("ward-statistics-eds-population")).toHaveTextContent(
+      "not shown still in ED · fewer than 5 in transit",
+    );
+    const bands = screen.getByTestId("ward-statistics-eds-bands");
+    expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
+    expect(bands).toHaveTextContent("Open ED journeys");
+    expect(bands).toHaveTextContent("The bands do not overlap: they add up to all open ED journeys.");
+    expect(
+      within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByRole("heading", {
+        name: "Open ED journeys, by ED",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps travelling people in open journeys and names physical ED presence separately", () => {
+    renderEd([
+      specimen({ id: "WF-wait", originEdId: DEPARTMENTS[0]!.id, leftDepartmentAt: undefined }),
+      specimen({
+        id: "WF-transit",
+        originEdId: DEPARTMENTS[0]!.id,
+        stage: "moving",
+        leftDepartmentAt: 100,
+      }),
+    ]);
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("2");
+    expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
+    expect(screen.getByRole("heading", { name: "Open ED journeys" })).toBeInTheDocument();
+    const bands = screen.getByTestId("ward-statistics-ed-bands");
+    expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED journeys")).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED journeys by time since opening")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-statistics-ed-everyone")).getByRole("heading", {
+        name: "Open ED journeys, by ED",
+      }),
+    ).toBeInTheDocument();
+  });
+  it("names open-journey counts separately from time since opening for a travelling journey", () => {
+    act(() => setWardFeatureFlagOnDevice("role-access", false));
+    const department = DEPARTMENTS[0]!;
+    const movements = [
+      specimen({ id: "WF-column-here", originEdId: department.id, openedAt: NOW_ANCHOR - 30 }),
+      specimen({
+        id: "WF-column-transit",
+        originEdId: department.id,
+        stage: "moving",
+        openedAt: NOW_ANCHOR - 120,
+        leftDepartmentAt: NOW_ANCHOR - 15,
+      }),
+    ];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsEdScreen edId={department.id} movements={movements} />
+      </WardFlowProvider>,
+    );
+    const comparison = screen.getByTestId("ward-stat-ed-comparison");
+    expect(within(comparison).getByRole("columnheader", { name: /^Open journeys$/u })).toBeInTheDocument();
+    expect(within(comparison).getByTestId(`ward-stat-ed-comparison-waiting-${department.id}`)).toHaveTextContent(
+      /^2$/u,
+    );
+    const detail = screen.getByTestId("ward-stat-ed-wait-table");
+    expect(within(detail).getByRole("columnheader", { name: /^Time since opening$/u })).toBeInTheDocument();
+    const travelling = within(detail).getByTestId("ward-stat-ed-wait-row-WF-column-transit");
+    expect(within(travelling).getAllByRole("cell").at(-1)).toHaveTextContent(/^2h 00m$/u);
+  });
+
   it("has departments to compare at all", () => {
     expect(DEPARTMENTS.length, "ward-sites.ts lists no emergency departments").toBeGreaterThan(1);
   });

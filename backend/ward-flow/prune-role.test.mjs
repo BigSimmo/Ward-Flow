@@ -13,8 +13,8 @@ if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
   throw new Error("Database tests require an isolated loopback PostgreSQL server");
 
 test("the receipt clean-up workflow accepts only the wardflow_pruner login on the approved project", () => {
-  const direct = `postgresql://wardflow_pruner:secret@db.${APPROVED_SUPABASE_PROJECT}.supabase.co:5432/postgres`;
-  const pooled = `postgresql://wardflow_pruner.${APPROVED_SUPABASE_PROJECT}:secret@${APPROVED_SUPABASE_POOLER}:5432/postgres`;
+  const direct = `postgresql://wardflow_pruner:secret@db.${APPROVED_SUPABASE_PROJECT}.supabase.co:5432/postgres`; // precommit-scan: allow - fixed dummy parser fixture; never used to connect.
+  const pooled = `postgresql://wardflow_pruner.${APPROVED_SUPABASE_PROJECT}:secret@${APPROVED_SUPABASE_POOLER}:5432/postgres`; // precommit-scan: allow - fixed dummy parser fixture; never used to connect.
   assert.equal(readSupabasePrunerConfig({ WARD_SUPABASE_PRUNE_DATABASE_URL: direct }).connectionString, direct);
   assert.equal(readSupabasePrunerConfig({ WARD_SUPABASE_PRUNE_DATABASE_URL: pooled }).connectionString, pooled);
   for (const refused of [

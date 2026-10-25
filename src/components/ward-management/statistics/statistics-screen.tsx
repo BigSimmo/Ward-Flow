@@ -50,9 +50,9 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
   type BedRelease,
@@ -254,9 +254,8 @@ export function StatisticsScreen({
   const availableNow = totalReadyBedsNow(units, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
-  // Audit 6 (Josh, 20 Oct 2026): "Waiting in ED" is the shared figure every other screen prints, the
-  // people physically in an ED; every open journey, in transit and ward-to-ward included, is "Still open".
-  const waitingCount = waitingInEds(sourceMovements, now).total;
+  // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
+  const waitingCount = openEdJourneys(sourceMovements, now).total;
   const stillOpenCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
@@ -449,7 +448,12 @@ export function StatisticsScreen({
                 ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
               }))
               .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-            ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
+            ed: emergencyDepts.map((d) => ({
+              id: d.id,
+              name: d.name,
+              code: d.site,
+              meta: `${d.waiting} open ED journeys`,
+            })),
             service: HEALTH_SERVICES.map((svc) => {
               const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
               return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
@@ -548,7 +552,7 @@ export function StatisticsScreen({
               ["Being made ready", pendingPreparation],
               // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
               ["Admissions ended today", small(dischargesCount)],
-              ["Waiting in ED", small(waitingCount)],
+              ["Open ED journeys", small(waitingCount)],
               ["Still open", small(stillOpenCount)],
             ],
           }}
@@ -571,7 +575,7 @@ export function StatisticsScreen({
               <HeroChip
                 value={small(waitingCount)}
                 // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                label={`Waiting in ED · ${small(stillOpenCount)} still open`}
+                label="Open ED journeys"
                 onPress={() =>
                   document
                     .querySelector('[data-testid="ward-statistics-emergency-departments"]')
@@ -860,7 +864,7 @@ export function StatisticsScreen({
 
               <StatCard
                 icon={Clock}
-                title="ED waits for a bed"
+                title="Open ED journeys"
                 data-testid="ward-statistics-emergency-departments"
                 aside={
                   longestEd && longestEd.longest !== null ? (
@@ -901,7 +905,7 @@ export function StatisticsScreen({
                         <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
                         <SortTh
                           id="waiting"
-                          label="Waiting"
+                          label="Open ED journeys"
                           sort={edSortCol}
                           asc={edSortAsc}
                           onSort={handleEdSort}

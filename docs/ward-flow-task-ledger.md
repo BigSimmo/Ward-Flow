@@ -386,6 +386,118 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
 
+## §7.83 — Live product review and resolution (23–26 October 2026)
+
+Current receipt, 26 October: task `wardflow-live-product-review-20261023`, repository
+`BigSimmo/Ward-Flow`, worktree `D:/Worktrees/WardFlow/review-ready-20261025`, local branch
+`codex/ward-review-ready-20261025`, publication branch `codex/ward-review-pr-20261024`.
+[PR #675](https://github.com/BigSimmo/Ward-Flow/pull/675) is ready for review and remains
+unmerged. The owner authorised fixes, normal pushes and normal merge after checks and review.
+
+Evidence identities and limits:
+
+- At `7b07ec6af0684d2dd2204c3ae527aa8766d1546d`, [CI run 40225408567](https://github.com/BigSimmo/Ward-Flow/actions/runs/40225408567)
+  completed with the `Ward Flow required` check successful. Its eight `Ward Flow unit shard`
+  jobs, `Ward Flow coverage`, `Ward Flow static checks`, `Ward Flow production build`,
+  all three `Ward Flow browser journeys` jobs, `Ward Flow backend and shared production proof`
+  and `Ward Flow release gate` succeeded. The production job's script-budget check passed all
+  five existing limits. `Ward Flow main reuse check` was intentionally skipped by the planner.
+- Normal merge of that head was refused because CodeRabbit's formal review still requested
+  changes. Resolving 16 inline threads did not clear its two outside-diff findings. No review
+  was dismissed or bypassed.
+- Commit `2b1fd2cacf21b0766959afc2063c09627f1b8e29` fixes those findings: ED table headings
+  distinguish journey counts from elapsed time; reload-recovery scope is omitted without
+  usable session identity. Independent source review of both two-file deltas found no further
+  actionable defect. That review executed no tests or provider calls.
+- `node scripts/run-vitest.mjs run tests/ward-statistics-ed-comparison.dom.test.tsx tests/ward-statistics-journey-view.dom.test.tsx`
+  passed 16 tests. The new header regression first failed against the preceding source.
+- `node scripts/run-backend-tests.mjs --offline` passed 250 tests, skipped 25 database-dependent
+  tests and failed none. Its new identity regressions first failed two tests against the
+  preceding source. No local PostgreSQL connection was used in this offline run.
+- `node scripts/run-heavy.mjs --npm-script typecheck:backend` rebuilt the shared engine and
+  passed backend TypeScript. The normal `git commit` hook for `2b1fd2cac` passed staged secret
+  scanning, lint for four files and scoped TypeScript for two files.
+- `node scripts/check-diff-integrity.mjs --base f5a9b6864fc28456d82a399d33c945539faba520`
+  passed, with 51 changed test files and 514 to 586 cases. Prior-head CI is not a final-head
+  verdict: the new fixes still require publication, fresh required CI and formal review release.
+
+Internal HealthPoint policy, service feeds and integration ownership, hosted-provider acceptance,
+physical devices and full acceptance for screen-reader use remain external follow-ups. No hosted migration or
+deployment was executed. Notion remains unsynced. Last verified: 26 October 2026 against
+`2b1fd2cac` and the explicitly named previous-head CI run above.
+
+Follow-up to review of `fdf734251`: an adapter without receipt support no longer advertises
+reload recovery, and a valid unsupported receipt lookup returns 404. Identity/hash and outage
+expiry assertions retain receipt-capable fixtures. Two new regressions first failed against
+`fdf734251`. `node scripts/run-backend-tests.mjs --offline` then passed 252 tests with 25
+database-dependent skips and zero failures; `node scripts/run-heavy.mjs --npm-script typecheck:backend`
+passed. Independent source/test review found no further actionable defect in the compatibility
+fix or the complete saved formal review. Fresh final-head hosted CI and formal review release
+remain pending; this receipt does not infer either from the earlier checks.
+
+<details>
+<summary>Historical reported checkpoint, 24 October 2026</summary>
+
+The dated narrative below is retained as task history. Its individual command receipts were not
+included here and have not been reconstructed. Its reported passes are not reused as current
+readiness evidence. Approval, publication and next-action statements below describe that earlier
+checkpoint; the current receipt above supersedes them.
+
+Task: `wardflow-live-product-review-20261023`. Owner: Codex review-resolution coordinator.
+Repository: `BigSimmo/Ward-Flow`. Original base `5875823b5322f0b4ed2f5239628f88d40ea0195e`.
+Candidate: `codex/ward-review-pr-20261024`, based on current main
+`b0d0cf722d2430aebeda50a264bb31e749bce626`. Original fixes remain in `8ca15c46f`;
+the original checkout and unfinished merge are retained. Josh approved the exact A–C
+scope and opening a PR. The clean current-main candidate carries only the review changes,
+avoiding unrelated incoming-main ownership checks. Source and regression repairs are
+committed in `d4135fdaa` and `5b29fa518`. Status: focused checks pass; full checks wait
+for the exact owned stopped-lease recovery approval described below. No PR is open yet.
+
+Three main-based author ports preserve current record storage, report owners, command
+completion, bed-kind revision guards, physical ED measures and current routes. Independent
+review reproduced and repaired a legacy held-bed Undo collision and a delayed manual
+snapshot that could replace a retained report after a shared outage began. Reporting
+retains all open ED-origin journeys through transit and recorded outcomes, with physical
+presence separate and complementary suppression on screen and CSV. Bed-release labels
+acknowledge linked identifiers. Recovery stores command identity only and never replays.
+
+Fresh current-candidate evidence at `d4135fdaa`: exact-lock root/backend installation,
+installed-tree parity, full lint, full frontend/backend TypeScript, documentation maintenance
+and offline backend tests (215 passes, 17 explicit database skips) pass. Three recovery,
+confirmation and community suites pass 54 tests. The local app starts and its project
+identity was verified; its owned preview server was stopped. Chromium and WebKit are
+installed. These source results remain applicable to the unchanged application code.
+
+The full unit run was stopped after six completed 100-file batches. Four UI files expected
+old labels and the engine-safety contract found the new hold action absent from its random
+event generator. Corrected six UI test files and the shared generator without weakening
+the invariant/coverage assertions. The corrected seven-file batch passes 52 tests; the
+generator's other two test callers pass seven tests. Both commits pass their staged lint
+and TypeScript checks. Change-integrity passes (25 test files, 243 to 287 cases). This is
+focused evidence; the incomplete full run is not a full-suite verdict. The shared fixture
+change requires a fresh full run, followed by production build and browser checks.
+
+A separate role-privacy owner reports a real local PostgreSQL/HTTP reproduction of old
+receipt-denial metadata after the same account narrows its role. That repair is separate
+and remains pending; this work does not claim to clear every privacy path. Internal
+HealthPoint policy, service-owner endorsement and actual SHOC/Beds Live/PaTCH interface
+ownership remain external acceptance boundaries, alongside physical-device and full
+screen-reader acceptance.
+
+Canonical private checkpoint and exact evidence:
+`C:/Users/joshs/Documents/Codex/Reviews/Ward-Flow-20261023/RESOLUTION.md` and its labelled
+manifests/logs. Stopping the owned full-run process tree left lease
+`3acac7e9-4a64-4def-9cf6-56c5e8bb559f` with an incomplete child receipt. Its holder,
+guardian and child were observed absent. The local protection hook blocked preserving
+that exact lease outside active admission and requires explicit approval; that question
+is pending. No peer process or lease was changed and no completion record was fabricated.
+Next: receive that approval, re-verify the owned stopped lease, preserve it, then complete
+the fresh full gate and production browser checks and publish one PR against main.
+No main merge or deployment is authorised. Notion is unsynced. Last verified:
+24 October 2026 against these fresh named artifacts.
+
+</details>
+
 ## §7.84 — Remaining-ledger reconciliation and source fixes (24 October 2026)
 
 Task/source identity: conversation `01a1684a-2d0a-7343-b88b-3e8c570335d0`, `BigSimmo/Ward-Flow`, branch `codex/ledger-integration-20261024`. This is a contribution to the existing ledger. Canonical Notion reconciliation remains pending; earlier completed and decided records are retained.

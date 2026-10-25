@@ -72,6 +72,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   PULL_PATIENT: "Pull bed",
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   ACCEPT_REFERRAL: "Accept referral",
+  HOLD_REFERRAL_BED: "Hold referral bed",
   CHANGE_LEGAL_STATUS: "Change legal status",
   RAISE_REFERRAL: "Record legal form",
   // T2 (2026-09-17 build plan). Covers both the first typed expiry and a later extension — see

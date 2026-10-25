@@ -29,7 +29,7 @@ import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 /**
  * Remaining-pages audit, 13 Oct 2026, Statistics phone polish (batch 3).
  *
- * stats-4: the hub's "ED waits for a bed" sheet rows open each department's statistics page.
+ * stats-4: the hub's "Open ED journeys" sheet rows open each department's statistics page.
  * stats-5: no time range pill on a phone hero while only Now is live.
  * stats-8: a long ED wait row carries no stripe or tinted fill; the red triangle carries the tone.
  * stats-13: Compare's phone chart labels wards by site code and cohort, never a clipped name.
@@ -65,7 +65,7 @@ describe("Statistics hub on a phone", () => {
   it("links each ED in the waits sheet to its statistics page (stats-4)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    fireEvent.click(screen.getByRole("button", { name: /ED waits for a bed/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Open ED journeys/u }));
     const dialog = screen.getByRole("dialog");
     for (const department of allEmergencyDepartments()) {
       const link = within(dialog)

@@ -495,7 +495,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         </WardFlowProvider>,
       );
 
-      const hud = screen.getByLabelText("Statewide Bed Telemetry");
+      const hud = screen.getByLabelText("Modelled network Bed Telemetry");
       const gapTable = screen.getByTestId("ward-capacity-gap-table");
 
       expect(hud).toBeDefined();

@@ -160,6 +160,92 @@ describe("the shared client shows archived records in History", () => {
     older.shared.dispose();
   });
 
+  it("drops a cached archive when only the access context changes", async () => {
+    const broad = "a".repeat(64);
+    const narrow = "b".repeat(64);
+    let context = broad;
+    let currentView: SharedView | undefined;
+    let archiveReads = 0;
+    const hasArchived = () =>
+      split.archived.some(({ collection, id }) =>
+        currentView?.snapshot?.payload.state[collection].some((record) => record.id === id),
+      );
+    const shared = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        currentView = next;
+      },
+      fetch: async (url) => {
+        if (new URL(String(url)).pathname === "/v1/workspace/archive") {
+          archiveReads++;
+          return Response.json({ archived: split.archived.length, records: context === broad ? records() : [] });
+        }
+        // Revision, generation, live payload and global archive count deliberately stay identical.
+        return Response.json({ snapshot: { ...snapshot(split.archived.length), accessContext: context } });
+      },
+    });
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(hasArchived()).toBe(true));
+      expect(archiveReads).toBe(1);
+      context = narrow;
+      await shared.refresh();
+      expect(currentView?.snapshot?.accessContext === narrow).toBe(true);
+      expect(hasArchived()).toBe(false);
+      await vi.waitFor(() => expect(archiveReads).toBe(2));
+      await shared.refresh();
+      expect(hasArchived()).toBe(false);
+      expect(archiveReads).toBe(2);
+    } finally {
+      shared.dispose();
+    }
+  });
+
+  it("drops an old-context archive reply without clearing the new context's pending read", async () => {
+    const broad = "a".repeat(64);
+    const narrow = "b".repeat(64);
+    let context = broad;
+    let currentView: SharedView | undefined;
+    const replies: Array<(response: Response) => void> = [];
+    const hasArchived = () =>
+      split.archived.some(({ collection, id }) =>
+        currentView?.snapshot?.payload.state[collection].some((record) => record.id === id),
+      );
+    const shared = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        currentView = next;
+      },
+      fetch: async (url) => {
+        if (new URL(String(url)).pathname === "/v1/workspace/archive")
+          return new Promise<Response>((resolve) => replies.push(resolve));
+        return Response.json({ snapshot: { ...snapshot(split.archived.length), accessContext: context } });
+      },
+    });
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(replies.length).toBe(1));
+      context = narrow;
+      await shared.refresh();
+      await vi.waitFor(() => expect(replies.length).toBe(2));
+      replies[0]!(Response.json({ archived: split.archived.length, records: records() }));
+      // Await an ordinary board read after releasing A. B's archive read is still pending:
+      // A's finally must not clear its same-count in-flight guard or cause a third request.
+      await shared.refresh();
+      expect(replies.length).toBe(2);
+      expect(currentView?.snapshot?.accessContext === narrow).toBe(true);
+      expect(hasArchived()).toBe(false);
+      replies[1]!(Response.json({ archived: split.archived.length, records: [] }));
+      await shared.refresh();
+      expect(replies.length).toBe(2);
+      expect(hasArchived()).toBe(false);
+    } finally {
+      shared.dispose();
+    }
+  });
+
   it("keeps the live board when the archive reply is malformed", async () => {
     const { shared, view, paths } = client(() =>
       Response.json({ archived: 1, records: [{ collection: "patients", body: { id: "x" } }] }),

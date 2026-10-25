@@ -43,12 +43,13 @@ describe("Ward Flow Read-Only Plain History", () => {
       // SET_SECLUSION_ROOM_STATUS.
       // Fix plan item 16 (D-76) adds ASK_MORE_WARDS.
       // Observation levels (fix plan item 10) add RECORD_OBSERVATION_LEVEL.
+      // Accepted-referral numbered holds add HOLD_REFERRAL_BED.
       // Closing the loop, package D (24 Oct 2026) adds MARK_CANCELLED_MOVE_CHECK,
       // RECORD_ACCEPTANCE_CONDITION, MARK_ACCEPTANCE_CONDITION_MET, RECORD_RESTRICTION_REVIEW and
       // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT; package E adds two.
       // Package B adds RECORD_DISCHARGE_DEPENDENCY and RECORD_DISCHARGE_PLAN_CHANGE.
       // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
-      expect(allEventTypes.length).toBe(160);
+      expect(allEventTypes.length).toBe(161);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

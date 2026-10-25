@@ -15,6 +15,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import { numberedBedKindRefusal } from "../src/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, URGENCY_CHANGE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import {
@@ -250,10 +251,27 @@ describe("ACCEPT_IN_PRINCIPLE with a bed number (the ward Bed board)", () => {
   }
 
   it("holds the numbered bed on the movement, and Undo clears it with the acceptance", () => {
-    const { state, event } = destinationReview();
-    const accepted = wardFlowReducer(state, { ...event, bedNumber: 1 });
+    const review = destinationReview();
+    const { event } = review;
+    // PR #675: a numbered bed is held only while that kind of bed is free, so give the seeded
+    // (full) ward one free bed, and choose a bed of the kind the open/locked rule allows next.
+    const state = {
+      ...review.state,
+      units: review.state.units.map((candidate) =>
+        candidate.id === event.unitId
+          ? { ...candidate, allocatable: { ...candidate.allocatable, value: candidate.allocatable.value + 1 } }
+          : candidate,
+      ),
+    };
+    const unit = state.units.find((candidate) => candidate.id === event.unitId)!;
+    const secure = state.movements.find((movement) => movement.id === event.movementId)!.security === "Secure";
+    const bedNumber = Array.from({ length: unit.beds }, (_, index) => index + 1).find(
+      (candidate) => numberedBedKindRefusal(unit, candidate, secure) === null,
+    );
+    expect(bedNumber).toBeDefined();
+    const accepted = wardFlowReducer(state, { ...event, bedNumber: bedNumber! });
     expect(accepted.rejections).toEqual([]);
-    expect(accepted.movements.find((movement) => movement.id === event.movementId)!.heldBedNumber).toBe(1);
+    expect(accepted.movements.find((movement) => movement.id === event.movementId)!.heldBedNumber).toBe(bedNumber);
     expect(isValidStoredWardFlowState(stored(accepted))).toBe(true);
     const undone = wardFlowReducer(accepted, undoEventFor(event, "ward", NOW + 1, event.unitId));
     expect(lastRefusal(accepted, undone)).toBeUndefined();

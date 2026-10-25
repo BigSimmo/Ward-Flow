@@ -17,6 +17,19 @@ export function numberedBedKind(unit: Unit, bedNumber: number): "locked" | "open
   return bedNumber <= unit.lockedBeds ? "locked" : "open";
 }
 
+/** Keep the owner's open-first/locked-first allocation rule when a person chooses a number. */
+export function numberedBedKindRefusal(unit: Unit, bedNumber: number, secureBedNeeded: boolean): string | null {
+  const kind = numberedBedKind(unit, bedNumber);
+  if (kind === undefined) return "The numbered bed reservation is outside this ward.";
+  if (!secureBedNeeded && openBedsFree(unit) > 0 && kind === "locked")
+    return "Choose an open bed first while open capacity remains.";
+  if (secureBedNeeded && lockedBedsFree(unit) > 0 && kind === "open")
+    return "Choose a locked bed first while locked capacity remains.";
+  if ((kind === "locked" ? lockedBedsFree(unit) : openBedsFree(unit)) <= 0)
+    return `No ${kind} capacity remains for that numbered bed.`;
+  return null;
+}
+
 /** Beds designated open. Derived — never stored, per the owner's one-source ruling. */
 export function openBeds(unit: Unit): number {
   return Math.max(0, unit.beds - unit.lockedBeds);

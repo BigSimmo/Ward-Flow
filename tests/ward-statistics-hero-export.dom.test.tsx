@@ -62,7 +62,7 @@ afterEach(() => {
 });
 
 describe("Statistics hero: Export the figures", () => {
-  it.each([false, true])("counts physical ED waits on the summary and CSV (phone=%s)", async (phone) => {
+  it.each([false, true])("counts open ED journeys through transit on the summary and CSV (phone=%s)", async (phone) => {
     installMatchMediaStub(phone);
     const base = seedWardFlowStateAt(0).movements.find(isWaitingInEd)!;
     const movements: Movement[] = [
@@ -72,15 +72,13 @@ describe("Statistics hero: Export the figures", () => {
       { ...base, id: "WF-SYN-TRANSFER", sourceAdmissionId: "ADM-SYN-TRANSFER" },
     ];
     inProvider(<StatisticsScreen movements={movements} />);
-    // The desktop chip carries the open-journey figure with it (main, audit 6): "Waiting in ED · N still open".
-    const label = phone
-      ? screen.getByText("Waiting in ED", { exact: true })
-      : screen.getByText(/^Waiting in ED · \d+ still open$/);
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
+    const label = within(hero).getByText("Open ED journeys", { exact: true });
     const figure = phone ? label.closest("li") : label.parentElement;
-    expect(figure?.textContent).toMatch(phone ? /^1Waiting in ED$/ : /^1Waiting in ED · \d+ still open$/);
+    expect(figure?.textContent).toMatch(/^3Open ED journeys$/);
     if (!phone) {
       const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
-      expect(csv).toContain('"Waiting in ED","1"');
+      expect(csv).toContain('"Open ED journeys","3"');
     }
   });
 

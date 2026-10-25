@@ -27,9 +27,11 @@ describe("a ward-raised referral asks for an authorised bed by the engine's rule
     expect(requiresAuthorisedDestination(undefined)).toBe(true);
   });
 
-  it("the ward screen uses that rule, not a text match of its own", () => {
+  it("the ward screen guesses no authorised-bed need of its own", () => {
+    // PR #675: a ward stay opens the full referral form, where the referrer records the need, instead
+    // of the ward screen deriving it. The screen must not grow back a text match or its own guess.
     const source = readFileSync(join(__dirname, "../src/components/ward-management/ward/ward-screen.tsx"), "utf8");
-    expect(source).toMatch(/involuntaryBedNeeded = requiresAuthorisedDestination\(/u);
+    expect(source).not.toMatch(/involuntaryBedNeeded\s*[:=]/u);
     expect(source).not.toMatch(/form 6a\|form 1a/iu);
   });
 });

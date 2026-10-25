@@ -69,6 +69,7 @@ const isSmall = (cell: string | undefined) => cell !== undefined && /^[1-4]$/u.t
 
 describe("the network figures export (issue #618)", () => {
   // Three people wait in an ED: under the line, so the executive's export words it.
+  // PR #675 names this row "Open ED journeys" (it keeps people in transit); these three are still in ED.
   const base = seedWardFlowStateAt(0).movements.find(isWaitingInEd)!;
   const movements: Movement[] = [0, 1, 2].map((index) => ({ ...base, id: `WF-SYN-${index}` }));
 
@@ -86,11 +87,11 @@ describe("the network figures export (issue #618)", () => {
   it("words a small count of people for the executive and keeps beds exact", async () => {
     asDesk("coordinator");
     const exact = await networkFigures();
-    expect(figure(exact, "Waiting in ED")).toBe("3");
+    expect(figure(exact, "Open ED journeys")).toBe("3");
 
     asDesk("executive");
     const worded = await networkFigures();
-    expect(figure(worded, "Waiting in ED")).toBe("fewer than 5");
+    expect(figure(worded, "Open ED journeys")).toBe("fewer than 5");
     expect(figure(worded, "Still open")).toBe("fewer than 5");
     expect(figure(worded, "Beds")).toBe(figure(exact, "Beds"));
     expect(figure(worded, "Beds ready now")).toBe(figure(exact, "Beds ready now"));
