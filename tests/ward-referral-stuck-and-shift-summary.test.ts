@@ -113,10 +113,18 @@ describe("referral stuck: no reply within the Settings limit", () => {
 describe("ward shift summary from recorded times", () => {
   it("uses the 07:00, 15:00 and 23:00 shifts, with night wrapping past midnight", () => {
     const day = NOW_ANCHOR - minuteOfDay(NOW_ANCHOR);
-    expect(shiftWindow(day + 10 * 60, "current")).toMatchObject({ id: "day", from: day + 7 * 60, to: day + 15 * 60 });
-    expect(shiftWindow(day + 10 * 60, "previous")).toMatchObject({ id: "night", from: day - 60, to: day + 7 * 60 });
-    expect(shiftWindow(day + 2 * 60, "current")).toMatchObject({ id: "night", from: day - 60 });
-    expect(shiftWindow(day + 23 * 60, "current")).toMatchObject({ id: "night", from: day + 23 * 60 });
+    expect(shiftWindow(day + 10 * 60, "current")).toMatchObject({
+      label: "Day Shift",
+      from: day + 7 * 60,
+      to: day + 15 * 60,
+    });
+    expect(shiftWindow(day + 10 * 60, "previous")).toMatchObject({
+      label: "Night Shift",
+      from: day - 60,
+      to: day + 7 * 60,
+    });
+    expect(shiftWindow(day + 2 * 60, "current")).toMatchObject({ label: "Night Shift", from: day - 60 });
+    expect(shiftWindow(day + 23 * 60, "current")).toMatchObject({ label: "Night Shift", from: day + 23 * 60 });
   });
 
   it("counts only this ward's records whose time falls inside the shift", () => {
@@ -129,6 +137,7 @@ describe("ward shift summary from recorded times", () => {
       admission({ id: "A2", arrivedAt: from - 1 }),
       admission({ id: "A3", state: "departed", leftAt: from + 5 }),
       admission({ id: "A4", unitId: "another-ward", arrivedAt: from + 2 }),
+      admission({ id: "A6", arrivedAt: now }),
     ].map((entry) => ({
       ...entry,
       pulledAt: null,
@@ -136,8 +145,6 @@ describe("ward shift summary from recorded times", () => {
       dischargeDateMoves: 0,
       observationChanges: [],
     }));
-    const accepted = referral("RF-T7", from - 60, { state: "accepted", decidedAt: now });
-    const stuck = referral("RF-T8", now - 500);
     const summary = wardShiftSummary({
       unit: ward,
       admissions: [
@@ -151,18 +158,10 @@ describe("ward shift summary from recorded times", () => {
           observationChanges: [],
         }),
       ],
-      referrals: [accepted, stuck],
-      configuration: limit,
       now,
       which: "current",
     });
-    expect(summary).toMatchObject({
-      arrived: 1,
-      left: 1,
-      referralsAccepted: 1,
-      referralsDeclined: 0,
-      referralsAwaitingReply: 1,
-      referralsStuck: 1,
-    });
+    // A1 and A6 (recorded this minute) arrived in the shift; A2 before it; A4 on another ward.
+    expect(summary).toMatchObject({ arrived: 2, left: 1 });
   });
 });

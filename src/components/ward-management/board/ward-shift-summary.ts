@@ -1,57 +1,45 @@
-import { minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
-import type { Referral, Unit } from "@/components/ward-management/ward-model";
-import { referralNoReplyWaits } from "@/components/ward-management/referrals/referral-no-reply";
+import type { Unit } from "@/components/ward-management/ward-model";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * A WARD'S SHIFT SUMMARY — what was RECORDED on this ward during one shift (Josh's list item 16,
  * 25 Oct 2026), shown on the ward's Shift brief and printed with it.
  *
  * Shifts follow the app's handover pattern: day 07:00 to 15:00, evening 15:00 to 23:00, night
- * 23:00 to 07:00 (`HANDOVER_SHIFTS`, `handover-model.ts`). Every figure is a count of records whose
+ * 23:00 to 07:00 (`SHIFT_PATTERN`, `ward-operational-defaults.ts`). Every figure is a count of records whose
  * own recorded time falls inside the shift. Nothing is estimated, scored or inferred, and no
  * person is named: counts only, so the paper carries no patient details (D-71).
+ *
+ * Referral answers are left out on purpose: a ward-facing surface may not read the full referral
+ * record (FD-23), and the coordinator's Referrals board and bed-meeting sheet carry the stuck flag.
  *
  * Something done on the ward but never recorded in Ward Flow does not appear, and the sheet says so.
  */
 
-type ShiftId = "day" | "evening" | "night";
+type Shift = (typeof SHIFT_PATTERN)[number];
 
-const SHIFTS: readonly { id: ShiftId; start: number; label: string }[] = [
-  { id: "night", start: 23 * 60, label: "Night shift" },
-  { id: "day", start: 7 * 60, label: "Day shift" },
-  { id: "evening", start: 15 * 60, label: "Evening shift" },
-];
-const SHIFT_MINUTES = 8 * 60;
+export type ShiftWindow = { label: string; from: Instant; to: Instant; inProgress: boolean };
 
-export type ShiftWindow = { id: ShiftId; label: string; from: Instant; to: Instant; inProgress: boolean };
+/** Minutes a shift runs, from its start to its end, wrapping past midnight. */
+function shiftLength(shift: Shift): number {
+  return (shift.endMinute - shift.startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+}
 
 /** The shift `now` falls in (`which: "current"`) or the one before it (`"previous"`). */
 export function shiftWindow(now: Instant, which: "current" | "previous"): ShiftWindow {
   const minute = minuteOfDay(now);
-  // Minutes since the current shift started: the night shift wraps past midnight.
-  const sinceStart = (start: number) => (minute - start + 24 * 60) % (24 * 60);
-  const current = SHIFTS.find((shift) => sinceStart(shift.start) < SHIFT_MINUTES)!;
-  const currentFrom = now - sinceStart(current.start);
+  // Minutes since a shift started: the night shift wraps past midnight.
+  const sinceStart = (shift: Shift) => (minute - shift.startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const index = SHIFT_PATTERN.findIndex((shift) => sinceStart(shift) < shiftLength(shift));
+  const current = SHIFT_PATTERN[index]!;
+  const currentFrom = now - sinceStart(current);
   if (which === "current") {
-    return {
-      id: current.id,
-      label: current.label,
-      from: currentFrom,
-      to: currentFrom + SHIFT_MINUTES,
-      inProgress: true,
-    };
+    return { label: current.name, from: currentFrom, to: currentFrom + shiftLength(current), inProgress: true };
   }
-  const index = SHIFTS.indexOf(current);
-  const previous = SHIFTS[(index + SHIFTS.length - 1) % SHIFTS.length]!;
-  return {
-    id: previous.id,
-    label: previous.label,
-    from: currentFrom - SHIFT_MINUTES,
-    to: currentFrom,
-    inProgress: false,
-  };
+  const previous = SHIFT_PATTERN[(index + SHIFT_PATTERN.length - 1) % SHIFT_PATTERN.length]!;
+  return { label: previous.name, from: currentFrom - shiftLength(previous), to: currentFrom, inProgress: false };
 }
 
 export type WardShiftSummary = {
@@ -68,24 +56,15 @@ export type WardShiftSummary = {
   datesMoved: number;
   /** Observation level changes recorded. */
   observationChanges: number;
-  /** This ward's recorded answers to referrals (`decidedAt`). */
-  referralsAccepted: number;
-  referralsDeclined: number;
-  /** At the moment shown: referrals still waiting for this ward's reply, and how many are stuck. */
-  referralsAwaitingReply: number;
-  referralsStuck: number;
-  limitMinutes: number;
 };
 
 export function wardShiftSummary(input: {
   unit: Pick<Unit, "id" | "name">;
   admissions: readonly Admission[];
-  referrals: readonly Referral[];
-  configuration: Pick<WardConfiguration, "referralDecisionTargetMinutes">;
   now: Instant;
   which: "current" | "previous";
 }): WardShiftSummary {
-  const { unit, admissions, referrals, configuration, now, which } = input;
+  const { unit, admissions, now, which } = input;
   const window = shiftWindow(now, which);
   // A finished shift ends just before the next one starts; a shift still running counts up to and
   // including the moment shown, so something recorded this minute is already in the count.
@@ -108,24 +87,6 @@ export function wardShiftSummary(input: {
     observationChanges += (admission.observationChanges ?? []).filter((change) => inShift(change.at)).length;
   }
 
-  let referralsAccepted = 0;
-  let referralsDeclined = 0;
-  let referralsAwaitingReply = 0;
-  let referralsStuck = 0;
-  for (const referral of referrals) {
-    for (const arm of referral.destinations) {
-      if (arm.destination.kind !== "psychiatric_ward" || arm.destination.unitId !== unit.id) continue;
-      if (arm.withdrawnAt !== undefined || !inShift(arm.decidedAt)) continue;
-      if (arm.state === "accepted") referralsAccepted += 1;
-      if (arm.state === "declined") referralsDeclined += 1;
-    }
-    for (const wait of referralNoReplyWaits(referral, now, configuration, [unit])) {
-      if (wait.unitId !== unit.id) continue;
-      referralsAwaitingReply += 1;
-      if (wait.pastLimit) referralsStuck += 1;
-    }
-  }
-
   return {
     window,
     arrived,
@@ -134,10 +95,5 @@ export function wardShiftSummary(input: {
     dischargesConfirmed,
     datesMoved,
     observationChanges,
-    referralsAccepted,
-    referralsDeclined,
-    referralsAwaitingReply,
-    referralsStuck,
-    limitMinutes: configuration.referralDecisionTargetMinutes,
   };
 }
