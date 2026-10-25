@@ -6,16 +6,10 @@ import type {
   ReferralOwnerDesk,
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
-// Closing-the-loop package A (24 Oct 2026): response commitments. A type-only import of closed lists.
+// Closing-the-loop features (24 Oct 2026): type-only imports for the optional records below.
 import type { ReferralCommitmentEntry } from "@/components/ward-management/referrals/referral-commitments";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
-// Closing the loop, package D (24 Oct 2026): type-only, for the four optional records below.
-import type {
-  AcceptanceCondition,
-  CancelledMoveCheck,
-  ClosureTransitionMark,
-  WardRestrictionReview,
-} from "@/components/ward-management/loop-checks/ward-loop-checks";
+import type * as LoopChecks from "@/components/ward-management/loop-checks/ward-loop-checks";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
@@ -275,7 +269,7 @@ export type WardAdmissionsClosure = {
   by: string;
   until?: Instant;
   /** Closing the loop D4: transition items a person marked dealt with. Cleared with the closure. */
-  transitionMarks?: ClosureTransitionMark[];
+  transitionMarks?: LoopChecks.ClosureTransitionMark[];
 };
 
 export type Unit = {
@@ -450,7 +444,7 @@ export type Unit = {
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
   /** Closing the loop D3: who reviews each temporary restriction, and when. Absent when none. */
-  restrictionReviews?: WardRestrictionReview[];
+  restrictionReviews?: LoopChecks.WardRestrictionReview[];
   homeRegion?: HomeRegion;
 };
 
@@ -866,10 +860,9 @@ export type Movement = MovementBase & {
   extendedHoldAt?: Instant;
   /** Smart features idea 5: actions the bed meeting agreed for this request. Absent when none. */
   meetingActions?: BedMeetingAction[];
-  /** Closing the loop D1: a cancelled move's checklist marks. Absent until someone marks one. */
-  cancellationChecks?: CancelledMoveCheck[];
-  /** Closing the loop D2: conditions the accepting ward attached. Read only for display. */
-  acceptanceConditions?: AcceptanceCondition[];
+  /** Closing the loop D1 and D2: a cancelled move's checklist marks; the accepting ward's conditions (display only). */
+  cancellationChecks?: LoopChecks.CancelledMoveCheck[];
+  acceptanceConditions?: LoopChecks.AcceptanceCondition[];
   /**
    * WHEN THE COORDINATOR PLANS THE MOVE TO HAPPEN (owner, 26 Sept 2026: "go ahead with your
    * recommendations" — the 48-hour horizon shows demo moves spread across the window rather than
@@ -1218,14 +1211,7 @@ export type BedRelease = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
-  // ── Closing-the-loop package B (24 Oct 2026): discharge logistics, `discharges/discharge-dependencies.ts`.
-  /** Practical items this discharge waits on, recorded order. Logistics only; gates nothing. */
-  dependencies?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargeDependency>;
-  /** Where the ward has recorded the person is planned to go. Absent until recorded. */
-  plannedDestination?: import("./discharges/discharge-dependencies").PlannedDischargeDestination;
-  /** Changes to the expected time or destination, oldest first, for "needs checking again". */
-  planChanges?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargePlanChange>;
-};
+} & import("./discharges/discharge-dependencies").DischargeLogisticsFields; // Closing-the-loop B: logistics only.
 
 /**
  * Task 1's privacy discipline, carried into decline reasons the same way `BED_RELEASE_BLOCKERS`
@@ -1487,8 +1473,7 @@ export type ReferralAddressing = {
   /** Fix plan item 16 (D-76): the ROLE that added this ward to an open referral with
    *  `ASK_MORE_WARDS`. Absent on every destination the referrer chose when raising it. */
   addedBy?: string;
-  /** Closing-the-loop package A: response commitments on this ward copy (`RECORD_REFERRAL_COMMITMENT`),
-   *  oldest first, append-only. See `ReferralCommitmentEntry`. Never an answer. */
+  /** Closing-the-loop A: response commitments on this ward copy, oldest first. Never an answer. */
   commitments?: ReadonlyArray<ReferralCommitmentEntry>;
 };
 

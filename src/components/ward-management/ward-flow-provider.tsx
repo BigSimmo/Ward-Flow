@@ -13,7 +13,6 @@ import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission, LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
-
 import {
   type Context,
   createContext,

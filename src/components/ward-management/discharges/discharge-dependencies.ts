@@ -160,3 +160,13 @@ export function dependencySummary(record: DischargeLogisticsRecord): DependencyS
 export function outstandingDependencies(record: DischargeLogisticsRecord): DischargeDependency[] {
   return (record.dependencies ?? []).filter((item) => item.state === "outstanding");
 }
+
+/** The optional discharge logistics fields on a `BedRelease` (closing-the-loop package B). */
+export type DischargeLogisticsFields = {
+  /** Practical items this discharge waits on, recorded order. Logistics only; gates nothing. */
+  dependencies?: ReadonlyArray<DischargeDependency>;
+  /** Where the ward has recorded the person is planned to go. Absent until recorded. */
+  plannedDestination?: PlannedDischargeDestination;
+  /** Changes to the expected time or destination, oldest first, for "needs checking again". */
+  planChanges?: ReadonlyArray<DischargePlanChange>;
+};
