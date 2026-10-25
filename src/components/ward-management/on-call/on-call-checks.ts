@@ -3,7 +3,10 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
-import { CHECK_DUE_DAYS, type DirectoryEntry } from "./on-call-directory";
+import type { DirectoryEntry } from "./on-call-directory";
+
+/** Days since the last check after which an entry reads "Not checked in over N days". */
+export const CHECK_DUE_DAYS = 40;
 
 /**
  * Closing-the-loop features (24 Oct 2026, package E): "On-call directory last checked".

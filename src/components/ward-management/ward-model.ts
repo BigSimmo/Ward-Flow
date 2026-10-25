@@ -9,11 +9,11 @@ import type { WardClosureReason } from "@/components/ward-management/capacity/wa
 import type { ReferralCommitmentEntry } from "@/components/ward-management/referrals/referral-commitments";
 import type { BedMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import type * as LoopChecks from "@/components/ward-management/loop-checks/ward-loop-checks";
+import type { DischargeLogisticsFields } from "@/components/ward-management/discharges/discharge-dependencies";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-patients.ts` imports nothing at all.
 import type { PatientId } from "@/components/ward-management/ward-patients";
 // A TYPE-ONLY import, and it introduces no cycle: `ward-diagnosis.ts` imports nothing at all —
-// see that module's own doc comment for why the vocabulary lives there rather than here or on
-// `ward-admissions.ts`, where the fact it describes first gained a runtime writer.
+// see its doc comment for why the vocabulary lives there, not here or on `ward-admissions.ts`.
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { Observation, ObservationChange } from "@/components/ward-management/ward-observation";
 /**
@@ -1212,7 +1212,7 @@ export type BedRelease = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
-} & import("./discharges/discharge-dependencies").DischargeLogisticsFields;
+} & DischargeLogisticsFields;
 
 /**
  * Task 1's privacy discipline, carried into decline reasons the same way `BED_RELEASE_BLOCKERS`

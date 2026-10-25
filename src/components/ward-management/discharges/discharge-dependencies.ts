@@ -101,14 +101,14 @@ export type DischargePlanChange =
       readonly at: Instant;
       readonly by: string;
     };
-export type DischargePlanFact = DischargePlanChange["fact"];
+type DischargePlanFact = DischargePlanChange["fact"];
 
 /**
  * Which facts each kind of confirmation relied on. A change to one of these after the item was
  * marked done means the item needs checking again. "Other" names nothing, because we cannot know
  * what it relied on.
  */
-export const FACTS_RELIED_ON: Record<DischargeDependencyKind, readonly DischargePlanFact[]> = {
+const FACTS_RELIED_ON: Record<DischargeDependencyKind, readonly DischargePlanFact[]> = {
   pharmacy: ["expected_date"],
   transport: ["expected_date", "destination"],
   destination: ["destination"],

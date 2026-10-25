@@ -71,11 +71,6 @@ export function commitmentStepRank(step: ReferralCommitmentStep | undefined): nu
   return step === undefined ? -1 : REFERRAL_COMMITMENT_STEP_IDS.indexOf(step);
 }
 
-/** Recorded and not resolved. */
-export function commitmentIsOpen(status: ReferralCommitmentStatus): boolean {
-  return status.entries > 0 && status.step?.step !== "resolved";
-}
-
 /** The recorded promised time has passed and nothing later was recorded. From the record alone. */
 export function promiseOverdue(status: ReferralCommitmentStatus, now: Instant): boolean {
   return status.step?.step === "promised" && status.promisedFor !== undefined && status.promisedFor < now;
@@ -87,7 +82,7 @@ export function callbackDue(status: ReferralCommitmentStatus, now: Instant): boo
 }
 
 /** Calls logged to this ward about this referral, in recorded order. */
-export function callsToWard(referral: Pick<Referral, "contactLog">, unitId: string): readonly ReferralContactEntry[] {
+function callsToWard(referral: Pick<Referral, "contactLog">, unitId: string): readonly ReferralContactEntry[] {
   return (referral.contactLog ?? []).filter(
     (call) => call.contact.kind === "psychiatric_ward" && call.contact.unitId === unitId,
   );

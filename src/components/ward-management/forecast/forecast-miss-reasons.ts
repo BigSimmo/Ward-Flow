@@ -86,7 +86,7 @@ export function parseForecastMissReasons(raw: string | null): ForecastMissReason
 }
 
 /** A day that differed from its forecast (the likely figure), the only days a reason applies to. */
-export function missedDays(days: readonly TrackRecordDay[]): TrackRecordDay[] {
+function missedDays(days: readonly TrackRecordDay[]): TrackRecordDay[] {
   return days.filter((day) => day.miss !== 0);
 }
 

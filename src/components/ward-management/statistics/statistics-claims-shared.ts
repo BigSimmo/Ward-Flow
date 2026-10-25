@@ -191,7 +191,7 @@ export const BED_RELEASE_BODY =
   "/** * #398 (D-72): the support notices the ward sent for this confirmed release, one per service, * oldest " +
   "first (`SEND_RELEASE_SUPPORT_NOTICE`). About the bed only. Absent until the first. */ supportNoticesSent?: " +
   "ReadonlyArray<{ readonly service: SupportServiceType; readonly at: Instant; readonly by: WardFlowRole; }>; " +
-  '} & import("./discharges/discharge-dependencies").DischargeLogisticsFields;';
+  "} & DischargeLogisticsFields;";
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather

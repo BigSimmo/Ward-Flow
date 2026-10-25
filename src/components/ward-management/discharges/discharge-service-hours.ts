@@ -37,7 +37,7 @@ const weekdays = (opens: number, closes: number, saturday: DayHours = null): Wee
 ];
 
 /** Synthetic hours. `"always"` is a service that never closes (the ward team). */
-export const SYNTHETIC_SERVICE_HOURS: Record<DischargeDependencyOwner, WeeklyHours | "always"> = {
+const SYNTHETIC_SERVICE_HOURS: Record<DischargeDependencyOwner, WeeklyHours | "always"> = {
   ward: "always",
   pharmacy: weekdays(8 * 60 + 30, 17 * 60, { opens: 9 * 60, closes: 12 * 60 }),
   patient_transport: weekdays(7 * 60, 19 * 60, { opens: 8 * 60, closes: 14 * 60 }),
@@ -46,7 +46,7 @@ export const SYNTHETIC_SERVICE_HOURS: Record<DischargeDependencyOwner, WeeklyHou
 };
 
 /** Western Australian public holidays, 2026 (and New Year's Day 2027). Reference to check. */
-export const WA_PUBLIC_HOLIDAYS: readonly { readonly date: string; readonly name: string }[] = [
+const WA_PUBLIC_HOLIDAYS: readonly { readonly date: string; readonly name: string }[] = [
   { date: "2026-01-01", name: "New Year's Day" },
   { date: "2026-01-26", name: "Australia Day" },
   { date: "2026-03-02", name: "Labour Day" },
@@ -102,7 +102,7 @@ export type ServiceClosure = {
 };
 
 /** How far ahead the board looks for the next weekend or holiday closure. */
-export const CLOSURE_LOOKAHEAD_DAYS = 7;
+const CLOSURE_LOOKAHEAD_DAYS = 7;
 
 /**
  * The service's next closure that runs over at least one whole closed day (a weekend or a public

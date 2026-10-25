@@ -66,16 +66,13 @@ export type LastLookWorld = {
   admissions?: readonly LastLookAdmission[];
 };
 
-export type LastLookAdmission = Pick<
-  Admission,
-  "id" | "unitId" | "state" | "dischargeDateMoves" | "dischargeDateSetAt"
->;
+type LastLookAdmission = Pick<Admission, "id" | "unitId" | "state" | "dischargeDateMoves" | "dischargeDateSetAt">;
 
 type BedsFreed = { unitId: string; unitName: string; count: number };
 type NewDelay = { movementId: string; title: string };
 /** Which ward's "yes" was withdrawn; `unitId` absent when the record did not say. */
-export type AcceptanceWithdrawnChange = { movementId: string; unitId?: string; unitName?: string };
-export type DischargeDateMovedChange = { admissionId: string; unitId: string; unitName?: string };
+type AcceptanceWithdrawnChange = { movementId: string; unitId?: string; unitName?: string };
+type DischargeDateMovedChange = { admissionId: string; unitId: string; unitName?: string };
 
 export type ChangesSinceLastLook = {
   since: Instant;

@@ -93,8 +93,8 @@ export type DirectoryEntry = {
   rostered: boolean;
 };
 
-/** Days since the last check after which an entry reads "Not checked in over N days". */
-export const CHECK_DUE_DAYS = 40;
+// Defined beside the check engine so the shared engine never loads this directory.
+export { CHECK_DUE_DAYS } from "./on-call-checks";
 /** Closing-the-loop (package E): the desks the synthetic seeded checks are spread across. */
 const SEEDED_CHECKERS: readonly WardFlowRole[] = ["coordinator", "bed_manager", "ward"];
 /** Minutes on the clock face, for wrapping times past midnight. A calendar fact, not a limit. */

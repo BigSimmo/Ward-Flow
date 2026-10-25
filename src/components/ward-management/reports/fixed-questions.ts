@@ -20,7 +20,7 @@ export type FixedQuestionId =
 /** The record a row came from. The screen turns it into a link; nothing else is carried. */
 export type FixedAnswerSource = { kind: "movement"; id: Movement["id"] } | { kind: "discharge"; admissionId: string };
 
-export type FixedAnswerRow = { key: string; label: string; detail: string; source: FixedAnswerSource };
+type FixedAnswerRow = { key: string; label: string; detail: string; source: FixedAnswerSource };
 
 export type FixedAnswer = {
   id: FixedQuestionId;
