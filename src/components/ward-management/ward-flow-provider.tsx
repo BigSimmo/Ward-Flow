@@ -651,24 +651,18 @@ export function WardFlowProvider({ children, initialNow, initialDayZero }: WardF
     if (initialNow !== undefined) return; // pinned: never touch the wall clock
     /*
      * ⚠️ **`react-hooks/set-state-in-effect` IS DISABLED HERE ON PURPOSE, AND THE RULE IS RIGHT
-     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE.** It fires because a synchronous `setState` in
-     * an effect body normally means state that could have been derived during render — a cascading
-     * render for nothing.
-     *
-     * **This is the one case where deriving it during render is the DEFECT.** The wall clock is a
-     * value the server and the client disagree about by construction, so reading it during render
-     * is precisely what made every ward route capable of failing hydration. The adoption has to
-     * happen after the first paint or it is not a fix at all.
-     *
-     * It costs one extra render per mount. If a future change makes the clock deterministic across
-     * server and client, delete the effect rather than the comment.
+     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE**: a `setState` in an effect is usually state
+     * that could be derived during render. **Here deriving it during render is the DEFECT.** Server
+     * and client disagree about the wall clock by construction, so reading it during render made
+     * every ward route able to fail hydration. Adoption must happen after the first paint.
+     * One extra render per mount. If the clock becomes deterministic, delete the effect, not this.
+     * In a transition, so code-split panels keep their server-drawn content until their code loads:
+     * an urgent update blanked them and the phone Home jumped (design re-score DR-03).
      */
-    // A transition, so panels whose code is still loading keep their server-drawn content instead
-    // of blanking until it arrives; blanking made the phone Home jump (design re-score DR-03).
-    const adopt = () =>
-      startTransition(() =>
-        setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) }),
-      );
+    const adopt = () => {
+      const next = { mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) };
+      startTransition(() => setAdopted(next));
+    };
     return whenStreamRevealed(adopt); // not while the streamed page is pending: React would duplicate it
   }, [initialNow]);
 
