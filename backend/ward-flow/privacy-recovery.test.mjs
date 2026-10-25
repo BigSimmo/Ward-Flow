@@ -18,8 +18,18 @@ test("scoped audit assembles migration-10 record rows before testing place membe
               payload,
               ...(sql.includes("jsonb_agg")
                 ? {
+                    cache_revision: 1,
+                    cache_updated_at: new Date("2026-10-26T00:00:00.000Z"),
                     records: [
-                      { collection: "units", record_id: own.id, kind: "item", ordinal: 0, revision: 1, body: own },
+                      {
+                        collection: "units",
+                        record_id: own.id,
+                        kind: "item",
+                        ordinal: 0,
+                        revision: 1,
+                        fresh: true,
+                        body: own,
+                      },
                     ],
                   }
                 : {}),
@@ -38,7 +48,9 @@ test("scoped audit assembles migration-10 record rows before testing place membe
     wholeNetwork: () => false,
     parseAccess: (role, scope) => ({ role, scope }),
     scopeWithin: (world, scope, parent) => {
-      assembled = world.state.units[0] === own;
+      // Cached record reads return copies; require the exact assembled list and body values.
+      assert.deepEqual(world.state.units, [own]);
+      assembled = true;
       return assembled && scope.service === parent.service;
     },
   };

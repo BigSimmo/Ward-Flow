@@ -36,7 +36,7 @@ import {
   CLEARANCE_STATUS_LABELS,
   type ClearanceStatus,
 } from "./referral-submission";
-import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { ReferralDocumentLinks } from "./referral-document-links";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";

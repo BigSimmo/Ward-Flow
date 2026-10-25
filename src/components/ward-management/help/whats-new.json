@@ -20,8 +20,8 @@
     "line": "Help now lists recent changes under What's new, and this note shows them after each update."
   },
   {
-    "id": "2026-10-25-bed-flow-reliability",
-    "date": "2026-10-25",
+    "id": "2026-10-26-bed-flow-reliability",
+    "date": "2026-10-26",
     "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
   }
 ]
