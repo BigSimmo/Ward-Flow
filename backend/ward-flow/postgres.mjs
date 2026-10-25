@@ -41,6 +41,8 @@ const hasMarkers = (payload) =>
 const VIEW_REPEAT_MS = 60_000;
 /** Most record access rows one read returns. */
 const VIEW_LIST_LIMIT = 200;
+// Pages an access admin below statewide reads to find its own place's newest openings.
+const VIEW_LIST_PAGES = 5;
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;
 
@@ -1439,16 +1441,36 @@ export function createWorkspaceStore(
       });
     },
     /**
-     * The newest record openings, optionally for one patient. Only the statewide coordinator reads
-     * them; the HTTP layer refuses everyone else before this runs.
+     * The newest record openings, optionally for one patient. The statewide coordinator reads them
+     * all; an access admin below statewide reads the openings by desks inside its own place, a page
+     * at a time so openings elsewhere never crowd them out. The HTTP layer refuses everyone else
+     * before this runs. `minutes` is the opening's time as minutes from the server's now.
      */
     async recordViews(view, patientId = null) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
-      const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype'${patientId ? " AND patient_id=$2" : ""} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
-        patientId ? [workspaceId, patientId] : [workspaceId],
-      );
-      return rows;
+      const at = clock();
+      const everywhere = view.access.scope.kind === "statewide";
+      const world = everywhere ? null : await read(view.actorId);
+      const inside = (row) => {
+        if (everywhere) return true;
+        const access = engine.parseAccess(row.actor_role, row.actor_scope);
+        return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+      };
+      const found = [];
+      let before = null;
+      for (let page = 0; page < VIEW_LIST_PAGES && found.length < VIEW_LIST_LIMIT; page += 1) {
+        const params = [workspaceId];
+        if (patientId) params.push(patientId);
+        if (before !== null) params.push(before);
+        const { rows } = await pool.query(
+          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype'${patientId ? " AND patient_id=$2" : ""}${before !== null ? ` AND id < $${params.length}` : ""} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+          params,
+        );
+        for (const row of rows) if (found.length < VIEW_LIST_LIMIT && inside(row)) found.push(row);
+        if (rows.length < VIEW_LIST_LIMIT) break;
+        before = rows.at(-1).id;
+      }
+      return found.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
     },
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token

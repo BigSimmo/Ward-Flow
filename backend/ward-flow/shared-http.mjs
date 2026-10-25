@@ -352,9 +352,11 @@ export function createSharedHandler({
         return reply(200, { events: await store.audit(view) });
       }
       if (path === "/v1/workspace/record-access") {
-        // Every desk logs the records it opens. Only the statewide coordinator reads the log.
+        // Every desk logs the records it opens. The statewide coordinator reads the whole log; the
+        // access admin reads it for the desks inside its own place (D-80 item 14, Access log).
         if (request.method === "GET") {
-          if (!whole) return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
+          if (!whole && view.access.role !== "admin")
+            return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
           return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });
