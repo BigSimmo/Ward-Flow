@@ -8,7 +8,7 @@
 // (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so
 // you stop and tell the coordinator before editing.
 import { execFile, execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -57,9 +57,28 @@ const SIGN_OUT =
       "sign-out.md",
     )
     .replace(/\\/g, "/");
+// Inline copy of withClaimFiles in scripts/pre-commit-checks.mjs (same reason as above).
+function withClaimFiles(logFile, logText) {
+  const dir = path.join(path.dirname(logFile), "claims");
+  let names;
+  try {
+    names = readdirSync(dir)
+      .filter((name) => name.endsWith(".md"))
+      .sort();
+  } catch {
+    return logText;
+  }
+  const lines = [];
+  for (const name of names) {
+    for (const line of readFileSync(path.join(dir, name), "utf8").split(/\r?\n/)) {
+      if (/^(?:- |RELEASED\b)/.test(line)) lines.push(line);
+    }
+  }
+  return lines.length ? `${logText.replace(/\n*$/, "")}\n${lines.join("\n")}\n` : logText;
+}
 function readSignOutText({ reportMissing = false } = {}) {
   try {
-    return readFileSync(SIGN_OUT, "utf8");
+    return withClaimFiles(SIGN_OUT, readFileSync(SIGN_OUT, "utf8"));
   } catch (error) {
     if (reportMissing && error.code === "ENOENT") {
       console.log(`sign-out-check: sign-out log missing at ${SIGN_OUT}; stale entries not checked.`);

@@ -47,7 +47,7 @@
  * during merges. Never bypass this admission with git commit --no-verify.
  */
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -74,6 +74,30 @@ const SIGN_OUT_FILE =
       "sign-out.md",
     )
     .replace(/\\/g, "/");
+
+// Claim files (25 Oct 2026): the shared folder is a sync mount that uploads each container's
+// whole copy of a file, so two threads appending to the one log in the same minute can wipe
+// each other's lines. A thread may instead write each claim or release as its own new file in
+// the claims/ folder beside the log, never edited after. Their claim and RELEASED lines count
+// exactly as if they were appended to the log; heading lines in them are ignored.
+export function withClaimFiles(logFile, logText) {
+  const dir = path.join(path.dirname(logFile), "claims");
+  let names;
+  try {
+    names = readdirSync(dir)
+      .filter((name) => name.endsWith(".md"))
+      .sort();
+  } catch {
+    return logText;
+  }
+  const lines = [];
+  for (const name of names) {
+    for (const line of readFileSync(path.join(dir, name), "utf8").split(/\r?\n/)) {
+      if (/^(?:- |RELEASED\b)/.test(line)) lines.push(line);
+    }
+  }
+  return lines.length ? `${logText.replace(/\n*$/, "")}\n${lines.join("\n")}\n` : logText;
+}
 
 /**
  * @deprecated Missing sign-out logs never grant ownership clearance.
@@ -978,7 +1002,7 @@ async function main() {
   }
   if (process.env.SKIP_SIGNOUT_GUARD !== "1") {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-    const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
+    const signOutText = signOutLogPresent ? withClaimFiles(SIGN_OUT_FILE, readFileSync(SIGN_OUT_FILE, "utf8")) : "";
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");
