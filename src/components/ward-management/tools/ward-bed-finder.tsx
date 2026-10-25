@@ -178,7 +178,7 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
       {filters.legalStatus ? (
         <>
           <p className={styles.result} role="status">
-            <strong>{rows.reduce((sum, row) => sum + row.free, 0)}</strong> synthetic Ready beds across{" "}
+            <strong>{rows.reduce((sum, row) => sum + row.free, 0)}</strong> Ready synthetic beds across{" "}
             <strong>{rows.length}</strong> {rows.length === 1 ? "ward" : "wards"}
           </p>
           {rows.length > 0 ? (
