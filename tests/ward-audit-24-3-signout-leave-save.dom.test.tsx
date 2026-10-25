@@ -9,7 +9,12 @@ import {
   SharedAccessContext,
   type SharedAccessApi,
 } from "@/components/ward-management/shell/ward-shared-access-context";
-import { endWardFlowBrowserSession, endWardFlowTabSession } from "@/components/ward-management/ward-browser-data";
+import {
+  endWardFlowBrowserSession,
+  endWardFlowTabSession,
+  wardLeaveSaveAllowed,
+  wardLeaveSaveTicket,
+} from "@/components/ward-management/ward-browser-data";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -86,6 +91,29 @@ describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
     await flush();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
+  });
+
+  it("writes no picture for the old account when another signs in before its save runs", async () => {
+    const first = render(<App account={signedIn("synthetic-account-one")} />);
+    first.unmount();
+    endWardFlowBrowserSession();
+    const next = render(<App account={signedIn("synthetic-account-two")} />);
+    await flush();
+    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
+    next.unmount();
+    await flush();
+    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-two"))).not.toBeNull();
+  });
+
+  it("fences a save even when no screen reported the account before the session ended", () => {
+    const account = signedIn("synthetic-account-one");
+    const before = wardLeaveSaveTicket(account);
+    endWardFlowTabSession();
+    expect(wardLeaveSaveAllowed(before)).toBe(false);
+    // The ended context shown again after the end stays fenced; a fresh sign-in does not.
+    expect(wardLeaveSaveAllowed(wardLeaveSaveTicket(account))).toBe(false);
+    expect(wardLeaveSaveAllowed(wardLeaveSaveTicket(null))).toBe(false);
+    expect(wardLeaveSaveAllowed(wardLeaveSaveTicket(signedIn("synthetic-account-one")))).toBe(true);
   });
 
   it("saves normally again once a new session signs in, even for the same account", async () => {

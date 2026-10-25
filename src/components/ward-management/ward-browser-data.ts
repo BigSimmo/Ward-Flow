@@ -106,21 +106,45 @@ export function onWardSessionEnd(reset: (scope: WardSessionEndScope) => void): v
 /**
  * Audit 4 A4-07: leave-saves ("since you last looked" pictures) wait one task, and the screen
  * re-renders signed out before it closes, so a save scheduled after the sweep wrote the picture
- * back. After a session ends, a leave-save may write only for an account context that signed in
- * afterwards: a new context object, never the ended one or the signed-out `null`.
+ * back. Each leave-save carries a ticket taken when it was scheduled. It may write only if no
+ * session ended since (so a later sign-in never revives it) and its account context was not
+ * ended: never the ended context, and never the signed-out `null` until someone signs in again.
  */
-let lastSeenAccount: object | null = null;
-let endedAccount: object | null | undefined;
+let sessionEpoch = 0;
+const liveAccounts = new Set<object>();
+const endedAccounts = new WeakSet<object>();
+let signedOutSinceEnd = false;
 
-/** Leave-saving screens report their current account context after each render. */
+/** Leave-saving screens report their account context while rendering, before any effect runs. */
 export function noteWardSessionAccount(account: object | null): void {
-  lastSeenAccount = account;
-  if (endedAccount !== undefined && account !== null && account !== endedAccount) endedAccount = undefined;
+  if (account === null || endedAccounts.has(account)) return;
+  liveAccounts.add(account);
+  signedOutSinceEnd = false;
 }
 
-/** Whether a leave-save made under `account` may still write, checked at the moment of writing. */
-export function wardLeaveSaveAllowed(account: object | null): boolean {
-  return endedAccount === undefined || (account !== null && account !== endedAccount);
+export type WardLeaveSaveTicket = {
+  readonly epoch: number;
+  readonly account: object | null;
+  readonly signedOut: boolean;
+};
+
+/** Take when scheduling a leave-save; check with `wardLeaveSaveAllowed` at the moment of writing. */
+export function wardLeaveSaveTicket(account: object | null): WardLeaveSaveTicket {
+  noteWardSessionAccount(account);
+  return { epoch: sessionEpoch, account, signedOut: account === null && signedOutSinceEnd };
+}
+
+export function wardLeaveSaveAllowed(ticket: WardLeaveSaveTicket): boolean {
+  if (ticket.epoch !== sessionEpoch || ticket.signedOut) return false;
+  return ticket.account === null || !endedAccounts.has(ticket.account);
+}
+
+/** Runs first, synchronously, in both session ends: every ticket and context so far is spent. */
+function fenceWardLeaveSaves(): void {
+  sessionEpoch += 1;
+  for (const account of liveAccounts) endedAccounts.add(account);
+  liveAccounts.clear();
+  signedOutSinceEnd = true;
 }
 
 /**
@@ -129,7 +153,7 @@ export function wardLeaveSaveAllowed(account: object | null): boolean {
  * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
-  endedAccount = lastSeenAccount;
+  fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
@@ -147,7 +171,7 @@ export function endWardFlowBrowserSession(): void {
  * local storage, which the other tab shares, as it is.
  */
 export function endWardFlowTabSession(): void {
-  endedAccount = lastSeenAccount;
+  fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {

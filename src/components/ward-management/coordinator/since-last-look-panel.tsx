@@ -7,7 +7,11 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 
 import styles from "./home.module.css";
-import { noteWardSessionAccount, wardLeaveSaveAllowed } from "@/components/ward-management/ward-browser-data";
+import {
+  noteWardSessionAccount,
+  wardLeaveSaveAllowed,
+  wardLeaveSaveTicket,
+} from "@/components/ward-management/ward-browser-data";
 import {
   changesSinceInstant,
   scopedChangesSinceLastLook,
@@ -107,7 +111,7 @@ export function useSinceLastLook(
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
-  useEffect(() => noteWardSessionAccount(account), [account]);
+  noteWardSessionAccount(account);
   const storageKey = scopeKey
     ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
     : LAST_LOOK_STORAGE_KEY;
@@ -133,12 +137,13 @@ export function useSinceLastLook(
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
     if (scopeKey) return;
+    const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture, and none may
       // write after its session ended, even one scheduled by a signed-out re-render (A4-07).
       const snapshot = latest.current;
       if (
-        wardLeaveSaveAllowed(account) &&
+        wardLeaveSaveAllowed(ticket) &&
         snapshot.userId === userId &&
         snapshot.worldGeneration === generation &&
         snapshot.scopeKey === scopeKey

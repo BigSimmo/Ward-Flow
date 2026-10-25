@@ -9,7 +9,11 @@
 import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
-import { noteWardSessionAccount, wardLeaveSaveAllowed } from "@/components/ward-management/ward-browser-data";
+import {
+  noteWardSessionAccount,
+  wardLeaveSaveAllowed,
+  wardLeaveSaveTicket,
+} from "@/components/ward-management/ward-browser-data";
 import { demoDayZero, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
@@ -145,7 +149,7 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
   const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}`;
-  useEffect(() => noteWardSessionAccount(account), [account]);
+  noteWardSessionAccount(account);
   const current = useMemo(
     () => takeForecastLook({ scenario, worldGeneration, userId }, model.tomorrow, now),
     [scenario, worldGeneration, userId, model.tomorrow, now],
@@ -162,10 +166,11 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
     const timer = pendingSaves.get(key);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingSaves.delete(key);
+    const ticket = wardLeaveSaveTicket(account);
     const save = () => {
       // Audit 4 A4-07: never write after the session that owned this picture ended, including a
       // save scheduled by the signed-out re-render just before the screen closes.
-      if (!wardLeaveSaveAllowed(account) || latest.current.userId !== userId) return;
+      if (!wardLeaveSaveAllowed(ticket) || latest.current.userId !== userId) return;
       writeForecastLook(latest.current, key);
       window.dispatchEvent(new Event(CHANGE_EVENT));
     };
