@@ -37,7 +37,9 @@ import {
 // The removed overview precedent depended on a home-page explanation that the owner retired.
 // 80 -> 79 on 8 October 2026: the preparation-control claim's page prose was already retired,
 // and its cited filter belonged to unused Ward-screen scaffolding, not a rendered control.
-const EXPECTED_MODEL_CLAIMS = 79;
+// 79 -> 78 on 25 October 2026 (production audit USC-07): the back-link claim went with
+// `statistics-section-frame.tsx`, a component no page rendered, deleted with Josh's approval.
+const EXPECTED_MODEL_CLAIMS = 78;
 /*
  * 12 -> 11 on 2026-09-05. The admitted gap that left was
  * `statistics-ward-screen/computed/ward-statistics-has-no-consumer-in-the-app`, and it left because
@@ -47,7 +49,8 @@ const EXPECTED_MODEL_CLAIMS = 79;
  * commit that ended it and is inverted in the same change.
  */
 const EXPECTED_UNEVIDENCED_CLAIMS = 11;
-const EXPECTED_REGISTERED_SURFACES = 8;
+// 8 -> 7 on 25 October 2026 (USC-07): `statistics-section-frame.tsx` was deleted as dead code.
+const EXPECTED_REGISTERED_SURFACES = 7;
 
 // Q004 removed these implementation explanations from the page, not their historical evidence.
 // This exact set is the only locator exemption; arbitrary retirement metadata cannot bypass it.
@@ -379,7 +382,7 @@ describe("the model-claims register", () => {
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
     expect(retired).toHaveLength(53);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(26);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(25);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)

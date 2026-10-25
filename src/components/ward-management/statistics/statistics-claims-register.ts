@@ -169,7 +169,6 @@ export const REGISTERED_SURFACES: readonly string[] = [
   "src/components/ward-management/statistics/statistics-compare-screen.tsx",
   "src/components/ward-management/statistics/statistics-ward-screen.tsx",
   "src/components/ward-management/statistics/statistics-ed-screen.tsx",
-  "src/components/ward-management/statistics/statistics-section-frame.tsx",
   "src/components/ward-management/statistics/statistics-disclaimers.tsx",
   "src/components/ward-management/statistics/statistics-derivations.ts",
   "src/components/ward-management/community/community-index.tsx",
