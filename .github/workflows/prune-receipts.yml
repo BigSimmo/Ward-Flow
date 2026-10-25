@@ -12,6 +12,10 @@ name: Ward Flow receipt clean-up
 # only call a function that removes receipts older than 7 days; it cannot read or change anything
 # else. The migration login is never stored here. Until the secret exists, each run says so and
 # succeeds without connecting. Public repository: free.
+#
+# The Supabase pooler's certificate chains to the public Supabase Root 2021 CA, which Node does not
+# trust by default, so the job uses the copy in backend/ward-flow/infra (public, not a secret;
+# SHA-256 80:70:25:AD:...:72:E6:CA:FA, valid to April 2031).
 on:
   schedule:
     - cron: "0 19 * * 0"
@@ -31,6 +35,7 @@ jobs:
     timeout-minutes: 10
     env:
       WARD_SUPABASE_PRUNE_DATABASE_URL: ${{ secrets.WARD_SUPABASE_PRUNE_DATABASE_URL }}
+      WARD_SUPABASE_CA_CERT_FILE: infra/supabase-root-2021-ca.crt
     steps:
       - name: Check the connection secret is set
         id: secrets
