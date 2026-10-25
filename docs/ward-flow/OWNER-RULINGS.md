@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**598 rulings/items extracted, across 38 of 44 files.**
+**599 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 341 distinct IDs
+## ID index — 342 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -249,6 +249,7 @@ safe global key across 30 files.
 | `D-78` | `decisions.md`:899 | D-78. One decline list for wards and coordinators (22 October 2026) |
 | `D-79` | `decisions.md`:910 | D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026) |
 | `D-80` | `decisions.md`:921 | D-80. Role access plan version 2: all 17 recommendations (23 October 2026) |
+| `D-81` | `decisions.md`:935 | D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -532,52 +533,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 38 files
 
-### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
-
-**Title:** Ward Flow — architecture decisions
-
-4 item(s):
-
-- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. Authorised-hospital status gates the destination of an involuntary admission"
-- #2 (no owner-issued ID, this file's own numbering) — line 81, heading: "2. The system proposes; a human allocates"
-- #3 (no owner-issued ID, this file's own numbering) — line 126, heading: "3. Catchment and region are different concepts"
-- #4 (no owner-issued ID, this file's own numbering) — line 176, heading: "4. Durations are stored relative to now, and exactly one module reads the wall clock"
-
-### `archive/dated-notes/ward-flow-phase-9-decisions.md` (2026-08-23 – 2026-10-24 (mixed, see file))
-
-**Title:** Ward Flow Phase 9 — decisions taken during the autonomous session
-
-9 item(s):
-
-- `D9` — line 62, heading: "D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION)"
-- `D9` — line 102, heading: "D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked)"
-- `D9` — line 126, heading: "D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION)"
-- `D9` — line 148, heading: "D9-4 — An ownership clock measures what is owed, and its colour threshold is invented and says so (SESSION — the highest-risk decision in the phase)"
-- `D9` — line 177, heading: "D9-5 — A notification fires only where someone is waiting on someone else (SESSION)"
-- `D9` — line 196, heading: "D9-6 — Anything flagged at a handover stays flagged until someone clears it (SESSION)"
-- `D9` — line 210, heading: "D9-7 — Navigation is grouped by role, with the coordinator's own section grouped by question (SESSION)"
-- `D9` — line 228, heading: "D9-8 — The prototype's memory is its own scoped item, never assumed into a screen (SESSION)"
-- `D9` — line 242, heading: "D9-9 — Waiting-time equity and the out-of-area ledger are designed knowing about each other (SESSION)"
-
-### `archive/dated-notes/ward-flow-phase-3-rulings.md` (2026-10-24)
-
-**Title:** Ward Flow Phase 3 — every decision made on the product owner's behalf
-
-5 item(s):
-
-- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. The eleven that changed what the software says to a clinician"
-- #2 (no owner-issued ID, this file's own numbering) — line 41, heading: "2. The recurring defect, and the eight rulings spent on it"
-- #3 (no owner-issued ID, this file's own numbering) — line 67, heading: "3. Unmeasured claims — six, three of them the controller's own"
-- #4 (no owner-issued ID, this file's own numbering) — line 87, heading: "4. Process and environment — decided, not asked"
-- #5 (no owner-issued ID, this file's own numbering) — line 111, heading: "5. Still open with the product owner"
-
-### `decisions.md` (2026-09-07 – 2026-10-23 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-10-24 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-80 item(s):
+81 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -659,6 +621,46 @@ safe global key across 30 files.
 - `D-78` — line 899, heading: "D-78. One decline list for wards and coordinators (22 October 2026)"
 - `D-79` — line 910, heading: "D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)"
 - `D-80` — line 921, heading: "D-80. Role access plan version 2: all 17 recommendations (23 October 2026)"
+- `D-81` — line 935, heading: "D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)"
+
+### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
+
+**Title:** Ward Flow — architecture decisions
+
+4 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. Authorised-hospital status gates the destination of an involuntary admission"
+- #2 (no owner-issued ID, this file's own numbering) — line 81, heading: "2. The system proposes; a human allocates"
+- #3 (no owner-issued ID, this file's own numbering) — line 126, heading: "3. Catchment and region are different concepts"
+- #4 (no owner-issued ID, this file's own numbering) — line 176, heading: "4. Durations are stored relative to now, and exactly one module reads the wall clock"
+
+### `archive/dated-notes/ward-flow-phase-9-decisions.md` (2026-08-23 – 2026-10-24 (mixed, see file))
+
+**Title:** Ward Flow Phase 9 — decisions taken during the autonomous session
+
+9 item(s):
+
+- `D9` — line 62, heading: "D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION)"
+- `D9` — line 102, heading: "D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked)"
+- `D9` — line 126, heading: "D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION)"
+- `D9` — line 148, heading: "D9-4 — An ownership clock measures what is owed, and its colour threshold is invented and says so (SESSION — the highest-risk decision in the phase)"
+- `D9` — line 177, heading: "D9-5 — A notification fires only where someone is waiting on someone else (SESSION)"
+- `D9` — line 196, heading: "D9-6 — Anything flagged at a handover stays flagged until someone clears it (SESSION)"
+- `D9` — line 210, heading: "D9-7 — Navigation is grouped by role, with the coordinator's own section grouped by question (SESSION)"
+- `D9` — line 228, heading: "D9-8 — The prototype's memory is its own scoped item, never assumed into a screen (SESSION)"
+- `D9` — line 242, heading: "D9-9 — Waiting-time equity and the out-of-area ledger are designed knowing about each other (SESSION)"
+
+### `archive/dated-notes/ward-flow-phase-3-rulings.md` (2026-10-24)
+
+**Title:** Ward Flow Phase 3 — every decision made on the product owner's behalf
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. The eleven that changed what the software says to a clinician"
+- #2 (no owner-issued ID, this file's own numbering) — line 41, heading: "2. The recurring defect, and the eight rulings spent on it"
+- #3 (no owner-issued ID, this file's own numbering) — line 67, heading: "3. Unmeasured claims — six, three of them the controller's own"
+- #4 (no owner-issued ID, this file's own numbering) — line 87, heading: "4. Process and environment — decided, not asked"
+- #5 (no owner-issued ID, this file's own numbering) — line 111, heading: "5. Still open with the product owner"
 
 ### `owner-answers-2026-10-21.md` (2026-10-21)
 

@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-23 - added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-24 - added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -881,7 +881,7 @@ is inferred.
 - **Date:** 22 October 2026 (`2026-10-22`), 12:52 AM AWST. **Decided by:** Josh, on the decision card in the Bigger UX changes mock-ups thread, choosing "Build all ten, as recommended", after "Ok go ahead and build this for me now". The mock-ups were made from the running app at `main` 1459fb5, as D-75 requires, and the D-74 approval rule is met.
 - **Decision:** build these ten changes and the desktop top bar fix:
   1. **Short community referral form.** Purpose is asked only on referrals to a community team, and purpose and first contact are required. There is no Documents step. The form has team search and a Sent tab.
-  2. **ED board** shows where its referral stands, using the words "Bed held".
+  2. **ED board** shows where its referral stands, using the words "Bed held". **Replaced by D-81** for the words: the ED board says "Bed pulled".
   3. **Desktop decision pane** uses the phone list, with Clinical override behind one button.
   4. **Ask wards** is a checkbox list of up to 3 wards (D-76 item 2).
   5. **Legal forms** loses the strip and side panels. Board now and Check a form time are dropped, and Form times stays in Tools.
@@ -931,3 +931,10 @@ is inferred.
 - **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands.
 - **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
 - **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.
+
+## D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)
+
+- **Date:** 24 October 2026 (`2026-10-24`), 10:42 PM AWST (14:42 UTC). **Decided by:** Josh, on the decision card in the usability review project thread.
+- **Decision:** a bed kept for an incoming patient is called "Pulled", and how long it is kept is the "Pull time limit". "Held" and "hold" are used only for a bed kept for its own patient while they are on leave or away, as Josh ruled on 1 September 2026 ([pull and hold ruling](archive/dated-notes/owner-rulings-2026-09-01-pull-and-hold.md)). This replaces the "Bed held" words in D-77 item 2 on the ED board, and the "bed hold" words in D-72 and D-75 where they mean a bed kept for an incoming patient. The rules in those entries are unchanged.
+- **Boundary:** visible words only. Code names, event names, flags and stored values keep their names, and recorded notice and audit text is not rewritten. Nothing is re-sorted or ranked.
+- **Why:** one screen said "Bed held" and another "Pulled" about the same incoming bed, and "held" already meant a bed kept for a patient on leave. One word for each meaning stops the two being confused.

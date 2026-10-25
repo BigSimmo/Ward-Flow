@@ -80,7 +80,7 @@ A dated summary of merge commits after `90e92444`, through `main` at `d1e61c1` (
 
 **This table, with the "Waiting on Josh" list after it, is the one place for what is left** (Josh, 24 October 2026). Record a new owner question here, and his answer in decisions.md or a dated `owner-answers-*.md` file. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
 
-Status of every decision in [decisions.md](decisions.md), D-1 to D-80, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026; D-15, D-21, D-23, D-26, D-30, D-45, D-48, D-50 and D-51 re-checked against source at `899b232e` the same day. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 is only the next free number (`next-decision` in [FACTS.md](../FACTS.md)); no D-81 entry exists yet.
+Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026; D-15, D-21, D-23, D-26, D-30, D-45, D-48, D-50 and D-51 re-checked against source at `899b232e` the same day. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 was added on 24 October 2026 with #680; the next free number is in [FACTS.md](../FACTS.md) (`next-decision`).
 
 | No.  | Short title                                   | Status                | Evidence                                                                      |
 | ---- | --------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
@@ -164,6 +164,7 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-80, read from
 | D-78 | One decline list                              | Built                 | #579                                                                          |
 | D-79 | Wards see the full referral first             | Built                 | #588                                                                          |
 | D-80 | Role access plan version 2                    | Partly built          | PRs 1 to 4 merged; PR 5 in part; item 14 mock-ups and item 17 (pilot) pending |
+| D-81 | Pulled, with a pull time limit                | Built                 | #680 (wording across screens and docs)                                        |
 
 ### Waiting on Josh
 

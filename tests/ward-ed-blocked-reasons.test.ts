@@ -40,7 +40,7 @@ import { CANCEL_TRANSPORT_REASONS } from "@/components/ward-management/ward-chan
 
 const NOW = 10_000;
 const COLLECTED =
-  'The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays held until it is released.';
+  'The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.';
 const NOT_UNTIL_EXAMINED = "Not offered until the examination outcome is recorded.";
 
 function movement(overrides: Partial<Movement> = {}): Movement {

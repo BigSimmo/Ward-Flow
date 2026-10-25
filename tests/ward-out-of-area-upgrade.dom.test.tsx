@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -385,5 +385,24 @@ describe("Out of area v10 pass", () => {
   it("the hero foot says what is being checked", () => {
     renderBoard();
     expect(screen.getAllByText("Other records without home area or travel time").length).toBeGreaterThan(0);
+  });
+});
+
+// Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+describe("out-of-area tab in the address", () => {
+  it("opens on the tab the address names and writes a fixed id when the tab changes", async () => {
+    window.history.replaceState(null, "", "/ward-flow/out-of-area?tab=history");
+    renderBoard();
+    await act(async () => {});
+    expect(screen.getByRole("tab", { name: /^History/u })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Away now/u }));
+    await act(async () => {});
+    expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
+    expect(screen.getByRole("tab", { name: /^Away now/u })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
+    await act(async () => {});
+    expect(new URLSearchParams(window.location.search).get("tab")).toBe("history");
   });
 });

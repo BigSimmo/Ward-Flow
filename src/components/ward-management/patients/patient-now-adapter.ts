@@ -65,7 +65,7 @@ function movementVerdict(
       : {
           tone: "warn",
           short: "Accepted, Awaiting Bed",
-          title: `Acceptance recorded at ${acceptedUnit.name}; no bed hold recorded.`,
+          title: `Acceptance recorded at ${acceptedUnit.name}; no bed pulled.`,
           gates: [],
         };
   }

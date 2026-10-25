@@ -459,7 +459,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               value: longestHere === undefined ? "—" : splitDuration(longestHere),
               tone: longestHere !== undefined && longestHere >= accessTarget ? "danger" : undefined,
             },
-            { id: "held", label: "Bed held", value: waitingForBed },
+            { id: "held", label: "Accepted", value: waitingForBed },
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}

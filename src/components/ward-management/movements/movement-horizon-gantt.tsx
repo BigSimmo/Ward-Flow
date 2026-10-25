@@ -391,7 +391,7 @@ export function MovementHorizonGantt({
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true" />
-                Bed hold passed
+                Pull time limit passed
               </li>
             </ul>
           </div>
@@ -680,7 +680,7 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
           : ev.type === "pred"
             ? "Pred"
             : ev.type === "delay"
-              ? "Hold"
+              ? "Pull"
               : "Admit";
 
   // Owner, 26 Sept 2026: the bar names the patient; the WF journey number is not shown.
