@@ -34,6 +34,7 @@ When the user says `open PR`, `create PR` or `publish PR` without also asking fo
 - Each push to a PR cancels its running CI and starts a new run, and one run fills most of the account's 20 runners, so other PRs wait. Gather a round of fixes (a review round or a CI failure) into one push, not one push per finding. Merge `origin/main` into a PR branch only for a real conflict or a failing check whose fix is on main, or when the owner asks for the branch sync below. Being behind main is not a reason on its own.
 - Background PR sweeps, the branch-sync scripts and the inherited `Run PR` and babysit shortcuts are retired. Sync a PR branch with `main` only when the owner asks, one branch at a time, with a normal merge.
 - If asked to watch CI, check at most every 5 minutes for at most 30 minutes, then report where it stands. Never leave a scheduled job watching a PR. Treat merge-queue state as read-only.
+- **A PR that changes something staff will see adds one plain line to the end of `src/components/ward-management/help/whats-new.json`** (a new `id`, the merge date and a sentence under 120 characters, no PR numbers or code words). The app's What's new note and Help list show it after the next daily release, and the release workflow copies it into that release's notes. Engineering-only changes add nothing. When two PRs both append, keep both entries in merge order.
 - Bundle changes into one PR only after checking the branch, owner and authorised scope. Never weaken, skip or relax a required check to save time.
 
 ## Reviews

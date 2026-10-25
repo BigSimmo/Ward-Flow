@@ -7,13 +7,14 @@ import { seedWardFlowStateAt, wardFlowReducer } from "../src/components/ward-man
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { capacityBreakdown, openBedsNow } from "../src/components/ward-management/ward-bed-availability";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
+import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-event-roles";
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 
 const NOW = NOW_ANCHOR;
 
 /**
  * Owner decision, Josh, 25 September 2026: a bed release is a named patient's discharge. Before
- * this, `RELEASE_BED` paired with a departure by comparing ward-wide counts (`runtimeDeparted` vs
+ * this, `RELEASE_BED` (removed by audit 24-1 decision 4, 24 Oct 2026) paired with a departure by comparing ward-wide counts (`runtimeDeparted` vs
  * `runtimeDischarged`), with two hard-coded exceptions (`WR-008`, the `AD-LEFT-` prefix) standing
  * in for what an `admissionId` now states directly. See `ward-model.ts`'s own doc comment on
  * `BedRelease.admissionId` for the full rationale, and `D:/Temp/claude/bed-release-link-plan.md`
@@ -78,16 +79,6 @@ function leave(state: WardFlowState, person: { id: string; unitId: string }) {
   });
 }
 
-function releaseBed(state: WardFlowState, releaseId: string, actingUnitId: string) {
-  return wardFlowReducer(state, {
-    type: "RELEASE_BED",
-    role: "ward",
-    now: NOW,
-    releaseId,
-    actingUnitId,
-  });
-}
-
 function liveReleaseFor(state: WardFlowState, admissionId: string) {
   return state.bedReleases.find((r) => r.admissionId === admissionId && r.state !== "discharged");
 }
@@ -106,15 +97,9 @@ describe("a bed release names its admission (owner decision, 2026-09-25)", () =>
     const secondFlag = flag(firstFlag, person);
     expect(secondFlag.rejections.length).toBeGreaterThan(0);
 
-    const afterFirstReleaseBed = releaseBed(secondFlag, firstRelease.id, person.unitId);
-    // A second RELEASE_BED for a release that does not exist (the second flag was refused) is refused too.
-    const afterSecondReleaseBed = releaseBed(afterFirstReleaseBed, `${firstRelease.id}-nonexistent`, person.unitId);
-    expect(afterSecondReleaseBed.rejections.length).toBeGreaterThan(0);
-
-    const afterLeaving = leave(afterSecondReleaseBed, person);
-    // Leaving itself adds no new rejection — the accumulated ones above are from the intentional
-    // refusals earlier in this chain (second flag, both premature RELEASE_BEDs).
-    expect(afterLeaving.rejections.length).toBe(afterSecondReleaseBed.rejections.length);
+    const afterLeaving = leave(secondFlag, person);
+    // Leaving itself adds no new rejection; the one above is the intentional second-flag refusal.
+    expect(afterLeaving.rejections.length).toBe(secondFlag.rejections.length);
     expect(unit(afterLeaving, person.unitId).empty.value).toBe(before + 1);
   });
 
@@ -199,30 +184,15 @@ describe("a bed release names its admission (owner decision, 2026-09-25)", () =>
     expect(completed?.state).toBe("discharged");
   });
 
-  it("T5: RELEASE_BED is refused while the named person is still in the bed", () => {
+  it("T5: a release stays live while the named person is still in the bed; only leaving completes it", () => {
+    // Audit 24-1 decision 4 (24 Oct 2026) removed RELEASE_BED, the other way a release could
+    // complete. It was unreachable, because leaving already completes the release (T2).
+    expect(Object.keys(EVENT_ROLE)).not.toContain("RELEASE_BED");
     const state = seeded();
     const person = anUnreleasedOccupant(state);
 
     const afterFlag = flag(state, person);
     expect(afterFlag.rejections).toHaveLength(0);
-    const release = liveReleaseFor(afterFlag, person.id);
-    if (!release) throw new Error("expected a live release");
-
-    const beforeUnit = unit(afterFlag, person.unitId);
-    const beforeRelease = afterFlag.bedReleases.find((r) => r.id === release.id);
-
-    const afterReleaseBed = releaseBed(afterFlag, release.id, person.unitId);
-    expect(afterReleaseBed.rejections.length).toBeGreaterThan(0);
-    expect(afterReleaseBed.rejections[afterReleaseBed.rejections.length - 1]?.reason).toMatch(/RECORD_LEAVING/);
-    expect(unit(afterReleaseBed, person.unitId)).toEqual(beforeUnit);
-    expect(afterReleaseBed.bedReleases.find((r) => r.id === release.id)).toEqual(beforeRelease);
-  });
-
-  it("T6: RELEASE_BED after departure moves nothing", () => {
-    const state = seeded();
-    const person = anUnreleasedOccupant(state);
-
-    const afterFlag = flag(state, person);
     const release = liveReleaseFor(afterFlag, person.id);
     if (!release) throw new Error("expected a live release");
     const afterConfirm = wardFlowReducer(afterFlag, {
@@ -232,30 +202,10 @@ describe("a bed release names its admission (owner decision, 2026-09-25)", () =>
       releaseId: release.id,
       actingUnitId: person.unitId,
     });
-    const afterLeaving = leave(afterConfirm, person);
-
-    // Hand-build a state where P has departed but P's release is still "confirmed" (only reachable
-    // through a hand-built state; the reducer itself now always completes the release on leaving).
-    const handBuilt: WardFlowState = {
-      ...afterLeaving,
-      bedReleases: afterLeaving.bedReleases.map((r) =>
-        r.id === release.id ? { ...r, state: "confirmed", confirmedAt: NOW - 100 } : r,
-      ),
-    };
-    const beforeUnit = unit(handBuilt, person.unitId);
-
-    const afterReleaseBed = releaseBed(handBuilt, release.id, person.unitId);
-    expect(afterReleaseBed.rejections).toHaveLength(0);
-    const completed = afterReleaseBed.bedReleases.find((r) => r.id === release.id);
-    expect(completed?.state).toBe("discharged");
-
-    const afterUnit = unit(afterReleaseBed, person.unitId);
-    // The "true branch writes only confirmedAt" (plan section 3d, ordering (d)): the VALUES are
-    // untouched, though confirmedAt (and the revision counter it bumps) legitimately restates.
-    expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
-    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
-    expect(afterUnit.allocatableLocked).toEqual(beforeUnit.allocatableLocked);
-    expect(afterUnit.sexMix).toEqual(beforeUnit.sexMix);
+    expect(afterConfirm.rejections).toHaveLength(0);
+    expect(afterConfirm.bedReleases.find((r) => r.id === release.id)?.state).toBe("confirmed");
+    expect(admission(afterConfirm, person.id).state).toBe("occupied");
+    expect(unit(afterConfirm, person.unitId).empty.value).toBe(unit(state, person.unitId).empty.value);
   });
 
   it("T7: FLAG refusals, one case each", () => {

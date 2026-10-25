@@ -1185,7 +1185,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             height="tall"
                             secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
                             primary={{
-                              label: declinePending ? "Confirming decline…" : "Confirm decline",
+                              label: declinePending ? "Confirming decline…" : `Decline for ${answerSelection.name}`, // 24-7 CT-19
                               disabledReason: declinePending ? "Waiting for confirmation" : undefined,
                               onAction: () => confirmDecline(activeMovement.id),
                             }}
@@ -1220,7 +1220,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 <div className={styles.phoneWaitlistHead}>
                                   <StatusGlyph tone="info" size={10} />
                                   <span className={styles.phoneFoldText}>
-                                    <span className={styles.phoneFoldTitle}>Accept to the waitlist instead?</span>
+                                    <span className={styles.phoneFoldTitle}>Accept to the waiting list instead?</span>
                                     <span className={styles.phoneFoldLine}>
                                       The bed request stays open and this ward is next when a bed frees.
                                     </span>
@@ -1391,7 +1391,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
                             className={`${styles.btn} ${styles.btnDanger}`}
                           >
-                            {declinePending ? "Confirming decline…" : "Confirm decline"}
+                            {declinePending ? "Confirming decline…" : `Decline for ${answerSelection.name}`}
                           </button>
                           {!canSubmitDecline(declineReason) ? (
                             <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">

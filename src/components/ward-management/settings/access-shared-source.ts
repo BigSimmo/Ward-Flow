@@ -18,6 +18,7 @@ import type {
   SharedAccessRequest,
   SharedChangeResult,
   SharedMembership,
+  SharedRecordView,
 } from "@/components/ward-management/ward-shared-client";
 import type { SharedAccessApi } from "@/components/ward-management/shell/ward-shared-access-context";
 import { parseStoredAccess, sharedAccessNeedsService } from "@/components/ward-management/shell/ward-access-store";
@@ -121,6 +122,7 @@ function useServerList<T>(
 
 const readAccess = (api: SharedAccessApi) => api.listAccess();
 const readCovers = (api: SharedAccessApi) => api.listCovers();
+const readRecordViews = (api: SharedAccessApi) => api.listRecordViews();
 
 /** What `AccessSettings` needs for the admin's lists, from the server. */
 export type SharedAdminSource = {
@@ -214,4 +216,54 @@ export function useSharedCoverSource(
       end: (id) => settle(api.revokeAccess(id)),
     };
   }, [api, value, at, problem, loading, self, after]);
+}
+
+/** One record opening in the Access log, on the demo clock. */
+export type RecordOpening = {
+  readonly id: string;
+  readonly actorId: string;
+  /** The desk the account was working as, or null when the server sent one this table refuses. */
+  readonly access: WardAccess | null;
+  readonly recordId: string;
+  readonly surface: string;
+  readonly at: Instant | null;
+};
+
+export type SharedRecordViewSource = {
+  readonly openings: readonly RecordOpening[];
+  readonly problem: string | null;
+  readonly loading: boolean;
+  readonly label: (actorId: string) => string;
+};
+
+function sharedRecordOpening(row: SharedRecordView, now: Instant): RecordOpening | null {
+  if (typeof row?.actor_id !== "string" || typeof row.patient_id !== "string") return null;
+  return {
+    id: String(row.id),
+    actorId: row.actor_id,
+    access: accessOf(row.actor_role, row.actor_scope),
+    recordId: row.patient_id,
+    surface: row.surface,
+    at: typeof row.minutes === "number" ? now + row.minutes : null,
+  };
+}
+
+/** The Access log's openings from the server (D-80 item 14). Read once when the tab opens. */
+export function useSharedRecordViews(
+  shared: { api: SharedAccessApi; actorId: string | null } | null,
+  now: Instant,
+  enabled: boolean,
+): SharedRecordViewSource | null {
+  const api = enabled ? (shared?.api ?? null) : null;
+  const self = shared?.actorId ?? null;
+  const { value, at, problem, loading } = useServerList(api, api ? readRecordViews : null, now);
+  return useMemo(() => {
+    if (!api) return null;
+    return {
+      openings: (value ?? []).map((row) => sharedRecordOpening(row, at)).filter(present),
+      problem,
+      loading,
+      label: (actorId) => accountLabel(actorId, self),
+    };
+  }, [api, value, at, problem, loading, self]);
 }

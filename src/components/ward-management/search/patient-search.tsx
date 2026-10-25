@@ -33,6 +33,7 @@ import {
 import {
   findPatients,
   foldPatientSearchText,
+  nearPatients,
   patientAgeYears,
   type Patient,
 } from "@/components/ward-management/ward-patients";
@@ -847,12 +848,21 @@ export function PatientSearchPage() {
       }}
     />
   );
+  // Audit 24-7 item 2: a typo that finds nobody shows names one keystroke away before Add patient.
+  const near =
+    visibleRows.length === 0 && people.length === 0 && !refusal && !isChip
+      ? nearPatients(
+          patients,
+          text.split(/\s+/).filter((term) => term.length > 0),
+        )
+      : [];
   const empty = (
     <CensusEmpty
       query={`${text} ${dobOn ? dob : ""}`.trim()}
       onReset={resetAllFilters}
       addHref={WARD_ADD_PERSON_HREF}
       onAdd={addPatientClick}
+      near={near}
     />
   );
   const refusalNotice = refusal ? (
