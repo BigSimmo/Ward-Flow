@@ -990,7 +990,9 @@ describe("examination", () => {
       expect(movement(released, TARGET).admissionId).toBeUndefined();
     });
 
-    it("STILL PROVES the pulled behaviour from 3956761b1f is unchanged — a revoked exam AT pulled releases immediately", () => {
+    // Audit 24-1 decision 3 (owner, CS2-21) replaced the 3956761b1f behaviour: a revoked exam AT
+    // pulled no longer releases immediately. It is held exactly as WLQ-4 holds it after transport.
+    it("a revoked exam AT pulled keeps the bed held, as WLQ-4 does after transport (audit 24-1 decision 3)", () => {
       const TARGET = "WF-012";
       let state = seeded();
       for (const step of [
@@ -1017,12 +1019,13 @@ describe("examination", () => {
         outcome: "revoked",
       });
       expect(revoked.rejections).toEqual([]);
-      expect(movement(revoked, TARGET).closure?.outcome).toBe("did_not_proceed");
+      expect(movement(revoked, TARGET).closure).toBeUndefined();
+      expect(movement(revoked, TARGET).examRevoked).toBe(true);
       expect(revoked.units.find((candidate) => candidate.id === "rph-adult-secure")!.allocatable.value).toBe(
-        beforeUnit.allocatable.value + 1,
+        beforeUnit.allocatable.value,
       );
-      expect(revoked.admissions.some((candidate) => candidate.id === admissionId)).toBe(false);
-      expect(movement(revoked, TARGET).admissionId).toBeUndefined();
+      expect(revoked.admissions.some((candidate) => candidate.id === admissionId)).toBe(true);
+      expect(movement(revoked, TARGET).admissionId).toBe(admissionId);
     });
   });
 
@@ -1059,7 +1062,9 @@ describe("examination", () => {
     expect(admission?.state).toBe("pulled");
   });
 
-  it("RECORD_EXAMINATION on a pulled bed is ACCEPTED and does release the bed", () => {
+  // Audit 24-1 decision 3 (owner): `revoked` no longer releases a pulled bed, so this control for
+  // the examination release path uses `community_order`, which still closes and releases.
+  it("RECORD_EXAMINATION (community_order) on a pulled bed is ACCEPTED and does release the bed", () => {
     // ⚠️ THE CONTROL THAT THE `it.fails` BELOW CANNOT PROVIDE FOR ITSELF, AND IT IS NOT OPTIONAL.
     // `it.fails` passes when its body throws for ANY reason — including a dispatch the reducer
     // REFUSED. A refused `RECORD_EXAMINATION` would leave the admission in place, so the assertion
@@ -1093,7 +1098,7 @@ describe("examination", () => {
       role: "ed",
       now: NOW + 1,
       movementId: TARGET,
-      outcome: "revoked",
+      outcome: "community_order",
     });
 
     // Not refused: the reducer records refusals rather than throwing, so an unchanged rejection
@@ -1119,7 +1124,9 @@ describe("examination", () => {
    * collected — is UNCHANGED by this fix and keeps the pre-existing dangling-admission behaviour;
    * see the fix's own commit for why that stayed out of scope.
    */
-  it("deletes the pulled admission and clears movement.admissionId when a pulled bed's examination is revoked", () => {
+  // Audit 24-1 decision 3 (owner): a revoked examination now keeps the pulled admission, so this
+  // admission-deletion check on the closing release path uses `community_order`.
+  it("deletes the pulled admission and clears movement.admissionId when a pulled bed's examination is community_order", () => {
     const TARGET = "WF-012";
     const steps = [
       {
@@ -1142,7 +1149,7 @@ describe("examination", () => {
       role: "ed",
       now: NOW + 1,
       movementId: TARGET,
-      outcome: "revoked",
+      outcome: "community_order",
     });
 
     expect(after.admissions.some((candidate) => candidate.id === "AD-ARR-01")).toBe(false);
