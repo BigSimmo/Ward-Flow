@@ -104,11 +104,32 @@ export function onWardSessionEnd(reset: (scope: WardSessionEndScope) => void): v
 }
 
 /**
+ * Audit 4 A4-07: leave-saves ("since you last looked" pictures) wait one task, and the screen
+ * re-renders signed out before it closes, so a save scheduled after the sweep wrote the picture
+ * back. After a session ends, a leave-save may write only for an account context that signed in
+ * afterwards: a new context object, never the ended one or the signed-out `null`.
+ */
+let lastSeenAccount: object | null = null;
+let endedAccount: object | null | undefined;
+
+/** Leave-saving screens report their current account context after each render. */
+export function noteWardSessionAccount(account: object | null): void {
+  lastSeenAccount = account;
+  if (endedAccount !== undefined && account !== null && account !== endedAccount) endedAccount = undefined;
+}
+
+/** Whether a leave-save made under `account` may still write, checked at the moment of writing. */
+export function wardLeaveSaveAllowed(account: object | null): boolean {
+  return endedAccount === undefined || (account !== null && account !== endedAccount);
+}
+
+/**
  * What the app runs when a signed-in session ends: fence any open form's draft writer first (so a
  * mounted sheet cannot write its draft back), forget every per-account memory store, then sweep
  * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
+  endedAccount = lastSeenAccount;
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
@@ -126,6 +147,7 @@ export function endWardFlowBrowserSession(): void {
  * local storage, which the other tab shares, as it is.
  */
 export function endWardFlowTabSession(): void {
+  endedAccount = lastSeenAccount;
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
