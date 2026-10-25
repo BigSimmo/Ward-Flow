@@ -1,0 +1,62 @@
+/* The recorded-only shift summary on the ward's Shift brief (item 16). */
+.card {
+  display: block;
+  break-inside: avoid;
+  margin: 0 0 var(--wf-s-2);
+  overflow: hidden;
+}
+
+.toggle {
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--wf-s-4);
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+}
+
+.facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.facts dt {
+  color: var(--wf-ink-2);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.note {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+}
+
+@media (max-width: 640px) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media print {
+  .toggle {
+    display: none;
+  }
+}

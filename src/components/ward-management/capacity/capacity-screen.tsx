@@ -123,17 +123,29 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 export function CapacityScreen() {
   const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
-  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
-    useWardFlowSelect(
-      "movements",
-      "units",
-      "bedReleases",
-      "admissions",
-      "leaveBeds",
-      "dispatch",
-      "worldGeneration",
-      "plannedAdmissions",
-    );
+  const {
+    movements,
+    units,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    dispatch,
+    worldGeneration,
+    plannedAdmissions,
+    referrals,
+    configuration,
+  } = useWardFlowSelect(
+    "referrals",
+    "configuration",
+    "movements",
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "dispatch",
+    "worldGeneration",
+    "plannedAdmissions",
+  );
   const network = useWardNetwork();
   // Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of this screen, unchanged.
   // No patient is chosen here, so it reads beds only: a ward can be picked out, never offered.
@@ -825,6 +837,8 @@ export function CapacityScreen() {
                     thresholds,
                     service,
                     nameOf: (movement) => patientOf(movement).displayName,
+                    referrals,
+                    referralLimitMinutes: configuration.referralDecisionTargetMinutes,
                   })
                 }
               />
@@ -1139,6 +1153,8 @@ export function CapacityScreen() {
               thresholds,
               service,
               nameOf: (movement) => patientOf(movement).displayName,
+              referrals,
+              referralLimitMinutes: configuration.referralDecisionTargetMinutes,
             })
           }
         />
