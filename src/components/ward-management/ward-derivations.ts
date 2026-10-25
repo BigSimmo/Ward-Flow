@@ -127,7 +127,9 @@ export function movementTimeline(movement: Movement) {
   for (const decline of movement.declines) {
     events.push({
       at: decline.at,
-      label: `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`,
+      label: decline.reason
+        ? `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`
+        : "Declined by referral",
     });
   }
   if (movement.transport?.acceptedAt !== undefined) {
@@ -935,8 +937,9 @@ export function allDeclines(movements: Movement[]): DeclineEntry[] {
     movement.declines
       .filter(
         (decline) =>
-          !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
-          !decline.reason.includes("waitlist"),
+          decline.reason === undefined ||
+          (!(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
+            !decline.reason.includes("waitlist")),
       )
       .map((decline) => ({ movement, decline })),
   );
@@ -1307,7 +1310,9 @@ export function deriveNextWardsAfterRefusal(
 ): NextWardsAfterRefusal | undefined {
   // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.
   const refusals = movement.declines.filter(
-    (decline) => !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
+    (decline) =>
+      decline.reason === undefined ||
+      !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
   );
   if (refusals.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
   const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));

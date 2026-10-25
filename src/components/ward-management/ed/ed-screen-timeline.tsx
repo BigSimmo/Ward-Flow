@@ -199,7 +199,8 @@ export function edDepartmentTimelineEvents({
         if (d.at !== undefined && now - d.at <= 24 * 60) {
           const targetUnit = units.find((u) => u.id === d.unitId);
           const unitName = targetUnit?.name ?? d.unitId;
-          const formattedReason = formatTimelineDeclineReason(d.reason);
+          // D-80: an ED's copy keeps the ward and the time, not the ward's reason.
+          const formattedReason = d.reason ? formatTimelineDeclineReason(d.reason) : undefined;
           timelineEvents.push({
             id: `decline-${m.id}-${d.unitId}-${d.at}`,
             min: d.at,
@@ -217,7 +218,8 @@ export function edDepartmentTimelineEvents({
             isOpenMovement: isMovementOpen,
             what: (
               <>
-                <b>{patientInfo.displayName}</b> {unitName} declined: &ldquo;{formattedReason}&rdquo;
+                <b>{patientInfo.displayName}</b> {unitName} declined
+                {formattedReason ? <>: &ldquo;{formattedReason}&rdquo;</> : null}
               </>
             ),
           });

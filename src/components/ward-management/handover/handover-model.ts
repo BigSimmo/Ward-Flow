@@ -216,7 +216,7 @@ export function toHandoverRow(
     declines: movement.declines.map((decline) => ({
       unitId: decline.unitId,
       name: unitName(units, decline.unitId),
-      reason: declineReasonLabels[decline.reason] ?? "Reason not recorded",
+      reason: (decline.reason && declineReasonLabels[decline.reason]) || "Reason not recorded",
       at: decline.at,
     })),
     pullExpiresAt: movement.pullExpiresAt,
