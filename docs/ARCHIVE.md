@@ -11,6 +11,23 @@ git show 0a469c6:docs/ward-flow/reports/remediation-2026-10-08.md
 git checkout 0a469c6 -- docs/ward-flow/reports/remediation-2026-10-08.md
 ```
 
+## Removed on 24 October 2026
+
+Josh approved 24 Oct 2026.
+
+- `docs/process-hardening.md` (848 lines): the former PsychSift process-hardening plan, covering
+  verification gates, CI cost measurements and known debts for the PsychSift monorepo. It was fully
+  fenced as history and described no current Ward Flow gate. Removed 2026-10-24. Its last commit on
+  `main` is `2273b858` (`2273b8584335fda6749ab51deea8b4ef5b4ec20e`). Read or restore it with
+  `git show 2273b858:docs/process-hardening.md` or `git checkout 2273b858 -- docs/process-hardening.md`.
+
+The same approval moved, rather than removed, other finished and superseded notes into
+[`ward-flow/archive/`](ward-flow/archive/): the owner and decision rulings formerly in `docs/archive/`
+and `docs/ward-flow/design/` (now in `ward-flow/archive/dated-notes/`), the rest of
+`docs/ward-flow/design/`, the six remaining build contracts, two finished plan folders, five of the six
+trap notes, two code-map pages, ten finished notes from the top of `docs/ward-flow/`, and the
+historical sections of `testing.md` and `wiring-conventions.md`. Git history follows each move.
+
 ## Removed on 18 October 2026
 
 Items 22 and 23 of the 18 October review, approved by the owner.
@@ -40,8 +57,8 @@ The shortcuts and document rules that lived only in `AGENTS.md` moved to
 
 ## Kept on purpose
 
-Owner rulings and decision records (including `docs/archive/` rulings, `docs/ward-flow/archive/dated-notes/`
-and the decision identity register), the lessons and journey folders (CI checks and scripts read
+Owner rulings and decision records (`docs/ward-flow/archive/dated-notes/`, which since 24 October 2026
+also holds the rulings formerly in `docs/archive/`, and the decision identity register), the lessons and journey folders (CI checks and scripts read
 them), reference data, governance, the database, backend and sign-in documents, and every file that
 code, tests, a check or acceptance evidence cites.
 

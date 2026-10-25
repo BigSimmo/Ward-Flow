@@ -316,7 +316,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       // ED's words. Audit A4-4: with no hold end recorded it states the configured length only.
       expect(screen.queryByTestId(`ward-ed-transit-badge-${movementPulled.id}`)).not.toBeInTheDocument();
       const referral = screen.getByTestId(`ward-ed-referral-${movementPulled.id}`);
-      expect(referral).toHaveTextContent(/Accepted, bed held, 4h hold/i);
+      expect(referral).toHaveTextContent(/Accepted, bed pulled, 4h pull time limit/i);
       expect(referral).not.toHaveTextContent(/clock active/i);
     });
 

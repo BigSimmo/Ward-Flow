@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
@@ -576,7 +576,7 @@ describe("the movements board never shows a closed movement as a person still wa
     }
   });
 
-  it("selects and focuses either movement tab using arrows, Home and End", () => {
+  it("selects and focuses either movement tab using arrows, Home and End", async () => {
     renderScreen();
     const open = screen.getByRole("tab", { name: /Open and resolved/u });
     const resolved = screen.getByRole("tab", { name: /Resolved today/u });
@@ -590,6 +590,7 @@ describe("the movements board never shows a closed movement as a person still wa
       ["ArrowRight", open],
     ] as const) {
       fireEvent.keyDown(document.activeElement!, { key });
+      await act(async () => {});
       expect(expected).toHaveFocus();
       expect(expected).toHaveAttribute("aria-selected", "true");
       expect(expected).toHaveAttribute("tabindex", "0");
@@ -598,7 +599,7 @@ describe("the movements board never shows a closed movement as a person still wa
     }
   });
 
-  it("labels every resolved-today row from its recorded closure outcome", () => {
+  it("labels every resolved-today row from its recorded closure outcome", async () => {
     const resolvedToday = wardMovements.filter(
       (movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(NOW),
     );
@@ -613,6 +614,7 @@ describe("the movements board never shows a closed movement as a person still wa
 
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
+    await act(async () => {});
     const panel = screen.getByRole("tabpanel", { name: /Resolved today/u });
 
     for (const movement of resolvedToday) {
@@ -1029,5 +1031,39 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
       "delayGroups must not call this no_eligible_bed while another ward is eligible",
     ).toBeUndefined();
     expect(causeOf(movement, NOW_ANCHOR, map)).not.toBe("no_eligible_bed");
+  });
+});
+
+// Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+describe("movements board tab in the address", () => {
+  it("opens on the tab the address names and writes a fixed id when the tab changes", async () => {
+    window.history.replaceState(null, "", "/ward-flow/movements?tab=resolved");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementsScreen />
+      </WardFlowProvider>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("tab", { name: /Resolved today/u })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /Open and resolved/u }));
+    await act(async () => {});
+    expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
+    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
+    await act(async () => {});
+    expect(new URLSearchParams(window.location.search).get("tab")).toBe("resolved");
+  });
+
+  it("ignores a tab id it does not know", async () => {
+    window.history.replaceState(null, "", "/ward-flow/movements?tab=Smith");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementsScreen />
+      </WardFlowProvider>,
+    );
+    await act(async () => {});
+    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
   });
 });

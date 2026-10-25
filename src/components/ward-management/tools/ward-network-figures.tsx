@@ -87,7 +87,7 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
         },
         { label: "Pulled beds", value: String(occupied.pulled), sub: "Awaiting arrival" },
         {
-          label: "Held beds",
+          label: "Not available",
           value: String(capacity.reduce((sum, value) => sum + value.held, 0)),
           sub: "Not allocatable",
         },

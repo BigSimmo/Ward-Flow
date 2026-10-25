@@ -4,13 +4,13 @@
 > `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out
 > of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.
 
-Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **36 files**. The brief also asked about
-`docs/ward-flow/*owner*ruling*.md`: that pattern matched **zero files beyond the first set** — every file it catches already starts with `owner-`.
+Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **44 files**. The brief also asked about
+`docs/ward-flow/*owner*ruling*.md`: that pattern matched **7 additional file(s)**, folded in below: `archive/dated-notes/ward-flow-decisions-2026-08-29.md`, `archive/dated-notes/ward-flow-owner-rulings-2026-08-31-community.md`, `archive/dated-notes/ward-flow-owner-rulings-2026-08-31.md`, `archive/dated-notes/ward-flow-owner-rulings-2026-09-01.md`, `archive/dated-notes/ward-flow-phase-3-rulings.md`, `archive/dated-notes/ward-flow-phase-9-decisions.md`, `archive/dated-notes/ward-management-decisions.md`.
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**562 rulings/items extracted, across 31 of 36 files.**
-**5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
+**599 rulings/items extracted, across 38 of 44 files.**
+**6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
 below — it does NOT prove the ruling is still CURRENT.** Owner rulings in this corpus get
@@ -24,13 +24,13 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 51 time(s) below (e.g. `D-1`).
+independently in more than one file 52 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
 ---
 
-## ID index — 335 distinct IDs
+## ID index — 342 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -249,6 +249,17 @@ safe global key across 30 files.
 | `D-78` | `decisions.md`:899 | D-78. One decline list for wards and coordinators (22 October 2026) |
 | `D-79` | `decisions.md`:910 | D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026) |
 | `D-80` | `decisions.md`:921 | D-80. Role access plan version 2: all 17 recommendations (23 October 2026) |
+| `D-81` | `decisions.md`:935 | D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026) |
+| `D9` ⚠️ **9 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:148 | D9-4 — An ownership clock measures what is owed, and its colour threshold is invented and says so (SESSION — the highest-risk decision in the phase) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:177 | D9-5 — A notification fires only where someone is waiting on someone else (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:196 | D9-6 — Anything flagged at a handover stays flagged until someone clears it (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:210 | D9-7 — Navigation is grouped by role, with the coordinator's own section grouped by question (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:228 | D9-8 — The prototype's memory is its own scoped item, never assumed into a screen (SESSION) |
+| ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:242 | D9-9 — Waiting-time equity and the out-of-area ledger are designed knowing about each other (SESSION) |
 | `Decision 1` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:17 | Decision 1 — a referral pointing at a person who does not exist |
 | `Decision 2` | `archive/dated-notes/owner-decisions-2026-09-03-patient-link-and-legal-status.md`:56 | Decision 2 — legal status on the referral's ward arm |
 | `O-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1518 | O-1 · Narrow widths — SCROLL SIDEWAYS, and show that it does · 🔴 A RATIFICATION, NOT A NEW RULING |
@@ -383,6 +394,11 @@ safe global key across 30 files.
 | `OA-64` | `archive/dated-notes/owner-answers-2026-09-17.md`:241 | OA-64 — Leave all four |
 | `OA-65` | `archive/dated-notes/owner-answers-2026-09-17.md`:309 | OA-65 — Third ruling, transport booking (17 Sept 2026, verbatim) |
 | `OA-66` | `archive/dated-notes/owner-answers-2026-09-17.md`:322 | OA-66 — Fourth ruling, 17 September evening — the last two questions |
+| `OD-1` | `archive/dated-notes/ward-flow-decisions-2026-08-29.md`:61 | OD-1 — The receiving-time options, approved as drafted |
+| `OD-2` | `archive/dated-notes/ward-flow-decisions-2026-08-29.md`:83 | OD-2 — Sex belongs on the admission record, explicitly approved |
+| `OD-3` | `archive/dated-notes/ward-flow-decisions-2026-08-29.md`:97 | OD-3 — The override reasons, and the free-text box comes out now |
+| `OD-4` | `archive/dated-notes/ward-flow-decisions-2026-08-29.md`:130 | OD-4 — The shift handover page goes live, and the sheet carries its moment |
+| `OD-5` | `archive/dated-notes/ward-flow-decisions-2026-08-29.md`:144 | OD-5 — The clinician check is deferred, deliberately |
 | `Q-1` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:47 | May beds be _ordered_ by the clinician's acuity mark? — 🔴 **NO.** Order by wait and legal deadline only. The acuity mark is **shown as a word** beside the person, never used as a sort key. — Lane A — Command |
 | `Q-2` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:48 | Does home area limit which ward a patient may go to? — **NO — catchment is INFORMATION, never a filter.** No bed is hidden or excluded by where someone lives, until a real mapping exists. — Lane A, lane C |
 | `Q-3` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:49 | Two search screens — keep both? — **Keep both this phase.** Search hub is the entry point; Patient search is the person-first list. Revisit after real use, not on paper. — Lane C |
@@ -515,15 +531,15 @@ safe global key across 30 files.
 
 ---
 
-## By file, newest first — 31 files
+## By file, newest first — 38 files
 
-### `decisions.md` (2026-09-07 – 2026-10-23 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-10-24 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-80 item(s):
+81 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -605,6 +621,46 @@ safe global key across 30 files.
 - `D-78` — line 899, heading: "D-78. One decline list for wards and coordinators (22 October 2026)"
 - `D-79` — line 910, heading: "D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)"
 - `D-80` — line 921, heading: "D-80. Role access plan version 2: all 17 recommendations (23 October 2026)"
+- `D-81` — line 935, heading: "D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)"
+
+### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
+
+**Title:** Ward Flow — architecture decisions
+
+4 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. Authorised-hospital status gates the destination of an involuntary admission"
+- #2 (no owner-issued ID, this file's own numbering) — line 81, heading: "2. The system proposes; a human allocates"
+- #3 (no owner-issued ID, this file's own numbering) — line 126, heading: "3. Catchment and region are different concepts"
+- #4 (no owner-issued ID, this file's own numbering) — line 176, heading: "4. Durations are stored relative to now, and exactly one module reads the wall clock"
+
+### `archive/dated-notes/ward-flow-phase-9-decisions.md` (2026-08-23 – 2026-10-24 (mixed, see file))
+
+**Title:** Ward Flow Phase 9 — decisions taken during the autonomous session
+
+9 item(s):
+
+- `D9` — line 62, heading: "D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION)"
+- `D9` — line 102, heading: "D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked)"
+- `D9` — line 126, heading: "D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION)"
+- `D9` — line 148, heading: "D9-4 — An ownership clock measures what is owed, and its colour threshold is invented and says so (SESSION — the highest-risk decision in the phase)"
+- `D9` — line 177, heading: "D9-5 — A notification fires only where someone is waiting on someone else (SESSION)"
+- `D9` — line 196, heading: "D9-6 — Anything flagged at a handover stays flagged until someone clears it (SESSION)"
+- `D9` — line 210, heading: "D9-7 — Navigation is grouped by role, with the coordinator's own section grouped by question (SESSION)"
+- `D9` — line 228, heading: "D9-8 — The prototype's memory is its own scoped item, never assumed into a screen (SESSION)"
+- `D9` — line 242, heading: "D9-9 — Waiting-time equity and the out-of-area ledger are designed knowing about each other (SESSION)"
+
+### `archive/dated-notes/ward-flow-phase-3-rulings.md` (2026-10-24)
+
+**Title:** Ward Flow Phase 3 — every decision made on the product owner's behalf
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 17, heading: "1. The eleven that changed what the software says to a clinician"
+- #2 (no owner-issued ID, this file's own numbering) — line 41, heading: "2. The recurring defect, and the eight rulings spent on it"
+- #3 (no owner-issued ID, this file's own numbering) — line 67, heading: "3. Unmeasured claims — six, three of them the controller's own"
+- #4 (no owner-issued ID, this file's own numbering) — line 87, heading: "4. Process and environment — decided, not asked"
+- #5 (no owner-issued ID, this file's own numbering) — line 111, heading: "5. Still open with the product owner"
 
 ### `owner-answers-2026-10-21.md` (2026-10-21)
 
@@ -1212,6 +1268,16 @@ safe global key across 30 files.
 - `R3` — line 59, heading: "R3–R9 — the seven he approved in the same message, recorded because they were nearly lost"
 - `R10` — line 98, heading: "R10 — A community team sees only its own referrals"
 
+### `archive/dated-notes/ward-flow-owner-rulings-2026-09-01.md` (2026-09-01)
+
+**Title:** Owner rulings — 2026-09-01
+
+3 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 15, heading: "1. The repository is to be treated as PRIVATE"
+- #2 (no owner-issued ID, this file's own numbering) — line 36, heading: "2. The LATEST decision wins, wherever it is written"
+- #3 (no owner-issued ID, this file's own numbering) — line 72, heading: "3. Confidence-decay is CROSSED OFF"
+
 ### `archive/dated-notes/owner-rulings-2026-09-01-vocabulary-and-pathways.md` (2026-09-01)
 
 **Title:** Owner rulings — vocabulary, bed states and pathways, 2026-09-01
@@ -1306,9 +1372,45 @@ safe global key across 30 files.
 - #5 (no owner-issued ID, this file's own numbering) — line 43, heading: "5. A promised bed cannot fail to materialise, because no bed is ever promised"
 - #6 (no owner-issued ID, this file's own numbering) — line 52, heading: "6. The sex counts are real, because some beds are sex-restricted"
 
+### `archive/dated-notes/ward-flow-owner-rulings-2026-08-31.md` (2026-08-31)
+
+**Title:** Owner rulings, 2026-08-31 — five decisions taken in one answer
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 16, heading: "1. The ten urgency-mark reasons — ⚠️ STILL OPEN"
+- #2 (no owner-issued ID, this file's own numbering) — line 30, heading: "2. A bed held for a named patient must NOT count as available"
+- #3 (no owner-issued ID, this file's own numbering) — line 46, heading: "3. A patient every approached ward has declined must be FLAGGED, never auto-escalated"
+- #4 (no owner-issued ID, this file's own numbering) — line 63, heading: "4. The end-to-end walk-through is to be finished"
+- #5 (no owner-issued ID, this file's own numbering) — line 74, heading: "5. Ward Flow is NOT to be pushed to a public repository as it stands"
+
+### `archive/dated-notes/ward-flow-owner-rulings-2026-08-31-community.md` (2026-08-31)
+
+**Title:** Owner rulings, 2026-08-31 — the community hub, and six urgency reasons
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 15, heading: "1. A patient is "this team's" by an EXPLICIT TEAM ON THE REFERRAL, not by home area"
+- #2 (no owner-issued ID, this file's own numbering) — line 21, heading: "2. ✅ A community team CAN see a ward's reason for declining their patient"
+- #6 (no owner-issued ID, this file's own numbering) — line 30, heading: "6. Real transport providers and community teams stay DEFERRED · 7. The refresh-wipes-state gap stays CUT"
+- #4 (no owner-issued ID, this file's own numbering) — line 58, heading: "⚠️ 4. THE SIX URGENCY REASONS — CHOSEN BY ME, ACCEPTED PROVISIONALLY, NOT HIS WORDS"
+- #1 (no owner-issued ID, this file's own numbering) — line 112, heading: "⚠️ 1. A SHORTER LIST IS EASIER TO APPLY AND THEREFORE EASIER TO OVER-APPLY"
+
+### `archive/dated-notes/ward-flow-decisions-2026-08-29.md` (2026-08-29)
+
+**Title:** Ward Flow — owner decisions, 2026-08-29, and two drafts for review
+
+5 item(s):
+
+- `OD-1` — line 61, heading: "OD-1 — The receiving-time options, approved as drafted"
+- `OD-2` — line 83, heading: "OD-2 — Sex belongs on the admission record, explicitly approved"
+- `OD-3` — line 97, heading: "OD-3 — The override reasons, and the free-text box comes out now"
+- `OD-4` — line 130, heading: "OD-4 — The shift handover page goes live, and the sheet carries its moment"
+- `OD-5` — line 144, heading: "OD-5 — The clinician check is deferred, deliberately"
+
 ---
 
-## Unparsed files — 5
+## Unparsed files — 6
 
 ✅ **Not a defect in the files — a limitation of this generator, stated rather than hidden.**
 A generator that silently drops what it cannot structure produces a tidy index missing exactly
@@ -1321,5 +1423,6 @@ an open question with no ruling recorded yet.
 - `archive/dated-notes/owner-open-questions-2026-09-02.md` — "Open questions for the owner — the actual list, written down"
 - `archive/dated-notes/owner-question-referral-withdrawal-2026-09-11.md` — "One missing record, two wrong numbers on the community team page"
 - `archive/dated-notes/owner-question-settings-thresholds-2026-09-12.md` — "The Thresholds table on Settings — wrong in both directions"
+- `archive/dated-notes/owner-ruling-2026-09-07-board-columns.md` — "Owner ruling 2026-09-07 — the ward board's five additions, and "Presentation""
 - `archive/dated-notes/owner-ruling-patient-link-2026-09-02.md` — "THE OWNER HAS RULED: A REFERRAL REMEMBERS ITS PATIENT — 2026-09-02"
 

@@ -484,6 +484,12 @@
   border-radius: 50%;
 }
 
+/* R1-25 (device sweep): in a list row the empty mark keeps the 36px ring's slot, so a service with
+   no beds starts its name where the others do. */
+:not(.next) > .ring0 {
+  margin-inline: 13px;
+}
+
 /* A chart inside a phone card (Compare bars, wait bands). */
 .chartCard {
   padding: var(--wf-s-3);

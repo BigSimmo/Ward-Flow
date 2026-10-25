@@ -122,7 +122,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const dispatch = renderAnswer("sjgm-adult-open");
     const dialog = openDialog();
     expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
-    const hold = within(dialog).getByLabelText("Bed hold once pulled");
+    const hold = within(dialog).getByLabelText("Pull time limit");
     expect(hold).toHaveValue("standard");
     fireEvent.change(hold, { target: { value: "extended" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
@@ -130,13 +130,13 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
 
     // Reopened, the choice starts at the standard hold again.
-    expect(within(openDialog()).getByLabelText("Bed hold once pulled")).toHaveValue("standard");
+    expect(within(openDialog()).getByLabelText("Pull time limit")).toHaveValue("standard");
   });
 
   it("offers the bed hold choice beside the desk's one-step Accept in principle", () => {
     const dispatch = renderAnswer("sjgm-adult-open");
     const id = shownId();
-    const hold = screen.getByRole("combobox", { name: "Bed hold once pulled" });
+    const hold = screen.getByRole("combobox", { name: "Pull time limit" });
     expect(hold).toHaveValue("standard");
     expect(
       within(hold)
@@ -160,7 +160,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       }),
     );
     expect(shownId()).toBe(id);
-    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), {
       target: { value: "extended" },
     });
     act(() =>
@@ -173,7 +173,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       }),
     );
     expect(shownId()).toBe("WF-AUDIT-NEXT");
-    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("standard");
+    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("standard");
     fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
@@ -201,7 +201,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     );
     const view = render(tree());
     const id = shownId();
-    fireEvent.change(screen.getByRole("combobox", { name: "Bed hold once pulled" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), {
       target: { value: "extended" },
     });
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
@@ -215,7 +215,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       },
     ];
     act(() => view.rerender(tree()));
-    expect(screen.getByRole("combobox", { name: "Bed hold once pulled" })).toHaveValue("extended");
+    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("extended");
     const form = screen.getByTestId(`ward-override-form-${id}`);
     fireEvent.click(within(form).getAllByRole("radio")[0]!);
     fireEvent.submit(form);

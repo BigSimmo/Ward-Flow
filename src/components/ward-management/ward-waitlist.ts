@@ -14,7 +14,8 @@ export function waitlistStands(movement: Movement, unitId: string): boolean {
   let endedAt = Number.NEGATIVE_INFINITY;
   for (const decline of movement.declines) {
     if (decline.unitId !== unitId) continue;
-    if (WAITLIST_REASONS.includes(decline.reason)) waitlistedAt = Math.max(waitlistedAt, decline.at);
+    if (decline.reason !== undefined && WAITLIST_REASONS.includes(decline.reason))
+      waitlistedAt = Math.max(waitlistedAt, decline.at);
     else endedAt = Math.max(endedAt, decline.at);
   }
   for (const withdrawal of movement.withdrawnReferrals) {

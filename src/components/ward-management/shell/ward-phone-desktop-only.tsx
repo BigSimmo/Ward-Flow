@@ -45,7 +45,7 @@ export function WardPhoneDesktopOnly() {
         <h1 id="ward-phone-desktop-only-title" className={styles.title}>
           {title} needs a larger screen
         </h1>
-        <p className={styles.line}>Open it on a tablet or computer.</p>
+        <p className={styles.line}>Open it on a computer or the meeting room screen.</p>
         <div className={styles.actions}>
           <Link href={WARD_HOME_HREF} className={buttonClass({ variant: "pri" })}>
             Home

@@ -35,9 +35,9 @@ export type EdReferralStatus = {
   steps?: EdReferralStep[];
 };
 
-/** The stage name the ED reads: "Bed held" for a pulled bed, otherwise the shared label. */
+/** The stage name the ED reads: "Bed pulled" for a pulled bed, otherwise the shared label (D-81). */
 export function edStageLabel(stage: MovementStage): string {
-  return stage === "pulled" ? "Bed held" : stageCopy[stage].label;
+  return stage === "pulled" ? "Bed pulled" : stageCopy[stage].label;
 }
 
 /** How many of the four steps (sent, accepted, bed held, transport) each stage has done. */
@@ -95,7 +95,7 @@ export function edReferralStatus(
       ? `Declined by ${declinedBy} ${declinedBy === 1 ? "ward" : "wards"}, coordinator reviewing`
       : "Coordinator asked wards";
   const heldDetail =
-    stage === "pulled" ? (hold ? hold.short : `${holdLabel} hold`) : done > 3 ? "Bed held" : "No bed yet";
+    stage === "pulled" ? (hold ? hold.short : `${holdLabel} pull time limit`) : done > 3 ? "Bed pulled" : "No bed yet";
   const transportDetail =
     stage === "moving"
       ? "On the way"
@@ -113,7 +113,7 @@ export function edReferralStatus(
     ward
       ? { label: `${ward} accepted`, detail: "Accepted in principle", done: done >= 2 }
       : { label: "A ward accepts", detail: "Waiting for a ward", done: false },
-    { label: "Bed held for this patient", detail: heldDetail, done: done >= 3 },
+    { label: "Bed pulled for this patient", detail: heldDetail, done: done >= 3 },
     {
       label: "Transport",
       detail: transportDetail,
@@ -135,7 +135,7 @@ export function edReferralStatus(
     stage === "accepted_awaiting_bed"
       ? "no bed yet"
       : stage === "pulled"
-        ? "bed held"
+        ? "bed pulled"
         : stage === "handover_ready"
           ? "handover ready"
           : stage === "moving"
@@ -145,7 +145,7 @@ export function edReferralStatus(
     stage !== "pulled"
       ? ""
       : !hold
-        ? `, ${holdLabel} hold`
+        ? `, ${holdLabel} pull time limit`
         : hold.state === "lapsed"
           ? `, ${hold.short.toLowerCase()}`
           : ` ${hold.short}`;

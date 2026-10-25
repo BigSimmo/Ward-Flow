@@ -157,7 +157,7 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["statusChanges", history({ from: text, to: text, by: text, reason: text })],
   ["urgencyChanges", history({ by: text, reason: text, from: urgency, to: urgency })],
   ["overrides", history({ by: text, reason: text, unitIds: strings })],
-  ["declines", history({ unitId: text, reason: text })],
+  ["declines", history({ unitId: text, reason: z.optional(text) })],
   ["withdrawnReferrals", history({ unitId: text, reason: text })],
   ["referralAnswerHistory", history({ unitId: text, answer: z.enum(["waitlisted", "declined", "withdrawn"]) })],
   ["unwinds", history({ kind: text, by: text, reason: text })],

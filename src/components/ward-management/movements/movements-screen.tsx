@@ -16,6 +16,7 @@ import { WardGroupHeading, WardRecordList } from "@/components/ward-management/w
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -83,6 +84,8 @@ import {
   transportRouteLabels,
 } from "./movements-screen-helpers";
 export { causeOf, inServiceSuffix } from "./movements-screen-helpers";
+
+const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
 
 /**
  * MERGE 03 — the patient movement board (`MovementsView`, a stage strip) and the coordinator's live
@@ -160,7 +163,8 @@ export function MovementsScreen() {
     };
   }, []);
 
-  const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
+  // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+  const [boardTab, setBoardTab] = useAddressTab("tab", MOVEMENT_BOARD_TABS, "every");
   // A ref, not state: it only records which tab a key press asked to focus, so the layout effect
   // below can move focus once the new selection has committed. Nothing renders from it.
   const keyboardTabFocus = useRef<"every" | "resolved" | null>(null);

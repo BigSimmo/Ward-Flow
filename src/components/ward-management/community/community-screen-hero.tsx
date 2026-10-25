@@ -252,7 +252,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
             flagged={admittedWhileAlreadyWithTeam.length > 0}
           />
           <WardFigure
-            label="In a bed or holding one"
+            label="In a bed or with one pulled"
             value={`${lists.currentlyAdmitted.length}`}
             sub={`${inBedCount} in the bed · ${bedPulledCount} bed pulled`}
           />

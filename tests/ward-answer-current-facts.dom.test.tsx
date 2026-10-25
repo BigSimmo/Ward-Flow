@@ -236,7 +236,7 @@ describe("Ward answer current facts", () => {
     });
     declines.forEach(({ movementId, decline, declineIndex }) => {
       const row = within(history).getByTestId(`ward-answer-history-${movementId}-declined-${declineIndex}`);
-      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason]);
+      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason!]);
       expect(row).toHaveTextContent(formatInstant(decline.at));
     });
     expect(within(history).getAllByText("Time not recorded")).toHaveLength(

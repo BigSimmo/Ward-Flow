@@ -57,14 +57,14 @@ export function alertChecks({
       label: "No eligible bed",
       n: countKind("nobed"),
       scope:
-        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waitlist and this is shown to the bed coordinator.",
+        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waiting list and this is shown to the bed coordinator.",
     },
     {
       key: "hold",
       kind: "hold",
-      label: "Bed hold expired",
+      label: "Pull expired",
       n: countKind("hold"),
-      scope: "Watches bed pulls against the time they were held until.",
+      scope: "Watches pulled beds against their pull time limit.",
     },
     {
       key: "transport",

@@ -36,7 +36,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
@@ -114,6 +114,9 @@ export function StatisticsWardScreen({
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = useMemo(() => units.find((candidate) => candidate.id === unitId), [units, unitId]);
+  // D-80: a ward desk is offered only the wards it may open, and no way to the others.
+  const canOpen = useCanOpenHref();
+  const openUnits = units.filter((each) => each.id === unitId || canOpen(wardStatisticsHref(each.id)));
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -243,31 +246,37 @@ export function StatisticsWardScreen({
       testId="ward-statistics-ward-screen"
       title={unit.name}
       titleAction={
-        <span className={ward.titleTools}>
-          <ChangeWard units={units} currentId={unit.id} />
-          <UnitStepper
-            noun="ward"
-            currentId={unit.id}
-            items={units.map((each) => ({ id: each.id, href: wardStatisticsHref(each.id), label: each.name }))}
-          />
-        </span>
+        openUnits.length > 1 ? (
+          <span className={ward.titleTools}>
+            <ChangeWard units={openUnits} currentId={unit.id} />
+            <UnitStepper
+              noun="ward"
+              currentId={unit.id}
+              items={openUnits.map((each) => ({ id: each.id, href: wardStatisticsHref(each.id), label: each.name }))}
+            />
+          </span>
+        ) : undefined
       }
       tools={
         <>
-          <HeroTool
-            href={STATISTICS_WARDS_HREF}
-            icon={<ListOrdered size={14} aria-hidden="true" />}
-            testId="ward-statistics-ward-all-wards"
-          >
-            All wards
-          </HeroTool>
-          <HeroTool
-            href={STATISTICS_COMPARE_HREF}
-            icon={<Scale size={14} aria-hidden="true" />}
-            testId="ward-statistics-ward-compare"
-          >
-            Compare
-          </HeroTool>
+          {canOpen(STATISTICS_WARDS_HREF) ? (
+            <HeroTool
+              href={STATISTICS_WARDS_HREF}
+              icon={<ListOrdered size={14} aria-hidden="true" />}
+              testId="ward-statistics-ward-all-wards"
+            >
+              All wards
+            </HeroTool>
+          ) : null}
+          {canOpen(STATISTICS_COMPARE_HREF) ? (
+            <HeroTool
+              href={STATISTICS_COMPARE_HREF}
+              icon={<Scale size={14} aria-hidden="true" />}
+              testId="ward-statistics-ward-compare"
+            >
+              Compare
+            </HeroTool>
+          ) : null}
         </>
       }
       eyebrowLabel="Ward statistics"

@@ -155,7 +155,7 @@ describe("settings audited journey recovery", () => {
     );
     interception.raise = pending as WardRaise;
     external({ parallelReferralCap: 2 });
-    fireEvent.keyDown(screen.getByRole("spinbutton", { name: /pulled bed hold duration/i }), { key: "ArrowDown" });
+    fireEvent.keyDown(screen.getByRole("spinbutton", { name: /pull time limit/i }), { key: "ArrowDown" });
     save();
     undo(/saved and recorded\./);
     expect(pending).toHaveBeenCalledTimes(1);

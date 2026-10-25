@@ -78,7 +78,7 @@ export function restrictionNotice(movement: Movement, unit: Unit): RestrictionNo
 export type EligibilityWarning = { level: "ineligible"; text: string; failedGates: GateResult[] };
 
 /**
- * The other half of the finding in `docs/ward-flow/the-engine-enforces-nothing.md`: `eligibility()`
+ * The other half of the finding in `docs/ward-flow/archive/dated-notes/the-engine-enforces-nothing.md`: `eligibility()`
  * already computes whether this ward may lawfully or safely hold this movement, and nothing on the
  * ward's own screen showed it. `ward-screen.tsx`'s accept and pull buttons deliberately mirror the
  * reducer's own (eligibility-free) checks so the two can never advertise different verdicts — which
