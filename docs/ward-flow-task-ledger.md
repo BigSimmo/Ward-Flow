@@ -386,7 +386,53 @@ Two product and privacy questions for Josh came out of the PR #383 review and ar
 1. **Decided. Community teams and typed discharge criteria**: should a community team on the patient's referral see the text of the patient-specific typed discharge criteria? Commit 678d14d took the safer default: the discharge record read gives a community team a numbered placeholder for each typed criterion, so counts and ticks still match the ward. Recommendation: keep the placeholders unless Josh wants community teams to read the text. Decided 17 October 2026: Josh accepted the recommendation, so the placeholders stay (D-65).
 2. **Decided. Verified psychiatrist role for typed criteria**: should typed criteria need a verified psychiatrist role? Today "Set by the treating psychiatrist" is a self-ticked box that the ward and coordinator desks can send, as for the fixed D-60 criteria, and the app has no psychiatrist sign-in to check it. Recommendation: keep the attestation for the prototype and record a decision before any real use. Decided 17 October 2026: Josh kept the tick box for the prototype. D-65 now records that real use needs a real psychiatrist sign in.
 
-## §7.83 — Live product review and resolution (23–24 October 2026)
+## §7.83 — Live product review and resolution (23–26 October 2026)
+
+Current receipt, 26 October: task `wardflow-live-product-review-20261023`, repository
+`BigSimmo/Ward-Flow`, worktree `D:/Worktrees/WardFlow/review-ready-20261025`, local branch
+`codex/ward-review-ready-20261025`, publication branch `codex/ward-review-pr-20261024`.
+[PR #675](https://github.com/BigSimmo/Ward-Flow/pull/675) is ready for review and remains
+unmerged. The owner authorised fixes, normal pushes and normal merge after checks and review.
+
+Evidence identities and limits:
+
+- At `7b07ec6af0684d2dd2204c3ae527aa8766d1546d`, [CI run 40225408567](https://github.com/BigSimmo/Ward-Flow/actions/runs/40225408567)
+  completed with the `Ward Flow required` check successful. Its eight `Ward Flow unit shard`
+  jobs, `Ward Flow coverage`, `Ward Flow static checks`, `Ward Flow production build`,
+  all three `Ward Flow browser journeys` jobs, `Ward Flow backend and shared production proof`
+  and `Ward Flow release gate` succeeded. The production job's script-budget check passed all
+  five existing limits. `Ward Flow main reuse check` was intentionally skipped by the planner.
+- Normal merge of that head was refused because CodeRabbit's formal review still requested
+  changes. Resolving 16 inline threads did not clear its two outside-diff findings. No review
+  was dismissed or bypassed.
+- Commit `2b1fd2cacf21b0766959afc2063c09627f1b8e29` fixes those findings: ED table headings
+  distinguish journey counts from elapsed time; reload-recovery scope is omitted without
+  usable session identity. Independent source review of both two-file deltas found no further
+  actionable defect. That review executed no tests or provider calls.
+- `node scripts/run-vitest.mjs run tests/ward-statistics-ed-comparison.dom.test.tsx tests/ward-statistics-journey-view.dom.test.tsx`
+  passed 16 tests. The new header regression first failed against the preceding source.
+- `node scripts/run-backend-tests.mjs --offline` passed 250 tests, skipped 25 database-dependent
+  tests and failed none. Its new identity regressions first failed two tests against the
+  preceding source. No local PostgreSQL connection was used in this offline run.
+- `node scripts/run-heavy.mjs --npm-script typecheck:backend` rebuilt the shared engine and
+  passed backend TypeScript. The normal `git commit` hook for `2b1fd2cac` passed staged secret
+  scanning, lint for four files and scoped TypeScript for two files.
+- `node scripts/check-diff-integrity.mjs --base f5a9b6864fc28456d82a399d33c945539faba520`
+  passed, with 51 changed test files and 514 to 586 cases. Prior-head CI is not a final-head
+  verdict: the new fixes still require publication, fresh required CI and formal review release.
+
+Internal HealthPoint policy, service feeds and integration ownership, hosted-provider acceptance,
+physical devices and full screen-reader acceptance remain external follow-ups. No hosted migration or
+deployment was executed. Notion remains unsynced. Last verified: 26 October 2026 against
+`2b1fd2cac` and the explicitly named previous-head CI run above.
+
+<details>
+<summary>Historical reported checkpoint, 24 October 2026</summary>
+
+The dated narrative below is retained as task history. Its individual command receipts were not
+included here and have not been reconstructed. Its reported passes are not reused as current
+readiness evidence. Approval, publication and next-action statements below describe that earlier
+checkpoint; the current receipt above supersedes them.
 
 Task: `wardflow-live-product-review-20261023`. Owner: Codex review-resolution coordinator.
 Repository: `BigSimmo/Ward-Flow`. Original base `5875823b5322f0b4ed2f5239628f88d40ea0195e`.
@@ -440,6 +486,8 @@ Next: receive that approval, re-verify the owned stopped lease, preserve it, the
 the fresh full gate and production browser checks and publish one PR against main.
 No main merge or deployment is authorised. Notion is unsynced. Last verified:
 24 October 2026 against these fresh named artifacts.
+
+</details>
 
 ## §7.84 — Remaining-ledger reconciliation and source fixes (24 October 2026)
 
