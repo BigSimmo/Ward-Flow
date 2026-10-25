@@ -44,7 +44,6 @@ describe("WardScreen & WardIndex audit remediation", () => {
           !label.includes("Ready") &&
           !label.includes("Closed") &&
           !label.includes("Pulled") &&
-          !label.includes("Inbound") &&
           !label.includes("Held up") &&
           !label.includes("Due out") &&
           !label.includes("Past date")

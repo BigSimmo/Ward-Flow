@@ -85,13 +85,13 @@ export function wardBedRoster({
   const openBedsCount = Math.max(0, unit.beds - lockedBeds);
   const isMixed = lockedBeds > 0 && openBedsCount > 0;
 
-  // Josh, 26 Sept 2026 ("go ahead with all your recommendations"): a bed reads "On Leave" only for
+  // Josh, 26 Sept 2026 ("go ahead with all your recommendations"): a bed reads "On leave" only for
   // the admission this ward's OWN leave records actually name — never whichever occupied
   // admission happened to sit first by position. `leaveAdmissionIds` is that ward-scoped set
   // (`unitLeaveBeds` is already filtered to `unit.id` above), and `otherOccupants` is every
   // occupied admission EXCEPT those — so nobody with a leave record is ever also handed an
   // ordinary "occupied" bed slot elsewhere on the same board. The leave slots below are built
-  // straight from `unitLeaveBeds` itself, one bed per record, so the number of "On Leave" beds can
+  // straight from `unitLeaveBeds` itself, one bed per record, so the number of "On leave" beds can
   // never drift from the number of leave records — there is no separate count to keep in step.
   const leaveAdmissionIds = new Set(unitLeaveBeds.map((leaveBed) => leaveBed.admissionId));
   const unitOccupantAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "occupied") ?? [];
@@ -136,14 +136,14 @@ export function wardBedRoster({
     let statusText = "Inpatient";
     if (i < states.ready) {
       status = "ready";
-      statusText = "Ready Vacant";
+      statusText = "Ready";
     } else if (isLeaveSlot) {
       status = "leave";
       // D-38: a bed held for an absence without leave is never shown as approved leave.
-      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On Leave";
+      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On leave";
     } else if (isIncomingSlot) {
       status = "incoming";
-      statusText = "Inbound";
+      statusText = "Pulled";
     } else if (isClosedSlot) {
       status = "closed";
       statusText = "Closed";
@@ -153,7 +153,7 @@ export function wardBedRoster({
     const incomingMovement = pulledSlot?.movement;
     // A pulled bed with no live movement is a seeded pull: name the pulled admission itself.
     const pulledAdmission = pulledSlot && incomingMovement === undefined ? pulledSlot.admission : undefined;
-    // The person shown "On Leave" is whoever THIS leave record names, found by its own
+    // The person shown "On leave" is whoever THIS leave record names, found by its own
     // `admissionId` — never by position. (Should the named admission ever not be among this
     // ward's occupied admissions, the slot is correctly left empty rather than borrowing someone
     // else's identity.)
