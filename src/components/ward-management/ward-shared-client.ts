@@ -6,16 +6,21 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import type { BoundWardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
 let isValidSharedState: ((value: unknown) => boolean) | undefined;
+let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWardPartialView | undefined;
 function loadSharedStateCheck(): Promise<void> {
-  if (isValidSharedState) return Promise.resolve();
-  return import("./ward-shared-state-validation").then((module) => {
-    isValidSharedState = module.isValidSharedWardFlowState;
-  });
+  if (isValidSharedState && bindSharedPartialView) return Promise.resolve();
+  return Promise.all([import("./ward-shared-state-validation"), import("./ward-partial-view-contract")]).then(
+    ([state, partialView]) => {
+      isValidSharedState = state.isValidSharedWardFlowState;
+      bindSharedPartialView = partialView.bindWardPartialView;
+    },
+  );
 }
 
 export type SharedSnapshot = {
@@ -27,6 +32,8 @@ export type SharedSnapshot = {
   demoControls?: boolean;
   /** Opaque server access lifetime for retained reports; absent on older servers. Never a grant. */
   accessContext?: string;
+  /** Display-only response data, validated against this outer snapshot before publication. */
+  partialView?: BoundWardPartialView;
   /** How many closed records this world has archived (migration 14); absent on older servers. */
   archived?: number;
 };
@@ -464,7 +471,14 @@ export class SharedWorkspaceClient {
       const payload = same ? held.payload : this.withArchive(snapshot.payload);
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
-      this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
+      // A missing, malformed or stale sibling clears the previous display on this adoption.
+      // The outer response supplies the lifetime; metadata cannot authenticate itself.
+      const partialView =
+        bindSharedPartialView?.(snapshot.partialView, {
+          revision: snapshot.revision,
+          accessContext: snapshot.accessContext ?? null,
+        }) ?? undefined;
+      this.publish({ snapshot: { ...snapshot, payload, partialView }, receivedAt: Date.now() });
       this.noteOpenSheets();
       const archived = snapshot.archived;
       if (

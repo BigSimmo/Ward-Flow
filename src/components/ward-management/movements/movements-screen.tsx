@@ -57,6 +57,8 @@ import {
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { movementPresentation } from "../ward-partial-view-presenters";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -212,6 +214,7 @@ export function MovementsScreen() {
     setReveal((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
   }
 
+  const sender = useSenderPresentation();
   const stages = useMemo(() => journeyStages(movements, now, thresholds), [movements, now, thresholds]);
   const closedMovements = useMemo(() => movements.filter((movement) => !isOpen(movement)), [movements]);
   const closedToday = useMemo(
@@ -402,7 +405,9 @@ export function MovementsScreen() {
   const causeGroups = useMemo(() => {
     return CAUSES.map((c) => {
       const items = byLongestWait(
-        movements.filter(isOpen).filter((m) => causeOf(m, now, severeCauseById) === c.key),
+        movements
+          .filter(isOpen)
+          .filter((m) => causeOf(m, now, severeCauseById, movementPresentation(m, sender.movementFor(m))) === c.key),
         now,
         thresholds,
       );
@@ -415,7 +420,7 @@ export function MovementsScreen() {
         movements: items,
       };
     }).filter((g) => g.movements.length > 0);
-  }, [movements, now, severeCauseById, thresholds]);
+  }, [movements, now, severeCauseById, thresholds, sender]);
 
   /**
    * SERVICE SCOPING — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
@@ -643,7 +648,11 @@ export function MovementsScreen() {
     .filter((movement) => (currentLegalDueAt(movement) ?? -Infinity) >= now)
     .sort((a, b) => currentLegalDueAt(a)! - currentLegalDueAt(b)!)[0];
   const myQueue = byLongestWait(
-    openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
+    openMovements.filter(
+      (movement) =>
+        movementPresentation(movement, sender.movementFor(movement)).kind === "record" &&
+        isCoordinatorStep(movementNextStep(movement)),
+    ),
     now,
     thresholds,
   ); // Wait order only (Audit 1, Josh 20 Oct 2026, D-71): flags and tier never move a row.

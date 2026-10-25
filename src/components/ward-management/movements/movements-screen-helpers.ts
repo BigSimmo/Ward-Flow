@@ -18,6 +18,21 @@ import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import { type MovementLegState } from "./movements-derivations";
 import { type WfFill, type WfTone } from "@/components/wf";
+import type { movementPresentation } from "../ward-partial-view-presenters";
+
+export type MovementPresentation = ReturnType<typeof movementPresentation>;
+export function movementProgressText(presentation: MovementPresentation): string | undefined {
+  if (presentation.kind === "record") return undefined;
+  if (presentation.kind === "unavailable") return "Progress unavailable";
+  return {
+    not_requested: "Not requested",
+    awaiting_answer: "Awaiting an answer",
+    none_found: "No accepting destination",
+    withdrawn: "Withdrawn",
+    accepted: "Accepted",
+    escalated: "Escalated",
+  }[presentation.progress];
+}
 
 export const MS_PER_MINUTE = 60_000;
 
@@ -53,6 +68,16 @@ interface CauseDefinition {
 }
 
 export const CAUSES: CauseDefinition[] = [
+  ...(
+    [
+      ["progress_unavailable", "Progress unavailable"],
+      ["progress_not_requested", "Not requested"],
+      ["progress_none_found", "No accepting destination"],
+      ["progress_withdrawn", "Withdrawn"],
+      ["progress_accepted", "Accepted"],
+      ["progress_escalated", "Escalated"],
+    ] as const
+  ).map(([key, title]) => ({ key, title, rank: 10 })),
   {
     key: "legal_breached",
     rank: 1,
@@ -138,14 +163,28 @@ export const CAUSES: CauseDefinition[] = [
  * ward elsewhere had never been asked, read `no_eligible_bed` here regardless — a false positive
  * Delays' network-wide shortlist search does not make.
  */
-export function causeOf(movement: Movement, now: Instant, severeCauseById: ReadonlyMap<string, DelayCause>): string {
+export function causeOf(
+  movement: Movement,
+  now: Instant,
+  severeCauseById: ReadonlyMap<string, DelayCause>,
+  presentation?: MovementPresentation,
+): string {
   const leg = movement.transport;
   const legState = transportLeg(leg);
   const inTransit = movement.stage === "moving" || legState === "En route" || legState === "Collected";
   if (inTransit) return "in_transit";
 
   const severeCause = severeCauseById.get(movement.id);
-  if (severeCause !== undefined) return severeCause;
+  if (
+    severeCause !== undefined &&
+    (severeCause !== "no_eligible_bed" || !presentation || presentation.kind === "record")
+  )
+    return severeCause;
+  if (presentation?.kind === "unavailable") return "progress_unavailable";
+  if (presentation?.kind === "sender") {
+    if (presentation.progress === "awaiting_answer") return "awaiting_ward_answer";
+    if (presentation.progress !== "accepted" || !movement.acceptedUnitId) return `progress_${presentation.progress}`;
+  }
 
   const noAccepted = !movement.acceptedUnitId;
   const hasReferred = movement.referredUnitIds && movement.referredUnitIds.length > 0;

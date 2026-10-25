@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
@@ -23,7 +24,19 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     "movements",
   );
   const now = useWardFlowClock();
-  const raise = useWardRaise("coordinator");
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
+  const gate = useRoleGate();
+  const expectationGate = gate(
+    movement.expectFlag && movement.expectFlag.clearedAt === undefined ? "CLEAR_EXPECT_FLAG" : "RAISE_EXPECT_FLAG",
+  );
+  const lateGate = gate("EVALUATE_ARRIVAL_LATENESS");
+  const leaveGate = gate("EVALUATE_LEAVE_BED_WARNINGS");
+  const mismatchGate = gate("FLAG_LEGAL_MISMATCH");
+  const buzzGate = gate("SEND_WARD_BUZZ");
+  const releaseGate = gate("RELEASE_AND_REOPEN_SEARCH");
+  const continuationGate = gate("RECORD_LEGAL_FORM_CONTINUATION");
+  const extensionGate = gate("RECORD_COUNTRY_EXTENSION");
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [reason, setReason] = useState<ReleasePullReason | "">("");
@@ -48,6 +61,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   };
   const open = !movement.closure;
   const lateArrivalUnavailable =
+    !lateGate.allowed ||
     !open ||
     !!movement.arrivalLateNotifiedAt ||
     !isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now);
@@ -56,25 +70,27 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     : movement.arrivalLateNotifiedAt
       ? "Late arrival has already been reviewed."
       : "No overdue arrival plan to review right now.";
-  const leaveWarningUnavailable = !leaveBeds.some((b) => leaveBedNeedsOpenWarning(b.confirmedAt, b.openWarningAt, now));
+  const leaveWarningUnavailable =
+    !leaveGate.allowed || !leaveBeds.some((b) => leaveBedNeedsOpenWarning(b.confirmedAt, b.openWarningAt, now));
   const leaveWarningReason = "No leave bed currently needs an open warning review.";
-  const mismatchUnavailable = !open || !mismatch || !unit;
+  const mismatchUnavailable = !mismatchGate.allowed || !open || !mismatch || !unit;
   const mismatchReason = !open
     ? "This movement is closed."
     : !unit
       ? "No accepting ward is recorded yet."
       : "No legal status placement mismatch is detected on the accepting ward.";
-  const releaseUnavailable = !reason || (!!movement.transport && movement.transport.cancelledAt === undefined);
+  const releaseUnavailable =
+    !releaseGate.allowed || !reason || (!!movement.transport && movement.transport.cancelledAt === undefined);
   const releaseReason =
     movement.transport && movement.transport.cancelledAt === undefined
       ? "Cancel the active transport booking before releasing the bed."
       : "Choose a release and reopen reason first.";
   const unsupportedContinuation = !!form && !isLegalClockFormCode(form);
-  const continuationUnavailable = !form || !written || unsupportedContinuation;
+  const continuationUnavailable = !continuationGate.allowed || !form || !written || unsupportedContinuation;
   const continuationReason = unsupportedContinuation
     ? `Form ${form} continuation is not recorded in this prototype.`
     : "Choose a continuation form and enter the written date and time first.";
-  const countryExtensionUnavailable = !countryExtensionEligible(movement) || !expiry;
+  const countryExtensionUnavailable = !extensionGate.allowed || !countryExtensionEligible(movement) || !expiry;
   const countryExtensionReason = !countryExtensionEligible(movement)
     ? "A country extension requires a current Form 1A with a country paper setting."
     : "Enter the new expiry written on the extension paper first.";
@@ -89,7 +105,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         {open && (
           <button
             type="button"
+            {...expectationGate.buttonProps}
             onClick={() => {
+              if (!expectationGate.allowed) return;
               before();
               if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
                 raise("CLEAR_EXPECT_FLAG", { movementId: movement.id });
@@ -106,11 +124,13 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               : "Raise expectation review flag"}
           </button>
         )}
+        {open && expectationGate.note}
         <button
           type="button"
           aria-disabled={lateArrivalUnavailable ? "true" : undefined}
           aria-describedby={lateArrivalUnavailable ? `workflow-late-arrival-reason-${movement.id}` : undefined}
           title={lateArrivalUnavailable ? lateArrivalReason : undefined}
+          {...lateGate.buttonProps}
           onClick={
             lateArrivalUnavailable
               ? ignoreUnavailableActivation
@@ -122,6 +142,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         >
           Review late arrival
         </button>
+        {lateGate.note}
         {lateArrivalUnavailable ? (
           <span id={`workflow-late-arrival-reason-${movement.id}`} className="sr-only">
             {lateArrivalReason}
@@ -132,6 +153,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           aria-disabled={leaveWarningUnavailable ? "true" : undefined}
           aria-describedby={leaveWarningUnavailable ? `workflow-leave-warning-reason-${movement.id}` : undefined}
           title={leaveWarningUnavailable ? leaveWarningReason : undefined}
+          {...leaveGate.buttonProps}
           onClick={
             leaveWarningUnavailable
               ? ignoreUnavailableActivation
@@ -143,6 +165,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         >
           Review leave bed warnings
         </button>
+        {leaveGate.note}
         {leaveWarningUnavailable ? (
           <span id={`workflow-leave-warning-reason-${movement.id}`} className="sr-only">
             {leaveWarningReason}
@@ -153,6 +176,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           aria-disabled={mismatchUnavailable ? "true" : undefined}
           aria-describedby={mismatchUnavailable ? `workflow-mismatch-reason-${movement.id}` : undefined}
           title={mismatchUnavailable ? mismatchReason : undefined}
+          {...mismatchGate.buttonProps}
           onClick={
             mismatchUnavailable
               ? ignoreUnavailableActivation
@@ -169,6 +193,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         >
           Flag current legal placement mismatch
         </button>
+        {mismatchGate.note}
         {mismatchUnavailable ? (
           <span id={`workflow-mismatch-reason-${movement.id}`} className="sr-only">
             {mismatchReason}
@@ -177,7 +202,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         {unit && (
           <button
             type="button"
+            {...buzzGate.buttonProps}
             onClick={() => {
+              if (!buzzGate.allowed) return;
               before();
               raise("SEND_WARD_BUZZ", {
                 unitId: unit.id,
@@ -190,6 +217,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </button>
         )}
         <p>A capacity request appears in the ward’s local request list. It does not send an external message.</p>
+        {unit && buzzGate.note}
       </div>
       {open && ["pulled", "accepted_awaiting_bed"].includes(movement.stage) && (
         <form
@@ -230,12 +258,14 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             aria-disabled={releaseUnavailable ? "true" : undefined}
             aria-describedby={releaseUnavailable ? `workflow-release-reason-${movement.id}` : undefined}
             title={releaseUnavailable ? releaseReason : undefined}
+            {...releaseGate.buttonProps}
             onClick={releaseUnavailable ? ignoreUnavailableActivation : undefined}
           >
             {/* Audit 24-7 (CT-19): the final button names the patient whose pulled bed is released. */}
             Release pulled bed for {resolveSubjectPatient(movement, { patients, referrals, movements }).formalName} and
             reopen search
           </button>
+          {releaseGate.note}
           {releaseUnavailable ? (
             <span id={`workflow-release-reason-${movement.id}`} className="sr-only">
               {releaseReason}
@@ -273,6 +303,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             aria-disabled={continuationUnavailable ? "true" : undefined}
             aria-describedby={continuationUnavailable ? `workflow-continuation-reason-${movement.id}` : undefined}
             title={continuationUnavailable ? continuationReason : undefined}
+            {...continuationGate.buttonProps}
             onClick={
               continuationUnavailable
                 ? ignoreUnavailableActivation
@@ -293,6 +324,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           >
             Record legal form continuation
           </button>
+          {continuationGate.note}
           {continuationUnavailable ? (
             <span id={`workflow-continuation-reason-${movement.id}`} className="sr-only">
               {continuationReason}
@@ -305,6 +337,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               countryExtensionUnavailable ? `workflow-country-extension-reason-${movement.id}` : undefined
             }
             title={countryExtensionUnavailable ? countryExtensionReason : undefined}
+            {...extensionGate.buttonProps}
             onClick={
               countryExtensionUnavailable
                 ? ignoreUnavailableActivation
@@ -323,6 +356,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           >
             Record country paper extension
           </button>
+          {extensionGate.note}
           {countryExtensionUnavailable ? (
             <span id={`workflow-country-extension-reason-${movement.id}`} className="sr-only">
               {countryExtensionReason}

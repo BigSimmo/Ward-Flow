@@ -18,5 +18,10 @@
     "id": "2026-10-25-whats-new",
     "date": "2026-10-25",
     "line": "Help now lists recent changes under What's new, and this note shows them after each update."
+  },
+  {
+    "id": "2026-10-26-ward-referral-privacy",
+    "date": "2026-10-26",
+    "line": "Ward referrals show permitted progress while keeping other destinations private."
   }
 ]
