@@ -131,7 +131,6 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   BLOCK_BED_RELEASE: { category: "bed", plainWording: "Bed release blocked" },
   CLEAR_BED_RELEASE_BLOCK: { category: "bed", plainWording: "Bed release block cleared" },
   SET_BED_PREPARATION: { category: "bed", plainWording: "Bed cleaning and preparation status updated" },
-  RELEASE_BED: { category: "bed", plainWording: "Bed freed and returned to unit capacity" },
   RECORD_LEAVE_BED: { category: "bed", plainWording: "Patient leave of absence bed hold recorded" },
   END_LEAVE_BED: { category: "bed", plainWording: "Leave of absence bed hold concluded" },
   RECORD_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave recorded, bed held" },
@@ -250,6 +249,15 @@ export function transportDeliveredWording(wardName?: string): string {
   return `Transport delivered to ${wardName && wardName.length > 0 ? wardName : "the receiving ward"}`;
 }
 
+/** Event types the engine no longer accepts, so records saved before removal still read plainly. Audit 24-1 decision 4 removed RELEASE_BED (24 Oct 2026). */
+const RETIRED_EVENT_HISTORY: Readonly<Record<string, EventTypeHistoryConfig>> = {
+  RELEASE_BED: { category: "bed", plainWording: "Bed freed and returned to unit capacity" },
+};
+
+function historyConfig(type: string): EventTypeHistoryConfig | undefined {
+  return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]] ?? RETIRED_EVENT_HISTORY[type];
+}
+
 /** The plain history wording for an event, with the officer's delivery told apart from arrival. */
 export function eventHistoryWording(
   type: string,
@@ -257,7 +265,7 @@ export function eventHistoryWording(
   wardName?: string,
 ): string | undefined {
   if (isTransportDelivery(type, role)) return transportDeliveredWording(wardName);
-  return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]]?.plainWording;
+  return historyConfig(type)?.plainWording;
 }
 
 function eventFieldString<K extends string>(event: WardFlowEvent, field: K): string | undefined {
@@ -362,7 +370,7 @@ export function selectPatientHistory(
   const matchingEntries: WardHistoryEntry[] = [];
 
   for (const event of events) {
-    const config = EVENT_HISTORY_TABLE[event.type];
+    const config = historyConfig(event.type);
     if (!config || (config.category !== "patient" && config.category !== "both")) continue;
 
     // D-14 (patient link is default-deny): match on the record ids only, never the patient link.
@@ -402,7 +410,7 @@ export function selectBedHistory(
   const matchingEntries: WardHistoryEntry[] = [];
 
   for (const event of events) {
-    const config = EVENT_HISTORY_TABLE[event.type];
+    const config = historyConfig(event.type);
     if (!config || (config.category !== "bed" && config.category !== "both")) continue;
 
     const unit = eventFieldString(event, "unitId");

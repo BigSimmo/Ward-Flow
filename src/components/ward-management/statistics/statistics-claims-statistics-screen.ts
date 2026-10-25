@@ -161,30 +161,8 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
       replaceWith: "const unblocked: BedRelease = { ...release, blocker: null, blockedBy: null,",
     },
   },
-  {
-    id: "statistics-screen/bed-readiness/releasing-the-bed-overwrites-it",
-    retiredPageProse: {
-      date: "2026-09-13",
-      reason:
-        "Q004 owner-requested removal of implementation commentary. The concise timestamp limitation no longer names releasing a bed as a specific overwrite action.",
-    },
-    renderedIn: STATISTICS_SCREEN,
-    rendered: "There is no pair of instants to subtract",
-    claim: "`RELEASE_BED` overwrites `confirmedAt`.",
-    sourceFile: WARD_BED_EVENTS,
-    evidence:
-      'const updatedRelease: BedRelease = { ...release, state: "discharged", waitingOn: null, blocker: null, ' +
-      "blockedBy: null, confirmedAt: event.now,",
-    falsifiedBy: {
-      change: "`RELEASE_BED` stops writing `confirmedAt`, so releasing the bed no longer overwrites it.",
-      find:
-        'const updatedRelease: BedRelease = { ...release, state: "discharged", waitingOn: null, blocker: null, ' +
-        "blockedBy: null, confirmedAt: event.now,",
-      replaceWith:
-        'const updatedRelease: BedRelease = { ...release, state: "discharged", waitingOn: null, blocker: null, ' +
-        "blockedBy: null,",
-    },
-  },
+  // Retired 25 October 2026: releasing-the-bed-overwrites-it. Its page prose went under Q004 on
+  // 13 September, and audit 24-1 decision 4 removed RELEASE_BED, the code it cited.
   {
     id: "statistics-screen/bed-readiness/preparation-begins-only-after-a-release",
     retiredPageProse: {

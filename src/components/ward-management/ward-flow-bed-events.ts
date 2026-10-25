@@ -42,7 +42,6 @@ export type BedEvent = Extract<
       | "BLOCK_BED_RELEASE"
       | "CLEAR_BED_RELEASE_BLOCK"
       | "SET_BED_PREPARATION"
-      | "RELEASE_BED"
       | "END_LEAVE_BED"
       | "END_COMMUNITY_TREATMENT_ORDER"
       | "REQUEST_CAPACITY_REFRESH"
@@ -589,62 +588,6 @@ export function reduceBedEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return replaceBedRelease(state, release.id, prepared);
-    }
-
-    case "RELEASE_BED": {
-      const release = findBedRelease(state, event.releaseId);
-      if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
-      if (event.actingUnitId !== release.unitId) {
-        return reject(
-          state,
-          event,
-          `RELEASE_BED was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
-        );
-      }
-      // Legal transitions: confirmed -> discharged and expected -> discharged; `discharged` is
-      // terminal (owner ruling: discharged, not released). Expected is accepted deliberately: "the
-      // person has left" is a fact about an empty bed.
-      if (release.state === "discharged") {
-        return reject(state, event, `release ${release.id} is already discharged and cannot be discharged again`);
-      }
-      const unit = findUnit(state, release.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${release.unitId}`);
-      // Owner decision: this completes a release only once its named admission has left. While they
-      // are still in the bed, `RECORD_LEAVING` is what completes it. See `departAdmission`.
-      const releasedAdmission = findAdmission(state, release.admissionId);
-      if (!releasedAdmission) {
-        return reject(
-          state,
-          event,
-          `release ${release.id} names admission ${release.admissionId}, which does not exist`,
-        );
-      }
-      if (releasedAdmission.state !== "departed") {
-        return reject(
-          state,
-          event,
-          `release ${release.id} completes when admission ${releasedAdmission.id} is recorded as having left (RECORD_LEAVING); they are still ${releasedAdmission.state}`,
-        );
-      }
-      // Spec D7: same freshness restatement as CONFIRM_BED_RELEASE. The blocked flag comes off here
-      // too: once the bed is free nothing is held up.
-      const updatedRelease: BedRelease = {
-        ...release,
-        state: "discharged",
-        waitingOn: null,
-        blocker: null,
-        blockedBy: null,
-        confirmedAt: event.now,
-      };
-      // The person has already left (refused above otherwise) and `departAdmission` moved the
-      // figures then; this event only records the stage and never moves a count, so the unit is left
-      // as it is. `unitCapacity`'s reconciliation identity (`tests/ward-capacity-reconciliation.test.ts`)
-      // depends on that. `sexMix` is not touched either: a release does not say who left, so the
-      // count moves when the admission departs (owner rulings), never by guessing here. Audit A1-11:
-      // recording the stage never stamps the ward's figures as confirmed.
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updatedRelease);
     }
 
     case "END_LEAVE_BED": {
