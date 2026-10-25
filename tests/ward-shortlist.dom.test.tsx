@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
@@ -481,6 +481,17 @@ describe("ShortlistPanel greyed Override", () => {
       "Override needs a ward chosen first",
     );
     fireEvent.click(screen.getByTestId("ward-placement-override-fix"));
+    expect(document.activeElement?.getAttribute("data-testid")).toMatch(/^ward-shortlist-candidate-/);
+  });
+
+  it("Choose a ward opens a collapsed Candidates list before going to it", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    renderShortlist();
+    const toggle = within(screen.getByRole("region", { name: "Candidate units" })).getAllByRole("button")[0]!;
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(screen.getByTestId("ward-placement-override-fix"));
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(document.activeElement?.getAttribute("data-testid")).toMatch(/^ward-shortlist-candidate-/);
   });
 

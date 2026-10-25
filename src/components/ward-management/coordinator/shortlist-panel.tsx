@@ -5,6 +5,7 @@ import { currentLegalDueAt, formProgression } from "@/components/ward-management
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
+import { flushSync } from "react-dom";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { holdOpenForm } from "@/components/wf/sheet-focus";
@@ -499,6 +500,11 @@ export function ShortlistPanel({
   const groups = useMemo(() => fitGroups(shortlist, movement), [shortlist, movement]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(true);
+  // A collapsed Candidates list hides every ward, so open it before taking the person there.
+  const chooseWard = (from: HTMLElement) => {
+    if (!candidatesOpen) flushSync(() => setCandidatesOpen(true));
+    focusFirstCandidate(from);
+  };
 
   // The unit whose gates this panel currently explains. A selection carried over from another
   // page (the diagram shares the same `selectedUnitId` state) is honoured even when it falls
@@ -1862,7 +1868,7 @@ export function ShortlistPanel({
                   data-testid="ward-shortlist-refer"
                   data-phone-choose="true"
                   className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={(event) => focusFirstCandidate(event.currentTarget)}
+                  onClick={(event) => chooseWard(event.currentTarget)}
                 >
                   Choose a ward to refer
                 </button>
@@ -1902,7 +1908,7 @@ export function ShortlistPanel({
                     ? () => setOverrideOpen((open) => !open)
                     : isPhone
                       ? // Phone: never greyed; with no ward picked it takes the person to the list.
-                        (event) => focusFirstCandidate(event.currentTarget)
+                        (event) => chooseWard(event.currentTarget)
                       : ignoreUnavailableActivation
                 }
               >
@@ -1932,7 +1938,7 @@ export function ShortlistPanel({
                   type="button"
                   className={buttonClass({ variant: "ghost", size: "sm" })}
                   data-testid="ward-placement-override-fix"
-                  onClick={(event) => focusFirstCandidate(event.currentTarget)}
+                  onClick={(event) => chooseWard(event.currentTarget)}
                 >
                   Choose a ward
                 </button>
