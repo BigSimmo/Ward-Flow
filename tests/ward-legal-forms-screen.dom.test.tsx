@@ -352,6 +352,29 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(closed).toBe(false);
   });
 
+  it("names a time that is not a real time (such as 2505) on the field once it is left, before any save", () => {
+    const movement = openMovements[0]!;
+    render(
+      <RecordFormSheet
+        open
+        onClose={() => undefined}
+        draft={{ form: "1A", movement: movement.id }}
+        onDraft={() => undefined}
+        openMovements={openMovements}
+        labelOf={(m) => m.id}
+        now={NOW_ANCHOR}
+      />,
+    );
+    const time = within(screen.getByTestId("ward-legal-record")).getByLabelText("Time on form");
+    fireEvent.change(time, { target: { value: "2505" } });
+    expect(time).not.toHaveAttribute("aria-invalid", "true");
+    fireEvent.blur(time);
+    expect(time).toHaveAttribute("aria-invalid", "true");
+    expect(time).toHaveAccessibleDescription(/Enter the time written on the form as HH:MM/);
+    fireEvent.change(time, { target: { value: "" } });
+    expect(time).not.toHaveAttribute("aria-invalid", "true");
+  });
+
   it("disables Record next form and Extend recorded form with a reason when the active desk role is not allowed", () => {
     const target = withDeadline[0]!;
     render(
