@@ -1,0 +1,84 @@
+/* Response commitments (closing-the-loop package A). Same shape as the owner and call log panel. */
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  margin-block: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+}
+
+.heading {
+  margin: 0;
+  padding: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ward {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.line {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.when {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* Spelled out in words beside the colour, never colour alone. */
+.overdue {
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}
+
+.chase {
+  display: inline-block;
+  margin-inline-start: var(--wf-s-1);
+  padding: 0 var(--wf-s-1);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

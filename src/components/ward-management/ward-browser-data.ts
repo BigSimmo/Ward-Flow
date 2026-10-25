@@ -104,11 +104,56 @@ export function onWardSessionEnd(reset: (scope: WardSessionEndScope) => void): v
 }
 
 /**
+ * Audit 4 A4-07: leave-saves ("since you last looked" pictures) wait one task, and the screen
+ * re-renders signed out before it closes, so a save scheduled after the sweep wrote the picture
+ * back. Each leave-save carries a ticket taken when it was scheduled. It may write only if no
+ * session ended since (so a later sign-in never revives it) and its account context was not
+ * ended: never the ended context, and never the signed-out `null` until someone signs in again.
+ */
+let sessionEpoch = 0;
+const liveAccounts = new Set<object>();
+const endedAccounts = new WeakSet<object>();
+let signedOutSinceEnd = false;
+
+/** Leave-saving screens report their account context while rendering, before any effect runs. */
+export function noteWardSessionAccount(account: object | null): void {
+  if (account === null || endedAccounts.has(account)) return;
+  liveAccounts.add(account);
+  signedOutSinceEnd = false;
+}
+
+export type WardLeaveSaveTicket = {
+  readonly epoch: number;
+  readonly account: object | null;
+  readonly signedOut: boolean;
+};
+
+/** Take when scheduling a leave-save; check with `wardLeaveSaveAllowed` at the moment of writing. */
+export function wardLeaveSaveTicket(account: object | null): WardLeaveSaveTicket {
+  noteWardSessionAccount(account);
+  return { epoch: sessionEpoch, account, signedOut: account === null && signedOutSinceEnd };
+}
+
+export function wardLeaveSaveAllowed(ticket: WardLeaveSaveTicket): boolean {
+  if (ticket.epoch !== sessionEpoch || ticket.signedOut) return false;
+  return ticket.account === null || !endedAccounts.has(ticket.account);
+}
+
+/** Runs first, synchronously, in both session ends: every ticket and context so far is spent. */
+function fenceWardLeaveSaves(): void {
+  sessionEpoch += 1;
+  for (const account of liveAccounts) endedAccounts.add(account);
+  liveAccounts.clear();
+  signedOutSinceEnd = true;
+}
+
+/**
  * What the app runs when a signed-in session ends: fence any open form's draft writer first (so a
  * mounted sheet cannot write its draft back), forget every per-account memory store, then sweep
  * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
+  fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
@@ -126,6 +171,7 @@ export function endWardFlowBrowserSession(): void {
  * local storage, which the other tab shares, as it is.
  */
 export function endWardFlowTabSession(): void {
+  fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
