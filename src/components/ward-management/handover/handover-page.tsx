@@ -501,6 +501,8 @@ export function HandoverPage() {
   const gate = useRoleGate();
   const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
   const signedAt = handoverSignedAt(handoverSignOffs, shift, now);
+  const signedBy =
+    signedAt === null ? null : ([...handoverSignOffs].reverse().find((record) => record.at === signedAt)?.by ?? null);
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
   const { run: runStep } = useUndoableStep({
     dispatch,
@@ -672,6 +674,8 @@ export function HandoverPage() {
         subtitle={`${shiftInfo.label} · ${scopeLabel}`}
         checks={signChecks}
         signedAt={signedAt}
+        signedBy={signedBy}
+        viewerRole={routeRole}
         now={now}
         canSignOff={canSignOff}
         cannotSignReason={
