@@ -7,6 +7,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { bedsPendingPreparation, boundedBedAvailability } from "../ward-bed-availability";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
+import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
@@ -14,18 +15,23 @@ import { COHORTS, HEALTH_SERVICES, type BedRelease, type Cohort, type HealthServ
 import { unitHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
 
+export type BedFinderLegalStatus = "voluntary" | "involuntary";
+
 export type BedFinderFilters = {
   cohort: Cohort;
   bed: "any" | "locked" | "open";
   sex: "any" | "Female" | "Male";
-  involuntary: boolean;
+  /** Absent until the user chooses one. There is no default (audit 24-1 decision 1). */
+  legalStatus?: BedFinderLegalStatus;
   home: HealthService | "any";
 };
 
-export type BedFinderMatch = {
+export type BedFinderRow = {
   unit: Unit;
   service: HealthService | undefined;
   free: number;
+  /** When the ward's bed count was last confirmed: the stored time, never a computed one. */
+  recordedAt: Instant;
   pending: number;
   home: boolean;
 };
@@ -34,43 +40,51 @@ export const DEFAULT_BED_FINDER_FILTERS: BedFinderFilters = {
   cohort: "Adult",
   bed: "any",
   sex: "any",
-  involuntary: false,
   home: "any",
 };
 
 /**
- * Tools, Find a bed (Tools review item 19, 15 Oct 2026). A quick filter over the shared units, not
- * the eligibility engine: it narrows the list for a phone call, and the referral's own gates still
- * decide. Wards in the patient's home service come first, then the most free beds.
+ * Tools, Find a bed (Tools review item 19, 15 Oct 2026; rewritten for audit 24-1 decision 1,
+ * 24 Oct 2026). A quick filter over the shared units, not the eligibility engine: it narrows the
+ * list for a phone call, and the referral's own gates still decide. Every open ward the filters
+ * leave is listed by name, A to Z, with its Ready count and when that count was recorded. It never
+ * ranks wards by home service, free beds or suitability: the never-build rule bars a "best match"
+ * list. Legal status has no default, so nothing is listed until the user chooses one.
  */
-export function findBeds(units: readonly Unit[], releases: BedRelease[], filters: BedFinderFilters): BedFinderMatch[] {
-  return units
-    .filter((unit) => !unit.isClosed)
-    .filter((unit) => unit.cohort === filters.cohort)
-    .filter((unit) => !filters.involuntary || unit.authorised)
-    .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
-    .map((unit) => {
-      // Capped at the board's Ready figure, min(allocatable, empty) under R-B-09, so this never
-      // shows more beds than the board or the bed summary. The data does not say which beds are
-      // empty, so each kind is capped on its own rather than giving the cap to locked beds first.
-      const ready = boundedBedAvailability(unit).available;
-      const free =
-        filters.bed === "locked"
-          ? Math.min(lockedBedsFree(unit), ready)
-          : filters.bed === "open"
-            ? Math.min(openBedsFree(unit), ready)
-            : ready;
-      const service = unitHealthService(unit);
-      return {
-        unit,
-        service,
-        free,
-        pending: bedsPendingPreparation(unit.id, releases),
-        home: filters.home !== "any" && service === filters.home,
-      };
-    })
-    .filter((match) => match.free > 0)
-    .sort((a, b) => Number(b.home) - Number(a.home) || b.free - a.free || a.unit.name.localeCompare(b.unit.name));
+export function findBeds(units: readonly Unit[], releases: BedRelease[], filters: BedFinderFilters): BedFinderRow[] {
+  if (!filters.legalStatus) return [];
+  const involuntary = filters.legalStatus === "involuntary";
+  return (
+    units
+      .filter((unit) => !unit.isClosed)
+      .filter((unit) => unit.cohort === filters.cohort)
+      .filter((unit) => !involuntary || unit.authorised)
+      .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
+      .map((unit) => {
+        // Capped at the board's Ready figure, min(allocatable, empty) under R-B-09, so this never
+        // shows more beds than the board or the bed summary. The data does not say which beds are
+        // empty, so each kind is capped on its own rather than giving the cap to locked beds first.
+        const ready = boundedBedAvailability(unit).available;
+        const free =
+          filters.bed === "locked"
+            ? Math.min(lockedBedsFree(unit), ready)
+            : filters.bed === "open"
+              ? Math.min(openBedsFree(unit), ready)
+              : ready;
+        const service = unitHealthService(unit);
+        return {
+          unit,
+          service,
+          free,
+          // The ward's own confirmed count time, as the referral's placement step shows it (CS-10).
+          recordedAt: unit.allocatable.confirmedAt,
+          pending: bedsPendingPreparation(unit.id, releases),
+          home: filters.home !== "any" && service === filters.home,
+        };
+      })
+      // Name order only. Ward names repeat across sites, so the id settles a tie the same way each time.
+      .sort((a, b) => a.unit.name.localeCompare(b.unit.name, "en-AU") || a.unit.id.localeCompare(b.unit.id))
+  );
 }
 
 function Choice<T extends string>({
@@ -80,7 +94,7 @@ function Choice<T extends string>({
   onChange,
 }: {
   label: string;
-  value: T;
+  value: T | undefined;
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
@@ -105,9 +119,9 @@ function Choice<T extends string>({
 }
 
 export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
-  const { units, bedReleases } = useWardFlowSelect("units", "bedReleases");
+  const { units, bedReleases, now } = useWardFlowSelect("units", "bedReleases", "now");
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
-  const matches = findBeds(units, bedReleases, filters);
+  const rows = findBeds(units, bedReleases, filters);
   const set =
     <K extends keyof BedFinderFilters>(key: K) =>
     (value: BedFinderFilters[K]) =>
@@ -141,15 +155,17 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("sex")}
       />
-      <Choice
+      {/* Required, with no default: Involuntary keeps the list to authorised wards. */}
+      <Choice<BedFinderLegalStatus>
         label="Legal status"
-        value={filters.involuntary ? "involuntary" : "voluntary"}
+        value={filters.legalStatus}
         options={[
           { value: "voluntary", label: "Voluntary" },
           { value: "involuntary", label: "Involuntary" },
         ]}
-        onChange={(value) => set("involuntary")(value === "involuntary")}
+        onChange={set("legalStatus")}
       />
+      {/* Labels the wards in that service. It never moves them up the list. */}
       <Choice
         label="Home service"
         value={filters.home}
@@ -159,42 +175,49 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("home")}
       />
-      <p className={styles.result} role="status">
-        <strong>{matches.reduce((sum, match) => sum + match.free, 0)}</strong> synthetic beds free on{" "}
-        <strong>{matches.length}</strong> {matches.length === 1 ? "ward" : "wards"}
-      </p>
-      {matches.length > 0 ? (
-        <ul className={styles.matchList} aria-label="Wards with a free bed">
-          {matches.slice(0, 6).map((match) => (
-            <li key={match.unit.id}>
-              <Link className={styles.matchRow} href={unitHref(match.unit.id)} onClick={onNavigate}>
-                <span>
-                  <strong>{match.unit.name}</strong>
-                  <small>
-                    {siteByCode(match.unit.siteCode)?.name ?? match.unit.siteCode} ·{" "}
-                    {match.service ?? "Service not recorded"}
-                    {match.home ? " · Home service" : ""}
-                  </small>
-                  <small>{designationSummary(match.unit)}</small>
-                </span>
-                <span className={styles.matchCount}>
-                  <b>{match.free}</b> free
-                  {match.pending > 0 ? <small>{match.pending} pending</small> : null}
-                </span>
-                <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {filters.legalStatus ? (
+        <>
+          <p className={styles.result} role="status">
+            <strong>{rows.reduce((sum, row) => sum + row.free, 0)}</strong> synthetic Ready beds across{" "}
+            <strong>{rows.length}</strong> {rows.length === 1 ? "ward" : "wards"}
+          </p>
+          {rows.length > 0 ? (
+            <ul className={styles.matchList} aria-label="Ready beds by ward">
+              {rows.map((row) => (
+                <li key={row.unit.id}>
+                  <Link className={styles.matchRow} href={unitHref(row.unit.id)} onClick={onNavigate}>
+                    <span>
+                      <strong>{row.unit.name}</strong>
+                      <small>
+                        {siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode} ·{" "}
+                        {row.service ?? "Service not recorded"}
+                        {row.home ? " · Home service" : ""}
+                      </small>
+                      <small>{designationSummary(row.unit)}</small>
+                    </span>
+                    <span className={styles.matchCount}>
+                      <b>{row.free}</b> Ready
+                      <small>Recorded {formatInstantWithDay(row.recordedAt, now)}</small>
+                      {row.pending > 0 ? <small>{row.pending} pending</small> : null}
+                    </span>
+                    <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.empty}>No open ward is left by these filters. Try Any for Bed or Ward for.</p>
+          )}
+        </>
       ) : (
-        <p className={styles.empty}>No ward has a free bed that fits. Try Any for bed type or home service.</p>
-      )}
-      {matches.length > 6 ? (
-        <p className={styles.note}>
-          Showing 6 of {matches.length} matching wards. Narrow the filters to see other wards.
+        <p className={styles.result} role="status">
+          Choose a legal status to list wards.
         </p>
-      ) : null}
-      <p className={styles.note}>Quick filter only. The referral still checks every rule before a bed is offered.</p>
+      )}
+      <p className={styles.note}>
+        Listed A to Z by ward name, not ranked. Quick filter only. The referral still checks every rule before a bed is
+        offered.
+      </p>
     </div>
   );
 }

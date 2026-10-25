@@ -316,13 +316,7 @@ export function WardToolsSheet({
             onNavigate={onNavigate}
           />
         ) : null}
-        {tool(
-          "bed-finder",
-          BedDouble,
-          "Find a bed",
-          "Ready beds that fit this patient",
-          <WardBedFinder onNavigate={onNavigate} />,
-        )}
+        {tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />)}
       </Group>
 
       {/* Simplification A5 (Josh, 19 Oct 2026): Tools no longer repeats the headline figures every
