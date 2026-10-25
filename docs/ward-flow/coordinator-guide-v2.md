@@ -279,7 +279,7 @@ These source-based corrections have not been rechecked on screen.
 - **Not recorded:** nobody has entered this. The app does not guess.
 - **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Ward Flow holds no statutory period table (`D-70`).
 - **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
-- **Pulled (`R-B-05`):** a bed taken and held for one named, accepted patient, from pull until arrival or release.
+- **Pulled (`R-B-05`):** a bed pulled for one named, accepted patient, from pull until arrival or release.
 - **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.
 - **Occupied (`R-B-05`):** a bed with an admitted inpatient currently in it.
 
