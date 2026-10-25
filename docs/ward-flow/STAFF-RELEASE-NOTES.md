@@ -1,5 +1,7 @@
 # Ward Flow: what's new for staff
 
+<!-- last-checked: 2026-10-24 -->
+
 Plain-English notes on what changed on screen, for the clinicians and staff testing Ward Flow.
 Newest first. The [desk guides](desk-guides/README.md) show each desk's steps in full.
 

@@ -7,7 +7,7 @@ import {
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail";
 import type { BedRelease, Site, Unit } from "@/components/ward-management/ward-model";
-import { openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { allUnits, wardSites } from "@/components/ward-management/ward-sites";
 
@@ -132,7 +132,7 @@ describe("deriveServiceBedAlerts", () => {
     expect(summary.metroOccupancyPercent).toBeGreaterThan(90);
   });
 
-  it("uses openBedsNow for free beds and site names for facilities", () => {
+  it("uses readyBedsNow for free beds and site names for facilities (audit 24-4 NA2-08)", () => {
     const unit = allUnits()[0];
     const site = wardSites.find((candidate) => candidate.code === unit.siteCode);
     if (!site) throw new Error("seed unit missing site");
@@ -140,12 +140,12 @@ describe("deriveServiceBedAlerts", () => {
     const releases: BedRelease[] = [];
     const summary = deriveServiceBedAlerts([unit], releases, [site]);
     const row = summary.services[0];
-    expect(row.freeBeds).toBe(openBedsNow(unit, releases));
+    expect(row.freeBeds).toBe(readyBedsNow(unit, [], releases));
     expect(row.totalBeds).toBe(unit.beds);
     // The board's occupied bucket, not total minus free (Josh, 25 Sept 2026: the rail matches the board).
     expect(row.occupiedBeds).toBe(unitCapacity(unit, releases).occupied);
     expect(row.facilities).toBe(site.name);
-    expect(row.escalation).toBe(`${row.freeBeds} free · ${row.occupiedBeds} occupied`);
+    expect(row.escalation).toBe(`${row.freeBeds} ready · ${row.occupiedBeds} occupied`);
   });
 
   it("omits a health service that has no wards", () => {

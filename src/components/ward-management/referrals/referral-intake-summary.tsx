@@ -7,7 +7,7 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 
 export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetails }) {
-  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const board = useOptionalWardFlowSelect("now", "dayZero");
   if (!intake) return null;
   return (
     <details className={styles.refCard}>
@@ -21,7 +21,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           <strong>Medical clearance</strong>
           {intake.medicalClearance.cleared
             ? "Cleared"
-            : `Pending · expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}`}
+            : `Pending · expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, board?.dayZero, board?.now)}`}
         </span>
         {!intake.medicalClearance.cleared && (
           <span>
@@ -72,7 +72,8 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
         {intake.arrival && (
           <span>
             <strong>Proposed arrival</strong>
-            {intake.arrival.transport} · {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, dayZero)}
+            {intake.arrival.transport} ·{" "}
+            {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, board?.dayZero, board?.now)}
             {intake.arrival.reference ? ` · ${intake.arrival.reference}` : ""}
           </span>
         )}

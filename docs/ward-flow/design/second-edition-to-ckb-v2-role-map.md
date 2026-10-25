@@ -1,5 +1,9 @@
 # The second edition is a second palette — and app code resolves through ckb-v2
 
+> **Historical record, September 2026.** Written for the drawing-era and second-edition build. It is not current guidance, and its paths, line counts and design rules may no longer match the code. The rendered app is the current design authority: start at the [Ward Flow entry point](../README.md) and the [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Written by Ward Lead, 2026-09-05, on Ward Builder One's finding.** It is the answer to
 one question nine screens were about to guess at: **when a screen is built from the locked
 second-edition mockups, where do its colours come from?**

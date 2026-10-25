@@ -198,6 +198,8 @@ describe("tour auto-start", () => {
     await new Promise((resolve) => setTimeout(resolve, 700));
     expect(onStart).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
+    // A first visit gets the tour, so the what's new note is marked read too.
+    expect(window.localStorage.getItem("ward_flow_choice_whats_new_seen")).not.toBeNull();
   });
 
   it("stays quiet when the device mark cannot be saved", async () => {

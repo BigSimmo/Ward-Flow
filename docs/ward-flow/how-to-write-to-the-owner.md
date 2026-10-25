@@ -1,5 +1,11 @@
 # How to write to the owner
 
+> **Read with the newer rule — noted 24 October 2026.** This page dates from 1 September 2026. On
+> 25 September Josh asked for the answer first, in plain Australian English and short sentences
+> ([`AGENTS.md`](../../AGENTS.md), "Writing to Josh"; [HOW-WE-WORK §8](HOW-WE-WORK.md#8-asking-and-recording-owner-questions)).
+> Where the two differ, `AGENTS.md` wins. The labelled lines below are still a useful checklist of
+> what to cover.
+
 Settled by the owner on 2026-09-01 after re-explaining it to several chats in turn. **That
 re-explaining is the problem this file exists to end** — a new chat should inherit the format here
 rather than be told it again.

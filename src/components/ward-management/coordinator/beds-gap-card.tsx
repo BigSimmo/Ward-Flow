@@ -8,12 +8,12 @@ import Link from "next/link";
 import { BedDouble, ChevronRight } from "lucide-react";
 
 import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
-import { formatGap, gapWord } from "@/components/ward-management/capacity/capacity-gap-words";
+import { formatGap, gapRangeWord, gapWord } from "@/components/ward-management/capacity/capacity-gap-words";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, StatusGlyph } from "@/components/wf";
-import { forecastByKind, kindRangeWord, signedFigure } from "@/components/ward-management/forecast/forecast-by-kind";
+import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./home-list.module.css";
@@ -21,6 +21,16 @@ import styles from "./home-list.module.css";
 function shortNeed(need: string): string {
   const words = need.replace(/^(a|an)\s+/i, "").replace(/\s+bed$/i, "");
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** "6 short", "1 spare" or "Enough": the state in words, never a bare minus sign. */
+function GapFigure({ gap }: { gap: number }) {
+  if (gap === 0) return <span className={styles.gapNum}>Enough</span>;
+  return (
+    <span>
+      <span className={styles.gapNum}>{Math.abs(gap)}</span> {gapWord(gap).text}
+    </span>
+  );
 }
 
 export function BedsGapCard({
@@ -67,7 +77,7 @@ export function BedsGapCard({
               <span className={styles.gapNeed}>{shortNeed(row.need)}</span>
               <span className={styles.gapValue}>
                 <StatusGlyph tone={word.tone} size={9} />
-                <span className={styles.gapNum}>{formatGap(row.gap)}</span>
+                <GapFigure gap={row.gap} />
               </span>
               <span className={styles.gapSub}>
                 {row.waiting} waiting
@@ -86,12 +96,12 @@ export function BedsGapCard({
               <span className={styles.gapNeed}>Tomorrow</span>
               <span className={styles.gapValue}>
                 <StatusGlyph tone={word.tone} size={9} />
-                <span className={styles.gapNum}>{signedFigure(kind.likely)}</span>
+                <GapFigure gap={kind.likely} />
               </span>
               <span className={styles.gapSub}>
-                {kindRangeWord(kind.low)} to
+                {gapRangeWord(kind.low)} to
                 <br />
-                {kindRangeWord(kind.high)}
+                {gapRangeWord(kind.high)}
               </span>
             </li>
           );
@@ -100,10 +110,10 @@ export function BedsGapCard({
       <p className={styles.gapTotal}>
         <StatusGlyph tone={totalWord.tone} size={9} />
         <span>
-          {totalWord.text} <b className={styles.mono}>{formatGap(totals.gap)}</b> across all four: {totals.waiting}{" "}
-          waiting for {totals.bedsThatFit} beds of the right kind. Tomorrow likely{" "}
-          <b className={styles.mono}>{kindRangeWord(tomorrow.total.likely)}</b>, range{" "}
-          {kindRangeWord(tomorrow.total.low)} to {kindRangeWord(tomorrow.total.high)}.
+          <b className={styles.mono}>{formatGap(totals.gap)}</b> across all four: {totals.waiting} waiting for{" "}
+          {totals.bedsThatFit} beds of the right kind. Tomorrow likely{" "}
+          <b className={styles.mono}>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)}{" "}
+          to {gapRangeWord(tomorrow.total.high)}.
         </span>
       </p>
     </Card>

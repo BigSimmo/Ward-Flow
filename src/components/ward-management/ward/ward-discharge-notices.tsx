@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef, useState } from "react";
 import { Badge, Button, Card, CardBody, CardFoot, CardHead } from "@/components/wf";
 import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -28,24 +28,47 @@ const SERVICE_LABELS: Record<SupportServiceType, string> = {
 export function WardDischargeNotices({
   recorded,
   ...props
-}: Omit<WardDischargeNoticesCardProps, "sentServices" | "onSendService"> & {
+}: Omit<WardDischargeNoticesCardProps, "sentServices" | "pendingServices" | "onSendService"> & {
   /** The confirmed release whose notices this card sends and reads back, and the ward sending. */
   recorded?: { release: BedRelease; actingUnitId: string; onFailure: (message: string) => void };
 }) {
   const raise = useWardRaise("ward");
+  // Production audit URE-02: one notice per service at a time. A second tap before the first has
+  // an answer would be refused as already sent and reported as "Not recorded".
+  const pendingRef = useRef(new Set<SupportServiceType>());
+  const [pending, setPending] = useState<ReadonlySet<SupportServiceType>>(() => new Set());
   if (!recorded) return <WardDischargeNoticesCard {...props} />;
   const { release, actingUnitId, onFailure } = recorded;
+  const settle = (service: SupportServiceType) => {
+    pendingRef.current.delete(service);
+    setPending(new Set(pendingRef.current));
+  };
   return (
     <WardDischargeNoticesCard
       {...props}
       sentServices={new Set((release.supportNoticesSent ?? []).map((notice) => notice.service))}
+      pendingServices={pending}
       onSendService={(service) => {
-        void Promise.resolve(
-          raise("SEND_RELEASE_SUPPORT_NOTICE", { releaseId: release.id, service, actingUnitId }),
-        ).then((outcome) => {
-          const failure = wardCommandFailure(outcome ?? undefined);
-          if (failure) onFailure(failure);
-        });
+        if (pendingRef.current.has(service)) return;
+        pendingRef.current.add(service);
+        setPending(new Set(pendingRef.current));
+        let result: ReturnType<typeof raise>;
+        try {
+          result = raise("SEND_RELEASE_SUPPORT_NOTICE", { releaseId: release.id, service, actingUnitId });
+        } catch (error) {
+          result = Promise.reject(error);
+        }
+        void Promise.resolve(result).then(
+          (outcome) => {
+            settle(service);
+            const failure = wardCommandFailure(outcome ?? undefined);
+            if (failure) onFailure(failure);
+          },
+          () => {
+            settle(service);
+            onFailure(wardCommandFailure({ commandId: "", status: "failed" })!);
+          },
+        );
       }}
     />
   );
@@ -58,6 +81,8 @@ type WardDischargeNoticesCardProps = {
   dueSoonHours: number | null;
   /** Optional controlled set of services already notified for this release. */
   sentServices?: ReadonlySet<SupportServiceType>;
+  /** Services whose notice is sent but not yet answered; their button waits. */
+  pendingServices?: ReadonlySet<SupportServiceType>;
   /** Requests a notice; sentServices changes only after confirmed completion. */
   onSendService?: (service: SupportServiceType) => void;
   onClose: () => void;
@@ -68,6 +93,7 @@ export function WardDischargeNoticesCard({
   bedLabel,
   dueSoonHours,
   sentServices,
+  pendingServices,
   onSendService,
   onClose,
 }: WardDischargeNoticesCardProps) {
@@ -95,6 +121,7 @@ export function WardDischargeNoticesCard({
           <ul className={styles.list}>
             {SUPPORT_SERVICE_TYPES.map((service) => {
               const isSent = sentServices?.has(service) === true;
+              const isPending = !isSent && pendingServices?.has(service) === true;
               return (
                 <li key={service} className={styles.row} data-sent={isSent ? "true" : "false"}>
                   <span className={styles.service}>{SERVICE_LABELS[service]}</span>
@@ -102,14 +129,14 @@ export function WardDischargeNoticesCard({
                     <Button
                       variant="sec"
                       size="sm"
-                      aria-disabled={isSent}
+                      aria-disabled={isSent || isPending}
                       aria-pressed={isSent}
                       aria-describedby={`${baseId}-ward-discharge-notice-${service}`}
                       onClick={() => {
-                        if (!isSent) onSendService?.(service);
+                        if (!isSent && !isPending) onSendService?.(service);
                       }}
                     >
-                      {isSent ? "Notice sent" : "Send notice"}
+                      {isSent ? "Notice sent" : isPending ? "Sending notice" : "Send notice"}
                     </Button>
                   ) : null}
                   <span id={`${baseId}-ward-discharge-notice-${service}`} className={styles.note}>

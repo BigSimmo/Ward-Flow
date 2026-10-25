@@ -324,6 +324,18 @@ export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
   return accessIsValid(access) ? access : null;
 }
 
+/**
+ * True for a stored role that `parseAccess` refuses only because it names no health service, such
+ * as an officer granted before the service was required (D-80 item 7). It still gives nothing; it
+ * lets the server say why, and an access admin find it to give it again with a service.
+ */
+export function accessNeedsService(role: unknown, scope: unknown): boolean {
+  if (parseAccess(role, scope) || !scope || typeof scope !== "object" || Array.isArray(scope)) return false;
+  const rest = { ...(scope as Record<string, unknown>) };
+  delete rest.service;
+  return HEALTH_SERVICES.some((service) => parseAccess(role, { ...rest, service }) !== null);
+}
+
 /** The bootstrap view: an account named in WARD_COORDINATOR_USER_IDS works as this. */
 export const STATEWIDE: WardAccess = STATEWIDE_COORDINATOR;
 

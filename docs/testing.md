@@ -357,7 +357,7 @@ dedicated repository. There is no active visual-baseline CI job or automatic scr
 workflow. The retained generic `playwright.visual.config.ts` is not evidence of a running gate.
 Verify changed Ward appearance through the affected Ward journey and direct browser inspection,
 including meaningful computed styles, geometry, keyboard interaction and accessibility where affected.
-Follow the bounded screenshot and viewport rules in [AGENTS.md](../AGENTS.md).
+Follow the bounded screenshot and viewport rules in [HOW-WE-WORK §5](ward-flow/HOW-WE-WORK.md#5-testing).
 
 <!-- docs-script-refs:historical-start -->
 

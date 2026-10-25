@@ -995,15 +995,31 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       admissions: new Set(admissions.map((admission) => admission.id)),
       referrals: new Set(referrals.map((referral) => referral.id)),
     };
+    // A ward or bed manager learns nothing about other wards through break glass either (FD-23,
+    // Audit 24-5 RA-01, Josh 24 Oct 2026): the same trim as its own copies.
+    const wardTrim = access.role === "ward" || access.role === "bed_manager";
     for (const movement of workspace.movements)
       if (movement.patientId && grantIds.has(movement.patientId) && !have.movements.has(movement.id))
-        movements.push(movement);
+        movements.push(wardTrim ? ownReferredUnits(movement, unitIn, false) : movement);
     for (const admission of workspace.admissions)
       if (admission.patientId && grantIds.has(admission.patientId) && !have.admissions.has(admission.id))
         admissions.push(admission);
-    for (const referral of workspace.referrals)
-      if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id))
+    for (const referral of workspace.referrals) {
+      if (!referral.patientId || !grantIds.has(referral.patientId) || have.referrals.has(referral.id)) continue;
+      if (!wardTrim) {
         referrals.push(referral);
+        continue;
+      }
+      const trimmed = trimReferral(
+        referral,
+        (addressing) =>
+          addressing.destination.kind === "psychiatric_ward" &&
+          (addressing.acceptedUnitId !== undefined
+            ? unitIn(addressing.acceptedUnitId)
+            : addressing.destination.unitId === undefined || unitIn(addressing.destination.unitId)),
+      );
+      if (trimmed) referrals.push(trimmed);
+    }
   }
 
   // Apply after grant expansion as well: community and count-only executive snapshots never

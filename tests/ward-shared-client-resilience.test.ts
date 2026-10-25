@@ -84,7 +84,8 @@ describe("shared workspace resilience (audit 4)", () => {
     await client.refresh();
     expect(view()?.snapshot?.revision).toBe(2);
     expect(view()?.status).toBe("unavailable");
-    expect(view()?.error).toBe("Connection is back. Press Retry to send your change.");
+    expect(view()?.error).toBe("Your last change was not confirmed. The board is up to date. Press Retry to send it.");
+    expect(view()?.boardCurrent).toBe(true);
     client.dispose();
   });
 
