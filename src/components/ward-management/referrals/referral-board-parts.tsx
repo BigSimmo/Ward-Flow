@@ -36,7 +36,7 @@ import {
   CLEARANCE_STATUS_LABELS,
   type ClearanceStatus,
 } from "./referral-submission";
-import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { ReferralDocumentLinks } from "./referral-document-links";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
@@ -407,7 +407,7 @@ export type MeetingRow = {
   umrn: string;
 };
 
-export function presentationClocks(referral: Referral, now: Instant, summary?: SenderReferralPresentation) {
+function presentationClocks(referral: Referral, now: Instant, summary?: SenderReferralPresentation) {
   const presentation = referralPresentation(referral, summary);
   if (presentation.kind === "unavailable") return undefined;
   const settled = summary !== undefined && (presentation.state !== "queued" || presentation.withdrawn);

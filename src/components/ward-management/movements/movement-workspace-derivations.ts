@@ -27,7 +27,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { movementProgressText, type MovementPresentation } from "./movements-screen-helpers";
+import { movementProgressText, type MovementPresentation } from "../ward-partial-view-presenters";
 
 /**
  * Task 10 (spec item 8). `changeReasonLabels` covers the four reason lists in

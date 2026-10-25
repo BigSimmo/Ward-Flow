@@ -507,15 +507,20 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     </WardLocalPartialViewProvider>
   );
   // Match the same UI clock used for collection visibility, even before the next cheap poll.
-  // Coordinator previews retain their explicit source capability and ordinary full-source scope.
-  return displayHost.shared && actualAccess?.role !== "coordinator" ? (
+  // Keep the shared provider in place through saving/adoption gaps: source values expire, but
+  // inserting or removing the provider would remount children and discard their drafts/filters.
+  // Coordinator previews retain only the current explicit capability from the outer host.
+  const coordinatorSource = actualAccess?.role === "coordinator" ? readSource : null;
+  const currentSource = coordinatorSource ?? (sharedCollectionReady ? readSource : null);
+  return displayHost.shared ? (
     <WardPartialViewProvider
-      response={sharedCollectionReady ? sharedPartialView : null}
-      currentRevision={sharedCollectionReady ? (readSource?.snapshot.revision ?? null) : null}
-      currentAccessContext={sharedCollectionReady ? (readSource?.snapshot.accessContext ?? null) : null}
+      response={coordinatorSource ? undefined : sharedCollectionReady ? sharedPartialView : null}
+      currentRevision={currentSource?.snapshot.revision ?? null}
+      currentAccessContext={currentSource?.snapshot.accessContext ?? null}
       currentNow={now}
+      previewAllowed={coordinatorSource !== null && displayHost.previewAllowed}
       senderRequired={displayHost.senderRequired}
-      readSource={sharedCollectionReady ? readSource : null}
+      readSource={currentSource}
     >
       {surface}
     </WardPartialViewProvider>

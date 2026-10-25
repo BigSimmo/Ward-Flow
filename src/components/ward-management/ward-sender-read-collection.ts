@@ -1,4 +1,5 @@
 import type { ScopableWorkspace } from "./ward-access-scope";
+import { retainSenderReadPatients } from "./ward-patient-resolver";
 import type { BoundWardPartialView } from "./ward-partial-view-contract";
 import { accessIsValid, type WardAccess } from "./ward-role-access";
 
@@ -72,14 +73,13 @@ export function retainSharedSenderReadCollection({
   const referralsById = new Map(scoped.referrals.map((row) => [row.id, row]));
   for (const row of ownRows) referralsById.set(row.id, row);
   const referrals = source.referrals.filter(({ id }) => referralsById.has(id)).map(({ id }) => referralsById.get(id)!);
-  const ownPatientIds = new Set<string>(ownRows.flatMap(({ patientId }) => (patientId ? [patientId] : [])));
-  const patientsById = new Map(scoped.patients.map((row) => [row.id, row]));
-  for (const patient of source.patients) if (ownPatientIds.has(patient.id)) patientsById.set(patient.id, patient);
-  const patients = source.patients.filter(({ id }) => patientsById.has(id)).map(({ id }) => patientsById.get(id)!);
-  // This is the screen's existing own-versus-grant-only label. The backend still checks every
-  // command against its complete source; no display hint is passed into that decision.
-  const glass = new Set([...scoped.breakGlassPatientIds].filter((id) => !ownPatientIds.has(id)));
-  const sameRows = <T>(a: readonly T[], b: readonly T[]) =>
+  const patientCollection = retainSenderReadPatients(
+    scoped.patients,
+    source.patients,
+    ownRows,
+    scoped.breakGlassPatientIds,
+  );
+  const sameRows = (a: ReadRows["referrals"], b: ReadRows["referrals"]) =>
     a.length === b.length && a.every((row, index) => row === b[index]);
   return {
     referrals: sameRows(referrals, source.referrals)
@@ -87,11 +87,6 @@ export function retainSharedSenderReadCollection({
       : sameRows(referrals, scoped.referrals)
         ? scoped.referrals
         : referrals,
-    patients: sameRows(patients, source.patients)
-      ? source.patients
-      : sameRows(patients, scoped.patients)
-        ? scoped.patients
-        : patients,
-    breakGlassPatientIds: glass.size === scoped.breakGlassPatientIds.size ? scoped.breakGlassPatientIds : glass,
+    ...patientCollection,
   };
 }

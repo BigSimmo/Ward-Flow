@@ -38,8 +38,7 @@ import {
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
 import { useSenderPresentation } from "../ward-sender-presentation";
-import { movementPresentation } from "../ward-partial-view-presenters";
-import { movementProgressText } from "./movements-screen-helpers";
+import { movementPresentation, movementProgressText } from "../ward-partial-view-presenters";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";

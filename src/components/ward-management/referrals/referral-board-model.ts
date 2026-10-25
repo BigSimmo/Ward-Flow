@@ -19,7 +19,7 @@ import {
   OVERDUE_AFTER_MINUTES_BY_TIER,
 } from "@/components/ward-management/ward-operational-defaults";
 import { durMinutes, type JourneyStage } from "@/components/wf";
-import { wardArm } from "./referral-board-parts";
+import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { referralPresentation, type SenderReferralPresentation } from "../ward-partial-view-presenters";
 
 /**
@@ -240,7 +240,7 @@ export function referralDueAt(referral: Referral, now: Instant): Instant | undef
  * said to be unrecorded when it is missing, so "not recorded" never reads as "same as sex".
  */
 export function demographicLabel(referral: Referral): string {
-  const ward = wardArm(referral)?.destination;
+  const ward = wardAddressing(referral)?.destination;
   const sex = referralSexCell(referral);
   const base = `${referral.ageBand}, ${sex}`;
   if (!ward) return base;

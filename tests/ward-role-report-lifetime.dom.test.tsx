@@ -1,18 +1,19 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   WardPartialViewProvider,
   WardLocalPartialViewProvider,
   useWardPartialView,
   useWardPartialDisplay,
+  useWardPartialDisplayHost,
 } from "@/components/ward-management/ward-partial-view";
 import { WardSharedAccess, type WardSharedConnection } from "@/components/ward-management/ward-shared-access";
 import { bindWardPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { WardFlowProvider, WardFlowOverride, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { setWardAccess, startAccessPreview } from "@/components/ward-management/shell/ward-access-store";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { STATEWIDE_COORDINATOR } from "@/components/ward-management/ward-role-access";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
@@ -180,6 +181,89 @@ function sharedCollectionTree(
 }
 
 describe("shared sender collection integration", () => {
+  it("keeps coordinator children mounted through saving and snapshot adoption while display capability expires immediately", () => {
+    const connection = sharedDisplayConnection();
+    connection.access = STATEWIDE_COORDINATOR;
+    delete connection.snapshot!.partialView;
+    const target = connection.snapshot!.payload.state.movements[0]!;
+    const nextUrgency = target.urgency === 1 ? 2 : 1;
+    const mounted = vi.fn();
+    function CoordinatorDraft() {
+      const [draft, setDraft] = useState("");
+      const [everyone, setEveryone] = useState(false);
+      const context = useWardFlow();
+      const host = useWardPartialDisplayHost();
+      const display = useWardPartialDisplay();
+      useEffect(() => {
+        mounted();
+      }, []);
+      return (
+        <>
+          <input aria-label="Coordinator draft" value={draft} onChange={(event) => setDraft(event.target.value)} />
+          <button type="button" aria-expanded={everyone} onClick={() => setEveryone((value) => !value)}>
+            Everyone waiting
+          </button>
+          <output aria-label="Current urgency">
+            {context.movements.find((movement) => movement.id === target.id)?.urgency}
+          </output>
+          <output aria-label="Current preview capability">{String(host.previewAllowed)}</output>
+          <output aria-label="Current display">{display === null ? "unavailable" : "available"}</output>
+        </>
+      );
+    }
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(STATEWIDE_COORDINATOR);
+    });
+    const tree = (current: WardSharedConnection) =>
+      sharedCollectionTree(current, NOW_ANCHOR, undefined, <CoordinatorDraft />);
+    const view = render(tree(connection));
+    try {
+      const draft = screen.getByRole("textbox", { name: "Coordinator draft" });
+      fireEvent.change(draft, { target: { value: "Synthetic draft" } });
+      fireEvent.click(screen.getByRole("button", { name: "Everyone waiting" }));
+      expect(screen.getByLabelText("Current preview capability")).toHaveTextContent("true");
+      const pending: WardSharedConnection = {
+        ...connection,
+        snapshot: {
+          ...connection.snapshot!,
+          revision: connection.snapshot!.revision + 1,
+          payload: {
+            ...connection.snapshot!.payload,
+            state: {
+              ...connection.snapshot!.payload.state,
+              movements: connection.snapshot!.payload.state.movements.map((movement) =>
+                movement.id === target.id ? { ...movement, urgency: nextUrgency } : movement,
+              ),
+            },
+          },
+        },
+      };
+      for (const current of [
+        { ...connection, status: "saving" as const },
+        { ...pending, reportSnapshotReady: false },
+        pending,
+      ]) {
+        view.rerender(tree(current));
+        expect(screen.getByRole("textbox", { name: "Coordinator draft" })).toBe(draft);
+        expect(draft).toHaveValue("Synthetic draft");
+        expect(screen.getByRole("button", { name: "Everyone waiting" })).toHaveAttribute("aria-expanded", "true");
+        expect(mounted).toHaveBeenCalledTimes(1);
+        expect(screen.getByLabelText("Current display")).toHaveTextContent("unavailable");
+        expect(screen.getByLabelText("Current preview capability")).toHaveTextContent(
+          current.status === "ready" && current.reportSnapshotReady === true ? "true" : "false",
+        );
+      }
+      expect(screen.getByLabelText("Current urgency")).toHaveTextContent(String(nextUrgency));
+    } finally {
+      view.unmount();
+      act(() => {
+        setWardAccess(STATEWIDE_COORDINATOR);
+        setWardFeatureFlagOnDevice("role-access", null);
+      });
+    }
+  });
+
   it("keeps the actual shared sender requirement while a stale coordinator role is denied its source", () => {
     const fixture = scopedCollectionFixture();
     act(() => {

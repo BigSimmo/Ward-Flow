@@ -109,3 +109,17 @@ export function movementPresentation(
   if (summary !== undefined) return { kind: "sender", progress: summary.progress, nextStep: summary.nextStep };
   return { kind: "record", nextStep: movementNextStep(movement)?.kind ?? "none" };
 }
+
+export type MovementPresentation = ReturnType<typeof movementPresentation>;
+export function movementProgressText(presentation: MovementPresentation): string | undefined {
+  if (presentation.kind === "record") return undefined;
+  if (presentation.kind === "unavailable") return "Progress unavailable";
+  return {
+    not_requested: "Not requested",
+    awaiting_answer: "Awaiting an answer",
+    none_found: "No accepting destination",
+    withdrawn: "Withdrawn",
+    accepted: "Accepted",
+    escalated: "Escalated",
+  }[presentation.progress];
+}

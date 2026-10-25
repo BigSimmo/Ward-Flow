@@ -18,21 +18,9 @@ import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import { type MovementLegState } from "./movements-derivations";
 import { type WfFill, type WfTone } from "@/components/wf";
-import type { movementPresentation } from "../ward-partial-view-presenters";
+import type { MovementPresentation } from "../ward-partial-view-presenters";
 
-export type MovementPresentation = ReturnType<typeof movementPresentation>;
-export function movementProgressText(presentation: MovementPresentation): string | undefined {
-  if (presentation.kind === "record") return undefined;
-  if (presentation.kind === "unavailable") return "Progress unavailable";
-  return {
-    not_requested: "Not requested",
-    awaiting_answer: "Awaiting an answer",
-    none_found: "No accepting destination",
-    withdrawn: "Withdrawn",
-    accepted: "Accepted",
-    escalated: "Escalated",
-  }[presentation.progress];
-}
+export { movementProgressText, type MovementPresentation } from "../ward-partial-view-presenters";
 
 export const MS_PER_MINUTE = 60_000;
 
