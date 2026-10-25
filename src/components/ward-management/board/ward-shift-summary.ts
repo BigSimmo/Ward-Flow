@@ -87,10 +87,10 @@ export function wardShiftSummary(input: {
 }): WardShiftSummary {
   const { unit, admissions, referrals, configuration, now, which } = input;
   const window = shiftWindow(now, which);
-  // A shift still running counts up to the moment shown, never past it.
-  const end = Math.min(window.to, now);
+  // A finished shift ends just before the next one starts; a shift still running counts up to and
+  // including the moment shown, so something recorded this minute is already in the count.
   const inShift = (at: Instant | null | undefined): boolean =>
-    at !== null && at !== undefined && Number.isFinite(at) && at >= window.from && at < end;
+    at !== null && at !== undefined && Number.isFinite(at) && at >= window.from && at < window.to && at <= now;
 
   let arrived = 0;
   let left = 0;

@@ -63,6 +63,19 @@ describe("referral stuck: no reply within the Settings limit", () => {
     expect(referralNoReplyWaits(toEd, NOW_ANCHOR, limit, state.units)).toEqual([]);
   });
 
+  it("keeps timing a community team's reply after a ward has accepted", () => {
+    const mixed = {
+      ...referral("RF-T10", NOW_ANCHOR - 300),
+      destinations: [
+        { destination: { kind: "psychiatric_ward", unitId: ward.id }, state: "accepted", decidedAt: NOW_ANCHOR - 200 },
+        { destination: { kind: "community_team", teamId: "team-x" }, state: "queued" },
+      ],
+    } as unknown as Referral;
+    const waits = referralNoReplyWaits(mixed, NOW_ANCHOR, limit, state.units);
+    expect(waits).toHaveLength(1);
+    expect(waits[0]!.pastLimit).toBe(true);
+  });
+
   it("follows the limit set in Settings", () => {
     const sent = referral("RF-T4", NOW_ANCHOR - 90);
     expect(referralNoReplyWaits(sent, NOW_ANCHOR, limit, state.units)[0]!.pastLimit).toBe(false);
@@ -123,7 +136,7 @@ describe("ward shift summary from recorded times", () => {
       dischargeDateMoves: 0,
       observationChanges: [],
     }));
-    const accepted = referral("RF-T7", from - 60, { state: "accepted", decidedAt: from + 3 });
+    const accepted = referral("RF-T7", from - 60, { state: "accepted", decidedAt: now });
     const stuck = referral("RF-T8", now - 500);
     const summary = wardShiftSummary({
       unit: ward,

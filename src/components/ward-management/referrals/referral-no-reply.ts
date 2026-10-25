@@ -1,7 +1,7 @@
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
-import { isAwaitingAnswer, referralDestinationLabel, referralState } from "@/components/ward-management/ward-referrals";
+import { isAwaitingAnswer, referralDestinationLabel } from "@/components/ward-management/ward-referrals";
 
 /**
  * "REFERRAL STUCK" — NO REPLY RECORDED WITHIN THE TIME LIMIT (Josh's list item 17, 25 Oct 2026).
@@ -41,7 +41,7 @@ export function referralNoReplyWaits(
   configuration: Pick<WardConfiguration, "referralDecisionTargetMinutes">,
   units: readonly Pick<Unit, "id" | "name">[],
 ): NoReplyWait[] {
-  if (referralState(referral) !== "queued") return [];
+  // Read per arm, not per referral: a community team still owes its own reply after a ward accepts.
   const limitMinutes = configuration.referralDecisionTargetMinutes;
   const waits: NoReplyWait[] = [];
   for (const arm of referral.destinations) {
