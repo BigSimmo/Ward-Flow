@@ -67,7 +67,14 @@ describe("referral refusal points at the field it names (RC-N2)", () => {
     const search = await screen.findByRole("searchbox", { name: "Find a patient" });
     expect(search).not.toHaveAttribute("aria-invalid");
     fireEvent.click(screen.getByRole("button", { name: /^Next, referral/ }));
-    await waitFor(() => expect(search).toHaveFocus());
+    // Error summary mock-up (24 Oct 2026): the refusal leads with the summary; its link reaches the field.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: /things? to fix before the next step/u })).toHaveFocus(),
+    );
+    fireEvent.click(
+      screen.getByRole("link", { name: "Find a patient, add a new patient, or choose Not yet identified" }),
+    );
+    expect(search).toHaveFocus();
     expect(search).toHaveAttribute("aria-invalid", "true");
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });

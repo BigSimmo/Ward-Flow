@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import type { WardSharedConnection } from "./ward-shared-access";
 import { useWardSharedSave } from "./shell/ward-shared-save-context";
+import { saveProblem } from "./ward-save-failure";
 import styles from "./ward-shared-save-status.module.css";
 
 const RELOAD_WARNING = "Reloading now will lose this unconfirmed action. Stay on this page and use Retry first.";
@@ -74,7 +75,7 @@ export function WardSharedSaveStatus({
       ? // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
         connection.boardCurrent
         ? ""
-        : "Connection unavailable — changes are disabled."
+        : saveProblem("connectionUnavailable")
       : `${deskLabel} · shared synthetic workspace`;
   const detail: ReactNode = (
     <>

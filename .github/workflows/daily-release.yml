@@ -59,8 +59,21 @@ jobs:
               *) echo "$line" >> new.txt ;;
             esac
           done < prs.txt
+          # The plain lines staff see in the app's "What's new" note: entries of the app's list that
+          # this release adds. Read as data through the API, never run. A list missing at either end
+          # counts as empty, so the first release after the list began shows every line in it.
+          list="src/components/ward-management/help/whats-new.json"
+          read_list() {
+            local raw
+            raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$list?ref=$1" 2>/dev/null)" || raw="[]"
+            printf '%s' "$raw" | jq -c 'if type == "array" then . else [] end' 2>/dev/null || echo "[]"
+          }
+          before="$(read_list "$current")"; after="$(read_list "$target")"
+          jq -rn --argjson before "${before:-[]}" --argjson after "${after:-[]}" \
+            '($before | map(.id)) as $old | $after[] | select((.id | IN($old[])) | not) | "- \(.line)"' > staff.txt || : > staff.txt
           {
             echo "What changed on the live site since the last release."
+            if [ -s staff.txt ]; then printf '\n### For staff, shown in the app\n\n'; cat staff.txt; fi
             for section in "New:new.txt" "Fixed:fixed.txt" "Behind the scenes:other.txt"; do
               file="${section#*:}"
               if [ -s "$file" ]; then printf '\n### %s\n\n' "${section%%:*}"; cat "$file"; fi

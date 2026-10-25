@@ -17,6 +17,7 @@ import {
   undoStepSubjectId,
   type UndoStepType,
 } from "@/components/ward-management/ward-undo";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /** The part of a toast API this hook needs: a page passes its own, or the layout's is used. */
 export type UndoToastApi = { push: (toast: ToastInput) => string };
@@ -154,7 +155,7 @@ export function useUndoableStep({
         const said =
           pending.outcome.status === "refused"
             ? `Not recorded: ${sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused.")}`
-            : (pending.outcome.message ?? "Save is not confirmed. Review the board before trying again.");
+            : (pending.outcome.message ?? SAVE_NOT_CONFIRMED);
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said);
         continue;
@@ -223,7 +224,7 @@ export function useUndoableStep({
                     sink.push({
                       tone: "warning",
                       title:
-                        "Undo is unavailable until the shared board is ready. Review the board before trying again.",
+                        "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
                     });
                     return false;
                   }
@@ -256,7 +257,7 @@ export function useUndoableStep({
       result = {
         commandId: "",
         status: "failed",
-        message: "Save is not confirmed. Review the board before trying again.",
+        message: SAVE_NOT_CONFIRMED,
       };
     }
     const completion = requireConfirmation ? confirmedWardCommand(result) : result;
@@ -271,7 +272,7 @@ export function useUndoableStep({
           const outcome: WardCommandOutcome = {
             commandId: "",
             status: "failed",
-            message: "Save is not confirmed. Review the board before trying again.",
+            message: SAVE_NOT_CONFIRMED,
           };
           if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
           pendingRef.current.push({ ...pending, outcome });
@@ -309,7 +310,7 @@ export function useUndoableStep({
       title:
         outcome.status === "refused"
           ? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`
-          : (outcome.message ?? "Save is not confirmed. Review the board before trying again."),
+          : (outcome.message ?? SAVE_NOT_CONFIRMED),
     });
   }
 

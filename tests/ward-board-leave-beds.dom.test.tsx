@@ -205,8 +205,11 @@ describe("Mark them back command completion", () => {
       });
       finishes[1 - unaccepted]!({ commandId: "accepted", status: "accepted" });
     });
+    // Only a failed step is "not confirmed"; a refused or cancelled one is known not saved (review: #722).
     expect(screen.getByTestId("ward-board-toast").textContent).toBe(
-      "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+      status === "failed"
+        ? "Part of this return was saved, but the other step is not confirmed. Check the board, then record only the missing step."
+        : "Part of this return was saved, but the other step was not. Check the board, then record only the missing step.",
     );
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Action refused");
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Nothing was changed.");
@@ -220,7 +223,7 @@ it.each(["refused", "failed", "cancelled"] as const)(
     const message =
       status === "refused"
         ? "This action is outside your working scope. Nothing was changed."
-        : "Save is not confirmed. Review the board before trying again.";
+        : "Save is not confirmed. Check the board. If your change is not there, make it again.";
     const dispatch = vi.fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>(async () => ({
       commandId: "unaccepted",
       status,

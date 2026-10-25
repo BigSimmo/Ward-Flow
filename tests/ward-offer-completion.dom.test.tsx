@@ -120,7 +120,7 @@ describe("already-recorded command completions", () => {
     expect(push).toHaveBeenCalledTimes(1);
     expect(push.mock.calls[0]![0]).toMatchObject({
       tone: "warning",
-      title: "Save is not confirmed. Review the board before trying again.",
+      title: "Save is not confirmed. Check the board. If your change is not there, make it again.",
     });
   });
   it.each([

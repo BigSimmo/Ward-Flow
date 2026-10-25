@@ -28,6 +28,11 @@ type ButtonOwnProps = {
   disabledReason?: string;
   /** Where the reason shows. Inline text by default; `tooltip` where space is tight. */
   reasonDisplay?: "inline" | "tooltip";
+  /**
+   * Called when the button is pressed while `disabledReason` holds (the action itself still does
+   * not run), so a form can show its error summary. Not called while loading.
+   */
+  onUnavailablePress?: () => void;
   /** Count inside the button (`Filter 3`), behind a hairline. */
   count?: number;
   /** Keyboard hint inside the button (`N`). */
@@ -77,6 +82,7 @@ export function Button(props: ButtonProps) {
     loading = false,
     disabledReason,
     reasonDisplay = "inline",
+    onUnavailablePress,
     count,
     kbd,
     iconOnly,
@@ -98,6 +104,7 @@ export function Button(props: ButtonProps) {
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (off || loading) {
       event.preventDefault();
+      if (off && !loading) onUnavailablePress?.();
       return;
     }
     if (isAriaDisabled) {

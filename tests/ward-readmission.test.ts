@@ -5,7 +5,6 @@ import { seedWardFlowState, type WardFlowState } from "@/components/ward-managem
 import {
   READMISSION_WINDOW_DAYS,
   createReadmissionIndex,
-  admissionReadmissionFlag,
   movementReadmissionFlag,
   priorDischargeWithinWindow,
   referralReadmissionFlag,
@@ -102,7 +101,7 @@ describe("28 day readmission flag", () => {
     ).toBe("AD-LEFT-01");
   });
 
-  it("flags an ED movement and an admission for the same person, never an admission against its own stay", () => {
+  it("flags an ED movement for the same person", () => {
     const seed = seedWardFlowState();
     const movement: Movement = {
       ...seed.movements[0]!,
@@ -113,7 +112,5 @@ describe("28 day readmission flag", () => {
     };
     const state = { ...seed, movements: [...seed.movements, movement] };
     expect(movementReadmissionFlag(movement, createReadmissionIndex(state))?.admissionId).toBe("AD-LEFT-01");
-    const own = state.admissions.find((admission) => admission.id === "AD-LEFT-01")!;
-    expect(admissionReadmissionFlag(own, createReadmissionIndex(state))).toBeNull();
   });
 });

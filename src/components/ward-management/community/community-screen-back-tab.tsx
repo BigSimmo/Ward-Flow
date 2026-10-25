@@ -57,7 +57,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 aria-pressed={egressFilter === "all"}
                 onClick={() => setEgressFilter("all")}
               >
-                <span>All Egress</span>
+                <span>All egress</span>
                 <span className={styles.badgePill}>{DEMO_COMMUNITY_EGRESS.length}</span>
               </button>
               <button
@@ -66,7 +66,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 aria-pressed={egressFilter === "overdue"}
                 onClick={() => setEgressFilter("overdue")}
               >
-                <span>Overdue (Priority Follow-up)</span>
+                <span>Overdue (priority follow-up)</span>
                 <span className={`${styles.badgePill} ${styles.inkDanger}`}>
                   {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "overdue").length}
                 </span>
@@ -77,7 +77,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 aria-pressed={egressFilter === "today"}
                 onClick={() => setEgressFilter("today")}
               >
-                <span>Due Today</span>
+                <span>Due today</span>
                 <span className={styles.badgePill}>
                   {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "today").length}
                 </span>
@@ -88,7 +88,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 aria-pressed={egressFilter === "upcoming"}
                 onClick={() => setEgressFilter("upcoming")}
               >
-                <span>Upcoming Discharges</span>
+                <span>Upcoming discharges</span>
                 <span className={styles.badgePill}>
                   {DEMO_COMMUNITY_EGRESS.filter((e) => e.status === "upcoming").length}
                 </span>
@@ -103,7 +103,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M9 3l4 5-4 5M13 8H3" />
                 </svg>
-                <span>7-Day Post-Discharge Follow-Up Register</span>
+                <span>7-day post-discharge follow-up register</span>
               </h2>
               <span className={styles.badgePill} id="egressHeadBadge">
                 {demoVisibleEgress.length} Patients in 7-Day Window
@@ -176,7 +176,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                               }
                             }}
                           >
-                            {isContacted ? "Contact Logged" : egr.actionLabel}
+                            {isContacted ? "Contact logged" : egr.actionLabel}
                           </button>
                         </td>
                       </tr>

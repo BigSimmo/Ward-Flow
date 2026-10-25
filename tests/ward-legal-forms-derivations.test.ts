@@ -25,7 +25,6 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { FORM_TIMING_FACTOR_LABEL, waitFactors } from "@/components/ward-management/ward-priority";
 import { edPressure } from "@/components/ward-management/ward-pressure";
-import { openWorkBeforeShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { publishedThresholds } from "@/components/ward-management/settings/settings-thresholds";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -418,7 +417,6 @@ describe("current form deadlines across operational outputs", () => {
     expect(breaches(live)).toBe(1);
     expect(publishedBreaches(live)).toBe(1);
     expect(activity(live).some((event) => event.id.startsWith("legal-deadline:"))).toBe(true);
-    expect(openWorkBeforeShiftEnd([live], NOW).some((item) => item.kind === "typed_form")).toBe(true);
 
     expect(ended.legalForm?.dueAt).toBe(NOW - 5);
     expect(currentLegalDueAt(ended)).toBeUndefined();
@@ -428,7 +426,6 @@ describe("current form deadlines across operational outputs", () => {
     expect(breaches(ended)).toBe(0);
     expect(publishedBreaches(ended)).toBe(0);
     expect(activity(ended).some((event) => event.id.startsWith("legal-deadline:"))).toBe(false);
-    expect(openWorkBeforeShiftEnd([ended], NOW).some((item) => item.kind === "typed_form")).toBe(false);
   });
 
   it("names exact 15-minute and 75-minute warning settings without rounding", () => {

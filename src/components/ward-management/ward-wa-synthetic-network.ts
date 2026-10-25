@@ -68,11 +68,6 @@ function presentOccupancy(network: DemoNetwork) {
   return { beds, present, rate: beds === 0 ? 0 : present / beds };
 }
 
-/** Report the actual snapshot numerator and denominator, independently of its illustrative target. */
-export function waSyntheticOccupancy(network: DemoNetwork) {
-  return presentOccupancy(network);
-}
-
 function addPresentStays(network: DemoNetwork): void {
   const initial = presentOccupancy(network);
   const target = Math.round(initial.beds * WA_SYNTHETIC_BENCHMARK.referenceOccupancy);

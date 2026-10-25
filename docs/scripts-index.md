@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (134 files) and the `package.json` script surface (86 entries),
+Curated map of `scripts/` (134 files) and the `package.json` script surface (85 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -37,7 +37,6 @@ and the review server. Their history is in Git.
 | `npm run verify:pr-local`                                      | `verify-pr-local.mjs`                                                                   | Local pre-push readiness selected from CI scope rules; inspect the dry run for the actual local stages.                       |
 | `npm run verify:cheap`                                         | the `package.json` command chain                                                        | Unconditional broad offline documentation, static, lint, typecheck and unit checks.                                           |
 | `npm run test:live`                                            | `run-live-tests.mjs`                                                                    | Provider-backed live tests; refuses unless `ALLOW_PROVIDER_TESTS=true` is set for an approved run. No live tests exist today. |
-| `npm run bench`                                                | none                                                                                    | Vitest benchmarks.                                                                                                            |
 
 Shared helpers for these runners: `owned-child.mjs` (and its Windows companion), `test-run-lock.mjs`,
 `test-environment.mjs` (offline, provider-free test environment), `test-run-selection.mjs`,

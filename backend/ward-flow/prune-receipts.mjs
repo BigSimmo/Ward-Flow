@@ -4,6 +4,7 @@ import { readMigrationConfig } from "./migrate-postgres.mjs";
 import { readSupabaseMigrationConfig } from "./migrate-supabase.mjs";
 import { createPortableMigrationPool } from "./portable-postgres.mjs";
 import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { APPROVED_SUPABASE_PROJECT, validateSupabaseDatabaseUrl } from "./supabase-config.mjs";
 import { createSupabaseMigrationPool } from "./supabase-postgres.mjs";
 
 /**
@@ -37,19 +38,55 @@ export async function pruneReceipts(pool, { days = RECEIPT_RETENTION_DAYS } = {}
   return removed;
 }
 
-/** The migration pool for the provider named on the command line: supabase or postgres. */
-function migrationPool(provider) {
+/**
+ * The same clean-up through the `wardflow_pruner` login (infra/supabase-prune-role.sql), which may
+ * only call `ward_flow_ops.prune_receipts`: the function fixes the 7 days and removes at most 5,000
+ * rows a call. For the scheduled workflow, so it never holds the migration identity.
+ */
+export async function pruneReceiptsAsPruner(pool) {
+  let removed = 0;
+  for (;;) {
+    const { rows } = await pool.query("SELECT ward_flow_ops.prune_receipts($1) AS removed", [BATCH]);
+    const step = Number(rows[0]?.removed ?? 0);
+    removed += step;
+    if (step < BATCH) return removed;
+  }
+}
+
+/**
+ * The pruner login's connection, from WARD_SUPABASE_PRUNE_DATABASE_URL: the approved project and the
+ * `wardflow_pruner` login only (direct, or through the pooler as `wardflow_pruner.<project>`).
+ */
+export function readSupabasePrunerConfig(env = process.env) {
+  const connectionString = validateSupabaseDatabaseUrl(env.WARD_SUPABASE_PRUNE_DATABASE_URL, { runtime: false });
+  const user = decodeURIComponent(new URL(connectionString).username);
+  if (user !== "wardflow_pruner" && user !== `wardflow_pruner.${APPROVED_SUPABASE_PROJECT}`)
+    throw new Error("Receipt pruning needs the wardflow_pruner login");
+  return {
+    connectionString,
+    ...(env.WARD_SUPABASE_CA_CERT_FILE?.trim() ? { caCertificateFile: env.WARD_SUPABASE_CA_CERT_FILE.trim() } : {}),
+  };
+}
+
+/** The pool for the provider named on the command line: supabase, supabase-pruner or postgres. */
+function prunePool(provider) {
   if (provider === "supabase") return createSupabaseMigrationPool(readSupabaseMigrationConfig());
+  if (provider === "supabase-pruner") return createSupabaseMigrationPool(readSupabasePrunerConfig());
   if (provider === "postgres") return createPortableMigrationPool(readMigrationConfig());
-  throw new Error("Name the provider: supabase or postgres");
+  throw new Error("Name the provider: supabase, supabase-pruner or postgres");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let pool;
   try {
-    pool = migrationPool(process.argv[2]);
-    await verifyPostgresNamespace(pool);
-    const removed = await pruneReceipts(pool);
+    const provider = process.argv[2];
+    pool = prunePool(provider);
+    let removed;
+    if (provider === "supabase-pruner") removed = await pruneReceiptsAsPruner(pool);
+    else {
+      await verifyPostgresNamespace(pool);
+      removed = await pruneReceipts(pool);
+    }
     console.log(`Ward Flow command receipts older than ${RECEIPT_RETENTION_DAYS} days removed: ${removed}`);
   } catch {
     console.error("Receipt pruning refused or unavailable; inspect the private administrator configuration");

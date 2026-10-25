@@ -872,19 +872,6 @@ export function edScopedReferral(referral: Referral): EdScopedReferral | undefin
   };
 }
 
-/** Every referral an emergency department may see, ED-scoped. A referral addressed to no department
- *  is absent from the list entirely — see `edScopedReferral` on why that is not itself a signal. A
- *  deliberate twin of `wardScopedReferrals` and `communityScopedReferrals`, never a shared generic.
- *
- *  ⚠️ It does NOT narrow to one department. `edReferralsFor` / `edAnsweredReferralsFor`
- *  (`ward-referrals.ts`) are where a screen picks its own department's work; this answers only what
- *  each referral looks like from an ED seat. Two questions, two functions, and no flag. */
-export function edScopedReferrals(referrals: Referral[]): EdScopedReferral[] {
-  return referrals
-    .map((referral) => edScopedReferral(referral))
-    .filter((projection): projection is EdScopedReferral => projection !== undefined);
-}
-
 /**
  * FD-23: the coordinator's view — everywhere this referral was sent, and what each said.
  *

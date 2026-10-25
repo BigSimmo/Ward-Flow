@@ -194,7 +194,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     const form = screen.getByTestId(`ward-decline-form-${id}`);
     fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
     await act(async () => {
-      fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
+      fireEvent.click(within(form).getByRole("button", { name: /^Decline for \S/u }));
     });
     stage = "declined";
     act(() => view.rerender(tree()));

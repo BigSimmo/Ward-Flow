@@ -42,6 +42,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import type { AccessEntry } from "./access-record";
+import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import {
   CENSUS_GROUPS,
   CENSUS_HIGHLIGHTS,
@@ -1004,16 +1005,34 @@ export function CensusEmpty({
   onReset,
   addHref,
   onAdd,
+  near = [],
 }: {
   query: string;
   onReset: () => void;
   addHref: string;
   onAdd: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
+  /** Audit 24-7 item 2: names one keystroke away, in record order, shown before Add patient. */
+  near?: readonly Patient[];
 }) {
+  const nameFor = usePatientNameDisplay();
   return (
     <div className={styles.empty}>
       <Icon icon={SearchX} size={20} />
       <span>{query ? `No patient matches “${query}”` : "No patient matches the current search"}</span>
+      {near.length > 0 ? (
+        <div role="group" aria-label="Did you mean?" className={styles.emptyNear}>
+          <span>Did you mean?</span>
+          {near.map((patient) => (
+            <Link
+              key={patient.id}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+              href={patientHref(patient.id)}
+            >
+              {nameFor(patientDisplayName(patient), patient.umrn)} · {patient.umrn} · born {patient.dateOfBirth}
+            </Link>
+          ))}
+        </div>
+      ) : null}
       <span className={styles.emptyActions}>
         <Button size="sm" onClick={onReset}>
           Clear search

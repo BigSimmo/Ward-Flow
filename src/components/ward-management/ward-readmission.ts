@@ -120,9 +120,3 @@ export function referralReadmissionFlag(referral: Referral, index: ReadmissionIn
 export function movementReadmissionFlag(movement: Movement, index: ReadmissionIndex): ReadmissionFlag | null {
   return priorDischargeWithinWindow(movement, movement.openedAt, index, movement.admissionId);
 }
-
-/** The flag for an admission, measured from arrival (or the bed being held, before arrival). */
-export function admissionReadmissionFlag(admission: Admission, index: ReadmissionIndex): ReadmissionFlag | null {
-  const at = admission.arrivedAt ?? admission.pulledAt;
-  return at === null ? null : priorDischargeWithinWindow(admission, at, index, admission.id);
-}

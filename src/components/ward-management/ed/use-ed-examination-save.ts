@@ -9,6 +9,7 @@ import { useWardSharedSave } from "../shell/ward-shared-save-context";
 import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
 import type { EdStepEvent } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 type ExaminationEvent = Extract<EdStepEvent, { type: "RECORD_EXAMINATION" }>;
 type Attempt = {
@@ -188,7 +189,7 @@ export function useEdExaminationSave({
             ? completion.then(confirmationForUndo, () => ({
                 commandId: "",
                 status: "failed" as const,
-                message: "Save is not confirmed. Review the board before trying again.",
+                message: SAVE_NOT_CONFIRMED,
               }))
             : completion
               ? confirmationForUndo(completion)

@@ -102,6 +102,7 @@ export function Choice<T extends string>({
   onChange,
   labels,
   required = false,
+  id,
 }: {
   legend: string;
   name: string;
@@ -110,14 +111,17 @@ export function Choice<T extends string>({
   onChange: (value: T) => void;
   labels?: Partial<Record<T, string>>;
   required?: boolean;
+  /** Put on the first option, for an error summary link. */
+  id?: string;
 }) {
   return (
     <fieldset className={styles.radioField}>
       <legend className={required ? styles.required : undefined}>{legend}</legend>
       <div className={styles.segmented}>
-        {options.map((option) => (
+        {options.map((option, index) => (
           <label key={option} data-selected={value === option}>
             <input
+              id={index === 0 ? id : undefined}
               type="radio"
               name={name}
               value={option}

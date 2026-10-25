@@ -18,6 +18,7 @@ import {
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import styles from "./arrival-time-modal.module.css";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /**
  * Late when an arrival plan exists, now is more than the late-arrival grace period past that
@@ -107,7 +108,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       pending.current = false;
       setSaving(false);
       if (outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true)) onClose();
-      else setSaveError(outcome?.message ?? "Save is not confirmed. Review the board before trying again.");
+      else setSaveError(outcome?.message ?? SAVE_NOT_CONFIRMED);
     };
     try {
       const result = dispatch({

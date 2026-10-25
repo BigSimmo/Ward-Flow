@@ -50,7 +50,7 @@ const apiDescriptions: Record<string, string> = {
 const routeOwnershipRows = [
   ["Ward Flow screens", "src/app/ward-flow, src/components/ward-management"],
   ["Ward Flow sign-in and digest", "src/app/ward-flow-sign-in, src/app/mockups/ward-flow-digest"],
-  ["Global shell layouts", "src/app/layout.tsx, src/app/mockups/layout.tsx"],
+  ["Global shell layouts", "src/app/layout.tsx"],
   ["Mockups", "src/app/mockups"],
 ] as const;
 
