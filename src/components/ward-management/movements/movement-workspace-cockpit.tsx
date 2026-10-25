@@ -1462,7 +1462,7 @@ export function MovementWorkspaceCockpit({
                 <h3 className={styles.actionSectionTitle}>Stop transport</h3>
                 <p className={styles.actionSay}>
                   The patient has already been collected. Stopping the job records where they are now and tells the
-                  officer; the bed stays held until it is released.
+                  officer; the bed stays pulled until it is released.
                 </p>
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor={`${baseId}-ward-console-stop-transport-reason`}>
@@ -1587,7 +1587,7 @@ export function MovementWorkspaceCockpit({
               <section className={styles.actionSection} data-testid="ward-patient-record-diversion">
                 <h3 className={styles.actionSectionTitle}>Record a diversion</h3>
                 <p className={styles.actionSay}>
-                  The patient is no longer going to the accepting ward. The bed stays held until it is released.
+                  The patient is no longer going to the accepting ward. The bed stays pulled until it is released.
                 </p>
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor={`${baseId}-ward-console-diversion-reason`}>
