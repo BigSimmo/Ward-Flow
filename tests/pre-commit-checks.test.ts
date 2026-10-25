@@ -622,6 +622,7 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
       stagedScope: () => ({ changes: [], ownershipPaths: [], contentPaths: [] }),
       existsSync: (file: string) => (file === mergeHeadPath ? merging : file === signOutFile && logPresent),
       readFileSync: (file: string) => (file === mergeHeadPath ? `${"a".repeat(40)}\n` : log),
+      withClaimFiles: (_file: string, text: string) => text,
       parseAddedLines: () => [],
       scanAddedLines: () => [],
       mergeOwnershipScope: () => ({ cleanIncoming: [], requiredClaims: [] }),

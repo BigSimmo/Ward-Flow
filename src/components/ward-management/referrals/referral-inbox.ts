@@ -24,6 +24,8 @@ export type WardReferralInboxEntry = {
   openedAt?: number;
   /** What this ward asked the referrer for (smart features idea 4). This ward's own request. */
   informationNeeds?: ReferralAddressing["informationNeeds"];
+  /** Closing-the-loop package A: this ward's own response commitment entries, never another ward's. */
+  commitments?: ReferralAddressing["commitments"];
   source: Referral["source"];
   originUnitId?: Referral["originUnitId"];
 };
@@ -70,6 +72,9 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         ...(arm.heldBedNumber === undefined ? {} : { heldBedNumber: arm.heldBedNumber }),
         ...(arm.openedAt === undefined ? {} : { openedAt: arm.openedAt }),
         ...(arm.informationNeeds === undefined ? {} : { informationNeeds: arm.informationNeeds }),
+        ...(arm.commitments === undefined
+          ? {}
+          : { commitments: arm.commitments.filter((entry) => entry.unitId === unitId) }),
         source: referral.source,
         originUnitId: referral.originUnitId,
         destination: {

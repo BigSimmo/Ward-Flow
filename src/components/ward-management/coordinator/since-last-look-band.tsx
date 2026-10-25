@@ -8,6 +8,12 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import styles from "./home.module.css";
 import { hasAnyChange, type ChangesSinceLastLook } from "./since-last-look";
 import { plural, type SinceActivityLine } from "./since-last-look-panel";
+import {
+  acceptanceWithdrawnLinks,
+  dischargeMovedLinks,
+  SinceRecordLinks,
+  type SinceRecordLink,
+} from "./since-last-look-links";
 
 /*
  * Phone budget (21 October 2026): the desktop "Since you last looked" band only draws when its hero
@@ -82,7 +88,7 @@ export function SinceLastLookPanel({
   const delayCounts = new Map<string, number>();
   for (const delay of changes.newDelays) delayCounts.set(delay.title, (delayCounts.get(delay.title) ?? 0) + 1);
   const bedsTotal = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
-  const lines: { key: string; tone: WfTone; label: string }[] = [];
+  const lines: { key: string; tone: WfTone; label: string; links?: SinceRecordLink[] }[] = [];
   if (changes.newReferralIds.length > 0) {
     lines.push({
       key: "referrals",
@@ -122,6 +128,23 @@ export function SinceLastLookPanel({
       label: `${plural(changes.newEscalationIds.length, "new escalation", "new escalations")}: no suitable bed`,
     });
   }
+  // Closing-the-loop (package E): recorded withdrawals of a ward's "yes", and moved discharge dates.
+  if (changes.acceptanceWithdrawn?.length) {
+    lines.push({
+      key: "acceptance-withdrawn",
+      tone: "warning",
+      label: plural(changes.acceptanceWithdrawn.length, "acceptance withdrawn", "acceptances withdrawn"),
+      links: acceptanceWithdrawnLinks(changes),
+    });
+  }
+  if (changes.dischargeDatesMoved?.length) {
+    lines.push({
+      key: "discharge-date-moved",
+      tone: "info",
+      label: plural(changes.dischargeDatesMoved.length, "discharge date moved", "discharge dates moved"),
+      links: dischargeMovedLinks(changes),
+    });
+  }
 
   return (
     <Card
@@ -146,6 +169,7 @@ export function SinceLastLookPanel({
           <li key={line.key} className={styles.sinceLine} data-change={line.key}>
             <StatusGlyph tone={line.tone} size={9} />
             <span>{line.label}</span>
+            {line.links ? <SinceRecordLinks links={line.links} label={`${line.label}: records`} /> : null}
           </li>
         ))}
       </ul>

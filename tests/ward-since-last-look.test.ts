@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  changesSinceInstant,
   changesSinceLastLook,
   scopedChangesSinceLastLook,
   scopeLastLookWorld,
@@ -24,6 +25,7 @@ function seededWorld(): LastLookWorld {
     movements: state.movements,
     units: state.units,
     bedReleases: state.bedReleases,
+    admissions: state.admissions,
   };
 }
 
@@ -106,8 +108,10 @@ describe("what changed since you last looked", () => {
     const snapshot = takeLastLookSnapshot(seededWorld(), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
     expect(Object.keys(snapshot).sort()).toEqual(
       [
+        "acceptanceWithdrawnByMovement",
         "at",
         "delayKeys",
+        "dischargeMovesByAdmission",
         "escalatedMovementIds",
         "movementIds",
         "readyByUnit",
@@ -134,6 +138,85 @@ describe("what changed since you last looked", () => {
     }
     // An array (even an empty one) is not a map of ready counts by unit.
     expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, readyByUnit: [] }))).toBeUndefined();
+    // Closing-the-loop (package E): the two new maps are counts by record id too.
+    expect(Object.values(snapshot.acceptanceWithdrawnByMovement!).every(Number.isSafeInteger)).toBe(true);
+    expect(
+      parseLastLookSnapshot(JSON.stringify({ ...snapshot, dischargeMovesByAdmission: { a: -1 } })),
+    ).toBeUndefined();
+    expect(parseLastLookSnapshot(JSON.stringify({ ...snapshot, acceptanceWithdrawnByMovement: [] }))).toBeUndefined();
+  });
+});
+
+describe("closing-the-loop additions: acceptance withdrawn and discharge date moved", () => {
+  it("reports an acceptance withdrawn and a discharge date moved since the last look, by record", () => {
+    const world = seededWorld();
+    const before = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
+    const movement = world.movements.find((m) => isOpen(m) && m.unwinds.length === 0)!;
+    const admission = world.admissions!.find((a) => a.state !== "departed")!;
+    const unit = world.units.find((u) => u.id === admission.unitId)!;
+    const later: LastLookWorld = {
+      ...world,
+      movements: world.movements.map((m) =>
+        m.id === movement.id
+          ? {
+              ...m,
+              unwinds: [
+                {
+                  at: NOW + 10,
+                  kind: "acceptance_withdrawn",
+                  by: "coordinator",
+                  reason: "the_bed_was_lost",
+                  unitId: unit.id,
+                },
+              ],
+            }
+          : m,
+      ),
+      admissions: world.admissions!.map((a) =>
+        a.id === admission.id
+          ? { ...a, dischargeDateMoves: a.dischargeDateMoves + 1, dischargeDateSetAt: NOW + 12 }
+          : a,
+      ),
+    };
+    const after = takeLastLookSnapshot(later, NOW + 30, DEFAULT_DUE_SOON_THRESHOLDS);
+    const changes = changesSinceLastLook(before, after, later)!;
+    expect(changes.acceptanceWithdrawn).toEqual([{ movementId: movement.id, unitId: unit.id, unitName: unit.name }]);
+    expect(changes.dischargeDatesMoved).toEqual([{ admissionId: admission.id, unitId: unit.id, unitName: unit.name }]);
+    expect(hasAnyChange(changes)).toBe(true);
+    // Nothing new when compared with itself; the fields are absent rather than empty.
+    const same = changesSinceLastLook(after, after, later)!;
+    expect(same.acceptanceWithdrawn).toBeUndefined();
+    expect(same.dischargeDatesMoved).toBeUndefined();
+  });
+
+  it("an older picture without the maps reports neither", () => {
+    const world = seededWorld();
+    const {
+      acceptanceWithdrawnByMovement: _a,
+      dischargeMovesByAdmission: _d,
+      ...old
+    } = takeLastLookSnapshot(world, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
+    void _a;
+    void _d;
+    const changes = changesSinceLastLook(
+      old,
+      takeLastLookSnapshot(world, NOW + 5, DEFAULT_DUE_SOON_THRESHOLDS),
+      world,
+    )!;
+    expect(changes.acceptanceWithdrawn).toBeUndefined();
+    expect(changes.dischargeDatesMoved).toBeUndefined();
+  });
+
+  it("before any look, reads recorded times in the shift; the seeded demo shows a moved discharge date", () => {
+    // The seed carries no withdrawn acceptance (the fixture keeps every movement's unwinds empty).
+    const world = seededWorld();
+    const changes = changesSinceInstant(world, NOW - 4 * 60, NOW);
+    expect(changes.acceptanceWithdrawn).toBeUndefined();
+    expect(changes.dischargeDatesMoved?.length ?? 0).toBeGreaterThan(0);
+    for (const row of changes.dischargeDatesMoved ?? []) {
+      const admission = world.admissions!.find((a) => a.id === row.admissionId)!;
+      expect(admission.dischargeDateMoves).toBeGreaterThan(0);
+    }
   });
 });
 
