@@ -1,4 +1,5 @@
 import { type HealthService, type Site } from "@/components/ward-management/ward-model";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { referenceEntity } from "@/components/ward-management/reference/ward-reference-registry";
 import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
@@ -83,11 +84,19 @@ export type DirectoryEntry = {
   note: string;
   /** Synthetic age of the record, in days. Over `CHECK_DUE_DAYS` reads as check due. */
   checkedDaysAgo: number;
+  /**
+   * Closing-the-loop (package E): the desk that made that synthetic check. A role, never a person.
+   * A check recorded on screen (`RECORD_DIRECTORY_CHECK`, `on-call-checks.ts`) replaces both.
+   */
+  checkedBy: WardFlowRole;
   /** True when a line's hours come from the on-call roster. */
   rostered: boolean;
 };
 
+/** Days since the last check after which an entry reads "Not checked in over N days". */
 export const CHECK_DUE_DAYS = 40;
+/** Closing-the-loop (package E): the desks the synthetic seeded checks are spread across. */
+const SEEDED_CHECKERS: readonly WardFlowRole[] = ["coordinator", "bed_manager", "ward"];
 /** Minutes on the clock face, for wrapping times past midnight. A calendar fact, not a limit. */
 const CLOCK_DAY = 24 * 60;
 const mod = (value: number) => ((value % CLOCK_DAY) + CLOCK_DAY) % CLOCK_DAY;
@@ -206,7 +215,10 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
   const line = (label: string, window: ContactWindow | null): ContactLine => ({ label, number: number(), window });
   const entries: DirectoryEntry[] = [];
   const add = (
-    entry: Omit<DirectoryEntry, "checkedDaysAgo" | "email" | "emailWindow" | "sendWith" | "note" | "rostered"> &
+    entry: Omit<
+      DirectoryEntry,
+      "checkedDaysAgo" | "checkedBy" | "email" | "emailWindow" | "sendWith" | "note" | "rostered"
+    > &
       Partial<Pick<DirectoryEntry, "email" | "emailWindow" | "sendWith" | "note" | "rostered">>,
   ) => {
     entries.push({
@@ -217,6 +229,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
       rostered: false,
       ...entry,
       checkedDaysAgo: (hash(`${entry.id}c`) % 52) + 1,
+      checkedBy: SEEDED_CHECKERS[hash(`${entry.id}b`) % SEEDED_CHECKERS.length]!,
     });
   };
 

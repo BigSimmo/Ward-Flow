@@ -94,6 +94,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "previousDueAt",
   "enRouteAt",
   "expectedAt",
+  // Closing-the-loop package B (24 Oct 2026): the time a discharge plan change moved away from.
+  "previousExpectedAt",
   "expectedReturn",
   "formedAt",
   "formWrittenAt",
@@ -188,6 +190,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "metAt",
   // The criteria status's derived lapse time. Never stored, but declared as an Instant beside them.
   "lapsesAt",
+  // Closing-the-loop (package E): a home service return's request, answer and review day.
+  "requestedAt",
+  "answeredAt",
+  "nextReviewAt",
 ]);
 
 /**

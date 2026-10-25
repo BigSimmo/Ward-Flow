@@ -41,6 +41,10 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-discharge-criteria.ts",
   // Closing-the-loop package A: a response commitment entry holds a promised time and a callback time.
   "src/components/ward-management/referrals/referral-commitments.ts",
+  // Closing-the-loop (package E): a home service return records when it was asked, answered and next reviewed.
+  "src/components/ward-management/out-of-area/home-service-return.ts",
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes on a bed release.
+  "src/components/ward-management/discharges/discharge-dependencies.ts",
 ];
 
 /**

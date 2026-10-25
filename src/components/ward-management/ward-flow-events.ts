@@ -2529,9 +2529,15 @@ export type WardFlowEvent =
   // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
+  | import("./discharges/discharge-dependency-events").DischargeDependencyEvent
   | ObservationLevelEvent
   | RecordWardDiagnosisEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
+  // Closing-the-loop (package E): return requested vs home service agreed.
+  | import("./out-of-area/home-service-return").HomeServiceReturnEvent
+  // Closing-the-loop (package E): an on-call directory entry checked now.
+  | import("./on-call/on-call-checks").DirectoryCheckEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

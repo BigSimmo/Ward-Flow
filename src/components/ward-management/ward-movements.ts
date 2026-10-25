@@ -18,6 +18,7 @@ import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
+import { withSeededDischargeLogistics } from "@/components/ward-management/discharges/discharge-dependency-seed";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
 import { completeSyntheticReferralIntakes } from "./ward-referral-intake-seed";
 
@@ -1877,10 +1878,14 @@ export function movementsByStage(stage: MovementStage): Movement[] {
  * many ready beds are still being cleaned have one real case to show. It is authored demo data, like
  * the seeded leave beds, never derived: no admission field says a bed is being cleaned.
  */
-export const bedReleases: BedRelease[] = derivedBedReleases(wardAdmissions, NOW_ANCHOR).map((release) =>
-  release.id === "derived-discharged-AD-LEFT-01"
-    ? { ...release, preparing: true, preparationNote: "Being cleaned" }
-    : release,
+export const bedReleases: BedRelease[] = withSeededDischargeLogistics(
+  derivedBedReleases(wardAdmissions, NOW_ANCHOR).map((release) =>
+    release.id === "derived-discharged-AD-LEFT-01"
+      ? { ...release, preparing: true, preparationNote: "Being cleaned" }
+      : release,
+  ),
+  // Closing-the-loop package B (24 Oct 2026): authored discharge logistics on four seeded releases.
+  NOW_ANCHOR,
 );
 
 /**

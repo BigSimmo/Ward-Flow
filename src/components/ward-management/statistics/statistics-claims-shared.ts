@@ -190,7 +190,14 @@ export const BED_RELEASE_BODY =
   "clearedBlockHistory?: ReadonlyArray<{ readonly at: Instant; readonly by: WardFlowRole; /** Absent when the clearing event named no reason; never defaulted. */ readonly reason?: DischargeDelayClearReason; readonly blocker?: BedReleaseBlocker | null; }>; " +
   "/** * #398 (D-72): the support notices the ward sent for this confirmed release, one per service, * oldest " +
   "first (`SEND_RELEASE_SUPPORT_NOTICE`). About the bed only. Absent until the first. */ supportNoticesSent?: " +
-  "ReadonlyArray<{ readonly service: SupportServiceType; readonly at: Instant; readonly by: WardFlowRole; }>; };";
+  "ReadonlyArray<{ readonly service: SupportServiceType; readonly at: Instant; readonly by: WardFlowRole; }>; " +
+  "// ── Closing-the-loop package B (24 Oct 2026): discharge logistics, `discharges/discharge-dependencies.ts`. " +
+  "/** Practical items this discharge waits on, recorded order. Logistics only; gates nothing. */ " +
+  'dependencies?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargeDependency>; ' +
+  "/** Where the ward has recorded the person is planned to go. Absent until recorded. */ " +
+  'plannedDestination?: import("./discharges/discharge-dependencies").PlannedDischargeDestination; ' +
+  '/** Changes to the expected time or destination, oldest first, for "needs checking again". */ ' +
+  'planChanges?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargePlanChange>; };';
 
 /**
  * The site lookup, cited as its signature AND its body. Two screens claim it returns nothing rather

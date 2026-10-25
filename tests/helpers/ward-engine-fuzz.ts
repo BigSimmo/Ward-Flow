@@ -120,6 +120,12 @@ import {
   WARD_RESTRICTION_KINDS,
   closureTransitionItems,
 } from "@/components/ward-management/loop-checks/ward-loop-checks";
+// Closing-the-loop (package E): the two new record events.
+import {
+  HOME_SERVICE_ANSWERS,
+  RETURN_PREREQUISITES,
+} from "@/components/ward-management/out-of-area/home-service-return";
+import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -757,6 +763,23 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       service: pick(random, ["pharmacy", "transport", "cleaning"] as const),
     })),
   ],
+  // Closing-the-loop package B (24 Oct 2026): discharge logistics on a live release.
+  [
+    1,
+    bedReleaseEvent("RECORD_DISCHARGE_DEPENDENCY", (_state, random) => ({
+      kind: pick(random, ["pharmacy", "transport", "destination", "community_follow_up", "other"] as const),
+      owner: pick(random, ["ward", "pharmacy", "patient_transport", "social_work", "community_team"] as const),
+      state: pick(random, ["outstanding", "done", "not_needed"] as const),
+    })),
+  ],
+  [
+    0.5,
+    bedReleaseEvent("RECORD_DISCHARGE_PLAN_CHANGE", (_state, random) =>
+      chance(random, 0.5)
+        ? { expectedAt: int(random, 0, 4000) }
+        : { leavingDestination: pick(random, ["discharged-to-the-community", "moved-to-residential-care"] as const) },
+    ),
+  ],
   [
     0.5,
     movementEvent("RECORD_ARRIVAL_CHECK", undefined, (_state, random) => ({
@@ -926,6 +949,8 @@ function undoSubjectField(state: WardFlowState, subjectId: string): Record<strin
 /** A legal form code for a movement: mostly one the model recognises, now and then 5B over a 5A. */
 const formCodeFor = (random: Random, movement: Movement) =>
   movement.legalForm?.code === "5A" && chance(random, 0.6) ? "5B" : pick(random, LEGAL_CLOCK_FORM_CODES)!;
+
+const DIRECTORY_ENTRIES = buildOnCallDirectory();
 
 const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   // Ward closure: a bed-relevant gate (the shortlist, acceptance and the pull honour it).
@@ -1804,6 +1829,29 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         ...(answer === "cannot" ? { reason: pick(random, REFERRAL_DECLINE_REASONS) } : {}),
       };
     },
+  ],
+  // Closing-the-loop (package E): home service return and on-call directory checks.
+  [
+    0.5,
+    (state, random) => {
+      const answered = chance(random, 0.5);
+      return {
+        type: "RECORD_HOME_SERVICE_RETURN",
+        admissionId: id(stayFor(state, random, occupied)),
+        step: answered ? "answered" : "requested",
+        ...(answered
+          ? { answer: pick(random, HOME_SERVICE_ANSWERS), prerequisites: [pick(random, RETURN_PREREQUISITES)!] }
+          : { homeHospital: chance(random, 0.95) ? pick(random, SITE_CODES) : MISSING_ID }),
+        ...(chance(random, 0.5) ? { nextReviewAt: currentNow + int(random, 0, 14) * 1440 } : {}),
+      };
+    },
+  ],
+  [
+    0.5,
+    (_state, random) => ({
+      type: "RECORD_DIRECTORY_CHECK",
+      entryId: chance(random, 0.95) ? id(pick(random, DIRECTORY_ENTRIES)) : MISSING_ID,
+    }),
   ],
   [0.5, (state, random) => ({ type: "EXTEND_BROADCAST_ALERT", alertId: id(pick(random, alerts(state))) })],
   [

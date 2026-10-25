@@ -64,6 +64,8 @@ import { badge } from "./discharge-board-parts";
 import { DischargeBarrierTable, DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
+// Closing-the-loop package B (24 Oct 2026): the weekend and holiday list, loaded when idle.
+import { DischargeWeekendPrep } from "./discharge-logistics-lazy";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -959,6 +961,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               onClear={() => setHighlight(null)}
             />
           </div>
+        ) : null}
+        {guarded.status === "allowed" && population === "releases" ? (
+          <DischargeWeekendPrep
+            releases={s.bedReleases.filter((release) => units.some((unit) => unit.id === release.unitId))}
+            units={units}
+            nameFor={(release) => {
+              const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+              return record ? recordName(record) : null;
+            }}
+            now={now}
+            dayZero={dayZero}
+            onOpen={s.selectRelease}
+          />
         ) : null}
         <WardPrototypeFooter
           testId="ward-discharge-governance"

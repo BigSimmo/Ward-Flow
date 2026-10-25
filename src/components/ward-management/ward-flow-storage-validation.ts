@@ -62,6 +62,8 @@ import {
 } from "./ward-discharge-criteria";
 import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 import { REPATRIATION_MODES } from "./ward-flow-events";
+import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-service-return";
+import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 import {
@@ -75,6 +77,7 @@ import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
+import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
 import { numberedBedKind } from "./ward-bed-designation";
 import { isObservation, type Observation } from "./ward-observation";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
@@ -681,6 +684,8 @@ const bedRelease = z.looseObject({
       .array(z.looseObject({ service: z.enum(SUPPORT_SERVICE_TYPES), at: finite, by: text }))
       .check(z.refine((sent) => new Set(sent.map((notice) => notice.service)).size === sent.length)),
   ),
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies, planned destination, plan changes.
+  ...dischargeLogisticsFields,
 });
 
 // D-38: an absence holds when it was recorded and the time of each fixed missing person step, and
@@ -913,6 +918,20 @@ const repatriation = z
     agreedBy: z.optional(role),
   })
   .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
+// Closing-the-loop (package E): return requested vs home service agreed. Closed lists, roles and
+// instants only; one record per stay, on a stay that exists.
+const homeServiceReturn = z.strictObject({
+  admissionId: id,
+  // Membership is checked against the saved scenario below, as a repatriation's is.
+  homeHospital: text,
+  requestedAt: finite,
+  requestedBy: role,
+  answer: z.optional(z.enum(HOME_SERVICE_ANSWERS)),
+  answeredAt: z.optional(finite),
+  answeredBy: z.optional(role),
+  prerequisites: z.array(z.enum(RETURN_PREREQUISITES)),
+  nextReviewAt: z.optional(finite),
+});
 const supportNotification = z.strictObject({
   id,
   occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
@@ -934,12 +953,14 @@ const supportNotification = z.strictObject({
 function typedRecordsResolve(
   state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
     supportNotifications?: WardFlowState["supportNotifications"];
+    homeServiceReturns?: WardFlowState["homeServiceReturns"];
   },
 ): boolean {
   const admissionIds = new Set(state.admissions.map((admission) => admission.id));
   const movementIds = new Set(state.movements.map((movement) => movement.id));
   return (
     state.repatriations.every((row) => admissionIds.has(row.admissionId)) &&
+    (state.homeServiceReturns ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
@@ -970,6 +991,17 @@ const storedState = z.looseObject({
     .array(repatriation)
     .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
   supportNotifications: z.optional(z.array(supportNotification).check(z.refine((rows) => distinctIds(rows)))),
+  // Closing-the-loop (package E): absent in older saves.
+  directoryChecks: z.optional(
+    z
+      .array(z.strictObject({ entryId: z.custom(isDirectoryEntryId), at: finite, by: role }))
+      .check(z.refine((rows) => new Set(rows.map((row) => row.entryId)).size === rows.length)),
+  ),
+  homeServiceReturns: z.optional(
+    z
+      .array(homeServiceReturn)
+      .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
+  ),
   handoverSignOffs: z.array(stamped),
   clinicalContacts: z.array(
     z.extend(stamped, { teamId: text.check(z.refine((teamId) => communityTeamById(teamId) !== null)) }),
@@ -1030,6 +1062,7 @@ function identitiesMatchScenario(state: StoredState): boolean {
       ),
     ) &&
     state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
+    (state.homeServiceReturns ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     state.patients.every(({ registrationScope }) => {
       if (registrationScope === undefined) return true;
       if (registrationScope.kind === "ed") return edIds.has(registrationScope.placeId);

@@ -666,6 +666,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_STEP_DOWN_CANDIDATE: false,
     // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
     RECORD_WARD_DIAGNOSIS: false,
+    // Closing-the-loop (package E): records a return request and the home service's answer. Not a refusal.
+    RECORD_HOME_SERVICE_RETURN: false,
+    // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
+    RECORD_DIRECTORY_CHECK: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -708,6 +712,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_SUPPORT_NOTIFICATION: false,
     SEND_RELEASE_SUPPORT_NOTICE: false,
     RECORD_ARRIVAL_CHECK: false,
+    // Closing-the-loop package B (24 Oct 2026): discharge logistics decline nobody.
+    RECORD_DISCHARGE_DEPENDENCY: false,
+    RECORD_DISCHARGE_PLAN_CHANGE: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,

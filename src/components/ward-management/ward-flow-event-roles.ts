@@ -537,6 +537,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
+  // Closing-the-loop (package E): the out-of-area return plan, the coordinator's tool as above.
+  RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+  // Closing-the-loop (package E): any desk with the on-call directory open may record a check.
+  RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
   // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
@@ -565,6 +569,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+  // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
+  RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
+  RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
   RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the

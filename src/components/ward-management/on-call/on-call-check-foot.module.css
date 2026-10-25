@@ -1,0 +1,15 @@
+/* Closing-the-loop (package E): last checked, by whom, and "Mark checked now". */
+.foot {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.note {
+  flex-basis: 100%;
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+}
+
+.status {
+  color: var(--wf-ink-2);
+}

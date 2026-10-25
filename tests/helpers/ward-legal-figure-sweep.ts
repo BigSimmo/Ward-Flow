@@ -987,6 +987,29 @@ export function candidateEvents(
           service,
         })),
       );
+    case "RECORD_DISCHARGE_DEPENDENCY":
+      // Closing-the-loop package B (24 Oct 2026): one outstanding pharmacy item per release,
+      // against the release's own unit. Logistics only; no legal figure.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        kind: "pharmacy" as const,
+        owner: "pharmacy" as const,
+        state: "outstanding" as const,
+      }));
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
+      // Closing-the-loop package B: one destination per release, against its own unit.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        leavingDestination: LEAVING_DESTINATIONS[0].id,
+      }));
     case "REVERT_BED_RELEASE":
       // Bed-model rework (2026-08-28). One candidate per release crossed with every waiting-on
       // value — the same "one candidate per real domain value" precedent every list-valued event

@@ -52,6 +52,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
     case "SEND_RELEASE_SUPPORT_NOTICE":
+    case "RECORD_DISCHARGE_DEPENDENCY":
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
       return event.releaseId;
     case "RELEASE_BED":
       return event.releaseId;
@@ -130,6 +132,8 @@ export function subjectId(event: WardFlowEvent): string {
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
     case "RECORD_WARD_DIAGNOSIS":
+    // Closing-the-loop (package E).
+    case "RECORD_HOME_SERVICE_RETURN":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
@@ -141,6 +145,9 @@ export function subjectId(event: WardFlowEvent): string {
       return "none";
     case "RECORD_CLINICAL_CONTACT":
       return event.teamId;
+    // Closing-the-loop (package E).
+    case "RECORD_DIRECTORY_CHECK":
+      return event.entryId;
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

@@ -64,6 +64,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
+  // Closing-the-loop (package E).
+  RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
+  RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
@@ -205,6 +208,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
   RECORD_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS notification recorded" },
   SEND_RELEASE_SUPPORT_NOTICE: { category: "bed", plainWording: "Discharge support notice sent" },
+  // Closing-the-loop package B (24 Oct 2026).
+  RECORD_DISCHARGE_DEPENDENCY: { category: "bed", plainWording: "Discharge dependency recorded" },
+  RECORD_DISCHARGE_PLAN_CHANGE: { category: "bed", plainWording: "Discharge plan changed" },
   RECORD_ARRIVAL_CHECK: { category: "patient", plainWording: "Arrival checklist item recorded" },
   // v10 pass 2 (10 Oct 2026): Undo and the ward Bed board.
   UNDO_REFERRAL_DECISION: { category: "patient", plainWording: "Referral decision undone" },

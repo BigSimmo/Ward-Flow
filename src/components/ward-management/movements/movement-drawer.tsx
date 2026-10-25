@@ -8,6 +8,8 @@ import { BedSingle, ChevronRight, FileText, Flag, Lock, Truck, X } from "lucide-
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/wf/sheet";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { confirmationAge } from "@/components/ward-management/ward-confirmation-age";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
   isOpen,
   movementHealthService,
@@ -701,6 +703,9 @@ export function MovementDrawer({
               {leg.escortRequired ? " · escort required" : ""}
               {leg.formRequired ? " · a form is required" : ""}
               {leg.acceptedAt === undefined ? "" : ` · accepted ${formatInstantWithDay(leg.acceptedAt, now)}`}
+              {/* Closing-the-loop package B (24 Oct 2026): how long ago the transport was confirmed, and who booked it. */}
+              {leg.acceptedAt === undefined ? "" : ` · ${confirmationAge(leg.acceptedAt, now, leg.provider)}`}
+              {leg.bookedBy ? ` · booked by ${WARD_FLOW_ROLE_LABELS[leg.bookedBy.role]}` : ""}
             </p>
           )}
         </Section>

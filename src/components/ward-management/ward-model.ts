@@ -1216,6 +1216,13 @@ export type BedRelease = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
+  // ── Closing-the-loop package B (24 Oct 2026): discharge logistics, `discharges/discharge-dependencies.ts`.
+  /** Practical items this discharge waits on, recorded order. Logistics only; gates nothing. */
+  dependencies?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargeDependency>;
+  /** Where the ward has recorded the person is planned to go. Absent until recorded. */
+  plannedDestination?: import("./discharges/discharge-dependencies").PlannedDischargeDestination;
+  /** Changes to the expected time or destination, oldest first, for "needs checking again". */
+  planChanges?: ReadonlyArray<import("./discharges/discharge-dependencies").DischargePlanChange>;
 };
 
 /**
