@@ -34,7 +34,7 @@ import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-m
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 
 const OUTCOME_CONSEQUENCE =
-  "This ends the bed search: live ward requests are withdrawn, a held bed is released and uncollected transport is cancelled.";
+  "This ends the bed search: live ward requests are withdrawn, a pulled bed is released and uncollected transport is cancelled.";
 
 /** Every panel a row can open. Each renders only while it is the open one. */
 export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
@@ -93,6 +93,22 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitReceiptCorrection,
     recordSaveState,
   } = ctx;
+  // Audit 24-1 B-06: an accepted request is live too (acceptance empties `referredUnitIds`), and
+  // withdrawing it gives back a pulled bed, by the same rule as `releasePulledBedAndAdmission`.
+  const acceptedUnitId = movement.acceptedUnitId;
+  const liveRequestCount =
+    movement.referredUnitIds.filter((unitId) => unitId !== acceptedUnitId).length + (acceptedUnitId ? 1 : 0);
+  const bedPulled =
+    acceptedUnitId !== undefined &&
+    (movement.stage === "pulled" ||
+      movement.stage === "handover_ready" ||
+      movement.stage === "moving" ||
+      movement.admissionId !== undefined);
+  const pulledWardName = acceptedUnitId
+    ? (ctx.units.find((unit) => unit.id === acceptedUnitId)?.name ?? "the accepting ward")
+    : undefined;
+  const withdrawWho = `${patientInfo.displayName} (${patientInfo.umrn})`;
+  const releasesPulledBed = bedPulled ? ` and releases the bed pulled at ${pulledWardName}` : "";
   const urgencySave = recordSaveState("urgency", movement.id);
   const legalStatusSave = recordSaveState("legalStatus", movement.id);
   const receiptSave = recordSaveState("receipt", movement.id);
@@ -124,9 +140,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       {withdrawOpen && !withdrawBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-withdraw-referral-${movement.id}`}>
           <p className={styles.cardMeta}>
-            {movement.referredUnitIds.length === 1
-              ? `Withdraw the referral for ${patientInfo.displayName}? This says the patient no longer needs a bed, so it withdraws that referral and closes the movement.`
-              : `Withdraw every live referral for ${patientInfo.displayName}? This says the patient no longer needs a bed, so it withdraws all ${movement.referredUnitIds.length} of them at once and closes the movement.`}{" "}
+            {liveRequestCount === 1
+              ? `Withdraw the referral for ${withdrawWho}? This says the patient no longer needs a bed, so it withdraws that referral${releasesPulledBed} and closes the movement.`
+              : `Withdraw every live referral for ${withdrawWho}? This says the patient no longer needs a bed, so it withdraws all ${liveRequestCount} of them at once${releasesPulledBed} and closes the movement.`}{" "}
             It cannot be undone, and it does not say where the patient went.
           </p>
           <div className={styles.actionRow}>
@@ -323,9 +339,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <fieldset className={styles.declineFieldset}>
             <legend className={styles.declineLegend}>Record outcome for {patientInfo.displayName}</legend>
             <p className={styles.cardMeta}>
-              This ends the bed search: any live ward requests are withdrawn, a held bed is released, and an uncollected
-              transport job is cancelled. The patient stays on this board until &quot;Left the department&quot; is
-              recorded.
+              This ends the bed search: any live ward requests are withdrawn, a pulled bed is released, and an
+              uncollected transport job is cancelled. The patient stays on this board until &quot;Left the
+              department&quot; is recorded.
             </p>
             {/* Audit 1 (CS-07, Josh 20 Oct): each outcome asks a second time, naming the person
                 and UMRN, because it cannot be undone from a toast. */}

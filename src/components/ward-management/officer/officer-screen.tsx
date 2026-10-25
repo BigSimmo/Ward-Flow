@@ -88,6 +88,7 @@ import {
   transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
+import { OfficerOrderNote } from "./officer-order-note";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 export {
@@ -309,8 +310,7 @@ export function OfficerScreen() {
     return priority(a) - priority(b) || stageSince(a) - stageSince(b);
   });
 
-  // The panel opens only when a patient is chosen (Josh, 9 Oct 2026): until then the table runs
-  // the full width of the page.
+  // The panel opens only when a patient is chosen (Josh, 9 Oct 2026); until then the table is full width.
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
 
@@ -672,8 +672,7 @@ export function OfficerScreen() {
     );
   }
 
-  // The job panel's render helpers live in `officer-job-detail.tsx` and read this screen's state
-  // and handlers through this context.
+  // The job panel's render helpers (`officer-job-detail.tsx`) read this screen's state through this context.
   const detailContext: OfficerJobDetailContext = {
     blockedNote,
     destinationLabelFor,
@@ -872,8 +871,13 @@ export function OfficerScreen() {
             </div>
             <strong className={styles.nextCardName}>{officerListPatientName(topJob)}</strong>
             <span className={styles.nextCardLine}>
-              <span className={styles.mono}>{umrnFor(topJob)}</span> · {originShortFor(topJob)} to{" "}
-              {destinationLabelFor(topJob)}
+              {/* B6-36: no leading separator when this desk is not shown the UMRN. */}
+              {umrnFor(topJob) ? (
+                <>
+                  <span className={styles.mono}>{umrnFor(topJob)}</span> ·{" "}
+                </>
+              ) : null}
+              {originShortFor(topJob)} to {destinationLabelFor(topJob)}
             </span>
             {late(topJob) && topJob.arrivalDetails ? (
               <span className={cx(styles.nextCardLine, styles.warnText)}>
@@ -1013,6 +1017,7 @@ export function OfficerScreen() {
                   />
                 </div>
 
+                <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next"} />
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No transport job is currently outstanding &mdash; every job has either arrived or its movement has

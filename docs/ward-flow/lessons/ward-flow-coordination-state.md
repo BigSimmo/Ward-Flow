@@ -212,7 +212,7 @@ Related: [[ward-flow-changeable-data-rule]], [[checks-that-cannot-fail]], [[meas
 
 ## Owner rulings, 2026-08-31 — five at once, one of them not closed
 
-Recorded in-repo at `docs/archive/ward-flow-owner-rulings-2026-08-31.md` (commit `0c94814a6`). He answered
+Recorded in-repo at `docs/ward-flow/archive/dated-notes/ward-flow-owner-rulings-2026-08-31.md` (commit `0c94814a6`). He answered
 five questions with **"Yes to all your recommendations."**
 
 - ⚠️ **The ten urgency reasons are STILL OPEN.** He approved a _process_ — read the placeholders,
@@ -249,7 +249,7 @@ passed, and the three long-standing repository failures fixed. All four chats' b
 
 **Where the durable record is:** `docs/ward-flow/outstanding/` (61 outstanding items),
 `docs/ward-flow/reports/` (every chat's own account and self-corrections),
-`docs/ward-flow/the-engine-enforces-nothing.md`, and nine queued requests in
+`docs/ward-flow/archive/dated-notes/the-engine-enforces-nothing.md`, and nine queued requests in
 `docs/outstanding-issues-inbox/`. The full session transcript plus a guide to what is in it and
 nowhere else: `C:/Users/joshs/Backups/claude-work/ward-lead-transcript-2026-09-02/`.
 

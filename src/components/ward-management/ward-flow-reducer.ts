@@ -649,8 +649,14 @@ function pullOverrides(
 /** The planned admissions module, handed this reducer's own rejection and placement refusal. */
 function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   return (
-    reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
-      eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+    reducePlannedAdmissionEvent(
+      state,
+      event,
+      decision,
+      reject,
+      (movement, unit, now, waived) =>
+        eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now, waived),
+      OVERRIDE_REASON_REQUIRED,
     ) ?? state
   );
 }
@@ -687,6 +693,12 @@ function eligibilityRefusal(
   movement: Movement,
   unit: Unit,
   now: Instant,
+  /**
+   * Audit 24-1 CS2-19: gates already answered by a reason recorded elsewhere — only a planned
+   * booking's recorded authorisation reason, for its own ward. Never the gender gate (checked
+   * first, above any waiver) and never a capacity refusal (refused before this is called).
+   */
+  waived: readonly EligibilityGate[] = [],
 ): string | null {
   /**
    * T10 (item 8): the `gender_designation` check runs first, before the override early return
@@ -718,11 +730,13 @@ function eligibilityRefusal(
     return null;
   }
   // `verdict` was already computed above, before the gender check — not recomputed here.
-  const failed = verdict.gates.find((gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate));
+  const failed = verdict.gates.find(
+    (gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate) && !waived.includes(gate.gate),
+  );
   if (!failed) return null;
   return (
     `${unit.name} is not eligible for movement ${movement.id} — failed gate ${failed?.gate}: ` +
-    `${candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
+    `${waived.length > 0 ? failed.detail : candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
   );
 }
 
@@ -1022,12 +1036,17 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
   // ceiling or rewrite physical empty. Record the disagreement for explicit re-confirmation.
   const releaseCountDisagrees =
     unit.allocatable.value === unit.beds || (lockedBedReleased && unit.allocatableLocked === unit.lockedBeds);
+  // Audit 24-1 B-02: a seeded pulled stay (`movementId: null`) sits outside the empty count
+  // (`bedStates`), so its bed becomes physically empty again here. Without this the released bed
+  // stayed in Occupied with nobody in it, and a Closed bed read as an unnamed Occupied one.
+  const seededPullReleased = heldAdmission?.movementId === null;
   const releasedUnit: Unit = {
     ...unit,
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
     },
+    ...(seededPullReleased ? { empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) } } : {}),
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
       ? {
@@ -1045,7 +1064,25 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
         }
       : {}),
   };
-  const withUnit = replaceUnit(state, unit.id, releasedUnit);
+  // Audit 24-1 CS2-03: the deleted stay's span stays in the bed replay, so a later pull keeps its bed.
+  const pulledAt = heldAdmission?.pulledAt;
+  const releasedSpan =
+    heldAdmission === undefined || pulledAt == null
+      ? undefined
+      : {
+          admissionId: heldAdmission.id,
+          pulledAt,
+          leftAt: Math.max(now, pulledAt),
+          ...(heldAdmission.bedKind === undefined ? {} : { bedKind: heldAdmission.bedKind }),
+          ...(heldAdmission.bedNumber === undefined ? {} : { bedNumber: heldAdmission.bedNumber }),
+        };
+  const withUnit = replaceUnit(
+    state,
+    unit.id,
+    releasedSpan === undefined
+      ? releasedUnit
+      : { ...releasedUnit, releasedPullSpans: [...(unit.releasedPullSpans ?? []), releasedSpan] },
+  );
   if (movement.admissionId === undefined) return withUnit;
   return {
     ...withUnit,

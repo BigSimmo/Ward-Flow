@@ -162,7 +162,7 @@ function nextStepFor(cause: DelayCause | undefined, movement: Movement, moving: 
     case "awaiting_ward_answer":
       return ["Ward to answer", "wait"];
     case "bed_pull_expired":
-      return ["Reserved time passed", "act"];
+      return ["Pull expired", "act"];
     case "awaiting_bed_ready":
       return ["Bed not ready", "wait"];
     case "awaiting_transport": {

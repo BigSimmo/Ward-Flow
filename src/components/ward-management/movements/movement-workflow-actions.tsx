@@ -9,10 +9,19 @@ import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-lega
 import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
 import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
+import { resolveSubjectPatient } from "../ward-patient-resolver";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
-  const { units, leaveBeds, rejections, dayZero } = useWardFlowSelect("units", "leaveBeds", "rejections", "dayZero");
+  const { units, leaveBeds, rejections, dayZero, patients, referrals, movements } = useWardFlowSelect(
+    "units",
+    "leaveBeds",
+    "rejections",
+    "dayZero",
+    "patients",
+    "referrals",
+    "movements",
+  );
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const [submitted, setSubmitted] = useState<number | null>(null);
@@ -223,7 +232,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             title={releaseUnavailable ? releaseReason : undefined}
             onClick={releaseUnavailable ? ignoreUnavailableActivation : undefined}
           >
-            Release pulled bed and reopen search
+            {/* Audit 24-7 (CT-19): the final button names the patient whose pulled bed is released. */}
+            Release pulled bed for {resolveSubjectPatient(movement, { patients, referrals, movements }).formalName} and
+            reopen search
           </button>
           {releaseUnavailable ? (
             <span id={`workflow-release-reason-${movement.id}`} className="sr-only">

@@ -80,6 +80,7 @@ import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-ma
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -105,6 +106,8 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
+
+const OUT_OF_AREA_TABS = ["now", "history"] as const;
 
 /**
  * Only a resolved person gets a link. A UMRN is never put in a URL (it can be typed text, and the
@@ -204,7 +207,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [region, setRegion] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
-  const [tab, setTab] = useState<"now" | "history">("now");
+  // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+  const [tab, setTab] = useAddressTab("tab", OUT_OF_AREA_TABS, "now");
 
   const selectionOriginRef = useRef<HTMLElement | null>(null);
   const detailColumnRef = useRef<HTMLDivElement | null>(null);

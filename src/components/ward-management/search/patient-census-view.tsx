@@ -672,7 +672,7 @@ export function ShiftSummary(props: ShiftSummaryProps) {
     {
       id: "reserved",
       glyph: "act",
-      title: "Reserved time passed",
+      title: "Pull expired",
       sub: reserved[0] ? `${reserved[0].name} · ${reserved[0].acceptedUnitName ?? reserved[0].to}` : "None",
       value: reserved.length,
       onPress: reserved[0] ? () => props.onSelect(reserved[0]!) : undefined,

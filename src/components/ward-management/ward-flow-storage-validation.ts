@@ -312,6 +312,18 @@ const unit = z
       ),
     ),
     arrivalCapacityConflicts: z.optional(z.array(z.looseObject({ movementId: text, at: finite }))),
+    // Audit 24-1 CS2-03: seat history of a released pull; its admission no longer exists.
+    releasedPullSpans: z.optional(
+      z.array(
+        z.looseObject({
+          admissionId: id,
+          pulledAt: finite,
+          leftAt: finite,
+          bedKind: z.optional(z.enum(["locked", "open"])),
+          bedNumber: z.optional(counter),
+        }),
+      ),
+    ),
     isClosed: z.optional(bool),
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(

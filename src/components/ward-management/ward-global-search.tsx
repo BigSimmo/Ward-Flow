@@ -638,6 +638,9 @@ export function WardGlobalSearch({
     };
   }, [showPopup]);
 
+  // Set by Cancel when it hands focus back to the field, so that focus does not reopen the palette.
+  const skipOpenOnFocusRef = useRef(false);
+
   function close() {
     setOpen(false);
     setActiveIndex(-1);
@@ -1313,7 +1316,13 @@ export function WardGlobalSearch({
             setHoverIndex(-1);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (skipOpenOnFocusRef.current) {
+              skipOpenOnFocusRef.current = false;
+              return;
+            }
+            setOpen(true);
+          }}
           onKeyDown={onKeyDown}
           data-testid="ward-global-search-input"
         />
@@ -1347,11 +1356,19 @@ export function WardGlobalSearch({
             type="button"
             className={styles.cancel}
             data-testid="ward-global-search-cancel"
-            onClick={() => {
+            onClick={(event) => {
               setQuery("");
               setKindFilter("all");
               close();
-              inputRef.current?.blur();
+              // DR-08: from a keyboard (no pointer, so `detail` is 0) focus goes back to the search
+              // control in the bar, closed, rather than to the page body. A tap still blurs, so the
+              // phone keyboard goes down.
+              if (event.detail === 0) {
+                skipOpenOnFocusRef.current = true;
+                inputRef.current?.focus();
+              } else {
+                inputRef.current?.blur();
+              }
             }}
           >
             Cancel

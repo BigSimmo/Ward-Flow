@@ -588,7 +588,7 @@ describe("the ward and ED TV views", () => {
       </WardFlowProvider>,
     );
     const asAt = screen.getByTestId("bed-meeting-tv-as-at");
-    expect(asAt).toHaveTextContent(/^As at \d\d:\d\d · connection unavailable, not updating$/);
+    expect(asAt).toHaveTextContent(/^Last updated \d\d:\d\d · connection unavailable, not updating$/);
     expect(asAt).not.toHaveTextContent("updates on its own");
   });
 

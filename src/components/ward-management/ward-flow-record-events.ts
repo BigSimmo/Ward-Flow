@@ -624,7 +624,17 @@ export function reduceRecordedFactEvent(
       const patientPhysicallyCollected = movement.transport?.collectedAt !== undefined;
       const transportAlreadyCommitted =
         patientPhysicallyCollected || movement.stage === "handover_ready" || movement.stage === "moving";
-      if (transportAlreadyCommitted) {
+      /**
+       * Audit 24-1 decision 3 (owner, CS2-21): a revoked examination never releases a bed by
+       * itself, before transport as well as after. A `"revoked"` outcome on a movement that still
+       * holds a bed (`movementHoldsBedByStage`, the same rule `releasePulledBedAndAdmission` uses)
+       * takes this same held path: the examination is recorded, the bed and admission stay held,
+       * the movement is not closed, and a person releases it with `RELEASE_PULL` or
+       * `RELEASE_HELD_BED`. `"community_order"` before transport is unchanged and still closes
+       * and releases below.
+       */
+      const revokedWhileBedHeld = event.outcome === "revoked" && movementHoldsBedByStage(movement);
+      if (transportAlreadyCommitted || revokedWhileBedHeld) {
         const flagged: Movement = {
           ...movement,
           examination: { at: event.now, outcome: event.outcome },
@@ -643,20 +653,21 @@ export function reduceRecordedFactEvent(
             "examination_revoked_ward",
             { role: "ward", placeId: movement.acceptedUnitId },
             { movementId: movement.id, unitId: movement.acceptedUnitId },
-            `The examination for ${movement.id} was revoked after transport was booked. The bed stays held until a person decides whether to release it.`,
+            transportAlreadyCommitted
+              ? `The examination for ${movement.id} was revoked after transport was booked. The bed stays held until a person decides whether to release it.`
+              : `The examination for ${movement.id} was revoked. The bed stays held until a person decides whether to release it.`,
           ),
         ]);
       }
 
-      // `community_order` or `revoked` at any other stage (in practice `pulled`): the patient does
-      // not proceed, so the record closes. The form is deliberately left as it is. The closure must
-      // unwind an in-flight transport job and any pulled bed, not just stop further progress.
+      // `community_order` at any other stage (in practice `pulled`), or `revoked` on a movement
+      // that holds no bed: the patient does not proceed, so the record closes. The form is
+      // deliberately left as it is. The closure must unwind an in-flight transport job and any
+      // pulled bed, not just stop further progress.
       //
       // T7: uses the shared `releasePulledBedAndAdmission`, the one place that knows how to give a
       // pulled bed back. This movement's own `admissionId` is cleared below whenever the helper
-      // would have released (including after a step-back, WFA-004). S1-5: check whether a bed was
-      // held so the notice does not falsely claim a release.
-      const bedWasHeld = movementHoldsBedByStage(movement);
+      // would have released (including after a step-back, WFA-004).
       const withoutPulledBed = withoutReferralBedHold(
         releasePulledBedAndAdmission(state, movement, event.now),
         movement,
@@ -706,9 +717,9 @@ export function reduceRecordedFactEvent(
             "examination_revoked_ward",
             { role: "ward", placeId: acceptingUnitId },
             { movementId: movement.id, unitId: acceptingUnitId },
-            bedWasHeld
-              ? `The examination for ${movement.id} was revoked. The patient is not coming and the bed has been released.`
-              : `The examination for ${movement.id} was revoked. The patient is not coming.`,
+            // Audit 24-1 decision 3: a revoked examination reaches this closing path only when no
+            // bed is held, so this notice never claims a release.
+            `The examination for ${movement.id} was revoked. The patient is not coming.`,
           ),
         );
       }

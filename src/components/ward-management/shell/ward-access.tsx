@@ -14,7 +14,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -53,8 +53,10 @@ import {
   canBreakGlass,
   edInScope,
   homeHrefFor,
+  ownStatisticsHrefFor,
   screenDecision,
   screenForPath,
+  statisticsHeldToOwnPlace,
   unitInScope,
   type BreakGlassReasonId,
   type WardAccess,
@@ -170,7 +172,7 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
 }
 
 export type StatisticsCounts = {
-  /** The executive desk: Statistics shows counts only, so a list of people is not shown. */
+  /** A counts-only desk (executive, or a ward, ED or community desk on its own page): no list of people is shown. */
   countsOnly: boolean;
   /** One count of people. Under the line it reads "fewer than 5". */
   small: (count: number) => number | string;
@@ -189,9 +191,12 @@ export function useStatisticsCounts(): StatisticsCounts {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
+  // D-80: a ward, ED or community desk holds a `counts` grant on its own place's page, which is
+  // numbers without names. Only the executive also gets the small-number rule.
+  const countsOnly = hide || (on && statisticsHeldToOwnPlace(access));
   return useMemo(
     () => ({
-      countsOnly: hide,
+      countsOnly,
       // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
       small: (count: number) => {
         if (!hide) return count;
@@ -200,7 +205,7 @@ export function useStatisticsCounts(): StatisticsCounts {
       },
       parts: (counts: readonly number[]) => (hide ? smallNumberParts(counts) : [...counts]),
     }),
-    [hide],
+    [hide, countsOnly],
   );
 }
 
@@ -440,11 +445,15 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
       if (!on || accessIsWholeNetwork(access)) return [...entries];
       const places = wardPlaceLookup(units);
       const own = OWN_PLACE_ENTRY[access.scope.kind];
+      // D-80: Statistics opens a ward, ED or team desk's own place's page.
+      const ownStatistics = ownStatisticsHrefFor(access, communityTeamSlug);
       return entries.flatMap((entry) => {
         const shown =
           own && entry.id === own.id
             ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label }
-            : entry;
+            : ownStatistics && entry.id === "statistics"
+              ? { ...entry, href: ownStatistics }
+              : entry;
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
@@ -580,6 +589,25 @@ function WardRecordViewLog({ patientId, surface }: { patientId: string; surface:
   return null;
 }
 
+function samePath(a: string, b: string): boolean {
+  return a.replace(/\/+$/, "") === b.replace(/\/+$/, "");
+}
+
+/** Replaces the address with the desk's own home, so Back does not return to the closed one (DR-06). */
+function OwnHomeRedirect({ href }: { href: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(href);
+  }, [router, href]);
+  return (
+    <WardGround>
+      <main className={styles.closed} data-testid="ward-access-own-home">
+        <p role="status">Opening your home</p>
+      </main>
+    </WardGround>
+  );
+}
+
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
   const { previewOf, switchFrom } = useWardAccessSnapshot();
@@ -593,6 +621,12 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   }, [opening]);
   const { units } = useUnscopedWardFlow();
   const home = homeHrefFor(access, communityTeamSlug);
+  // DR-06: Ward Flow's own address (the app icon, the brand) sends a desk whose Home is closed to
+  // that desk's own home instead of saying the screen is not part of the role.
+  const pathname = usePathname() ?? "";
+  const toOwnHome =
+    !opening && patientId === undefined && screenForPath(pathname)?.screen === "home" && !samePath(home, pathname);
+  if (toOwnHome) return <OwnHomeRedirect href={home} />;
   if (opening)
     return (
       <WardGround>

@@ -85,7 +85,8 @@
 }
 
 .swatchWeekend {
-  border: 1px solid var(--wf-line);
+  /* B6-28 (device sweep): a stronger edge, so the pale weekend swatch shows on a white card. */
+  border: 1px solid var(--wf-line-3);
   background: var(--wf-surface-2);
 }
 

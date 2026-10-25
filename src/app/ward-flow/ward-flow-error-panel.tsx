@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { RefreshCw, TriangleAlert } from "lucide-react";
 
 import { cn, primaryControl } from "@/components/ui-primitives";
+import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-management/ward-chunk-load-error";
 
 /**
  * THE RECOVERY PANEL EVERY WARD FLOW `error.tsx` RENDERS, WRITTEN ONCE.
@@ -58,6 +59,16 @@ export function WardFlowErrorPanel({
   testId: string;
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
+  // Design re-score DR-01: a script or style file that failed because the connection dropped gets
+  // the connection message, and the page reloads once by itself when the connection returns.
+  const chunkFailure = isChunkLoadError(error);
+  const online = useReloadWhenOnline(chunkFailure);
+  const shownTitle = chunkFailure ? (online ? "Part of this page did not load" : "You are offline") : title;
+  const shownDescription = !chunkFailure
+    ? description
+    : online
+      ? "The connection dropped while the page was loading. Reload the page to finish loading it. Nothing was changed."
+      : "The connection dropped while the page was loading. This page will reload by itself when the connection returns. Nothing was changed.";
 
   useEffect(() => {
     // The whole error object, not `error.message`: the console entry is where the stack is
@@ -93,11 +104,11 @@ export function WardFlowErrorPanel({
           tabIndex={-1}
           className="mt-4 text-lg font-semibold tracking-tight text-[color:var(--text-heading)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus)]"
         >
-          {title}
+          {shownTitle}
         </h1>
 
         <p role="alert" className="mt-2 text-sm leading-relaxed text-[color:var(--text-muted)]">
-          {description}
+          {shownDescription}
         </p>
 
         {/* The message itself outside production; there, the console and the digest carry it. */}

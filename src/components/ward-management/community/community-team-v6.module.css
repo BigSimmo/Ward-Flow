@@ -20,6 +20,8 @@
 /* ---- Team menu beside the title ---- */
 
 .heroMenuButton {
+  /* L25 / A18 (device sweep): a gap after "on the caseload". */
+  margin-left: var(--wf-s-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Check, ChevronRight } from "lucide-react";
 import { Button, StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
@@ -38,7 +39,8 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
-import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_ALERTS_HREF, WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import styles from "./ward-broadcast-banner.module.css";
 
@@ -98,6 +100,8 @@ export function BannerBody({
   const isPhone = useIsPhone();
   const deskInScope = useDeskInScope();
   const isRed = tone === "act_now";
+  // Audit 24-7 (CT-03): the TV shows initials only, so a banner over it does too, with no UMRN.
+  const onTv = usePathname() === WARD_BED_MEETING_TV_HREF;
   // D-80: on one of its wards' pages a site bed manager answers for that ward in its own name.
   const bedManager = useRouteRole() === "bed_manager";
   const actingRole =
@@ -127,7 +131,15 @@ export function BannerBody({
   };
 
   const movement = alert.movementId ? lookup.movements?.find((m) => m.id === alert.movementId) : undefined;
-  const subject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
+  const fullSubject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
+  const subject =
+    fullSubject && onTv
+      ? {
+          ...fullSubject,
+          displayName: movement ? resolveSubjectPatient(movement, lookup).initials : "Patient",
+          umrn: "",
+        }
+      : fullSubject;
   const myReply = desk.id ? latestReplies(alert).get(desk.id) : undefined;
   const board = kind === "directive" ? undefined : replyBoard(alert, units);
   const directiveAcks = kind === "directive" ? directiveAcknowledgements(alert, units, deskInScope) : undefined;
@@ -206,7 +218,7 @@ export function BannerBody({
           {subject ? (
             <>
               <strong className={styles.headline}>{subject.displayName}</strong>
-              <span className={styles.mono}>{subject.umrn}</span>
+              {subject.umrn ? <span className={styles.mono}>{subject.umrn}</span> : null}
               <span className={styles.meta}>at {subject.from}</span>
               {movement ? (
                 <span className={styles.meta}>

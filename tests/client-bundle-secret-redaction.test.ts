@@ -84,4 +84,47 @@ describe("client secret diagnostics", () => {
       rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
+
+  it("scans built client chunks under .next/static and redacts what it finds", () => {
+    const root = mkdtempSync(join(tmpdir(), "ward-secret-chunks-"));
+    const invented = "AKIA" + "INVENTEDCHUNK001";
+    try {
+      mkdirSync(join(root, "scripts"));
+      mkdirSync(join(root, "src"));
+      mkdirSync(join(root, ".next/static/chunks/app"), { recursive: true });
+      cpSync("scripts/check-client-bundle-secrets.mjs", join(root, "scripts/check-client-bundle-secrets.mjs"));
+      writeFileSync(join(root, "src/safe.ts"), "export const safe = true;\n");
+      writeFileSync(join(root, ".next/static/chunks/clean.js"), "self.x=1;\n");
+      execFileSync("git", ["init", "--quiet"], { cwd: root });
+      execFileSync("git", ["add", "src"], { cwd: root });
+      const run = () =>
+        spawnSync(process.execPath, ["scripts/check-client-bundle-secrets.mjs"], {
+          cwd: root,
+          encoding: "utf8",
+          timeout: 10_000,
+        });
+      const clean = run();
+      expect(clean.status).toBe(0);
+      expect(clean.stdout).toContain("1 built client chunks in .next/static scanned.");
+
+      // A comment marker does not excuse a chunk: one minified line can hold a whole module.
+      writeFileSync(join(root, ".next/static/chunks/app/page.js"), `var k="${invented}";/* synthetic-only */\n`);
+      const leaked = run();
+      expect(leaked.status).toBe(1);
+      const output = leaked.stdout + leaked.stderr;
+      expect(output).toContain(".next/static/chunks/app/page.js:1 [AWS Access Key]");
+      expect(output).not.toContain(invented);
+
+      // A credential URL split across lines by a template literal is still caught, at its first line.
+      const split = "postgres://" + "invented:secret\n@db.example.test";
+      writeFileSync(join(root, ".next/static/chunks/app/page.js"), `var a=1;\nvar u=\`${split}\`;\n`);
+      const multiline = run();
+      expect(multiline.status).toBe(1);
+      expect(multiline.stdout + multiline.stderr).toContain(
+        ".next/static/chunks/app/page.js:2 [Database URL with credentials]",
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
 });

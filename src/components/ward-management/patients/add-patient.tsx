@@ -216,6 +216,20 @@ export function AddPatientForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const toast = useOptionalToast();
+  /**
+   * Audit 24-7 (CT-08): the "Form cleared" toast lives in the layout and outlives this form, but its
+   * Undo can only refill this form. Once the form has gone the toast is closed, so no Undo is offered
+   * that cannot work.
+   */
+  const resetToastRef = useRef<{ id: string; dismiss: (id: string) => void } | null>(null);
+  useEffect(
+    () => () => {
+      const open = resetToastRef.current;
+      resetToastRef.current = null;
+      if (open) open.dismiss(open.id);
+    },
+    [],
+  );
   /*
    * v10 Add a patient, Phone. shell-7 (Josh, 13 Oct 2026): the short identity form and its
    * duplicate check show straight away; the "needs a larger screen" landing is gone. One quiet row
@@ -280,12 +294,22 @@ export function AddPatientForm() {
   const performReset = () => {
     if (isDirty && toast) {
       const snap = formSnapshot();
-      toast.push({
+      const id = toast.push({
         tone: "info",
         title: "Form cleared",
         body: "Nothing was saved to the record.",
-        undo: { durationMs: 8000, onUndo: () => restoreSnapshot(snap) },
+        undo: {
+          durationMs: 8000,
+          onUndo: () => {
+            if (resetToastRef.current?.id === id) resetToastRef.current = null;
+            restoreSnapshot(snap);
+          },
+          onExpire: () => {
+            if (resetToastRef.current?.id === id) resetToastRef.current = null;
+          },
+        },
       });
+      resetToastRef.current = { id, dismiss: toast.dismiss };
     }
     clearForm();
   };

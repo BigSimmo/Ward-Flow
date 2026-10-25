@@ -68,10 +68,13 @@
   text-overflow: ellipsis;
 }
 
+/* Device sweep (24 Oct 2026): the title never clips mid-word ("70 open mo"). When the title and its
+ * meta cannot share a line, the meta drops under the title, and a title wider than the band wraps. */
 .titleLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--wf-s-2);
+  gap: 0 var(--wf-s-2);
   min-width: 0;
 }
 
@@ -80,16 +83,15 @@
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
   letter-spacing: -0.015em;
   color: var(--wf-hero-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
   min-width: 0;
+  max-width: 100%;
 }
 
 .titleMeta {
+  min-width: 0;
   font-size: var(--wf-fs-13);
   color: var(--wf-hero-ink-2);
-  white-space: nowrap;
 }
 
 .stats {
@@ -217,10 +219,18 @@
     gap: var(--wf-s-3);
     padding: 0;
   }
+  /* Device sweep (24 Oct 2026): the eyebrow wraps rather than hiding its end (an observation badge,
+   * a generated time) behind an ellipsis. One line still sits centred in a 28px line; a second
+   * line follows at the normal 16px step, not another 28px. */
   .eyebrow {
     display: block;
+    box-sizing: border-box;
     min-height: 28px;
-    line-height: 28px;
+    padding-block: 6px;
+    line-height: var(--wf-lh-12);
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: break-word;
     color: var(--wf-hero-ink-2);
   }
   /* The eyebrow and title always come first on phone: the lead (ring) and every chip row follow. */
@@ -262,6 +272,7 @@
   /* A figure: value over label, a hairline before every figure but the first. No box. */
   .stat {
     position: relative;
+    justify-content: flex-start;
     gap: 3px;
     min-height: 48px;
     padding: 6px 10px;
@@ -290,6 +301,7 @@
   }
   .stats .statToggle {
     flex: 1 1 auto;
+    justify-content: flex-start;
     gap: 3px;
     width: 100%;
     min-height: 48px;
@@ -316,11 +328,17 @@
     display: none;
   }
 
-  /* A flex label cannot show an ellipsis, so on phone the label is a block line and the glyph
-   * sits inline before the text. */
+  /* A flex label cannot show an ellipsis, so on phone the label is a block and the glyph sits inline
+   * before the text. Device sweep (24 Oct 2026): it takes two lines before any cut, so a three-up
+   * strip reads "Locked ready beds" or "Teams with a patient in a bed" rather than "Locked re…". */
   .label {
-    display: block;
+    display: -webkit-box;
     max-width: 100%;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: break-word;
     font-weight: 500;
   }
 
@@ -333,15 +351,19 @@
     order: 3;
     flex: 1 1 100%;
     min-width: 0;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
     gap: var(--wf-s-2);
     margin-left: 0;
   }
-  /* The actions share the row as 48px buttons; an icon button keeps its own width. */
+  /* The actions share the row as 48px buttons; an icon button keeps its own width. Device sweep
+   * (24 Oct 2026): a button never shrinks under its label ("Next …", "Broa…"); when the labels
+   * cannot share one row the buttons wrap onto a second. */
   .aside > :not([data-wf-live]) {
     flex: 1 1 0;
     min-width: 0;
+    min-width: fit-content;
+    max-width: 100%;
   }
   .aside > :is(button, a):not([data-wf-live]) {
     justify-content: center;
@@ -463,8 +485,17 @@
 }
 
 .inline {
+  flex: 0 0 auto;
   padding: 0;
   border-left: 0;
+}
+
+/* Device sweep (24 Oct 2026): a row of inline pills keeps a gap and wraps rather than squeezing
+ * each pill under its own width, where the pills overlapped and the first ran past the band edge. */
+.stats:has(> .inline) {
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  overflow: visible;
 }
 
 .inline .statToggle {

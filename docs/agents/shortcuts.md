@@ -4,7 +4,7 @@
 
 - `run`: follow [Local server safety](building-ui.md#local-server-safety), execute `npm run ensure` and return its verified URL.
 - `upload`: safe Git handoff. Inspect branch, status, remotes and worktrees first. Commit coherent, completed, owned changes with clear messages. Push only with separate authority naming the Ward target. Skip anything on the ask-first list and report the confirmation needed. Never commit secrets, logs, caches or build output.
-- `dependency`: safe dependency maintenance, as set out in [codex-dependency-shortcut.md](codex-dependency-shortcut.md). No commit, push or deploy without confirmation.
+- `dependency`: safe dependency maintenance, as set out in [codex-dependency-shortcut.md](codex-dependency-shortcut.md). No commit, push or deploy without confirmation. The own-worktree and sign-out rules (AGENTS.md hard rules 2 and 7) still apply.
 - `bug-hunter`: targeted defect hunt on the touched code. Reproducible defects first. For each, give the trigger, expected behaviour, risk and smallest proof. No broad refactors. Say so if nothing high-confidence turns up.
 - `Run PR`: disabled here. It targeted PsychSift's PR queue.
 

@@ -885,6 +885,13 @@ export type WardFlowEvent =
        * constrains future callers rather than this one.
        */
       actingUnitId?: string;
+      /**
+       * Audit 24-7 (CT-06): the pull an Undo was offered for — the unit and the index of its
+       * `to: "pulled"` entry in `stageChanges`. When given, the release is refused unless that entry
+       * is still the movement's latest stage change at that unit, so an Undo never releases a
+       * different pull made since. Absent for every other caller, which behave as before.
+       */
+      expectedPull?: { unitId: string; stageIndex: number };
     }
   | {
       /**
@@ -2418,6 +2425,11 @@ export type WardFlowEvent =
       /** The age group booked for: from the record for a linked patient, recorded for initials. */
       ageBand: Cohort;
       /**
+       * Audit 24-1 CS2-19: required, from `OVERRIDE_REASONS`, when the ward is not authorised for
+       * involuntary admissions and the legal status needs one; ignored otherwise.
+       */
+      overrideReason?: OverrideReason;
+      /**
        * The demo calendar's date at `now` ("yyyy-mm-dd", from `calendarDateOf(now, dayZero)`).
        * Required with `patientId`: the reducer holds no calendar, and refuses an `ageBand` that the
        * record's date of birth does not give on the expected arrival's date, counted from this one.
@@ -2445,6 +2457,8 @@ export type WardFlowEvent =
       legalStatus: LegalStatus;
       /** As on `BOOK_PLANNED_ADMISSION`: required when a linked booking's arrival moves to another day. */
       calendarDate?: string;
+      /** As on `BOOK_PLANNED_ADMISSION`: the reason a change onto an unauthorised ward needs. */
+      overrideReason?: OverrideReason;
       actingUnitId?: string;
     }
   | {

@@ -599,6 +599,15 @@ export function HandoverPrintSheet({
     };
   });
 
+  /* Audit 24-7 (CT-11): a browser print (Ctrl+P) must stamp the rows it prints, not an older Print-button time. */
+  const latestPrepare = useRef(() => onPrintPrepared(now));
+  latestPrepare.current = () => onPrintPrepared(now);
+  useEffect(() => {
+    const onBeforePrint = () => flushSync(() => latestPrepare.current());
+    window.addEventListener("beforeprint", onBeforePrint);
+    return () => window.removeEventListener("beforeprint", onBeforePrint);
+  }, []);
+
   const print = () => {
     flushSync(() => onPrintPrepared(now));
     // Read synchronously as well: a quick click or a changed header must use its actual new size.

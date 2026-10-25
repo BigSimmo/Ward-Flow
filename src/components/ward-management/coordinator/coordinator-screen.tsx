@@ -455,7 +455,7 @@ export function CoordinatorScreen() {
         return {
           ...item,
           title: "Pull expired, bed still pulled",
-          detail: `${item.detail} · Release the bed or set a new reserved time`,
+          detail: `${item.detail} · Release the bed or set a new pull time limit`,
         };
       }),
     [

@@ -34,6 +34,7 @@ import {
   perthCalendarDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -60,6 +61,7 @@ import { WardPanel } from "@/components/ward-management/ward-panel";
 import { plannedAdmissionAgenda } from "./planned-admissions";
 import {
   applyDraftPatch,
+  authorisationReasonNeeded,
   clockInputValue,
   draftTiming,
   plannedDayOffsets,
@@ -229,6 +231,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       stayDays: "7",
       legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0] ?? "Voluntary",
       ageBand: "Adult",
+      overrideReason: undefined,
     });
     setForm({ mode: "book" });
   }
@@ -250,6 +253,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       stayDays: String(planned.expectedStayDays),
       legalStatus: planned.legalStatus,
       ageBand: planned.ageBand,
+      overrideReason: planned.authorisationOverride?.reason,
     });
     setForm({ mode: "change", id: planned.id });
   }
@@ -270,6 +274,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function submitDraft() {
     if (!draft || !form || form.mode === "cancel") return;
+    if (overrideReasonMissing) return;
     const timing = draftTiming(draft, now);
     if (!timing.ok) {
       setRefusal(timing.refusal);
@@ -325,6 +330,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         legalStatus: draft.legalStatus,
         ageBand,
         ...(calendarDate !== undefined ? { calendarDate } : {}),
+        overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
       });
     } else {
       dispatch({
@@ -339,6 +345,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         expectedStayDays,
         legalStatus: draft.legalStatus,
         ...(calendarDate !== undefined ? { calendarDate } : {}),
+        overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
       });
     }
   }
@@ -367,6 +374,19 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       unitId: planned.unitId,
     });
   }
+
+  // Audit 24-1 CS2-19: the chosen ward is not authorised for the chosen legal status, so the booking
+  // needs an override reason chosen from the list a pull past the same gate uses. A booking already
+  // standing at this ward on that footing (saved before the rule) may be edited without one, as the
+  // reducer allows.
+  const draftUnit = draft ? units.find((unit) => unit.id === draft.unitId) : undefined;
+  const overrideReasonShown = draft !== null && authorisationReasonNeeded(draft.legalStatus, draftUnit);
+  const alreadyStanding =
+    changing !== undefined &&
+    draft !== null &&
+    changing.unitId === draft.unitId &&
+    authorisationReasonNeeded(changing.legalStatus, draftUnit);
+  const overrideReasonMissing = overrideReasonShown && !alreadyStanding && draft?.overrideReason === undefined;
 
   const booked = agenda.length;
   const update = (patch: Partial<Draft>) => {
@@ -497,7 +517,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         footer={
           <div className={styles.sheetFoot}>
             <Button onClick={closeForm}>Close</Button>
-            <Button variant="pri" onClick={submitDraft} data-testid="ward-planned-submit">
+            <Button
+              variant="pri"
+              onClick={submitDraft}
+              disabledReason={overrideReasonMissing ? "Choose an override reason first" : undefined}
+              data-testid="ward-planned-submit"
+            >
               {form?.mode === "change" ? "Save" : "Book"}
             </Button>
           </div>
@@ -694,6 +719,32 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 </Select>
               </Field>
             </div>
+            {overrideReasonShown ? (
+              <Field
+                label="Override reason"
+                hint={`${draftUnit?.name ?? "This ward"} is not set up for involuntary admissions. Record why this is going ahead anyway.`}
+              >
+                <Select
+                  value={draft.overrideReason ?? ""}
+                  onChange={(event) => {
+                    const chosen = event.target.value;
+                    update({
+                      overrideReason: OVERRIDE_REASONS.includes(chosen as OverrideReason)
+                        ? (chosen as OverrideReason)
+                        : undefined,
+                    });
+                  }}
+                  data-testid="ward-planned-override-reason"
+                >
+                  <option value="">Choose reason</option>
+                  {OVERRIDE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
             {displayedRefusal ? (
               <p className={styles.refusal} role="alert" data-testid="ward-planned-form-refusal">
                 {displayedRefusal}
@@ -718,7 +769,8 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               disabledReason={cancelReason === "" ? "Choose a reason first." : undefined}
               data-testid="ward-planned-cancel-confirm"
             >
-              Cancel booking
+              {/* Audit 24-7 (CT-19): the final button names who the booking is for. */}
+              {cancelling ? `Cancel booking for ${whoText(cancelling)}` : "Cancel booking"}
             </Button>
           </div>
         }

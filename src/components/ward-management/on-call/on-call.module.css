@@ -412,8 +412,11 @@
   scrollbar-color: var(--wf-line-2) transparent;
 }
 
+/* Device sweep (24 Oct 2026): 40rem was 24px wider than the directory beside the detail panel at
+   1024 and 1280 px, so the copy and email buttons sat on the card edge and the service jump
+   chips ran off it. 37rem fits both widths; below that the table still scrolls. */
 .dirTable {
-  min-width: 40rem;
+  min-width: 37rem;
   table-layout: fixed;
 }
 
@@ -957,6 +960,7 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .lineRow {
@@ -994,6 +998,32 @@
 .lineLabel span {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* Device sweep (24 Oct 2026): in the narrow detail panel (1024 to 1440 px) the role was cut to
+   "Bed flo…" and "08:00 to 20:00" stacked over three lines. When the list is narrow, the role and
+   its hours take the first line and the number, state and copy button the second. Phone keeps its
+   own row (below). */
+@media (min-width: 48.0625rem) {
+  @container (max-width: 26rem) {
+    .lineRow {
+      grid-template-columns: minmax(0, 1fr) auto 28px;
+      row-gap: 2px;
+      padding-block: 6px;
+    }
+
+    .lineLabel {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: var(--wf-s-2);
+    }
+
+    .lineLabel b {
+      white-space: normal;
+    }
+  }
 }
 
 .lineNumber {

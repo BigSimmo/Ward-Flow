@@ -567,6 +567,9 @@ export function PatientTransitOperations({
                   if (!holdGate.allowed) return;
                   setOverrideUnitId(destination.id);
                   noteAttempt();
+                  // Audit 24-7 (CT-06): the pull's own stage-change entry, so Undo releases only this
+                  // pull and is refused once it has been released or replaced.
+                  const expectedPull = { unitId: destination.id, stageIndex: movement.stageChanges.length };
                   runStep(
                     {
                       type: "PULL_PATIENT",
@@ -584,6 +587,7 @@ export function PatientTransitOperations({
                         movementId: movement.id,
                         reason: "pull_made_in_error",
                         ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                        expectedPull,
                       }),
                       undone: "Bed pull undone.",
                     },
@@ -897,11 +901,20 @@ export function PatientTransitOperations({
                     {releasePullBlocked}
                   </span>
                 ) : null}
+                {/* Audit 24-7 (CT-19): the final button sits beside the name and UMRN of the patient
+                    whose pulled bed is released. */}
+                <p className={styles.deckHint} id={`${baseId}-release-pull-who`} data-testid="ward-release-pull-who">
+                  For {identity}
+                </p>
                 <button
                   type="button"
                   className={styles.secondary}
                   aria-disabled={releasePullBlocked ? "true" : undefined}
-                  aria-describedby={releasePullBlocked ? `${baseId}-release-pull-disabled-guidance` : undefined}
+                  aria-describedby={
+                    releasePullBlocked
+                      ? `${baseId}-release-pull-who ${baseId}-release-pull-disabled-guidance`
+                      : `${baseId}-release-pull-who`
+                  }
                   onClick={(e) => {
                     if (releasePullBlocked || !releaseReason) {
                       ignoreUnavailableActivation(e);
@@ -931,7 +944,7 @@ export function PatientTransitOperations({
               <details>
                 <summary>Step back with recorded reason</summary>
                 <p className={styles.deckHint}>
-                  Corrects the stage record. Held beds and transport bookings remain until explicitly released or
+                  Corrects the stage record. Pulled beds and transport bookings remain until explicitly released or
                   cancelled.
                 </p>
                 <label>
@@ -996,18 +1009,31 @@ export function PatientTransitOperations({
                     checked={confirmWithdraw}
                     onChange={(e) => setConfirmWithdraw(e.target.checked)}
                   />
-                  Confirm this bed search is no longer required
+                  {/* Audit 24-1 (B-05): the confirm line names the patient whose bed search ends. */}
+                  Confirm this bed search is no longer required for {identity}
                 </label>
                 {withdrawBlocked ? (
                   <span id={`${baseId}-withdraw-referral-disabled-guidance`} className="sr-only">
                     {withdrawBlocked}
                   </span>
                 ) : null}
+                {/* Audit 24-7 (CT-19): the final button sits beside the patient's name and UMRN. */}
+                <p
+                  className={styles.deckHint}
+                  id={`${baseId}-withdraw-referral-who`}
+                  data-testid="ward-withdraw-referral-who"
+                >
+                  For {identity}
+                </p>
                 <button
                   type="button"
                   className={styles.secondary}
                   aria-disabled={withdrawBlocked ? "true" : undefined}
-                  aria-describedby={withdrawBlocked ? `${baseId}-withdraw-referral-disabled-guidance` : undefined}
+                  aria-describedby={
+                    withdrawBlocked
+                      ? `${baseId}-withdraw-referral-who ${baseId}-withdraw-referral-disabled-guidance`
+                      : `${baseId}-withdraw-referral-who`
+                  }
                   onClick={(e) => {
                     if (withdrawBlocked || !confirmWithdraw || movement.referredUnitIds.length === 0) {
                       ignoreUnavailableActivation(e);
@@ -1041,6 +1067,13 @@ export function PatientTransitOperations({
           <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
       </header>
+      {/* Audit 24-1 (B-05): the sheet that hosts this deck covers the page header on a phone, so the
+          deck names the patient and UMRN at its top. Ask wards and Withdraw referral act on them. */}
+      {bare ? (
+        <p className={styles.deckHint} data-testid="ward-transit-patient">
+          <strong>{identity}</strong>
+        </p>
+      ) : null}
       <div aria-live="polite" aria-atomic="true" className={styles.feedback}>
         {errors.length > 0 ? (
           <p role="alert">{errors.map((e) => e.reason).join(" · ")}</p>

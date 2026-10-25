@@ -169,7 +169,7 @@ export function PilotMeasuresSection({
       key="holds"
       isPhone={isPhone}
       icon={BedDouble}
-      title="Pulled beds"
+      title="Bed pulls"
       meta={`${holds.held} pulled`}
       testId="ward-pilot-holds"
       figures={[

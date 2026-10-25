@@ -38,23 +38,34 @@ describe("Tools sheet, Copy bed summary", () => {
   });
 });
 
+// Audit 24-1 decision 1: legal status has no default, so each call below chooses one.
+const VOLUNTARY = { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" } as const;
+
 describe("Tools sheet, Find a bed", () => {
-  it("lists only open wards of the chosen age group that have a free bed", () => {
-    const matches = findBeds(seed.units, bedReleases, DEFAULT_BED_FINDER_FILTERS);
+  it("lists nothing until a legal status is chosen", () => {
+    expect(DEFAULT_BED_FINDER_FILTERS.legalStatus).toBeUndefined();
+    expect(findBeds(seed.units, bedReleases, DEFAULT_BED_FINDER_FILTERS)).toEqual([]);
+  });
+
+  it("lists every open ward of the chosen age group, with its Ready count and recorded time", () => {
+    const matches = findBeds(seed.units, bedReleases, VOLUNTARY);
     expect(matches.length).toBeGreaterThan(0);
+    expect(matches).toHaveLength(seed.units.filter((unit) => !unit.isClosed && unit.cohort === "Adult").length);
     for (const match of matches) {
       expect(match.unit.cohort).toBe("Adult");
       expect(match.unit.isClosed).not.toBe(true);
-      expect(match.free).toBeGreaterThan(0);
+      expect(match.free).toBe(boundedBedAvailability(match.unit).available);
+      expect(match.recordedAt).toBe(match.unit.allocatable.confirmedAt);
     }
   });
 
   it("keeps involuntary patients to authorised wards and locked requests to free locked beds", () => {
     const matches = findBeds(seed.units, bedReleases, {
       ...DEFAULT_BED_FINDER_FILTERS,
-      involuntary: true,
+      legalStatus: "involuntary",
       bed: "locked",
     });
+    expect(matches.length).toBeGreaterThan(0);
     for (const match of matches) {
       expect(match.unit.authorised).toBe(true);
       expect(match.free).toBe(Math.min(lockedBedsFree(match.unit), boundedBedAvailability(match.unit).available));
@@ -64,7 +75,7 @@ describe("Tools sheet, Find a bed", () => {
   it("never shows more beds than the board's Ready figure", () => {
     const ward = seed.units.find((unit) => !unit.isClosed && unit.cohort === "Adult" && unit.allocatable.value > 1)!;
     const crowded = { ...ward, empty: { ...ward.empty, value: 1 } };
-    const [match] = findBeds([crowded], bedReleases, DEFAULT_BED_FINDER_FILTERS);
+    const [match] = findBeds([crowded], bedReleases, VOLUNTARY);
     expect(match?.free).toBe(1);
     const mixed = {
       ...ward,
@@ -72,15 +83,21 @@ describe("Tools sheet, Find a bed", () => {
       allocatableLocked: 2,
       empty: { ...ward.empty, value: 2 },
     };
-    expect(findBeds([mixed], bedReleases, { ...DEFAULT_BED_FINDER_FILTERS, bed: "open" })[0]?.free).toBe(2);
+    expect(findBeds([mixed], bedReleases, { ...VOLUNTARY, bed: "open" })[0]?.free).toBe(2);
+    // Every ward in scope is listed, so a ward with no Ready bed shows 0 rather than dropping out.
     const none = { ...ward, empty: { ...ward.empty, value: 0 } };
-    expect(findBeds([none], bedReleases, DEFAULT_BED_FINDER_FILTERS)).toEqual([]);
+    expect(findBeds([none], bedReleases, VOLUNTARY)[0]?.free).toBe(0);
   });
 
-  it("puts wards in the home service first", () => {
+  it("labels wards in the home service without moving them up the list", () => {
     const home = unitHealthService(seed.units[0]!)!;
-    const matches = findBeds(seed.units, bedReleases, { ...DEFAULT_BED_FINDER_FILTERS, home });
-    const firstAway = matches.findIndex((match) => !match.home);
-    if (firstAway >= 0) expect(matches.slice(firstAway).every((match) => !match.home)).toBe(true);
+    const matches = findBeds(seed.units, bedReleases, { ...VOLUNTARY, home });
+    expect(matches.some((match) => match.home)).toBe(true);
+    for (const match of matches) expect(match.home).toBe(match.service === home);
+    const names = matches.map((match) => match.unit.name);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, "en-AU")));
+    expect(matches.map((match) => match.unit.id)).toEqual(
+      findBeds(seed.units, bedReleases, VOLUNTARY).map((match) => match.unit.id),
+    );
   });
 });

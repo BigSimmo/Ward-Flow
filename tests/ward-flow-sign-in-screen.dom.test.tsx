@@ -9,7 +9,7 @@ import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-s
 
 /**
  * The catcher for the new "Sign in and role" screen
- * (`docs/ward-flow/build-contracts-2026-09-12/contract-sign-in.md`).
+ * (`docs/ward-flow/archive/build-contracts-2026-09-12/contract-sign-in.md`).
  *
  * Two shapes of assertion, matching the contract's own §7 recommendation:
  *   1. Ordinary DOM assertions — the screen renders, every section is present BY NAME, the role

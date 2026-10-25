@@ -16,7 +16,7 @@ import { DEMO_COMMUNITY_INPATIENTS } from "./community-demo-cohort";
 import { unitName, bedStateLabel, stayLabel, elapsedSinceOrUnderADay } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 
-/** Tab 2: people referred to this team in a bed or holding one. */
+/** Tab 2: people referred to this team in a bed or with one pulled. */
 export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView }) {
   const {
     teamId,
@@ -50,17 +50,21 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
       role="tabpanel"
       aria-labelledby="tabBtn-inpatients"
     >
-      {/* ── List 2, moved — everyone of ours in a bed or holding one ─────────────────── */}
-      <section className={styles.cardPanel} aria-label="In a bed or holding one" data-testid="ward-community-admitted">
+      {/* ── List 2, moved — everyone of ours in a bed or with one pulled ─────────────────── */}
+      <section
+        className={styles.cardPanel}
+        aria-label="In a bed or with one pulled"
+        data-testid="ward-community-admitted"
+      >
         <div className={styles.panelHead}>
           <h2 className={styles.panelTitle}>
-            <span>In a bed or holding one</span>
+            <span>In a bed or with one pulled</span>
           </h2>
           <span className={styles.badgePill} data-ward-panel-count>
             {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
           </span>
         </div>
-        <div className={styles.panelBody} role="region" aria-label="In a bed or holding one details" tabIndex={0}>
+        <div className={styles.panelBody} role="region" aria-label="In a bed or with one pulled details" tabIndex={0}>
           {isDemoMode ? (
             <>
               <div className={styles.filterToolbar}>
@@ -122,7 +126,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                 testId="ward-community-admitted-list"
                 hasScrollThreshold
               >
-                <caption>People referred to this team in a bed or holding one</caption>
+                <caption>People referred to this team in a bed or with one pulled</caption>
                 <thead>
                   <tr>
                     <th scope="col">Patient</th>
@@ -211,7 +215,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                   testId="ward-community-admitted-list"
                   hasScrollThreshold
                 >
-                  <caption>People referred to this team in a bed or holding one</caption>
+                  <caption>People referred to this team in a bed or with one pulled</caption>
                   <thead>
                     <tr>
                       {/*
@@ -379,7 +383,9 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
                   </>
                 ) : (
-                  <>Nobody this team can currently see in a bed or holding one was accepted before that bed began.</>
+                  <>
+                    Nobody this team can currently see in a bed or with one pulled was accepted before that bed began.
+                  </>
                 )}
               </p>
             ) : (

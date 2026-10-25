@@ -120,7 +120,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
   for (const unwind of movement.unwinds) {
     if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
     const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);
-    const fact = unwind.kind === "pull_released" ? "Held bed released" : "Acceptance withdrawn";
+    const fact = unwind.kind === "pull_released" ? "Pulled bed released" : "Acceptance withdrawn";
     events.push({ at: unwind.at, tone: "closed", text: `${fact}${ward ? `, ${ward}` : ""}, by ${unwind.by}` });
   }
   const job = movement.transport;

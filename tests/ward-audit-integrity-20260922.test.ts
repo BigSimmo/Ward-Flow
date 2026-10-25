@@ -231,12 +231,14 @@ describe("WFA-004: stage corrections cannot erase physical collection", () => {
       reason: "recorded_in_error",
     });
     const admissionId = movement(state).admissionId;
+    // Audit 24-1 decision 3 (owner): a revoked examination no longer releases a bed by itself, so
+    // this release-path check uses `community_order`, which still closes and releases.
     const next = apply(state, {
       type: "RECORD_EXAMINATION",
       role: "ed",
       now: NOW_ANCHOR + 2,
       movementId,
-      outcome: "revoked",
+      outcome: "community_order",
     });
     expect(next.admissions.some((item) => item.id === admissionId)).toBe(false);
     expect(movement(next).admissionId).toBeUndefined();

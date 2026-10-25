@@ -18,16 +18,16 @@
 }
 
 .closeButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  color: var(--wf-ink-1);
   min-height: 48px;
   min-width: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+/* The record button keeps its 48 px height and padding; the kit Button gives it its edge (DR-18). */
+.primaryButton {
+  min-height: 48px;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem;
 }
 
 .form {

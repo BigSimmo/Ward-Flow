@@ -1152,7 +1152,10 @@
 
 /* v10 phone: the view switch stays under the bar while the list scrolls, as on Home. */
 @media (max-width: 48rem) {
-  .phonePanes {
+  /* R2-03 / R1-15 / R3-15 (device sweep, 24 Oct 2026): doubled so it outranks the kit's
+     ScrollRow "position: relative", which turned this "top" into a 56px shove: a blank band above
+     the switch and the switch lying over the Suburb search and its Clear button. */
+  .phonePanes.phonePanes {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;

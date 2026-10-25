@@ -271,6 +271,15 @@
   min-width: 0;
 }
 
+/* Device sweep R2-08 (24 Oct 2026): on a phone the five catchments fit a 390px track with 8px
+ * sides, so the chosen one (often Statewide, the last) is never cut at the edge. Narrower phones
+ * still scroll the row. */
+@media (max-width: 48rem) {
+  .fullSegmented.fullSegmented > [role="radio"] {
+    padding-inline: 8px;
+  }
+}
+
 .roleList {
   display: grid;
   border: 1px solid var(--wf-line);
@@ -574,8 +583,9 @@
     display: none;
   }
 
-  .fullSegmented > *,
-  .look [role="radio"] {
+  /* Device sweep R1-26/R2-20 (24 Oct 2026): the theme switch keeps the shared phone size, a 38px
+   * option in its 44px track with a 48px hit area, rather than a 48px option poking out of it. */
+  .fullSegmented > * {
     min-height: 48px;
   }
 
@@ -601,5 +611,31 @@
   .itemNote {
     grid-column: 2;
     text-align: left;
+  }
+}
+
+/* Device sweep R1-14/R2-20 (24 Oct 2026): on a narrow phone the words that explain a role wrap
+ * rather than end in an ellipsis ("Runs the queue and pla…", "Opens Command, th…"). The badge and
+ * the chosen scope drop under the title when the row has no room for them. */
+@media (max-width: 640px) {
+  .titleRow,
+  .reachHead {
+    flex-wrap: wrap;
+  }
+
+  .titleText {
+    flex: 1 1 10rem;
+  }
+
+  .subtitle,
+  .reachTitle,
+  .roleName,
+  .roleBrief,
+  .goContext,
+  .itemWords,
+  .itemNoteLine,
+  .reachHead > .labelMeta {
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 }
