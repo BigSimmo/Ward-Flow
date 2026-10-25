@@ -1,4 +1,5 @@
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
+import { projectWardPartialView } from "../../src/components/ward-management/ward-partial-view-projector";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
@@ -356,6 +357,21 @@ export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, gra
     grants: worldGrants(world, grants, at),
   });
   return { ...world, state };
+}
+
+/** Response-only sender display data, derived privately from the full stored world.
+ * It is never put into scopeWorld, a saved world or a command-authorisation input. */
+export function partialViewForWorld(
+  world: SharedWorld,
+  access: WardAccess,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+) {
+  return projectWardPartialView(world.state, access, {
+    now: worldNow(world, at),
+    places: getWardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
 }
 
 /**

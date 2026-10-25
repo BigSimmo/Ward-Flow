@@ -116,17 +116,33 @@ export function createWorkspaceStore(
         .digest("hex"),
     };
   };
-  const snapshot = (row, at, view) => ({
-    dataMode: row.data_mode,
-    // Whether the demonstration controls work here for this desk, so the screens can say when they
-    // do not. They are the statewide coordinator's alone (commandRefusal), so no other desk is told
-    // they work (role access plan v2, D-80).
-    demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
-    revision: Number(row.revision),
-    ...accessContext(at, view),
-    payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
-    now: engine.worldNow(row.payload, at),
-  });
+  const snapshot = (row, at, view) => {
+    const context = accessContext(at, view);
+    const revision = Number(row.revision);
+    const senderView =
+      typeof context.accessContext === "string" &&
+      (view?.access?.role === "ward" || view?.access?.role === "bed_manager");
+    return {
+      dataMode: row.data_mode,
+      // Whether the demonstration controls work here for this desk, so the screens can say when they
+      // do not. They are the statewide coordinator's alone (commandRefusal), so no other desk is told
+      // they work (role access plan v2, D-80).
+      demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
+      revision,
+      ...context,
+      ...(senderView
+        ? {
+            partialView: {
+              revision,
+              accessContext: context.accessContext,
+              view: engine.partialViewForWorld(row.payload, view.access, at, view.grants),
+            },
+          }
+        : {}),
+      payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
+      now: engine.worldNow(row.payload, at),
+    };
+  };
   /** The cutoff before which a role not used since switches off (synthetic, clinical values). */
   const unusedBefore = (at) => new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000);
   // D-80: a role's end date is at most 12 months away.
