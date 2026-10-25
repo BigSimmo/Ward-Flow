@@ -6,7 +6,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * Wording ROUTING item 9: the community Expected back chips and the contact button read in
+ * Wording ROUTING item 9: the community Expected back chips and the In bed column header read in
  * sentence case, like every other chip. Synthetic demonstration cohort only.
  */
 describe("community Expected back wording is sentence case", () => {
@@ -22,5 +22,8 @@ describe("community Expected back wording is sentence case", () => {
       expect(text).toContain(words);
     }
     expect(text).not.toMatch(/Due Today|Upcoming Discharges|Follow-Up Register/u);
+    const headers = Array.from(container.querySelectorAll("th")).map((th) => th.textContent);
+    expect(headers).toContain("Community key clinician");
+    expect(headers).not.toContain("Community Key Clinician");
   });
 });

@@ -1220,7 +1220,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 <div className={styles.phoneWaitlistHead}>
                                   <StatusGlyph tone="info" size={10} />
                                   <span className={styles.phoneFoldText}>
-                                    <span className={styles.phoneFoldTitle}>Accept to the waitlist instead?</span>
+                                    <span className={styles.phoneFoldTitle}>Accept to the waiting list instead?</span>
                                     <span className={styles.phoneFoldLine}>
                                       The bed request stays open and this ward is next when a bed frees.
                                     </span>
