@@ -4,9 +4,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { directiveAcknowledgements } from "../src/components/ward-management/alerts/global-alert-view";
 import type { BroadcastAlert } from "../src/components/ward-management/alerts/ward-broadcast-model";
-import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "../src/components/ward-management/ward-sites";
-import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { GENDER_PLACEMENT_REASONS, OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
+import type { Movement, Referral, ReferralAddressing } from "../src/components/ward-management/ward-model";
+import { projectWardPartialView } from "../src/components/ward-management/ward-partial-view-projector";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { commandScopeRefusal, scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
@@ -106,6 +109,444 @@ describe("the access table", () => {
   it("refuses a scope a role may not hold", () => {
     expect(accessIsValid({ role: "ward", scope: { kind: "statewide" } })).toBe(false);
     expect(accessIsValid(wardDesk)).toBe(true);
+  });
+});
+
+describe("sender copies retain acceptance and existing own receiving data only", () => {
+  const origin = state.units[0];
+  const hidden = state.units.filter((unit) => unit.id !== origin.id).slice(0, 2);
+  const sender: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [origin.id] } };
+  const wardLine = (id: string, answer: ReferralAddressing["state"]): ReferralAddressing => ({
+    destination: {
+      kind: "psychiatric_ward",
+      unitId: id,
+      sex: "Female",
+      secureBedNeeded: false,
+      involuntaryBedNeeded: false,
+      highAcuityNursingNeeded: false,
+    },
+    state: answer,
+    ...(answer === "accepted" ? { acceptedUnitId: id, decidedAt: NOW_ANCHOR } : {}),
+    ...(answer === "declined" ? { declineReason: "belongs_to_another_service", decidedAt: NOW_ANCHOR } : {}),
+  });
+  const source = (destinations: ReferralAddressing[]) => {
+    const referral: Referral = {
+      ...structuredClone(state.referrals[0]),
+      id: "ref-sender-privacy",
+      source: "psychiatric_ward",
+      originUnitId: origin.id,
+      originSiteCode: origin.siteCode,
+      raisedAt: NOW_ANCHOR,
+      destinations,
+    };
+    const movement: Movement = {
+      ...structuredClone(state.movements[0]),
+      referralId: referral.id,
+      sourceAdmissionId: undefined,
+      stage: "destination_review",
+      closure: undefined,
+      referredUnitIds: hidden.map((unit) => unit.id),
+      acceptedUnitId: undefined,
+      heldBedNumber: undefined,
+      allocatedBed: undefined,
+      declines: [],
+      withdrawnReferrals: [],
+      unwinds: [],
+      overrides: [],
+      genderPlacements: [],
+      escalation: undefined,
+      legalMismatch: undefined,
+      referralAnswerHistory: [],
+      waitlistedUnitIds: [],
+    };
+    return { ...state, referrals: [referral], movements: [movement] };
+  };
+  const read = (workspace: ReturnType<typeof source>, access = sender, now = NOW_ANCHOR) =>
+    scopeWorkspace(workspace, access, { now, places });
+
+  it.each(["queued", "declined", "withdrawn"] as const)(
+    "retains a foreign-only %s sender referral without destination rows or foreign contact/placement history",
+    (outcome) => {
+      const arm = wardLine(hidden[0].id, outcome === "declined" ? "declined" : "queued");
+      if (outcome === "withdrawn") arm.withdrawnAt = NOW_ANCHOR;
+      const workspace = source([arm]);
+      workspace.referrals[0].contactLog = [
+        {
+          contact: { kind: "psychiatric_ward", unitId: hidden[0].id },
+          at: NOW_ANCHOR,
+          by: "ward",
+          outcome: "no_answer",
+        },
+      ];
+      workspace.referrals[0].genderPlacements = [
+        {
+          at: NOW_ANCHOR,
+          by: "coordinator",
+          unitIds: [hidden[0].id],
+          reason: GENDER_PLACEMENT_REASONS[0],
+          wardChecked: true,
+        },
+      ];
+      const before = JSON.stringify(workspace);
+      const copy = read(workspace);
+      expect(copy.referrals.map((row) => row.id)).toEqual([workspace.referrals[0].id]);
+      expect(copy.referrals[0].destinations).toEqual([]);
+      expect(copy.referrals[0].contactLog).toEqual([]);
+      expect(copy.referrals[0].genderPlacements).toEqual([]);
+      expect(copy.movements[0].referredUnitIds).toEqual([]);
+      expect(projectWardPartialView(workspace, sender, { now: NOW_ANCHOR, places }).referrals[0]).toMatchObject({
+        kind: "sender",
+        state: outcome === "declined" ? "declined" : "queued",
+        withdrawn: outcome === "withdrawn",
+      });
+      expect(JSON.stringify(copy.referrals)).not.toContain(hidden[0].id);
+      expect(JSON.stringify(workspace)).toBe(before);
+    },
+  );
+
+  it("does not expose an accepted community follow-up while a foreign ward question remains open", () => {
+    const workspace = source([
+      {
+        destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+        state: "accepted",
+        decidedAt: NOW_ANCHOR,
+      },
+      wardLine(hidden[0].id, "queued"),
+    ]);
+    expect(read(workspace).referrals[0].destinations).toEqual([]);
+    expect(JSON.stringify(read(workspace).referrals)).not.toContain("Synthetic hidden followup");
+  });
+
+  it("removes actual producer-duplicated hidden community reassessments without rebuilding a latest note", () => {
+    const workspace = source([
+      wardLine(hidden[0].id, "queued"),
+      { destination: { kind: "community_team", teamName: "Synthetic hidden followup" }, state: "queued" },
+    ]);
+    const common = { at: NOW_ANCHOR - 1, by: "coordinator" as const, note: "Synthetic common review" };
+    workspace.referrals[0].history = "Synthetic common source narrative";
+    workspace.referrals[0] = { ...workspace.referrals[0], reassessmentHistory: [common] };
+    const event = {
+      type: "ACCEPT_REFERRAL" as const,
+      role: "community" as const,
+      now: NOW_ANCHOR,
+      referralId: workspace.referrals[0].id,
+      destinationKind: "community_team" as const,
+      reassessmentNote: "Synthetic hidden followup callback",
+      clinicalUpdate: true,
+    };
+    // The real producer appends the same entry to the arm and parent on initial acceptance and
+    // accepted-arm reassessment. Repeating its time/note also covers duplicate-copy count leakage.
+    const first = wardFlowReducer(workspace, event);
+    const full = wardFlowReducer(first, event);
+    const referral = full.referrals[0];
+    expect(full.rejections).toHaveLength(workspace.rejections.length);
+    expect(referral.destinations[0].state).toBe("queued");
+    expect(referral.destinations[1].state).toBe("accepted");
+    expect(referral.destinations[1].reassessmentHistory).toHaveLength(2);
+    expect(referral.reassessmentHistory).toHaveLength(3);
+    expect(referral.reassessmentNote).toBe(event.reassessmentNote);
+    const before = JSON.stringify(full);
+    const copy = scopeWorkspace(full, sender, { now: NOW_ANCHOR, places }).referrals[0];
+    expect(copy.destinations).toEqual([]);
+    expect(copy.reassessmentHistory).toEqual([common]);
+    expect(copy).not.toHaveProperty("reassessmentNote");
+    expect(copy.history).toBe("Synthetic common source narrative");
+    expect(JSON.stringify(copy)).not.toContain("Synthetic hidden followup");
+    expect(JSON.stringify(full)).toBe(before);
+  });
+
+  it.each(["own", "primary", "parent-only"] as const)(
+    "retains allowed %s reassessment detail and unrelated parent history",
+    (latest) => {
+      const own = { at: NOW_ANCHOR - 3, by: "ward" as const, note: "Synthetic own receiving review" };
+      const primary = {
+        at: NOW_ANCHOR - 2,
+        by: "ward" as const,
+        note: "Synthetic primary acceptance review",
+        clearanceUpdated: true,
+      };
+      const common = {
+        at: NOW_ANCHOR - 1,
+        by: "coordinator" as const,
+        note: "Synthetic parent-only review",
+        urgency: 2 as const,
+      };
+      const hiddenEntry = { at: NOW_ANCHOR, by: "community" as const, note: "Synthetic hidden followup review" };
+      const workspace = source([
+        { ...wardLine(origin.id, "cancelled"), reassessmentNote: own.note, reassessmentHistory: [own] },
+        { ...wardLine(hidden[0].id, "accepted"), reassessmentNote: primary.note, reassessmentHistory: [primary] },
+        {
+          destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+          state: "accepted",
+          reassessmentNote: hiddenEntry.note,
+          reassessmentHistory: [hiddenEntry],
+        },
+      ]);
+      workspace.referrals[0] = {
+        ...workspace.referrals[0],
+        reassessmentHistory: [own, primary, common, hiddenEntry],
+        reassessmentNote: latest === "own" ? own.note : latest === "primary" ? primary.note : common.note,
+      };
+      const before = JSON.stringify(workspace);
+      const copy = read(workspace).referrals[0];
+      expect(copy.reassessmentHistory).toEqual([own, primary, common]);
+      expect(copy.reassessmentNote).toBe(workspace.referrals[0].reassessmentNote);
+      expect(copy.destinations[0].reassessmentHistory).toEqual([own]);
+      expect(copy.destinations[1].reassessmentHistory).toEqual([primary]);
+      expect(JSON.stringify(copy)).not.toContain("Synthetic hidden followup");
+      expect(JSON.stringify(workspace)).toBe(before);
+    },
+  );
+
+  it("retains unrelated parent entries with the same words but different recorded provenance", () => {
+    const hiddenEntry = {
+      at: NOW_ANCHOR,
+      by: "community" as const,
+      note: "Synthetic shared review",
+      clinicalUpdate: true,
+      clearanceUpdated: true,
+      urgency: 2 as const,
+      highAcuity: true,
+    };
+    const common = { ...hiddenEntry, by: "coordinator" as const };
+    const differentFacts = {
+      ...hiddenEntry,
+      clinicalUpdate: false,
+      clearanceUpdated: false,
+      urgency: 3 as const,
+      highAcuity: false,
+    };
+    const workspace = source([
+      wardLine(hidden[0].id, "queued"),
+      {
+        destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+        state: "accepted",
+        reassessmentNote: hiddenEntry.note,
+        reassessmentHistory: [hiddenEntry],
+      },
+    ]);
+    workspace.referrals[0] = { ...workspace.referrals[0], reassessmentHistory: [hiddenEntry, common, differentFacts] };
+    expect(read(workspace).referrals[0].reassessmentHistory).toEqual([common, differentFacts]);
+  });
+
+  it("fails closed on indistinguishable hidden/allowed parent copies while preserving the allowed arm", () => {
+    const entry = { at: NOW_ANCHOR, by: "coordinator" as const, note: "Synthetic ambiguous review" };
+    const own = { ...wardLine(origin.id, "queued"), reassessmentNote: entry.note, reassessmentHistory: [entry] };
+    const workspace = source([
+      own,
+      {
+        destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+        state: "accepted",
+        reassessmentNote: entry.note,
+        reassessmentHistory: [entry],
+      },
+    ]);
+    workspace.referrals[0] = {
+      ...workspace.referrals[0],
+      reassessmentHistory: [entry, structuredClone(entry)],
+      reassessmentNote: entry.note,
+    };
+    const copy = read(workspace).referrals[0];
+    expect(copy.destinations).toEqual([own]);
+    expect(copy.reassessmentHistory).toEqual([]);
+    expect(copy).not.toHaveProperty("reassessmentNote");
+  });
+
+  it("omits legacy hidden loose-note parent copies while preserving different-text common history", () => {
+    const hiddenNote = "Synthetic legacy hidden followup review";
+    const common = { at: NOW_ANCHOR - 1, by: "coordinator" as const, note: "Synthetic unrelated common review" };
+    const workspace = source([
+      wardLine(hidden[0].id, "queued"),
+      {
+        destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+        state: "accepted",
+        reassessmentNote: hiddenNote,
+      },
+    ]);
+    workspace.referrals[0] = {
+      ...workspace.referrals[0],
+      reassessmentNote: hiddenNote,
+      reassessmentHistory: [common, { at: NOW_ANCHOR, by: "community", note: hiddenNote }],
+    };
+    const before = JSON.stringify(workspace);
+    const copy = read(workspace).referrals[0];
+    expect(copy.destinations).toEqual([]);
+    expect(copy.reassessmentHistory).toEqual([common]);
+    expect(copy).not.toHaveProperty("reassessmentNote");
+    expect(JSON.stringify(copy)).not.toContain(hiddenNote);
+    expect(JSON.stringify(workspace)).toBe(before);
+  });
+
+  it.each(["psychiatric_ward", "emergency_department"] as const)(
+    "keeps the real primary %s acceptance ahead of community follow-up",
+    (kind) => {
+      const primary: ReferralAddressing =
+        kind === "psychiatric_ward"
+          ? wardLine(hidden[0].id, "accepted")
+          : {
+              destination: { kind: "emergency_department", edId: allEmergencyDepartments()[0].id, purpose: "bed" },
+              state: "accepted",
+              decidedAt: NOW_ANCHOR,
+            };
+      const workspace = source([
+        {
+          destination: { kind: "community_team", teamName: "Synthetic hidden followup" },
+          state: "accepted",
+          decidedAt: NOW_ANCHOR,
+        },
+        primary,
+        wardLine(hidden[1].id, "declined"),
+      ]);
+      const before = JSON.stringify(workspace);
+      expect(read(workspace).referrals[0].destinations).toEqual([primary]);
+      expect(JSON.stringify(workspace)).toBe(before);
+    },
+  );
+
+  it("removes foreign movement histories while preserving the actual accepted placement", () => {
+    const workspace = source([wardLine(hidden[0].id, "accepted")]);
+    const movement = workspace.movements[0];
+    Object.assign(movement, {
+      acceptedUnitId: hidden[0].id,
+      stage: "accepted_awaiting_bed",
+      heldBedNumber: 2,
+      allocatedBed: 2,
+      declines: [{ unitId: hidden[1].id, at: NOW_ANCHOR, reason: "belongs_to_another_service" }],
+      withdrawnReferrals: [{ unitId: hidden[1].id, at: NOW_ANCHOR, reason: "another_unit_accepted" }],
+      unwinds: [
+        {
+          kind: "acceptance_withdrawn",
+          at: NOW_ANCHOR,
+          by: "coordinator",
+          unitId: hidden[1].id,
+          reason: "Synthetic hidden unwind",
+        },
+      ],
+      referralAnswerHistory: [{ unitId: hidden[1].id, at: NOW_ANCHOR, answer: "declined" }],
+      waitlistedUnitIds: [hidden[1].id],
+      escalation: { at: NOW_ANCHOR, triedUnitIds: [hidden[1].id], contact: "Synthetic hidden contact" },
+      stageChanges: [{ at: NOW_ANCHOR, to: "destination_review", by: "coordinator", reason: hidden[1].id }],
+    });
+    movement.overrides = [
+      { at: NOW_ANCHOR, by: "coordinator", reason: OVERRIDE_REASONS[0], unitIds: hidden.map((unit) => unit.id) },
+    ];
+    movement.genderPlacements = [
+      {
+        at: NOW_ANCHOR,
+        by: "coordinator",
+        reason: GENDER_PLACEMENT_REASONS[0],
+        unitIds: hidden.map((unit) => unit.id),
+        wardChecked: true,
+      },
+    ];
+    const before = JSON.stringify(workspace);
+    const copy = read(workspace).movements[0];
+    expect(copy.acceptedUnitId).toBe(hidden[0].id);
+    expect(copy.heldBedNumber).toBe(2);
+    expect(copy.allocatedBed).toBe(2);
+    expect(copy.overrides.map((row) => row.unitIds)).toEqual([[hidden[0].id]]);
+    expect(copy.genderPlacements?.map((row) => row.unitIds)).toEqual([[hidden[0].id]]);
+    for (const key of [
+      "declines",
+      "withdrawnReferrals",
+      "unwinds",
+      "referralAnswerHistory",
+      "waitlistedUnitIds",
+    ] as const)
+      expect(copy[key]).toEqual([]);
+    expect(copy.escalation).toBeUndefined();
+    expect(JSON.stringify(copy)).not.toContain(hidden[1].id);
+    expect(JSON.stringify(copy)).not.toContain("Synthetic hidden");
+    expect(JSON.stringify(workspace)).toBe(before);
+  });
+
+  it("preserves own receiving arms and answers when a ward cover also includes the sender", () => {
+    const workspace = source([wardLine(hidden[0].id, "queued"), wardLine(hidden[1].id, "declined")]);
+    workspace.movements[0].referredUnitIds = [hidden[0].id, hidden[1].id];
+    workspace.movements[0].declines = [
+      { unitId: hidden[0].id, at: NOW_ANCHOR, reason: "no_suitable_bed" },
+      { unitId: hidden[1].id, at: NOW_ANCHOR, reason: "belongs_to_another_service" },
+    ];
+    const covered: WardAccess = { role: "ward", scope: { kind: "ward", unitIds: [origin.id, hidden[0].id] } };
+    const copy = read(workspace, covered);
+    expect(copy.referrals[0].destinations).toEqual([workspace.referrals[0].destinations[0]]);
+    expect(copy.movements[0].referredUnitIds).toEqual([hidden[0].id]);
+    expect(copy.movements[0].declines.map((row) => row.unitId)).toEqual([hidden[0].id]);
+  });
+
+  it("preserves own attributed unwind history but omits unattributable rows whose required reason cannot be safely projected", () => {
+    const workspace = source([wardLine(hidden[0].id, "queued")]);
+    const own: Movement["unwinds"][number] = {
+      kind: "acceptance_withdrawn",
+      at: NOW_ANCHOR,
+      by: "coordinator",
+      unitId: origin.id,
+      reason: "Own recorded correction",
+    };
+    workspace.movements[0].unwinds = [
+      own,
+      {
+        kind: "stage_corrected",
+        at: NOW_ANCHOR,
+        by: "coordinator",
+        reason: `Synthetic hidden destination ${hidden[1].id}`,
+      },
+    ];
+    const before = JSON.stringify(workspace);
+    const copy = read(workspace).movements[0];
+    expect(copy.unwinds).toEqual([own]);
+    expect(JSON.stringify(copy.unwinds)).not.toContain(hidden[1].id);
+    expect(JSON.stringify(workspace)).toBe(before);
+  });
+
+  it("keeps community acceptance as primary when no non-community question remains open", () => {
+    const primary: ReferralAddressing = {
+      destination: { kind: "community_team", teamName: "Synthetic accepted followup" },
+      state: "accepted",
+      decidedAt: NOW_ANCHOR,
+    };
+    const workspace = source([wardLine(hidden[0].id, "declined"), primary]);
+    expect(read(workspace).referrals[0].destinations).toEqual([primary]);
+  });
+
+  it("does not expose a conflicting requested unit on the actual primary accepting arm", () => {
+    const primary = wardLine(hidden[0].id, "accepted");
+    if (primary.destination.kind !== "psychiatric_ward") throw new Error("Expected ward test arm");
+    primary.destination.unitId = hidden[1].id;
+    const workspace = source([primary]);
+    const before = JSON.stringify(workspace);
+    const retained = read(workspace).referrals[0].destinations[0];
+    expect(retained.acceptedUnitId).toBe(hidden[0].id);
+    expect(retained.destination).not.toHaveProperty("unitId");
+    expect(JSON.stringify(read(workspace).referrals)).not.toContain(hidden[1].id);
+    expect(JSON.stringify(workspace)).toBe(before);
+  });
+
+  it("preserves own-site receiving data for a bed-manager sender but removes foreign pending arms", () => {
+    const ownEd = allEmergencyDepartments()[0];
+    const local = state.units.find((unit) => unit.siteCode === ownEd.siteCode)!;
+    const remote = state.units.find((unit) => unit.siteCode !== ownEd.siteCode)!;
+    expect(local).toBeDefined();
+    const workspace = source([wardLine(local.id, "queued"), wardLine(remote.id, "queued")]);
+    workspace.referrals[0].source = "ed_medical";
+    workspace.referrals[0].originSiteCode = ownEd.siteCode;
+    delete workspace.referrals[0].originUnitId;
+    workspace.movements[0].originEdId = ownEd.id;
+    workspace.movements[0].referredUnitIds = [local.id, remote.id];
+    const manager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: ownEd.siteCode } };
+    const copy = read(workspace, manager);
+    expect(copy.referrals[0].destinations).toEqual([workspace.referrals[0].destinations[0]]);
+    expect(copy.movements[0].referredUnitIds).toEqual([local.id]);
+  });
+
+  it("keeps the existing sender handoff window and does not retain old unlinked answers", () => {
+    const workspace = source([wardLine(hidden[0].id, "accepted")]);
+    workspace.movements = [];
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    workspace.referrals[0].raisedAt = NOW_ANCHOR - window - 2;
+    workspace.referrals[0].destinations[0].decidedAt = NOW_ANCHOR - window;
+    expect(read(workspace).referrals).toHaveLength(1);
+    expect(read(workspace, sender, NOW_ANCHOR + 1).referrals).toEqual([]);
   });
 });
 
@@ -758,7 +1199,7 @@ describe("the desk store", () => {
     const communityDesk: WardAccess = { role: "community", scope: { kind: "team", teamName: "Midland" } };
 
     const sendingScoped = scopeWorkspace(customState, sendingWardDesk, opts);
-    expect(sendingScoped.referrals.find((r) => r.id === wardOutboundReferral.id)?.destinations).toHaveLength(2);
+    expect(sendingScoped.referrals.find((r) => r.id === wardOutboundReferral.id)?.destinations).toEqual([]);
     expect(
       commandScopeRefusal(
         customState,
@@ -954,7 +1395,7 @@ describe("a receiving desk learns nothing about other wards on a journey (FD-23,
     const admission = state.admissions.find((item) => item.unitId === unitId && item.leftAt === null)!;
     const sent = trimmedFor(wardDesk, { ...shared, sourceAdmissionId: admission.id } as typeof shared);
     expect(sent.acceptedUnitId).toBe(otherUnit.id);
-    expect(sent.declines).toHaveLength(2);
+    expect(sent.declines.map((entry) => entry.unitId)).toEqual([unitId]);
   });
 
   it("leaves a bed manager whose own ED sent the person knowing where they were accepted", () => {
