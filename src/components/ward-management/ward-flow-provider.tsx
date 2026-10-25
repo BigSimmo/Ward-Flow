@@ -20,6 +20,7 @@ import {
   Fragment,
   type ReactNode,
   type SetStateAction,
+  startTransition,
   use,
   useCallback,
   useContext,
@@ -662,7 +663,12 @@ export function WardFlowProvider({ children, initialNow, initialDayZero }: WardF
      * It costs one extra render per mount. If a future change makes the clock deterministic across
      * server and client, delete the effect rather than the comment.
      */
-    const adopt = () => setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
+    // A transition, so panels whose code is still loading keep their server-drawn content instead
+    // of blanking until it arrives; blanking made the phone Home jump (design re-score DR-03).
+    const adopt = () =>
+      startTransition(() =>
+        setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) }),
+      );
     return whenStreamRevealed(adopt); // not while the streamed page is pending: React would duplicate it
   }, [initialNow]);
 
