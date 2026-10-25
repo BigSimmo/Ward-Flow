@@ -43,6 +43,7 @@ import {
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
 
 export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
@@ -307,6 +308,13 @@ export function ReturnPlan({
           />
         </div>
       ) : null}
+
+      {/* Closing-the-loop (package E): return requested vs home service agreed, recorded apart. */}
+      <HomeServiceReturnPanel
+        key={entry.admission.id}
+        admissionId={entry.admission.id}
+        presetHospital={record?.homeHospital ?? (draft.homeHospital || undefined)}
+      />
 
       {record ? (
         <RecordedReturn

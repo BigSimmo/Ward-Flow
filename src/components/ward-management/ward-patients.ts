@@ -389,12 +389,14 @@ function getPatientOptionalField(
 // currently patient-record-only, so it is accepted and deliberately unused.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function findPatients(patients: readonly Patient[], query: string, _context?: PatientSearchContext): Patient[] {
-  const needle = fold(query);
+  const needle = fold(commaNameAsGivenFamily(query));
   if (needle.length === 0) return [];
+  // "UM 100001" is the same UMRN as "UM100001".
+  const umrnNeedle = needle.replace(/ /g, "");
   return patients.filter((patient) => {
     // 1. Core identity matching: UMRN, given name, family name, full display name
     if (
-      fold(patient.umrn).includes(needle) ||
+      fold(patient.umrn).replace(/ /g, "").includes(umrnNeedle) ||
       fold(patient.givenName).startsWith(needle) ||
       fold(patient.familyName).startsWith(needle) ||
       fold(patientDisplayName(patient)).includes(needle)
@@ -641,7 +643,23 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
 
 /** Fold text the way `findPatients` does before comparing needles and haystacks. */
 export function foldPatientSearchText(value: string): string {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’-]/g, "").trim();
+  // Audit 24-7 (CT-23): runs of spaces count as one, so a doubled space still matches.
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’-]/g, "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * "Family, Given" reads as "Given Family", the same rule as normaliseCommaNameQuery in
+ * search/ward-smart-search.ts (inlined: that module imports this one).
+ */
+function commaNameAsGivenFamily(query: string): string {
+  const trimmed = query.trim();
+  if (!trimmed.includes(",") || /\d/.test(trimmed)) return trimmed;
+  const parts = trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+  return parts.join(" ");
 }
 
 function fold(value: string): string {

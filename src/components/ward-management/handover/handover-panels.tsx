@@ -11,6 +11,8 @@ import { Check, ClipboardCopy, Clock, Route, Truck, UserRound, X } from "lucide-
 import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import {
@@ -290,6 +292,8 @@ export function HandoverSignOffPanel({
   subtitle,
   checks,
   signedAt,
+  signedBy = null,
+  viewerRole = "coordinator",
   now,
   canSignOff,
   cannotSignReason,
@@ -300,6 +304,10 @@ export function HandoverSignOffPanel({
   subtitle: string;
   checks: SignOffCheck[];
   signedAt: Instant | null;
+  /** The role recorded on this shift's sign-off, as History shows it; null while unsigned. */
+  signedBy?: WardFlowRole | null;
+  /** The desk viewing the page, who would sign an unsigned handover. */
+  viewerRole?: WardChromeRole;
   now: Instant;
   canSignOff: boolean;
   cannotSignReason?: string;
@@ -308,6 +316,12 @@ export function HandoverSignOffPanel({
   onUndoSignOff: () => void;
 }) {
   const baseId = useId();
+  // Codex P2 on #707: a recorded sign-off names the role on its record (as History does), never the
+  // desk that happens to be viewing it; only an unsigned handover names the viewer, who would sign.
+  const signer = signedAt !== null && signedBy !== null ? signedBy : viewerRole;
+  const signerLabel =
+    signer === "coordinator" ? "Flow coordinator" : signer === "demo" ? "Demo" : CHROME_ROLE_LABELS[signer];
+  const signerIsYou = signedAt === null || signedBy === null || signedBy === viewerRole;
   return (
     <Card
       as="section"
@@ -342,15 +356,15 @@ export function HandoverSignOffPanel({
         <span className={styles.sectionHead}>Handed over by</span>
         <div className={styles.who}>
           <Icon icon={UserRound} size={14} />
-          <b>Flow coordinator</b>
-          <span>you</span>
+          <b>{signerLabel}</b>
+          {signerIsYou ? <span>you</span> : null}
         </div>
       </div>
       {signedAt !== null ? (
         <div className={styles.section}>
           <div className={styles.signed} data-testid="ward-handover-sign-off-visible-status" role="status">
             <StatusGlyph tone="success" size={9} />
-            Signed off at {formatInstantWithDay(signedAt, now)} as flow coordinator. Recorded in History.
+            Signed off at {formatInstantWithDay(signedAt, now)} as {signerLabel.toLowerCase()}. Recorded in History.
           </div>
         </div>
       ) : null}

@@ -5,7 +5,12 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import {
+  useOptionalWardFlowSelect,
+  useWardFlowClock,
+  useWardNetwork,
+} from "@/components/ward-management/ward-flow-provider";
+import { withRecordedChecks } from "./on-call-checks";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -134,7 +139,13 @@ export function OnCallScreen() {
   const [slideId, setSlideId] = useState<string | null>(null);
   // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
   const network = useWardNetwork();
-  const entries = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
+  const baseEntries = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
+  // Closing-the-loop (package E): recorded checks replace the synthetic ones, in the same order.
+  const directoryChecks = useOptionalWardFlowSelect("directoryChecks")?.directoryChecks;
+  const entries = useMemo(
+    () => withRecordedChecks(baseEntries, directoryChecks, boardNow),
+    [baseEntries, directoryChecks, boardNow],
+  );
   const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");

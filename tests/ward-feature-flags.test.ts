@@ -72,7 +72,6 @@ describe("resolveWardFeatureFlags", () => {
       "referral-opened-receipts",
       "referral-information-needs",
       "ward-closure-mode",
-      "pilot-measures",
       "awol-bed-hold-review",
       "top25-criteria-led-discharge",
     ] as const;
