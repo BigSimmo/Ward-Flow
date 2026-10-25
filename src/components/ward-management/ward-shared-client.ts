@@ -214,8 +214,14 @@ export class SharedWorkspaceClient {
     this.queue = [];
     this.syncUnloadWarning();
   }
-  private cancelAll(message: string) {
-    if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
+  /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
+  private cancelAll(message: string, sentMessage = saveProblem("notConfirmed")) {
+    if (this.pending)
+      this.settle(
+        this.pending.commandId,
+        "cancelled",
+        this.sentCommandId === this.pending.commandId ? sentMessage : message,
+      );
     this.pending = null;
     this.sentCommandId = null;
     this.cancelQueued(message);
@@ -225,7 +231,7 @@ export class SharedWorkspaceClient {
     if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
       this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
-    this.cancelAll(saveProblem("roleChanged"));
+    this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
   /**
    * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
@@ -445,7 +451,7 @@ export class SharedWorkspaceClient {
     };
     const denied = (error: string) => {
       this.settleForSessionEnd(body, error, true);
-      this.cancelAll(saveProblem("sessionEnded"));
+      this.cancelAll(saveProblem("sessionEnded"), saveProblem("sessionEndedWhileSaving"));
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });

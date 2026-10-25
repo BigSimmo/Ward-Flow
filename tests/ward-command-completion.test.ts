@@ -334,6 +334,10 @@ describe("working-role changes", () => {
         message: expect.stringContaining("may have been applied"),
       });
       await expect(queued).resolves.toMatchObject({ status: "cancelled" });
+      // The sent command's final answer keeps the uncertainty: it may have been applied (Codex, #722).
+      const confirmed = await (await first).confirmation;
+      expect(confirmed?.message).toContain("may have been applied");
+      expect(confirmed?.message).not.toContain("not saved");
       response.resolve(Response.json({ snapshot: snapshot(9) }));
       await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, options]) => !options?.body)).toHaveLength(2));
       expect(fetcher.mock.calls.filter(([, options]) => options?.body)).toHaveLength(1);
