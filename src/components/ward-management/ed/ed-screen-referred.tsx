@@ -2,7 +2,10 @@
 
 // "Referred": the patients this department referred onward who are still here, and its recently
 // answered referrals. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+import { useState } from "react";
+
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { Dialog } from "@/components/wf";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import type { ReferralGender } from "@/components/ward-management/ward-model";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -37,6 +40,16 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
     answeredAll,
     answered,
   } = ctx;
+  // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first,
+  // naming the person and the ward holding the bed.
+  const [releaseDivertedId, setReleaseDivertedId] = useState<string | null>(null);
+  const releaseDiverted = outbox.find((movement) => movement.id === releaseDivertedId);
+  const releaseDivertedPatient = releaseDiverted
+    ? resolveSubjectPatient(releaseDiverted, { patients: registryPatients, referrals, movements })
+    : undefined;
+  const releaseDivertedUnit = releaseDiverted
+    ? units.find((unit) => unit.id === releaseDiverted.acceptedUnitId)
+    : undefined;
   /*
    * RECENTLY ANSWERED — owner ruling 7, 2026-09-01. Directly beneath the inbox because it is
    * the same clinician's own question a moment later: "what did I just decide, and why?" The
@@ -137,11 +150,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                         type="button"
                         data-testid={`ward-ed-release-diverted-bed-${movement.id}`}
                         className={styles.declineButton}
-                        onClick={() =>
-                          raise("RELEASE_DIVERTED_BED", {
-                            movementId: movement.id,
-                          })
-                        }
+                        onClick={() => setReleaseDivertedId(movement.id)}
                       >
                         Release the pulled bed
                       </button>
@@ -339,6 +348,27 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
           </ul>
         )}
       </div>
+      <Dialog
+        open={releaseDiverted !== undefined}
+        onClose={() => setReleaseDivertedId(null)}
+        size="sm"
+        title="Release pulled bed?"
+        description={`The bed pulled at ${releaseDivertedUnit?.name ?? "the accepting ward"} for ${releaseDivertedPatient?.formalName ?? "this patient"} is offered again and the diverted journey is closed. This cannot be undone.`}
+        secondary={[{ label: "Cancel", onAction: () => setReleaseDivertedId(null) }]}
+        primary={{
+          label: "Release pulled bed",
+          onAction: () => {
+            setReleaseDivertedId(null);
+            if (!releaseDiverted) return;
+            raise("RELEASE_DIVERTED_BED", { movementId: releaseDiverted.id });
+          },
+        }}
+        data-testid="ward-ed-release-diverted-confirm"
+      >
+        {releaseDivertedPatient ? (
+          <p data-testid="ward-ed-release-diverted-identity">Check: {patientIdentityLine(releaseDivertedPatient)}</p>
+        ) : null}
+      </Dialog>
     </section>
   );
 }

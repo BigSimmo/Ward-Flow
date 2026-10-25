@@ -102,6 +102,8 @@ function edName(department: string): string {
  * delays by cause) take two or three lines a row, so each names three and counts the rest.
  */
 const MEETING_TV_ROWS = 3;
+/** Delay causes that fit under the ED waits on a 1080p State TV (DR-02). */
+const DELAYS_SHORT_ROWS = 1;
 
 function Figure({ value }: { value: number | string }) {
   return <>{value === 0 ? "None" : value}</>;
@@ -159,16 +161,25 @@ function Panel({
   title,
   testId,
   wide = false,
+  area,
   children,
 }: {
   title: string;
   testId: string;
   wide?: boolean;
+  /** The panel's place in the all-services meeting grid at 1080p (DR-02). */
+  area?: "main" | "fit" | "brief" | "waits" | "delays";
   children: ReactNode;
 }) {
   const id = `${testId}-title`;
   return (
-    <section className={styles.panel} data-wide={wide || undefined} aria-labelledby={id} data-testid={testId}>
+    <section
+      className={styles.panel}
+      data-wide={wide || undefined}
+      data-area={area}
+      aria-labelledby={id}
+      data-testid={testId}
+    >
       <h2 id={id} className={styles.panelTitle}>
         {title}
       </h2>
@@ -182,10 +193,21 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 /** "and 3 more causes", or with `one`, "and 1 more cause". */
-function More({ count, noun, one = noun }: { count: number; noun: string; one?: string }) {
+function More({
+  count,
+  noun,
+  one = noun,
+  fit,
+}: {
+  count: number;
+  noun: string;
+  one?: string;
+  /** Which layout this count belongs to, when a 1080p State TV shows fewer rows than the rest. */
+  fit?: "full" | "short";
+}) {
   if (count === 0) return null;
   return (
-    <p className={styles.more}>
+    <p className={styles.more} data-fit={fit}>
       and {count} more {count === 1 ? one : noun}
     </p>
   );
@@ -486,7 +508,7 @@ function BedMeetingTvView({
 
       <div className={styles.panels} data-layout="meeting">
         {sheet.service === null ? (
-          <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide>
+          <Panel title="By health service" testId="bed-meeting-tv-services-panel" wide area="main">
             <ServiceTable rows={extras.services} />
           </Panel>
         ) : (
@@ -498,17 +520,18 @@ function BedMeetingTvView({
         <Panel
           title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${healthServiceAcronym(sheet.service)}`}
           testId="bed-meeting-tv-fit-panel"
+          area="fit"
         >
           <BedsThatFit gaps={extras.gaps} tomorrow={sheet.service === null ? forecast.tomorrow.kinds : undefined} />
         </Panel>
 
         {sheet.service === null ? (
-          <Panel title="Brief for this meeting" testId="bed-meeting-tv-brief-panel" wide>
+          <Panel title="Brief for this meeting" testId="bed-meeting-tv-brief-panel" wide area="brief">
             <ForecastBriefPanel now={now} />
           </Panel>
         ) : null}
 
-        <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel">
+        <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel" area="waits">
           {ed.longestWaits.length === 0 ? (
             <Empty>Nobody waiting.</Empty>
           ) : (
@@ -526,21 +549,29 @@ function BedMeetingTvView({
           )}
         </Panel>
 
-        <Panel title="Delays by cause" testId="bed-meeting-tv-delays-panel">
+        <Panel title="Delays by cause" testId="bed-meeting-tv-delays-panel" area="delays">
           {delays.groups.length === 0 ? (
             <Empty>No delays.</Empty>
           ) : (
             <>
               <ol className={styles.list}>
-                {delays.groups.slice(0, MEETING_TV_ROWS).map((group) => (
-                  <li key={group.cause}>
+                {delays.groups.slice(0, MEETING_TV_ROWS).map((group, index) => (
+                  // On a 1080p State TV only the first cause fits under the ED waits (DR-02); the
+                  // rest keep their order and are counted below, never re-sorted.
+                  <li key={group.cause} data-fit={index >= DELAYS_SHORT_ROWS ? "full" : undefined}>
                     <span className={styles.who}>{group.title}</span>
                     <span className={styles.where}>longest {splitDuration(group.longestWaitMinutes)}</span>
                     <span className={styles.wait}>{group.count}</span>
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" />
+              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" fit="full" />
+              <More
+                count={Math.max(0, delays.groups.length - DELAYS_SHORT_ROWS)}
+                noun="causes"
+                one="cause"
+                fit="short"
+              />
             </>
           )}
         </Panel>
@@ -1024,7 +1055,12 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     thresholds,
   ]);
 
-  const stamp = asAtStamp(now);
+  // Audit 24-7 (CT-02): while not live, the time stops at the last moment the screen was live, so
+  // "As at" never moves forward over figures that have stopped updating. Adjusted during render.
+  const live = online && !sharedDown;
+  const [lastLive, setLastLive] = useState(now);
+  if (live && lastLive !== now) setLastLive(now);
+  const stamp = asAtStamp(live ? now : lastLive);
 
   if (!enabled) {
     return (
@@ -1088,12 +1124,14 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {stamp.time === null ? "Time not recorded" : `As at ${stamp.time}`} ·{" "}
-            {!online
-              ? "offline, not updating"
-              : sharedDown
-                ? "connection unavailable, not updating"
-                : "updates on its own"}
+            {stamp.time === null ? "Time not recorded" : live ? `As at ${stamp.time}` : `Last updated ${stamp.time}`} ·{" "}
+            {live ? (
+              "updates on its own"
+            ) : (
+              <strong className={styles.stale} data-testid="bed-meeting-tv-stale">
+                {!online ? "offline, not updating" : "connection unavailable, not updating"}
+              </strong>
+            )}
           </p>
         </div>
         <div className={styles.actions}>

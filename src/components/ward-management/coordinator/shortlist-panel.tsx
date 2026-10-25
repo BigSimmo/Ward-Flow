@@ -93,7 +93,7 @@ import {
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import {
   REFERENCE_DISTANCE_CAVEAT,
@@ -2599,11 +2599,19 @@ export function ShortlistPanel({
                     </option>
                   ))}
                 </select>
+                {/* Audit 24-7 (CT-19): the final button sits beside the patient's name and UMRN. */}
+                <p id="ward-release-pull-who" data-testid="ward-release-pull-who">
+                  For {patientIdentityLine(patientIdentity)}
+                </p>
                 <button
                   type="submit"
                   className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                   aria-disabled={releasePullReason === undefined ? "true" : undefined}
-                  aria-describedby={releasePullReason === undefined ? "ward-release-pull-reason-blocked" : undefined}
+                  aria-describedby={
+                    releasePullReason === undefined
+                      ? "ward-release-pull-who ward-release-pull-reason-blocked"
+                      : "ward-release-pull-who"
+                  }
                   title={releasePullReason === undefined ? UNWIND_REASON_UNCHOSEN : undefined}
                   onClick={releasePullReason === undefined ? ignoreUnavailableActivation : undefined}
                 >
@@ -2645,12 +2653,18 @@ export function ShortlistPanel({
                     </option>
                   ))}
                 </select>
+                {/* Audit 24-7 (CT-19): the final button sits beside the patient's name and UMRN. */}
+                <p id="ward-cancel-transport-who" data-testid="ward-cancel-transport-who">
+                  For {patientIdentityLine(patientIdentity)}
+                </p>
                 <button
                   type="submit"
                   className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                   aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
                   aria-describedby={
-                    cancelTransportReason === undefined ? "ward-cancel-transport-reason-blocked" : undefined
+                    cancelTransportReason === undefined
+                      ? "ward-cancel-transport-who ward-cancel-transport-reason-blocked"
+                      : "ward-cancel-transport-who"
                   }
                   title={cancelTransportReason === undefined ? UNWIND_REASON_UNCHOSEN : undefined}
                   onClick={cancelTransportReason === undefined ? ignoreUnavailableActivation : undefined}

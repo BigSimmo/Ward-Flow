@@ -718,7 +718,8 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               disabledReason={cancelReason === "" ? "Choose a reason first." : undefined}
               data-testid="ward-planned-cancel-confirm"
             >
-              Cancel booking
+              {/* Audit 24-7 (CT-19): the final button names who the booking is for. */}
+              {cancelling ? `Cancel booking for ${whoText(cancelling)}` : "Cancel booking"}
             </Button>
           </div>
         }

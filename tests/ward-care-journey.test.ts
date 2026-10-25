@@ -316,6 +316,11 @@ describe("complete guarded local care journey", () => {
     const a = right.admissions.find((a) => a.id === admission.id)!;
     expect(a.leavingDestination).toBe("moved-to-residential-care");
     expect(separationHandoff(a)).toMatchObject({ separationCode: "22", externalSubmission: "not_connected" });
+    // Audit 24-7 (CT-16): the exported file says it is synthetic.
+    expect(separationHandoff(a)).toMatchObject({
+      synthetic: true,
+      notice: "Synthetic demonstration data only. Not a clinical record.",
+    });
   });
   it.each(["private_vehicle", "taxi", "service_vehicle", "ambulance", "police", "rfds"] as const)(
     "supports reviewed %s transport without sending a booking",
