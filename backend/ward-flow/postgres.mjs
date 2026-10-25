@@ -41,6 +41,17 @@ export const ARCHIVE_EVERY_REVISIONS = 20;
 /** The newest archived records one desk reads for History. */
 export const ARCHIVE_READ_LIMIT = 5000;
 const RECORD_COLUMNS = "collection, record_id, kind, ordinal, revision, body";
+/**
+ * A copy of `value` with object keys in PostgreSQL's jsonb order (shorter keys first, then by
+ * bytes), so a record kept from a save reads back exactly as the database would send it.
+ */
+function jsonbOrdered(value) {
+  if (Array.isArray(value)) return value.map(jsonbOrdered);
+  if (!value || typeof value !== "object") return value;
+  const keys = Object.keys(value).map((key) => [key, Buffer.from(key, "utf8")]);
+  keys.sort(([, a], [, b]) => a.length - b.length || Buffer.compare(a, b));
+  return Object.fromEntries(keys.map(([key]) => [key, jsonbOrdered(value[key])]));
+}
 /** Whether a stored workspace row stands in for rows of `ward_flow.workspace_records`. */
 const hasMarkers = (payload) =>
   !!payload?.state &&
@@ -194,6 +205,55 @@ export function createWorkspaceStore(
     return kept.slice(0, cap);
   }
   let known = { version: 0, until: 0 };
+  /**
+   * The workspace records this server last read or saved (limits audit, 25 Oct 2026: reading the
+   * whole board from the database on every save and refresh would use up Supabase's monthly data
+   * allowance in about a day). `confirmed` is a state read from the database. `pending` is the
+   * state a save of this server wrote, trusted only once the database shows that save committed.
+   * Each is named by the workspace row's revision and update time. A matching workspace row needs
+   * no record read; otherwise only records whose content changed since `confirmed` are sent. The
+   * bodies here are never handed out: every reader gets its own copy.
+   * @type {{ revision: number, updatedAt: number, rows: Map<string, any> } | null}
+   */
+  let confirmed = null;
+  /** @type {{ revision: number, updatedAt: number, rows: Map<string, any> } | null} */
+  let pending = null;
+  const rowKey = (collection, recordId) => `${collection}\u0000${recordId}`;
+  /** The cached state the workspace row names, promoting a committed save; null when none does. */
+  function cachedState(revision, updatedAt) {
+    const at = updatedAt instanceof Date ? updatedAt.getTime() : Number.NaN;
+    if (pending && pending.revision === Number(revision) && pending.updatedAt === at) confirmed = pending;
+    // A save still committing is newer than this row; any other pending state never committed.
+    if (!pending || pending.revision <= Number(revision)) pending = null;
+    return confirmed && confirmed.revision === Number(revision) && confirmed.updatedAt === at ? confirmed : null;
+  }
+  /** Remembers `rows` as the state at this workspace row, and returns copies for the caller. */
+  function remember(revision, updatedAt, rows, keep = true) {
+    if (keep && updatedAt instanceof Date)
+      confirmed = {
+        revision: Number(revision),
+        updatedAt: updatedAt.getTime(),
+        rows: new Map(rows.map((row) => [rowKey(row.collection, row.record_id), row])),
+      };
+    return copies(rows);
+  }
+  const copies = (rows) => rows.map((row) => ({ ...row, body: structuredClone(row.body) }));
+  /**
+   * Rows read with only the bodies changed since `confirmed` (`fresh`), completed from it. Null
+   * when an unchanged row is missing there (a rollback put records back, say): read them all.
+   */
+  function completed(rows) {
+    const out = [];
+    for (const { fresh, ...row } of rows) {
+      if (fresh) out.push(row);
+      else {
+        const kept = confirmed?.rows.get(rowKey(row.collection, row.record_id));
+        if (!kept) return null;
+        out.push({ ...row, body: kept.body });
+      }
+    }
+    return out;
+  }
   /** When this server last logged the workspace size warning. */
   let sizeWarnedAt = -Infinity;
   async function schemaVersion() {
@@ -273,14 +333,33 @@ export function createWorkspaceStore(
   async function readWorld(connection, columns = "data_mode, revision, payload") {
     for (let attempt = 0; ; attempt += 1) {
       const records = known.version >= RECORDS_MIGRATION;
+      // Records are sent only when the workspace row is not the cached one, and then only the
+      // bodies changed since it (the limits audit). A second read sends them all if one is missing.
+      const base = attempt === 0 ? (pending ?? confirmed) : null;
+      const since = attempt === 0 ? (confirmed?.revision ?? -1) : -1;
       try {
         const { rows } = await connection.query(
-          `SELECT ${columns}${records ? `, (SELECT coalesce(jsonb_agg(jsonb_build_object('collection', r.collection, 'record_id', r.record_id, 'kind', r.kind, 'ordinal', r.ordinal, 'revision', r.revision, 'body', r.body)), '[]'::jsonb) FROM ward_flow.workspace_records r WHERE r.workspace_id = w.id) AS records` : ""} FROM ward_flow.workspaces w WHERE id=$1 AND data_mode='prototype'`,
-          [workspaceId],
+          `SELECT ${columns}${records ? `, w.revision AS cache_revision, date_trunc('milliseconds', w.updated_at) AS cache_updated_at, CASE WHEN w.revision = $2 AND date_trunc('milliseconds', w.updated_at) = $3 THEN NULL ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object('collection', r.collection, 'record_id', r.record_id, 'kind', r.kind, 'ordinal', r.ordinal, 'revision', r.revision, 'fresh', r.revision > $4, 'body', CASE WHEN r.revision > $4 THEN r.body END)), '[]'::jsonb) FROM ward_flow.workspace_records r WHERE r.workspace_id = w.id) END AS records` : ""} FROM ward_flow.workspaces w WHERE id=$1 AND data_mode='prototype'`,
+          records ? [workspaceId, base?.revision ?? -1, base ? new Date(base.updatedAt) : null, since] : [workspaceId],
         );
         const row = rows[0];
         if (!row) return null;
-        if (records) return { ...row, payload: assembleWorld(row.payload, row.records) };
+        if (records) {
+          const { cache_revision: revision, cache_updated_at: updatedAt, records: read, ...fields } = row;
+          const cached = cachedState(revision, updatedAt);
+          let stored;
+          if (read === null && cached) stored = copies([...cached.rows.values()]);
+          else {
+            const whole = read && completed(read);
+            if (!whole) {
+              confirmed = null;
+              if (attempt === 0) continue;
+              throw new Error("Stored workspace records are incomplete");
+            }
+            stored = remember(revision, updatedAt, whole);
+          }
+          return { ...fields, payload: assembleWorld(row.payload, stored) };
+        }
         if (attempt === 0 && hasMarkers(row.payload)) {
           known = { version: 0, until: 0 };
           if ((await schemaVersion()) >= RECORDS_MIGRATION) continue;
@@ -298,19 +377,46 @@ export function createWorkspaceStore(
    * stored workspace row in `core` and its records in `stored`. The records are read after the
    * lock is held, so a save that committed while this waited is never missed.
    */
-  async function lockedWorld(client, mode) {
+  async function lockedWorld(client, mode, keep = true) {
     const { rows } = await client.query(
-      `SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR ${mode}`,
+      `SELECT data_mode, revision, payload, date_trunc('milliseconds', updated_at) AS cache_updated_at FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR ${mode}`,
       [workspaceId],
     );
-    const row = rows[0];
-    if (!row) return null;
+    const found = rows[0];
+    if (!found) return null;
+    const { cache_updated_at: updatedAt, ...row } = found;
     if (!keepsRecords(row.payload)) return { ...row, core: null, stored: [] };
-    const { rows: stored } = await client.query(
-      `SELECT ${RECORD_COLUMNS} FROM ward_flow.workspace_records WHERE workspace_id=$1`,
-      [workspaceId],
-    );
-    return { ...row, core: row.payload, stored, payload: assembleWorld(row.payload, stored) };
+    // Under the lock no save can commit, so the cached state is exact when the row names it, and
+    // otherwise only bodies changed since it are read (the limits audit, 25 Oct 2026).
+    const cached = keep ? cachedState(row.revision, updatedAt) : null;
+    let stored;
+    if (cached) stored = copies([...cached.rows.values()]);
+    else {
+      const since = keep ? (confirmed?.revision ?? -1) : -1;
+      const { rows: read } = await client.query(
+        `SELECT ${RECORD_COLUMNS.replace("body", "CASE WHEN revision > $2 THEN body END AS body")}, revision > $2 AS fresh FROM ward_flow.workspace_records WHERE workspace_id=$1`,
+        [workspaceId, since],
+      );
+      let whole = completed(read);
+      if (!whole) {
+        confirmed = null;
+        ({ rows: whole } = await client.query(
+          `SELECT ${RECORD_COLUMNS} FROM ward_flow.workspace_records WHERE workspace_id=$1`,
+          [workspaceId],
+        ));
+      }
+      // A read after this transaction's own writes (a new workspace) is never remembered: it may
+      // still roll back.
+      stored = remember(row.revision, updatedAt, whole, keep);
+    }
+    // `cache`: the cached state `stored` was copied from, which a save here builds on.
+    return {
+      ...row,
+      core: row.payload,
+      stored,
+      cache: keep ? confirmed : null,
+      payload: assembleWorld(row.payload, stored),
+    };
   }
   /**
    * Saves `world` at `revision` over `row` from `lockedWorld`. From migration 10 only the records
@@ -341,6 +447,32 @@ export function createWorkspaceStore(
       at,
     ]);
     await writeRecords(client, plan, at);
+    pending = savedState(row, plan, revision, at);
+  }
+  /**
+   * The records as this save leaves them, from the cached rows it started from; trusted once the
+   * database shows the save committed (`cachedState`). Null when a row it kept is not cached.
+   */
+  function savedState(row, plan, revision, at) {
+    if (!row.cache) return null;
+    const rows = new Map();
+    for (const kept of row.stored) {
+      const key = rowKey(kept.collection, kept.record_id);
+      const cached = row.cache.rows.get(key);
+      if (!cached) return null;
+      rows.set(key, cached);
+    }
+    for (const gone of plan.deletes) rows.delete(rowKey(gone.collection, gone.recordId));
+    for (const part of plan.upserts)
+      rows.set(rowKey(part.collection, part.recordId), {
+        collection: part.collection,
+        record_id: part.recordId,
+        kind: part.kind,
+        ordinal: part.ordinal,
+        revision: String(part.revision),
+        body: jsonbOrdered(part.body),
+      });
+    return { revision: Number(revision), updatedAt: at.getTime(), rows };
   }
   /**
    * From migration 14, moves this world's closed records older than 30 days into the archive table
@@ -439,7 +571,7 @@ export function createWorkspaceStore(
           changes: {},
         });
       }
-      row = await lockedWorld(client, "UPDATE");
+      row = await lockedWorld(client, "UPDATE", false);
     }
     at.setTime(clock().getTime());
     if (row?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");

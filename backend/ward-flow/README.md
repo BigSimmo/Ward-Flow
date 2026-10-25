@@ -163,6 +163,12 @@ These source files do not establish a current hosted connection or deployment.
     record first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
+    From 25 Oct 2026 (limits audit) the server keeps the records it last read or saved. When the
+    workspace row's revision and update time match them, no record is read; otherwise only the
+    bodies changed since are read. A save's own result is trusted only once the database shows it
+    committed. This keeps database data transfer (Supabase egress) to a small part of a board per
+    save or refresh. It relies on every record change going through a save, which gives the
+    changed record the new revision; edit records by hand only with every server stopped.
   - `011-record-access-and-sign-out.sql`: append-only patient/movement record access history,
     append-only protection for break glass rows and server-side session sign-outs. The
     `/v1/workspace/record-access` and `/v1/workspace/sign-out` routes use these capabilities;
