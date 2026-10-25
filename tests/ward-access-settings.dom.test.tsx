@@ -230,6 +230,7 @@ describe("the Access tab", () => {
         requests: [],
       })),
       listCovers: vi.fn(async () => []),
+      listRecordViews: vi.fn(async () => []),
       grantAccess: vi.fn(async () => grants.shift() ?? null),
       revokeAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
@@ -269,6 +270,7 @@ describe("the Access tab", () => {
     const api: SharedAccessApi = {
       listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
       listCovers: vi.fn(async () => []),
+      listRecordViews: vi.fn(async () => []),
       grantAccess: vi.fn(async () => "step-up" as const),
       revokeAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
@@ -292,6 +294,113 @@ describe("the Access tab", () => {
     await act(async () => signedIn());
     expect(api.grantAccess).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cancelled. Nothing was changed.");
+  });
+
+  it("shows the access admin a demo access log, said to be made up, and filters it in the page", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    settings();
+    const log = screen.getByTestId("ward-access-log");
+    expect(log).toHaveTextContent("Demo only: made-up openings by the demo staff");
+    const rows = within(log).getAllByTestId("ward-access-log-row");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0]).toHaveTextContent("Demo staff A, Nurse in charge, FSH Adult Secure. 12 minutes ago.");
+    fireEvent.change(within(log).getByLabelText("Find a record id or account"), { target: { value: "staff b" } });
+    const left = within(log).getAllByTestId("ward-access-log-row");
+    expect(left.length).toBeGreaterThan(0);
+    for (const row of left) expect(row).toHaveTextContent("Demo staff B");
+    fireEvent.change(within(log).getByLabelText("Find a record id or account"), { target: { value: "nobody" } });
+    expect(log).toHaveTextContent("No opening matches.");
+  });
+
+  it("does not show the access log to a nurse in charge", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
+    });
+    settings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    expect(screen.queryByTestId("ward-access-log")).not.toBeInTheDocument();
+  });
+
+  it("in the shared workspace lists the server's record openings by record id, desk and time", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
+      listCovers: vi.fn(async () => []),
+      listRecordViews: vi.fn(async () => [
+        {
+          id: 7,
+          actor_id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+          actor_role: "ed",
+          actor_scope: { kind: "ed", edId: "fsh-ed" },
+          patient_id: "PT-1001",
+          surface: "referral",
+          minutes: -90,
+        },
+        {
+          id: 6,
+          actor_id: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
+          actor_role: "coordinator",
+          actor_scope: { kind: "statewide" },
+          patient_id: "PT-2002",
+          surface: "patient",
+          minutes: -3,
+        },
+      ]),
+      grantAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    sharedSettings(
+      api,
+      vi.fn(async () => {}),
+    );
+    const log = screen.getByTestId("ward-access-log");
+    const rows = await within(log).findAllByTestId("ward-access-log-row");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("PT-1001, Referral detail");
+    expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED mental health clinician");
+    expect(rows[0]).toHaveTextContent("2 hours ago.");
+    expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
+    expect(rows[1]).toHaveTextContent("You, Flow coordinator, Statewide. 3 minutes ago.");
+    expect(log).not.toHaveTextContent("Demo only");
+    expect(api.listRecordViews).toHaveBeenCalledTimes(1);
+  });
+
+  it("says plainly when the server would not give the access log", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({ memberships: [], requests: [] })),
+      listCovers: vi.fn(async () => []),
+      listRecordViews: vi.fn(async () => {
+        throw new Error("The record access log is not part of your role");
+      }),
+      grantAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    sharedSettings(
+      api,
+      vi.fn(async () => {}),
+    );
+    const log = screen.getByTestId("ward-access-log");
+    expect(await within(log).findByRole("alert")).toHaveTextContent(
+      "The access log could not be read from the server.",
+    );
+    expect(within(log).queryByTestId("ward-access-log-row")).not.toBeInTheDocument();
   });
 
   it("tells a step waiting for the password that it was cancelled when a second step asks", async () => {
