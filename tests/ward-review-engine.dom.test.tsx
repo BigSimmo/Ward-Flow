@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
-const routing = vi.hoisted(() => ({ push: vi.fn(), dispatch: vi.fn(), query: "" }));
+import { afterEach, describe, expect, it, vi } from "vitest";
+const routing = vi.hoisted(() => ({
+  push: vi.fn(),
+  dispatch: vi.fn(),
+  query: "",
+  lifecycle: null as "pulled" | "occupied" | "departed" | "waitlisted" | null,
+}));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/ward/scgh-adult-open",
   useSearchParams: () => new URLSearchParams(routing.query),
@@ -22,7 +27,21 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
       const context = actual.useWardFlow();
       return {
         ...context,
-        admissions: context.admissions?.map((a) => ({
+        admissions: [
+          ...(context.admissions ?? []),
+          ...(routing.lifecycle && context.referrals.at(-1)
+            ? [
+                {
+                  ...context.admissions[0]!,
+                  id: "AD-LIFECYCLE-CONSUMED",
+                  unitId: UNIT,
+                  referralId: context.referrals.at(-1)!.id,
+                  movementId: null,
+                  state: routing.lifecycle,
+                },
+              ]
+            : []),
+        ].map((a) => ({
           ...a,
           observation: { level: "within_sight" as const, intervalMinutes: null, reviewAt: null },
           highAcuity: false,
@@ -41,6 +60,9 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { NOW_ANCHOR as now } from "@/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 const UNIT = "scgh-adult-open";
+afterEach(() => {
+  routing.lifecycle = null;
+});
 function DirectReferral() {
   const { dispatch, referrals, eventLog } = useWardFlow();
   useEffect(() => {
@@ -83,6 +105,7 @@ function DirectReferral() {
   }, [dispatch, newest?.id, newest?.raisedAt, newest?.destinations]);
   return (
     <>
+      <output data-testid="referral-id">{newest?.id}</output>
       <output data-testid="arm">{JSON.stringify(newest?.destinations[0])}</output>
       <output data-testid="hold-audit">
         {JSON.stringify(eventLog?.filter((event) => event.type === "HOLD_REFERRAL_BED"))}
@@ -137,5 +160,28 @@ describe("review caller regressions", () => {
     expect(after).toEqual({ ...before, heldBedNumber: Number(free!.dataset.testid!.replace("ward-board-bed-", "")) });
     expect(screen.getByTestId("accept-count")).toHaveTextContent("1");
     expect(JSON.parse(screen.getByTestId("hold-audit").textContent!)).toHaveLength(1);
+  });
+});
+
+describe("accepted referral picker lifecycle", () => {
+  it.each(["pulled", "occupied", "departed"] as const)(
+    "keeps a consumed %s direct referral out of the picker",
+    (lifecycle) => {
+      routing.query = "tab=board";
+      routing.lifecycle = lifecycle;
+      renderWard(<DirectReferral />);
+      const referralId = screen.getByTestId("referral-id").textContent!;
+      expect(JSON.parse(screen.getByTestId("arm").textContent!).state).toBe("accepted");
+      expect(screen.queryByTestId("ward-board-pick-" + referralId)).not.toBeInTheDocument();
+      routing.lifecycle = null;
+    },
+  );
+  it("retains the existing waitlisted-stay eligibility", () => {
+    routing.query = "tab=board";
+    routing.lifecycle = "waitlisted";
+    renderWard(<DirectReferral />);
+    const referralId = screen.getByTestId("referral-id").textContent!;
+    expect(screen.getByTestId("ward-board-pick-" + referralId)).toBeInTheDocument();
+    routing.lifecycle = null;
   });
 });

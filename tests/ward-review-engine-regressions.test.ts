@@ -9,6 +9,8 @@ import { NOW_ANCHOR as now } from "../src/components/ward-management/ward-sites"
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { liveMovementForAdmission } from "../src/components/ward-management/ward-admissions";
+import { deviceCopyFromEvents } from "../src/components/ward-management/ward-flow-typed-text-scrub";
+import { OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { movementBedReservation } from "../src/components/ward-management/ward-movement-bed-hold";
 const UNIT = "scgh-adult-open";
 function fixture() {
@@ -568,5 +570,281 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     expect(undone.rejections).toEqual([]);
     expect(undone.admissions).toEqual(state.admissions);
     expect(undone.units.find((u) => u.id === UNIT)).toMatchObject({ allocatable: { value: 1 }, allocatableLocked: 1 });
+  });
+});
+
+describe("final review: reservation and admission lifecycle boundaries", () => {
+  function joinedPull(initial = fixture(), bed = 2, duplicateArm = false) {
+    const direct = accept(received(initial), bed);
+    const referral = direct.referrals.at(-1)!;
+    if (duplicateArm) referral.destinations.push({ ...referral.destinations[0]!, heldBedNumber: 1 });
+    const source = acceptedMovement();
+    const movement = { ...source.state.movements.at(-1)!, referralId: referral.id, heldBedNumber: undefined };
+    const pulled = wardFlowReducer(
+      {
+        ...direct,
+        // Keep the runtime movement ID and its source sequence coherent in this joined fixture.
+        referralSequence: Math.max(direct.referralSequence, source.state.referralSequence),
+        movements: [...direct.movements, movement],
+      },
+      {
+        type: "PULL_PATIENT",
+        role: "ward",
+        actingUnitId: UNIT,
+        unitId: UNIT,
+        movementId: movement.id,
+        now,
+      },
+    );
+    expect(pulled.rejections).toEqual([]);
+    return {
+      pulled,
+      movementId: movement.id,
+      admissionId: pulled.movements.at(-1)!.admissionId!,
+      referralId: referral.id,
+    };
+  }
+  function moveJoined(initial = fixture(), bed = 2, target = 1, duplicateArm = false) {
+    const join = joinedPull(initial, bed, duplicateArm);
+    const moved = wardFlowReducer(join.pulled, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId: join.admissionId,
+      bedNumber: target,
+      now: now + 1,
+    });
+    expect(moved.rejections).toEqual([]);
+    return { ...join, moved };
+  }
+  it("undo restores only the arm changed by the numbered move when accepted ward arms are duplicated", () => {
+    const restoredInput = accept(received(seedWardFlowState()));
+    const restoredReferral = restoredInput.referrals.at(-1)!;
+    restoredReferral.destinations.push(structuredClone(restoredReferral.destinations[0]!));
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(restoredInput)))).toBe(true);
+    const { moved, admissionId, referralId } = moveJoined(fixture(), 2, 1, true);
+    const beforeUndo = moved.referrals.find((r) => r.id === referralId)!.destinations;
+    expect(beforeUndo.map((a) => a.heldBedNumber)).toEqual([1, 1]);
+    const record = moved.undoRecords!.find((r) => r.kind === "bed-placement")!;
+    expect(record).toMatchObject({ beforeReferralArmIndex: 0 });
+    const undone = wardFlowReducer(moved, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId,
+      now: now + 2,
+    });
+    expect(undone.rejections).toEqual([]);
+    const arms = undone.referrals.find((r) => r.id === referralId)!.destinations;
+    expect(arms[0]).toEqual({ ...beforeUndo[0], heldBedNumber: 2 });
+    expect(arms[1]).toEqual(beforeUndo[1]);
+  });
+  it("keeps legacy Undo available when the accepted ward arm is unique", () => {
+    const { moved, pulled, admissionId } = moveJoined();
+    const legacy = structuredClone(moved);
+    const record = legacy.undoRecords!.find((r) => r.kind === "bed-placement")!;
+    if (record.kind !== "bed-placement") throw new Error("Expected bed move");
+    delete record.beforeReferralArmIndex;
+    const undone = wardFlowReducer(legacy, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId,
+      now: now + 2,
+    });
+    expect(undone.rejections).toEqual([]);
+    expect(undone.referrals).toEqual(pulled.referrals);
+    expect(undone.admissions).toEqual(pulled.admissions);
+  });
+  it("refuses an ambiguous legacy arm restore without mutating any linked record", () => {
+    const { moved, admissionId } = moveJoined(fixture(), 2, 1, true);
+    const legacy = structuredClone(moved);
+    const record = legacy.undoRecords!.find((r) => r.kind === "bed-placement")!;
+    if (record.kind !== "bed-placement") throw new Error("Expected bed move");
+    delete record.beforeReferralArmIndex;
+    const undone = wardFlowReducer(legacy, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId,
+      now: now + 2,
+    });
+    expect(undone.rejections.at(-1)?.reason).toMatch(/referral arm.*changed/);
+    expect(undone.admissions).toEqual(legacy.admissions);
+    expect(undone.movements).toEqual(legacy.movements);
+    expect(undone.referrals).toEqual(legacy.referrals);
+    expect(undone.units).toEqual(legacy.units);
+  });
+  it("keeps the numeric arm slot through a safe device copy and rejects malformed slot metadata", () => {
+    const { pulled, moved } = moveJoined(seedWardFlowState(), 24, 23);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(pulled)))).toBe(true);
+    const stored = JSON.parse(JSON.stringify(moved));
+    expect(isValidStoredWardFlowState(stored)).toBe(true);
+    const copied = deviceCopyFromEvents(moved, [], () => [seedWardFlowState()]);
+    expect(copied).not.toBeNull();
+    expect(copied!.undoRecords!.find((r) => r.kind === "bed-placement")).toMatchObject({ beforeReferralArmIndex: 0 });
+    const malformed = structuredClone(stored);
+    malformed.undoRecords.find((r: { kind: string }) => r.kind === "bed-placement").beforeReferralArmIndex = -1;
+    expect(isValidStoredWardFlowState(malformed)).toBe(false);
+  });
+  it("pulls a valid locked reservation after Open capacity becomes free", () => {
+    const { state, movementId } = acceptedMovement();
+    const movement = state.movements.at(-1)!;
+    const start = {
+      ...state,
+      movements: [
+        {
+          ...movement,
+          stage: "destination_review" as const,
+          acceptedUnitId: undefined,
+          heldBedNumber: undefined,
+          referredUnitIds: [UNIT],
+        },
+      ],
+      units: state.units.map((u) => (u.id === UNIT ? { ...u, allocatable: { ...u.allocatable, value: 1 } } : u)),
+    };
+    const reserved = wardFlowReducer(start, {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      actingUnitId: UNIT,
+      unitId: UNIT,
+      movementId,
+      bedNumber: 1,
+      now,
+    });
+    expect(reserved.rejections).toEqual([]);
+    const opened = {
+      ...reserved,
+      units: reserved.units.map((u) => (u.id === UNIT ? { ...u, allocatable: { ...u.allocatable, value: 2 } } : u)),
+    };
+    const pulled = wardFlowReducer(opened, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      actingUnitId: UNIT,
+      unitId: UNIT,
+      movementId,
+      now: now + 1,
+    });
+    expect(pulled.rejections).toEqual([]);
+    expect(pulled.admissions.at(-1)).toMatchObject({ bedNumber: 1, bedKind: "locked", state: "pulled" });
+    expect(pulled.units.find((u) => u.id === UNIT)).toMatchObject({ allocatable: { value: 1 }, allocatableLocked: 0 });
+  });
+  it("still requires a recorded override for a reserved Open bed on a Secure request", () => {
+    const { state, movementId } = acceptedMovement();
+    const source = state.movements.at(-1)!;
+    const initial = {
+      ...state,
+      movements: [
+        {
+          ...source,
+          security: "Secure" as const,
+          stage: "destination_review" as const,
+          acceptedUnitId: undefined,
+          heldBedNumber: undefined,
+          referredUnitIds: [UNIT],
+        },
+      ],
+      units: state.units.map((u) => (u.id === UNIT ? { ...u, allocatableLocked: 0 } : u)),
+    };
+    const reserved = wardFlowReducer(initial, {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      actingUnitId: UNIT,
+      unitId: UNIT,
+      movementId,
+      bedNumber: 2,
+      now,
+    });
+    expect(reserved.rejections).toEqual([]);
+    const reopened = {
+      ...reserved,
+      units: reserved.units.map((u) => (u.id === UNIT ? { ...u, allocatableLocked: 1 } : u)),
+    };
+    const pull = {
+      type: "PULL_PATIENT",
+      role: "ward",
+      actingUnitId: UNIT,
+      unitId: UNIT,
+      movementId,
+      now: now + 1,
+    } as const;
+    const refused = wardFlowReducer(reopened, pull);
+    expect(refused.rejections).toHaveLength(1);
+    expect(refused.rejections[0]!.reason).toMatch(/numbered reservation.*open bed/);
+    expect(refused.admissions).toEqual(reopened.admissions);
+    const pulled = wardFlowReducer(reopened, { ...pull, overrideReason: OVERRIDE_REASONS[0] });
+    expect(pulled.rejections).toEqual([]);
+    expect(pulled.admissions.at(-1)).toMatchObject({ bedNumber: 2, bedKind: "open" });
+    expect(pulled.movements.at(-1)!.overrides).toContainEqual(
+      expect.objectContaining({ gate: "locked_bed_capacity", reason: OVERRIDE_REASONS[0] }),
+    );
+  });
+  it("clears the accepted any-ward arm's reservation when its linked arrival is recorded", () => {
+    const joined = joinedPull();
+    const current = joined.pulled;
+    const referral = current.referrals.find((r) => r.id === joined.referralId)!;
+    const arm = referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected ward arm");
+    delete arm.destination.unitId;
+    const arrived = wardFlowReducer(current, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      actingUnitId: UNIT,
+      movementId: joined.movementId,
+      now: now + 1,
+      exception: { gaps: ["fit_to_travel_missing"], reason: "treating_team_confirmed" },
+    });
+    expect(arrived.rejections).toEqual([]);
+    expect(arrived.admissions.find((a) => a.id === joined.admissionId)).toMatchObject({
+      bedNumber: 2,
+      state: "occupied",
+    });
+    expect(arrived.referrals.find((r) => r.id === joined.referralId)!.destinations[0]!.heldBedNumber).toBeUndefined();
+    expect(arrived.referrals.find((r) => r.id === joined.referralId)!.destinations[0]!.decidedAt).toBe(arm.decidedAt);
+  });
+  it("never reholds a consumed direct referral after departure or after Undo departure", () => {
+    const accepted = accept(received());
+    const referralId = accepted.referrals.at(-1)!.id;
+    const occupied = {
+      ...seedWardFlowState().admissions.find((a) => a.state === "occupied")!,
+      id: "AD-DIRECT-CONSUMED",
+      unitId: UNIT,
+      referralId,
+      movementId: null,
+      patientId: null,
+      bedNumber: 2,
+      bedKind: "open" as const,
+    };
+    const state = {
+      ...accepted,
+      admissions: [occupied],
+      units: accepted.units.map((u) =>
+        u.id === UNIT ? { ...u, allocatable: { ...u.allocatable, value: 1 }, empty: { ...u.empty, value: 1 } } : u,
+      ),
+    };
+    const departed = wardFlowReducer(state, {
+      type: "RECORD_LEAVING",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId: occupied.id,
+      leavingDestination: "discharged-to-the-community",
+      now,
+    });
+    expect(departed.rejections).toEqual([]);
+    expect(departed.admissions[0]!.state).toBe("departed");
+    expect(hold(departed, 2).rejections).toHaveLength(1);
+    expect(hold(departed, 2).referrals).toEqual(departed.referrals);
+    const undone = wardFlowReducer(departed, {
+      type: "UNDO_DEPARTURE",
+      role: "ward",
+      actingUnitId: UNIT,
+      admissionId: occupied.id,
+      now: now + 1,
+    });
+    expect(undone.rejections).toEqual([]);
+    expect(undone.admissions[0]!.state).toBe("occupied");
+    expect(hold(undone, 2).rejections).toHaveLength(1);
+    const newReferral = accept(received(departed));
+    expect(hold(newReferral, 2).rejections).toEqual([]);
   });
 });

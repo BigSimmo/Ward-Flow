@@ -1187,7 +1187,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           !movements.some((movement) => movement.referralId === entry.id) &&
           !admissions.some(
             (admission) =>
-              admission.referralId === entry.id && (admission.state === "pulled" || admission.state === "occupied"),
+              admission.referralId === entry.id &&
+              (admission.state === "pulled" || admission.state === "occupied" || admission.state === "departed"),
           ),
       )
       .map((entry) => ({

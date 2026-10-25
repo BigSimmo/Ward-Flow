@@ -634,6 +634,7 @@ function pullOverrides(
   admissions: WardFlowState["admissions"],
   event: Extract<WardFlowEvent, { type: "PULL_PATIENT" }>,
   checkEligibility: boolean,
+  bedKindTaken?: "open" | "locked",
 ): Movement["overrides"] {
   if (event.overrideReason === undefined || !OVERRIDE_REASONS.includes(event.overrideReason)) return movement.overrides;
   const gates: NonNullable<Movement["overrides"][number]["gate"]>[] = [];
@@ -646,7 +647,11 @@ function pullOverrides(
       gates.push("authorisation");
   }
   if (checkEligibility) {
-    if (movement.security === "Secure" && lockedBedsFree(unit) <= 0) gates.push("locked_bed_capacity");
+    if (
+      movement.security === "Secure" &&
+      (bedKindTaken === "open" || (bedKindTaken === undefined && lockedBedsFree(unit) <= 0))
+    )
+      gates.push("locked_bed_capacity");
     gates.push(
       ...eligibility(movement, unit, event.now)
         .gates.filter((gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate))

@@ -592,7 +592,7 @@ export function reduceTransportEvent(
                 arm.state !== "accepted" ||
                 arm.heldBedNumber === undefined ||
                 arm.destination.kind !== "psychiatric_ward" ||
-                arm.destination.unitId !== unit.id
+                (arm.acceptedUnitId ?? arm.destination.unitId) !== unit.id
               )
                 return arm;
               const { heldBedNumber: _heldBed, ...releasedArm } = arm;

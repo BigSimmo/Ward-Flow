@@ -662,7 +662,10 @@ export function reduceReferralAnswerEvent(
         return reject(state, event, "This ward needs a current accepted referral before holding a bed");
       if (
         state.movements.some((m) => m.referralId === referral.id) ||
-        state.admissions.some((a) => a.referralId === referral.id && (a.state === "pulled" || a.state === "occupied"))
+        state.admissions.some(
+          (a) =>
+            a.referralId === referral.id && (a.state === "pulled" || a.state === "occupied" || a.state === "departed"),
+        )
       )
         return reject(state, event, "This referral already has a bed journey or current stay; use that record");
       const unit = findUnit(state, event.unitId);

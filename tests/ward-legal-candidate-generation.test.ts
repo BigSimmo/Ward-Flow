@@ -1,3 +1,4 @@
+import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -107,5 +108,103 @@ describe("legal sweep candidate generation", () => {
         candidateEvents(type, state, NOW_ANCHOR, supplyDueAt),
       );
     }
+  });
+});
+
+describe("bounded accepted-referral hold candidates", () => {
+  function bench() {
+    const seed = seedWardFlowState();
+    const unitId = "scgh-adult-open";
+    let state: ReturnType<typeof seedWardFlowState> = {
+      ...seed,
+      admissions: [],
+      movements: [],
+      referrals: [],
+      units: seed.units.map((u) =>
+        u.id === unitId
+          ? {
+              ...u,
+              beds: 3,
+              lockedBeds: 0,
+              allocatableLocked: 0,
+              allocatable: { ...u.allocatable, value: 3 },
+              empty: { ...u.empty, value: 3 },
+            }
+          : u,
+      ),
+    };
+    function receive() {
+      state = wardFlowReducer(state, {
+        type: "RECEIVE_REFERRAL",
+        role: "community",
+        now: NOW_ANCHOR,
+        ageBand: "Adult",
+        destinations: [
+          {
+            kind: "psychiatric_ward",
+            unitId,
+            sex: "Female",
+            gender: "Female",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+        ],
+        homeRegion: "Perth Metropolitan",
+        suburb: { kind: "unknown", reason: "not_known" },
+        source: "community",
+        urgency: 2,
+        originSiteCode: "SCGH",
+        transportNeeded: false,
+        ...FIXTURE_HISTORY,
+      });
+      const referralId = state.referrals.at(-1)!.id;
+      state = wardFlowReducer(state, {
+        type: "ACCEPT_REFERRAL",
+        role: "ward",
+        actingUnitId: unitId,
+        unitId,
+        referralId,
+        destinationKind: "psychiatric_ward",
+        now: NOW_ANCHOR,
+      });
+      expect(state.rejections).toEqual([]);
+      return referralId;
+    }
+    const other = receive();
+    const target = receive();
+    state = {
+      ...state,
+      admissions: [{ ...seed.admissions.find((a) => a.state === "occupied")!, unitId, bedNumber: 1 }],
+      referrals: state.referrals.map((r) =>
+        r.id === other ? { ...r, destinations: r.destinations.map((a) => ({ ...a, heldBedNumber: 2 })) } : r,
+      ),
+    };
+    return { state, target, unitId, seed };
+  }
+  it("skips occupied and other-referral-held numbers while retaining one candidate", () => {
+    const { state, target } = bench();
+    const candidates = candidateEvents("HOLD_REFERRAL_BED", state, NOW_ANCHOR).filter(
+      (e) => e.type === "HOLD_REFERRAL_BED" && e.referralId === target,
+    );
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({ bedNumber: 3 });
+    expect(wardFlowReducer(state, candidates[0]!).rejections).toEqual([]);
+  });
+  it("keeps a bounded refusal candidate when all fitting numbers are unavailable", () => {
+    const { state, target, unitId, seed } = bench();
+    const full = {
+      ...state,
+      admissions: [
+        ...state.admissions,
+        { ...seed.admissions.find((a) => a.state === "occupied")!, id: "AD-LAST-NUMBER", unitId, bedNumber: 3 },
+      ],
+    };
+    const candidates = candidateEvents("HOLD_REFERRAL_BED", full, NOW_ANCHOR).filter(
+      (e) => e.type === "HOLD_REFERRAL_BED" && e.referralId === target,
+    );
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({ bedNumber: 1 });
+    expect(wardFlowReducer(full, candidates[0]!).rejections).toHaveLength(1);
   });
 });

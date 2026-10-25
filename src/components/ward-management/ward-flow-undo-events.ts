@@ -147,6 +147,29 @@ export function reduceUndoEvent(
           linkedMovement.heldBedNumber !== record.afterBed)
       )
         return reject(state, event, "The bed journey has changed, so the held-bed move cannot be undone");
+      const linkedReferral =
+        record.beforeReferralBed === undefined
+          ? undefined
+          : findReferral(state, admission.referralId ?? linkedMovement?.referralId ?? "");
+      const acceptedArmIndexes =
+        linkedReferral?.destinations.flatMap((arm, index) =>
+          arm.state === "accepted" &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.acceptedUnitId ?? arm.destination.unitId) === admission.unitId
+            ? [index]
+            : [],
+        ) ?? [];
+      // Legacy records may restore only an unambiguous accepted ward arm.
+      const referralArmIndex =
+        record.beforeReferralArmIndex ?? (acceptedArmIndexes.length === 1 ? acceptedArmIndexes[0] : undefined);
+      const linkedArm = referralArmIndex === undefined ? undefined : linkedReferral?.destinations[referralArmIndex];
+      if (
+        record.beforeReferralBed !== undefined &&
+        (referralArmIndex === undefined ||
+          !acceptedArmIndexes.includes(referralArmIndex) ||
+          linkedArm?.heldBedNumber !== record.afterBed)
+      )
+        return reject(state, event, "The accepted referral arm has changed, so the held-bed move cannot be undone");
       // Older pulled stays can be unnumbered while their journey or referral holds a number.
       // Validate every number restored by Undo, including those absent from the admission.
       const restoredBeds = new Set(
@@ -196,13 +219,11 @@ export function reduceUndoEvent(
         referrals:
           record.beforeReferralBed !== undefined
             ? state.referrals.map((referral) =>
-                referral.id === (admission.referralId ?? linkedMovement?.referralId)
+                referral === linkedReferral
                   ? {
                       ...referral,
-                      destinations: referral.destinations.map((arm) =>
-                        arm.state === "accepted" &&
-                        arm.destination.kind === "psychiatric_ward" &&
-                        (arm.acceptedUnitId ?? arm.destination.unitId) === admission.unitId
+                      destinations: referral.destinations.map((arm, index) =>
+                        index === referralArmIndex
                           ? { ...arm, heldBedNumber: record.beforeReferralBed ?? undefined }
                           : arm,
                       ),

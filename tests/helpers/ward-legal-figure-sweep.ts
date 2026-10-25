@@ -49,6 +49,8 @@ import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo"
 import {
   seedWardFlowState,
   wardFlowReducer,
+  bedNumberRefusal,
+  heldBedRefusal,
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../../src/components/ward-management/ward-legal-forms";
@@ -1333,7 +1335,10 @@ export function candidateEvents(
           const secure = arm.destination.secureBedNeeded === true;
           const bedNumber =
             Array.from({ length: unit.beds }, (_, index) => index + 1).find(
-              (candidate) => numberedBedKindRefusal(unit, candidate, secure) === null,
+              (candidate) =>
+                numberedBedKindRefusal(unit, candidate, secure) === null &&
+                bedNumberRefusal(state, unit, candidate, undefined) === null &&
+                heldBedRefusal(state, unit, candidate, undefined, referral.id) === null,
             ) ?? 1;
           return [{ type, role, now, referralId: referral.id, unitId: unit.id, actingUnitId: unit.id, bedNumber }];
         }),

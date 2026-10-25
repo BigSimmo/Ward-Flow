@@ -176,7 +176,12 @@ export function reduceBedEvent(
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
           ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
-          ...(linkedArm ? { beforeReferralBed: linkedArm.heldBedNumber ?? null } : {}),
+          ...(linkedArm
+            ? {
+                beforeReferralBed: linkedArm.heldBedNumber ?? null,
+                beforeReferralArmIndex: linkedReferral!.destinations.indexOf(linkedArm),
+              }
+            : {}),
           afterBed: event.bedNumber,
           bedKindChange: {
             before: admission.bedKind ?? null,

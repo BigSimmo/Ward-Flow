@@ -48,6 +48,8 @@ export type BedPlacementUndo = {
   beforeBed: number | null;
   beforeMovementBed?: number | null;
   beforeReferralBed?: number | null;
+  /** Exact destination slot changed by the move; absent on older saves. */
+  beforeReferralArmIndex?: number;
   afterBed: number;
   /** Absent on older saves. Null preserves a seed's unrecorded historical bed kind on Undo. */
   bedKindChange?: {
