@@ -3,7 +3,8 @@
 //
 // Fails when a commit in the pull request was AUTHORED by a bot account (any `[bot]` login or
 // noreply address, or a known review/coding bot such as qodo) and that commit's own files touch
-// `supabase/**`, `backend/**/infra/*.sql` or a clinical path. Such PRs would otherwise pass CI and
+// `supabase/**`, backend SQL (forward migrations and `infra/` rollbacks), the backend sign-in,
+// engine and command-schema files, or a clinical or legal-logic path. Such PRs would otherwise pass CI and
 // could auto-merge with no human review. Dependabot only edits dependency manifests, lockfiles and
 // action pins, none of which match, so its PRs are unaffected. Human commits are never judged here.
 //
@@ -45,9 +46,19 @@ export function isBotAuthor(author) {
 // Clinical paths: the clinical values, MHA 2014 reference data, clinical governance documents,
 // and any source, data or doc file whose path names clinical content. Tests are excluded only when
 // they fall under no other rule; protected data stays protected wherever it is referenced.
+// `^supabase/` has no folder in Ward Flow today; it stays so a Supabase CLI `supabase/` folder added
+// later is protected from its first commit.
 export const sensitivePathPatterns = [
   /^supabase\//u,
   /^backend\/(?:.+\/)?infra\/[^/]+\.sql$/iu,
+  // Ward Flow's forward schema migrations and the list that orders them.
+  /^backend\/ward-flow\/(?:migrations\/[^/]+\.sql|migrations\.mjs)$/u,
+  // Backend sign-in and role checks, the shared command engine and its input schemas.
+  /^backend\/ward-flow\/(?:auth|supabase-auth)\.mjs$/u,
+  /^backend\/ward-flow\/(?:engine|command-schemas)\.ts$/u,
+  // Ward eligibility and the Mental Health Act legal-forms logic (not their styles or views).
+  /^src\/components\/ward-management\/ward-eligibility\.ts$/u,
+  /^src\/components\/ward-management\/(?:legal-forms\/)?[^/]*legal[^/]*\.ts$/u,
   /^data\/mha-[^/]*$/iu,
   /^docs\/ward-flow\/governance\//u,
   /^(?:src|data|docs|backend)\/(?:.*\/)?[^/]*clinic[^/]*(?:\/|$)/iu,
@@ -79,7 +90,7 @@ export function botSensitiveCommitViolations(commits) {
     const sensitive = commit.files.filter(isSensitivePath);
     if (sensitive.length > 0) {
       violations.push(
-        `Bot-authored commit ${sha} (${who}) touches protected paths (${sensitive.slice(0, 5).join(", ")}${sensitive.length > 5 ? ", …" : ""}). Supabase, backend infra SQL and clinical paths need a human-authored commit and owner review.`,
+        `Bot-authored commit ${sha} (${who}) touches protected paths (${sensitive.slice(0, 5).join(", ")}${sensitive.length > 5 ? ", …" : ""}). Supabase, backend SQL and sign-in, engine, legal and clinical paths need a human-authored commit and owner review.`,
       );
     }
   }
