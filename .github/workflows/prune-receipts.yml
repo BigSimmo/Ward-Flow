@@ -7,9 +7,10 @@ name: Ward Flow receipt clean-up
 # about 0.5 KB per save. Runs `backend/ward-flow/prune-receipts.mjs`, which deletes in small batches
 # so saves are never held up, and prints only the number removed.
 #
-# Needs two repository secrets, added by the owner: WARD_SUPABASE_DATABASE_URL (the backend's runtime
-# connection, used only to check the target matches) and WARD_SUPABASE_MIGRATION_DATABASE_URL (the
-# migration identity, which alone may delete receipts). Until both exist, each run says so and
+# Needs one repository secret, added by the owner: WARD_SUPABASE_PRUNE_DATABASE_URL, the connection
+# for the `wardflow_pruner` login (backend/ward-flow/infra/supabase-prune-role.sql). That login can
+# only call a function that removes receipts older than 7 days; it cannot read or change anything
+# else. The migration login is never stored here. Until the secret exists, each run says so and
 # succeeds without connecting. Public repository: free.
 on:
   schedule:
@@ -29,18 +30,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      WARD_SUPABASE_PROJECT_REF: zakzoemeedfepxcstsou
-      WARD_SUPABASE_DATABASE_URL: ${{ secrets.WARD_SUPABASE_DATABASE_URL }}
-      WARD_SUPABASE_MIGRATION_DATABASE_URL: ${{ secrets.WARD_SUPABASE_MIGRATION_DATABASE_URL }}
+      WARD_SUPABASE_PRUNE_DATABASE_URL: ${{ secrets.WARD_SUPABASE_PRUNE_DATABASE_URL }}
     steps:
-      - name: Check the connection secrets are set
+      - name: Check the connection secret is set
         id: secrets
         run: |
-          if [ -n "$WARD_SUPABASE_DATABASE_URL" ] && [ -n "$WARD_SUPABASE_MIGRATION_DATABASE_URL" ]; then
+          if [ -n "$WARD_SUPABASE_PRUNE_DATABASE_URL" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Receipt clean-up skipped: add WARD_SUPABASE_DATABASE_URL and WARD_SUPABASE_MIGRATION_DATABASE_URL as repository secrets."
+            echo "::notice::Receipt clean-up skipped: add WARD_SUPABASE_PRUNE_DATABASE_URL (the wardflow_pruner login) as a repository secret."
           fi
       - name: Check out the locked source
         if: ${{ steps.secrets.outputs.ready == 'true' }}
@@ -59,4 +58,4 @@ jobs:
       - name: Remove receipts older than 7 days
         if: ${{ steps.secrets.outputs.ready == 'true' }}
         working-directory: backend/ward-flow
-        run: npm run prune:receipts:supabase
+        run: npm run prune:receipts:supabase-pruner
