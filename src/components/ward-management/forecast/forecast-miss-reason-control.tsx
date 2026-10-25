@@ -10,7 +10,7 @@ import { useId, useState } from "react";
 
 import { Button, Select } from "@/components/wf";
 import { dischargeHref, movementHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
   FORECAST_MISS_REASON_LABELS,
@@ -31,9 +31,11 @@ export function ForecastMissReasonControl({
   day,
   entry,
   candidates,
+  now,
   onRecord,
 }: {
   day: number;
+  now: Instant;
   entry: ForecastMissReasonEntry | undefined;
   candidates: readonly MissCandidate[];
   onRecord: (reason: ForecastMissReason) => void;
@@ -46,7 +48,7 @@ export function ForecastMissReasonControl({
     return (
       <p className={styles.missReason} data-testid={`ward-forecast-miss-reason-${day}`}>
         Reason: {FORECAST_MISS_REASON_LABELS[entry.reason]}. Recorded by {WARD_FLOW_ROLE_LABELS[entry.by]} at{" "}
-        {formatInstant(entry.at)}.{" "}
+        {formatInstantWithDay(entry.at, now)}.{" "}
         <Button
           variant="ghost"
           size="sm"

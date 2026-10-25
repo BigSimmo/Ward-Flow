@@ -13,32 +13,25 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 
 import styles from "./handover-open-promises.module.css";
 
-/** One shift after the chosen handover: the window the next coordinator inherits. */
-export const NEXT_SHIFT_MINUTES = 8 * 60;
-
 /**
  * OPEN PROMISES CARRIED OVER AT HANDOVER (closing-the-loop package A, 24 Oct 2026). Response
- * commitments still open whose promised time or next callback is already past or falls before the
- * end of the next shift, each linked to its referral, so the incoming coordinator inherits them.
+ * commitments still open that carry a promised time or a next callback, overdue or still to come,
+ * each with its recorded time and linked to its referral (no invented shift length), so the incoming coordinator inherits them.
  * Read only, in recorded order, and nothing is ranked. Renders nothing when none is due.
  */
 export function HandoverOpenPromises({
   referrals,
   units,
   now,
-  handoverAt,
 }: {
   referrals: readonly Referral[];
   units: readonly Unit[];
   now: Instant;
-  /** The chosen handover's time. The window runs to one shift after it. */
-  handoverAt: Instant;
 }) {
   const baseId = useId();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
-  const until = Math.max(handoverAt, now) + NEXT_SHIFT_MINUTES;
-  const items = commitmentsDueBy(referrals, until);
+  const items = commitmentsDueBy(referrals, Number.POSITIVE_INFINITY);
   if (items.length === 0) return null;
   const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
   return (
@@ -46,7 +39,7 @@ export function HandoverOpenPromises({
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         Open promises and callbacks to carry over ({items.length})
       </h2>
-      <p className={styles.note}>Overdue, or due before {formatInstantWithDay(until, now)}. Recorded order.</p>
+      <p className={styles.note}>Overdue or still to come, each with its recorded time. Recorded order.</p>
       <ul className={styles.list}>
         {items.map((item) => {
           const who = patientOf(item.referral);

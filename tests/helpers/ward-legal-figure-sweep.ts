@@ -1,4 +1,5 @@
 // Closing the loop, package D (24 Oct 2026).
+import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 import {
   activeWardRestrictions,
   closureTransitionItems,
@@ -1533,6 +1534,15 @@ export function candidateEvents(
       });
       return [...arrivalCandidates, ...dischargeCandidates];
     }
+    // Closing-the-loop package E (24 Oct 2026): records only, against a current stay or a directory entry.
+    case "RECORD_HOME_SERVICE_RETURN":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    case "RECORD_DIRECTORY_CHECK":
+      return buildOnCallDirectory()
+        .slice(0, 3)
+        .map((entry) => ({ type, role, now, entryId: entry.id }));
     // Closing the loop, package D (24 Oct 2026): records only, each against the records it names.
     case "MARK_CANCELLED_MOVE_CHECK":
       return state.movements

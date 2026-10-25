@@ -14,7 +14,7 @@ import { CardBody, tableClasses } from "@/components/wf";
 import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { MINIMUM_EFFECTIVENESS_SAMPLE } from "@/components/ward-management/ward-derivations-records";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -31,17 +31,22 @@ const GROUP_WORDS: Record<Group, string> = {
 };
 
 /** No name, UMRN or journey number on Statistics (D-39): the admission number, else where and when. */
-function journeyName(movement: Movement, admissions: readonly Admission[]): string {
+function journeyName(movement: Movement, admissions: readonly Admission[], now: Instant): string {
   const admission = admissions.find((each) => each.movementId === movement.id)?.id ?? movement.admissionId;
-  return admission ?? `${originName(movement) ?? "Origin not recorded"}, raised ${formatInstant(movement.openedAt)}`;
+  return (
+    admission ??
+    `${originName(movement) ?? "Origin not recorded"}, raised ${formatInstantWithDay(movement.openedAt, now)}`
+  );
 }
 
 export function WaitingStagesCard({
   movements,
   admissions,
+  now,
 }: {
   movements: readonly Movement[];
   admissions: readonly Admission[];
+  now: Instant;
 }) {
   const rows = useMemo(() => waitingStages(movements), [movements]);
   const [open, setOpen] = useState<{ stage: WaitingStageId; group: Group } | null>(null);
@@ -122,7 +127,7 @@ export function WaitingStagesCard({
           typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times. Journeys still in a stage are not
           in its typical time. Choose a count to see its journeys.
         </p>
-        <div id={listId} aria-live="polite">
+        <div id={listId}>
           {openRow && open ? (
             <>
               <h3 className={styles.listHead}>
@@ -132,7 +137,7 @@ export function WaitingStagesCard({
               <ul className={styles.list} data-testid="ward-waiting-stage-journeys">
                 {openJourneys.map(({ movement, minutes }) => (
                   <li key={movement.id}>
-                    <Link href={movementHref(movement.id)}>{journeyName(movement, admissions)}</Link>
+                    <Link href={movementHref(movement.id)}>{journeyName(movement, admissions, now)}</Link>
                     <span className={styles.sub}>
                       {minutes !== undefined
                         ? splitDuration(minutes)

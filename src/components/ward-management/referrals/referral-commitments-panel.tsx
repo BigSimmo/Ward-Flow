@@ -57,7 +57,7 @@ export function CommitmentTimeSelect({
         <option value="">Not set</option>
         {REFERRAL_COMMITMENT_TIME_CHOICES.map((choice) => (
           <option key={choice.minutes} value={String(choice.minutes)}>
-            {choice.label} ({formatInstantWithDay(now + choice.minutes, now)})
+            By {formatInstantWithDay(now + choice.minutes, now)}
           </option>
         ))}
       </Select>

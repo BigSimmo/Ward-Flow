@@ -52,7 +52,7 @@ describe("Coordinated call sheet (closing-the-loop package A)", () => {
 });
 
 describe("Handover carries open promises over (closing-the-loop package A)", () => {
-  it("lists the seeded overdue promise and the callback due next shift, each linked to its referral", () => {
+  it("lists the seeded overdue promise and the callback still to come, each linked to its referral", () => {
     inProvider(<HandoverPage />);
     const panel = screen.getByTestId("ward-handover-open-promises");
     const rf001 = within(panel).getByTestId("ward-handover-promise-RF-001");

@@ -222,6 +222,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "discharges/discharge-service-hours.ts",
+    name: "CLOSURE_LOOKAHEAD_DAYS",
+    why: "how many days ahead weekend preparation searches a synthetic service-hours table for its next closure; a search horizon, never a clinical limit",
+  },
+  {
     file: "ward-role-alerts.ts",
     name: "ROLE_ALERT_WINDOW_MINUTES",
     why: "how long a phone alert id stays live for a retried delivery (D-80); never shown",

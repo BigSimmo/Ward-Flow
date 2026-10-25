@@ -6,6 +6,7 @@ import { MINUTES_PER_DAY, dayOf, formatSheetMoment, type Instant } from "@/compo
 import { confirmationAge } from "@/components/ward-management/ward-confirmation-age";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { Badge, Button, Select } from "@/components/wf";
 import {
@@ -67,6 +68,7 @@ export function DischargeDependenciesPanel({
   dispatch: (event: WardFlowEvent) => void;
 }) {
   const idPrefix = useId();
+  const raise = wardRaise(dispatch, role, now);
   const canChange = (role === "ward" || role === "coordinator") && release.state !== "discharged";
   const list = release.dependencies ?? [];
   const summary = dependencySummary(release);
@@ -79,10 +81,7 @@ export function DischargeDependenciesPanel({
   const kindChosen = newKind !== "" && unrecorded.includes(newKind) ? newKind : unrecorded[0];
 
   const record = (kind: DischargeDependencyKind, owner: DischargeDependencyOwner, state: DischargeDependencyState) =>
-    dispatch({
-      type: "RECORD_DISCHARGE_DEPENDENCY",
-      role,
-      now,
+    raise("RECORD_DISCHARGE_DEPENDENCY", {
       releaseId: release.id,
       actingUnitId: release.unitId,
       kind,
@@ -95,10 +94,7 @@ export function DischargeDependenciesPanel({
     if (!match) return;
     const minutes = Number(match[1]) * 60 + Number(match[2]);
     if (minutes >= MINUTES_PER_DAY) return;
-    dispatch({
-      type: "RECORD_DISCHARGE_PLAN_CHANGE",
-      role,
-      now,
+    raise("RECORD_DISCHARGE_PLAN_CHANGE", {
       releaseId: release.id,
       actingUnitId: release.unitId,
       expectedAt: (dayOf(now) + dayOffset) * MINUTES_PER_DAY + minutes,
@@ -222,7 +218,7 @@ export function DischargeDependenciesPanel({
               <input
                 className={styles.time}
                 type="time"
-                aria-label="Time (24 hour)"
+                aria-label="Time (hh:mm)"
                 value={time}
                 onChange={(event) => setTime(event.target.value)}
               />
@@ -252,10 +248,7 @@ export function DischargeDependenciesPanel({
               disabled={destination === ""}
               onClick={() => {
                 if (destination === "") return;
-                dispatch({
-                  type: "RECORD_DISCHARGE_PLAN_CHANGE",
-                  role,
-                  now,
+                raise("RECORD_DISCHARGE_PLAN_CHANGE", {
                   releaseId: release.id,
                   actingUnitId: release.unitId,
                   leavingDestination: destination,

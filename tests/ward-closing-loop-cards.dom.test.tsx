@@ -18,7 +18,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 describe("closing-the-loop Statistics cards", () => {
   it("opens the journeys behind a waiting-stage count, each linking to its record", () => {
     const state = seedWardFlowState();
-    render(<WaitingStagesCard movements={state.movements} admissions={state.admissions} />);
+    render(<WaitingStagesCard movements={state.movements} admissions={state.admissions} now={NOW_ANCHOR} />);
     const button = screen.getByTestId("ward-waiting-stage-awaiting_transport-notRecorded");
     expect(button.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(button);

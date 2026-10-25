@@ -40,15 +40,15 @@ export function referralCommitmentStepLabel(step: ReferralCommitmentStep): strin
 }
 
 /**
- * The times a person can choose for a promise or a callback, as minutes from now. Offered as a
- * list, so a time is always a person's choice and never worked out for them.
+ * The times a person can choose for a promise or a callback, as minutes from now, each shown as the
+ * clock time it lands on. Offered as a list, so a time is always a person's choice.
  */
 export const REFERRAL_COMMITMENT_TIME_CHOICES = [
-  { minutes: 30, label: "In 30 min" },
-  { minutes: 60, label: "In 1 hour" },
-  { minutes: 120, label: "In 2 hours" },
-  { minutes: 240, label: "In 4 hours" },
-  { minutes: 480, label: "In 8 hours" },
+  { minutes: 30 },
+  { minutes: 60 },
+  { minutes: 120 },
+  { minutes: 240 },
+  { minutes: 480 },
 ] as const;
 
 /**

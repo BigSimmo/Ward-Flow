@@ -1211,7 +1211,7 @@ export type BedRelease = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
-} & import("./discharges/discharge-dependencies").DischargeLogisticsFields; // Closing-the-loop B: logistics only.
+} & import("./discharges/discharge-dependencies").DischargeLogisticsFields;
 
 /**
  * Task 1's privacy discipline, carried into decline reasons the same way `BED_RELEASE_BLOCKERS`

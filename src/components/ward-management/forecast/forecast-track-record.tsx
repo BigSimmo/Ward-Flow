@@ -110,6 +110,7 @@ export function ForecastTrackRecordCard({
                   {/* Closing-the-loop features (Josh, 24 Oct 2026): a person records why a day differed. */}
                   {day.miss === 0 ? null : (
                     <ForecastMissReasonControl
+                      now={now}
                       day={day.day}
                       entry={latestReasons.get(day.day)}
                       candidates={missCandidates(day, movements, admissions)}

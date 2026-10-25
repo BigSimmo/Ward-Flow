@@ -5,7 +5,7 @@
 // typed question, no AI and no ranking: rows keep recorded order, and every row names the record it
 // came from so the screen can link to it. Nothing here releases, books or changes anything.
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -62,10 +62,10 @@ function unitName(units: readonly Unit[], unitId: string | undefined): string {
  * A row's name without a patient name, UMRN or journey number (D-39): the admission number when
  * the journey has one, otherwise where and when the request was raised.
  */
-function journeyLabel(movement: Movement, admissions: readonly Admission[]): string {
+function journeyLabel(movement: Movement, admissions: readonly Admission[], now: Instant): string {
   const admission = admissions.find((each) => each.movementId === movement.id)?.id ?? movement.admissionId;
   if (admission) return admission;
-  return `${originName(movement) ?? "Origin not recorded"}, raised ${formatInstant(movement.openedAt)}`;
+  return `${originName(movement) ?? "Origin not recorded"}, raised ${formatInstantWithDay(movement.openedAt, now)}`;
 }
 
 function open(movement: Movement): boolean {
@@ -78,10 +78,15 @@ function liveTransport(movement: Movement) {
   return job !== undefined && job.cancelledAt === undefined ? job : undefined;
 }
 
-function movementRow(movement: Movement, admissions: readonly Admission[], detail: string): FixedAnswerRow {
+function movementRow(
+  movement: Movement,
+  admissions: readonly Admission[],
+  now: Instant,
+  detail: string,
+): FixedAnswerRow {
   return {
     key: movement.id,
-    label: journeyLabel(movement, admissions),
+    label: journeyLabel(movement, admissions, now),
     detail,
     source: { kind: "movement", id: movement.id },
   };
@@ -99,6 +104,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
       movementRow(
         movement,
         admissions,
+        now,
         `${STAGE_WORDS[movement.stage]} at ${unitName(units, movement.acceptedUnitId)}. ${
           transportNeedState(movement) === "needed" ? "Transport needed" : "Transport need not recorded"
         }, none booked.`,
@@ -120,7 +126,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
     .filter((movement) => open(movement) && movement.acceptedUnitId === undefined)
     .filter((movement) => movement.stage === "placement_requested" || movement.stage === "destination_review")
     .filter((movement) => movement.referredUnitIds.length === 0)
-    .map((movement) => movementRow(movement, admissions, `${STAGE_WORDS[movement.stage]}. No ward asked yet.`));
+    .map((movement) => movementRow(movement, admissions, now, `${STAGE_WORDS[movement.stage]}. No ward asked yet.`));
 
   const pastLimit = movements
     .filter((movement) => open(movement) && movement.stage === "pulled")
@@ -129,8 +135,10 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
       movementRow(
         movement,
         admissions,
-        `Bed pulled at ${unitName(units, movement.acceptedUnitId)}. Pull time limit ${formatInstant(
+        now,
+        `Bed pulled at ${unitName(units, movement.acceptedUnitId)}. Pull time limit ${formatInstantWithDay(
           movement.pullExpiresAt!,
+          now,
         )}. Still pulled until a person releases it.`,
       ),
     );
@@ -142,6 +150,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
       movementRow(
         movement,
         admissions,
+        now,
         `${STAGE_WORDS[movement.stage]} to ${unitName(units, movement.acceptedUnitId)}. No transport booked, so no escort answer.`,
       ),
     );

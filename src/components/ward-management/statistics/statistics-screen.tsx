@@ -1172,7 +1172,7 @@ export function StatisticsScreen({
               {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
               {countsOnly ? null : (
                 <>
-                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} />
+                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
                   <FixedQuestionsCard
                     movements={sourceMovements}
                     bedReleases={sourceBedReleases}

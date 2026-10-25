@@ -826,7 +826,7 @@ export function HandoverPage() {
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
-        <HandoverOpenPromises referrals={referrals} units={units} now={now} handoverAt={shiftAt} />
+        <HandoverOpenPromises referrals={referrals} units={units} now={now} />
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -1426,7 +1426,7 @@ export function HandoverPage() {
       {hero}
       {pastBanner}
       {sheetOpen ? null : sinceStrip}
-      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} handoverAt={shiftAt} />}
+      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} />}
       {sheetOpen ? null : toolbar}
       {body}
       {wide && !portrait ? (
