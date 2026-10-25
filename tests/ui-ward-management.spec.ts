@@ -1,7 +1,45 @@
-import { expect, test, type Page } from "playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-import { WARD_WORKSPACE_MODES } from "@/components/ward-management/ward-management-modes";
+import { expect, test, type Page } from "playwright/test";
+import ts from "typescript";
+
 import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
+
+// Read the authoritative declaration without importing its React/CSS component graph into
+// Playwright's Node-side collector. The unit chrome contract also checks it against real routes.
+const workspaceSource = ts.createSourceFile(
+  "ward-management-modes.tsx",
+  readFileSync(path.join(__dirname, "../src/components/ward-management/ward-management-modes.tsx"), "utf8"),
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TSX,
+);
+const workspaceDeclarations = workspaceSource.statements.flatMap((statement) =>
+  ts.isVariableStatement(statement) &&
+  statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
+    ? statement.declarationList.declarations.filter(
+        (declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === "WARD_WORKSPACE_MODES",
+      )
+    : [],
+);
+if (workspaceDeclarations.length !== 1) throw new Error("Expected one exported WARD_WORKSPACE_MODES declaration");
+let workspaceExpression = workspaceDeclarations[0]!.initializer;
+while (
+  workspaceExpression &&
+  (ts.isAsExpression(workspaceExpression) ||
+    ts.isSatisfiesExpression(workspaceExpression) ||
+    ts.isParenthesizedExpression(workspaceExpression))
+)
+  workspaceExpression = workspaceExpression.expression;
+if (!workspaceExpression || !ts.isArrayLiteralExpression(workspaceExpression))
+  throw new Error("WARD_WORKSPACE_MODES must remain a literal array for browser collection");
+const WARD_WORKSPACE_MODES = workspaceExpression.elements.map((element) => {
+  if (!ts.isStringLiteral(element)) throw new Error("WARD_WORKSPACE_MODES must contain only string literals");
+  return element.text;
+});
+if (new Set(WARD_WORKSPACE_MODES).size !== WARD_WORKSPACE_MODES.length)
+  throw new Error("WARD_WORKSPACE_MODES must not contain duplicates");
 
 const PATH = "/ward-flow";
 
