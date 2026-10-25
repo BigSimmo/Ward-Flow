@@ -18,6 +18,102 @@ const snapshot = (revision: number): SharedSnapshot => ({
 });
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
 
+describe("response-only sender snapshot binding", () => {
+  const firstContext = "a".repeat(64);
+  const nextContext = "b".repeat(64);
+  const response = (accessContext = firstContext, revision = 1) => ({
+    revision,
+    accessContext,
+    view: { version: 1 as const, referrals: [], movements: [] },
+  });
+
+  it("adopts a defensive frozen display bound to the actual outer snapshot", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () =>
+        Response.json({ snapshot: { ...snapshot(1), accessContext: firstContext, partialView: response() } }),
+    });
+    try {
+      await client.refresh();
+      expect(view?.status).toBe("ready");
+      expect(view?.snapshot?.partialView).toEqual(response());
+      expect(Object.isFrozen(view?.snapshot?.partialView)).toBe(true);
+      expect(Object.isFrozen(view?.snapshot?.partialView?.view.referrals)).toBe(true);
+    } finally {
+      client.dispose();
+    }
+  });
+
+  it.each([
+    undefined,
+    null,
+    { ...response(), revision: 2 },
+    response(nextContext),
+    { ...response(), view: { ...response().view, destinations: ["foreign-destination"] } },
+  ])("drops an unavailable or invalid sibling while accepting valid domain data: %#", async (partialView) => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => Response.json({ snapshot: { ...snapshot(1), accessContext: firstContext, partialView } }),
+    });
+    try {
+      await client.refresh();
+      expect(view?.status).toBe("ready");
+      expect(view?.snapshot?.partialView).toBeUndefined();
+    } finally {
+      client.dispose();
+    }
+  });
+
+  it("clears a prior display on equal-revision context replacement and a missing newer sibling", async () => {
+    let view: SharedView | undefined;
+    let reads = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => {
+        reads++;
+        return Response.json({
+          snapshot:
+            reads === 1
+              ? { ...snapshot(1), accessContext: firstContext, partialView: response() }
+              : reads === 2
+                ? { ...snapshot(1), accessContext: nextContext, partialView: response() }
+                : reads === 3
+                  ? { ...snapshot(1), accessContext: nextContext, partialView: response(nextContext) }
+                  : { ...snapshot(2), accessContext: nextContext },
+        });
+      },
+    });
+    try {
+      await client.refresh();
+      expect(view?.snapshot?.partialView).toBeDefined();
+      await client.refresh();
+      expect(view?.snapshot?.accessContext).toBe(nextContext);
+      expect(view?.snapshot?.partialView).toBeUndefined();
+      await client.refresh();
+      expect(view?.snapshot?.partialView?.accessContext).toBe(nextContext);
+      await client.refresh();
+      expect(view?.snapshot?.revision).toBe(2);
+      expect(view?.snapshot?.partialView).toBeUndefined();
+    } finally {
+      client.dispose();
+    }
+  });
+});
+
 describe("shared snapshot access context", () => {
   it.each([undefined, "a".repeat(64)])(
     "preserves the optional server context without breaking older snapshots: %s",
