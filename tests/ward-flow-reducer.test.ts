@@ -2121,8 +2121,15 @@ describe("bed release privacy", () => {
     // reducer-produced one, never silently degrade to checking only one source.
     expect(seeded.bedReleases.length).toBeGreaterThan(0);
     const everyRelease = [...seeded.bedReleases, reducerProduced];
+    // Closing-the-loop package B (24 Oct 2026): discharge logistics, optional and about the
+    // arrangements (chosen values, times and role labels), never the departing patient.
+    const OPTIONAL_LOGISTICS_FIELDS = ["dependencies", "plannedDestination", "planChanges"];
     for (const release of everyRelease) {
-      expect(Object.keys(release).sort()).toEqual(ALLOWED_BED_RELEASE_FIELDS);
+      expect(
+        Object.keys(release)
+          .filter((key) => !OPTIONAL_LOGISTICS_FIELDS.includes(key))
+          .sort(),
+      ).toEqual(ALLOWED_BED_RELEASE_FIELDS);
     }
   });
 

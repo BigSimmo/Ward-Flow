@@ -82,11 +82,6 @@ export const WARD_FEATURE_FLAGS = {
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
   },
-  "pilot-measures": {
-    label: "Pilot measures",
-    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
-    defaults: { development: true, demo: true, production: true },
-  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;
