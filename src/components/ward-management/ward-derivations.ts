@@ -764,7 +764,7 @@ export function buildActionInbox(
       tone: "danger",
       icon: CircleAlert,
       title: "No eligible bed: shown to the bed coordinator",
-      detail: "No ward in the network is currently eligible; the patient stays on the waitlist",
+      detail: "No ward in the network is currently eligible; the patient stays on the waiting list",
       owner: "Bed coordinator",
       movementId: movement.id,
     });
@@ -1225,26 +1225,20 @@ export function expectFlagKindFor(
   return age >= EXPECT_FLAG_INVOLUNTARY_MINUTES ? "involuntary_7d" : null;
 }
 
-function toInstantMinutes(val: Instant | string): number {
-  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
-  const parsed = Date.parse(val);
-  if (Number.isNaN(parsed)) return 0;
-  return Math.floor(parsed / 60_000);
-}
-
 /**
  * Top 25 items 1 and 5: occupied stays whose ward's own expected discharge falls from now to the
  * discharge prep window ahead (`CLINICAL_VALUES.dischargePrepWindow`). The ward discharge prep
  * prompt and the discharge support notices both read this one list, so they always agree.
  */
-export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant | string): Admission[] {
-  const nowMin = toInstantMinutes(now);
+export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant): Admission[] {
+  // EDR-09: `now` is an Instant only. A non-finite one finds nobody rather than reading as minute zero.
+  if (!Number.isFinite(now)) return [];
   const windowMinutes = CLINICAL_VALUES.dischargePrepWindow.value;
   return admissions.filter((adm) => {
     if (!bedIsOccupied(adm) || adm.expectedDischargeAt === null || !Number.isFinite(adm.expectedDischargeAt)) {
       return false;
     }
-    const diff = adm.expectedDischargeAt - nowMin;
+    const diff = adm.expectedDischargeAt - now;
     return diff >= 0 && diff <= windowMinutes;
   });
 }
