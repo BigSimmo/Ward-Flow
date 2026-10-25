@@ -214,6 +214,9 @@ export function RecordFormSheet({
   const [saving, setSaving] = useState(false);
   // Counts presses of Save while something is missing; the error summary shows from the first.
   const [refusedSaves, setRefusedSaves] = useState(0);
+  // A typed time that is not a real time (such as 2505) is named on the field once the person
+  // leaves it, not only after a refused save (Josh's iPhone, 25 Oct 2026).
+  const [timeLeft, setTimeLeft] = useState(false);
   const submissionVersion = useRef(0);
   const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration", "dayZero");
   const dayZero = world?.dayZero;
@@ -316,7 +319,9 @@ export function RecordFormSheet({
             : []),
         ];
   const problemFor = (id: string) =>
-    refusedSaves > 0 ? (problems.find((problem) => problem.id === id)?.text ?? null) : null;
+    refusedSaves > 0 || (id === timeId && timeLeft && timeOnForm.trim() !== "")
+      ? (problems.find((problem) => problem.id === id)?.text ?? null)
+      : null;
   return (
     <Sheet
       open={open}
@@ -439,6 +444,7 @@ export function RecordFormSheet({
               disabled={saving}
               value={timeOnForm}
               onChange={(event) => setTimeOnForm(event.target.value)}
+              onBlur={() => setTimeLeft(true)}
             />
           </Field>
         </div>

@@ -223,12 +223,12 @@ export function PatientLegalNowCard({
               <StatusGlyph tone="neutral" size={10} />
               <span className={styles.phItemText}>
                 <strong>No form recorded</strong>
-                {isOpen(movement) ? (
-                  <Link className={styles.phLink} href={recordFormHref(movement.id)}>
-                    Record a form
-                  </Link>
-                ) : null}
               </span>
+              {isOpen(movement) ? (
+                <Link className={styles.phLink} href={recordFormHref(movement.id)}>
+                  Record a form
+                </Link>
+              ) : null}
             </li>
           ) : null}
         </ul>
