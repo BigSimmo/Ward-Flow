@@ -28,6 +28,7 @@ import { WardAuthError } from "@/components/ward-management/ward-auth-link";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { nextEvent, seededRandom } from "../../../tests/helpers/ward-engine-fuzz";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 
 const backend = new URL("../../../backend/ward-flow/", import.meta.url);
 const { Pool } = createRequire(new URL("package.json", backend))("pg");
@@ -600,6 +601,25 @@ async function busyShift(server: BackendProcess) {
   lag.disable();
   const { counts, problems, keptIds } = await reconcile(load.outcomes);
   const end = await serverWorld();
+  // After the shift: the server's world still keeps the saved-world rules, and every desk, once
+  // refreshed, shows exactly the server's revision and beds (no desk left on a different picture).
+  const endState = (end.world as { state: Record<string, unknown> }).state;
+  check(
+    "load",
+    "the server's world after the shift passes the saved-world check",
+    isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...endState, rejections: [] }))),
+  );
+  await Promise.all(load.people.map((person) => person.client.refresh()));
+  const beds = (state: unknown) => JSON.stringify((state as { admissions: unknown }).admissions);
+  const diverged = load.people.filter(
+    (person) => person.revision !== end.revision || beds(person.state) !== beds(endState),
+  );
+  check(
+    "load",
+    "every desk shows the server's picture after refreshing",
+    diverged.length === 0,
+    `${diverged.length} of ${load.people.length} desks differ`,
+  );
   const refusals: Record<string, number> = {};
   for (const outcome of load.outcomes)
     if (outcome.status !== "accepted") {
