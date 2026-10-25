@@ -8,7 +8,7 @@
 
 import { dayOf, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import { STANDARD_WARD_SITES, wardNetworkOf } from "@/components/ward-management/ward-sites";
 
 /**
  * A fixture document's title, resolved from the Chief Psychiatrist register rather than
@@ -35,8 +35,7 @@ function officialFormName(code: string): string {
  * surge, the WA-like network) the lookup found nothing and every patient record crashed (stress
  * test 25 Oct 2026).
  */
-const standardUnitName = (id: string) =>
-  STANDARD_WARD_SITES.flatMap((site) => site.units).find((unit) => unit.id === id)!.name;
+const standardUnitName = (id: string) => wardNetworkOf(STANDARD_WARD_SITES).unitById(id)!.name;
 const standardEdName = (id: string) =>
   STANDARD_WARD_SITES.find((site) => site.emergencyDepartment?.id === id)!.emergencyDepartment!.name;
 

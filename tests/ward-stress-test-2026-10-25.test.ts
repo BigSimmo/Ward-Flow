@@ -68,10 +68,8 @@ describe("stress test 25 Oct: a patient record opens under every scenario's netw
       vi.resetModules();
       const { activateScenarioNetwork } = await import("@/components/ward-management/ward-scenarios");
       activateScenarioNetwork(scenario);
-      await expect(
-        import("@/components/ward-management/patients/patient-now-records"),
-        scenario,
-      ).resolves.toBeDefined();
+      const { dur } = await import("@/components/ward-management/patients/patient-now-records");
+      expect(dur, scenario).toBeTypeOf("function");
     }
     vi.resetModules();
   });
