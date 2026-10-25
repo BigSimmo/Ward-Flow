@@ -217,8 +217,10 @@
   white-space: nowrap;
 }
 
+/* Device sweep R3-05/L17 (24 Oct 2026): the pills wrap rather than squeeze into each other. */
 .heroFilters {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
@@ -1373,10 +1375,13 @@ button.taskLabel[aria-pressed="true"] {
   grid-auto-columns: auto;
 }
 
+/* Device sweep R1-05/B6-17 (24 Oct 2026): the action keeps its whole label ("Copy for handover 6"); the shared phone hero
+ * actions row already wraps. */
 .phoneHeroAction {
   flex: 1 1 0;
   justify-content: center;
   min-width: 0;
+  min-width: fit-content;
 }
 
 .phoneViews {

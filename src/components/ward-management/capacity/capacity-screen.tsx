@@ -145,7 +145,6 @@ export function CapacityScreen() {
   );
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -839,7 +838,7 @@ export function CapacityScreen() {
                   Open on TV
                 </Link>
               ) : null}
-              {!isPhone && bedMeetingActionsOn ? (
+              {!isPhone ? (
                 <Link
                   href={BED_MEETING_AGENDA_HREF}
                   className={buttonClass({ variant: "onHero" })}

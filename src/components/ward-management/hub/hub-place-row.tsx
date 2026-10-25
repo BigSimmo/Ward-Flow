@@ -76,18 +76,20 @@ export const HubPlaceRow = memo(function HubPlaceRow({
               <BedStrip bar counts={wardFigures} wardName={entry.name} />
               {/* Simplification A6 (Josh, 19 Oct 2026): words, not "2/2/3 of 24". */}
               {/* Ready always shows; pulled and closed only when there are any, so the words fit the column. */}
+              {/* Device sweep (24 Oct 2026): the dot is held to the figure before it by a no-break
+                  space, so a wrapped line never starts with a stray "· 3 closed". */}
               <span className={styles.resultFigures}>
                 <span>{wardFigures.ready} ready</span>
                 {wardFigures.pulled > 0 ? (
                   <>
-                    {" "}
-                    <span>· {wardFigures.pulled} pulled</span>
+                    {"\u00a0· "}
+                    <span>{wardFigures.pulled} pulled</span>
                   </>
                 ) : null}
                 {wardFigures.closed > 0 ? (
                   <>
-                    {" "}
-                    <span>· {wardFigures.closed} closed</span>
+                    {"\u00a0· "}
+                    <span>{wardFigures.closed} closed</span>
                   </>
                 ) : null}{" "}
                 <span>of {entry.beds ?? 0} beds</span>

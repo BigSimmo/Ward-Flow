@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { decide } from "../scripts/ward-ci-public/budget-recheck.mjs";
+import { decide, listOpenPullRequests } from "../scripts/ward-ci-public/budget-recheck.mjs";
 import { mergeLatestMain } from "../scripts/ward-ci-public/merge-latest-main.mjs";
 
 const since = Date.parse("2026-10-21T06:00:00Z");
@@ -14,6 +14,22 @@ const build = (fields: Record<string, unknown>) => ({ id: 7, name: "Ward Flow pr
 const done = { status: "completed" };
 
 describe("budget recheck: which pull requests re-measure when main moves", () => {
+  it("reads every page of open pull requests, not just the first 100", async () => {
+    const paths: string[] = [];
+    const api = async (path: string) => {
+      paths.push(path);
+      const page = Number(new URL(path, "https://example.invalid").searchParams.get("page"));
+      const size = page === 1 ? 100 : page === 2 ? 3 : 0;
+      return Array.from({ length: size }, (_, index) => ({ number: page * 1000 + index }));
+    };
+    const prs = await listOpenPullRequests(api);
+    expect(prs).toHaveLength(103);
+    expect(paths).toEqual([
+      "/pulls?state=open&base=main&per_page=100&page=1",
+      "/pulls?state=open&base=main&per_page=100&page=2",
+    ]);
+  });
+
   it("re-runs a finished build that measured an older main", () => {
     expect(
       decide(

@@ -1508,10 +1508,12 @@
   }
 }
 
-/* v10 desktop toolbar: one row. The order note shrinks and truncates rather than wrapping. */
+/* v10 desktop toolbar: one row where it fits. Device sweep (24 Oct 2026): beside the detail panel
+   at 1024 and 1280 px one row ran past the card edge ("Filter queu", "Longe…"), so the tools wrap
+   to a second row there instead. */
 @media (min-width: 48.0625rem) {
   .toolbar {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
   .search {

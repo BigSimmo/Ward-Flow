@@ -138,6 +138,9 @@
   display: flex;
   flex: 1 1 auto;
   justify-content: center;
+  /* R1-17 (device sweep): when the stepper sits straight in this row (Service, Community), its
+     buttons keep the same 8px gap they have inside a wrapper on Ward and ED. */
+  gap: var(--wf-s-2);
   min-width: 0;
 }
 

@@ -445,14 +445,31 @@
   }
 }
 
+/* Forced colours drop the raised fill and shadow that mark a selected option, so the selected
+ * segment, pill tab and chip take the system Highlight fill (device sweep R7-07, 24 Oct 2026; an
+ * outline alone doubled up with the track item's own border on some screens and read as nothing on
+ * the pill tabs, which had no rule). */
 @media (forced-colors: active) {
   .segOn,
   .trk .segOn,
+  .ptItem[aria-selected="true"],
   .chip[aria-pressed="true"] {
-    outline: 2px solid Highlight;
+    forced-color-adjust: none;
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
+    outline: 0;
+  }
+  .segOn .k,
+  .trk .segOn .k,
+  .ptItem[aria-selected="true"] .k,
+  .chip[aria-pressed="true"] .k {
+    border: 1px solid HighlightText;
+    background: Highlight;
+    color: HighlightText;
   }
   .tab[aria-selected="true"] {
-    border-bottom-color: Highlight;
+    border-bottom: 3px solid Highlight;
   }
   .tab:focus-visible,
   .ptItem:focus-visible,

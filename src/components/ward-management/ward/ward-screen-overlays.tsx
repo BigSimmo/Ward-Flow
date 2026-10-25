@@ -116,7 +116,7 @@ export function WardScreenCapacityModal({
                   </dd>
                 </div>
                 <div>
-                  <dt>Ready Vacant</dt>
+                  <dt>Ready</dt>
                   <dd className={styles.factValue}>
                     {capacity.available} {capacity.available === 1 ? "bed" : "beds"}
                   </dd>

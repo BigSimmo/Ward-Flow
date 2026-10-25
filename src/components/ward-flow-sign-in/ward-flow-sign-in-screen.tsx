@@ -171,7 +171,7 @@ export function WardFlowSignInScreen() {
         <p className={styles.brand}>
           <span className={styles.wordmark}>Ward Flow</span>
           <Badge size="sm">WA</Badge>
-          <span className={styles.gov}>Government of Western Australia · Department of Health</span>
+          <span className={styles.gov}>Mental health bed flow · prototype</span>
         </p>
         <div className={styles.look}>
           <h2 id="appearance-label" className="sr-only">

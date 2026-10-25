@@ -36,6 +36,17 @@ Error messages, URLs, headers, bodies, users and breadcrumbs are dropped before 
 Optional `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` label events; Railway's commit SHA is the
 default release. No DSN has been configured or observed sending, so delivery is unverified.
 
+The shared backend has its own optional reporter, `backend/ward-flow/error-report.mjs`, turned on
+by `SENTRY_DSN` on the `ward-flow-backend` service. It needs no SDK. Each report holds only a
+fixed failure name (unhandled request failure, unhandled rejection, uncaught exception or push
+re-check failure), the allow-listed error name and code that the log line already carries, the
+environment and the release. No message, stack, request, user or record content is read. Each
+failure kind is sent at most once every five minutes, so a long outage stays inside a free plan.
+
+Uptime: `.github/workflows/backend-uptime.yml` checks the backend and its database every 30
+minutes and emails the owner through a GitHub issue. The signed-in site is not checked because it
+sleeps when idle.
+
 ## Hosted browser acceptance
 
 Owner role: application maintainer, with the synthetic test-account owner.

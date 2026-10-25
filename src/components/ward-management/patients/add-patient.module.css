@@ -609,7 +609,7 @@
   display: none;
 }
 
-/* v10 phone: search first, then the short identity form with a sticky Add bar. */
+/* v10 phone: search first, then the short identity form with the Add bar at its foot. */
 @media (max-width: 48rem) {
   .phLanding {
     display: flex;
@@ -728,7 +728,7 @@
     font-size: var(--wf-fs-12);
   }
 
-  /* The short form: identity only. The page flows as one column so the Add bar can stick. */
+  /* The short form: identity only. The page flows as one column with the Add bar last. */
   .main[data-phone-form="true"] .phHide {
     display: none;
   }
@@ -745,12 +745,23 @@
     display: contents;
   }
 
+  /* Device sweep R1-01/R2-05 (24 Oct 2026): the Add bar sits in flow at the foot of the form. Pinned,
+     its three wrapped buttons (about 230px at 320) covered UMRN and the names on first view. */
   .main[data-phone-form="true"] .submitBar.submitBar {
-    position: sticky;
-    bottom: var(--wf-s-2);
-    z-index: 2;
+    position: static;
     order: 10;
     border-color: var(--wf-line-2);
+  }
+
+  /* DR-04: while the on-screen keyboard is up the card stops sticking, so it no longer covers the
+     field being typed in; it waits at the foot of the form. The scroll padding keeps a focused
+     field clear of the screen's bottom edge. */
+  :global(html[data-wf-keyboard="open"]) .main[data-phone-form="true"] .submitBar.submitBar {
+    position: static;
+  }
+
+  :global(html[data-wf-keyboard="open"]):has(.main[data-phone-form="true"]) {
+    scroll-padding-bottom: var(--wf-s-4);
   }
 
   /* The three buttons wrap rather than set a row wider than the phone (F-03): Reset and Register

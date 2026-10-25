@@ -6,6 +6,9 @@
   width: 100%;
   max-width: 880px;
   min-width: 0;
+  /* A3 / L22 (device sweep, 24 Oct 2026): centred on a wide screen, as Settings is, rather than a
+     narrow column on the left with the rest of the screen empty. */
+  margin-inline: auto;
   padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-6);
 }
 

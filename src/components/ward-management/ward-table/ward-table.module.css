@@ -99,6 +99,32 @@
 }
 
 /*
+ * THE SAME EDGE, FOR EVERY CALLER, WHILE COLUMNS ARE STILL OFF TO THE RIGHT (device sweep, 24 Oct
+ * 2026). At 1024 and 1280 px several of these tables sit beside a side panel and scroll sideways,
+ * but most callers never declared a threshold, so nothing on screen said a column was hidden.
+ * A scroll-driven animation draws the right edge in `--ward-border-strong` while there is more to
+ * the right and clears it at the end. A table that fits has no scroll timeline, so the animation
+ * does nothing and the edge stays clear. A border, not a fade, for the reasons above.
+ */
+@keyframes wardTableMoreRight {
+  from,
+  97% {
+    border-right-color: var(--ward-border-strong);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .tableScroll {
+    border-right: var(--ward-space-2) solid transparent;
+    animation: wardTableMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+/*
  * THE STATED SENTENCE. Renders as a sibling below the scroller, for every caller with a declared
  * threshold, regardless of whether that table happens to overflow at the viewport currently being
  * read — whether it does is a runtime fact this Server Component cannot measure (see ward-table.tsx
