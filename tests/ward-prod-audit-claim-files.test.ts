@@ -9,7 +9,7 @@ import { withClaimFiles } from "../scripts/pre-commit-checks.mjs";
 // sync mount overwrite each other.
 describe("withClaimFiles", () => {
   let dir = "";
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
   it("adds claim and release lines from claims/*.md after the log, in file-name order", () => {
     dir = mkdtempSync(path.join(tmpdir(), "ward-claim-files-"));
