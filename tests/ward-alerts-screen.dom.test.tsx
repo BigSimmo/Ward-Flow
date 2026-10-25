@@ -70,7 +70,7 @@ const CONDITIONS = [
   "Form due passed",
   "Every ward declined",
   "Unsuitable destination",
-  "Bed hold expired",
+  "Pull expired",
   "Transport not left",
   "Target overdue",
   "Triage waiting",

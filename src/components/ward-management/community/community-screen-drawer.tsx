@@ -107,13 +107,13 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
             {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
               <span id="pxDrawerHeading">
                 {selectedPatient
-                  ? `Patient Dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
-                  : `Patient Dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
+                  ? `Patient dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
+                  : `Patient dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
               </span>
             )}
             {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
               <span id="refDrawerHeading">
-                {selectedReferral ? `Referral Triage: ${identityOf(selectedReferral)}` : "Referral unavailable"}
+                {selectedReferral ? `Referral triage: ${identityOf(selectedReferral)}` : "Referral unavailable"}
               </span>
             )}
             {(activeDrawer === "activity" || activeDrawer === "activityDrawer") && "Illustrative catchment activity"}
@@ -155,7 +155,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <>
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; Allocation</h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; allocation</h4>
                     <span id="pxLegalChip" className={`${styles.statusPillBadge} ${styles.neutral}`}>
                       {selectedPatient.legalStatus ?? "Legal status not recorded"}
                     </span>
@@ -178,7 +178,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                         </span>
                       </div>
                       <div>
-                        <b>Community Team:</b> <span>{selectedPatient.catchmentCommunityTeam ?? "Not recorded"}</span>
+                        <b>Community team:</b> <span>{selectedPatient.catchmentCommunityTeam ?? "Not recorded"}</span>
                       </div>
                     </div>
                   </div>
@@ -186,20 +186,20 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Key Information</h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Key information</h4>
                   </div>
                   <div className={styles.panelBody}>
                     <dl className={styles.factsList}>
                       <div className={styles.factsRow}>
-                        <dt>Key Clinician</dt>
+                        <dt>Key clinician</dt>
                         <dd id="pxClinician">{NOT_RECORDED_IN_WARD_FLOW}</dd>
                       </div>
                       <div className={styles.factsRow}>
-                        <dt>Care Tier</dt>
+                        <dt>Care tier</dt>
                         <dd id="pxCareTier">{NOT_RECORDED_IN_WARD_FLOW}</dd>
                       </div>
                       <div className={styles.factsRow}>
-                        <dt>Next Scheduled Review</dt>
+                        <dt>Next scheduled review</dt>
                         <dd>{NOT_RECORDED_IN_WARD_FLOW}</dd>
                       </div>
                     </dl>
@@ -222,9 +222,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <>
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
-                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; Allocation</h4>
+                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Demographics &amp; allocation</h4>
                     <span id="pxLegalChip" className={`${styles.statusPillBadge} ${styles.neutral}`}>
-                      Illustrative Record
+                      Illustrative record
                     </span>
                   </div>
                   <div className={`${styles.panelBody} ${styles.bodyText}`}>
@@ -236,31 +236,31 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                         </span>
                       </div>
                       <div>
-                        <b>DOB / Age:</b>{" "}
+                        <b>DOB / age:</b>{" "}
                         <span id="pxDobAge" className={styles.mono}>
                           {selectedPatientId === "PT-3712" ? "12/03/1967 (59y)" : "14/05/1992 (34y)"}
                         </span>
                       </div>
                       <div>
-                        <b>Assigned Clinician:</b>{" "}
+                        <b>Assigned clinician:</b>{" "}
                         <span id="pxClinician">{selectedPatientId === "PT-3712" ? "SW M. Davies" : "RN K. Vance"}</span>
                       </div>
                       <div>
-                        <b>Supervising Psychiatrist:</b>{" "}
+                        <b>Supervising psychiatrist:</b>{" "}
                         <span id="pxPsychiatrist">
                           {selectedPatientId === "PT-3712" ? "Dr J. Lim" : teamConfig.consultant}
                         </span>
                       </div>
                       <div>
-                        <b>Current Placement:</b>{" "}
+                        <b>Current placement:</b>{" "}
                         <span id="pxPlacement">
-                          {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : `${teamConfig.campus} Secure (Bed 03)`}
+                          {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : `${teamConfig.campus} secure (bed 03)`}
                         </span>
                       </div>
                       <div>
-                        <b>Admitted Length of Stay:</b>{" "}
+                        <b>Admitted length of stay:</b>{" "}
                         <span id="pxLos" className={styles.mono}>
-                          {selectedPatientId === "PT-3712" ? "6 Days" : "14 Days"}
+                          {selectedPatientId === "PT-3712" ? "6 days" : "14 days"}
                         </span>
                       </div>
                     </div>
@@ -270,10 +270,10 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
                     <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>
-                      Current Active Care Plan &amp; Diagnosis
+                      Current active care plan &amp; diagnosis
                     </h4>
                     <span id="pxCareTier" className={styles.badgePill}>
-                      {selectedPatientId === "PT-3712" ? "Tier 2 Step-Down" : "Tier 1 High Acuity"}
+                      {selectedPatientId === "PT-3712" ? "Tier 2 step-down" : "Tier 1 high acuity"}
                     </span>
                   </div>
                   <div className={`${styles.panelBody} ${styles.bodyProse}`}>
@@ -286,15 +286,15 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                       </span>
                     </p>
                     <p>
-                      <b>Management Goal:</b>{" "}
+                      <b>Management goal:</b>{" "}
                       <span id="pxManagement">
                         {selectedPatientId === "PT-3712"
                           ? "Community step-down coordination, medication compliance monitoring, and outpatient psychological therapy."
-                          : "Inpatient stabilization on long-acting injectable antipsychotic (Paliperidone palmitate 150mg monthly, oral Risperidone 1mg daily). Transition to community assertive outreach team upon discharge."}
+                          : "Inpatient stabilisation on long-acting injectable antipsychotic (paliperidone palmitate 150mg monthly, oral risperidone 1mg daily). Transition to community assertive outreach team upon discharge."}
                       </span>
                     </p>
                     <p>
-                      <b>Risk Profile:</b>{" "}
+                      <b>Risk profile:</b>{" "}
                       <span id="pxRisk">
                         {selectedPatientId === "PT-3712"
                           ? "Low acute risk. Ongoing monitoring for psychomotor slowing and self-neglect."
@@ -307,24 +307,24 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 <div className={styles.cardPanel}>
                   <div className={styles.panelHead}>
                     <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>
-                      Recent Timeline &amp; Clinical Contacts
+                      Recent timeline &amp; clinical contacts
                     </h4>
-                    <span className={styles.badgePill}>Last 7 Days</span>
+                    <span className={styles.badgePill}>Last 7 days</span>
                   </div>
                   <div id="pxTimeline" className={`${styles.panelBody} ${styles.timeline}`}>
                     <div className={styles.timelineEntry}>
-                      <span className={`${styles.mono} ${styles.microMuted}`}>3d ago</span> · <b>Ward Bed Telemetry:</b>{" "}
-                      Admitted in {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure Bed 03"}.
+                      <span className={`${styles.mono} ${styles.microMuted}`}>3d ago</span> · <b>Ward bed telemetry:</b>{" "}
+                      Admitted in {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure bed 03"}.
                       Joint MDT conference scheduled.
                     </div>
                     <div className={styles.timelineEntry}>
                       <span className={`${styles.mono} ${styles.microMuted}`}>5d ago</span> ·{" "}
-                      <b>Community Liaison Contact:</b> Key clinician attended ward huddle; patient tolerating care plan
+                      <b>Community liaison contact:</b> Key clinician attended ward huddle; patient tolerating care plan
                       well.
                     </div>
                     <div>
                       <span className={`${styles.mono} ${styles.microMuted}`}>10d ago</span> ·{" "}
-                      <b>Inpatient Admission:</b> Transferred under Form 1A MHA.
+                      <b>Inpatient admission:</b> Transferred under Form 1A MHA.
                     </div>
                   </div>
                 </div>
@@ -373,7 +373,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
               <p className={styles.footnote}>Priority triage assessment and referral routing record.</p>
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Referral Demographics &amp; Urgency</h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Referral demographics &amp; urgency</h4>
                   <span className={`${styles.statusPillBadge} ${styles.danger}`} id="refDrawerUrgencyBadge">
                     {selectedReferral ? urgencyTierLabel(selectedReferral.urgency) : "Urgency not recorded"}
                   </span>
@@ -387,15 +387,15 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                       </span>
                     </div>
                     <div>
-                      <b>Referring Service:</b>{" "}
+                      <b>Referring service:</b>{" "}
                       <span id="refDrawerService">{selectedReferral?.originSiteCode ?? "Not recorded"}</span>
                     </div>
                     <div>
-                      <b>Referring Clinician:</b>{" "}
+                      <b>Referring clinician:</b>{" "}
                       <span id="refDrawerClinician">{selectedReferral?.sendingTeamName ?? "Not recorded"}</span>
                     </div>
                     <div>
-                      <b>Statutory Status:</b>{" "}
+                      <b>Statutory status:</b>{" "}
                       <span className={`${styles.statusPillBadge} ${styles.danger}`} id="refDrawerLegalBadge">
                         {selectedReferral?.patientId
                           ? (patients.find((p) => p.id === selectedReferral.patientId)?.legalStatus ?? "Not recorded")
@@ -403,7 +403,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                       </span>
                     </div>
                     <div>
-                      <b>Elapsed Wait:</b>{" "}
+                      <b>Elapsed wait:</b>{" "}
                       <span className={`${styles.mono} ${styles.inkDangerStrong}`} id="refDrawerWait">
                         {selectedReferral ? referralWaitLine(selectedReferral, now) : "Not recorded"}
                       </span>
@@ -414,15 +414,15 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Triage Assessment &amp; Clinical Notes</h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Triage assessment &amp; clinical notes</h4>
                 </div>
                 <div className={`${styles.panelBody} ${styles.bodyProse}`}>
                   <p>
-                    <b>Presenting Symptoms:</b>{" "}
+                    <b>Presenting symptoms:</b>{" "}
                     <span id="refDrawerSymptoms">{selectedReferral?.history || "History not recorded"}</span>
                   </p>
                   <p>
-                    <b>Medical Clearance:</b>{" "}
+                    <b>Medical clearance:</b>{" "}
                     <span id="refDrawerClearance">
                       {selectedReferral?.medicalClearance
                         ? `${selectedReferral.medicalClearance.cleared ? "Recorded as medically cleared" : "Recorded as not medically cleared"} · ${formatInstantWithDay(selectedReferral.medicalClearance.at, now)}`
@@ -430,7 +430,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     </span>
                   </p>
                   <p>
-                    <b>Recommended Action:</b>{" "}
+                    <b>Recommended action:</b>{" "}
                     <span id="refDrawerAction">
                       No clinical recommendation is recorded by this dossier. Review the referring team&apos;s
                       information.
@@ -441,7 +441,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
-                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Clinician Allocation &amp; Decision</h4>
+                  <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Clinician allocation &amp; decision</h4>
                 </div>
                 <div className={`${styles.panelBody} ${styles.bodyStack}`}>
                   <p>
@@ -490,7 +490,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 {
                   id: "taskCard3",
                   label: "Example: contact a person after their discharge",
-                  prio: "Attention Needed",
+                  prio: "Attention needed",
                 },
               ].map((task) => {
                 const isDismissed = dismissedTaskIds.has(task.id);
@@ -532,7 +532,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                         });
                       }}
                     >
-                      {isDismissed ? "Undo" : "Mark Done"}
+                      {isDismissed ? "Undo" : "Mark done"}
                     </button>
                   </div>
                 );
@@ -543,14 +543,14 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
           {(activeDrawer === "tools" || activeDrawer === "toolsDrawer") && (
             <div className={styles.stackLg}>
               <div>
-                <h4 className={styles.toolsHeading}>Prototype State Simulation</h4>
+                <h4 className={styles.toolsHeading}>Prototype state simulation</h4>
                 <div className={styles.buttonRow}>
                   <button
                     type="button"
                     className={uiState === "populated" ? styles.btnSmPrimary : styles.btnSmSec}
                     onClick={() => {
                       setUiState("populated");
-                      setToastMessage("State: Populated Console");
+                      setToastMessage("State: populated console");
                     }}
                   >
                     Populated
@@ -560,7 +560,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     className={uiState === "skeleton" ? styles.btnSmPrimary : styles.btnSmSec}
                     onClick={() => {
                       setUiState("skeleton");
-                      setToastMessage("State: Skeleton Loading");
+                      setToastMessage("State: skeleton loading");
                     }}
                   >
                     Skeleton
@@ -570,7 +570,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     className={uiState === "empty" ? styles.btnSmPrimary : styles.btnSmSec}
                     onClick={() => {
                       setUiState("empty");
-                      setToastMessage("State: Empty Catchment");
+                      setToastMessage("State: empty catchment");
                     }}
                   >
                     Empty
@@ -580,10 +580,10 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     className={uiState === "error" ? styles.btnSmPrimary : styles.btnSmSec}
                     onClick={() => {
                       setUiState("error");
-                      setToastMessage("State: Network Simulation Error");
+                      setToastMessage("State: network simulation error");
                     }}
                   >
-                    Error Banner
+                    Error banner
                   </button>
                 </div>
               </div>
@@ -624,7 +624,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 setActiveDrawer(null);
               }}
             >
-              Decline / Redirect
+              Decline / redirect
             </button>
             <button
               type="button"
