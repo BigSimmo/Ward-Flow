@@ -375,6 +375,7 @@ export function createSharedHandler({
         const cursor = new URL(request.url).searchParams.get("before");
         if (cursor !== null && (!/^[1-9][0-9]{0,18}$/.test(cursor) || BigInt(cursor) > 9223372036854775807n))
           return reply(400, { error: "Invalid audit cursor" });
+        if (typeof store.auditPage === "function") return reply(200, await store.auditPage(view, cursor));
         const events = cursor === null ? await store.audit(view) : await store.audit(view, cursor);
         const complete = events.length < 200;
         return reply(200, { events, complete, nextCursor: complete ? null : String(events.at(-1).sequence) });

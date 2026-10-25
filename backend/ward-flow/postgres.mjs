@@ -1030,6 +1030,35 @@ export function createWorkspaceStore(
       engine.PUSH_ROLES.includes(view.access.role)
     );
   }
+  /** A bounded audit page; its cursor includes progress through rows outside this desk. */
+  async function auditPage(view, cursor = null) {
+    const whole = !view || engine.wholeNetwork(view.access);
+    const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
+    const statewide = whole || view.access.scope.kind === "statewide";
+    let payload;
+    if (!statewide) {
+      payload = (await readWorld(pool, "payload"))?.payload;
+      if (!payload || !engine.validWorld(payload)) return { events: [], complete: true, nextCursor: null };
+    }
+    // Scan at most ten raw pages per request, applying scope before the public 200-row cap.
+    // Sequence stays as the database's bigint text: never round a cursor through Number.
+    const selected = [];
+    let before = cursor;
+    for (let page = 0; page < 10; page++) {
+      const { rows } = await pool.query(
+        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+        before === null ? [workspaceId] : [workspaceId, before],
+      );
+      for (const row of rows) {
+        before = row.sequence;
+        const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
+        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+        if (selected.length === 200) return { events: selected, complete: false, nextCursor: String(before) };
+      }
+      if (rows.length < 200) return { events: selected, complete: true, nextCursor: null };
+    }
+    return { events: selected, complete: false, nextCursor: String(before) };
+  }
   return {
     pushEnabled: !!push,
     async ready() {
@@ -1237,32 +1266,10 @@ export function createWorkspaceStore(
      * access admin reads only role changes inside their own place, never which patient was opened.
      * The HTTP layer refuses everyone else before this runs.
      */
+    auditPage,
+    // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
     async audit(view, cursor = null) {
-      const whole = !view || engine.wholeNetwork(view.access);
-      const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
-      const statewide = whole || view.access.scope.kind === "statewide";
-      let payload;
-      if (!statewide) {
-        payload = (await readWorld(pool, "payload"))?.payload;
-        if (!payload || !engine.validWorld(payload)) return [];
-      }
-      // Keyset-page the retained history, applying scope before the public 200-row cap.
-      // Sequence stays as the database's bigint text: never round a cursor through Number.
-      const selected = [];
-      let before = cursor;
-      for (;;) {
-        const { rows } = await pool.query(
-          `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
-          before === null ? [workspaceId] : [workspaceId, before],
-        );
-        for (const row of rows) {
-          const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
-          if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
-          if (selected.length === 200) return selected;
-        }
-        if (rows.length < 200) return selected;
-        before = rows.at(-1).sequence;
-      }
+      return (await auditPage(view, cursor)).events;
     },
     /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
     async receipt(actorId, commandId) {

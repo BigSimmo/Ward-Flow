@@ -154,6 +154,96 @@ test("audit reports an explicit continuation cursor at its scoped cap and accept
   assert.equal(body.nextCursor, "101");
   assert.equal(calls[0][1], "9007199254740999");
 });
+function scopedAuditFixture(events) {
+  const cursors = [];
+  const pool = {
+    query: async (sql, values) => {
+      if (sql.includes("FROM ward_flow.workspaces")) return { rows: [{ payload: {} }] };
+      assert.ok(sql.includes("FROM ward_flow.audit"));
+      const before = values?.[1];
+      cursors.push(before ?? null);
+      return {
+        rows: events.filter((row) => before == null || BigInt(row.sequence) < BigInt(before)).slice(0, 200),
+      };
+    },
+  };
+  const engine = {
+    validWorld: () => true,
+    wholeNetwork: () => false,
+    parseAccess: (role, scope) => ({ role, scope }),
+    scopeWithin: (_payload, scope, parent) => scope.service === parent.service,
+  };
+  const view = { version: 9, access: { role: "admin", scope: { kind: "service", service: "Own" } } };
+  const store = createWorkspaceStore(pool, { workspaceId: "synthetic", engine });
+  return { store, view, cursors };
+}
+
+test("audit bounds a sparse-scope scan and resumes after an empty partial page", async () => {
+  const start = 9007199254745000n;
+  const events = Array.from({ length: 2001 }, (_, index) => ({
+    sequence: String(start - BigInt(index)),
+    changes: { role: "admin", scope: { kind: "service", service: index === 2000 ? "Own" : "Other" } },
+  }));
+  const { store, view, cursors } = scopedAuditFixture(events);
+  const endpoint = handler({ auditPage: store.auditPage, viewer: async () => ({ status: "ok", ...view }) });
+  const first = await endpoint(httpRequest("/audit"));
+  assert.equal(first.status, 200);
+  const partial = await first.json();
+  assert.equal(cursors.length, 10);
+  assert.deepEqual(partial, { events: [], complete: false, nextCursor: String(start - 1999n) });
+  const next = await endpoint(httpRequest(`/audit?before=${partial.nextCursor}`));
+  assert.equal(next.status, 200);
+  const final = await next.json();
+  assert.equal(cursors.length, 11);
+  assert.equal(cursors[10], partial.nextCursor);
+  assert.deepEqual(
+    final.events.map((row) => row.sequence),
+    [events[2000].sequence],
+  );
+  assert.equal(final.complete, true);
+  assert.equal(final.nextCursor, null);
+});
+
+test("audit resumes immediately after the 200th match inside a raw page", async () => {
+  const start = 9007199254745000n;
+  const events = Array.from({ length: 205 }, (_, index) => ({
+    sequence: String(start - BigInt(index)),
+    changes: { role: "admin", scope: { kind: "service", service: index === 0 ? "Other" : "Own" } },
+  }));
+  const { store, view, cursors } = scopedAuditFixture(events);
+  const first = await store.auditPage(view);
+  assert.equal(first.events.length, 200);
+  assert.equal(first.complete, false);
+  assert.equal(first.nextCursor, events[200].sequence);
+  assert.equal(cursors.length, 2);
+  const next = await store.auditPage(view, first.nextCursor);
+  assert.deepEqual(
+    next.events.map((row) => row.sequence),
+    events.slice(201).map((row) => row.sequence),
+  );
+  assert.equal(next.complete, true);
+  assert.equal(next.nextCursor, null);
+  const legacyAudit = store.audit;
+  assert.equal(Array.isArray(await legacyAudit(view)), true);
+});
+
+test("audit HTTP preserves an explicit empty partial envelope and bigint cursor", async () => {
+  const calls = [];
+  const endpoint = handler({
+    auditPage: async (_view, cursor) => {
+      calls.push(cursor);
+      return { events: [], complete: false, nextCursor: "9007199254740998" };
+    },
+    audit: async () => {
+      throw new Error("Legacy audit must not replace an explicit page result");
+    },
+  });
+  const response = await endpoint(httpRequest("/audit?before=9007199254740999"));
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls, ["9007199254740999"]);
+  assert.deepEqual(await response.json(), { events: [], complete: false, nextCursor: "9007199254740998" });
+});
+
 test("outage authorisation ends no later than session, membership, cover or temporary opening", async () => {
   const until = Date.now() + 5000;
   const response = await handler({
