@@ -26,7 +26,7 @@ import { wardAdmissions } from "@/components/ward-management/ward-admissions-see
 
 /**
  * The build-contract catcher for the out-of-area upgrade
- * (`docs/ward-flow/build-contracts-2026-09-12/contract-out-of-area.md`), Sonnet, extraction/DOM
+ * (`docs/ward-flow/archive/build-contracts-2026-09-12/contract-out-of-area.md`), Sonnet, extraction/DOM
  * assertion.
  *
  * Two jobs, both required by the brief:

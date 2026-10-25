@@ -303,7 +303,7 @@ on 15 Oct 2026.
 **`governance/page.tsx` mounts `WardModeWorkspace mode="governance"`, which renders `GovernanceView`
 from `ward-management-modes.tsx`, which in turn renders `GovernanceWorkbench` from
 `ward-management/governance-registers` — an entirely different, unrelated component tree** (covered
-in [Frame and PsychSift](frame-and-psychsift.md) or [Routes, shell and shared UI](shell-and-shared.md),
+in [Frame and PsychSift](../archive/code-map/frame-and-psychsift.md) or [Routes, shell and shared UI](shell-and-shared.md),
 not this file). **Dispatches:** none. **Reads:** none live. **Tests:** only
 `ward-browser-build-css.test.ts`, and that test only compiles `governance.module.css` through the
 build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 15 Oct 2026.

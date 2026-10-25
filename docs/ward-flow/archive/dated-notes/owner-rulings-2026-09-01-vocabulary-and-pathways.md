@@ -167,7 +167,7 @@ knowing that, or they ship as records nobody reads and read as done.
 5. **The SENDING location books transport**, consistent with `TR-D5`.
    ⚠️ **AND: _"ED, Community and Wards all have the ability to book transport."_** `BOOK_TRANSPORT` is
    `["ed", "ward"]` today. **This is the 2026-08-31 community-transport ruling finally landing** — see
-   `docs/ward-flow/community-origin-scope.md`, because a community team booking transport for a
+   `docs/ward-flow/archive/dated-notes/community-origin-scope.md`, because a community team booking transport for a
    movement raises the origin question again.
 6. **When a pull cancels a patient's other waitlists, those wards ARE told, and the patient is REMOVED
    from their waitlist.**
