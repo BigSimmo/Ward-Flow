@@ -40,12 +40,14 @@ const BANNED: readonly Banned[] = [
   { id: "needs the bed held", pattern: /\bneeds the bed held\b/i, instead: "Needs the bed pulled" },
   {
     id: "held bed released after transport",
-    pattern: /\bheld bed released after (?:stopped transport|transport diversion)\b/i,
+    pattern: /\bheld bed released after\b/i,
     instead: "Pulled bed released after ...",
   },
   { id: "reserved time", pattern: /\breserved time\b/i, instead: "Pull time limit" },
   { id: "ready vacant", pattern: /\bready vacant\b/i, instead: "Ready" },
   { id: "the waitlist", pattern: /\b(?:the|a) waitlist\b/i, instead: "the waiting list" },
+  { id: "log in", pattern: /\blog in\b/i, instead: "Sign in" },
+  { id: "log out", pattern: /\blog out\b/i, instead: "sign out" },
   // Australian spelling.
   {
     id: "US spelling",
