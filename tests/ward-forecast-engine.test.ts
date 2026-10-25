@@ -277,7 +277,7 @@ describe("brief and alerts", () => {
 
   it("writes the four brief lines from fixed templates", () => {
     const brief = forecastBrief(tomorrow, levers, risk, (id) => `ED ${id}`);
-    expect(brief.map((line) => line.label)).toEqual(["Tightest", "Biggest blocker", "ED risk", "Best single action"]);
+    expect(brief.map((line) => line.label)).toEqual(["Tightest", "Biggest blocker", "ED waits", "Biggest lever"]);
     for (const line of brief) expect(line.text).toMatch(/\.$/);
   });
 

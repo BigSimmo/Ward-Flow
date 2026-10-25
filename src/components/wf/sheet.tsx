@@ -72,6 +72,8 @@ type SheetBaseProps = {
    * interactive content.
    */
   bodyTabIndex?: number;
+  /** Names the scrollable body as a region, for a body given `bodyTabIndex` (its tab stop needs a name). */
+  bodyLabel?: string;
   onBodyScroll?: UIEventHandler<HTMLDivElement>;
   footerClassName?: string;
   /**
@@ -149,6 +151,7 @@ export function Sheet({
   bodyClassName,
   bodyRef,
   bodyTabIndex,
+  bodyLabel,
   onBodyScroll,
   footerClassName,
   footerVariant,
@@ -576,6 +579,8 @@ export function Sheet({
           ref={bodyRef}
           onScroll={onBodyScroll}
           tabIndex={bodyTabIndex}
+          role={bodyLabel ? "region" : undefined}
+          aria-label={bodyLabel}
           // overscroll-contain: without it a gesture that reaches the end of this
           // body continues into the page behind the sheet. `.polished-scroll` is
           // scrollbar styling only and never carried this.
