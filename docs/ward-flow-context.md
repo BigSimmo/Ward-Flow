@@ -76,7 +76,7 @@ never treats a patient's current location as a compliance problem.
 
 > This rule was got wrong once during this build. The original ADR said an involuntary patient must
 > be "detained at an authorised hospital", which reads as though holding a detained patient in an
-> ED were unlawful. It has been corrected in `docs/archive/ward-management-decisions.md` ADR 1. Do not
+> ED were unlawful. It has been corrected in `docs/ward-flow/archive/dated-notes/ward-management-decisions.md` ADR 1. Do not
 > reintroduce the older phrasing.
 
 ### Forms that appear in the model
@@ -557,7 +557,7 @@ model work but would cost more than it returns on screens.
 | `docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md` | Executing Phase 2                                                                           |
 | `docs/archive/ward-flow-phase-handoff.md`                                   | Phase 1 rulings and parked findings in full                                                 |
 | `docs/archive/ward-management-context.md`                                   | The domain glossary — ~30 terms                                                             |
-| `docs/archive/ward-management-decisions.md`                                 | Four ADRs, including the corrected authorisation rule                                       |
+| `docs/ward-flow/archive/dated-notes/ward-management-decisions.md`           | Four ADRs, including the corrected authorisation rule                                       |
 | `docs/archive/ward-management-mode-map.md`                                  | The route model as currently built. Carries a superseded banner                             |
 | `docs/archive/ward-flow-phase-2-kickoff.md`                                 | The session-start brief                                                                     |
 

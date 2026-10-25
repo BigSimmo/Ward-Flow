@@ -86,7 +86,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 - [`testing.md`](testing.md) — local unit commands, run admission, Playwright projects and CI topology
 - [`task-receipts.md`](task-receipts.md) — task lifecycle, canonical checkpoints, and sanitised receipt handoff
 - [`agents/`](agents/) — topic rules `AGENTS.md` links to: [`git-publication.md`](agents/git-publication.md), [`checks-and-evidence.md`](agents/checks-and-evidence.md), [`task-efficiency.md`](agents/task-efficiency.md), [`building-ui.md`](agents/building-ui.md), [`wiring-and-bundle-budget.md`](agents/wiring-and-bundle-budget.md), [`cloud-ownership.md`](agents/cloud-ownership.md), [`shortcuts.md`](agents/shortcuts.md), [`shared-context-and-memory.md`](agents/shared-context-and-memory.md), [`dead-code-deletion.md`](agents/dead-code-deletion.md), [`test-deletion-guard.md`](agents/test-deletion-guard.md), [`codex-desktop-worktree-setup.md`](agents/codex-desktop-worktree-setup.md), [`codex-dependency-shortcut.md`](agents/codex-dependency-shortcut.md), [`context7.md`](agents/context7.md), [`figma-sync.md`](agents/figma-sync.md)
-- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) and [`process-hardening.md`](process-hardening.md) (former PsychSift workflow, fully fenced as history)
+- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see [`ARCHIVE.md`](ARCHIVE.md))
 
 ## Maintenance rules
 
@@ -141,7 +141,6 @@ Every remaining tracked document in this category (architecture and design, plus
 
 ### Historical process & review catalogue
 
-- [process-hardening.md](process-hardening.md) — verification gates, CI expectations, known debts
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
@@ -165,9 +164,9 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 Every remaining tracked document in this category (the Ward Flow developer-gated prototype's context, decisions, roadmap, ledgers and dated handovers), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
 - [ward-flow-context.md](ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
-- [ward-flow-phase-3-rulings.md](archive/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
+- [ward-flow-phase-3-rulings.md](ward-flow/archive/dated-notes/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
 - [ward-flow-phase-5-handover.md](ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
-- [ward-management-decisions.md](archive/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
+- [ward-management-decisions.md](ward-flow/archive/dated-notes/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
 
 ## Subdirectory map
 

@@ -289,7 +289,7 @@ describe("the movement workspace's blocker control", () => {
   it("cannot submit a blank, so an empty blocker never reaches the reducer", () => {
     renderWorkspace("WF-001");
     // The blocked button carries a stated reason (`aria-describedby` + `title`), so it stays
-    // focusable with `aria-disabled` and ignores activation, per `docs/wiring-conventions.md`.
+    // focusable with `aria-disabled` and ignores activation, per `docs/ward-flow/archive/wiring-conventions-historical.md`.
     const submit = screen.getByRole("button", { name: /record it/i });
     expect(submit).toHaveAttribute("aria-disabled", "true");
     expect(submit).not.toBeDisabled();
