@@ -7,6 +7,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -42,10 +43,11 @@ function AssignToTeam({ referralId }: { referralId: string }) {
                   ? "Assigned to this team's desk."
                   : outcome.status === "refused"
                     ? "Not assigned. It may already be with this team's desk."
-                    : "Not assigned. The change was not saved.",
+                    : // Not a definite refusal: it may yet be saved by Retry, so never say "not saved".
+                      (outcome.message ?? SAVE_NOT_CONFIRMED),
               ),
             )
-            .catch(() => setResult("Not assigned. The change was not saved."));
+            .catch(() => setResult(SAVE_NOT_CONFIRMED));
         }}
         data-testid={`community-assign-take-${referralId}`}
       >

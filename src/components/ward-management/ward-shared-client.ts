@@ -6,6 +6,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -218,13 +219,19 @@ export class SharedWorkspaceClient {
       this.confirmations.delete(commandId);
     }
   }
-  private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
+  private cancelQueued(message = saveProblem("queuedCancelled")) {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
     this.syncUnloadWarning();
   }
-  private cancelAll(message: string) {
-    if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
+  /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
+  private cancelAll(message: string, sentMessage = saveProblem("notConfirmed")) {
+    if (this.pending)
+      this.settle(
+        this.pending.commandId,
+        "cancelled",
+        this.sentCommandId === this.pending.commandId ? sentMessage : message,
+      );
     this.pending = null;
     this.sentCommandId = null;
     this.cancelQueued(message);
@@ -233,12 +240,8 @@ export class SharedWorkspaceClient {
     // Fence outgoing drawers before their unmount cleanup can autosave into the next desk.
     if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
-      this.settle(
-        this.pending.commandId,
-        "failed",
-        "The working role changed while this action was being saved. It may have been applied. Review the board before trying again.",
-      );
-    this.cancelAll("Your working role changed. Review the board before trying again.");
+      this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
+    this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
   /**
    * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
@@ -250,11 +253,7 @@ export class SharedWorkspaceClient {
     if (!pending) return;
     if (answered && body === pending) this.settle(pending.commandId, "refused", message);
     else if (this.sentCommandId === pending.commandId)
-      this.settle(
-        pending.commandId,
-        "failed",
-        "The session ended while this action was being saved. It may have been applied. Review the board before trying again.",
-      );
+      this.settle(pending.commandId, "failed", saveProblem("sessionEndedWhileSaving"));
   }
   private disposed = false;
   private busy = false;
@@ -462,7 +461,7 @@ export class SharedWorkspaceClient {
     };
     const denied = (error: string) => {
       this.settleForSessionEnd(body, error, true);
-      this.cancelAll("The session ended. Review the board before trying again.");
+      this.cancelAll(saveProblem("sessionEnded"), saveProblem("sessionEndedWhileSaving"));
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
@@ -470,11 +469,7 @@ export class SharedWorkspaceClient {
     };
     const settleForRoleGate = () => {
       if (this.pending && body === this.pending)
-        this.settle(
-          this.pending.commandId,
-          "refused",
-          "Your working role ended. Review the board before trying again.",
-        );
+        this.settle(this.pending.commandId, "refused", saveProblem("roleEnded"));
       this.cancelForRoleChange();
     };
     const gate = (update: Partial<SharedView>) => {
@@ -618,12 +613,10 @@ export class SharedWorkspaceClient {
         !roleSignal.aborted &&
         !this.gated()
       ) {
-        this.cancelQueued(
-          "This queued action was cancelled because the board could not be refreshed. Reconnect and review the board before trying again.",
-        );
+        this.cancelQueued(saveProblem("queuedNotRefreshed"));
         this.publish({
           status: "unavailable",
-          error: "The shared board could not be refreshed. Reconnect before making changes.",
+          error: saveProblem("notRefreshed"),
         });
       }
     } finally {
@@ -645,7 +638,7 @@ export class SharedWorkspaceClient {
       return Promise.resolve({
         commandId,
         status: "cancelled",
-        message: "The workspace is not ready. Reconnect and review the board before trying again.",
+        message: saveProblem("notReady"),
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -692,11 +685,7 @@ export class SharedWorkspaceClient {
           const queued = this.queue.shift();
           if (!snapshot || !queued) break;
           if (queued.worldEpoch !== this.worldEpoch) {
-            this.settle(
-              queued.commandId,
-              "cancelled",
-              "The workspace was replaced before this queued action ran. Review the current board.",
-            );
+            this.settle(queued.commandId, "cancelled", saveProblem("replaced"));
             continue;
           }
           const basis = this.basis(queued.sheets);
@@ -803,7 +792,7 @@ export class SharedWorkspaceClient {
           );
           this.publish({
             status: "unavailable",
-            error: `The action was ${response.ok ? "accepted" : "not applied"}, but the shared board could not be refreshed. Reconnect before making changes.`,
+            error: boardNotRefreshed(response.ok),
           });
           return;
         }
@@ -820,19 +809,19 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? "This record changed while you were looking. Your action was not applied; review the latest details and try again."
+                ? saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
                     ? value.error
                     : command.event.role === "demo" && value.snapshot?.demoControls === false
-                      ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                      ? saveProblem("demoControlsOff")
                       : response.status === 422 && typeof value?.error === "string" && value.error.trim()
                         ? // Audit F-08: the workflow's own reason, as the local board shows it.
                           `${sentence(value.error)} Nothing was changed.`
                         : response.status === 429
-                          ? "The server is busy. Nothing was saved. Try again in a moment."
-                          : "The action was not applied. Review the workflow requirements.",
+                          ? saveProblem("busy")
+                          : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
           break;
@@ -850,19 +839,13 @@ export class SharedWorkspaceClient {
       }
     } catch {
       if (generation === this.viewGeneration) {
-        if (this.pending)
-          this.settle(
-            this.pending.commandId,
-            "failed",
-            "Save is not confirmed. Reconnect and review the board before trying again.",
-          );
+        if (this.pending) this.settle(this.pending.commandId, "failed", saveProblem("connectionLost"));
         this.cancelQueued();
       }
       if (generation === this.viewGeneration && !this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({
           status: "unavailable",
-          error:
-            "Your change may not have been saved. Press Retry when you are back online. It will not be saved twice.",
+          error: saveProblem("mayNotBeSaved"),
         });
     } finally {
       this.busy = false;
@@ -1072,7 +1055,7 @@ export class SharedWorkspaceClient {
     this.disposed = true;
     this.stopWatchingSheets();
     this.lifetime.abort();
-    this.cancelAll("The connection closed. Review the board before trying again.");
+    this.cancelAll(saveProblem("connectionClosed"));
     this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   }
 }

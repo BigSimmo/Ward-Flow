@@ -578,7 +578,9 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot?.demoControls).toBe(false);
     client.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: 642, minutes: 15 } as WardFlowEvent);
     await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
-    expect(view?.error).toBe("Demo controls are switched off on the shared workspace. Nothing was changed.");
+    expect(view?.error).toBe(
+      "Demo controls are switched off on the shared workspace. Nothing was changed. Ask whoever runs the demonstration to switch them on.",
+    );
     client.dispose();
   });
   it("says why when a command names a record outside the desk's place", async () => {
