@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-24 - added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -277,6 +277,8 @@ is inferred.
   nothing. Archive and measurement:
   `docs/ward-flow/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md`.
 - **Left open:** whether the screen-local forced-colours repoint blocks are now dead code.
+- **Subsequent note (25 October 2026):** The archive file named above was removed with the old
+  history documents in #296. It remains in git history only.
 
 ## D-21. Coordinator bed board: all nine recommended answers (26 September)
 
@@ -367,6 +369,8 @@ is inferred.
 - **Why:** On 27 September, a three-file queue-tool change passed its four related merged-tree tests
   but then waited over 14 minutes in a roughly 9,600-test fold suite. The full suite did not target
   a plausible additional failure path for that change and blocked the shared wide slot.
+- **Subsequent note (25 October 2026):** `select-fold-gate.mjs` was retired with other unused
+  scripts (commit 97fa3e25), so the fold selection named here no longer runs.
 
 ## D-27. Ward Flow uses its dedicated repository (28 September)
 
@@ -596,6 +600,7 @@ is inferred.
 - **Date:** 9 October 2026 (`2026-10-09`). **Decided by:** Josh (`design/v9/design-system-v9.md` §7 & §14).
 - **Decision:** Phone (`390×844`, below `--wf-bp-narrow` `48rem`) is a dedicated mobile design—priority list, cards with one action, bottom sheets, a sticky `44px` bottom bar and a segmented control—never a squashed desktop multi-column reflow. Names render at `14px`, meta at `12px`, rows tap as a whole, row actions are at least `36px`, and phone bars use solid surfaces rather than glass blur.
 - **Why:** Clinicians walking the ward on a phone need immediate priority triage and thumb-reachable bottom sheets rather than stacked desktop tables.
+- **Subsequent note (25 October 2026):** The `--wf-bp-narrow` token no longer exists. The phone breakpoint is the same `48rem`, read from `WF_PHONE_QUERY` in [`use-is-phone.ts`](../../src/components/wf/use-is-phone.ts).
 
 ## D-46. Every page has a focal part, a part of its own, a page-specific hero and command-bar action rules (9 October 2026)
 
@@ -632,6 +637,7 @@ is inferred.
 - **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §9 & §14, harmonising D-41).
 - **Decision:** Across queues of 100 rows or fewer, filter chips (`HighlightPills`) highlight matching rows by default and dim non-matching rows with `--wf-dim` (`data-dim`, stating `"N of M highlighted, all rows stay"` with `Clear`). By explicit owner exception (D-41), the Delays board filters continue to hide non-matching rows and state the hidden count with `"Show everyone"`.
 - **Why:** Preserves context on standard queues so waiting patients never vanish silently, while honouring the approved Delays board narrowing contract.
+- **Subsequent note (25 October 2026):** The `HighlightPills` component no longer exists, and the Delays board is now the Waiting screen (`/ward-flow/waiting`). The names above are kept as they were decided.
 
 ## D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026)
 
@@ -818,6 +824,7 @@ is inferred.
   7. **Unfinished controls hidden by Audit 7.** Build the answer view's bed hold field (wired to the existing hold event) and its nurse unit manager field (wired to the existing high-acuity override tick). Delete the referral Call button and replace it with "Log a call" from the new call log. Delete the Add patient "After adding" card and go straight to the patient's page. Delete the cockpit's "Confirm a destination" section, which leans toward suggesting a ward (D-71). Build Assign referral with the call log.
 - **Boundary:** Synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
 - **Why:** A source review of 21 October 2026 found 14 product issues; these were the decisions the fix plan needed from the owner before building. Plan: `/mnt/project-files/plan/ward-flow-fix-plan-2026-10-21.md` (project files, outside the repository).
+- **Subsequent note (25 October 2026):** The fix plan named above is no longer kept in the project files, so that path no longer opens.
 
 ## D-73. Batch merge safeguards (21 October 2026)
 

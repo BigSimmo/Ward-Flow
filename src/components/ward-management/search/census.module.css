@@ -765,6 +765,15 @@ table.censusTable {
   gap: var(--wf-s-2);
 }
 
+/* Audit 24-7 item 2: near spellings sit above Add patient and wrap on a phone. */
+.emptyNear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
+}
+
 /* ───── history ───── */
 
 .history {

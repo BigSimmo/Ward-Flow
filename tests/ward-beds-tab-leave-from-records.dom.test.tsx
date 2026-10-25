@@ -83,7 +83,7 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
     }
 
     const bedsTab = document.getElementById("tab-beds")!;
-    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn Leave\b/ });
+    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn leave\b/ });
 
     // (b) the count of "On Leave" beds is exactly the ward's own leave-record count — never
     // hard-coded to one, so this still holds if the fixture ever carries more than one.
@@ -117,7 +117,7 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
 
     // And the reverse of (a)/(b) above, restated concretely for this one named record: Luke's own
     // bed card reads "On Leave", not something else.
-    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn Leave\b/ });
+    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn leave\b/ });
     expect(leaveCards.some((card) => (card.getAttribute("aria-label") ?? "").includes(lukeName!))).toBe(true);
   });
 
@@ -150,7 +150,7 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
     );
 
     const bedsTab = document.getElementById("tab-beds")!;
-    const incomingCards = within(bedsTab).getAllByRole("button", { name: /\bInbound\b/ });
+    const incomingCards = within(bedsTab).getAllByRole("button", { name: /\bPulled\b/ });
     expect(incomingCards.length).toBeGreaterThan(0);
     for (const card of incomingCards) {
       expect(card.textContent ?? "").not.toMatch(/LOS \d/);
@@ -173,7 +173,7 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
     );
 
     const bedsTab = document.getElementById("tab-beds")!;
-    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn Leave\b/ });
+    const leaveCards = within(bedsTab).getAllByRole("button", { name: /\bOn leave\b/ });
     expect(leaveCards).toHaveLength(unitLeave.length);
     for (const card of leaveCards) {
       const label = card.getAttribute("aria-label") ?? "";

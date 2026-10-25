@@ -77,6 +77,20 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 "Flow coordinator" in the recorded decision field and some demo text. One name should win; until Josh
 chooses, do not add a third ("bed flow coordinator", "bed manager" for this role).
 
+## Save problems
+
+Every message for a save that failed or is not confirmed says what happened, then what to do now. The
+sentences live in one place, `src/components/ward-management/ward-save-failure.ts`; screens use them rather
+than writing their own. A refusal that gives the workflow's own reason ("No allocatable bed on this ward.
+Nothing was changed.") says that reason, because it already names what to change.
+
+| Say                        | Means                                                                    | Do not say                                   |
+| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
+| **Save is not confirmed.** | Ward Flow has no answer for this save; it may or may not have been kept. | "Review the board before trying again" alone |
+| **Nothing was saved.**     | The change definitely did not reach the board.                           | failed to persist, error saving              |
+| **Press Retry**            | Resend the same change. It is never saved twice.                         | resubmit, reload the page                    |
+| **Check the board**        | Look at the current board before making the change again.                | review the workflow requirements             |
+
 ## Style
 
 - Australian spelling (colour, centre, organise, cancelled, stabilisation). Do not say US spelling (organize, stabilization, utilization, canceled, behavior, favorite).

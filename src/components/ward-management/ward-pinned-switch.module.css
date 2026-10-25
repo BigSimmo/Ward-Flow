@@ -22,4 +22,12 @@
       var(--wf-s-4) 0 0 var(--wf-pin-ground, var(--wf-canvas)),
       calc(-1 * var(--wf-s-4)) 0 0 var(--wf-pin-ground, var(--wf-canvas));
   }
+
+  /* A phone Segmented carries an edge-fade mask, and a mask clips everything painted outside the
+     box, including the band above, so rows showed through over and beside the pinned switch (Josh's
+     iPhone, Legal forms and the patient record, 25 Oct 2026). The attribute outranks the kit's mask. */
+  .pinnedSwitch[class] {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }

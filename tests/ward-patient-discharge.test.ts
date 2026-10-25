@@ -3,6 +3,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import { selectDischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { PROTECTED_REFUSAL_REASONS } from "@/components/ward-management/ward-flow-protected-record-events";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 function fixture() {
@@ -221,7 +222,12 @@ describe("patient-linked discharge transition", () => {
     expect(next.auditEvents).toHaveLength(1);
     expect(next.auditEvents[0].outcome).not.toBe("accepted");
     expect(
-      next.rejections.every((row) => row.reason === "Request could not be completed" && row.movementId === "none"),
+      next.rejections.every(
+        (row) =>
+          Object.values(PROTECTED_REFUSAL_REASONS).includes(row.reason) &&
+          row.reason.endsWith("Nothing was changed.") &&
+          row.movementId === "none",
+      ),
     ).toBe(true);
     if (patch.now !== undefined) {
       expect(next.rejections).toEqual([]);

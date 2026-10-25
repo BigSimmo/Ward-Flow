@@ -8,6 +8,7 @@ import type { WardCommandOutcome } from "../ward-shared-client";
 import { confirmedWardCommand } from "../ward-command-completion";
 import { wardCommandFailure } from "../ward/use-ward-command-completion";
 import styles from "./ed.module.css";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 type Confirmation = "deterioration" | "cleared" | "not_cleared";
 type Choice = { kind: Confirmation; movementId: string; world: number };
@@ -77,7 +78,7 @@ export function EdMedicalPlacementControls({
           finishSave(next, {
             ...outcome,
             confirmation: undefined,
-            message: "Save is not confirmed. Review the board before trying again.",
+            message: SAVE_NOT_CONFIRMED,
           }),
       );
     }

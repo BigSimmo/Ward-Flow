@@ -11,35 +11,11 @@ import {
   perthCalendarDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { WA_PUBLIC_HOLIDAYS } from "@/components/ward-management/wa-public-holidays";
 import type { Unit } from "@/components/ward-management/ward-model";
 
-/**
- * WA public holidays for 2026 and 2027, as `YYYY-MM-DD`, with the Monday substitutes for a holiday
- * falling on a weekend. Synthetic prototype reference data: check it against the WA Government's
- * published list before any real use.
- */
-const WA_PUBLIC_HOLIDAYS: ReadonlySet<string> = new Set([
-  "2026-01-01",
-  "2026-01-26",
-  "2026-03-02",
-  "2026-04-03",
-  "2026-04-06",
-  "2026-04-27",
-  "2026-06-01",
-  "2026-09-28",
-  "2026-12-25",
-  "2026-12-28",
-  "2027-01-01",
-  "2027-01-26",
-  "2027-03-01",
-  "2027-03-26",
-  "2027-03-29",
-  "2027-04-26",
-  "2027-06-07",
-  "2027-09-27",
-  "2027-12-27",
-  "2027-12-28",
-]);
+/** WA public holiday dates, from the list the discharges board uses too. */
+const HOLIDAY_DATES: ReadonlySet<string> = new Set(WA_PUBLIC_HOLIDAYS.map((holiday) => holiday.date));
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
@@ -57,7 +33,9 @@ export function horizonDays(now: Instant, dayZero: Date, count = 7): HorizonDay[
       offset,
       label: `${WEEKDAYS[day.weekday]} ${day.day}`,
       weekend: day.weekday === 0 || day.weekday === 6,
-      holiday: WA_PUBLIC_HOLIDAYS.has(isoOf(day)),
+      // Marked on weekdays only: a holiday on a weekend is already a weekend, and its weekday
+      // additional day carries the mark.
+      holiday: day.weekday !== 0 && day.weekday !== 6 && HOLIDAY_DATES.has(isoOf(day)),
     };
   });
 }

@@ -81,7 +81,7 @@ describe("an edit made from a popup (audit CS-19)", () => {
     const refused = await client.dispatch(event);
     expect(refused.status).toBe("refused");
     expect(view()?.error).toBe(
-      "This record changed while you were looking. Your action was not applied; review the latest details and try again.",
+      "This record changed while you were looking. Your action was not applied. Check the latest details, then try again.",
     );
     // Asked again from the same popup, after the warning and the latest board.
     expect((await client.dispatch(event)).status).toBe("accepted");

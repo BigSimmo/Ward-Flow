@@ -34,7 +34,6 @@ export const COMMUNITY_SCREEN_FILES: readonly string[] = [
   `${COMMUNITY_DIR}/community-screen-drawer.tsx`,
   `${COMMUNITY_DIR}/use-community-screen-demo-lists.ts`,
   `${COMMUNITY_DIR}/use-community-screen-overlays.ts`,
-  `${COMMUNITY_DIR}/use-community-screen-window-bridge.ts`,
 ];
 
 /** A file name that belongs to the screen: `community-screen*.ts(x)` or `use-community-screen*.ts`. */

@@ -217,6 +217,21 @@ input.planInput {
   color: var(--muted) !important;
   cursor: default;
 }
+/* Usability review, Josh approved 24 Oct 2026: a greyed item's visible "why" and its one fix sit under the item. */
+.actionItems [data-unavailable-note] {
+  padding: 0 8px 6px;
+}
+.actionItems button[data-unavailable-fix] {
+  width: auto;
+  justify-content: center;
+  min-height: 28px !important;
+  padding: 2px 8px !important;
+  border: 1px solid var(--wf-line-2) !important;
+  border-radius: var(--wf-r-sm) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-accent) !important;
+  font-weight: 600;
+}
 .actionItems button[class*="primaryActionButton"]:not([aria-disabled="true"]) {
   color: var(--accent) !important;
   font-weight: 600;

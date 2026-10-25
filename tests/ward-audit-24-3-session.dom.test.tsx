@@ -25,7 +25,9 @@ it("drops 'Connection unavailable' when only a save waits on Retry (SM-4)", () =
   expect(screen.queryByText(/Connection unavailable/)).toBeNull();
   unmount();
   status(false, "The shared board could not be refreshed. Reconnect before making changes.");
-  expect(screen.getAllByRole("status")[0]).toHaveTextContent(/^Connection unavailable — changes are disabled\./);
+  expect(screen.getAllByRole("status")[0]).toHaveTextContent(
+    /^Connection unavailable, so changes are switched off\. Press Retry/,
+  );
 });
 
 it("a this-tab-only sign-out sweeps this tab's session storage and leaves shared local storage (SM-1)", () => {

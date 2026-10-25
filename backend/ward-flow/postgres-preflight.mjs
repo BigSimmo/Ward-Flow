@@ -114,6 +114,8 @@ const tableColumns = {
     "id:bigint!@,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,membership_id:uuid,actor_role:text!,actor_scope:jsonb!,patient_id:text!,surface:text!,viewed_at:timestamp with time zone!=now()",
   session_sign_outs:
     "session_id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,signed_out_at:timestamp with time zone!=now(),until:timestamp with time zone!",
+  archived_records:
+    "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,collection:text!,record_id:text!,closed_at:integer!,body:jsonb!,archived_revision:bigint!,archived_at:timestamp with time zone!=now()",
 };
 
 /** Columns later migrations added to an existing table, in the order they were added. */
@@ -137,6 +139,7 @@ const tableSince = {
   workspace_records: 10,
   record_access: 11,
   session_sign_outs: 11,
+  archived_records: 14,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -208,6 +211,14 @@ const checks = {
     "length(patient_id) >= 1 AND length(patient_id) <= 100",
   ],
   session_sign_outs: ["data_mode = 'prototype'", "until > signed_out_at"],
+  archived_records: [
+    "data_mode = 'prototype'",
+    "world_generation >= 0",
+    "collection = ANY (ARRAY['movements','referrals','broadcastAlerts'])",
+    "length(record_id) >= 1 AND length(record_id) <= 200",
+    "jsonb_typeof(body) = 'object' AND body ->> 'id' = record_id AND octet_length(body::text) <= 1048576",
+    "archived_revision > 0",
+  ],
 };
 
 /** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
@@ -237,6 +248,7 @@ const primaryKeys = {
   workspace_records: ["workspace_id", "collection", "record_id"],
   record_access: ["id"],
   session_sign_outs: ["session_id"],
+  archived_records: ["workspace_id", "world_generation", "collection", "record_id"],
 };
 
 const indexes = [
@@ -278,6 +290,8 @@ const indexes = [
   [12, "record_access_workspace_mode", "record_access", "workspace_id, data_mode", false],
   [12, "session_sign_outs_workspace_mode", "session_sign_outs", "workspace_id, data_mode", false],
   [12, "workspace_records_workspace_mode", "workspace_records", "workspace_id, data_mode", false],
+  [14, "archived_records_pkey", "archived_records", "workspace_id, world_generation, collection, record_id", true],
+  [14, "archived_records_workspace_mode", "archived_records", "workspace_id, data_mode", false],
 ];
 
 /** Each guard trigger function, the table it guards and the migration that added it. */
@@ -449,6 +463,15 @@ function expectedConstraints(version, tables) {
       deletion: "a",
     });
   }
+  if (version >= 14)
+    result.push({
+      table: "archived_records",
+      type: "f",
+      keys: ["workspace_id", "data_mode"],
+      target: "workspaces",
+      foreign: ["id", "data_mode"],
+      deletion: "a",
+    });
   if (version >= 10)
     result.push({
       table: "workspace_records",

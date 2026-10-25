@@ -17,6 +17,7 @@ import {
   recordToken,
   splitWorld,
 } from "./records.mjs";
+import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -501,10 +502,13 @@ test(
         [2, 1, 2],
       );
 
-      // The rollback puts every record back in the workspace row, in order (013, 012 and 011 go first).
+      // The rollback puts every record back in the workspace row, in order (014 to 011 go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-013-referral-record-views.sql", import.meta.url), "utf8"),
         );
@@ -529,7 +533,7 @@ test(
       assert.deepEqual((await createWorkspaceStore(pool, { workspaceId, engine }).read(actor)).payload, saved);
     } finally {
       await pool.end();
-      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await dropTestDatabase(admin, database);
       await admin.end();
     }
   },
