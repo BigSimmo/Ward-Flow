@@ -37,7 +37,6 @@ and the review server. Their history is in Git.
 | `npm run verify:pr-local`                                      | `verify-pr-local.mjs`                                                                   | Local pre-push readiness selected from CI scope rules; inspect the dry run for the actual local stages.                       |
 | `npm run verify:cheap`                                         | the `package.json` command chain                                                        | Unconditional broad offline documentation, static, lint, typecheck and unit checks.                                           |
 | `npm run test:live`                                            | `run-live-tests.mjs`                                                                    | Provider-backed live tests; refuses unless `ALLOW_PROVIDER_TESTS=true` is set for an approved run. No live tests exist today. |
-| `npm run bench`                                                | none                                                                                    | Vitest benchmarks.                                                                                                            |
 
 Shared helpers for these runners: `owned-child.mjs` (and its Windows companion), `test-run-lock.mjs`,
 `test-environment.mjs` (offline, provider-free test environment), `test-run-selection.mjs`,
