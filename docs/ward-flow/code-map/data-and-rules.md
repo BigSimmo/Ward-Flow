@@ -183,7 +183,7 @@ capacity figure anywhere in this group is real.
   including `referralState`, `referralCandidates`, `referralQueueOrder`, `recentlyDecidedReferrals`,
   `referralClocks`, `hasConfirmedCapacity`, `noBedBreakdown`, `matchReason`,
   `DECLINE_REASON_LABELS`, `COMMUNITY_DECLINE_REASON_LABELS`, `groupCandidatesByTravelBand`,
-  `outOfAreaLedger`, `canReassessReferral`, `isBedHoldExpired`, `BED_HOLD_EXPIRY_MINUTES`. Holds no
+  `outOfAreaLedger`, `canReassessReferral`. Holds no
   seed data of its own — the referral fixtures it operates on live in `ward-movements.ts`.
 - **`src/components/ward-management/ward-referral-visibility.ts`** (1,076 lines, 6 importers) —
   Scopes a `Referral` to what each role may see: `wardScopedReferral(s)`,
@@ -255,8 +255,7 @@ capacity figure anywhere in this group is real.
 - **`src/components/ward-management/ward-discharge-dates.ts`** (255 lines, 6 importers) — Derives
   forward-looking `BedRelease[]` from each admission's single `expectedDischargeAt`. Pure; does no
   bed-count arithmetic itself (that stays in `ward-bed-availability.ts`, which buckets this
-  output). Key exports: `derivedBedReleases`, `statewideReleaseCount`, `blockedReleaseCount`,
-  `dischargeDateAccuracy`.
+  output). Key exports: `derivedBedReleases`, `blockedReleaseCount`.
 - **`src/components/ward-management/ward-discharge-records.ts`** (170 lines, 10 importers) —
   Access-controlled read of discharge records: who (`WardRecordActor`) may read which
   `DischargeRecord`/`DischargeIdentity`, and safe lookups that fail closed (`RecordRead<T>` is

@@ -13,10 +13,7 @@ import {
   type EligibilityVerdict,
 } from "@/components/ward-management/ward-eligibility";
 import { SUBURB_UNKNOWN_REASONS, suburbUnknownLabels } from "@/components/ward-management/ward-model";
-import {
-  BED_HOLD_EXPIRY_MINUTES,
-  EXPECT_RECONSIDER_AFTER_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { EXPECT_RECONSIDER_AFTER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   CommunityDeclineReason,
@@ -1361,37 +1358,3 @@ export function travelBandGroupLabel(band: TravelBandGroup["band"]): string {
 
 // The out-of-area ledger lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals-out-of-area";
-
-/**
- * Bed Hold Expiry Alert:
- * Flags bed holds that have been active longer than Josh's named default (2 hours) without confirmed
- * dispatch.
- * Does NOT automatically cancel or release the bed (per clinical safety rules: do not release
- * a bed automatically merely because a clock expired), but surfaces an alert for review.
- */
-export { BED_HOLD_EXPIRY_MINUTES };
-
-export function isBedHoldExpired(
-  movement: Movement,
-  now: Instant,
-  thresholdMinutes: number = BED_HOLD_EXPIRY_MINUTES,
-): boolean {
-  if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
-    return false;
-  }
-  const pulledAt = (movement as { pulledAt?: Instant }).pulledAt ?? movement.acceptedAt;
-  if (pulledAt === undefined || pulledAt === null || !Number.isFinite(pulledAt)) {
-    return false;
-  }
-  // If transport is already en route, collected or arrived, the hold is not expired/stalled.
-  // `TransportJob` records progress as timestamps; it has no `stage` field.
-  const transport = movement.transport;
-  if (
-    transport !== undefined &&
-    transport.cancelledAt === undefined &&
-    (transport.enRouteAt !== undefined || transport.collectedAt !== undefined || transport.arrivedAt !== undefined)
-  ) {
-    return false;
-  }
-  return now - pulledAt >= thresholdMinutes;
-}
