@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { OverlayPortal } from "@/components/wf";
 
@@ -11,8 +11,8 @@ import entries from "./whats-new.json";
 /**
  * WHAT'S NEW (Josh, 24 and 25 Oct 2026): a short note after each daily release, shown once per
  * device for the changes it has not seen, and gone once closed. Help keeps the full recent list. A
- * device that has never had the tour gets the tour instead, which marks every change read
- * (`markWhatsNewSeen`), so nobody sees both on their first visit.
+ * device that has never had the tour gets the tour instead, and the tour's start marks every change
+ * read (`TOUR_AUTO_STARTED_EVENT`), so nobody sees both on their first visit.
  *
  * `whats-new.json` is the one list. A pull request that changes something staff will see adds one
  * plain line at the end; the live site only moves at the daily release, so the note appears the
@@ -29,8 +29,9 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = entries;
 export const WHATS_NEW_CARD_LIMIT = 4;
 
 export const WHATS_NEW_STORAGE_KEY = "ward_flow_choice_whats_new_seen";
-// The same key as `ward-tour-auto-start.tsx`, written out so this note does not load the tour.
+// The same key and event as `ward-tour-auto-start.tsx`, written out so this note does not load the tour.
 const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
+export const TOUR_AUTO_STARTED_EVENT = "ward-flow-tour-auto-started";
 
 /**
  * The changes a device has not seen, newest first: those after the stored id. A device that has
@@ -86,6 +87,10 @@ export function WardWhatsNew() {
   // Read once from the device; the server and hydration read "nothing new".
   const unseen = useSyncExternalStore(noSubscribe, readUnseen, readNone);
   const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
+    return () => window.removeEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
+  }, []);
   if (unseen.length === 0 || closed) return null;
   const close = () => {
     markWhatsNewSeen();

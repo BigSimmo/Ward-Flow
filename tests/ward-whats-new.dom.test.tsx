@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -12,6 +14,7 @@ import {
   WHATS_NEW_CARD_LIMIT,
   WHATS_NEW_STORAGE_KEY,
   WardWhatsNew,
+  TOUR_AUTO_STARTED_EVENT,
   markWhatsNewSeen,
   unseenWhatsNew,
   type WhatsNewEntry,
@@ -75,7 +78,18 @@ describe("what's new note", () => {
     window.removeEventListener("ward-flow-open-help", listener);
   });
 
-  it("stays hidden once marked read, as the tour does on a first visit", () => {
+  it("marks every change read when the tour starts by itself on a first visit", () => {
+    render(<WardWhatsNew />);
+    act(() => {
+      window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
+    });
+    expect(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY)).toBe(newest().id);
+    // The tour sends the same event name, written out on its side to keep the files apart.
+    const tourSource = readFileSync("src/components/ward-management/help/ward-tour-auto-start.tsx", "utf8");
+    expect(tourSource).toContain(`"${TOUR_AUTO_STARTED_EVENT}"`);
+  });
+
+  it("stays hidden once marked read", () => {
     window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
     act(() => markWhatsNewSeen());
     render(<WardWhatsNew />);

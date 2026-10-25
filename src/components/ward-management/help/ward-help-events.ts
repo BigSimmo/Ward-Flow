@@ -14,8 +14,9 @@ export function openWardHelp(view: HelpView = "screen"): void {
 
 export function subscribeWardHelp(onOpen: (view: HelpView) => void): () => void {
   function handler(event: Event) {
-    const view = (event as CustomEvent<{ view?: HelpView }>).detail?.view;
-    onOpen(view === "desk" || view === "glossary" || view === "new" || view === "tour" ? view : "screen");
+    // Only `openWardHelp` sends this event, so its view is already a HelpView. No check is kept
+    // here: this file loads on every page, inside the phone script budget.
+    onOpen((event as CustomEvent<{ view?: HelpView }>).detail?.view ?? "screen");
   }
   window.addEventListener(OPEN_HELP_EVENT, handler);
   return () => window.removeEventListener(OPEN_HELP_EVENT, handler);
