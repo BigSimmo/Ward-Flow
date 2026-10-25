@@ -1,5 +1,9 @@
 # Communication — addendum to the third-edition master build plan
 
+> **Historical plan input, September 2026.** Listed as a historical input in the [plans index](README.md). Some source and test comments still cite its sections; current behaviour is in source and tests.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Path claimed by Ward Lead** (master plan §3.4 discipline). Authorised by owner ruling **D-2**,
 2026-09-10 (`docs/ward-flow/owner-decisions-2026-09-1x.md`). Built in **Phase 1, by Ward Lead, on
 the line** — it touches the model, the reducer and the shell, which no lane may edit.

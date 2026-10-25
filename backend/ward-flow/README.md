@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-21 - shared build inputs and deployment watch contract checked against source; Documentation owns._
+_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -19,8 +19,9 @@ These source files do not establish a current hosted connection or deployment.
 ## How the UI connects
 
 - **Local mode (default):** with `NEXT_PUBLIC_WARD_SHARED_ENABLED` unset or `false`, the app runs
-  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). Saving stops
-  for the rest of the session once typed free text is dispatched (D-18).
+  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). After typed
+  text is dispatched it saves a scrubbed copy with typed values removed, and stops saving only if
+  a safe copy cannot be made (D-72, which replaced D-18's stop).
 - **Shared mode (opt in):** with `WARD_SHARED_ENABLED=true` and
   `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, the UI signs in through `use-ward-supabase-shared.ts`
   and talks to this backend's `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`
@@ -65,7 +66,7 @@ These source files do not establish a current hosted connection or deployment.
 - Provider seam: `config.mjs` (provider names, defaults and settings validation) and
   `providers.mjs` (adapters and startup).
 - HTTP: `server.mjs` (server, readiness, shutdown and the five-minute phone push sweep) and
-  `shared-http.mjs` (workspace routes).
+  `shared-http.mjs` (workspace routes). `error-report.mjs` sends optional scrubbed failure reports.
 - Domain: `engine.ts`, built to `dist/engine.mjs` by `build-engine.mjs`. `push.mjs` builds and
   sends Web Push act-now alerts.
 - Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state), `records.mjs`
@@ -193,6 +194,9 @@ These source files do not establish a current hosted connection or deployment.
   text. HTTP, push and store failures share bounded error-name and protocol-code fields; unknown
   values fall back to `Error` without copying exception text. Logger failures cannot change the
   API result.
+- Optional Sentry error reporting (`error-report.mjs`) is off unless `SENTRY_DSN` is set. It sends
+  only the fixed failure name and those same error-name and code fields, at most once every five
+  minutes per failure kind. `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` are optional labels.
 - Configured PostgreSQL lock/query deadline failures return `503 storage_unavailable`; other
   query/code faults remain `500`. A failed migration rollback preserves the original exception
   and removes the failed connection from the pool.

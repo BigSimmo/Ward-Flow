@@ -348,7 +348,7 @@ export type WardDailySheetProps = {
   outgoingBasisLabel?: string;
   /** `arrowTargets` for this unit: where the people in these beds are expected to head, nearest
    *  first, already limited to the board's display horizon. */
-  destinations?: readonly { region: string; count: number; nearestDays: number }[];
+  destinations?: readonly { region: string; count: number; nearestDays: number; nearestDue?: boolean }[];
   /** The board's occupants, in the board's order. */
   people?: readonly DailySheetPerson[];
   /** Optional instant or shift timestamp for the sheet */
@@ -636,7 +636,11 @@ export function WardDailySheet({
                     <span className={`${styles.rowLine} ${styles.rowLineBlock}`}>
                       <span style={TNUM}>{target.count}</span> {target.count === 1 ? "person" : "people"}, soonest{" "}
                       {target.nearestDays === 0 ? (
-                        "due now or overdue"
+                        target.nearestDue === false ? (
+                          "today"
+                        ) : (
+                          "due now or overdue"
+                        )
                       ) : (
                         <>
                           in <span style={TNUM}>{target.nearestDays}</span> day

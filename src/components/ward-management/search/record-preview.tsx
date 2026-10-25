@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formTitleForCode } from "@/lib/form-register";
 import Link from "next/link";
 
@@ -262,6 +263,8 @@ export function RecordPreview({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // UISR-01: Escape that a field (the typeahead's list) or a sheet on top already took is not ours.
+      if (e.defaultPrevented || hasOpenSheet()) return;
       if (e.key === "Escape") {
         onClose();
       }

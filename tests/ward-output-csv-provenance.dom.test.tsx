@@ -124,7 +124,7 @@ it("capacity export names the alert-line highlight while still exporting every m
   render(
     <StatisticsCapacityChart units={allUnits().slice(0, 2)} bedReleases={[]} asAt="Fri, 1 Jan 2027, 00:05 AWST" />,
   );
-  fireEvent.click(screen.getByRole("button", { name: /At or over the alert line/u }));
+  fireEvent.click(screen.getByRole("button", { name: /at or over the alert line/iu }));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
   expect(csv).toMatch(/all matching rows; all services highlighted, only rows at or above the \d+% alert line;/u);
 });

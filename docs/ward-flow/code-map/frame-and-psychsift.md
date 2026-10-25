@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **Historical Extraction Context:**
-> This map records the shared app frame and dependencies at the time Ward Flow was separated from PsychSift. In `BigSimmo/Ward-Flow`, Ward Flow is hosted in its own repository with zero live connection to PsychSift or Supabase.
+> This map records the shared app frame and dependencies at the time Ward Flow was separated from PsychSift. In `BigSimmo/Ward-Flow`, Ward Flow is hosted in its own repository with no connection to PsychSift or its resources. (24 October 2026 correction: Ward Flow now has its own synthetic shared backend on <!-- fact:database-provider -->Supabase<!-- /fact -->; see [DATABASE.md](../DATABASE.md).) Many files this map names, such as `src/lib/env.ts`, `src/lib/types.ts` and `src/lib/ward-output.ts`, are no longer in the repository.
 
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). This part covers two

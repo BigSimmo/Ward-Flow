@@ -111,6 +111,12 @@ function readHistoryIndex(state: unknown): number | null {
   return typeof index === "number" && Number.isFinite(index) ? index : null;
 }
 
+/**
+ * Link clicks a dirty guard has already confirmed. Every dirty guard listens for clicks, so without
+ * this a second dirty form asked the same question again for one tap (production audit CD-05).
+ */
+const confirmedLinkClicks = new WeakSet<Event>();
+
 function hasAnyDirtyGuard(approved?: ReadonlySet<NavigationGuardEntry>): boolean {
   for (const entry of navigationGuards) {
     if (entry.isDirty && !approved?.has(entry)) return true;
@@ -315,7 +321,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
 
     const handleClick = (event: MouseEvent) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented || confirmedLinkClicks.has(event)) return;
 
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
@@ -356,7 +362,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       if (!confirmed) {
         event.preventDefault();
         event.stopPropagation();
-      }
+      } else confirmedLinkClicks.add(event);
     };
 
     document.addEventListener("click", handleClick, true);

@@ -1,5 +1,9 @@
 # Full repository audit remediation implementation plan
 
+> **Dated plan record, 18 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 > **For agentic workers:** Use the existing parallel implementation lanes with the coordinator applying the executing-plans, systematic-debugging and test-first workflows. Do not recursively spawn workers. Steps use checkbox syntax. The user explicitly requested both the plan and implementation; no additional routine plan approval is required.
 
 **Goal:** Correct the ten confirmed findings from the Full Deep audit, preserve current synthetic-prototype behaviour and provide independently reviewed local verification.

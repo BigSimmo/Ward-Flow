@@ -95,8 +95,12 @@ export const ED_STAGE_LABELS: Record<MovementStage, string> = {
   moving: "In transit",
   arrived: "Arrived",
 };
-/** A bed is accepted or pulled for them. */
-export const ED_HELD_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
+/** Audit 24-4 NA2-04 (Josh, 24 Oct 2026): "Bed held" splits into these two, in Movements' words. */
+export const ED_ACCEPTED_NO_BED_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed"];
+export const ED_BED_PULLED_STAGES: readonly MovementStage[] = ["pulled"];
+export const ED_SPLIT_HELD_LABELS = { acceptedNoBed: "Accepted, no bed yet", bedPulled: "Bed pulled" } as const;
+/** A bed is accepted or pulled for them: both of the above, kept until the ED screens show the split. */
+export const ED_HELD_STAGES: readonly MovementStage[] = [...ED_ACCEPTED_NO_BED_STAGES, ...ED_BED_PULLED_STAGES];
 /** On their way out of the department. */
 export const ED_LEAVING_STAGES: readonly MovementStage[] = ["handover_ready", "moving"];
 

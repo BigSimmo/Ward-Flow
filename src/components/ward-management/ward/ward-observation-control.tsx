@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/wf";
 import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
   OBSERVATION_LEVELS,
@@ -47,13 +49,16 @@ export function observationWithReview(observation: Observation, now: Instant): s
 export function WardObservationControl({
   observation,
   now,
+  editingToken,
   onSave,
   showCurrent = true,
 }: {
   observation: Observation;
   now: Instant;
+  /** The record's `observationEditingToken` now; the one seen on opening goes with the save. */
+  editingToken?: string;
   /** Absent for a desk that may not change it: the level is shown and nothing more. */
-  onSave?: (next: Observation) => void;
+  onSave?: (next: Observation, expected?: string) => ReturnType<WardCommandDispatch>;
   /** False where a row above already states the level, as in the bed drawer. */
   showCurrent?: boolean;
 }) {
@@ -66,6 +71,10 @@ export function WardObservationControl({
   const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">("today");
   const [reviewEdited, setReviewEdited] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A colleague's change made while this is open is refused by the server, not overwritten.
+  const [openedToken, setOpenedToken] = useState<string>();
+  // Audit 24-3 SV-4: the control stays open with its choices until the level is accepted.
+  const recording = useWardFormSave("observation");
 
   function save() {
     // An untouched review box keeps the recorded review time exactly, even one outside today or tomorrow.
@@ -79,8 +88,12 @@ export function WardObservationControl({
       reviewAt = typed;
     }
     setError(null);
-    onSave?.({ level, intervalMinutes: level === "intermittent" ? interval : null, reviewAt });
-    setOpen(false);
+    const next = { level, intervalMinutes: level === "intermittent" ? interval : null, reviewAt };
+    if (onSave)
+      recording.submit(
+        () => onSave(next, openedToken),
+        () => setOpen(false),
+      );
   }
 
   // In the bed drawer the row above already states the level and its review time, so a desk that
@@ -107,6 +120,8 @@ export function WardObservationControl({
             setReviewDay(review.day);
             setReviewEdited(false);
             setError(null);
+            recording.forget();
+            setOpenedToken(editingToken);
             setOpen(true);
           }}
         >
@@ -176,16 +191,33 @@ export function WardObservationControl({
               </select>
             </label>
           </div>
-          {error ? (
-            <p className={styles.meta} role="alert">
-              {error}
+          {error || recording.error ? (
+            <p className={styles.meta} role="alert" data-testid="ward-observation-error">
+              {error ?? recording.error}
+            </p>
+          ) : recording.pending ? (
+            <p className={styles.meta} role="status">
+              Saving…
             </p>
           ) : null}
           <div className={`${styles.editor} ${styles.editorFlush}`}>
-            <Button variant="pri" className={styles.pill} data-testid="ward-observation-save" onClick={save}>
+            <Button
+              variant="pri"
+              className={styles.pill}
+              data-testid="ward-observation-save"
+              aria-disabled={recording.pending ? "true" : undefined}
+              onClick={save}
+            >
               Record level
             </Button>
-            <Button variant="sec" className={styles.pill} onClick={() => setOpen(false)}>
+            <Button
+              variant="sec"
+              className={styles.pill}
+              onClick={() => {
+                recording.forget();
+                setOpen(false);
+              }}
+            >
               Cancel
             </Button>
           </div>

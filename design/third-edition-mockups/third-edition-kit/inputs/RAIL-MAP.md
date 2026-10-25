@@ -1,5 +1,9 @@
 # Ward Flow Rail: map of the owner's artifact and the plan to build the third edition Command over it
 
+> **Historical drawing-era record, September 2026.** Written while the third-edition drawings were being built. It is not current guidance for app screens. The rendered app is the current design authority; start at the [Ward Flow entry point](../../../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Source: `inputs/rail.html`, 6600 lines, title "Ward Flow Rail". Fonts Newsreader, IBM Plex Sans, IBM Plex Mono.
 Compared against `merged/source-L-command.html` (the Live edition Command, 6664 lines) and
 `merged/command-third-edition.html` (the third edition Command, 6760 lines).

@@ -1,5 +1,7 @@
 # Desk guide: Access admin
 
+<!-- last-checked: 2026-10-24 -->
+
 You give staff access to the right desk and place. You never see patients.
 
 ## What you see first

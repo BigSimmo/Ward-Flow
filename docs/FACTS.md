@@ -16,14 +16,19 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `latest-decision`   | D-80                                        | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                      |
 | `next-decision`     | D-81                                        | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                      |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                               | `package.json`                                                     |
-| `backend-env-vars`  | 23 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
+| `backend-env-vars`  | 28 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
 
 ## backend-env-vars
 
 Environment variables the shared backend reads:
 
 - `HOST`
+- `NODE_ENV`
 - `PORT`
+- `RAILWAY_GIT_COMMIT_SHA`
+- `SENTRY_DSN`
+- `SENTRY_ENVIRONMENT`
+- `SENTRY_RELEASE`
 - `WARD_ALLOWED_ORIGIN`
 - `WARD_AUTH_PROVIDER`
 - `WARD_COORDINATOR_USER_IDS`

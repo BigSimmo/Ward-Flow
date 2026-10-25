@@ -5,7 +5,7 @@ import {
   type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import {
   HOME_REGIONS,
@@ -340,9 +340,12 @@ export type ArrowTarget = {
   region: HomeRegion;
   /** How many people in beds here are expected to head to that region within the horizon. */
   count: number;
-  /** Whole days until the nearest of them is expected to leave. Zero for anyone already past the
-   *  ward's own expected date. */
+  /** Calendar days until the nearest of them is expected to leave: 0 today, 1 tomorrow. Zero for
+   *  anyone already past the ward's own expected date. */
   nearestDays: number;
+  /** Whether the nearest of them is already at or past the ward's expected time (`expected <= now`).
+   *  Only this reads as "due now or overdue"; a time still ahead today reads as "today". */
+  nearestDue: boolean;
 };
 
 /**
@@ -372,14 +375,17 @@ export type ArrowTarget = {
  */
 export function arrowTargets(admissions: readonly Admission[], now: Instant): ArrowTarget[] {
   if (!Number.isFinite(now)) return [];
-  const buckets = new Map<HomeRegion, { count: number; nearestDays: number }>();
+  const buckets = new Map<HomeRegion, { count: number; nearestDays: number; nearestDue: boolean }>();
 
   for (const admission of admissions) {
     if (!bedIsOccupied(admission)) continue;
     const expected = admission.expectedDischargeAt;
     if (expected === null || !Number.isFinite(expected)) continue;
 
-    const days = Math.max(0, Math.floor((expected - now) / MINUTES_PER_DAY));
+    // Calendar days, as `releaseBand` counts them (production audit 24 Oct 2026, EDR-01): 14:00
+    // tomorrow read at 15:00 today is tomorrow, not "due now".
+    const days = Math.max(0, dayOf(expected) - dayOf(now));
+    const due = expected <= now;
     if (days > ARROW_HORIZON_DAYS) continue;
 
     // Task 17, 2026-08-30: an admission created by an ARRIVAL through the emergency-department
@@ -394,15 +400,21 @@ export function arrowTargets(admissions: readonly Admission[], now: Instant): Ar
     if (admission.homeRegion === null) continue;
 
     const bucket = buckets.get(admission.homeRegion);
-    if (bucket === undefined) buckets.set(admission.homeRegion, { count: 1, nearestDays: days });
+    if (bucket === undefined) buckets.set(admission.homeRegion, { count: 1, nearestDays: days, nearestDue: due });
     else {
       bucket.count += 1;
       bucket.nearestDays = Math.min(bucket.nearestDays, days);
+      bucket.nearestDue ||= due;
     }
   }
 
   return [...buckets.entries()]
-    .map(([region, bucket]) => ({ region, count: bucket.count, nearestDays: bucket.nearestDays }))
+    .map(([region, bucket]) => ({
+      region,
+      count: bucket.count,
+      nearestDays: bucket.nearestDays,
+      nearestDue: bucket.nearestDue,
+    }))
     .sort(
       (a, b) =>
         a.nearestDays - b.nearestDays ||

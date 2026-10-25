@@ -1,6 +1,6 @@
 # Testing and verification
 
-_Updated 2026-10-20 - verified CI scope, production browser proof and measured diagnostics; Documentation owns._
+_Updated 2026-10-24 - `test:focused --files` takes one comma-separated argument; Documentation owns._
 
 Current Ward Flow commands, browser cadence and CI topology below were checked
 against the remediation source on 20 October 2026. Hosted performance for this topology has not been measured. Older diagnostic and performance
@@ -10,7 +10,7 @@ material is retained as historical context; it does not select a gate. Follow
 > [!NOTE]
 > **Inherited diagnostic material:**
 > Some historical sections describe tooling developed for the former PsychSift monorepo. Those sections do not imply those tools or hosted jobs are present in Ward Flow.
-> In the dedicated **Ward Flow** repository (`BigSimmo/Ward-Flow`), use synthetic browser/offline data. Run a focused unit check through `node scripts/run-vitest.mjs run <test-file>` or `npm run test:focused -- --files <paths>` so repository admission and offline defaults apply. Use `npm run test:e2e:ward-journeys` for browser journeys and inspect `npm run verify:pr-local -- --dry-run` before readiness checks. Follow [`AGENTS.md`](../AGENTS.md) and [`HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) for authority and gates.
+> In the dedicated **Ward Flow** repository (`BigSimmo/Ward-Flow`), use synthetic browser/offline data. Run a focused unit check through `node scripts/run-vitest.mjs run <test-file>` or `npm run test:focused -- --files <a>,<b>` (one comma-separated argument) so repository admission and offline defaults apply. Use `npm run test:e2e:ward-journeys` for browser journeys and inspect `npm run verify:pr-local -- --dry-run` before readiness checks. Follow [`AGENTS.md`](../AGENTS.md) and [`HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) for authority and gates.
 
 ## Safe local execution
 
@@ -85,7 +85,7 @@ Browser gates are expensive; select the affected checks before starting them. Pr
 
 | Change type                           | Run this                                                                       | Avoid                                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| Lib/helper, no UI                     | `npm run test:focused -- --files <paths>` or one Vitest file                   | `verify:ui`                                               |
+| Lib/helper, no UI                     | `npm run test:focused -- --files <a>,<b>` or one Vitest file                   | `verify:ui`                                               |
 | Component interaction                 | `.dom.test.tsx` + focused Vitest                                               | full Chromium                                             |
 | Phone chrome / scroll / composer      | Focused Ward journey; release-gate phone project where affected                | immediate `verify:ui`                                     |
 | Shared shell / header / `globals.css` | Inspect the local readiness plan; run affected Ward journeys                   | stacking `verify:cheap` + `verify:pr-local` + `verify:ui` |
@@ -179,7 +179,7 @@ it is limited to the documented, exact GitHub connector-gap operation in
 | Command                                       | Purpose                                                                                                       |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `node scripts/run-vitest.mjs run <test-file>` | Focused development check with admission and offline defaults.                                                |
-| `npm run test:focused -- --files <paths>`     | Related-file selection; unsafe or empty mappings fail closed to the full unit command.                        |
+| `npm run test:focused -- --files <a>,<b>`     | Related-file selection; unsafe or empty mappings fail closed to the full unit command.                        |
 | `npm run test`                                | Complete default offline unit population.                                                                     |
 | `npm run typecheck:backend`                   | Backend TypeScript check, selected for backend and unknown local scope.                                       |
 | `npm run test:backend`                        | Discover all backend tests; prints PostgreSQL integration NOT RUN without an explicit loopback test database. |
@@ -357,7 +357,7 @@ dedicated repository. There is no active visual-baseline CI job or automatic scr
 workflow. The retained generic `playwright.visual.config.ts` is not evidence of a running gate.
 Verify changed Ward appearance through the affected Ward journey and direct browser inspection,
 including meaningful computed styles, geometry, keyboard interaction and accessibility where affected.
-Follow the bounded screenshot and viewport rules in [AGENTS.md](../AGENTS.md).
+Follow the bounded screenshot and viewport rules in [HOW-WE-WORK §5](ward-flow/HOW-WE-WORK.md#5-testing).
 
 <!-- docs-script-refs:historical-start -->
 
