@@ -200,7 +200,7 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
       if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
+        return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
       if (event.formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
         return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
@@ -305,7 +305,7 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
       if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
+        return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
       const expiryHistory =
         event.paperExpiresAt === undefined

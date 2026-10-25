@@ -82,7 +82,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
     cause: "bed_pull_expired",
     title: "Pull expired, bed still pulled",
-    note: "Release the bed or set a new reserved time",
+    note: "Release the bed or set a new pull time limit",
   },
   { cause: "awaiting_bed_ready", title: "Awaiting the bed itself", note: "each has a named bed" },
   { cause: "awaiting_transport", title: "Awaiting transport", note: "" },

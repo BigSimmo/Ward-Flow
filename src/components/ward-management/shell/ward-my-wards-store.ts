@@ -32,11 +32,12 @@ let inMemoryFallback: readonly string[] | undefined;
 let lastRaw: string | null | undefined;
 let lastParsed: readonly string[] = NO_PINS;
 
-onWardSessionEnd(() => {
+onWardSessionEnd((scope) => {
   inMemoryFallback = undefined;
   lastRaw = undefined;
   lastParsed = NO_PINS;
-  if (typeof window === "undefined") return;
+  // Pins live in local storage, which another tab still signed in on this browser shares.
+  if (typeof window === "undefined" || scope === "tab") return;
   // Removed here, before subscribers re-read, so a mounted rail cannot read the last person's pins back.
   try {
     window.localStorage.removeItem(MY_WARDS_STORAGE_KEY);

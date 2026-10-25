@@ -1,4 +1,5 @@
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import {
   type DueSoonThresholds,
   formatInstantWithDay,
@@ -119,7 +120,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       events.push({
         at: decline.at,
         id: `decline:${movement.id}:${decline.unitId}:${decline.at}:${index}`,
-        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}.`,
+        text: `${unitNames.get(decline.unitId) ?? decline.unitId} declined ${movement.id}. ${decline.reason ? (DECLINE_REASON_LABELS[decline.reason] ?? decline.reason) : DECLINE_REASON_NOT_SHARED}.`,
         tone: "warning",
         category: "decline",
       });

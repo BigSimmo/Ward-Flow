@@ -1,15 +1,14 @@
 #!/usr/bin/env node
-// Guardrail: scans tracked source files under src/ for known credential patterns.
-// This does not inspect built bundles or prove the absence of all exposed secrets.
+// Guardrail: scans tracked source files under src/ for known credential patterns and, when a build
+// has left `.next/static`, every built client chunk there. Any match or unreadable file fails.
+// It does not prove the absence of all exposed secrets.
 //
 // Usage:
 //   node scripts/check-client-bundle-secrets.mjs
-//   node scripts/check-client-bundle-secrets.mjs --strict
 
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-
-const strict = process.argv.includes("--strict") || true;
+import path from "node:path";
 
 const SECRET_PATTERNS = [
   { name: "OpenAI Secret Key", regex: /\bsk-[a-zA-Z0-9]{20,}\b/g },
@@ -69,18 +68,49 @@ for (const file of files) {
   });
 }
 
+// Built client chunks: what the browser actually receives. No comment-marker exceptions apply here,
+// because one minified line can hold a whole module.
+const BUNDLE_DIR = path.join(".next", "static");
+const chunks = existsSync(BUNDLE_DIR)
+  ? readdirSync(BUNDLE_DIR, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.(?:js|mjs)$/.test(entry.name))
+      .map((entry) => path.join(entry.parentPath, entry.name).split(path.sep).join("/"))
+  : [];
+for (const chunk of chunks) {
+  let text;
+  try {
+    text = readFileSync(chunk, "utf8");
+  } catch {
+    unreadable.push(chunk);
+    continue;
+  }
+  // Whole-chunk matching: a template literal can split a credential URL across lines.
+  for (const pattern of SECRET_PATTERNS) {
+    for (const match of text.matchAll(pattern.regex)) {
+      const line = text.slice(0, match.index).split("\n").length;
+      violations.push({ file: chunk, line, rule: pattern.name });
+    }
+  }
+}
+const bundleSummary =
+  chunks.length > 0
+    ? `${chunks.length} built client chunks in ${BUNDLE_DIR} scanned.`
+    : `Built bundles were not scanned (no ${BUNDLE_DIR}; run after next build to include them).`;
+
 if (violations.length === 0 && unreadable.length === 0) {
   console.log(
-    `[check-client-bundle-secrets] Clean: ${audited} tracked source files scanned for known credential patterns; ${files.length - audited} synthetic guard files excluded. No pattern matches found. Built bundles were not scanned.`,
+    `[check-client-bundle-secrets] Clean: ${audited} tracked source files scanned for known credential patterns; ${files.length - audited} synthetic guard files excluded. No pattern matches found. ${bundleSummary}`,
   );
   process.exit(0);
 } else {
   console.error(
     `[check-client-bundle-secrets] FAILED: ${violations.length} credential-pattern matches; ${unreadable.length} tracked source files unreadable:`,
   );
-  for (const file of unreadable) console.error(`  - ${file} [unable to read tracked source]`);
+  for (const file of unreadable) {
+    console.error(`  - ${file} [unable to read ${file.startsWith(".next/") ? "built chunk" : "tracked source"}]`);
+  }
   for (const v of violations) {
     console.error(`  - ${v.file}:${v.line} [${v.rule}] (value redacted)`);
   }
-  process.exit(strict ? 1 : 0);
+  process.exit(1);
 }

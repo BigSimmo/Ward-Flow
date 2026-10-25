@@ -465,7 +465,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ["/ward-flow/statistics/compare", "Reached by Link from the statistics hub, for the same reason as /overview above."],
   [
     "/ward-flow/bed-meeting/agenda",
-    "Reached by the Meeting agenda Link on Capacity, behind the bed-meeting-actions switch: the agenda belongs to the bed meeting, not a section of the app (smart features idea 5, 19 Oct 2026).",
+    "Reached by the Meeting agenda Link on Capacity: the agenda belongs to the bed meeting, not a section of the app (smart features idea 5, 19 Oct 2026).",
   ],
   /*
    * 🔴 SETTINGS IS UNLISTED BY THE DRAWING'S OWN INSTRUCTION, NOT BY THIS LANE'S JUDGEMENT.

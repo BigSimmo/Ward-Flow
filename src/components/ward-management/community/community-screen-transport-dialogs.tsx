@@ -21,6 +21,7 @@ import {
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { cadNumberSentence, transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import styles from "./community.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -36,6 +37,22 @@ const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
 
 const NO_TRANSPORT_PROVIDER_VALUE = "";
 
+/** Audit 24-3 SV-2: a save still out, or why it was not recorded. The dialog and its answers stay. */
+function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: string }) {
+  // A save held for the status bar's Retry is pending and not confirmed: say why it is held.
+  if (save.pending && !save.error)
+    return (
+      <p className={styles.transportHint} role="status">
+        Saving…
+      </p>
+    );
+  return save.error ? (
+    <p className={styles.transportHint} role="alert" data-testid={testId}>
+      {save.error}
+    </p>
+  ) : null;
+}
+
 /** Logs a transport booking made by phone. Renders nothing until one is opened. */
 export function CommunityScreenTransportBookDialog({ view }: { view: CommunityScreenView }) {
   const {
@@ -47,6 +64,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     transportBookDialogRef,
     submitBookTransport,
   } = view;
+  const save = useWardFormSave(transportBookFor ?? "");
   if (transportBookFor === undefined) return null;
   // A typed CAD number the rule refuses is named beside the field, not only at the confirm control.
   const cadFieldProblem = transportDraft.cadNumber.trim() ? cadNumberProblem(transportDraft.cadNumber) : undefined;
@@ -227,13 +245,15 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
                     type="button"
                     className={styles.transportConfirmButton}
                     data-testid={`ward-community-book-transport-confirm-${transportBookFor}`}
-                    aria-disabled={blocked === undefined ? undefined : "true"}
+                    aria-disabled={blocked === undefined && !save.pending ? undefined : "true"}
                     aria-describedby={
                       blocked === undefined ? undefined : `ward-community-book-transport-blocked-${transportBookFor}`
                     }
                     title={blocked}
                     onClick={
-                      blocked === undefined ? () => submitBookTransport(transportBookFor) : ignoreUnavailableActivation
+                      blocked === undefined
+                        ? () => submitBookTransport(transportBookFor, save.submit)
+                        : ignoreUnavailableActivation
                     }
                   >
                     Confirm booking
@@ -243,6 +263,10 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
                       {blocked}
                     </span>
                   )}
+                  <TransportSaveAnswer
+                    save={save}
+                    testId={`ward-community-book-transport-failure-${transportBookFor}`}
+                  />
                 </>
               );
             })()}
@@ -264,6 +288,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
     transportCancelDialogRef,
     submitCancelTransport,
   } = view;
+  const save = useWardFormSave(transportCancelFor ?? "");
   if (transportCancelFor === undefined) return null;
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
@@ -323,7 +348,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               type="button"
               className={styles.transportConfirmButton}
               data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
-              aria-disabled={cancelTransportBlocked === undefined ? undefined : "true"}
+              aria-disabled={cancelTransportBlocked === undefined && !save.pending ? undefined : "true"}
               aria-describedby={
                 cancelTransportBlocked === undefined
                   ? undefined
@@ -332,7 +357,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               title={cancelTransportBlocked}
               onClick={
                 cancelTransportBlocked === undefined
-                  ? () => submitCancelTransport(transportCancelFor)
+                  ? () => submitCancelTransport(transportCancelFor, save.submit)
                   : ignoreUnavailableActivation
               }
             >
@@ -343,6 +368,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
                 {cancelTransportBlocked}
               </span>
             )}
+            <TransportSaveAnswer save={save} testId={`ward-community-cancel-transport-failure-${transportCancelFor}`} />
           </div>
         </div>
       </div>

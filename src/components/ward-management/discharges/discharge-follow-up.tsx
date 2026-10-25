@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
 import { FOLLOW_UP_STATES, isFollowUpState, type FollowUpState } from "../ward-admissions";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { formatInstantWithDay } from "../ward-clock";
@@ -30,6 +31,8 @@ export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; 
     rejections.length > submittedAtCount &&
     rejections.at(-1)?.attempted === "RECORD_ADMISSION_FOLLOW_UP";
   const [choice, setChoice] = useState<FollowUpState | "">("");
+  // Audit 24-3 SV-5: a shared refusal reaches only the outcome, so it is said here too.
+  const save = useWardFormSave(record.admissionId);
   const editable =
     (actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === record.unitId)) &&
     record.identity.kind === "linked" &&
@@ -64,6 +67,7 @@ export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; 
       ) : null}
       <p>This records an arrangement status. It does not confirm that follow-up occurred.</p>
       {refused && <p role="alert">Follow-up status was not recorded. Reopen the current record and try again.</p>}
+      {!refused && save.error ? <p role="alert">{save.error}</p> : null}
       {editable && (
         <form
           className={styles.filters}
@@ -76,17 +80,23 @@ export function DischargeFollowUp({ record, actor }: { record: DischargeRecord; 
             )
               return;
             setSubmittedAtCount(rejections.length);
-            dispatch({
-              type: "RECORD_ADMISSION_FOLLOW_UP",
-              role: actor.role,
-              now,
-              ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
-              admissionId: record.admissionId,
-              patientId: record.identity.patient.id,
-              expectedGeneration: record.generation,
-              expectedRevision: record.revision,
-              followUpState: choice,
-            });
+            const { role } = actor;
+            const patientId = record.identity.patient.id;
+            save.submit(
+              () =>
+                dispatch({
+                  type: "RECORD_ADMISSION_FOLLOW_UP",
+                  role,
+                  now,
+                  ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
+                  admissionId: record.admissionId,
+                  patientId,
+                  expectedGeneration: record.generation,
+                  expectedRevision: record.revision,
+                  followUpState: choice,
+                }),
+              () => {},
+            );
           }}
         >
           <label className={styles.filterField}>

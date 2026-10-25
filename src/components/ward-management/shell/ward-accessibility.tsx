@@ -45,6 +45,23 @@ export function useWardAccessibilityPreference(preference: Preference): [boolean
 }
 /** Mounted above every Ward route so reload and navigation restore both preferences. */
 export function WardAccessibility() {
+  useEffect(() => {
+    // The WCAG 2.4.11 check loads on the first focus, so the shell every route loads stays small.
+    let check: ((event: FocusEvent) => void) | undefined;
+    let live = true;
+    const onFocus = (event: FocusEvent) => {
+      if (check) return check(event);
+      void import("./keep-focus-clear").then((module) => {
+        check = module.keepKeyboardFocusClear;
+        if (live) check(event);
+      });
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => {
+      live = false;
+      document.removeEventListener("focusin", onFocus);
+    };
+  }, []);
   const [reduced] = useWardAccessibilityPreference("reduced-motion");
   const [contrast] = useWardAccessibilityPreference("high-contrast");
   useEffect(() => {

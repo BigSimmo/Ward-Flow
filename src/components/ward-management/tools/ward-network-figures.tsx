@@ -6,6 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
+import { totalReadyBedsNow } from "../ward-bed-states";
 import { CAPACITY_FIGURE_LABELS } from "../ward-morning-rollup";
 import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
@@ -37,7 +38,8 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
   const capacity = units.map((unit) => capacityBreakdown(unit, bedReleases, leaveBeds, now));
   const total = units.reduce((sum, unit) => sum + unit.beds, 0);
   const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
-  const available = capacity.reduce((sum, value) => sum + value.availableNow, 0);
+  // Audit 24-4 NA2-06: the one ready figure Home and Capacity print (`readyBedsNow`).
+  const available = totalReadyBedsNow(units, admissions, bedReleases);
   const open = movements.filter(isOpen);
   const deadlines = standingFigures(
     {
@@ -85,7 +87,7 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
         },
         { label: "Pulled beds", value: String(occupied.pulled), sub: "Awaiting arrival" },
         {
-          label: "Held beds",
+          label: "Not available",
           value: String(capacity.reduce((sum, value) => sum + value.held, 0)),
           sub: "Not allocatable",
         },

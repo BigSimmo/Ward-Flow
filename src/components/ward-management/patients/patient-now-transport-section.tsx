@@ -271,7 +271,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                   data-testid="ward-patient-eta-after-hold"
                 >
                   <StatusGlyph tone="warning" size={9} />
-                  Arrives after the hold ends at {clock(draftHoldEnd)}. Extend the hold or rebook.
+                  Arrives after the pull time limit ends at {clock(draftHoldEnd)}. Extend the pull or rebook.
                 </span>
               ) : null}
             </div>
@@ -480,10 +480,10 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
           ) : null}
           {holdEndsBeforeEta(liveMovement, liveMovement.transport?.estimatedAt) !== undefined ? (
             <div className={styles.transportFact} data-testid="ward-patient-transport-hold-before-eta">
-              <span className={styles.transportFactLabel}>Bed hold</span>
+              <span className={styles.transportFactLabel}>Pull time limit</span>
               <span className={styles.transportFieldNote}>
                 <StatusGlyph tone="warning" size={9} />
-                Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the hold or rebook.
+                Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the pull or rebook.
               </span>
             </div>
           ) : null}

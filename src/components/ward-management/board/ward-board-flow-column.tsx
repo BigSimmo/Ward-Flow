@@ -267,7 +267,9 @@ export function WardBoardFlowColumn({
                       {target.count} {target.count === 1 ? "person" : "people"}
                       {" · "}
                       {target.nearestDays === 0
-                        ? "soonest due now or overdue"
+                        ? target.nearestDue
+                          ? "soonest due now or overdue"
+                          : "soonest today"
                         : `soonest in ${target.nearestDays} day${target.nearestDays === 1 ? "" : "s"}`}
                     </p>
                     {/*

@@ -288,7 +288,7 @@ export function EdIndex() {
       word: `over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
     },
     { id: "no-bed", value: total((row) => row.noBed), label: "No bed yet", word: "with no bed yet" },
-    { id: "held", value: total((row) => row.held), label: "Bed held", word: "with a bed held" },
+    { id: "held", value: total((row) => row.held), label: "Accepted", word: "accepted by a ward" },
     { id: "form", value: total((row) => row.forms), label: "Under a form", word: "under a form" },
   ];
   const activeChip = chips.find((chip) => chip.id === highlight);
@@ -771,7 +771,7 @@ function EdCard({
       <p className={styles.figures}>
         <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.held}</b> held <span aria-hidden="true">·</span>{" "}
+        <b className={styles.num}>{row.held}</b> accepted <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.forms}</b> form
       </p>
       <div className={styles.cardFoot}>
@@ -810,7 +810,7 @@ function EdTable({
               No bed
             </span>
             <span role="columnheader" className={styles.end}>
-              Held
+              Accepted
             </span>
             <span role="columnheader" className={styles.end}>
               Leaving
@@ -1095,7 +1095,7 @@ function PhoneEdList({
               <span className={styles.phoneMeta}>
                 <PeoplePips row={item} highlight={highlight} />
                 <span>
-                  {item.noBed} no bed · {item.held} held · {item.forms} form
+                  {item.noBed} no bed · {item.held} accepted · {item.forms} form
                 </span>
               </span>
             ) : (

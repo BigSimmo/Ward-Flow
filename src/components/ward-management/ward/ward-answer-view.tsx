@@ -555,9 +555,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     );
   }
 
-  // Fix plan item 10: incoming patients on a constant observation level, accepted here.
+  // Fix plan item 10: incoming patients on a constant observation level, accepted here and still open
+  // (audit 24-4 NA2-12: a closed journey is no longer incoming).
   const activeSpeciallingCount = movements.filter(
-    (m) => isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
+    (m) => isOpen(m) && isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
   ).length;
 
   return (
@@ -1241,12 +1242,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 </div>
                                 <div>
                                   <dt>Bed</dt>
-                                  <dd>{capacity.available > 0 ? "Ready now" : "Allocatable"}</dd>
+                                  <dd>{capacity.available > 0 ? "Ready now" : "Not ready yet"}</dd>
                                 </div>
                               </dl>
                               <div className={styles.phoneSheetField}>
                                 <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
-                                  Bed hold once pulled
+                                  Pull time limit
                                 </span>
                                 <div
                                   className={styles.phoneSegment}
@@ -1280,7 +1281,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
                         {isPhone || blocked ? null : (
                           <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
-                            <span className={styles.formLabel}>Bed hold once pulled</span>
+                            <span className={styles.formLabel}>Pull time limit</span>
                             <select
                               id={`ward-accept-hold-${activeMovement.id}`}
                               className={styles.formSelect}
@@ -1388,7 +1389,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             {phoneFold(
               "capacity",
               "Confirm your beds",
-              `Allocatable ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
+              `Confirmed free ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
               unit.allocatable.value,
               <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
                 <div className={styles.panelHeader}>
@@ -1401,11 +1402,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <dd>{states.ready}</dd>
                     </div>
                     <div>
-                      <dt>Physically empty</dt>
+                      <dt>Empty</dt>
                       <dd>{unit.empty.value}</dd>
                     </div>
                     <div>
-                      <dt>Allocatable</dt>
+                      <dt>Confirmed free</dt>
                       <dd>{unit.allocatable.value}</dd>
                     </div>
                     <div>
@@ -1428,7 +1429,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   ) : null}
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
                     <span className={styles.capacityLabel} id="ward-capacity-label">
-                      Allocatable now, for {unit.name}
+                      Free beds now, for {unit.name}
                     </span>
                     <div className={styles.capacityRow}>
                       {/* v10: one control only, a stepper; no slider and no free number box. */}
@@ -1436,7 +1437,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         value={Number(capacityValue) || 0}
                         min={0}
                         max={unit.beds}
-                        noun="allocatable beds"
+                        noun="free beds"
                         valueTestId="ward-capacity-input"
                         onChange={(next) =>
                           setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })
@@ -1649,7 +1650,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               </p>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel} htmlFor="hold-duration-select">
-                  Bed hold once pulled
+                  Pull time limit
                 </label>
                 <select
                   id="hold-duration-select"

@@ -1,4 +1,4 @@
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
@@ -43,6 +43,13 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
  * states what it counts, and `wardNavCountLabel` composes that into the link's accessible name so a
  * screen-reader user hears the meaning rather than a digit adrift from its label.
  */
+/**
+ * Audit 24-4 NA2-02 (Josh, 24 Oct 2026): the menu and TV figure is bed releases due today or
+ * tomorrow with a blocker (`capacityBreakdown().blockedToday`). "Discharges held up" stays for
+ * patients in a bed with a recorded hold (Handover, the ward), a different count.
+ */
+export const RELEASES_HELD_UP_LABEL = "Releases held up, today and tomorrow";
+
 export type WardNavCount = {
   value: number;
   /** What the number counts, in words. Becomes part of the link's accessible name. */
@@ -139,7 +146,7 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     },
     discharges: {
       value: rollup.service.blockedToday,
-      noun: BED_RELEASE_BLOCKED_FIGURE_LABEL.toLowerCase(),
+      noun: RELEASES_HELD_UP_LABEL.toLowerCase(),
       urgent: rollup.service.blockedToday > 0,
     },
     referrals: {

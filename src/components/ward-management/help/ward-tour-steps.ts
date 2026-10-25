@@ -674,7 +674,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "queue",
           { sel: 'section[aria-label="Priority queue"]' },
           "Who is waiting",
-          `Patients lists everyone waiting in priority order, T1 first.${
+          `Patients lists everyone waiting, longest wait first.${
             f.referralsWaiting === undefined ? "" : ` Referrals holds the ${f.referralsWaiting} waiting for a decision.`
           } Form due lists the forms due soon.`,
         ),

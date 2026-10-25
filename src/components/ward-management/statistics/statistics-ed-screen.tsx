@@ -26,7 +26,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
 import {
   ED_WAIT_BANDS,
@@ -42,7 +42,7 @@ import {
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
@@ -93,6 +93,7 @@ export function StatisticsEdScreen({
   const live = useStatisticsLive();
   // The executive desk sees counts only: small counts worded, lists of people left out.
   const { countsOnly, small, parts } = useStatisticsCounts();
+  const canOpen = useCanOpenHref();
   const { movements: liveMovements, units } = live.state;
   const isPhone = useIsPhone();
   const now = live.now;
@@ -157,7 +158,11 @@ export function StatisticsEdScreen({
         ? sortedWaits[middle]!
         : (sortedWaits[middle - 1]! + sortedWaits[middle]!) / 2;
 
-  const departments = allEmergencyDepartments();
+  // D-80: an ED desk's copy holds only its own journeys, so other departments are left out rather
+  // than shown as empty.
+  const departments = allEmergencyDepartments().filter(
+    (each) => each.id === department.id || canOpen(edStatisticsHref(each.id)),
+  );
   const comparison = departments.map((each) => {
     const figures = edWaitFigures(movements, each.id, now);
     return {
@@ -208,31 +213,37 @@ export function StatisticsEdScreen({
       testId="ward-statistics-ed-screen"
       title={department.name}
       titleAction={
-        <span className={ed.titleTools}>
-          <ChangeDepartment currentId={department.id} />
-          <UnitStepper
-            noun="ED"
-            currentId={department.id}
-            items={departments.map((each) => ({ id: each.id, href: edStatisticsHref(each.id), label: each.name }))}
-          />
-        </span>
+        departments.length > 1 ? (
+          <span className={ed.titleTools}>
+            <ChangeDepartment departments={departments} currentId={department.id} />
+            <UnitStepper
+              noun="ED"
+              currentId={department.id}
+              items={departments.map((each) => ({ id: each.id, href: edStatisticsHref(each.id), label: each.name }))}
+            />
+          </span>
+        ) : undefined
       }
       tools={
         <>
-          <HeroTool
-            href={STATISTICS_EDS_HREF}
-            icon={<ListOrdered size={14} aria-hidden="true" />}
-            testId="ward-statistics-ed-all-eds"
-          >
-            All EDs
-          </HeroTool>
-          <HeroTool
-            href={STATISTICS_COMPARE_HREF}
-            icon={<Scale size={14} aria-hidden="true" />}
-            testId="ward-statistics-ed-compare"
-          >
-            Compare
-          </HeroTool>
+          {canOpen(STATISTICS_EDS_HREF) ? (
+            <HeroTool
+              href={STATISTICS_EDS_HREF}
+              icon={<ListOrdered size={14} aria-hidden="true" />}
+              testId="ward-statistics-ed-all-eds"
+            >
+              All EDs
+            </HeroTool>
+          ) : null}
+          {canOpen(STATISTICS_COMPARE_HREF) ? (
+            <HeroTool
+              href={STATISTICS_COMPARE_HREF}
+              icon={<Scale size={14} aria-hidden="true" />}
+              testId="ward-statistics-ed-compare"
+            >
+              Compare
+            </HeroTool>
+          ) : null}
         </>
       }
       eyebrowLabel="Emergency department"
@@ -463,85 +474,87 @@ export function StatisticsEdScreen({
             </CardBody>
           </StatCard>
 
-          <StatCard
-            icon={Scale}
-            title="Across departments"
-            id="ed-departments"
-            aside={<LegalLimitsNotChecked variant="tag" />}
-            data-testid="ward-stat-ed-comparison"
-          >
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`}>
-                <caption className={styles.srOnly}>Open ED journeys from every emergency department</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Department</th>
-                    <th scope="col" className={styles.num}>
-                      Waiting
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Longest
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      Due passed
-                    </th>
-                    <th scope="col" className={styles.num}>
-                      {`${longHours}h+`}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparison.map(({ department: each, figures, breached }) => {
-                    const here = each.id === department.id;
-                    return (
-                      <tr
-                        key={each.id}
-                        data-testid={`ward-stat-ed-comparison-row-${each.id}`}
-                        aria-current={here ? "page" : undefined}
-                        className={here ? detail.currentRow : undefined}
-                      >
-                        <th scope="row">
-                          <span className={styles.codeLead}>{each.siteCode}</span>
-                          {here ? (
-                            each.name
-                          ) : (
-                            <Link href={edStatisticsHref(each.id)} className={styles.rowLink}>
-                              {each.name}
-                            </Link>
-                          )}
-                          {here ? <span className={styles.code}>this page</span> : null}
-                        </th>
-                        <td
-                          className={figures.onTheList === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                          data-testid={`ward-stat-ed-comparison-waiting-${each.id}`}
+          {departments.length > 1 ? (
+            <StatCard
+              icon={Scale}
+              title="Across departments"
+              id="ed-departments"
+              aside={<LegalLimitsNotChecked variant="tag" />}
+              data-testid="ward-stat-ed-comparison"
+            >
+              <div className={styles.tableWrap}>
+                <table className={`${tableClasses.table} ${styles.table}`}>
+                  <caption className={styles.srOnly}>Open ED journeys from every emergency department</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Department</th>
+                      <th scope="col" className={styles.num}>
+                        Waiting
+                      </th>
+                      <th scope="col" className={styles.num}>
+                        Longest
+                      </th>
+                      <th scope="col" className={styles.num}>
+                        Due passed
+                      </th>
+                      <th scope="col" className={styles.num}>
+                        {`${longHours}h+`}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparison.map(({ department: each, figures, breached }) => {
+                      const here = each.id === department.id;
+                      return (
+                        <tr
+                          key={each.id}
+                          data-testid={`ward-stat-ed-comparison-row-${each.id}`}
+                          aria-current={here ? "page" : undefined}
+                          className={here ? detail.currentRow : undefined}
                         >
-                          {small(figures.onTheList)}
-                        </td>
-                        <td
-                          className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
-                          data-testid={`ward-stat-ed-comparison-longest-${each.id}`}
-                        >
-                          {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "none waiting"}
-                        </td>
-                        <td
-                          className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                          data-testid={`ward-stat-ed-comparison-breached-${each.id}`}
-                        >
-                          {small(breached)}
-                        </td>
-                        <td
-                          className={figures.over24h === 0 ? `${styles.num} ${styles.muted}` : styles.num}
-                          data-testid={`ward-stat-ed-comparison-over24h-${each.id}`}
-                        >
-                          {small(figures.over24h)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </StatCard>
+                          <th scope="row">
+                            <span className={styles.codeLead}>{each.siteCode}</span>
+                            {here ? (
+                              each.name
+                            ) : (
+                              <Link href={edStatisticsHref(each.id)} className={styles.rowLink}>
+                                {each.name}
+                              </Link>
+                            )}
+                            {here ? <span className={styles.code}>this page</span> : null}
+                          </th>
+                          <td
+                            className={figures.onTheList === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                            data-testid={`ward-stat-ed-comparison-waiting-${each.id}`}
+                          >
+                            {small(figures.onTheList)}
+                          </td>
+                          <td
+                            className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
+                            data-testid={`ward-stat-ed-comparison-longest-${each.id}`}
+                          >
+                            {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "none waiting"}
+                          </td>
+                          <td
+                            className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                            data-testid={`ward-stat-ed-comparison-breached-${each.id}`}
+                          >
+                            {small(breached)}
+                          </td>
+                          <td
+                            className={figures.over24h === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                            data-testid={`ward-stat-ed-comparison-over24h-${each.id}`}
+                          >
+                            {small(figures.over24h)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </StatCard>
+          ) : null}
           {/* The page's own provenance note: each sentence says the figures are invented by itself. */}
           <Card as="div">
             <CardBody>
@@ -699,12 +712,18 @@ function bandShortLabel(index: number): string {
   return next ? `${from}-${next.fromMinutes / 60}h` : `${from}h+`;
 }
 
-function ChangeDepartment({ currentId }: { currentId: string }) {
+function ChangeDepartment({
+  departments,
+  currentId,
+}: {
+  departments: readonly EmergencyDepartment[];
+  currentId: string;
+}) {
   const router = useOptionalRouter();
   return (
     <Menu
       label="Change ED"
-      items={allEmergencyDepartments().map((each) => ({
+      items={departments.map((each) => ({
         id: each.id,
         label: each.name,
         meta: each.siteCode,

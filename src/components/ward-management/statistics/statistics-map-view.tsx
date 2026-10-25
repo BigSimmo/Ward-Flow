@@ -253,7 +253,7 @@ const lensStatus = (site: SiteFigures, lens: MapLens): WaMapNode["status"] => {
 const lensAria = (site: SiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
-    return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
+    return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
     return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")

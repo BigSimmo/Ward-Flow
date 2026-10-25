@@ -9,15 +9,15 @@ describe("community sample time precision", () => {
     // design/third-edition-mockups/community-team-third-edition.html:
     // same egress row (Today 11:30, Community Step-Down) and caseload rows
     // (Tier 1 High Acuity / RN T. Bradley; Tier 2 Case Management / RN C. Davis).
-    expect(DEMO_COMMUNITY_EGRESS.find((row) => row.id === "EGR-03")?.kpiStatusLabel).toBe("Due Today 4:30pm");
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-02")?.lastContact).toBe("20 Sep 11:30am (Clinic)");
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-04")?.lastContact).toBe("18 Sep 9:30am (Home)");
+    expect(DEMO_COMMUNITY_EGRESS.find((row) => row.id === "EGR-03")?.kpiStatusLabel).toBe("Due today 4:30pm");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-02")?.lastContact).toBe("20 Sep 11:30am (clinic)");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-04")?.lastContact).toBe("18 Sep 9:30am (home)");
   });
 
   it("retains whole hours where the synthetic fixture records whole hours", () => {
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-01")?.lastContact).toBe("Yesterday 2pm (Home)");
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-03")?.lastContact).toBe("19 Sep 3pm (Telehealth)");
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-05")?.lastContact).toBe("17 Sep 4pm (Clinic)");
-    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-06")?.lastContact).toBe("15 Sep 10am (Clinic)");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-01")?.lastContact).toBe("Yesterday 2pm (home)");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-03")?.lastContact).toBe("19 Sep 3pm (telehealth)");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-05")?.lastContact).toBe("17 Sep 4pm (clinic)");
+    expect(DEMO_COMMUNITY_CASELOAD.find((row) => row.id === "CL-06")?.lastContact).toBe("15 Sep 10am (clinic)");
   });
 });

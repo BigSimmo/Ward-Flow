@@ -111,7 +111,7 @@ function finite(value: Instant | null | undefined): Instant | null {
 }
 
 const UNWIND_LABELS: Record<Movement["unwinds"][number]["kind"], string> = {
-  pull_released: "Bed hold released",
+  pull_released: "Pulled bed released",
   transport_cancelled: "Transport cancelled",
   stage_corrected: "Stage stepped back",
   acceptance_withdrawn: "Acceptance withdrawn",
@@ -206,7 +206,7 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Ward declined": ["DECLINE"],
     "Ward request withdrawn": ["WITHDRAW_REFERRAL", "WITHDRAW_WARD_REQUEST"],
     Accepted: ["ACCEPT_IN_PRINCIPLE"],
-    "Bed hold released": ["RELEASE_PULL", "RELEASE_AND_REOPEN_SEARCH"],
+    "Pulled bed released": ["RELEASE_PULL", "RELEASE_AND_REOPEN_SEARCH"],
     "Transport cancelled": ["CANCEL_TRANSPORT"],
     "Stage stepped back": ["STEP_BACK_STAGE"],
     "Acceptance withdrawn": ["WITHDRAW_ACCEPTANCE"],

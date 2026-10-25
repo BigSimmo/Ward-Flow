@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush, rememberPhonePushOwnership } from "./shell/ward-phone-push";
 import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
-import { endWardFlowBrowserSession, onWardSessionEnd } from "./ward-browser-data";
+import { endWardFlowBrowserSession, endWardFlowTabSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
@@ -12,6 +12,7 @@ import { CLINICAL_VALUES } from "./ward-clinical-values";
 
 /** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
 const SESSION_CHANNEL = "ward-flow-session";
+const IDLE_ACTIVITY = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
 /**
  * When this sign-in reaches the session limit: the token's oldest sign-in factor plus the limit,
@@ -154,7 +155,7 @@ export function useWardSupabaseShared(
     signIn: (email: string, password: string) => Promise<void>;
     recover: (email: string) => Promise<void>;
     updatePassword: (password: string) => Promise<void>;
-    signOut: (reason?: string, everyTab?: boolean) => Promise<void>;
+    signOut: (reason?: string, everyTab?: boolean, askOtherTabs?: boolean) => Promise<void>;
     retry: () => Promise<void>;
     reauthenticate: (password: string) => Promise<void>;
   } | null>(null);
@@ -166,6 +167,27 @@ export function useWardSupabaseShared(
     let auth: WardBrowserAuthAdapter | null = null;
     let connectedActorId: string | null = null;
     let channel: BroadcastChannel | null = null;
+    // Audit 24-3 SM-1: a duplicated tab shares this sign-in's server session. Before an idle
+    // sign-out ends it, ask whether another tab on this sign-in was used within the idle time.
+    let lastUsed = Date.now();
+    const used = () => {
+      lastUsed = Date.now();
+    };
+    for (const name of IDLE_ACTIVITY) window.addEventListener(name, used, { passive: true });
+    let asked: { id: string; answer: () => void } | null = null;
+    const otherTabInUse = () =>
+      new Promise<boolean>((resolve) => {
+        if (!channel || !auth?.userId) return resolve(false);
+        const id = crypto.randomUUID();
+        const wait = setTimeout(() => done(false), 250);
+        const done = (inUse: boolean) => {
+          clearTimeout(wait);
+          if (asked?.id === id) asked = null;
+          resolve(inUse);
+        };
+        asked = { id, answer: () => done(true) };
+        channel.postMessage({ ask: id, userId: auth.userId, within: CLINICAL_VALUES.idleLock.value * 60_000 });
+      });
     const disconnect = (forgetDrafts = true) => {
       forgetDowntimePack();
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
@@ -210,7 +232,7 @@ export function useWardSupabaseShared(
       const instance = auth;
       const client = new SharedWorkspaceClient({
         baseUrl: baseUrl.replace(/\/$/, ""),
-        token: () => instance.token(),
+        token: (options) => instance.token(options),
         workingAs,
         recoveryStorage: {
           getItem: (key) => window.sessionStorage.getItem(key),
@@ -340,7 +362,29 @@ export function useWardSupabaseShared(
             await auth!.reauthenticate(password);
           },
           // `reason` is shown on the sign-in screen; a deliberate sign-out (no reason) ends every tab.
-          signOut: async (reason, everyTab = reason === undefined) => {
+          signOut: async (reason, everyTab = reason === undefined, askOtherTabs = false) => {
+            if (askOtherTabs) {
+              disconnect();
+              // Another tab is in use: only this tab signs out, and the shared session stays.
+              if (await otherTabInUse()) {
+                let failure: string | null = null;
+                try {
+                  await auth!.signOut(true);
+                } catch (error) {
+                  failure =
+                    error instanceof WardAuthError
+                      ? error.message
+                      : "Sign-out cleanup could not be confirmed. Clear this site's browser data before sharing the device.";
+                }
+                // This tab's saved data goes too, so a reload here reopens nothing (audit 24-3 SM-1).
+                endWardFlowTabSession();
+                if (!closed) {
+                  setView({ ...emptyView, status: "ready", error: reason ?? null });
+                  if (failure) setForm({ open: true, recovery: false, busy: false, message: failure });
+                }
+                return;
+              }
+            }
             if (everyTab) channel?.postMessage("signed-out");
             const token = auth!.captureAccessTokenForSignOut();
             const ownerId = auth!.userId;
@@ -395,9 +439,17 @@ export function useWardSupabaseShared(
         };
         try {
           channel = new BroadcastChannel(SESSION_CHANNEL);
-          channel.onmessage = (event) => {
-            if (event.data === "signed-out" && auth?.userId)
+          channel.onmessage = ({ data }) => {
+            if (data === "signed-out" && auth?.userId)
               void actions.current?.signOut("Signed out in another Ward Flow tab. Sign in again to carry on.", false);
+            else if (
+              data?.ask &&
+              data.userId === auth?.userId &&
+              connection.current &&
+              Date.now() - lastUsed < data.within
+            )
+              channel?.postMessage({ inUse: data.ask });
+            else if (data?.inUse && asked && data.inUse === asked.id) asked.answer();
           };
         } catch {
           // No broadcast channel in this browser: each tab still signs itself out.
@@ -426,6 +478,7 @@ export function useWardSupabaseShared(
     return () => {
       closed = true;
       channel?.close();
+      for (const name of IDLE_ACTIVITY) window.removeEventListener(name, used);
       disconnect(false);
       auth?.dispose();
       actions.current = null;
@@ -440,7 +493,9 @@ export function useWardSupabaseShared(
     sessionEndsAt: endsAt,
     /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
     signOut: (reason?: unknown) => {
-      void actions.current?.signOut(typeof reason === "string" ? reason : undefined);
+      // A reason means an idle sign-out (the only caller), which first asks the other tabs.
+      const why = typeof reason === "string" ? reason : undefined;
+      void actions.current?.signOut(why, undefined, why !== undefined);
     },
     retry: () => {
       void actions.current?.retry();

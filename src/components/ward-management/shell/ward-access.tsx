@@ -53,8 +53,10 @@ import {
   canBreakGlass,
   edInScope,
   homeHrefFor,
+  ownStatisticsHrefFor,
   screenDecision,
   screenForPath,
+  statisticsHeldToOwnPlace,
   unitInScope,
   type BreakGlassReasonId,
   type WardAccess,
@@ -170,7 +172,7 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
 }
 
 export type StatisticsCounts = {
-  /** The executive desk: Statistics shows counts only, so a list of people is not shown. */
+  /** A counts-only desk (executive, or a ward, ED or community desk on its own page): no list of people is shown. */
   countsOnly: boolean;
   /** One count of people. Under the line it reads "fewer than 5". */
   small: (count: number) => number | string;
@@ -189,9 +191,12 @@ export function useStatisticsCounts(): StatisticsCounts {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
+  // D-80: a ward, ED or community desk holds a `counts` grant on its own place's page, which is
+  // numbers without names. Only the executive also gets the small-number rule.
+  const countsOnly = hide || (on && statisticsHeldToOwnPlace(access));
   return useMemo(
     () => ({
-      countsOnly: hide,
+      countsOnly,
       // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
       small: (count: number) => {
         if (!hide) return count;
@@ -200,7 +205,7 @@ export function useStatisticsCounts(): StatisticsCounts {
       },
       parts: (counts: readonly number[]) => (hide ? smallNumberParts(counts) : [...counts]),
     }),
-    [hide],
+    [hide, countsOnly],
   );
 }
 
@@ -440,11 +445,15 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
       if (!on || accessIsWholeNetwork(access)) return [...entries];
       const places = wardPlaceLookup(units);
       const own = OWN_PLACE_ENTRY[access.scope.kind];
+      // D-80: Statistics opens a ward, ED or team desk's own place's page.
+      const ownStatistics = ownStatisticsHrefFor(access, communityTeamSlug);
       return entries.flatMap((entry) => {
         const shown =
           own && entry.id === own.id
             ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label }
-            : entry;
+            : ownStatistics && entry.id === "statistics"
+              ? { ...entry, href: ownStatistics }
+              : entry;
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
@@ -804,10 +813,17 @@ export function WardIdleLock() {
       // Only this tab: another tab in use keeps its own idle lock (Audit 4 A4-04, A4-06).
       if (session) session.signOut(`Signed out after ${minutes} minutes without use. Sign in again to carry on.`);
       setLocked((current) => current || (session ? "signed-out" : "screen"));
+      // Past this lock, the next use (after "Carry on") starts a new clock rather than locking again.
+      deadline = Number.POSITIVE_INFINITY;
     };
     // A signed-in desk is asked "Still there?" for the last minute, so a person at it is not signed out.
     const warn = () => {
       const secondsTo = () => Math.ceil((deadline - Date.now()) / 1000);
+      // Audit 24-3 SM-5: a laptop woken after the deadline signs out at once, never counts below 1.
+      if (secondsTo() <= 0) {
+        lock();
+        return;
+      }
       setSecondsLeft(Math.min(IDLE_WARNING_SECONDS, secondsTo()));
       countdown = window.setInterval(() => {
         const left = secondsTo();
@@ -853,7 +869,8 @@ export function WardIdleLock() {
         <div className={styles.lockCard}>
           <h1 id="ward-idle-warn-title">Still there?</h1>
           <p data-testid="ward-idle-countdown">
-            This desk has not been used for {minutes - 1} minutes. You will be signed out in {secondsLeft} seconds.
+            This desk has not been used for {minutes - 1} minutes. You will be signed out in{" "}
+            {secondsLeft === 1 ? "1 second" : `${secondsLeft} seconds`}.
           </p>
           <Button variant="pri" data-testid="ward-idle-still-here" onClick={() => stillHere.current()}>
             I&apos;m still here

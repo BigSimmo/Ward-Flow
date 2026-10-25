@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, type ComponentProps } from "react";
+import { useEffect, useRef, type ComponentProps } from "react";
 
 import type { Instant } from "../ward-clock";
 import { useWardRaise } from "../ward-flow-raise";
@@ -57,10 +57,27 @@ export function useMarkReferralsOpened(
     .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined && entry.openedAt === undefined)
     .map((entry) => entry.id)
     .join(" ");
+  // Production audit URE-07: a receipt already sent from this mount is not sent again while it is
+  // in flight; a new referral arriving re-runs the effect, and the duplicate would be refused.
+  const raised = useRef(new Set<string>());
   useEffect(() => {
     if (!enabled || routeRole !== "ward" || actingUnitId !== unitId || unopened === "") return;
     for (const referralId of unopened.split(" ")) {
-      raise("MARK_REFERRAL_OPENED", { referralId, unitId, actingUnitId });
+      const key = `${unitId} ${referralId}`;
+      if (raised.current.has(key)) continue;
+      raised.current.add(key);
+      const forget = () => raised.current.delete(key);
+      let result: ReturnType<typeof raise>;
+      try {
+        result = raise("MARK_REFERRAL_OPENED", { referralId, unitId, actingUnitId });
+      } catch {
+        forget();
+        continue;
+      }
+      // Only an accepted receipt stays remembered; any other answer lets a later render try again.
+      void Promise.resolve(result).then((outcome) => {
+        if (outcome && outcome.status !== "accepted") forget();
+      }, forget);
     }
     // `raise` carries the time a referral first appears; a clock tick alone does not re-run this.
     // eslint-disable-next-line react-hooks/exhaustive-deps

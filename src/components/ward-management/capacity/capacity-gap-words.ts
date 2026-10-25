@@ -44,19 +44,20 @@ export function bedKindsServed(unit: Unit): string {
   return kinds.length > 0 ? kinds.join(" & ") : "Adult (no beds)";
 }
 
-/** Phone (v10): the word says short or spare, so the figure is the size of the gap; none when exact. */
-export function phoneGap(gap: number): string {
-  return gap === 0 ? "" : String(Math.abs(gap));
+/** "6 short", "1 spare" or "Enough": a gap in words, never a bare minus sign. */
+export function formatGap(gap: number): string {
+  return gap === 0 ? "Enough" : `${Math.abs(gap)} ${gapWord(gap).text}`;
 }
 
-export function formatGap(gap: number): string {
-  return gap > 0 ? `+${gap}` : `${gap}`;
+/** One end of a range inside a sentence: "2 short to enough". */
+export function gapRangeWord(gap: number): string {
+  return gap === 0 ? "enough" : formatGap(gap);
 }
 
 export function gapWord(gap: number): { tone: WfTone; text: string } {
-  if (gap < 0) return { tone: "warning", text: "Short" };
-  if (gap === 0) return { tone: "success", text: "Exactly enough" };
-  return { tone: "success", text: "Spare" };
+  if (gap < 0) return { tone: "warning", text: "short" };
+  if (gap === 0) return { tone: "success", text: "Enough" };
+  return { tone: "success", text: "spare" };
 }
 
 /**

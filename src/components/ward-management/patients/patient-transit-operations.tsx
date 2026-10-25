@@ -931,7 +931,7 @@ export function PatientTransitOperations({
               <details>
                 <summary>Step back with recorded reason</summary>
                 <p className={styles.deckHint}>
-                  Corrects the stage record. Held beds and transport bookings remain until explicitly released or
+                  Corrects the stage record. Pulled beds and transport bookings remain until explicitly released or
                   cancelled.
                 </p>
                 <label>

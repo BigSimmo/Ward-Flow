@@ -172,8 +172,10 @@
   white-space: nowrap;
 }
 
+/* Device sweep R1-05/B6-17 (24 Oct 2026): the actions wrap rather than cut a label ("Bed meeting …"). */
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--wf-s-2);
   min-width: 0;
 }
@@ -182,6 +184,7 @@
   flex: 1 1 0;
   justify-content: center;
   min-width: 0;
+  min-width: fit-content;
   min-height: var(--wf-touch, 44px);
 }
 

@@ -70,30 +70,10 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
     added: "2026-10-19",
     removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
-  "shift-confirmations": {
-    description:
-      "On Capacity, how many wards have confirmed their bed numbers since the shift began, and which have not.",
-    owner: "Josh",
-    added: "2026-10-19",
-    removeWhen: "Josh agrees the card with the coordinators after a bed meeting trial.",
-  },
-  "bed-meeting-actions": {
-    description:
-      "A bed meeting agenda built from fixed rules, and an action log with an owner and a due time, linked from Capacity.",
-    owner: "Josh",
-    added: "2026-10-19",
-    removeWhen: "Josh agrees the action list and owners with the coordinators after a bed meeting trial.",
-  },
   "pilot-measures": {
     description: "The weekly report adds the pilot's agreed measures.",
     owner: "Josh",
     added: "2026-10-19",
     removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
-  },
-  "missed-requests-check": {
-    description: "Waiting shows coordinators a daily check for missed or doubled bed requests.",
-    owner: "Josh",
-    added: "2026-10-19",
-    removeWhen: "Josh agrees the window and the rules with the pilot sponsor.",
   },
 };

@@ -36,7 +36,7 @@ export function NextWardAfterRefusal({
   const next = deriveNextWardsAfterRefusal(movement, units, now);
   if (!next) return null;
   const declinedUnit = units.find((unit) => unit.id === next.latestDecline.unitId);
-  const reason = declineReasonLabels[next.latestDecline.reason] ?? "Reason not recorded";
+  const reason = (next.latestDecline.reason && declineReasonLabels[next.latestDecline.reason]) || "Reason not recorded";
 
   return (
     <section

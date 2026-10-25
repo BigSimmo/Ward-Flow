@@ -161,7 +161,7 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     // it shows in every build. Assigning a clinician is still not built.
     expect(screen.queryAllByRole("button", { name: "Assign" }).length).toBeGreaterThan(0);
     act(() => (window as unknown as { openReferralDrawer(id: string): void }).openReferralDrawer("unwired-test"));
-    const dossier = screen.getByRole("dialog", { name: /^Referral Triage: / });
+    const dossier = screen.getByRole("dialog", { name: /^Referral triage: / });
     expect(dossier).toHaveTextContent("It does not assign a clinician or confirm an appointment.");
     expect(dossier.textContent?.includes("Clinician assignment: Not wired in this prototype.")).toBe(shown);
   });
