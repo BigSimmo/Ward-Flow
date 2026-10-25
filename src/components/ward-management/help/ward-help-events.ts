@@ -4,7 +4,7 @@
  */
 const OPEN_HELP_EVENT = "ward-flow-open-help";
 
-export type HelpView = "desk" | "screen" | "glossary" | "tour";
+export type HelpView = "desk" | "screen" | "glossary" | "new" | "tour";
 
 /** Opens the Help sheet at `view`, from anywhere in the shell. */
 export function openWardHelp(view: HelpView = "screen"): void {
@@ -14,8 +14,9 @@ export function openWardHelp(view: HelpView = "screen"): void {
 
 export function subscribeWardHelp(onOpen: (view: HelpView) => void): () => void {
   function handler(event: Event) {
-    const view = (event as CustomEvent<{ view?: HelpView }>).detail?.view;
-    onOpen(view === "desk" || view === "glossary" || view === "tour" ? view : "screen");
+    // Only `openWardHelp` sends this event, so its view is already a HelpView. No check is kept
+    // here: this file loads on every page, inside the phone script budget.
+    onOpen((event as CustomEvent<{ view?: HelpView }>).detail?.view ?? "screen");
   }
   window.addEventListener(OPEN_HELP_EVENT, handler);
   return () => window.removeEventListener(OPEN_HELP_EVENT, handler);

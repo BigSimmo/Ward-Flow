@@ -1,4 +1,5 @@
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /** Confirmed UI actions cannot infer acceptance from a dispatch that returned no outcome. */
 export function confirmedWardCommand(
@@ -8,7 +9,7 @@ export function confirmedWardCommand(
     outcome ?? {
       commandId: "",
       status: "failed",
-      message: "Save is not confirmed. Review the board before trying again.",
+      message: SAVE_NOT_CONFIRMED,
     };
   return completion && "then" in completion ? completion.then(confirmed) : confirmed(completion);
 }

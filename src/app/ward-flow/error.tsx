@@ -16,8 +16,7 @@ import { WardFlowErrorPanel } from "./ward-flow-error-panel";
  *
  * ⚠️ **WHAT IT CANNOT COVER, AND NO BOUNDARY PLACED UNDER THIS FOLDER COULD.** `error.tsx` does not
  * wrap the `layout.tsx` sitting beside it in the same segment. `ward-flow/layout.tsx` renders
- * `WardFlowProvider` (since `DeveloperAreaGate` was retired, `/mockups/*` uses the mockup layout directly),
- * and the provider seeds the whole world in its `useReducer` initialiser — so a throw out of
+ * `WardFlowProvider`, and the provider seeds the whole world in its `useReducer` initialiser — so a throw out of
  * `seedWardFlowStateAt` escapes this boundary and lands on `src/app/error.tsx`, exactly as before.
  * Worse, `ward-movements.ts` builds its seeded movements at MODULE scope
  * (`export const wardMovements = [...]`), which routes the "unhandled movement stage" guard through

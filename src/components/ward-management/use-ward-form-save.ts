@@ -3,9 +3,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { wardCommandFailure } from "./ward/use-ward-command-completion";
-
-/** Said when a save has no answer, or was accepted on a board that has since been replaced. */
-const NOT_CONFIRMED = "Save is not confirmed. Review the board before trying again.";
+import { SAVE_NOT_CONFIRMED } from "./ward-save-failure";
 
 export type WardFormSave = ReturnType<typeof useWardFormSave>;
 type Held = { scope: object; outcome: WardCommandOutcome };
@@ -57,7 +55,8 @@ export function useWardFormSave(scope: string) {
         setError({
           scope: submittedScope,
           message:
-            (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ?? NOT_CONFIRMED,
+            (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
+            SAVE_NOT_CONFIRMED,
         });
     };
     const finish = (outcome?: WardCommandOutcome | void) => {

@@ -32,7 +32,8 @@ function oldReady(state: WardFlowState, now: number) {
  * and `readyBedsNow` disagree: the accepted events up to that point.
  */
 function eventsToSplit(): WardFlowEvent[] {
-  for (let seed = 0; seed < 40; seed += 1) {
+  // 40 until 25 Oct 2026; removing RELEASE_BED from the generator shifted the runs (PR #730).
+  for (let seed = 0; seed < 400; seed += 1) {
     const random = seededRandom(24460 + seed);
     let state = seedWardFlowState("standard");
     const events: WardFlowEvent[] = [];

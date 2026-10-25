@@ -32,7 +32,7 @@ afterEach(() => cleanup());
 const FAILED: WardCommandOutcome = {
   commandId: "c-1",
   status: "failed",
-  message: "Save is not confirmed. Review the board before trying again.",
+  message: "Save is not confirmed. Check the board. If your change is not there, make it again.",
 };
 
 function deferred() {
@@ -122,7 +122,9 @@ describe("URE-02: Send notice", () => {
     expect(pharmacy()).toHaveTextContent("Sending notice");
 
     await act(async () => pending.fail(new Error("network")));
-    expect(onFailure).toHaveBeenCalledWith("Save is not confirmed. Review the board before trying again.");
+    expect(onFailure).toHaveBeenCalledWith(
+      "Save is not confirmed. Check the board. If your change is not there, make it again.",
+    );
     expect(pharmacy()).toHaveTextContent("Send notice");
     fireEvent.click(pharmacy());
     expect(dispatch).toHaveBeenCalledTimes(2);

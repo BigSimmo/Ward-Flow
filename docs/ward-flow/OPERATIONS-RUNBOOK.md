@@ -35,7 +35,7 @@ There is no `supabase/` folder and no Railway config file in the repo. Build com
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
-<!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->.
+<!-- fact:latest-migration -->014-archived-records<!-- /fact -->.
 
 ## Who may do what
 
@@ -65,7 +65,9 @@ Weekly, or before a demonstration. All read-only.
    do not prove sign-in or saving works.
 4. **Supabase.** In the dashboard (right project, checked against DATABASE.md): project healthy,
    database size and usage against the plan limit, newest backup date.
-5. **Receipts.** Command receipts older than 7 days can be pruned with
+5. **Receipts.** Command receipts older than 7 days are pruned every Monday at 03:00 Perth by
+   `.github/workflows/prune-receipts.yml`. It does nothing until the owner adds the repository
+   secret `WARD_SUPABASE_PRUNE_DATABASE_URL`; check its weekly run succeeded. To prune by hand, run
    `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
 

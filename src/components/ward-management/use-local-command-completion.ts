@@ -40,7 +40,8 @@ export function useLocalCommandCompletion(
         for (const settle of lifetime.early.values())
           settle({
             status: "cancelled",
-            message: "The demonstration closed before restoration finished. Review the board before trying again.",
+            message:
+              "The demonstration closed before restoration finished. Check the board, then make the change again if it is not there.",
           });
         lifetime.early.clear();
       });

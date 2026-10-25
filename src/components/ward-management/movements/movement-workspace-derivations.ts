@@ -175,7 +175,7 @@ export function urgentFigureFlags(conditions: { deadlineBreached: boolean; decli
   const labels: Record<string, string> = {
     deadline: "the passed deadline on the legal form",
     declines: "the wards that have declined",
-    pull: "the hold on the bed, which has run out",
+    pull: "the pull on the bed, which has run out",
   };
   const urgent = [
     conditions.deadlineBreached ? "deadline" : undefined,

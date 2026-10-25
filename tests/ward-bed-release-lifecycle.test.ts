@@ -4,7 +4,6 @@ import { capacityBreakdown, releaseBand } from "../src/components/ward-managemen
 import { BED_PREPARATION_NOTES, BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
-import type { Movement } from "../src/components/ward-management/ward-model";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -32,12 +31,6 @@ function occupantsNotOnLeave(state: ReturnType<typeof seeded>, unitId: string) {
     (a) => a.unitId === unitId && a.state === "occupied" && !state.leaveBeds.some((bed) => bed.admissionId === a.id),
   );
   if (found.length < 3) throw new Error(`the seed has fewer than three occupants on ${unitId} not on leave`);
-  return found;
-}
-
-function admission(state: ReturnType<typeof seeded>, id: string) {
-  const found = state.admissions.find((candidate) => candidate.id === id);
-  if (!found) throw new Error(`state is missing admission ${id}`);
   return found;
 }
 
@@ -503,14 +496,15 @@ describe("ward bed release lifecycle", () => {
     expect(release(next, target.id)).toEqual(target);
   });
 
-  it("4. RELEASE_BED is refused while its admission is occupied; recording the leaving completes the release and availableNow rises by one", () => {
+  it("4. recording the leaving completes the release and availableNow rises by one", () => {
     // CHANGED 25 September 2026: owner decision 2026-09-25 made a bed release complete only once
     // its named admission has actually left (RECORD_LEAVING -> `departAdmission`), never directly
     // through RELEASE_BED while the person is still occupying the bed — see the reducer's own
     // RELEASE_BED and `departAdmission` comments. This test used to dispatch RELEASE_BED straight
     // on a confirmed release and expect the bed to free immediately; that path is now refused, so
     // the test pins the refusal AND completes the discharge the new way, keeping the same
-    // "availableNow rises by one" claim the test always existed to prove.
+    // "availableNow rises by one" claim the test always existed to prove. Audit 24-1 decision 4
+    // (24 Oct 2026) then removed RELEASE_BED itself, so only the leaving path remains.
     const state = seeded();
     const target = releaseSafeToComplete(
       state,
@@ -518,16 +512,6 @@ describe("ward bed release lifecycle", () => {
       "confirmed, unblocked",
     );
     const before = capacityBreakdown(unit(state, target.unitId), state.bedReleases, state.leaveBeds, NOW);
-
-    const refused = wardFlowReducer(state, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId: target.id,
-      actingUnitId: target.unitId,
-    });
-    expect(refused.rejections).toHaveLength(1);
-    expect(release(refused, target.id)).toEqual(target);
 
     const left = wardFlowReducer(state, {
       type: "RECORD_LEAVING",
@@ -616,11 +600,11 @@ describe("ward bed release lifecycle", () => {
 
   /** Spec D2, extended by the 2026-08-28 rework to the three events it added: only the ward moves
    *  a bed between stages, flags it stuck or unstuck, or says it is being made ready. */
-  it("5. a role that is not the ward (the transport officer) may not confirm, revert, block, unblock, prepare or release a bed — six rejections, no state change (spec D2)", () => {
+  it("5. a role that is not the ward (the transport officer) may not confirm, revert, block, unblock or prepare a bed — five rejections, no state change (spec D2)", () => {
     // The coordinator may take every action (Josh, 10 Oct 2026), so the officer is the refused role.
     // CHANGED 25 September 2026: WR-002/WR-001 no longer exist; picks two fresh releases at
     // runtime instead (an expected-unblocked one and a confirmed-unblocked one). Their exact shape
-    // does not matter here, since every one of these six events is refused on ROLE alone, before
+    // does not matter here, since every one of these five events is refused on ROLE alone, before
     // the reducer ever inspects the release itself.
     const state = seeded();
     const targetA = expectedUnblockedRelease(state);
@@ -664,17 +648,9 @@ describe("ward bed release lifecycle", () => {
       actingUnitId: targetB.unitId,
       preparing: true,
     });
-    const afterRelease = wardFlowReducer(afterPrepare, {
-      type: "RELEASE_BED",
-      role: "officer",
-      now: NOW,
-      releaseId: targetB.id,
-      actingUnitId: targetB.unitId,
-    });
-
-    expect(afterRelease.rejections).toHaveLength(6);
-    expect(release(afterRelease, targetA.id)).toEqual(targetA);
-    expect(release(afterRelease, targetB.id)).toEqual(targetB);
+    expect(afterPrepare.rejections).toHaveLength(5);
+    expect(release(afterPrepare, targetA.id)).toEqual(targetA);
+    expect(release(afterPrepare, targetB.id)).toEqual(targetB);
   });
 
   it("6. a ward whose actingUnitId does not match the release's unitId is rejected", () => {
@@ -959,137 +935,5 @@ describe("ward bed release lifecycle", () => {
     expect(next.rejections).toHaveLength(1);
     expect(next.rejections[0]?.reason).toBe(`cannot block this bed release because it is already released`);
     expect(release(next, target.id)).toEqual(before);
-  });
-
-  it("12. RELEASE_BED on a discharged release is refused with the exact text, state unchanged", () => {
-    // CHANGED 25 September 2026: WR-008 no longer exists; picks a fresh discharged release at
-    // runtime instead.
-    const state = seeded();
-    const target = dischargedRelease(state);
-    const before = release(state, target.id);
-    const next = wardFlowReducer(state, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId: target.id,
-      actingUnitId: target.unitId,
-    });
-    expect(next.rejections).toHaveLength(1);
-    // Reworded 2026-09-06: the message said "to released", and `released` stopped being the third
-    // stage's name on 2026-08-30 — the owner ruled it `discharged`. A rejection is the one place
-    // somebody reads when something has gone wrong, so it must not name a stage that does not
-    // exist. Interpolating the stage as well produced "from discharged to discharged", a tautology
-    // in the one message somebody reads when something has gone wrong — so it names the state once
-    // and says what is actually refused. The transition being refused is unchanged.
-    expect(next.rejections[0]?.reason).toBe(`this bed release is already discharged and cannot be discharged again`);
-    expect(release(next, target.id)).toEqual(before);
-  });
-
-  it("13. RELEASE_BED is refused while occupied; once the admission has departed it discharges the release but moves no figure", () => {
-    // CHANGED 25 September 2026: owner decision 2026-09-25 made this test's original claim false —
-    // RELEASE_BED no longer accepts `expected -> discharged` (or any transition) while the named
-    // admission is still occupied; it is refused outright (see the reducer's own RELEASE_BED
-    // comment). Rewritten to pin that refusal, then to prove the second half of the same rule: once
-    // the admission has genuinely departed, RELEASE_BED completes a still-live release but writes
-    // NO bed figure — RELEASE_BED leaves the unit untouched (its old always-true count flag is gone),
-    // because the figure only ever moves through `departAdmission` (RECORD_LEAVING). Constructing an
-    // already-departed admission whose release is still expected has to be done by hand here
-    // (spreading state directly, the same technique "fix round 1 (Critical)" above uses) because
-    // dispatching RECORD_LEAVING through the reducer discharges the linked release in the very same
-    // step (`departAdmission`), leaving nothing not-yet-discharged for RELEASE_BED to act on.
-    const state = seeded();
-    const target = expectedUnblockedRelease(state);
-    const beforeAdmission = admission(state, target.admissionId);
-    expect(beforeAdmission.state).toBe("occupied");
-
-    const refused = wardFlowReducer(state, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId: target.id,
-      actingUnitId: target.unitId,
-    });
-    expect(refused.rejections).toHaveLength(1);
-    expect(refused.rejections[0]?.reason).toBe(
-      `this bed release completes when this stay is recorded as having left (RECORD_LEAVING); they are still occupied`,
-    );
-    expect(release(refused, target.id)).toEqual(target);
-
-    const departedButNotReleased = {
-      ...state,
-      admissions: state.admissions.map((candidate) =>
-        candidate.id === beforeAdmission.id
-          ? {
-              ...candidate,
-              state: "departed" as const,
-              leftAt: NOW,
-              leavingDestination: "moved-to-residential-care" as const,
-            }
-          : candidate,
-      ),
-    };
-    const beforeUnit = unit(departedButNotReleased, target.unitId);
-
-    const next = wardFlowReducer(departedButNotReleased, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId: target.id,
-      actingUnitId: target.unitId,
-    });
-    expect(next.rejections).toHaveLength(0);
-    expect(release(next, target.id).state).toBe("discharged");
-    expect(release(next, target.id).waitingOn).toBeNull();
-    expect(release(next, target.id).blocker).toBeNull();
-    const afterUnit = unit(next, target.unitId);
-    // The point of this second half: RELEASE_BED moved the release's own STATE but wrote no bed
-    // figure at all — the unit's empty/allocatable values are exactly what they were on the
-    // hand-constructed (not-yet-incremented) state above.
-    expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
-    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
-  });
-
-  it("14. RELEASE_BED still discharges a departed admission whose movement predates allocatedBed (legacy state)", () => {
-    const state = seeded();
-    const target = expectedUnblockedRelease(state);
-    const beforeAdmission = admission(state, target.admissionId);
-    const departedWithPreAllocMovement = {
-      ...state,
-      movements: [
-        ...state.movements,
-        {
-          ...state.movements[0],
-          id: "MV-PRE-ALLOC" as Movement["id"],
-          allocatedBed: undefined,
-        },
-      ],
-      admissions: state.admissions.map((candidate) =>
-        candidate.id === beforeAdmission.id
-          ? {
-              ...candidate,
-              movementId: "MV-PRE-ALLOC" as Movement["id"],
-              state: "departed" as const,
-              leftAt: NOW,
-              leavingDestination: "moved-to-residential-care" as const,
-            }
-          : candidate,
-      ),
-    };
-
-    const beforeUnit = unit(departedWithPreAllocMovement, target.unitId);
-    const next = wardFlowReducer(departedWithPreAllocMovement, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId: target.id,
-      actingUnitId: target.unitId,
-    });
-    // A patient who has physically left frees the bed whether or not the movement carries the
-    // newer allocatedBed field; a silent no-op here would strand the bed as occupied.
-    expect(next.rejections).toHaveLength(0);
-    expect(release(next, target.id).state).toBe("discharged");
-    const afterUnit = unit(next, target.unitId);
-    expect(afterUnit.empty.value).toBe(beforeUnit.empty.value);
-    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
   });
 });

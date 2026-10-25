@@ -102,6 +102,7 @@ import { wardReferralTally } from "./statistics-ward-referrals";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
+import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -1167,6 +1168,20 @@ export function StatisticsScreen({
                   admissions={sourceAdmissions}
                   movements={sourceMovements}
                 />
+              )}
+
+              {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
+              {countsOnly ? null : (
+                <>
+                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
+                  <FixedQuestionsCard
+                    movements={sourceMovements}
+                    bedReleases={sourceBedReleases}
+                    admissions={sourceAdmissions}
+                    units={units}
+                    now={now}
+                  />
+                </>
               )}
             </div>
           </div>

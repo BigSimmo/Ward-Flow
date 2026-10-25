@@ -20,16 +20,16 @@ import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import { nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
 
 const FIRST_SEED = 1;
-const LAST_SEED = 400;
+// 400 until 24 Oct 2026: removing RELEASE_BED from the generator shifted the random runs, and the
+// rare country extension now first lands after seed 400. The loop stops once everything is seen.
+const LAST_SEED = 1000;
 const STEPS = 300;
 
 /**
- * RELEASE_BED is the single allowed exception (audit 24-1 C-02): recording that the patient left
- * (`departAdmission`) completes the bed release in the same write, so no reachable world holds a
- * live release whose stay has already departed, and no screen sends RELEASE_BED. Whether to remove
- * the event or keep it as legacy is an owner decision still pending; until then it may go unaccepted.
+ * No exceptions. RELEASE_BED was the only one (audit 24-1 C-02) and was removed from the engine by
+ * owner decision 4 (24 Oct 2026), because recording the leaving already completes the release.
  */
-const NEVER_ACCEPTED_ALLOWED: readonly WardFlowEvent["type"][] = ["RELEASE_BED"];
+const NEVER_ACCEPTED_ALLOWED: readonly WardFlowEvent["type"][] = [];
 
 describe("random engine run coverage (audit 24-1 E-19)", () => {
   it("sees every event type in the role table accepted at least once", { timeout: 120_000 }, () => {

@@ -45,10 +45,10 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
 type Mode = "failed" | "refused" | "pending" | "accepted";
 const NOT_SAVED: Mode[] = ["failed", "refused", "pending"];
-const FAILED_SAYS = "Save is not confirmed. Reconnect and review the board before trying again.";
+const FAILED_SAYS = "Save is not confirmed. Press Retry when you are back online. It will not be saved twice.";
 const REFUSED_SAYS = "This record changed while you were looking. Your action was not applied.";
 const SAYS: Record<Mode, RegExp | null> = {
-  failed: /Save is not confirmed\. Reconnect/u,
+  failed: /Save is not confirmed\. Press Retry when you are back online/u,
   refused: /^Not recorded: This record changed while you were looking/u,
   pending: null,
   accepted: null,

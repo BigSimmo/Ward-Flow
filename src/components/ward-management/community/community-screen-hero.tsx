@@ -225,7 +225,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
               CTO register
             </Button>
             <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
-              Catchment MDT
+              Catchment counts
             </Button>
             {/* New referral in the header is the page's one primary (device audit option A). */}
             <Button variant="onHero" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>

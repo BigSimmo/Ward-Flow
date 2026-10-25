@@ -3,6 +3,8 @@
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
@@ -40,6 +42,8 @@ import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
 import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
 import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
+import { ReferralCommitments } from "./referral-commitments-lazy";
+import { referralCommitmentStepLabel } from "./referral-commitments";
 import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
@@ -313,9 +317,11 @@ export function WaitRunway({
 export type BedsReadySummary = {
   cells: { label: string; value: number }[];
   /**
-   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure, the same sum Home, Capacity and
-   * the rail read (`capacityBreakdown(...).availableNow`, as `serviceRollup` sums it). Locked is a
-   * part of the cohort cells, never added on top: summing every cell read 33 against 26.
+   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure. NA2-06 (audit 24 Oct 2026): with
+   * `admissions` it is `readyBedsNow` per ward, the figure Home, Capacity, the rail, Handover and
+   * Statistics print (`totalReadyBedsNow`), so a bed pulled for an incoming patient is not offered
+   * twice. Without them it falls back to the older `capacityBreakdown(...).availableNow`. Locked is
+   * a part of the cohort cells, never added on top: summing every cell read 33 against 26.
    */
   total: number;
   /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
@@ -328,6 +334,8 @@ export function bedsReadySummary(
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  /** NA2-06: pass the workspace's admissions to read the shared `readyBedsNow` figure. */
+  admissions?: readonly Admission[],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -336,7 +344,10 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready = capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
+    const ready =
+      admissions !== undefined
+        ? readyBedsNow(unit, admissions, bedReleases)
+        : capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
@@ -679,6 +690,11 @@ export function ReferralPatientTab({
         <ReferralOwnerAndCalls referral={referral} now={now} readOnly={readOnly} />
       </Section>
 
+      {/* Closing-the-loop package A (24 Oct 2026): what each ward agreed to, and when to ring again. */}
+      <Section title="Response commitments">
+        <ReferralCommitments referral={referral} now={now} readOnly={readOnly} />
+      </Section>
+
       <Section title="Recorded legal information" aside="For the receiving unit">
         <p className={styles.pMuted}>
           Referral details do not establish consent, detention authority or a register check.
@@ -743,6 +759,13 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
       const item = referralInformationNeedLabel(entry.need);
       entries.push({ at: entry.at, tone: "neutral", text: `${where} asked for: ${item}` });
       if (entry.metAt !== undefined) entries.push({ at: entry.metAt, tone: "success", text: `${item} provided` });
+    }
+    // Closing-the-loop package A: commitment steps and callbacks. Never an answer.
+    for (const entry of arm.commitments ?? []) {
+      const ward = units.find((unit) => unit.id === entry.unitId)?.name ?? "Ward not recorded";
+      const what = entry.step ? referralCommitmentStepLabel(entry.step) : "Next callback booked";
+      const callback = entry.step && entry.nextCallbackAt !== undefined ? ", next callback booked" : "";
+      entries.push({ at: entry.at, tone: "neutral", text: `${ward}: ${what}${callback} (${entry.by})` });
     }
     if (arm.decidedAt === undefined) continue;
     if (arm.state === "accepted") {

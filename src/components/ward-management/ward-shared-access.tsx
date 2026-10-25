@@ -151,6 +151,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     return {
       listAccess: async () => connected().listAccess(),
       listCovers: async () => connected().listCovers(),
+      listRecordViews: async () => connected().listRecordViews(),
       grantAccess: async (input): Promise<SharedChangeResult> => connected().grantAccess(input),
       revokeAccess: async (id) => connected().revokeAccess(id),
       giveCover: async (input) => connected().giveCover(input),

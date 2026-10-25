@@ -28,6 +28,7 @@ import { WardAuthError } from "@/components/ward-management/ward-auth-link";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { nextEvent, seededRandom } from "../../../tests/helpers/ward-engine-fuzz";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 
 const backend = new URL("../../../backend/ward-flow/", import.meta.url);
 const { Pool } = createRequire(new URL("package.json", backend))("pg");
@@ -102,7 +103,7 @@ function signToken(sub: string, { expiresIn = 3600, signedInSecondsAgo = 0 } = {
 
 // ---------------------------------------------------------------- backend processes
 const workspaceId = randomUUID();
-const coordinatorIds = Array.from({ length: 60 }, () => randomUUID());
+const coordinatorIds = Array.from({ length: Math.max(60, USERS + 2) }, () => randomUUID());
 async function freePort() {
   const server = createServer().listen(0, "127.0.0.1");
   await once(server, "listening");
@@ -600,6 +601,28 @@ async function busyShift(server: BackendProcess) {
   lag.disable();
   const { counts, problems, keptIds } = await reconcile(load.outcomes);
   const end = await serverWorld();
+  // After the shift: the server's world still passes the shared-state check, and every statewide
+  // coordinator desk, once refreshed, shows exactly the server's revision and stays. (Ward and ED
+  // desks are sent their own place only, so their picture is meant to differ.)
+  const endState = (end.world as { state: Record<string, unknown> }).state;
+  check(
+    "load",
+    "the server's world after the shift passes the shared-state check",
+    isValidSharedWardFlowState(JSON.parse(JSON.stringify(endState))),
+  );
+  // A desk that never loaded its board (counted above) has no picture to compare.
+  const coordinators = load.people.filter((person) => person.desk.role === "coordinator" && person.state);
+  await Promise.all(coordinators.map((person) => person.client.refresh()));
+  const stays = (state: unknown) => JSON.stringify((state as { admissions: unknown }).admissions);
+  const diverged = coordinators.filter(
+    (person) => person.revision !== end.revision || stays(person.state) !== stays(endState),
+  );
+  check(
+    "load",
+    "every coordinator desk shows the server's picture after refreshing",
+    diverged.length === 0,
+    `${diverged.length} of ${coordinators.length} desks differ`,
+  );
   const refusals: Record<string, number> = {};
   for (const outcome of load.outcomes)
     if (outcome.status !== "accepted") {

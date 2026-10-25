@@ -11,9 +11,8 @@ import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle"
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
-import type { LeavingDestination } from "./ward-admissions";
+import type { Admission, LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
-
 import {
   type Context,
   createContext,
@@ -21,6 +20,7 @@ import {
   Fragment,
   type ReactNode,
   type SetStateAction,
+  startTransition,
   use,
   useCallback,
   useContext,
@@ -73,7 +73,7 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -122,7 +122,7 @@ import {
  * expose state fields or recipient projections. Focus is shared UI navigation state;
  * it never enters the reducer or an event.
  */
-type WardFlowContextValue = {
+type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
@@ -278,6 +278,7 @@ const WARD_FLOW_KEY_SET = {
   refreshRequests: true,
   handoverSignOffs: true,
   repatriations: true,
+  ...closingLoop.CLOSING_LOOP_CONTEXT_KEYS,
   inboxAcknowledgements: true,
   inboxCompletions: true,
   inboxOwnership: true,
@@ -650,19 +651,18 @@ export function WardFlowProvider({ children, initialNow, initialDayZero }: WardF
     if (initialNow !== undefined) return; // pinned: never touch the wall clock
     /*
      * ⚠️ **`react-hooks/set-state-in-effect` IS DISABLED HERE ON PURPOSE, AND THE RULE IS RIGHT
-     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE.** It fires because a synchronous `setState` in
-     * an effect body normally means state that could have been derived during render — a cascading
-     * render for nothing.
-     *
-     * **This is the one case where deriving it during render is the DEFECT.** The wall clock is a
-     * value the server and the client disagree about by construction, so reading it during render
-     * is precisely what made every ward route capable of failing hydration. The adoption has to
-     * happen after the first paint or it is not a fix at all.
-     *
-     * It costs one extra render per mount. If a future change makes the clock deterministic across
-     * server and client, delete the effect rather than the comment.
+     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE**: a `setState` in an effect is usually state
+     * that could be derived during render. **Here deriving it during render is the DEFECT.** Server
+     * and client disagree about the wall clock by construction, so reading it during render made
+     * every ward route able to fail hydration. Adoption must happen after the first paint.
+     * One extra render per mount. If the clock becomes deterministic, delete the effect, not this.
+     * In a transition, so code-split panels keep their server-drawn content until their code loads:
+     * an urgent update blanked them and the phone Home jumped (design re-score DR-03).
      */
-    const adopt = () => setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
+    const adopt = () => {
+      const next = { mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) };
+      startTransition(() => setAdopted(next));
+    };
     return whenStreamRevealed(adopt); // not while the streamed page is pending: React would duplicate it
   }, [initialNow]);
 
@@ -1336,6 +1336,7 @@ function WardFlowWorld({
       refreshRequests: state.refreshRequests,
       handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : EMPTY_ARRAY,
       repatriations: Array.isArray(state.repatriations) ? state.repatriations : EMPTY_ARRAY,
+      ...closingLoop.closingLoopContext(state),
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
