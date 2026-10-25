@@ -308,8 +308,8 @@ function orphanedTransportAttention(movement: Movement): Attention | undefined {
           `until the job is cancelled a replacement cannot be booked — the reducer refuses a second ` +
           `job. Cancel it, in What you can do here below.`
         : `The recorded stage has been moved back behind the booking, so this page can no longer say ` +
-          `a bed is being held. Correcting a stage does not release a bed, so the ward may still be ` +
-          `holding one — check with them before cancelling ${orphan.provider}.`,
+          `a bed is pulled. Correcting a stage does not release a bed, so the ward may still have a ` +
+          `bed pulled — check with them before cancelling ${orphan.provider}.`,
   };
 }
 

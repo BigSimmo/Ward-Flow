@@ -90,7 +90,7 @@ describe("Patient search record drawer when the page widens", () => {
     resizeCard();
 
     expect(screen.queryByTestId("ward-patient-search-details")).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed hold active");
+    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
   });
 
   it("stays open while the page is still one column", () => {

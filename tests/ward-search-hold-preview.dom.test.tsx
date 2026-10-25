@@ -127,12 +127,12 @@ describe("record preview shares current bed hold truth", () => {
     // DOM projection separately from the actual visible Patient details preview.
     const legacy = screen.getByTestId("ward-patient-search-preview");
     expect(legacy).toHaveTextContent("Accepted, awaiting bed");
-    expect(legacy).not.toHaveTextContent("Bed hold active");
+    expect(legacy).not.toHaveTextContent("Bed pulled");
     expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Accepted, awaiting bed");
     fireEvent.click(screen.getByRole("button", { name: "pull" }));
     expect(probe).toHaveAttribute("data-held", "true");
-    expect(legacy).toHaveTextContent("Bed hold active");
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed hold active");
+    expect(legacy).toHaveTextContent("Bed pulled");
+    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
   });
 
   it("the actual WF-318 authored seed hold appears in both visible details and selected preview", () => {
@@ -143,9 +143,9 @@ describe("record preview shares current bed hold truth", () => {
     );
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "WF-318" } });
     fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
-    expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveTextContent("Bed hold active");
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed hold active");
-    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed hold active");
+    expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveTextContent("Bed pulled");
+    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
+    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed pulled");
   });
 
   it("the person preview reads the linked actual referral journey without inventing a held bed", () => {
@@ -215,7 +215,7 @@ describe("record preview shares current bed hold truth", () => {
       />,
     );
     expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Accepted, awaiting bed");
-    expect(screen.getByTestId("ward-patient-search-preview")).not.toHaveTextContent("Bed hold active");
+    expect(screen.getByTestId("ward-patient-search-preview")).not.toHaveTextContent("Bed pulled");
     send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId: "scgh-adult-open" });
     rerender(
       <RecordPreview
@@ -229,6 +229,6 @@ describe("record preview shares current bed hold truth", () => {
         onClose={() => {}}
       />,
     );
-    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed hold active");
+    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed pulled");
   });
 });

@@ -9,7 +9,7 @@ import { acceptedWardOf } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -309,7 +309,9 @@ export function ReferralBoard({
   const [leftNotice, setLeftNotice] = useState<string>();
 
   const handleSelect = useCallback((referralId: string) => {
-    triggerRef.current = document.activeElement as HTMLElement | null;
+    // Usability review, 24 Oct 2026: Safari leaves focus on <body> after a tap, so take the shared
+    // opener (the last pressed control stands in) rather than the active element alone.
+    triggerRef.current = overlayOpener();
     setLeftNotice(undefined);
     setSelectedReferralId(referralId);
     setInspectorTab("place");
@@ -318,7 +320,7 @@ export function ReferralBoard({
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
-    if (triggerRef.current && typeof triggerRef.current.focus === "function") {
+    if (triggerRef.current?.isConnected && typeof triggerRef.current.focus === "function") {
       triggerRef.current.focus();
     }
   }, []);

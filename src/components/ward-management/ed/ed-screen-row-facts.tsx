@@ -101,7 +101,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
           )
         ) : (
           <span className={styles.transitBadge} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-            ⏱ Transit: {holdLabel} hold (
+            ⏱ Transit: {holdLabel} pull time limit (
             {movement.arrivalDetails.modeOfArrival ??
               (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
             )

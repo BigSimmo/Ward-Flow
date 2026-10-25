@@ -34,7 +34,7 @@ import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-m
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 
 const OUTCOME_CONSEQUENCE =
-  "This ends the bed search: live ward requests are withdrawn, a held bed is released and uncollected transport is cancelled.";
+  "This ends the bed search: live ward requests are withdrawn, a pulled bed is released and uncollected transport is cancelled.";
 
 /** Every panel a row can open. Each renders only while it is the open one. */
 export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
@@ -339,9 +339,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <fieldset className={styles.declineFieldset}>
             <legend className={styles.declineLegend}>Record outcome for {patientInfo.displayName}</legend>
             <p className={styles.cardMeta}>
-              This ends the bed search: any live ward requests are withdrawn, a held bed is released, and an uncollected
-              transport job is cancelled. The patient stays on this board until &quot;Left the department&quot; is
-              recorded.
+              This ends the bed search: any live ward requests are withdrawn, a pulled bed is released, and an
+              uncollected transport job is cancelled. The patient stays on this board until &quot;Left the
+              department&quot; is recorded.
             </p>
             {/* Audit 1 (CS-07, Josh 20 Oct): each outcome asks a second time, naming the person
                 and UMRN, because it cannot be undone from a toast. */}

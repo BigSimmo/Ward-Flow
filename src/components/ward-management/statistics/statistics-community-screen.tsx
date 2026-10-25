@@ -163,7 +163,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
-    { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
+    { key: "admitted", label: "In a bed, or with one pulled", figure: figures.admitted },
     { key: "expected", label: "With a discharge date", figure: figures.expected },
     { key: "discharged", label: "Discharged into the area", figure: figures.discharged },
     { key: "other", label: "Left the ward another way", figure: figures.other },
@@ -367,7 +367,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     data-testid="ward-statistics-community-in-hospital-count"
                     data-unmeasured={isUnmeasured(figures.admitted) || undefined}
                   >
-                    {countText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                    {countText(figures.admitted)} referred to this team and in a bed, or with one pulled, now.
                   </p>
                   <p
                     data-testid="ward-statistics-community-in-hospital-with-date"
@@ -388,7 +388,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     {countText(figures.other)} left a ward another way.
                   </p>
                 </SrOnly>
-                <CardFoot meta="Discharge dates are a subset of people holding a bed">
+                <CardFoot meta="Discharge dates are a subset of people in a bed or with one pulled">
                   <Link
                     href={communityTeamHref(team)}
                     className={buttonClass({ variant: "sec", size: "sm" })}
@@ -572,7 +572,9 @@ function TeamPhone({
           <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
         ) : sorted.length === 0 ? (
           <p className={phone.note}>
-            {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}
+            {inBedMeasured
+              ? "Nobody referred to this team is in a bed or has one pulled now."
+              : `In a bed: ${inBedText}`}
           </p>
         ) : (
           <PhoneList label="Referred to this team, in a bed now">
@@ -662,7 +664,7 @@ function TeamPhone({
 }
 
 const HERO_LABELS: Record<keyof CommunityFigures, string> = {
-  admitted: "In a bed or holding",
+  admitted: "In a bed, or with one pulled",
   expected: "With a discharge date",
   discharged: "Discharged here",
   other: "Left another way",
@@ -695,7 +697,7 @@ function ChangeTeam({ currentId }: { currentId: string }) {
 
 type Measure = keyof CommunityFigures;
 const MEASURES: { id: Measure; label: string; chart: string }[] = [
-  { id: "admitted", label: "In beds", chart: "People in a bed or holding one, by team" },
+  { id: "admitted", label: "In beds", chart: "People in a bed or with one pulled, by team" },
   { id: "expected", label: "With date", chart: "People with a discharge date, by team" },
   { id: "discharged", label: "Discharged", chart: "People discharged into the area, by team" },
   { id: "other", label: "Left", chart: "People who left the ward another way, by team" },
