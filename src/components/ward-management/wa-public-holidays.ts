@@ -2,7 +2,7 @@
  * Western Australian public holidays, as Perth `YYYY-MM-DD` dates, with the additional weekday a
  * holiday falling on a weekend brings. Public reference data, checked on 25 October 2026 against the
  * WA Government's list (wa.gov.au, "Public holidays in Western Australia"), which publishes 2026
- * and 2027 only. Add the next year once it is published: `tests/wa-public-holidays.test.ts` fails
+ * and 2027 only. Add the next year once it is published: `tests/ward-public-holidays.test.ts` fails
  * from 1 September of the last year listed, so the list cannot quietly run out.
  *
  * Shared by the discharges board (which services close) and the forecast (which days are holidays).
