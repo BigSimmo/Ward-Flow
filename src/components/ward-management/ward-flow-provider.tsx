@@ -767,7 +767,6 @@ function WardFlowWorld({
     () => (sharedDayZero ? new Date(sharedDayZero) : localDayZero),
     [sharedDayZero, localDayZero],
   );
-
   // `trackWardFlowTypedTextDispatch` is a plain top-level function — pure, no closure over any
   // per-mount ref — so it can be passed directly; its own identity being stable or not is
   // irrelevant to `useReducer`, which always calls whatever function is currently passed. Pinned
