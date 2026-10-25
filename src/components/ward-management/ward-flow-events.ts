@@ -711,20 +711,25 @@ export type WardFlowEvent =
       actingUnitId?: string;
       needs: readonly ReferralInformationNeed[];
     }
-  | {
+  | ({
       /** Smart features idea 4: the referrer or the coordinator ticks off one item a ward asked for. */
       type: "MARK_REFERRAL_INFORMATION_MET";
       role: WardFlowRole;
       now: Instant;
       referralId: string;
-      /**
-       * The ward whose copy asked, named as a referral destination rather than `unitId`: the referrer
-       * ticks off from its own place, and the shared write check treats every `unitId` as a place the
-       * sender must be in.
-       */
-      wardUnitId: string;
       need: ReferralInformationNeed;
-    }
+    } & (
+      | {
+          /** The named ward's existing request. This is a destination, not the sender's acting place. */
+          wardUnitId: string;
+          allRequestingWards?: never;
+        }
+      | {
+          /** Sender privacy: supply this category to all current eligible requests without recipient IDs. */
+          allRequestingWards: true;
+          wardUnitId?: never;
+        }
+    ))
   | {
       /**
        * Fix plan item 4 (Josh, 21 Oct 2026): assign a front-door referral to the desk chasing it.
