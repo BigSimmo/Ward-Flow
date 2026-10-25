@@ -1033,25 +1033,14 @@ export const ARRIVAL_CHECKS = ["contraband_search", "medication_chart"] as const
 export type ArrivalCheck = (typeof ARRIVAL_CHECKS)[number];
 
 /**
- * A bed release's lifecycle, in the order a bed moves through it. Hand-listed (never derived) for
- * the same reason `DECLINE_REASONS` is: a UI picker needs a runtime list, not just a type.
- *
- * **Three stages since 2026-08-28**, down from four — the product owner's decision, recorded in
- * `docs/ward-flow-phase-6-7-decisions.md` ("The bed model becomes three stages plus a flag").
- * Each stage says how CERTAIN the discharge is, and nothing else. `"blocked"` was removed as a
- * stage and became a flag (`BedRelease.blocker`/`blockedBy`) that sits ON a expected or
- * confirmed release, because being stuck is not a degree of certainty.
- *
- * The defect that forced it, verified in the code before it was raised: `capacityBreakdown`
- * (`ward-bed-availability.ts`) sorted today's releases into `confirmedToday` or `expectedToday`
- * by state, so a release in state `"blocked"` matched NEITHER branch and was counted nowhere.
- * Marking a confirmed discharge blocked silently dropped the ward's confirmed count — the figures
- * improved at the exact moment the ward got stuck. A blocked-but-confirmed bed now keeps counting
- * as confirmed, and `CapacityBreakdown.blockedToday` states how many are stuck beside it.
- *
- * Transitions go BOTH ways: `confirmed` may return to `expected` when a decision is reversed
- * (`REVERT_BED_RELEASE`). The old one-way model did not stop reversals happening — it made wards
- * record them dishonestly.
+ * A bed release's lifecycle, in order. Hand-listed (never derived), like `DECLINE_REASONS`, since a
+ * UI picker needs a runtime list. **Three stages since 2026-08-28** (owner decision,
+ * `docs/ward-flow-phase-6-7-decisions.md`): each says how CERTAIN the discharge is, nothing else.
+ * `"blocked"` became a flag (`BedRelease.blocker`/`blockedBy`) on an expected or confirmed release,
+ * because a release in state `"blocked"` matched neither branch of `capacityBreakdown` and silently
+ * dropped the ward's confirmed count; `CapacityBreakdown.blockedToday` now counts stuck beds beside it.
+ * Transitions go BOTH ways (`REVERT_BED_RELEASE`): a one-way model made wards record reversals
+ * dishonestly.
  */
 export const BED_RELEASE_STATES = ["expected", "confirmed", "discharged"] as const;
 export type BedReleaseState = (typeof BED_RELEASE_STATES)[number];
