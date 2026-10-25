@@ -23,14 +23,69 @@ import {
   Segmented,
   Stepper,
   Switch,
+  StatusGlyph,
+  Dot,
   Tabs,
   Timer,
   clk,
   dur,
   durMinutes,
   type ChoiceItem,
+  type WfTone,
 } from "@/components/wf";
 import { guessPhoneFromUserAgent, guessTabletFromRequest, guessTabletFromUserAgent } from "@/components/wf/phone-guess";
+
+describe("status glyph rendering contract", () => {
+  it("keeps the six decorative shapes identical when the tone changes", () => {
+    const tones: WfTone[] = ["danger", "warning", "success", "info", "neutral", "closed"];
+    const view = render(<StatusGlyph tone="danger" size={16} className="contract-glyph" />);
+    const output = tones.map((tone) => {
+      view.rerender(<StatusGlyph tone={tone} size={16} className="contract-glyph" />);
+      const svg = view.container.querySelector("svg")!;
+      expect(svg).toHaveAttribute("aria-hidden", "true");
+      expect(svg).toHaveAttribute("focusable", "false");
+      expect(svg).toHaveAttribute("width", "16");
+      expect(svg).toHaveClass("contract-glyph");
+      return { tone, shape: svg.innerHTML };
+    });
+    expect(output).toMatchInlineSnapshot(`
+      [
+        {
+          "shape": "<path d="M5 0.8 9.6 9.2H0.4Z" fill="currentColor"></path>",
+          "tone": "danger",
+        },
+        {
+          "shape": "<circle cx="5" cy="5" r="4" fill="currentColor"></circle>",
+          "tone": "warning",
+        },
+        {
+          "shape": "<path d="M1.4 5.4 3.9 7.8 8.6 2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>",
+          "tone": "success",
+        },
+        {
+          "shape": "<rect x="0.6" y="2.9" width="8.8" height="4.2" rx="2.1" fill="currentColor"></rect>",
+          "tone": "info",
+        },
+        {
+          "shape": "<circle cx="5" cy="5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"></circle>",
+          "tone": "neutral",
+        },
+        {
+          "shape": "<path d="M2 2 8 8M8 2 2 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>",
+          "tone": "closed",
+        },
+      ]
+    `);
+    view.rerender(<Dot tone="info" className="contract-dot" />);
+    expect(view.container.querySelector("svg")).toHaveAttribute("width", "8");
+    expect(view.container.querySelector("svg")).toHaveClass("contract-dot");
+  });
+
+  it("leaves an unrecognised tone empty", () => {
+    const view = render(<StatusGlyph tone={"unrecognised" as WfTone} />);
+    expect(view.container.querySelector("svg")!.childElementCount).toBe(0);
+  });
+});
 
 const MIN = 60_000;
 
