@@ -17,6 +17,7 @@
     "prune:supabase": "node --env-file-if-exists=.env prune-receipts.mjs supabase",
     "prune:receipts:postgres": "node --env-file-if-exists=.env prune-receipts.mjs postgres",
     "prune:receipts:supabase": "node --env-file-if-exists=.env prune-receipts.mjs supabase",
+    "prune:receipts:supabase-pruner": "node --env-file-if-exists=.env prune-receipts.mjs supabase-pruner",
     "test:coverage": "node ../../scripts/run-backend-tests.mjs --coverage",
     "test:integration": "node ../../scripts/run-backend-tests.mjs --integration",
     "test:offline": "node ../../scripts/run-backend-tests.mjs --offline"

@@ -7,9 +7,6 @@ const workflow = readFileSync(new URL("../.github/workflows/prune-receipts.yml",
   "\n",
 );
 const backendPackage = JSON.parse(readFileSync(new URL("../backend/ward-flow/package.json", import.meta.url), "utf8"));
-const APPROVED_SUPABASE_PROJECT = /APPROVED_SUPABASE_PROJECT = "([a-z]+)"/u.exec(
-  readFileSync(new URL("../backend/ward-flow/supabase-config.mjs", import.meta.url), "utf8"),
-)?.[1];
 
 describe("weekly receipt clean-up (limits audit, 25 Oct 2026)", () => {
   it("runs weekly and on request only, never on a push or PR", () => {
@@ -19,10 +16,11 @@ describe("weekly receipt clean-up (limits audit, 25 Oct 2026)", () => {
     expect(workflow).toMatch(/^permissions:\n  contents: read$/mu);
   });
 
-  it("targets only the approved project and runs the existing prune script", () => {
-    expect(workflow).toContain(`WARD_SUPABASE_PROJECT_REF: ${APPROVED_SUPABASE_PROJECT}`);
-    expect(workflow).toContain("run: npm run prune:receipts:supabase");
-    expect(backendPackage.scripts["prune:receipts:supabase"]).toContain("prune-receipts.mjs supabase");
+  it("uses only the receipt-only pruner login, never the migration login", () => {
+    expect(workflow).toContain("WARD_SUPABASE_PRUNE_DATABASE_URL: ${{ secrets.WARD_SUPABASE_PRUNE_DATABASE_URL }}");
+    expect(workflow).not.toMatch(/MIGRATION_DATABASE_URL|WARD_SUPABASE_DATABASE_URL/u);
+    expect(workflow).toContain("run: npm run prune:receipts:supabase-pruner");
+    expect(backendPackage.scripts["prune:receipts:supabase-pruner"]).toContain("prune-receipts.mjs supabase-pruner");
   });
 
   it("connects only when both secrets are set", () => {
