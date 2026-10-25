@@ -664,7 +664,9 @@ export function MovementDrawer({
                   movement.acceptedUnitId === unitId
                     ? "Accepted"
                     : decline
-                      ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
+                      ? decline.reason
+                        ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
+                        : "Declined"
                       : "No answer yet";
                 return (
                   <li key={unitId}>

@@ -247,14 +247,14 @@ export const ACCEPTANCE_STOPS_RECORDING_THE_UNIT: FalsifyingEdit = {
 
 export const DECLINE_LOSES_ITS_UNIT: FalsifyingEdit = {
   change: "A movement decline stops naming the unit that gave it, so it no longer records a unit id at all.",
-  find: "export type Decline = { unitId: string; at: Instant; reason: DeclineReason; };",
-  replaceWith: "export type Decline = { at: Instant; reason: DeclineReason; };",
+  find: "export type Decline = { unitId: string; at: Instant;",
+  replaceWith: "export type Decline = { at: Instant;",
 };
 
 export const DECLINE_GAINS_FREE_TEXT: FalsifyingEdit = {
   change: "A free-text note arrives on a movement decline, so it no longer carries a reason and nothing else.",
-  find: "export type Decline = { unitId: string; at: Instant; reason: DeclineReason; };",
-  replaceWith: "export type Decline = { unitId: string; at: Instant; reason: DeclineReason; note: string; };",
+  find: "reason?: DeclineReason; };",
+  replaceWith: "reason?: DeclineReason; note: string; };",
 };
 
 export const MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST: FalsifyingEdit = {
@@ -319,7 +319,9 @@ export const EMERGENCY_DEPARTMENT_BODY =
   "export type EmergencyDepartment = { id: string; siteCode: string; referenceEdId?: string; name: string; };";
 
 /** The whole `Decline` record. Three screens state its three fields by name. */
-export const DECLINE_BODY = "export type Decline = { unitId: string; at: Instant; reason: DeclineReason; };";
+export const DECLINE_BODY =
+  "export type Decline = { unitId: string; at: Instant; " +
+  "/** Absent only on an ED's copy: other wards' decline reasons are the coordinator's (D-80). */ reason?: DeclineReason; };";
 
 /**
  * The two capacity counts on `Unit`, cited as ONE substring with the doc comment that sits between

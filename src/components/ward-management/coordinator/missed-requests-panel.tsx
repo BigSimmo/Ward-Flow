@@ -8,7 +8,6 @@ import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -30,7 +29,6 @@ import styles from "./missed-requests-panel.module.css";
  */
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
-  const enabled = useWardFeatureFlag("missed-requests-check");
   const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
     "movements",
     "referrals",
@@ -54,7 +52,7 @@ export function MissedRequestsPanel() {
     [movements, referrals, patients, now],
   );
 
-  if (!enabled || access.role !== "coordinator") return null;
+  if (access.role !== "coordinator") return null;
 
   const checked = dailyCheckRecord(inboxCompletions, now);
 

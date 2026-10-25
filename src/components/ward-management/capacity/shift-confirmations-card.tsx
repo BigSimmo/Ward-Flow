@@ -6,7 +6,6 @@ import { useId, useState } from "react";
 import { Button, StatusGlyph } from "@/components/wf";
 
 import { unitHref } from "../shell/ward-facade";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { Unit } from "../ward-model";
 import { UNCHANGED_SHIFTS_LISTED, shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
@@ -15,12 +14,11 @@ import styles from "./shift-confirmations.module.css";
 /**
  * Smart features idea 6 (19 Oct 2026), the coordinator's half of "beds still correct": how many
  * wards have confirmed their numbers since this shift began, and which have not, so their figures
- * can be chased before the bed meeting. Behind the `shift-confirmations` switch. Under it, the wards
+ * can be chased before the bed meeting. Under it, the wards
  * that have confirmed the same number unchanged for a day or more (`unchangedConfirmations`).
  */
 export function ShiftConfirmationsCard({ units, now }: { units: readonly Unit[]; now: Instant }) {
-  const enabled = useWardFeatureFlag("shift-confirmations");
-  if (!enabled || units.length === 0) return null;
+  if (units.length === 0) return null;
   return <ShiftConfirmationsBody units={units} now={now} />;
 }
 
