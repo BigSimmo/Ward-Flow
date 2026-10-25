@@ -47,7 +47,7 @@
  * during merges. Never bypass this admission with git commit --no-verify.
  */
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -74,6 +74,61 @@ const SIGN_OUT_FILE =
       "sign-out.md",
     )
     .replace(/\\/g, "/");
+
+// Claim files (25 Oct 2026): the shared folder is a sync mount that uploads each container's
+// whole copy of a file, so two threads appending to the one log in the same minute can wipe
+// each other's lines. A thread may instead write each claim or release as its own new file in
+// the claims/ folder beside the log, never edited after. Their claim and RELEASED lines count
+// exactly as if they were appended to the log; heading lines in them are ignored.
+export function withClaimFiles(logFile, logText) {
+  const dir = path.join(path.dirname(logFile), "claims");
+  let names;
+  try {
+    names = readdirSync(dir)
+      .filter((name) => name.endsWith(".md"))
+      .sort();
+  } catch (error) {
+    if (error.code === "ENOENT") return logText;
+    // An existing but unreadable folder may hold releases or claims: never treat it as empty.
+    throw new Error(`claims folder unreadable at ${dir}: ${error.message}`);
+  }
+  // Event time: claim files from the name's leading UTC stamp, log lines from their first field.
+  const stamp = (text) => {
+    const match = /^(\d{4})-?(\d{2})-?(\d{2})(?:[T ](\d{2}):?(\d{2}))?/.exec(text);
+    return match ? match.slice(1, match[4] ? 6 : 4).join("") : null;
+  };
+  const files = [];
+  for (const name of names) {
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (error) {
+      throw new Error(`claim file unreadable at ${path.join(dir, name)}: ${error.message}`);
+    }
+    const lines = text.split(/\r?\n/).filter((line) => /^(?:- |RELEASED\b)/.test(line));
+    if (lines.length) files.push({ key: stamp(name), lines });
+  }
+  if (!files.length) return logText;
+  // Merge into the active section in event order, so a release only clears claims made before it.
+  // A log line with only a date ties with every file that day and stays first.
+  const start = logText.indexOf("## Active sign-outs");
+  const nextHeading = start < 0 ? -1 : logText.indexOf("\n## ", start + 1);
+  const end = nextHeading < 0 ? logText.length : nextHeading;
+  const section = logText.slice(start < 0 ? 0 : start, end).replace(/\n*$/, "");
+  const merged = [];
+  const pending = [...files];
+  for (const line of section.split(/\r?\n/)) {
+    const logKey = stamp(line.replace(/^(?:- |RELEASED )\s*/, ""));
+    if (logKey && /^(?:- |RELEASED )/.test(line)) {
+      while (pending.length && pending[0].key !== null && logKey > pending[0].key.slice(0, logKey.length)) {
+        merged.push(...pending.shift().lines);
+      }
+    }
+    merged.push(line);
+  }
+  for (const file of pending) merged.push(...file.lines);
+  return `${logText.slice(0, start < 0 ? 0 : start)}${merged.join("\n")}\n${logText.slice(end).replace(/^\n*/, nextHeading < 0 ? "" : "\n")}`;
+}
 
 /**
  * @deprecated Missing sign-out logs never grant ownership clearance.
@@ -978,7 +1033,7 @@ async function main() {
   }
   if (process.env.SKIP_SIGNOUT_GUARD !== "1") {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-    const signOutText = signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
+    const signOutText = signOutLogPresent ? withClaimFiles(SIGN_OUT_FILE, readFileSync(SIGN_OUT_FILE, "utf8")) : "";
     const taskBranch = isPublicWardFlowCheckout(root)
       ? branch !== "main" && branch !== "HEAD"
       : branch.startsWith("ward/");

@@ -46,6 +46,9 @@ describe("ward closure panel", () => {
     fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
     fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
     fireEvent.click(screen.getByTestId("ward-closure-close"));
+    // DR-07: the close asks once before it is recorded.
+    expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `Close ${UNIT.name}` }));
 
     expect(screen.getByRole("heading", { name: `${UNIT.name} closed to admissions` })).toBeInTheDocument();
     expect(screen.getByText(/^Staffing · since/)).toBeInTheDocument();
@@ -54,6 +57,16 @@ describe("ward closure panel", () => {
     expect(screen.getByTestId("ward-closure-panel").textContent ?? "").not.toMatch(/\b(WF|RF|PT|AD|WR)-\d/);
 
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
+    expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
+  });
+
+  it("asks before closing, and Cancel leaves the ward open (DR-07)", () => {
+    renderPanel({ role: "coordinator" });
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(screen.getByTestId("ward-closure-close"));
+    expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });
 

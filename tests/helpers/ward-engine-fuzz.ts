@@ -83,6 +83,7 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { REFERRAL_INFORMATION_NEED_IDS } from "@/components/ward-management/referrals/referral-information-needs";
+import { REFERRAL_COMMITMENT_STEP_IDS } from "@/components/ward-management/referrals/referral-commitments";
 import {
   REFERRAL_CONTACT_OUTCOME_IDS,
   REFERRAL_OWNER_DESKS,
@@ -114,6 +115,24 @@ import {
   openEpisodes,
 } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import { FIXTURE_HISTORY } from "./ward-referral-history";
+// Closing the loop, package D (24 Oct 2026).
+import {
+  ACCEPTANCE_BED_AFTER_HOURS,
+  ACCEPTANCE_CONDITION_AGREED_WITH,
+  ACCEPTANCE_CONDITION_KINDS,
+  CANCELLED_MOVE_CHECK_ITEMS,
+  CANCELLED_MOVE_CHECK_MARKS,
+  RESTRICTION_REVIEW_AFTER_HOURS,
+  RESTRICTION_REVIEWER_ROLES,
+  WARD_RESTRICTION_KINDS,
+  closureTransitionItems,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
+// Closing-the-loop (package E): the two new record events.
+import {
+  HOME_SERVICE_ANSWERS,
+  RETURN_PREREQUISITES,
+} from "@/components/ward-management/out-of-area/home-service-return";
+import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -789,6 +808,23 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       service: pick(random, ["pharmacy", "transport", "cleaning"] as const),
     })),
   ],
+  // Closing-the-loop package B (24 Oct 2026): discharge logistics on a live release.
+  [
+    1,
+    bedReleaseEvent("RECORD_DISCHARGE_DEPENDENCY", (_state, random) => ({
+      kind: pick(random, ["pharmacy", "transport", "destination", "community_follow_up", "other"] as const),
+      owner: pick(random, ["ward", "pharmacy", "patient_transport", "social_work", "community_team"] as const),
+      state: pick(random, ["outstanding", "done", "not_needed"] as const),
+    })),
+  ],
+  [
+    0.5,
+    bedReleaseEvent("RECORD_DISCHARGE_PLAN_CHANGE", (_state, random) =>
+      chance(random, 0.5)
+        ? { expectedAt: int(random, 0, 4000) }
+        : { leavingDestination: pick(random, ["discharged-to-the-community", "moved-to-residential-care"] as const) },
+    ),
+  ],
   [
     0.5,
     movementEvent("RECORD_ARRIVAL_CHECK", undefined, (_state, random) => ({
@@ -958,6 +994,8 @@ function undoSubjectField(state: WardFlowState, subjectId: string): Record<strin
 /** A legal form code for a movement: mostly one the model recognises, now and then 5B over a 5A. */
 const formCodeFor = (random: Random, movement: Movement) =>
   movement.legalForm?.code === "5A" && chance(random, 0.6) ? "5B" : pick(random, LEGAL_CLOCK_FORM_CODES)!;
+
+const DIRECTORY_ENTRIES = buildOnCallDirectory();
 
 const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
   // Ward closure: a bed-relevant gate (the shortlist, acceptance and the pull honour it).
@@ -1567,6 +1605,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Closing-the-loop package A: a commitment step, a callback time or both, on a ward's copy.
+  [
+    0.5,
+    (state, random) => {
+      const unitId = id(pick(random, state.units));
+      const step = pick(random, [...REFERRAL_COMMITMENT_STEP_IDS, undefined]);
+      return {
+        type: "RECORD_REFERRAL_COMMITMENT",
+        referralId: id(referralFor(state, random)),
+        unitId,
+        actingUnitId: unitId,
+        ...(step === undefined ? {} : { step }),
+        ...(step === "promised" ? { promisedFor: currentNow + int(random, 0, 480) } : {}),
+        ...(step === undefined || chance(random, 0.5) ? { nextCallbackAt: currentNow + int(random, 0, 480) } : {}),
+      };
+    },
+  ],
   // D-72: seclusion and restraint on a stay, then ended; ward incidents and the seclusion room.
   [
     1,
@@ -1863,6 +1918,29 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Closing-the-loop (package E): home service return and on-call directory checks.
+  [
+    0.5,
+    (state, random) => {
+      const answered = chance(random, 0.5);
+      return {
+        type: "RECORD_HOME_SERVICE_RETURN",
+        admissionId: id(stayFor(state, random, occupied)),
+        step: answered ? "answered" : "requested",
+        ...(answered
+          ? { answer: pick(random, HOME_SERVICE_ANSWERS), prerequisites: [pick(random, RETURN_PREREQUISITES)!] }
+          : { homeHospital: chance(random, 0.95) ? pick(random, SITE_CODES) : MISSING_ID }),
+        ...(chance(random, 0.5) ? { nextReviewAt: currentNow + int(random, 0, 14) * 1440 } : {}),
+      };
+    },
+  ],
+  [
+    0.5,
+    (_state, random) => ({
+      type: "RECORD_DIRECTORY_CHECK",
+      entryId: chance(random, 0.95) ? id(pick(random, DIRECTORY_ENTRIES)) : MISSING_ID,
+    }),
+  ],
   [0.5, (state, random) => ({ type: "EXTEND_BROADCAST_ALERT", alertId: id(pick(random, alerts(state))) })],
   [
     0.5,
@@ -1870,6 +1948,80 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       type: "STAND_DOWN_BROADCAST_ALERT",
       alertId: id(prefer(random, alerts(state), (alert) => alert.status === "active")),
     }),
+  ],
+  // Closing the loop, package D (24 Oct 2026): records only; none may move a bed.
+  [
+    1,
+    (state, random) => ({
+      type: "MARK_CANCELLED_MOVE_CHECK",
+      movementId: id(prefer(random, state.movements, (m) => m.closure?.outcome === "did_not_proceed")),
+      item: pick(random, CANCELLED_MOVE_CHECK_ITEMS),
+      mark: pick(random, CANCELLED_MOVE_CHECK_MARKS),
+    }),
+  ],
+  [
+    1,
+    (state, random) => {
+      const movement = prefer(random, state.movements, (m) => m.acceptedUnitId !== undefined && !m.closure);
+      const condition = pick(random, ACCEPTANCE_CONDITION_KINDS);
+      return {
+        type: "RECORD_ACCEPTANCE_CONDITION",
+        movementId: id(movement),
+        ...(movement?.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+        condition,
+        agreedWith: pick(random, ACCEPTANCE_CONDITION_AGREED_WITH),
+        ...(condition === "bed_after_time"
+          ? { readyAt: currentNow + pick(random, ACCEPTANCE_BED_AFTER_HOURS)! * 60 }
+          : {}),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const movement = prefer(random, state.movements, (m) => (m.acceptanceConditions ?? []).some((c) => !c.met));
+      return {
+        type: "MARK_ACCEPTANCE_CONDITION_MET",
+        movementId: id(movement),
+        ...(movement?.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+        condition:
+          movement?.acceptanceConditions?.find((c) => !c.met)?.kind ?? pick(random, ACCEPTANCE_CONDITION_KINDS),
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (u) => Boolean(u.isClosed) || (u.intakeConstraints ?? []).length > 0);
+      return {
+        type: "RECORD_RESTRICTION_REVIEW",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        restriction: unit?.isClosed ? "admissions_closure" : pick(random, WARD_RESTRICTION_KINDS),
+        reviewer: pick(random, RESTRICTION_REVIEWER_ROLES),
+        expectedAt: currentNow + pick(random, RESTRICTION_REVIEW_AFTER_HOURS)! * 60,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const unit = prefer(random, state.units, (u) => Boolean(u.isClosed));
+      const item = unit
+        ? pick(random, closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions))
+        : undefined;
+      return {
+        type: "MARK_CLOSURE_TRANSITION_ITEM",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        item: item?.kind ?? "accepted",
+        ...(item?.kind === "referral"
+          ? { referralId: item.recordId }
+          : item?.kind === "booked_arrival"
+            ? { plannedAdmissionId: item.recordId }
+            : { movementId: item?.recordId ?? MISSING_ID }),
+      };
+    },
   ],
 ];
 

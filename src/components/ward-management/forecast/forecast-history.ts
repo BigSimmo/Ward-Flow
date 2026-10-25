@@ -42,8 +42,11 @@ export function historyEntry(
   };
 }
 
-type TrackRecordDay = {
+export type TrackRecordDay = {
   day: number;
+  /** When the forecast was taken (the day before) and when the day's gap was taken. */
+  forecastAt: Instant;
+  actualAt: Instant;
   forecast: ForecastHistoryEntry["tomorrow"];
   actual: number;
   inRange: boolean;
@@ -63,6 +66,8 @@ export function forecastTrackRecord(history: readonly ForecastHistoryEntry[]): T
     const { low, likely, high } = before.tomorrow;
     days.push({
       day: entry.day,
+      forecastAt: before.at,
+      actualAt: entry.at,
       forecast: before.tomorrow,
       actual: entry.nowGap,
       inRange: entry.nowGap >= low && entry.nowGap <= high,
