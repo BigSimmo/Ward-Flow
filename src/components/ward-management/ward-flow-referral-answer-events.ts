@@ -50,7 +50,8 @@ import {
   referralSuburbIsAnswered,
   wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
+import { scenarioEmergencyDepartments } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralAnswerEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
@@ -404,7 +405,7 @@ export function reduceReferralAnswerEvent(
        */
       const edDestination = event.destinations.find((destination) => destination.kind === "emergency_department");
       if (edDestination?.kind === "emergency_department") {
-        if (!allEmergencyDepartments().some((department) => department.id === edDestination.edId)) {
+        if (!scenarioEmergencyDepartments(state.scenario).some((department) => department.id === edDestination.edId)) {
           return reject(state, event, `RECEIVE_REFERRAL edId must resolve to a real emergency department`);
         }
         if (!REFERRAL_PURPOSES.includes(edDestination.purpose)) {

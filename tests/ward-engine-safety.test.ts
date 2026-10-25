@@ -85,6 +85,18 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
 
   const beds = new Map<string, string>();
   const people = new Map<string, string>();
+  // A repatriation pulls the home bed while the person still occupies the sending stay; arrival
+  // ends that stay (`PATIENT_ARRIVED`). So a pulled stay and its journey's source stay are one move.
+  const transferPairs = new Set(
+    state.movements.flatMap((movement) =>
+      !movement.closure && movement.admissionId && movement.sourceAdmissionId
+        ? [
+            `${movement.admissionId}|${movement.sourceAdmissionId}`,
+            `${movement.sourceAdmissionId}|${movement.admissionId}`,
+          ]
+        : [],
+    ),
+  );
   for (const admission of state.admissions) {
     if (!ADMISSION_STATES.includes(admission.state))
       return { rule: "every stay has a known state", detail: `${admission.id} is ${String(admission.state)}` };
@@ -97,7 +109,7 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
     }
     if (admission.patientId) {
       const other = people.get(admission.patientId);
-      if (other)
+      if (other && !transferPairs.has(`${other}|${admission.id}`))
         return {
           rule: "no person is in two beds",
           detail: `${admission.patientId} is in ${other} and ${admission.id}`,
