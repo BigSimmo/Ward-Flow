@@ -79,8 +79,9 @@ describe("gate board status card review fixes", () => {
       buildPatientStatus(mode, ctx({ ...base, stage, transport: undefined, transportNeed: undefined })).cells.find(
         (cell) => cell.key === (mode === "held" ? "transport" : "collected"),
       )?.action?.kind;
-    // B3 (site review, 12 Oct 2026): before the bed is held, Log booking opens that step instead of greying.
-    expect(booking("accepted_awaiting_bed", "held")).toBe("button");
+    // UX review 24 Oct 2026: before the bed is pulled, Log booking is greyed with its reason. The
+    // Bed cell holds the step needed first, so this cell no longer repeats it.
+    expect(booking("accepted_awaiting_bed", "held")).toBe("unavailable");
     expect(booking("pulled", "held")).toBe("button");
     expect(booking("handover_ready", "transit")).toBe("button");
     expect(booking("moving", "transit")).toBe("unavailable");
@@ -89,17 +90,7 @@ describe("gate board status card review fixes", () => {
       ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
     ).cells.find((cell) => cell.key === "transport");
     expect(waiting?.sub).toBe("Needs the bed pulled");
-    let opened = "";
-    const prior = buildPatientStatus(
-      "held",
-      ctx(
-        { ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined },
-        { onOpenPlacement: () => (opened = "placement"), onBookTransport: () => (opened = "booking") },
-      ),
-    ).cells.find((cell) => cell.key === "transport")?.action;
-    expect(prior?.kind === "button" && prior.secondary).toBe(true);
-    if (prior?.kind === "button") prior.onClick({} as never);
-    expect(opened).toBe("placement");
+    expect(waiting?.action).toEqual({ kind: "unavailable", label: "Log booking", reason: "Needs the bed pulled" });
   });
 
   it("links the Bed and Transport values to the ward and the movement (decision 2)", () => {

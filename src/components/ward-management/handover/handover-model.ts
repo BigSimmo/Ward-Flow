@@ -15,11 +15,7 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import {
-  isStoppedTransportAwaitingRelease,
-  transportLeg,
-  unitCapacity,
-} from "@/components/ward-management/ward-derivations";
+import { isStoppedTransportAwaitingRelease, transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -36,7 +32,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
-import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
@@ -682,7 +678,8 @@ export function toHandoverWard(
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
-    held: unitCapacity(unit, bedReleases).held,
+    // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
+    held: bedStates(unit, admissions, bedReleases, []).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)
       .length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)

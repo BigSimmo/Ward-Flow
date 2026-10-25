@@ -2,9 +2,9 @@
  * Main-push reuse check for .github/workflows/ward-flow.yml.
  *
  * Railway deploys a main commit only after this workflow succeeds on it ("Wait for CI"). Every main
- * commit arrives through a pull request that the ruleset keeps up to date with main, so the tree that
- * lands is normally byte-for-byte the tree the PR's own run already passed. This check proves that
- * for one push, and only then lets the workflow skip re-running the unit shards, browser journeys,
+ * commit arrives through a pull request. The ruleset does not require that PR to be up to date with
+ * main, but when it was, the tree that lands is byte-for-byte the tree the PR's own run already
+ * passed. This check proves that for one push (check 3 rejects a head that was behind main), and only then lets the workflow skip re-running the unit shards, browser journeys,
  * coverage and production build on main. The static checks (including the whole-tree lint that only
  * non-PR runs do) and the secret scan still run on every main commit.
  *

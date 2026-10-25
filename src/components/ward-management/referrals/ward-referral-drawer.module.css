@@ -3199,6 +3199,15 @@ details.refCard > summary {
     left: 0;
   }
 
+  /* Device sweep R7-04: on a short landscape phone (667x375) the hero filled the sheet and the pinned
+     Continue bar covered what was left, so the step list never showed. In the list the bar scrolls
+     with the steps there; a step sheet keeps its pinned Back and Next. */
+  @media (max-height: 30rem) {
+    .drawerWide[data-ph-mode="list"] .sendReferralFoot {
+      position: static;
+    }
+  }
+
   .drawerWide:is([data-ph-mode="list"], [data-ph-mode="sheet"]) .sendTargetSummary:not([role="alert"]) {
     display: none;
   }

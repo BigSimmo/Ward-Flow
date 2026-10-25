@@ -231,6 +231,7 @@
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
+  container-type: inline-size;
 }
 
 .scopeLine {
@@ -1008,6 +1009,26 @@
 
 .phoneSheetBody .rowControl {
   max-width: 100%;
+}
+
+/* Device sweep (24 Oct 2026): two columns at 1280 px left each rule card too narrow for the four
+   tracks, so "Shown on…" ran off the card edge. In a narrow column the effect takes its own line
+   under the rule, as it does below 761px. */
+@media (min-width: 761px) {
+  @container (max-width: 34rem) {
+    .ruleRow {
+      grid-template-columns: minmax(0, 1fr) 28px 9.5rem;
+    }
+
+    .effectCell {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: var(--wf-s-3);
+      text-align: left;
+    }
+  }
 }
 
 @media (max-width: 1100px) {

@@ -66,7 +66,7 @@ These source files do not establish a current hosted connection or deployment.
 - Provider seam: `config.mjs` (provider names, defaults and settings validation) and
   `providers.mjs` (adapters and startup).
 - HTTP: `server.mjs` (server, readiness, shutdown and the five-minute phone push sweep) and
-  `shared-http.mjs` (workspace routes).
+  `shared-http.mjs` (workspace routes). `error-report.mjs` sends optional scrubbed failure reports.
 - Domain: `engine.ts`, built to `dist/engine.mjs` by `build-engine.mjs`. `push.mjs` builds and
   sends Web Push act-now alerts.
 - Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state), `records.mjs`
@@ -194,6 +194,9 @@ These source files do not establish a current hosted connection or deployment.
   text. HTTP, push and store failures share bounded error-name and protocol-code fields; unknown
   values fall back to `Error` without copying exception text. Logger failures cannot change the
   API result.
+- Optional Sentry error reporting (`error-report.mjs`) is off unless `SENTRY_DSN` is set. It sends
+  only the fixed failure name and those same error-name and code fields, at most once every five
+  minutes per failure kind. `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` are optional labels.
 - Configured PostgreSQL lock/query deadline failures return `503 storage_unavailable`; other
   query/code faults remain `500`. A failed migration rollback preserves the original exception
   and removes the failed connection from the pool.

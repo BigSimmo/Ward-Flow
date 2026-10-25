@@ -82,23 +82,8 @@ export const WARD_FEATURE_FLAGS = {
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
   },
-  "shift-confirmations": {
-    label: "Confirmed this shift",
-    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
-    defaults: { development: true, demo: true, production: true },
-  },
-  "bed-meeting-actions": {
-    label: "Bed meeting agenda",
-    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
-    defaults: { development: true, demo: true, production: true },
-  },
   "pilot-measures": {
     label: "Pilot measures",
-    // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
-    defaults: { development: true, demo: true, production: true },
-  },
-  "missed-requests-check": {
-    label: "Daily missed request check",
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
   },

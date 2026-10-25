@@ -23,6 +23,7 @@ import {
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
 } from "@/components/ward-management/ward-model";
+import { nextRuntimeIdNumber } from "@/components/ward-management/ward-runtime-ids";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -630,7 +631,13 @@ export function reduceRecordedStayEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const existing = Array.isArray(state.supportNotifications) ? state.supportNotifications : [];
-      const recorded: SupportNotificationRecord = { id: `SN-${existing.length + 1}`, ...base, ...detail };
+      // Never the length alone: an Undo removes a record, and the next one must not reuse a live id (ENG-01).
+      const number = nextRuntimeIdNumber(
+        existing.map((record) => record.id),
+        "SN-",
+        existing.length + 1,
+      );
+      const recorded: SupportNotificationRecord = { id: `SN-${number}`, ...base, ...detail };
       return { ...state, supportNotifications: [...existing, recorded] };
     }
   }

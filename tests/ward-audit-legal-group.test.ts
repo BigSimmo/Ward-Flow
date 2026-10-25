@@ -210,7 +210,10 @@ describe("legal status on a stay (A3-18)", () => {
     for (const stay of state.admissions.filter((a) => a.state === "occupied")) {
       const short = stayLegalShort(stay, state);
       if (short === undefined) continue;
-      expect(short).toMatch(/^(Form \S+|Voluntary|Involuntary)$/);
+      // Production audit 24 Oct 2026, EDR-02: the recorded status in its own words, never "Involuntary" for a CTO or referral.
+      expect(short).toMatch(
+        /^(Form \S+|Voluntary|Involuntary|CTO|Referred for exam|Awaiting exam|Status unrecognised)$/,
+      );
     }
     expect(isOnOrder("Voluntary")).toBe(false);
     expect(isOnOrder("Involuntary inpatient")).toBe(true);

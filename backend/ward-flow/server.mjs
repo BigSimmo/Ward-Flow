@@ -9,6 +9,7 @@ import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
+import { logFailure, startErrorReporting } from "./error-report.mjs";
 
 const BODY_LIMIT = 1_048_576;
 /** `/healthz` asks the database at most this often, so an unauthenticated caller cannot load it. */
@@ -237,7 +238,7 @@ export function listen(handler, config) {
       } catch (error) {
         // Name and code only: a database or engine message can quote values from the request.
         const { errorName, errorCode } = errorFields(error);
-        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", errorName, errorCode }));
+        logFailure({ event: "ward_backend_unhandled_failure", errorName, errorCode });
         if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
@@ -249,7 +250,7 @@ export function listen(handler, config) {
 }
 
 /** One phone-push re-check. A failure is logged with closed diagnostic fields, never exception text. */
-export async function sweepPush(sharedStore, log = (event) => console.error(JSON.stringify(event))) {
+export async function sweepPush(sharedStore, log = logFailure) {
   try {
     await sharedStore.sweepPush();
   } catch (error) {
@@ -286,7 +287,7 @@ export function registerShutdown(server, pool, signals = process) {
   signals.once("SIGTERM", close);
   signals.on?.("unhandledRejection", (error) => {
     const { errorName, errorCode } = errorFields(error);
-    console.error(JSON.stringify({ event: "ward_backend_unhandled_rejection", errorName, errorCode }));
+    logFailure({ event: "ward_backend_unhandled_rejection", errorName, errorCode });
     signals.exitCode = 1;
     const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     forceExit.unref?.();
@@ -294,7 +295,7 @@ export function registerShutdown(server, pool, signals = process) {
   });
   signals.on?.("uncaughtException", (error) => {
     const { errorName, errorCode } = errorFields(error);
-    console.error(JSON.stringify({ event: "ward_backend_uncaught_exception", errorName, errorCode }));
+    logFailure({ event: "ward_backend_uncaught_exception", errorName, errorCode });
     signals.exitCode = 1;
     const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     forceExit.unref?.();
@@ -311,6 +312,8 @@ export function registerShutdown(server, pool, signals = process) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let pool;
   try {
+    // Optional Sentry error reporting, off unless SENTRY_DSN is set (see error-report.mjs).
+    startErrorReporting();
     const config = readConfig();
     const backend = await createBackend(config);
     pool = backend.pool;
