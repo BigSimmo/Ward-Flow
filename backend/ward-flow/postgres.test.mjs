@@ -1173,7 +1173,7 @@ test("real PostgreSQL: the Supabase runtime grants pass the runtime role check",
   } finally {
     await owner.end();
     await runtime.end();
-    await admin.query(`DROP DATABASE ${database}`);
+    await dropTestDatabase(admin, database);
     await admin.end();
   }
 });
