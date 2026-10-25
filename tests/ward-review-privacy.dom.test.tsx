@@ -329,6 +329,116 @@ describe("review privacy boundaries", () => {
       expect(lastDowntimePack()).toBeNull();
     },
   );
+  it("re-arms a long access deadline instead of overflowing and expiring it early", async () => {
+    vi.useFakeTimers();
+    const maxDelay = 2_147_483_647;
+    const schedule = vi.spyOn(globalThis, "setTimeout");
+    const deadline = Date.now() + maxDelay + 1000;
+    let current: SharedView | undefined;
+    const view = () => current;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "synthetic",
+      changed: (next) => {
+        current = next;
+      },
+      fetch: async () => Response.json({ snapshot, accessUntil: deadline }),
+    });
+    try {
+      await client.refresh();
+      expect(schedule.mock.calls.some(([, delay]) => Number(delay) > maxDelay)).toBe(false);
+      await vi.advanceTimersByTimeAsync(maxDelay);
+      expect(view()?.snapshot === null).toBe(false);
+      expect(view()?.accessUntil).toBe(deadline);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(view()?.snapshot === null).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(view()?.snapshot === null).toBe(true);
+      expect(view()?.status).toBe("unavailable");
+    } finally {
+      client.dispose();
+    }
+  });
+
+  it("re-arms a long outage-view deadline without a short timer loop", () => {
+    vi.useFakeTimers();
+    const maxDelay = 2_147_483_647;
+    const schedule = vi.spyOn(globalThis, "setTimeout");
+    const connection = {
+      enabled: true,
+      signedIn: true,
+      snapshot,
+      receivedAt: Date.now(),
+      status: "unavailable",
+      error: null,
+      accessUntil: Date.now() + maxDelay + 1000,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      retry: vi.fn(),
+      dispatch: vi.fn(),
+      pushApi: {},
+    } as unknown as WardSharedConnection;
+    render(
+      <WardSharedAccess connection={connection}>
+        <button>Cached report</button>
+      </WardSharedAccess>,
+    );
+    const button = screen.getByRole("button", { name: "Cached report" });
+    expect(schedule.mock.calls.some(([, delay]) => Number(delay) > maxDelay)).toBe(false);
+    act(() => vi.advanceTimersByTime(maxDelay));
+    expect(button.closest("[inert]") === null).toBe(true);
+    act(() => vi.advanceTimersByTime(999));
+    expect(button.closest("[inert]") === null).toBe(true);
+    act(() => vi.advanceTimersByTime(1));
+    expect(button.closest("[inert]") === null).toBe(false);
+  });
+
+  it.each(["loading", "choose-role"] as const)(
+    "forgets an outgoing desk's deadline while the next desk is %s",
+    async (phase) => {
+      vi.useFakeTimers();
+      const deadline = Date.now() + 1000;
+      let current: SharedView | undefined;
+      const view = () => current;
+      let reads = 0;
+      let finish!: (response: Response) => void;
+      let nextSignal: AbortSignal | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "synthetic",
+        changed: (next) => {
+          current = next;
+        },
+        fetch: async (_url, init) => {
+          if (reads++ === 0) return Response.json({ snapshot, accessUntil: deadline });
+          nextSignal = init?.signal as AbortSignal;
+          if (phase === "choose-role") return Response.json({ code: "choose-role", choices: [] }, { status: 409 });
+          return new Promise<Response>((resolve) => {
+            finish = resolve;
+          });
+        },
+      });
+      try {
+        await client.refresh();
+        client.switchRole();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(reads).toBe(2);
+        expect(view()?.accessUntil).toBeUndefined();
+        await vi.advanceTimersByTimeAsync(1001);
+        expect(view()?.status).toBe(phase);
+        if (phase === "loading") {
+          expect(nextSignal?.aborted).toBe(false);
+          finish(Response.json({ snapshot, accessUntil: Date.now() + 60_000 }));
+          await vi.advanceTimersByTimeAsync(0);
+          expect(view()?.status).toBe("ready");
+        }
+      } finally {
+        client.dispose();
+      }
+    },
+  );
+
   it("drops a retained pack and board at temporary access expiry without extending it on outage", async () => {
     vi.useFakeTimers();
     let view: SharedView | undefined;

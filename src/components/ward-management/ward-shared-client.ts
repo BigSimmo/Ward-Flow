@@ -571,6 +571,8 @@ export class SharedWorkspaceClient {
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
     if (update.snapshot === null) {
+      // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
+      update = { accessUntil: undefined, ...update };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
@@ -586,30 +588,37 @@ export class SharedWorkspaceClient {
     };
     if ("accessUntil" in update) {
       clearTimeout(this.accessTimer);
-      if (Number.isFinite(this.view.accessUntil))
-        this.accessTimer = setTimeout(
-          () => {
-            this.viewGeneration += 1;
-            this.roleLifetime.abort();
-            this.roleLifetime = new AbortController();
-            if (this.pending && this.sentCommandId === this.pending.commandId)
-              this.settle(
-                this.pending.commandId,
-                "failed",
-                "Access expired while this action was being saved. Its outcome is uncertain; review the board after reconnecting.",
-              );
-            this.cancelAll(`Access expired. ${saveProblem("notReady")}`);
-            this.clearRecovery();
-            forgetDowntimePack();
-            this.publish({
-              snapshot: null,
-              accessUntil: undefined,
-              status: "unavailable",
-              error: "Access verification expired. Reconnect to confirm your current role before viewing records.",
-            });
-          },
-          Math.max(0, this.view.accessUntil! - Date.now()),
-        );
+      const deadline = this.view.accessUntil;
+      if (Number.isFinite(deadline)) {
+        const expire = () => {
+          if (this.disposed || this.view.accessUntil !== deadline) return;
+          const remaining = deadline! - Date.now();
+          if (remaining > 0) {
+            this.accessTimer = setTimeout(expire, Math.min(2_147_483_647, remaining));
+            return;
+          }
+          this.viewGeneration += 1;
+          this.roleLifetime.abort();
+          this.roleLifetime = new AbortController();
+          if (this.pending && this.sentCommandId === this.pending.commandId)
+            this.settle(
+              this.pending.commandId,
+              "failed",
+              "Access expired while this action was being saved. Its outcome is uncertain; review the board after reconnecting.",
+            );
+          this.cancelAll(`Access expired. ${saveProblem("notReady")}`);
+          this.clearRecovery();
+          forgetDowntimePack();
+          this.publish({
+            snapshot: null,
+            accessUntil: undefined,
+            status: "unavailable",
+            error: "Access verification expired. Reconnect to confirm your current role before viewing records.",
+          });
+        };
+        // Longer delays overflow browser timers; check again without ending future access.
+        this.accessTimer = setTimeout(expire, Math.min(2_147_483_647, Math.max(0, deadline! - Date.now())));
+      }
     }
     this.options.changed(this.view);
   }

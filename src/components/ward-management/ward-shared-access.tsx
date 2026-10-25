@@ -571,7 +571,11 @@ function WardSharedWorkspaceContent({
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   useEffect(() => {
     if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
-    const timer = setTimeout(() => setCheckedAt(Date.now()), Math.max(0, connection.accessUntil! - Date.now()));
+    // A checkpoint updates checkedAt and re-arms this effect while the deadline is still ahead.
+    const timer = setTimeout(
+      () => setCheckedAt(Date.now()),
+      Math.min(2_147_483_647, Math.max(0, connection.accessUntil! - Date.now())),
+    );
     return () => clearTimeout(timer);
   }, [connection.accessUntil, checkedAt]);
   if (!connection.enabled) return children;
