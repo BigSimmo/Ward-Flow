@@ -4,6 +4,7 @@
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
+import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
 import { useMemo } from "react";
 import { Lock, Scale, Truck, Users } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -251,6 +252,12 @@ export function QueuedSection({
                           {referralFollowUpLine(referral, now)}
                         </span>
                       ) : null}
+                      <ReferralNoReplyFlag
+                        referral={referral}
+                        now={now}
+                        className={a.rowNote}
+                        testId={`ward-referral-board-no-reply-${referral.id}`}
+                      />
                     </td>
                     <td data-testid={`ward-referral-board-wait-${referral.id}`}>
                       <span className="sr-only">{referralWaitLine(referral, now)}</span>
@@ -411,6 +418,12 @@ export function QueuedSection({
                       {referralFollowUpLine(referral, now)}
                     </span>
                   ) : null}
+                  <ReferralNoReplyFlag
+                    referral={referral}
+                    now={now}
+                    className={a.cardNote}
+                    testId={`ward-referral-board-card-no-reply-${referral.id}`}
+                  />
                 </li>
               );
             })}

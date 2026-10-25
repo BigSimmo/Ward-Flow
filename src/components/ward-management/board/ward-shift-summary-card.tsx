@@ -1,0 +1,86 @@
+"use client";
+
+import { useId, useState } from "react";
+
+import { Card, CardHead, Segmented } from "@/components/wf";
+import { formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import type { Unit } from "@/components/ward-management/ward-model";
+
+import { wardShiftSummary } from "./ward-shift-summary";
+import styles from "./ward-shift-summary.module.css";
+
+/**
+ * "This shift on the ward" — the recorded-only shift summary on the Shift brief (item 16). Counts,
+ * never names. Outside a provider it shows nothing, since there are no live records to count.
+ */
+export function WardShiftSummaryCard({ unit, now }: { unit: Pick<Unit, "id" | "name">; now: Instant }) {
+  const baseId = useId();
+  const [which, setWhich] = useState<"current" | "previous">("current");
+  const flow = useOptionalWardFlowSelect("admissions", "referrals", "configuration");
+  if (!flow) return null;
+  const summary = wardShiftSummary({
+    unit,
+    admissions: flow.admissions,
+    referrals: flow.referrals,
+    configuration: flow.configuration,
+    now,
+    which,
+  });
+  const { window } = summary;
+  const span = `${formatInstant(window.from)} to ${formatInstant(window.to)}`;
+  const facts: { label: string; value: number; testId: string }[] = [
+    { label: "Arrived on the ward", value: summary.arrived, testId: "arrived" },
+    { label: "Left the ward", value: summary.left, testId: "left" },
+    { label: "Beds pulled for an incoming patient", value: summary.bedsPulled, testId: "pulled" },
+    { label: "Discharges confirmed", value: summary.dischargesConfirmed, testId: "confirmed" },
+    { label: "Expected dates changed", value: summary.datesMoved, testId: "dates" },
+    { label: "Observation levels changed", value: summary.observationChanges, testId: "observations" },
+    { label: "Referrals accepted by this ward", value: summary.referralsAccepted, testId: "accepted" },
+    { label: "Referrals declined by this ward", value: summary.referralsDeclined, testId: "declined" },
+  ];
+
+  return (
+    <Card className={styles.card} aria-labelledby={`${baseId}-shift-heading`} data-testid="ward-shift-summary">
+      <CardHead
+        level={3}
+        eyebrow
+        id={`${baseId}-shift-heading`}
+        title={`${window.label} on ${unit.name}`}
+        meta={<span data-testid="ward-shift-summary-span">{window.inProgress ? `${span}, so far` : span}</span>}
+      />
+      <div className={styles.toggle} data-testid="ward-shift-summary-which">
+        <Segmented
+          label="Which shift"
+          items={[
+            { id: "current", label: "This shift" },
+            { id: "previous", label: "Last shift" },
+          ]}
+          value={which}
+          onChange={setWhich}
+        />
+      </div>
+      <dl className={styles.facts}>
+        {facts.map((fact) => (
+          <div key={fact.testId} data-testid={`ward-shift-summary-${fact.testId}`}>
+            <dt>{fact.label}</dt>
+            <dd>{fact.value}</dd>
+          </div>
+        ))}
+        <div data-testid="ward-shift-summary-awaiting">
+          <dt>Referrals waiting for this ward&apos;s reply now</dt>
+          <dd>
+            {summary.referralsAwaitingReply}
+            {summary.referralsStuck > 0
+              ? ` (${summary.referralsStuck} stuck: no reply past ${splitDuration(summary.limitMinutes)})`
+              : ""}
+          </dd>
+        </div>
+      </dl>
+      <p className={styles.note}>
+        Counts only, from times recorded in Ward Flow during this shift. Anything done but not recorded here does not
+        show.
+      </p>
+    </Card>
+  );
+}
