@@ -18,7 +18,11 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wardflow_pruner') THEN
     CREATE ROLE wardflow_pruner LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_auth_members WHERE member = 'wardflow_pruner'::regrole OR roleid = 'wardflow_pruner'::regrole) THEN
+  -- A non-superuser creator on PostgreSQL 16+ gets an ADMIN-only membership (no SET, no INHERIT),
+  -- which confers no access; any other membership does.
+  IF EXISTS (SELECT 1 FROM pg_auth_members m WHERE m.member = 'wardflow_pruner'::regrole
+    OR (m.roleid = 'wardflow_pruner'::regrole AND (COALESCE((to_jsonb(m)->>'set_option')::boolean, true)
+      OR COALESCE((to_jsonb(m)->>'inherit_option')::boolean, true)))) THEN
     RAISE EXCEPTION 'Pruner role has unexpected membership; inspect before applying';
   END IF;
 END $$;
