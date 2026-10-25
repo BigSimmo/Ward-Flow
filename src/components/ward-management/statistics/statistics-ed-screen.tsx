@@ -489,7 +489,7 @@ export function StatisticsEdScreen({
                     <tr>
                       <th scope="col">Department</th>
                       <th scope="col" className={styles.num}>
-                        Waiting
+                        Open journeys
                       </th>
                       <th scope="col" className={styles.num}>
                         Longest
@@ -861,7 +861,7 @@ function Waits({
                       <span className={styles.srOnly}>Elapsed against {veryLongHours} hours</span>
                     </th>
                     <th scope="col" className={styles.num}>
-                      Waiting
+                      Time since opening
                     </th>
                   </tr>
                 </thead>

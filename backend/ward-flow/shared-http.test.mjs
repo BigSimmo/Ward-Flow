@@ -1,5 +1,6 @@
 // @ts-check
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
 import { storageFailure } from "./shared-http.mjs";
@@ -744,4 +745,66 @@ test("History's archive is read with the desk's own view, and a store without on
   assert.deepEqual(asked, ["ward"]);
   const older = setup(other, "prototype", { viewer: async () => wardView });
   assert.deepEqual(await (await older.handler(request("/archive"))).json(), { archived: 0, records: [] });
+});
+
+test("an older store without session identity omits receipt scope even with finite access expiry", async () => {
+  const { handler } = setup(coordinator, "prototype", {
+    sessionLimitMinutes: null,
+    viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
+  });
+  const response = await handler(request("", undefined, "Bearer unknown"));
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(Number.isFinite(value.accessUntil), true);
+  assert.equal(Object.hasOwn(value, "receiptScope"), false);
+});
+
+async function workspaceWithSessionIdentity(identity) {
+  const handler = createHandler({
+    config: { coordinatorIds: [coordinator], workspaceId: "synthetic-workspace" },
+    sharedStore: {
+      viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
+      sessionLimitMinutes: null,
+      read: async () => ({ dataMode: "prototype", revision: 1 }),
+    },
+    authenticate: async (_token, { session }) => {
+      Object.assign(session, identity);
+      return coordinator;
+    },
+    log: () => {},
+  });
+  const response = await handler(request());
+  assert.equal(response.status, 200);
+  return response.json();
+}
+
+test("blank session IDs and nonfinite start times cannot enable receipt recovery", async () => {
+  for (const identity of [
+    { sessionId: "" },
+    { sessionId: "   " },
+    { sessionId: "", startedAt: Number.NaN },
+    { startedAt: Number.POSITIVE_INFINITY },
+  ]) {
+    const value = await workspaceWithSessionIdentity(identity);
+    assert.equal(Object.hasOwn(value, "receiptScope"), false);
+  }
+});
+
+test("usable session identities preserve the original receipt hash bytes", async () => {
+  const sessionId = " 11111111-1111-4111-8111-111111111111 ";
+  const cases = [
+    { identity: { sessionId, startedAt: 1_700_000_000_000 }, binding: sessionId },
+    { identity: { startedAt: 1_700_000_000_000 }, binding: 1_700_000_000_000 },
+    { identity: { sessionId: null, startedAt: 0 }, binding: 0 },
+  ];
+  const scopes = [];
+  for (const { identity, binding } of cases) {
+    const value = await workspaceWithSessionIdentity(identity);
+    const expected = createHash("sha256")
+      .update(JSON.stringify(["synthetic-workspace", coordinator, null, binding]))
+      .digest("hex");
+    assert.equal(value.receiptScope, expected);
+    scopes.push(value.receiptScope);
+  }
+  assert.equal(new Set(scopes).size, cases.length);
 });

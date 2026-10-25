@@ -18,7 +18,7 @@ import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-managem
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
@@ -186,6 +186,35 @@ describe("comparison across departments", () => {
       }),
     ).toBeInTheDocument();
   });
+  it("names open-journey counts separately from time since opening for a travelling journey", () => {
+    act(() => setWardFeatureFlagOnDevice("role-access", false));
+    const department = DEPARTMENTS[0]!;
+    const movements = [
+      specimen({ id: "WF-column-here", originEdId: department.id, openedAt: NOW_ANCHOR - 30 }),
+      specimen({
+        id: "WF-column-transit",
+        originEdId: department.id,
+        stage: "moving",
+        openedAt: NOW_ANCHOR - 120,
+        leftDepartmentAt: NOW_ANCHOR - 15,
+      }),
+    ];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsEdScreen edId={department.id} movements={movements} />
+      </WardFlowProvider>,
+    );
+    const comparison = screen.getByTestId("ward-stat-ed-comparison");
+    expect(within(comparison).getByRole("columnheader", { name: /^Open journeys$/u })).toBeInTheDocument();
+    expect(within(comparison).getByTestId(`ward-stat-ed-comparison-waiting-${department.id}`)).toHaveTextContent(
+      /^2$/u,
+    );
+    const detail = screen.getByTestId("ward-stat-ed-wait-table");
+    expect(within(detail).getByRole("columnheader", { name: /^Time since opening$/u })).toBeInTheDocument();
+    const travelling = within(detail).getByTestId("ward-stat-ed-wait-row-WF-column-transit");
+    expect(within(travelling).getAllByRole("cell").at(-1)).toHaveTextContent(/^2h 00m$/u);
+  });
+
   it("has departments to compare at all", () => {
     expect(DEPARTMENTS.length, "ward-sites.ts lists no emergency departments").toBeGreaterThan(1);
   });

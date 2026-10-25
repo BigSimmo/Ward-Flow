@@ -314,6 +314,13 @@ export function createSharedHandler({
       }
       const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
+        // Missing session identity must not become a shared JSON-null recovery binding.
+        const receiptIdentity =
+          typeof session.sessionId === "string" && session.sessionId.trim().length > 0
+            ? session.sessionId
+            : Number.isFinite(started)
+              ? started
+              : undefined;
         // A locked store read can refresh this request's role and joined cover.
         const workspace = () => ({
           role: view.access.role,
@@ -328,9 +335,13 @@ export function createSharedHandler({
             view.accessUntil ?? Infinity,
             ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
           ),
-          receiptScope: createHash("sha256")
-            .update(JSON.stringify([config.workspaceId, actorId, view.membershipId, session.sessionId ?? started]))
-            .digest("hex"),
+          ...(receiptIdentity === undefined
+            ? {}
+            : {
+                receiptScope: createHash("sha256")
+                  .update(JSON.stringify([config.workspaceId, actorId, view.membershipId, receiptIdentity]))
+                  .digest("hex"),
+              }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
