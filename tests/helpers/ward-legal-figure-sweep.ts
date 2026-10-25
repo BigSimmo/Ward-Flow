@@ -1,3 +1,10 @@
+// Closing the loop, package D (24 Oct 2026).
+import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import {
+  activeWardRestrictions,
+  closureTransitionItems,
+  currentAcceptanceConditions,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
 import { buildTurnaroundFixture } from "./ward-turnaround-fixture";
 import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 /**
@@ -364,6 +371,19 @@ export function candidateEvents(
           referralId: referral.id,
           contact: { kind: "psychiatric_ward" as const, unitId },
           outcome: "no_answer" as const,
+        })),
+      );
+    // Closing-the-loop package A: every referral, asking each ward on its own for a response.
+    case "RECORD_REFERRAL_COMMITMENT":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          unitId,
+          actingUnitId: unitId,
+          step: "response_requested" as const,
         })),
       );
     // Fix plan item 16 (D-76): every referral, asking each ward on its own.
@@ -968,6 +988,29 @@ export function candidateEvents(
           service,
         })),
       );
+    case "RECORD_DISCHARGE_DEPENDENCY":
+      // Closing-the-loop package B (24 Oct 2026): one outstanding pharmacy item per release,
+      // against the release's own unit. Logistics only; no legal figure.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        kind: "pharmacy" as const,
+        owner: "pharmacy" as const,
+        state: "outstanding" as const,
+      }));
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
+      // Closing-the-loop package B: one destination per release, against its own unit.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        leavingDestination: LEAVING_DESTINATIONS[0].id,
+      }));
     case "REVERT_BED_RELEASE":
       // Bed-model rework (2026-08-28). One candidate per release crossed with every waiting-on
       // value — the same "one candidate per real domain value" precedent every list-valued event
@@ -1491,6 +1534,68 @@ export function candidateEvents(
       });
       return [...arrivalCandidates, ...dischargeCandidates];
     }
+    // Closing-the-loop package E (24 Oct 2026): records only, against a current stay or a directory entry.
+    case "RECORD_HOME_SERVICE_RETURN":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    case "RECORD_DIRECTORY_CHECK":
+      return buildOnCallDirectory()
+        .slice(0, 3)
+        .map((entry) => ({ type, role, now, entryId: entry.id }));
+    // Closing the loop, package D (24 Oct 2026): records only, each against the records it names.
+    case "MARK_CANCELLED_MOVE_CHECK":
+      return state.movements
+        .filter((movement) => movement.closure?.outcome === "did_not_proceed")
+        .map((movement) => ({ type, role, now, movementId: movement.id, item: "escort", mark: "not_applicable" }));
+    case "RECORD_ACCEPTANCE_CONDITION":
+      return state.movements
+        .filter((movement) => movement.acceptedUnitId !== undefined && !movement.closure)
+        .map((movement) => ({
+          type,
+          role,
+          now,
+          movementId: movement.id,
+          condition: "call_ward_before_leaving",
+          agreedWith: "ed",
+        }));
+    case "MARK_ACCEPTANCE_CONDITION_MET":
+      return state.movements.flatMap((movement) =>
+        currentAcceptanceConditions(movement)
+          .filter((condition) => !condition.met)
+          .map((condition) => ({ type, role, now, movementId: movement.id, condition: condition.kind })),
+      );
+    case "RECORD_RESTRICTION_REVIEW":
+      return state.units.flatMap((unit) =>
+        activeWardRestrictions(unit).map((restriction) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          restriction,
+          reviewer: "nurse_unit_manager" as const,
+          expectedAt: now + 240,
+        })),
+      );
+    case "MARK_CLOSURE_TRANSITION_ITEM":
+      return state.units
+        .filter((unit) => unit.isClosed)
+        .flatMap((unit) =>
+          closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions).map((item) => ({
+            type,
+            role,
+            now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            item: item.kind,
+            ...(item.kind === "referral"
+              ? { referralId: item.recordId }
+              : item.kind === "booked_arrival"
+                ? { plannedAdmissionId: item.recordId }
+                : { movementId: item.recordId }),
+          })),
+        );
     default:
       return [];
   }

@@ -94,6 +94,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "previousDueAt",
   "enRouteAt",
   "expectedAt",
+  // Closing-the-loop package B (24 Oct 2026): the time a discharge plan change moved away from.
+  "previousExpectedAt",
   "expectedReturn",
   "formedAt",
   "formWrittenAt",
@@ -112,6 +114,9 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
    * read a data error.
    */
   "withdrawnAt",
+  // Closing-the-loop package A: a promised answer time and a next callback time on a commitment entry.
+  "promisedFor",
+  "nextCallbackAt",
   // ── `Admission`, in `ward-admissions.ts`. Absent until 2026-08-31 because the guard test never
   //    looked at that file; see this set's own comment for what each one was getting wrong.
   "pulledAt",
@@ -187,6 +192,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "metAt",
   // The criteria status's derived lapse time. Never stored, but declared as an Instant beside them.
   "lapsesAt",
+  // Closing-the-loop (package E): a home service return's request, answer and review day.
+  "requestedAt",
+  "answeredAt",
+  "nextReviewAt",
 ]);
 
 /**

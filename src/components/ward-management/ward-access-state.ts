@@ -249,6 +249,14 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   rejections: () => [],
   refreshRequests: (context) =>
     context.coordinator ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId)) : [],
+  // Closing-the-loop (package E): directory checks name a mock directory entry and a desk, never a
+  // person, so every desk keeps them.
+  directoryChecks: (context) => context.state.directoryChecks ?? [],
+  // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
+  homeServiceReturns: (context) =>
+    context.coordinator
+      ? (context.state.homeServiceReturns ?? []).filter((record) => context.admissionIds.has(record.admissionId))
+      : [],
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))

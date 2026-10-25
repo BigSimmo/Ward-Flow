@@ -222,6 +222,11 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "discharges/discharge-service-hours.ts",
+    name: "CLOSURE_LOOKAHEAD_DAYS",
+    why: "how many days ahead weekend preparation searches a synthetic service-hours table for its next closure; a search horizon, never a clinical limit",
+  },
+  {
     file: "ward-role-alerts.ts",
     name: "ROLE_ALERT_WINDOW_MINUTES",
     why: "how long a phone alert id stays live for a retried delivery (D-80); never shown",
@@ -277,7 +282,7 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "delays/delays-board-model.ts", name: "CHART_BIN_MINUTES", why: "chart bin width" },
   { file: "discharges/discharge-board.tsx", name: "CHART_DAYS_AHEAD", why: "chart window" },
   { file: "legal-forms/legal-forms-screen.tsx", name: "CHART_WINDOW_MINUTES", why: "chart window" },
-  { file: "on-call/on-call-directory.ts", name: "CHECK_DUE_DAYS", why: "when a directory entry is re-checked" },
+  { file: "on-call/on-call-checks.ts", name: "CHECK_DUE_DAYS", why: "when a directory entry is re-checked" },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_MAX_STAY_DAYS", why: "input bound on a typed date" },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_WINDOW_DAYS", why: "how far ahead the planned list looks" },
   { file: "ward-bed-availability.ts", name: "MIDDAY_MINUTES", why: "a day-part bin" },

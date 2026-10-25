@@ -11,9 +11,8 @@ import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle"
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
-import type { LeavingDestination } from "./ward-admissions";
+import type { Admission, LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
-
 import {
   type Context,
   createContext,
@@ -73,7 +72,7 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -122,7 +121,7 @@ import {
  * expose state fields or recipient projections. Focus is shared UI navigation state;
  * it never enters the reducer or an event.
  */
-type WardFlowContextValue = {
+type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
@@ -278,6 +277,7 @@ const WARD_FLOW_KEY_SET = {
   refreshRequests: true,
   handoverSignOffs: true,
   repatriations: true,
+  ...closingLoop.CLOSING_LOOP_CONTEXT_KEYS,
   inboxAcknowledgements: true,
   inboxCompletions: true,
   inboxOwnership: true,
@@ -1336,6 +1336,7 @@ function WardFlowWorld({
       refreshRequests: state.refreshRequests,
       handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : EMPTY_ARRAY,
       repatriations: Array.isArray(state.repatriations) ? state.repatriations : EMPTY_ARRAY,
+      ...closingLoop.closingLoopContext(state),
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,

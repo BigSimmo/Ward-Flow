@@ -132,7 +132,7 @@ export function AlertDetail({
   const track: TrackPoint[] = [];
   if (kind === "hold") {
     if (movement?.originEdId) track.push({ at: movement.openedAt, label: "Arrived ED", shape: "wait" });
-    if (item.since !== undefined) track.push({ at: item.since, label: "Hold ended", shape: "act" });
+    if (item.since !== undefined) track.push({ at: item.since, label: "Pull ended", shape: "act" });
   } else if (kind === "transport") {
     if (movement?.transport?.acceptedAt !== undefined) {
       track.push({ at: movement.transport.acceptedAt, label: "Transport accepted", shape: "wait" });
@@ -424,7 +424,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           )}
         </div>
@@ -565,7 +566,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           </div>
         )}
