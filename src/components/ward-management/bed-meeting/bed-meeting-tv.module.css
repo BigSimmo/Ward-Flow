@@ -29,6 +29,25 @@
 .tv {
   --tv-small: clamp(var(--wf-fs-14), 1.25vw, 2rem);
   --tv-row: clamp(var(--wf-fs-15), 1.3vw, 2.25rem);
+  /* Audit 24-7 (CT-18): the smallest TV text (status words, controls, footer) reaches 20 px at 1080p,
+   * readable from about 4 m. Lists and labels stay on --tv-small (24 px). */
+  --tv-least: clamp(var(--wf-fs-14), 1.05vw, 1.5rem);
+  /* The larger footer wraps to two lines on the ED view, so the bands sit a little closer and the
+   * header and footer lines are tighter, keeping each view on one 1080p screen. */
+  row-gap: calc(var(--tv-gap) * 0.6);
+}
+
+/* 4K TV (Josh, 24 Oct 2026): the main text already scales with the screen, but the controls,
+ * status words, footer and the Brief's own labels and note stopped at 24 px. On a 3840 wide screen
+ * (from 3200 px) they reach 40 px, the same share of the screen as 20 px on a 1080p TV. */
+@media (min-width: 200rem) {
+  .tv {
+    --tv-least: 2.5rem;
+  }
+
+  .panel[data-area="brief"] :is(dt, dl + p) {
+    font-size: var(--tv-least);
+  }
 }
 
 .tv:fullscreen {
@@ -57,6 +76,7 @@
   margin: 0;
   color: var(--wf-ink-3);
   font-size: var(--tv-small);
+  line-height: 1.25;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -73,6 +93,16 @@
   margin: var(--wf-s-1) 0 0;
   color: var(--wf-ink-2);
   font-size: var(--tv-small);
+  line-height: 1.25;
+}
+
+/* Audit 24-7 (CT-02): the not-updating warning reads from across the room, not as grey small print. */
+.stale {
+  padding: 0 var(--wf-s-2);
+  border: 2px solid var(--wf-warning-ink);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font-weight: 700;
 }
 
 .actions {
@@ -92,7 +122,7 @@
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-15) / 1 var(--wf-font);
+  font: 600 var(--tv-least) / 1 var(--wf-font);
   text-decoration: none;
   cursor: pointer;
 }
@@ -146,7 +176,8 @@
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   box-shadow: 0 var(--wf-s-2) var(--wf-s-8) color-mix(in srgb, var(--wf-ink-1) 18%, transparent);
-  font-size: var(--wf-fs-15);
+  /* Audit 24-7 (CT-18): the screen picker is read on the TV too. */
+  font-size: var(--tv-least);
 }
 
 .pickerMenu > div {
@@ -169,7 +200,7 @@
 .pickerHeading {
   margin: 0 0 var(--wf-s-1);
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+  font-size: var(--tv-least);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -289,7 +320,7 @@
   background: color-mix(in srgb, var(--tile-accent) 18%, var(--wf-surface));
   color: var(--tile-ink);
   /* DA-22: the status word on a tile is read from across the room too. */
-  font-size: clamp(var(--wf-fs-11), 0.85vw, 1.25rem);
+  font-size: var(--tv-least);
   line-height: 1.4;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -342,6 +373,20 @@
   background: var(--wf-ink-3);
 }
 
+/* R7-09 (device sweep): the tile meters keep a drawn track and fill in forced colours. */
+@media (forced-colors: active) {
+  .tileMeter {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .tileMeter > span,
+  .tile[data-tone="neutral"] .tileMeter > span {
+    background: CanvasText;
+  }
+}
+
 .tileDetail {
   margin: var(--wf-s-1) 0 0;
   color: var(--wf-ink-2);
@@ -372,11 +417,57 @@
 /* A laptop preview beside the side menu: the table takes the full width, the rest pair up below. */
 @container (max-width: 90rem) {
   .panels[data-layout="meeting"] {
+    /* L23 (device sweep): dense, so Longest ED waits and Delays fill the row beside Beds that fit
+     * instead of leaving it a third filled while the full-width Brief drops below. */
+    grid-auto-flow: row dense;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .panels[data-layout="meeting"] > .panel[data-wide] {
     grid-column: 1 / -1;
+  }
+}
+
+/* DR-02: on a 1080p TV the all-services meeting has five panels, and four abreast left "Beds that fit"
+ * a letter wide and the Brief overprinting itself. On any TV they now sit in three columns: the
+ * Brief runs under the service table and "Beds that fit", where its four parts have room, and the
+ * delays sit under the ED waits. Table rows are a little tighter so it all stays on one screen. */
+@container (min-width: 90rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "main fit waits"
+      "main fit delays"
+      "brief brief delays";
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) .table :is(th, td) {
+    padding-block: calc(var(--wf-s-2) * 0.5);
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > .panel {
+    padding-block: calc(var(--tv-gap) * 0.6);
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="main"] {
+    grid-area: main;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="fit"] {
+    grid-area: fit;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="brief"] {
+    grid-area: brief;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="waits"] {
+    grid-area: waits;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="delays"] {
+    grid-area: delays;
   }
 }
 
@@ -428,6 +519,11 @@
 .table tbody th {
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+/* DR-02: a bed type ("Locked", "Older") is one short word; never print it a letter a line. */
+.panels [data-area="fit"] .table tbody th {
+  overflow-wrap: normal;
 }
 
 .table th,
@@ -570,10 +666,27 @@
   font-size: var(--tv-small);
 }
 
+/* The 1080p State TV's own count (DR-02): shown only where that layout hides rows. */
+.more[data-fit="short"] {
+  display: none;
+}
+
+/* Up to about 2700 px only the first delay cause fits under the ED waits; a 4K TV has room for all. */
+@container (min-width: 90rem) and (max-width: 170rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) [data-fit="full"] {
+    display: none;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) .more[data-fit="short"] {
+    display: block;
+  }
+}
+
 .footer {
   margin: 0;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-14);
+  font-size: var(--tv-least);
+  line-height: 1.25;
 }
 
 .off {

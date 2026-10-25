@@ -26,12 +26,12 @@ claiming reuse; a declared workflow alone proves no run. Preserve every required
 
 Companion documents, which this one does not duplicate:
 
-| For                                                    | Read                                                      |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| Which gate to run, and proving it ran                  | `AGENTS.md` § verification pyramid, and the `gates` skill |
-| Test execution, flake policy, the speed playbook table | `docs/testing.md`                                         |
-| Measured CI cost per job, verification debt            | `docs/process-hardening.md`                               |
-| What is outstanding across sessions                    | `docs/ward-flow-task-ledger.md`                           |
+| For                                                    | Read                                                        |
+| ------------------------------------------------------ | ----------------------------------------------------------- |
+| Which gate to run, and proving it ran                  | `AGENTS.md` § verification pyramid, and the `gates` skill   |
+| Test execution, flake policy, the speed playbook table | `docs/testing.md`                                           |
+| Measured CI cost per job, verification debt            | removed `docs/process-hardening.md` (see `docs/ARCHIVE.md`) |
+| What is outstanding across sessions                    | `docs/ward-flow-task-ledger.md`                             |
 
 ---
 
@@ -148,7 +148,7 @@ message, for deleted or missing paths and for any change under `tests/`, `script
 `package.json`, `package-lock.json`, `tsconfig*`, `vitest.config`, `next.config` or `eslint*`.
 When it refuses, run the full suite; that refusal is the gate working.
 
-In `BigSimmo/Ward-Flow`, for fast local unit testing during development, run `npx vitest run <path/to/test.ts>` directly (~250ms, executing in isolation without waiting on machine-wide heavy locks or `test:focused` selector restrictions, per [`AGENTS.md`](../AGENTS.md)). When you want a coordinator-managed shared lease across multiple test files or pre-push verification, use `node scripts/run-vitest.mjs run <files>`, `npm run test:focused`, or `npm run verify:pr-local`.
+In `BigSimmo/Ward-Flow`, for fast local unit testing during development, run `node scripts/run-vitest.mjs run <path/to/test.ts>`. The wrapper strips provider credentials and applies the offline defaults and the shared run lock, which raw `npx vitest` skips ([checks-and-evidence.md](agents/checks-and-evidence.md)). For a changed-file selection or pre-push verification, use `npm run test:focused` or `npm run verify:pr-local`.
 
 ### 3.2 Two traps in the selectors
 
@@ -300,7 +300,7 @@ documentation and non-executable workflow/policy paths run a focused route; **ex
 unrecognised paths fail closed to heavy scope**, and `coverage_changed` simply equals
 `static_heavy_changed`.
 
-Genuinely cheap shapes, per `docs/process-hardening.md`:
+Genuinely cheap shapes, per the removed `docs/process-hardening.md` (see `docs/ARCHIVE.md`):
 
 - **Docs-only** changes run in 3–5.5 minutes.
 - **Non-executable workflow/policy YAML** gets the workflow self-tests and a focused
@@ -336,7 +336,7 @@ in-flight work under its own message. This repo has hit that.
 
 ## 11. Levers already measured and refuted — do not revive
 
-Re-litigating these is itself a cost. From `docs/testing.md` and `docs/process-hardening.md`:
+Re-litigating these is itself a cost. From `docs/ward-flow/archive/testing-historical-diagnostics.md` and the removed `docs/process-hardening.md` (see `docs/ARCHIVE.md`):
 
 - A persistent Actions cache for the Next webpack tree (~804 MB; evicts the browser cache).
 - Transporting the 1.09 GB webpack cache to shard runners (19–67 s download, slower than a cold

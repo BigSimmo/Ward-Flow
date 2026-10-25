@@ -3,6 +3,7 @@ import type { CareJourney } from "./ward-care-journey";
 import {
   type BedReleaseBlocker,
   type DischargeDelayClearReason,
+  type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
@@ -1095,6 +1096,14 @@ export type PlannedAdmission = {
    * is recorded on the booking, as a referral records its own age band.
    */
   ageBand: Cohort;
+  /**
+   * Audit 24-1 CS2-19 (Josh, 24 Oct 2026): the reason recorded when this booking was placed on a
+   * ward not set up for involuntary admissions although its legal status needs one. Chosen from
+   * `OVERRIDE_REASONS`, the list a pull past the same authorisation gate uses; never typed. Names
+   * the ward it was recorded against, and who recorded it (a role label, never a name). Absent
+   * when no reason was needed. Optional, so a save made before it existed still restores.
+   */
+  authorisationOverride?: PlannedAdmissionAuthorisationOverride;
   state: PlannedAdmissionState;
   bookedAt: Instant;
   /** Role label of whoever booked it, never a person's name. */
@@ -1108,6 +1117,15 @@ export type PlannedAdmission = {
   convertedAt: Instant | null;
   /** The occupied admission created on arrival. */
   admissionId: string | null;
+};
+
+/** The recorded reason a booking stands on a ward not authorised for its legal status. */
+export type PlannedAdmissionAuthorisationOverride = {
+  reason: OverrideReason;
+  unitId: string;
+  at: Instant;
+  /** Role label of whoever recorded it, never a person's name. */
+  by: string;
 };
 
 /** Booked, and its expected arrival has passed without the arrival being recorded. */

@@ -83,7 +83,11 @@ function listFiles() {
       const relPath = `${prefix}${f}`;
       if ((prefix === "" && f === "decisions.md") || /^owner-.*\.md$/.test(f)) {
         primary.push(relPath);
-      } else if (/owner.*ruling.*\.md$/i.test(f)) {
+      } else if (
+        /owner.*ruling.*\.md$/i.test(f) ||
+        // Early ruling records archived from docs/archive/ on 24 Oct 2026 (Josh's yes).
+        (prefix === "archive/dated-notes/" && /^ward-(?:flow|management)-.*(?:rulings|decisions).*\.md$/.test(f))
+      ) {
         secondary.push(relPath);
       }
     }

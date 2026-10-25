@@ -21,6 +21,8 @@ import {
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
+// Closing-the-loop package A (24 Oct 2026): response commitments.
+import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -37,6 +39,16 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+// Closing the loop, package D (24 Oct 2026).
+import {
+  ACCEPTANCE_CONDITION_AGREED_WITH,
+  ACCEPTANCE_CONDITION_KINDS,
+  CANCELLED_MOVE_CHECK_ITEMS,
+  CANCELLED_MOVE_CHECK_MARKS,
+  CLOSURE_TRANSITION_ITEM_KINDS,
+  RESTRICTION_REVIEWER_ROLES,
+  WARD_RESTRICTION_KINDS,
+} from "./loop-checks/ward-loop-checks";
 import {
   BED_MEETING_ACTION_KINDS,
   BED_MEETING_ACTION_OWNERS,
@@ -50,6 +62,8 @@ import {
 } from "./ward-discharge-criteria";
 import { TYPED_TEXT_NOT_KEPT } from "./ward-flow-demo-storage-constants";
 import { REPATRIATION_MODES } from "./ward-flow-events";
+import { HOME_SERVICE_ANSWERS, RETURN_PREREQUISITES } from "./out-of-area/home-service-return";
+import { isDirectoryEntryId } from "./on-call/on-call-checks";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 import {
@@ -63,6 +77,7 @@ import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
+import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
 import { numberedBedKind } from "./ward-bed-designation";
 import { isObservation, type Observation } from "./ward-observation";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
@@ -280,6 +295,40 @@ const capacityFigure = z.looseObject({
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
 });
+// Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
+const closureTransitionMarkRule = z.strictObject({
+  kind: z.enum(CLOSURE_TRANSITION_ITEM_KINDS),
+  recordId: id,
+  at: finite,
+  by: text,
+});
+const restrictionReviewRule = z.strictObject({
+  restriction: z.enum(WARD_RESTRICTION_KINDS),
+  reviewer: z.enum(RESTRICTION_REVIEWER_ROLES),
+  expectedAt: finite,
+  recordedAt: finite,
+  by: text,
+  startedAt: z.optional(finite),
+});
+const cancelledMoveCheckRule = z.strictObject({
+  item: z.enum(CANCELLED_MOVE_CHECK_ITEMS),
+  mark: z.enum(CANCELLED_MOVE_CHECK_MARKS),
+  at: finite,
+  by: text,
+});
+const acceptanceConditionRule = z
+  .strictObject({
+    kind: z.enum(ACCEPTANCE_CONDITION_KINDS),
+    unitId: id,
+    acceptedAt: z.optional(finite),
+    agreedWith: z.enum(ACCEPTANCE_CONDITION_AGREED_WITH),
+    agreedBy: text,
+    recordedAt: finite,
+    readyAt: z.optional(finite),
+    met: z.optional(z.strictObject({ at: finite, by: text })),
+  })
+  .check(z.refine((condition) => (condition.kind === "bed_after_time") === (condition.readyAt !== undefined)));
+
 const unit = z
   .looseObject({
     id,
@@ -312,6 +361,18 @@ const unit = z
       ),
     ),
     arrivalCapacityConflicts: z.optional(z.array(z.looseObject({ movementId: text, at: finite }))),
+    // Audit 24-1 CS2-03: seat history of a released pull; its admission no longer exists.
+    releasedPullSpans: z.optional(
+      z.array(
+        z.looseObject({
+          admissionId: id,
+          pulledAt: finite,
+          leftAt: finite,
+          bedKind: z.optional(z.enum(["locked", "open"])),
+          bedNumber: z.optional(counter),
+        }),
+      ),
+    ),
     isClosed: z.optional(bool),
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
@@ -320,8 +381,10 @@ const unit = z
         at: finite,
         by: text,
         until: z.optional(finite),
+        transitionMarks: z.optional(z.array(closureTransitionMarkRule)),
       }),
     ),
+    restrictionReviews: z.optional(z.array(restrictionReviewRule)),
     // D-72: fixed-list choices, ids and typed times already read to instants. No typed text.
     restrictivePractice: z.optional(
       z.looseObject({
@@ -456,6 +519,8 @@ const movement = z
     // D-74: the community purpose that closed this record is one of the two listed values, or absent.
     communityPurpose: z.optional(z.custom(isCommunityReferralPurpose)),
     meetingActions: z.optional(z.array(meetingAction)),
+    cancellationChecks: z.optional(z.array(cancelledMoveCheckRule)),
+    acceptanceConditions: z.optional(z.array(acceptanceConditionRule)),
     medicalClearance: z.optional(medicalClearanceRule),
     medicalDeterioration: z.optional(z.looseObject({ at: finite, by: z.literal("ed"), resumedAt: z.optional(finite) })),
   })
@@ -563,6 +628,27 @@ const referralContactEntry = z.strictObject({
   at: finite,
   by: text,
 });
+// Closing-the-loop package A: a commitment entry is a ward id, a listed step or a time, the time
+// it was recorded and the role that recorded it. Strict, so no typed field can ride along; a
+// promised time only beside the promised step.
+const referralCommitmentEntry = z
+  .strictObject({
+    unitId: text,
+    step: z.optional(
+      text.check(z.refine((step) => (REFERRAL_COMMITMENT_STEP_IDS as readonly string[]).includes(step))),
+    ),
+    promisedFor: z.optional(finite),
+    nextCallbackAt: z.optional(finite),
+    at: finite,
+    by: text,
+  })
+  .check(
+    z.refine(
+      (entry) =>
+        (entry.step !== undefined || entry.nextCallbackAt !== undefined) &&
+        (entry.promisedFor === undefined) === (entry.step !== "promised"),
+    ),
+  );
 const referral = z.looseObject({
   id,
   submissionId: z.optional(text.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))),
@@ -586,6 +672,7 @@ const referral = z.looseObject({
       acceptedUnitId: link,
       openedAt: z.optional(finite),
       informationNeeds: z.optional(z.array(informationNeed)),
+      commitments: z.optional(z.array(referralCommitmentEntry)),
     }),
   ),
   patientId: link,
@@ -609,6 +696,8 @@ const bedRelease = z.looseObject({
       .array(z.looseObject({ service: z.enum(SUPPORT_SERVICE_TYPES), at: finite, by: text }))
       .check(z.refine((sent) => new Set(sent.map((notice) => notice.service)).size === sent.length)),
   ),
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies, planned destination, plan changes.
+  ...dischargeLogisticsFields,
 });
 
 // D-38: an absence holds when it was recorded and the time of each fixed missing person step, and
@@ -843,6 +932,20 @@ const repatriation = z
     agreedBy: z.optional(role),
   })
   .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
+// Closing-the-loop (package E): return requested vs home service agreed. Closed lists, roles and
+// instants only; one record per stay, on a stay that exists.
+const homeServiceReturn = z.strictObject({
+  admissionId: id,
+  // Membership is checked against the saved scenario below, as a repatriation's is.
+  homeHospital: text,
+  requestedAt: finite,
+  requestedBy: role,
+  answer: z.optional(z.enum(HOME_SERVICE_ANSWERS)),
+  answeredAt: z.optional(finite),
+  answeredBy: z.optional(role),
+  prerequisites: z.array(z.enum(RETURN_PREREQUISITES)),
+  nextReviewAt: z.optional(finite),
+});
 const supportNotification = z.strictObject({
   id,
   occasion: z.enum(SUPPORT_NOTIFICATION_OCCASIONS),
@@ -864,12 +967,14 @@ const supportNotification = z.strictObject({
 function typedRecordsResolve(
   state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
     supportNotifications?: WardFlowState["supportNotifications"];
+    homeServiceReturns?: WardFlowState["homeServiceReturns"];
   },
 ): boolean {
   const admissionIds = new Set(state.admissions.map((admission) => admission.id));
   const movementIds = new Set(state.movements.map((movement) => movement.id));
   return (
     state.repatriations.every((row) => admissionIds.has(row.admissionId)) &&
+    (state.homeServiceReturns ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
@@ -900,6 +1005,17 @@ const storedState = z.looseObject({
     .array(repatriation)
     .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
   supportNotifications: z.optional(z.array(supportNotification).check(z.refine((rows) => distinctIds(rows)))),
+  // Closing-the-loop (package E): absent in older saves.
+  directoryChecks: z.optional(
+    z
+      .array(z.strictObject({ entryId: z.custom(isDirectoryEntryId), at: finite, by: role }))
+      .check(z.refine((rows) => new Set(rows.map((row) => row.entryId)).size === rows.length)),
+  ),
+  homeServiceReturns: z.optional(
+    z
+      .array(homeServiceReturn)
+      .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
+  ),
   handoverSignOffs: z.array(stamped),
   clinicalContacts: z.array(
     z.extend(stamped, { teamId: text.check(z.refine((teamId) => communityTeamById(teamId) !== null)) }),
@@ -960,6 +1076,7 @@ function identitiesMatchScenario(state: StoredState): boolean {
       ),
     ) &&
     state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
+    (state.homeServiceReturns ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     state.patients.every(({ registrationScope }) => {
       if (registrationScope === undefined) return true;
       if (registrationScope.kind === "ed") return edIds.has(registrationScope.placeId);

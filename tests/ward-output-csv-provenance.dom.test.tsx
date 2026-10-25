@@ -113,7 +113,7 @@ it("searched roster export names matching rows without repeating the typed searc
   const roster = screen.getByTestId("ward-statistics-ward-roster");
   const csv = await captureCsv(() => fireEvent.click(within(roster).getByRole("button", { name: "CSV" })));
   const lines = csv.split("\r\n");
-  expect(lines[2]).toContain("matching roster rows; status filter: all");
+  expect(lines[2]).toContain("matching roster rows; status filter: all; search applied");
   expect(lines[2]).not.toContain(admission.id);
   expect(lines[2]).not.toContain("all roster rows");
   expect(lines).toHaveLength(7);

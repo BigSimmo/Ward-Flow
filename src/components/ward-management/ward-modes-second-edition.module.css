@@ -21,7 +21,7 @@
  * TransportView exactly as before.
  *
  * Colour comes from `ward-tokens.module.css` roles only — see
- * docs/ward-flow/design/second-edition-to-ckb-v2-role-map.md. Panel headers below carry no fill
+ * docs/ward-flow/archive/design/second-edition-to-ckb-v2-role-map.md. Panel headers below carry no fill
  * (Ruling E1 / role-map §3.2): every ward fill role measures below the 1.11:1 floor against a
  * panel in the light theme, so a header reads as a header from its border-bottom and its
  * uppercase, weighted type alone.

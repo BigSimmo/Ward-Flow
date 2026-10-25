@@ -437,6 +437,23 @@ export function reducePlacementEvent(
       if (movement.closure) {
         return reject(state, event, `cannot release a pull for a closed movement (${movement.closure.reason})`);
       }
+      // Audit 24-7 (CT-06): an Undo names the pull it was offered for. Once that pull is released or
+      // replaced, the Undo is refused rather than releasing whichever bed is pulled now.
+      if (event.expectedPull) {
+        const { unitId, stageIndex } = event.expectedPull;
+        const stillThatPull =
+          movement.stage === "pulled" &&
+          movement.acceptedUnitId === unitId &&
+          movement.stageChanges.length === stageIndex + 1 &&
+          movement.stageChanges[stageIndex]?.to === "pulled";
+        if (!stillThatPull) {
+          return reject(
+            state,
+            event,
+            "the bed pull this Undo was for has since been released or replaced; the bed pulled now was left as it is",
+          );
+        }
+      }
       // WFA-004: physical collection is not erased by a stage correction. Releasing the bed after
       // collection is `STOP_TRANSPORT`, never `RELEASE_PULL`.
       if (movement.transport?.collectedAt !== undefined) {
@@ -640,6 +657,10 @@ export function reducePlacementEvent(
           reason: diversionReason,
         },
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
+        // Ledger L3-06 (audit 24-7): the journey is over, so it no longer lingers as live at any
+        // ward, as `RELEASE_HELD_BED` already does when it ends a bed search.
+        acceptedUnitId: undefined,
+        referredUnitIds: [],
       };
       const next = replaceMovement(withoutHeldBed, movement.id, released);
       if (event.role === "ward" || movement.acceptedUnitId === undefined) {

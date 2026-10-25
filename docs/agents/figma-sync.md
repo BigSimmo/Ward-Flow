@@ -61,7 +61,7 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
 
 2. `node scripts/figma-tokens.mjs --diff figma-pull.json` and show Josh the changed tokens.
 3. `node scripts/figma-tokens.mjs --apply figma-pull.json`, then
-   `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v9-tokens.css`.
+   `node scripts/run-vitest.mjs run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v9-tokens.css`.
    Invalid collection shapes, sizes or colours fail before any CSS is written. Writes replace the
    complete file atomically; a malformed pull leaves source CSS unchanged. Partial valid pulls
    are allowed. Figma helper variables remain ignored.

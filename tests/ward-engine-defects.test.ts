@@ -588,8 +588,33 @@ describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
   });
 });
 
-describe("a revoked examination gives back a bed held by a stepped-back movement", () => {
-  it("returns the bed and removes the admission, closing the movement", () => {
+describe("an examination outcome and a bed held by a stepped-back movement", () => {
+  // Audit 24-1 decision 3 (owner): `community_order` still closes and gives the bed back, so the
+  // stepped-back release path is proved with it.
+  it("community_order returns the bed and removes the admission, closing the movement", () => {
+    const steppedBack = steppedBackHoldingBed();
+    const heldAdmission = movementIn(steppedBack, REPULL_MOVEMENT).admissionId;
+    const allocatableBefore = unitIn(steppedBack, REPULL_UNIT).allocatable.value;
+
+    const after = wardFlowReducer(steppedBack, {
+      type: "RECORD_EXAMINATION",
+      role: "ed",
+      now: NOW + 20,
+      movementId: REPULL_MOVEMENT,
+      outcome: "community_order",
+    });
+
+    expect(after.rejections).toEqual([]);
+    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(allocatableBefore + 1);
+    expect(after.admissions.some((admission) => admission.id === heldAdmission)).toBe(false);
+    const movement = movementIn(after, REPULL_MOVEMENT);
+    expect(movement.admissionId).toBeUndefined();
+    expect(movement.closure?.outcome).toBe("did_not_proceed");
+  });
+
+  // Audit 24-1 decision 3 (owner): a revoked examination never releases a bed by itself. The
+  // stepped-back movement keeps its bed and admission until a person releases it.
+  it("revoked keeps the bed and admission held until RELEASE_HELD_BED gives them back", () => {
     const steppedBack = steppedBackHoldingBed();
     const heldAdmission = movementIn(steppedBack, REPULL_MOVEMENT).admissionId;
     const allocatableBefore = unitIn(steppedBack, REPULL_UNIT).allocatable.value;
@@ -603,11 +628,22 @@ describe("a revoked examination gives back a bed held by a stepped-back movement
     });
 
     expect(after.rejections).toEqual([]);
-    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(allocatableBefore + 1);
-    expect(after.admissions.some((admission) => admission.id === heldAdmission)).toBe(false);
-    const movement = movementIn(after, REPULL_MOVEMENT);
-    expect(movement.admissionId).toBeUndefined();
-    expect(movement.closure?.outcome).toBe("did_not_proceed");
+    expect(unitIn(after, REPULL_UNIT).allocatable.value).toBe(allocatableBefore);
+    expect(after.admissions.some((admission) => admission.id === heldAdmission)).toBe(true);
+    const held = movementIn(after, REPULL_MOVEMENT);
+    expect(held.admissionId).toBe(heldAdmission);
+    expect(held.closure).toBeUndefined();
+
+    const released = wardFlowReducer(after, {
+      type: "RELEASE_HELD_BED",
+      role: "coordinator",
+      now: NOW + 21,
+      movementId: REPULL_MOVEMENT,
+    });
+    expect(released.rejections).toEqual([]);
+    expect(unitIn(released, REPULL_UNIT).allocatable.value).toBe(allocatableBefore + 1);
+    expect(released.admissions.some((admission) => admission.id === heldAdmission)).toBe(false);
+    expect(movementIn(released, REPULL_MOVEMENT).closure?.outcome).toBe("did_not_proceed");
   });
 
   /** Control: a movement that never held a bed gets nothing back — the refund is keyed on a held bed. */

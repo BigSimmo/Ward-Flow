@@ -229,6 +229,14 @@
   min-width: 0;
 }
 
+/* Audit 24-1 B-04: the person this drawer was opened for has left the bed. */
+.goneNotice {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-1);
+}
+
 .cardTitle {
   margin: 0;
   padding: 10px 14px 0;

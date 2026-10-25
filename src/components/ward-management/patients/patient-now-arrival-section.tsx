@@ -9,6 +9,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
@@ -38,7 +39,6 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
     acceptingWardName,
     displayCadNumber,
     hasArrivalPlan,
-    isHoldExpired,
     isOverdue,
     isPulled,
     liveMovement,
@@ -49,6 +49,9 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
     setShowUploadFormsModal,
     uploadedForms,
   } = ctx;
+  // Audit 24-1 A-02: an arrival plan does not stop the pull time limit (the engine keeps it, E-13),
+  // so the recorded `pullExpiresAt` shows either way. Read as recorded, never a typed length.
+  const pull = bedHold(pullExpiresAt, now);
   return (mode === "held" || mode === "transit") && liveMovement ? (
     <>
       {(isPulled || hasArrivalPlan) && (
@@ -69,10 +72,11 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                     ETA: {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120, now)} AWST
                   </span>
                 </span>
-              ) : pullExpiresAt !== undefined ? (
+              ) : null}
+              {pullExpiresAt !== undefined ? (
                 <span
                   className={styles.pulledClockBadge}
-                  data-tone={isHoldExpired ? "danger" : "normal"}
+                  data-tone={pull?.state === "lapsed" ? "danger" : "normal"}
                   data-testid="ward-patient-pull-hold-remaining"
                 >
                   <Clock size={14} aria-hidden="true" />
@@ -114,13 +118,13 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                 </span>
               </div>
               <div className={styles.pulledDetailItem}>
-                <span className={styles.pulledDetailLabel}>Pull status</span>
-                <span className={styles.pulledDetailValue}>
-                  {hasArrivalPlan
-                    ? "Pull clock cleared (arrival time scheduled)"
-                    : isHoldExpired
-                      ? "4h window passed — review the pull"
-                      : "4h standard countdown active"}
+                <span className={styles.pulledDetailLabel}>Pull time limit</span>
+                <span className={styles.pulledDetailValue} data-testid="ward-patient-pull-time-limit">
+                  {!pull
+                    ? "No pull time limit recorded"
+                    : pull.state === "lapsed"
+                      ? `Passed at ${formatInstantWithDay(pull.expiresAt, now)} AWST. ${pull.label}. ${pull.nextStep}.`
+                      : `Until ${formatInstantWithDay(pull.expiresAt, now)} AWST. ${pull.label}.`}
                 </span>
               </div>
             </div>

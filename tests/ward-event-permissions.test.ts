@@ -285,6 +285,9 @@ describe("who may raise which event", () => {
     // desk takes a referral for itself; the same desks log calls about it.
     ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
     LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+    // Closing-the-loop package A (24 Oct 2026): the coordinator records any commitment step; a
+    // ward records acknowledged or promised on its own copy (the reducer checks which).
+    RECORD_REFERRAL_COMMITMENT: ["coordinator", "ward"],
     ASK_MORE_WARDS: ["coordinator"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
@@ -294,6 +297,12 @@ describe("who may raise which event", () => {
     RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
     RECORD_WARD_INCIDENT: ["ward", "coordinator"],
     SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
+    // Closing the loop, package D (24 Oct 2026).
+    MARK_CANCELLED_MOVE_CHECK: ["coordinator", "ward"],
+    RECORD_ACCEPTANCE_CONDITION: ["coordinator", "ward"],
+    MARK_ACCEPTANCE_CONDITION_MET: ["coordinator", "ward"],
+    RECORD_RESTRICTION_REVIEW: ["ward", "bed_manager", "coordinator"],
+    MARK_CLOSURE_TRANSITION_ITEM: ["ward", "bed_manager", "coordinator"],
     FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
     CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
     RECORD_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
@@ -473,6 +482,9 @@ describe("who may raise which event", () => {
     // 23-25 Sept commits (6eec76bd85, 65090c4db6, 5d7f438126) with no written ruling; pinned here so
     // any later widening still fails, which is this table's job.
     RECORD_REPATRIATION: ["coordinator"],
+    // Closing-the-loop (package E): the home service's answer is the coordinator's; any working desk can confirm a directory entry.
+    RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+    RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
@@ -491,6 +503,8 @@ describe("who may raise which event", () => {
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
     RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+    RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
+    RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
     RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
     // v10 pass 2 (Josh, 10 Oct 2026): Undo and the ward Bed board. The reducer narrows the referral
     // undo to the role that decided (a ward to its own unit) or the coordinator.

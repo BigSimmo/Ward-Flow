@@ -188,7 +188,7 @@
  */
 /*
  * 🔴 **HORIZONTAL INSET SETTLED, TASK 6a — was `--ward-space-8`, now `--ward-space-16`.**
- * `docs/ward-flow/design/screen-adoption-playbook.md` (`search` adoption, "What `search` did NOT
+ * `docs/ward-flow/archive/design/screen-adoption-playbook.md` (`search` adoption, "What `search` did NOT
  * exercise") named this as a known unresolved misalignment: a table's first column sat 8px from
  * the panel edge while the panel's own header (`ward-panel.module.css`'s `.panelHeader`, `padding:
  * var(--ward-space-12) var(--ward-space-16)`) sat 16px from it — so a table's heading text and its

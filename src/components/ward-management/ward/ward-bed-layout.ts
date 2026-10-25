@@ -129,8 +129,12 @@ export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds
       : [];
   });
   const reservations = spans.filter((span) => span.recorded !== undefined);
+  // Audit 24-1, B-01: a recorded stay is never pushed by another's reservation. The layout pins it
+  // to its recorded bed, so its replay seat only holds a place; evicting that seat retroactively
+  // cascaded, and a second Bed board move shifted untouched people up one bed.
   const reservedAgainst = (bed: number, span: Span) =>
     span.end === Number.POSITIVE_INFINITY &&
+    span.recorded === undefined &&
     reservations.some(
       (other) => other !== span && other.recorded === bed && other.start < span.end && span.start < other.end,
     );

@@ -172,6 +172,8 @@ interface PatientNowScreenProps {
   movementId?: string;
   initialTaskAction?: "refer" | "contact";
   initialExampleId?: "WF-009" | "WF-004";
+  /** DR-11: the tab title. The movement route passes "Movement record — Ward Flow"; never a name. */
+  documentTitle?: string;
 }
 
 export function PatientNowScreen({
@@ -179,6 +181,7 @@ export function PatientNowScreen({
   movementId,
   initialExampleId = "WF-009",
   initialTaskAction,
+  documentTitle = "Patient — Ward Flow",
 }: PatientNowScreenProps) {
   const thresholds = useDueSoonThresholds();
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
@@ -292,8 +295,8 @@ export function PatientNowScreen({
 
   // Synchronize document title
   useEffect(() => {
-    document.title = "Patient — Ward Flow";
-  }, []);
+    document.title = documentTitle;
+  }, [documentTitle]);
 
   // Dynamically resolve the patient record
   const resolved = useMemo(() => {

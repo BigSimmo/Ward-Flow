@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { Button } from "@/components/wf";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
@@ -146,15 +147,16 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               Record document details
             </h2>
           </div>
-          <button
-            type="button"
+          {/* DR-18: kit buttons, so both keep an edge in forced colours. */}
+          <Button
+            variant="ghost"
+            iconOnly
+            icon={X}
             onClick={dismiss}
             disabled={saving}
             aria-label="Close dialog"
             className={styles.closeButton}
-          >
-            <X aria-hidden="true" size={20} />
-          </button>
+          />
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -273,9 +275,11 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             >
               Cancel
             </button>
-            <button
+            <Button
               type="submit"
-              aria-busy={saving || undefined}
+              variant="pri"
+              size="lg"
+              loading={saving}
               aria-disabled={saving || !fileAttached || simulatedSize <= 0 ? "true" : undefined}
               onClick={saving || !fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
               aria-describedby={
@@ -285,21 +289,10 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
               }
               data-testid="confirm-upload-form-button"
-              style={{
-                minHeight: "48px",
-                padding: "0.625rem 1.5rem",
-                borderRadius: "0.5rem",
-                border: "none",
-                backgroundColor: "var(--wf-pri-1)",
-                color: "var(--wf-on-pri)",
-                fontSize: "0.9375rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-              }}
+              className={styles.primaryButton}
             >
               {saving ? "Saving…" : "Record document details"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

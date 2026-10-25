@@ -513,7 +513,15 @@ describe("ward override-surface guard", () => {
    * judgement someone may override, or a fact they may not? Ward Lead's proposal, taken over my
    * single named pin, which protected against a fifth member and not against the existing four.
    */
-  const EXPECTED_OVERRIDABLE_EVENTS = ["REFER_TO_UNITS", "ACCEPT_IN_PRINCIPLE", "PULL_PATIENT", "ACCEPT_REFERRAL"];
+  // Audit 24-1 decision 2 (Josh, 25 Oct 2026): a planned booking onto an unauthorised ward needs a reason.
+  const EXPECTED_OVERRIDABLE_EVENTS = [
+    "REFER_TO_UNITS",
+    "ACCEPT_IN_PRINCIPLE",
+    "PULL_PATIENT",
+    "ACCEPT_REFERRAL",
+    "BOOK_PLANNED_ADMISSION",
+    "CHANGE_PLANNED_ADMISSION",
+  ];
 
   it("the derived overridable set equals its snapshot, so any change is a decision somebody takes", () => {
     expect([...overridableEventTypes].sort()).toEqual([...EXPECTED_OVERRIDABLE_EVENTS].sort());
@@ -721,6 +729,9 @@ describe("ward override-surface guard", () => {
     // one construction site each) left with the file itself, deleted outright by item 41
     // (owner-approved 2026-09-17). Re-derived by running this file, not by arithmetic.
     expect(counts).toEqual({
+      // Audit 24-1 decision 2: the booking form's Book and Save.
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx::BOOK_PLANNED_ADMISSION": 1,
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx::CHANGE_PLANNED_ADMISSION": 1,
       // Top 25 item 8: the step down board's plain Refer (allowlisted above).
       "src/components/ward-management/capacity/step-down-board.tsx::REFER_TO_UNITS": 1,
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this

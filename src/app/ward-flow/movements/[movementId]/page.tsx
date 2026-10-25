@@ -5,8 +5,11 @@ import { PatientNowScreen } from "@/components/ward-management/patients/patient-
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { decodeRecordAddress, querySuffix } from "@/components/ward-management/shell/ward-record-address";
 
+// DR-11: a movement record is told apart from a person's page by its tab title. No name goes in it.
+const MOVEMENT_TITLE = "Movement record — Ward Flow";
+
 export const metadata: Metadata = {
-  title: "Patient — Ward Flow",
+  title: MOVEMENT_TITLE,
   description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
 };
 
@@ -39,6 +42,7 @@ export default async function WardMovementPage({
     <PatientNowScreen
       key={`${id}:${taskAction ?? ""}`}
       movementId={id}
+      documentTitle={MOVEMENT_TITLE}
       initialTaskAction={taskAction === "refer" || taskAction === "contact" ? taskAction : undefined}
     />
   );

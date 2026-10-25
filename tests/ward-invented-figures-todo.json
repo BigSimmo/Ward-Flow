@@ -36,18 +36,6 @@
     "owner": "Build linked demo data"
   },
   {
-    "file": "patients/patient-now-arrival-section.tsx",
-    "rule": "hour window",
-    "text": "4h standard countdown active",
-    "owner": "Build linked demo data"
-  },
-  {
-    "file": "patients/patient-now-arrival-section.tsx",
-    "rule": "hour window",
-    "text": "4h window passed — review the pull",
-    "owner": "Build linked demo data"
-  },
-  {
     "file": "ward-flow-bed-events.ts",
     "rule": "hour window",
     "text": "Leave bed has been away for more than 24 hours — consider opening it.",

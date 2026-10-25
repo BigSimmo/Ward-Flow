@@ -43,7 +43,7 @@ NEITHER block and never has.
 components resolve colour through `ward-tokens.module.css`, which resolves through ckb-v2 — because
 `local/no-hardcoded-hex` is an `error` and the two palettes differ in all but one role. The mapping
 is by ROLE and a value match against those numbers finds nothing:
-[`../second-edition-to-ckb-v2-role-map.md`](../../docs/ward-flow/design/second-edition-to-ckb-v2-role-map.md).
+[`../second-edition-to-ckb-v2-role-map.md`](../../docs/ward-flow/archive/design/second-edition-to-ckb-v2-role-map.md).
 
 **Copy the block for your edition verbatim** into your mockup and then add only the rules your
 screen needs, below a comment saying which screen they belong to. Do not edit the copied block. Do

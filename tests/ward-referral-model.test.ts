@@ -510,6 +510,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // recorded by DECLINE_REFERRAL on its own copy.
     ASSIGN_REFERRAL: false,
     LOG_REFERRAL_CONTACT: false,
+    // Closing-the-loop package A: a recorded commitment step or callback time. Never an answer.
+    RECORD_REFERRAL_COMMITMENT: false,
     ASK_MORE_WARDS: false,
     FLAG_MOVEMENT_URGENT: false,
     CLEAR_MOVEMENT_URGENT_FLAG: false,
@@ -568,6 +570,13 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_RESTRICTIVE_PRACTICE_END: false,
     RECORD_WARD_INCIDENT: false,
     SET_SECLUSION_ROOM_STATUS: false,
+    // Closing the loop, package D (24 Oct 2026): records about what people did or agreed, never a
+    // refusal of a named referral or placement.
+    MARK_CANCELLED_MOVE_CHECK: false,
+    RECORD_ACCEPTANCE_CONDITION: false,
+    MARK_ACCEPTANCE_CONDITION_MET: false,
+    RECORD_RESTRICTION_REVIEW: false,
+    MARK_CLOSURE_TRANSITION_ITEM: false,
     RECORD_ESCALATION: false,
     ADVANCE_CLOCK: false,
     RESET_SCENARIO: false,
@@ -659,6 +668,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_STEP_DOWN_CANDIDATE: false,
     // FD-10: the ward's own diagnosis block. Records an assessment, refuses nobody.
     RECORD_WARD_DIAGNOSIS: false,
+    // Closing-the-loop (package E): records a return request and the home service's answer. Not a refusal.
+    RECORD_HOME_SERVICE_RETURN: false,
+    // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
+    RECORD_DIRECTORY_CHECK: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -701,6 +714,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_SUPPORT_NOTIFICATION: false,
     SEND_RELEASE_SUPPORT_NOTICE: false,
     RECORD_ARRIVAL_CHECK: false,
+    // Closing-the-loop package B (24 Oct 2026): discharge logistics decline nobody.
+    RECORD_DISCHARGE_DEPENDENCY: false,
+    RECORD_DISCHARGE_PLAN_CHANGE: false,
     // v10 pass 2: undo restores the state before a decision (a queued referral, a review or a bed),
     // and a bed move changes which bed a current stay is in. None of the four declines anybody.
     UNDO_REFERRAL_DECISION: false,
@@ -1254,7 +1270,12 @@ describe("Referral privacy — structural", () => {
     "decidedBy",
     "declineReason",
     "acceptedUnitId",
+    // WIDENED 24 Oct 2026 (closing-the-loop package A): seeded ward copies carry response
+    // commitments, each a ward id, a listed step or a time, an instant and a role label. Nothing
+    // typed and no person; entry fields are pinned by ALLOWED_COMMITMENT_ENTRY_FIELDS below.
+    "commitments",
   ].sort();
+  const ALLOWED_COMMITMENT_ENTRY_FIELDS = ["at", "by", "nextCallbackAt", "promisedFor", "step", "unitId"];
 
   const ALLOWED_DESTINATION_FIELDS: Record<ReferralDestinationKind, string[]> = {
     // WIDENED ON PURPOSE, 2026-09-10 — owner ruling: high-acuity nursing is marked by the
@@ -1403,6 +1424,17 @@ describe("Referral privacy — structural", () => {
           declineReason: "no_suitable_bed",
           decidedAt: NOW_ANCHOR + 5,
           decidedBy: "Flow coordinator",
+          // Closing-the-loop package A: a fully populated commitment entry, so its keys are pinned.
+          commitments: [
+            {
+              unitId: "rph-adult-secure",
+              step: "promised",
+              promisedFor: NOW_ANCHOR + 4,
+              nextCallbackAt: NOW_ANCHOR + 4,
+              at: NOW_ANCHOR + 2,
+              by: "Flow coordinator",
+            },
+          ],
         },
       ],
       homeRegion: "Perth Metropolitan",
@@ -1479,6 +1511,7 @@ describe("Referral privacy — structural", () => {
     expect(Object.keys(canonical.corrections[0]).sort()).toEqual(ALLOWED_CORRECTION_FIELDS);
     expect(Object.keys(canonical.ownerHistory[0]!).sort()).toEqual(ALLOWED_OWNER_ENTRY_FIELDS);
     expect(Object.keys(canonical.contactLog[0]!).sort()).toEqual(ALLOWED_CONTACT_ENTRY_FIELDS);
+    expect(Object.keys(canonical.destinations[0].commitments![0]!).sort()).toEqual(ALLOWED_COMMITMENT_ENTRY_FIELDS);
   });
 
   it("gives every real referral in the fixture only keys drawn from that same allowed set", () => {
@@ -1494,6 +1527,10 @@ describe("Referral privacy — structural", () => {
             ALLOWED_ADDRESSING_FIELDS,
             `${referral.id}'s ${addressing.destination.kind} addressing carries "${key}"`,
           ).toContain(key);
+        }
+        // Closing-the-loop package A: one level further down, each commitment entry's own keys.
+        for (const entry of addressing.commitments ?? []) {
+          for (const key of Object.keys(entry)) expect(ALLOWED_COMMITMENT_ENTRY_FIELDS).toContain(key);
         }
         for (const key of Object.keys(addressing.destination)) {
           expect(

@@ -8,7 +8,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
-import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import {
@@ -47,6 +47,11 @@ type Pending = {
    * their own accepted snapshot and keep its record number.
    */
   guard?: boolean;
+  /**
+   * Audit 24-7 (CT-08): this is the toast's own Undo. Its outcome is still said through the layout
+   * toast when the page that raised the toast has gone, because the toast outlives the page.
+   */
+  sayAfterLeaving?: boolean;
 };
 
 type RecordWatch = { undoType: UndoStepType; subjectId: string; priorSeq?: number; seq?: number };
@@ -200,6 +205,9 @@ export function useUndoableStep({
         ...(limit
           ? { body: `Undo: ${limit}` }
           : {
+              // Audit 24-7 (CT-10): the engine refuses Undo after its window, even while the toast is
+              // still on screen (its countdown pauses on hover), so the toast says the limit.
+              body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
@@ -222,6 +230,7 @@ export function useUndoableStep({
                   const undoPending = {
                     prior: rejectionCountRef.current,
                     success: pending.undone ?? "Undone. Back as it was.",
+                    sayAfterLeaving: true,
                   };
                   const undoEvent = {
                     ...build(nowRef.current),
@@ -254,26 +263,54 @@ export function useUndoableStep({
     if (completion && "then" in completion) {
       void completion
         .then((outcome) => {
-          if (!mountedRef.current) return;
+          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
           pendingRef.current.push({ ...pending, outcome });
           setToken((value) => value + 1);
         })
         .catch(() => {
-          if (!mountedRef.current) return;
-          pendingRef.current.push({
-            ...pending,
-            outcome: {
-              commandId: "",
-              status: "failed",
-              message: "Save is not confirmed. Review the board before trying again.",
-            },
-          });
+          const outcome: WardCommandOutcome = {
+            commandId: "",
+            status: "failed",
+            message: "Save is not confirmed. Review the board before trying again.",
+          };
+          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
+          pendingRef.current.push({ ...pending, outcome });
           setToken((value) => value + 1);
         });
+    } else if (!mountedRef.current) {
+      sayAfterLeaving(pending, completion ?? undefined);
     } else {
       pendingRef.current.push(completion ? { ...pending, outcome: completion } : pending);
       setToken((value) => value + 1);
     }
+  }
+
+  /**
+   * Audit 24-7 (CT-08): the page that raised an Undo toast has gone, so its effect never runs. The
+   * Undo's outcome is said through the layout toast instead, which outlives the page. The inline
+   * refusal has gone with the page, so a refusal is always said here.
+   */
+  function sayAfterLeaving(pending: Pending, outcome: WardCommandOutcome | undefined) {
+    const out = layoutToast ?? sink;
+    if (!pending.sayAfterLeaving || !out) return;
+    if (outcome?.isCurrent && !outcome.isCurrent()) return;
+    if (!outcome) {
+      // A local dispatch with no outcome: its refusal reached only the page that has gone.
+      out.push({ tone: "info", title: "Undo sent. Check the board to confirm it." });
+      return;
+    }
+    if (outcome.status === "accepted") {
+      out.push({ tone: "info", title: pending.success });
+      return;
+    }
+    const reason = outcome.message ?? "The action was refused.";
+    out.push({
+      tone: "warning",
+      title:
+        outcome.status === "refused"
+          ? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`
+          : (outcome.message ?? "Save is not confirmed. Review the board before trying again."),
+    });
   }
 
   return {

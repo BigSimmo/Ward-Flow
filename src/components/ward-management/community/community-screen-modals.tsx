@@ -117,7 +117,7 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
   );
 }
 
-/** Record contact, catchment MDT and crisis dialogs. */
+/** Record contact, catchment counts and crisis dialogs. */
 export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }) {
   const {
     now,
@@ -189,7 +189,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
             className={styles.modalTitle}
           >
             {activeModalType === "contact" && "Record Clinical Contact"}
-            {activeModalType === "handover" && "Print Catchment MDT Summary"}
+            {activeModalType === "handover" && "Print Catchment Counts"}
             {activeModalType === "crisis" && "Catchment Crisis Response & Outreach Duty"}
           </h3>
           <button
@@ -248,9 +248,10 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
 
           {activeModalType === "handover" && (
             <div className={styles.stackLg}>
-              <p className={styles.footnote}>Catchment MDT summary print view for clinical huddle.</p>
+              {/* Audit 24-7 (CT-21): it carries three counts only, so it is named for what it holds. */}
+              <p className={styles.footnote}>Catchment counts print view. Three counts, no patient details.</p>
               <div className={styles.mdtSummary}>
-                <b>{team.name} · Morning MDT Summary</b>
+                <b>{team.name} · Catchment counts</b>
                 <p className={styles.mdtSummaryLine}>
                   {stamp === null ? "As at — the moment shown is not recorded." : `As at ${stamp}`} · Synthetic figures,
                   not a record of any real day.
@@ -279,6 +280,11 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
 
           {activeModalType === "crisis" && (
             <div className={styles.stackLg}>
+              {/* Audit 24-7 (CT-21): every detail here is invented. It is labelled a synthetic example,
+                  never shown as a live deployment, and the number is from the fictional 0491 570 range. */}
+              <p className={styles.footnote} data-testid="ward-community-crisis-synthetic">
+                Synthetic example. Not a live roster, vehicle or deployment.
+              </p>
               <div className={styles.vehicleCard}>
                 <div>
                   <div className={styles.vehicleName}>Mobile Outreach Vehicle 2 (Car 2)</div>
@@ -286,7 +292,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                     Catchment: {team.name} · {teamConfig.campus} · {teamConfig.service}
                   </div>
                 </div>
-                <span className={styles.telemetryPillGood}>Active in Field</span>
+                <span className={styles.telemetryPillGood}>Synthetic example</span>
               </div>
 
               <div className={styles.contactGrid}>
@@ -303,8 +309,8 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               </div>
 
               <div className={styles.deploymentNote}>
-                <b>Current Deployment:</b> Urgent joint assessment with MHERT / WA Police co-response. En-route{" "}
-                {teamConfig.campus} to catchment residence.
+                <b>Example deployment (synthetic):</b> Urgent joint assessment with MHERT / WA Police co-response,
+                travelling from {teamConfig.campus} to a catchment residence.
               </div>
 
               <div className={`${styles.modalFoot} ${styles.modalFootInline}`}>

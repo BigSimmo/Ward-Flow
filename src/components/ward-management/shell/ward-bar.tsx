@@ -116,6 +116,7 @@ import {
   WardBarServiceSelector,
 } from "./ward-bar-controls";
 import { WardBarActivityBody } from "./ward-bar-activity";
+import { usePhoneActivitySheet } from "./ward-phone-menu";
 import styles from "./ward-bar.module.css";
 
 // Moved to `ward-bar-model.ts`; re-exported so existing importers keep working.
@@ -395,9 +396,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
-  // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
+  // Phone: the menu's sheets return focus to Menu, or to Back where a drill-down shows it instead.
   const phoneMenuRef = useRef<HTMLButtonElement>(null);
-  // On a phone drill-down Back replaces Menu, so focus returns to whichever of the two is showing.
   const phoneBackRef = useRef<HTMLButtonElement>(null);
   const phoneReturnTarget = useMemo<RefObject<HTMLButtonElement | null>>(
     () => ({
@@ -732,7 +732,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       tasksActiveCount,
     ],
   );
-
+  const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
    * fresh with what this open asked for. `returnFocus` is where focus goes when it closes.
@@ -1115,7 +1115,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
         roleCategory={roleCategory}
-        onOpenDrawer={openPopover}
+        onOpenDrawer={activitySheet.openFromPhone}
         onOpenReferral={openReferral}
         liveOverSheet={headerLiveOverSheet}
       />
@@ -1283,7 +1283,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={isPhone ? phoneReturnTarget : activityTriggerRef}
+        {...activitySheet.sheetProps}
         descriptionContent={
           isPhone ? (
             // v10 Activity sheet (phone): one quiet line, then the list.

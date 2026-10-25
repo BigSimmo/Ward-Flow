@@ -25,7 +25,8 @@ export type Toast = {
   body?: string;
   /**
    * ms before auto-dismiss. Pass 0 to require an explicit dismiss. A toast with an `action`
-   * defaults to 0: v6 keeps actions on screen until dismissed.
+   * defaults to 0: v6 keeps actions on screen until dismissed. A warning or danger toast also
+   * defaults to 0 (Audit 24-7, CT-09), so a refusal is not lost while the person looks away.
    */
   duration?: number;
   /** One action, such as Undo. */
@@ -283,7 +284,9 @@ function ToastCard({
   onUndone: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
 }) {
   // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
-  const duration = toast.undo ? 0 : (toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION));
+  // Audit 24-7 (CT-09): a warning or danger toast stays until dismissed unless its caller sets a time.
+  const lasting = Boolean(toast.action) || toast.tone === "warning" || toast.tone === "danger";
+  const duration = toast.undo ? 0 : (toast.duration ?? (lasting ? 0 : DEFAULT_DURATION));
 
   useEffect(() => {
     if (duration <= 0) return;
