@@ -111,12 +111,3 @@ export function leaveBedNeedsOpenWarning(
   if (openWarningAt !== undefined) return false;
   return now - confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES;
 }
-
-/**
- * Handover completion flag windows (local minutes from midnight). Engine data for screens —
- * 07:00–15:00 and 15:00–00:00 only.
- */
-export const HANDOVER_COMPLETION_WINDOWS = [
-  { id: "day", startMinute: 7 * 60, endMinute: 15 * 60 },
-  { id: "evening", startMinute: 15 * 60, endMinute: 24 * 60 },
-] as const;

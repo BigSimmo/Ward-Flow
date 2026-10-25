@@ -16,7 +16,6 @@
   "exports:src/components/ward-management/ward-movements.ts:movementsByStage",
   "files:src/components/clinical-dashboard/brand.tsx",
   "files:src/components/ward-management/statistics/statistics-disclaimers.tsx",
-  "files:src/components/ward-management/statistics/statistics-section-frame.tsx",
   "types:src/components/ward-management/alerts/ward-broadcast-reducer.ts:WardBroadcastStandaloneAction",
   "types:src/components/ward-management/alerts/ward-broadcast-reducer.ts:WardBroadcastStandaloneState",
   "types:src/components/ward-management/ward-admissions.ts:PullReleaseReason",

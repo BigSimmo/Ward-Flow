@@ -163,11 +163,6 @@ export const SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES = 72 * MINUTES_PER_HOUR;
 export const LEAVE_BED_OPEN_WARNING_MINUTES = CLINICAL_VALUES.leaveOpenWarning.value;
 /** Patient search's wait filter: the band under this many hours, then up to the long wait. */
 export const WAIT_FILTER_SHORT_MINUTES = 6 * MINUTES_PER_HOUR;
-/**
- * A bed hold active this long without a confirmed dispatch is flagged for review, never released
- * (Josh, 26 Sept 2026: the 2 hours stay as his default, not the 4-hour pull hold).
- */
-export const BED_HOLD_EXPIRY_MINUTES = CLINICAL_VALUES.bedHoldReview.value;
 
 /** Occupancy colour bands on the side rail, as whole-number percentages of beds. */
 export const OCCUPANCY_ALERT_PERCENT = CLINICAL_VALUES.occupancyAmber.value;

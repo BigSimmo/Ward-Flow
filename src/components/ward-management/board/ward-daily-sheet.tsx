@@ -30,6 +30,7 @@ import { releaseBand } from "@/components/ward-management/ward-bed-availability"
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./ward-daily-sheet.module.css";
+import { WardShiftSummaryCard } from "./ward-shift-summary-card";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
@@ -528,6 +529,10 @@ export function WardDailySheet({
           />
         </div>
       </div>
+
+      {/* THIS SHIFT. Counts of what was recorded on this ward during the shift (item 16); reads the
+        provider itself, so the board's props stay as they are. */}
+      {unit ? <WardShiftSummaryCard unit={unit} now={currentNow} /> : null}
 
       <div className={styles.groups}>
         {/* WHO CAME IN. The two states are kept apart on the sheet exactly as they are on the board:

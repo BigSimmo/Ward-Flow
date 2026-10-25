@@ -8,7 +8,6 @@ import {
 } from "@/components/ward-management/ward-model";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import {
-  catchmentSuburbOf,
   referralSuburbIsAnswered,
   referralSuburbIsKnown,
   referralSuburbLabel,
@@ -141,15 +140,6 @@ describe("a referral records its suburb", () => {
       expect(referralSuburbLabel({ kind: "unknown", reason }), "a label is a sentence, not the code").not.toBe(reason);
     }
     expect(referralSuburbLabel({ kind: "named", name: "Armadale" })).toBe("Armadale");
-  });
-
-  it("⚠️ READS NO CATCHMENT FOR A PATIENT WITH NO PLACE, rather than guessing one", () => {
-    // The honest consequence, and the reason "not known" cannot be quietly mapped onto a default
-    // suburb somewhere downstream: no place means no catchment, and a catchment invented for
-    // somebody with no address is exactly the administrative fiction this field resolves against a
-    // real table to avoid.
-    expect(catchmentSuburbOf({ kind: "unknown", reason: "not_known" })).toBeNull();
-    expect(catchmentSuburbOf({ kind: "named", name: "Armadale" })).toBe("Armadale");
   });
 
   it("⚠️ IS EXERCISED BY EVERY SEEDED REFERRAL, or the screens have nothing real to look up", () => {

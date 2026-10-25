@@ -67,7 +67,7 @@ export function SettingsTargetsColumn({
               title={step.label}
               sub={
                 step.step === "referral_decision"
-                  ? "Referral to ward answer"
+                  ? "Referral to ward answer. Past this, a referral shows Stuck: no reply"
                   : step.step === "transfer_acceptance"
                     ? "Acceptance to bed pulled"
                     : "Bed pulled to transport booked"

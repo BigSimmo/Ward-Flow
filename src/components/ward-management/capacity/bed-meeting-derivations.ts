@@ -5,7 +5,15 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  HealthService,
+  LeaveBed,
+  Movement,
+  Referral,
+  Unit,
+} from "@/components/ward-management/ward-model";
+import { stuckReferralsByPlace, type NoReplyByPlace } from "@/components/ward-management/referrals/referral-no-reply";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   edHealthService,
@@ -106,6 +114,11 @@ export type BedMeetingSheet = {
   discharges: BedMeetingDischarges;
   ed: BedMeetingEd;
   delays: BedMeetingDelays;
+  /**
+   * Referrals with no reply recorded past the Settings time limit, one line per ward or service
+   * (item 17). Counts and times only. `undefined` when the caller passed no referrals.
+   */
+  stuckReferrals?: { limitMinutes: number; places: NoReplyByPlace[]; morePlaces: number };
 };
 
 export type BedMeetingInput = {
@@ -121,6 +134,9 @@ export type BedMeetingInput = {
   service: HealthService | null;
   /** Resolves a movement to the patient's display name — the screen's own resolver. */
   nameOf: (movement: Movement) => string;
+  /** Waiting referrals and the "Referral decision" time limit; both or neither. */
+  referrals?: readonly Referral[];
+  referralLimitMinutes?: number;
 };
 
 /** Longest first, then by id so two prints of the same picture never reshuffle. */
@@ -247,5 +263,23 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     morePeople: Math.max(0, delayPeople.length - BED_MEETING_ROW_LIMIT),
   };
 
-  return { service, capacity, discharges, ed, delays };
+  // Stuck referrals — a ward place counts in its own service; a non-ward place only in "All services".
+  let stuckReferrals: BedMeetingSheet["stuckReferrals"];
+  if (input.referrals !== undefined && input.referralLimitMinutes !== undefined) {
+    const limitMinutes = input.referralLimitMinutes;
+    const places = stuckReferralsByPlace(
+      input.referrals,
+      now,
+      { referralDecisionTargetMinutes: limitMinutes },
+      units,
+      (wait) => service === null || (wait.unitId !== undefined && scopedUnitIds.has(wait.unitId)),
+    );
+    stuckReferrals = {
+      limitMinutes,
+      places: places.slice(0, BED_MEETING_ROW_LIMIT),
+      morePlaces: Math.max(0, places.length - BED_MEETING_ROW_LIMIT),
+    };
+  }
+
+  return { service, capacity, discharges, ed, delays, ...(stuckReferrals ? { stuckReferrals } : {}) };
 }
