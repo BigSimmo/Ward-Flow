@@ -170,6 +170,53 @@ test(
     }
   },
 );
+test("real PostgreSQL: an access admin reads only its own place's record openings", { skip: !url }, async () => {
+  const engine = await import("./dist/engine.mjs");
+  const pool = new Pool({ connectionString: url, max: 4 });
+  const workspaceId = randomUUID();
+  const at = new Date("2026-10-20T10:00:00Z");
+  const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+  const viewOf = (role, scope) => ({
+    version: LATEST_MIGRATION,
+    actorId: randomUUID(),
+    membershipId: null,
+    access: { role, scope },
+    grants: [],
+  });
+  try {
+    await migrate(pool);
+    await store.ready();
+    await store.read(randomUUID());
+    const north = JSON.stringify({ kind: "service", service: "North Metro" });
+    const south = JSON.stringify({ kind: "service", service: "South Metro" });
+    // 1,250 openings elsewhere, newer than the 3 inside, so any fixed scan of the newest rows would
+    // miss them (Codex review on #724).
+    await pool.query(
+      "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3::jsonb,'PT-SYN-NORTH-' || n,'patient',$4 FROM generate_series(1,3) n",
+      [workspaceId, randomUUID(), north, new Date(at.getTime() - 30 * 60_000)],
+    );
+    await pool.query(
+      "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3::jsonb,'PT-SYN-SOUTH-' || n,'movement',$4 FROM generate_series(1,1250) n",
+      [workspaceId, randomUUID(), south, new Date(at.getTime() - 5 * 60_000)],
+    );
+    const own = await store.recordViews(viewOf("admin", { kind: "service", service: "North Metro" }));
+    assert.deepEqual(
+      own.map((row) => row.patient_id),
+      ["PT-SYN-NORTH-3", "PT-SYN-NORTH-2", "PT-SYN-NORTH-1"],
+    );
+    assert.equal(own[0].minutes, -30);
+    const whole = await store.recordViews(viewOf("admin", { kind: "statewide" }));
+    assert.equal(whole.length, 200);
+    assert.equal(whole[0].minutes, -5);
+    const one = await store.recordViews(viewOf("coordinator", { kind: "statewide" }), "PT-SYN-NORTH-2");
+    assert.deepEqual(
+      one.map((row) => row.patient_id),
+      ["PT-SYN-NORTH-2"],
+    );
+  } finally {
+    await pool.end();
+  }
+});
 test("real PostgreSQL: shared commands, last-bed contention, retry, audit and recovery", { skip: !url }, async (t) => {
   const engine = await import("./dist/engine.mjs");
   const pool = new Pool({ connectionString: url, max: 8 });

@@ -673,7 +673,7 @@ test("a database outage while checking a sign-out is a 503, never a pass", async
   assert.equal(calls.length, 0);
 });
 
-test("every desk logs the records it opens; only the statewide coordinator reads the log", async () => {
+test("every desk logs the records it opens; only the statewide coordinator and the access admin read the log", async () => {
   const logged = [];
   const store = {
     logView: async (view, patientId, surface) => {
@@ -706,6 +706,26 @@ test("every desk logs the records it opens; only the statewide coordinator reads
   const views = await lead.handler(request("/record-access?patient=PT-2002"));
   assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }] });
   assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
+  // The access admin reads the log for its Access log in Settings (D-80 item 14); a coordinator
+  // below statewide still does not.
+  const admin = setup(other, "prototype", {
+    ...store,
+    viewer: async () => ({
+      ...wardView,
+      access: { role: "admin", scope: { kind: "service", service: "North Metro" } },
+    }),
+  });
+  assert.deepEqual(await (await admin.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+  });
+  const service = setup(other, "prototype", {
+    ...store,
+    viewer: async () => ({
+      ...wardView,
+      access: { role: "coordinator", scope: { kind: "service", service: "North Metro" } },
+    }),
+  });
+  assert.equal((await service.handler(request("/record-access"))).status, 403);
 });
 
 test("History's archive is read with the desk's own view, and a store without one sends an empty list", async () => {

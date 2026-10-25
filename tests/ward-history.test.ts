@@ -47,7 +47,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_ACCEPTANCE_CONDITION, MARK_ACCEPTANCE_CONDITION_MET, RECORD_RESTRICTION_REVIEW and
       // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT; package E adds two.
       // Package B adds RECORD_DISCHARGE_DEPENDENCY and RECORD_DISCHARGE_PLAN_CHANGE.
-      expect(allEventTypes.length).toBe(161);
+      // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
+      expect(allEventTypes.length).toBe(160);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
@@ -181,6 +182,7 @@ describe("Ward Flow Read-Only Plain History", () => {
         bedId: "BED-04",
         blocker: "pending_physio",
       } as unknown as WardFlowEvent,
+      // A stored record of the retired RELEASE_BED (audit 24-1 decision 4) still reads plainly.
       {
         type: "RELEASE_BED",
         role: "ward",

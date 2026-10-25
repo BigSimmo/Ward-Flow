@@ -1,6 +1,6 @@
 import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
 import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import {
   activateWardNetwork,
   STANDARD_WARD_SITES,
@@ -84,6 +84,18 @@ export function activateScenarioNetwork(scenario: WardScenario): void {
 /** The scenario's wards, as an input a screen passes on (`useWardNetwork()`). */
 export function scenarioWardNetwork(scenario: WardScenario): WardNetwork {
   return wardNetworkOf(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
+}
+
+/**
+ * The emergency departments of one world's own network. The engine checks an event's `edId`
+ * against these rather than the module-wide active network, which only a browser provider switches:
+ * the shared server never does, so a wa-synthetic world there accepted a department from another
+ * network and then failed its own save check (stress test 25 Oct 2026, CS2-20).
+ */
+export function scenarioEmergencyDepartments(scenario: WardScenario): EmergencyDepartment[] {
+  return scenarioWardNetwork(scenario).sites.flatMap((site) =>
+    site.emergencyDepartment ? [site.emergencyDepartment] : [],
+  );
 }
 
 /**

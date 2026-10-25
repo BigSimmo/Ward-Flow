@@ -1550,16 +1550,43 @@ export function createWorkspaceStore(
       });
     },
     /**
-     * The newest record openings, optionally for one patient. Only the statewide coordinator reads
-     * them; the HTTP layer refuses everyone else before this runs.
+     * The newest record openings, optionally for one patient. The statewide coordinator reads them
+     * all; an access admin below statewide reads the openings by desks inside its own place. The
+     * place filter runs in the query, so openings elsewhere never crowd those out of the limit: the
+     * desks that have opened anything are few, so each is checked here and only those inside are
+     * asked for. The HTTP layer refuses everyone else before this runs. `minutes` is the opening's
+     * time as minutes from the server's now.
      */
     async recordViews(view, patientId = null) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
+      const at = clock();
+      const params = [workspaceId];
+      let where = "workspace_id=$1 AND data_mode='prototype'";
+      if (patientId) {
+        params.push(patientId);
+        where += ` AND patient_id=$${params.length}`;
+      }
+      if (view.access.scope.kind !== "statewide") {
+        const world = await read(view.actorId);
+        const { rows: desks } = await pool.query(
+          `SELECT DISTINCT actor_role, actor_scope FROM ward_flow.record_access WHERE ${where}`,
+          params,
+        );
+        const inside = desks
+          .filter((desk) => {
+            const access = engine.parseAccess(desk.actor_role, desk.actor_scope);
+            return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+          })
+          .map((desk) => JSON.stringify([desk.actor_role, desk.actor_scope]));
+        if (inside.length === 0) return [];
+        params.push(inside);
+        where += ` AND jsonb_build_array(actor_role, actor_scope) = ANY($${params.length}::jsonb[])`;
+      }
       const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype'${patientId ? " AND patient_id=$2" : ""} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
-        patientId ? [workspaceId, patientId] : [workspaceId],
+        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        params,
       );
-      return rows;
+      return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
     },
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token

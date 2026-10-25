@@ -145,7 +145,7 @@ describe("recording that a patient has left", () => {
     expect(unit(next, person.unitId).allocatable.value).toBe(before + 1);
   });
 
-  it("RECORD_LEAVING completes the person's own release in one write, and a subsequent RELEASE_BED is refused as already discharged", () => {
+  it("RECORD_LEAVING completes the person's own release in one write", () => {
     // Owner decision 2026-09-25: a bed release is a named patient's discharge, so pairing is by
     // `admissionId`, never by ward-wide counts — rewritten from the count-based double-increment
     // guard this test used to be, per the bed-release-link plan (section 7a T2, section 7b).
@@ -190,19 +190,6 @@ describe("recording that a patient has left", () => {
     expect(completed?.state).toBe("discharged");
     // A4-24: and the vacated bed is being made ready, not instantly Ready.
     expect(completed?.preparing).toBe(true);
-
-    // A subsequent RELEASE_BED against the now-completed release moves nothing further: it is
-    // refused as already discharged.
-    const afterRelease = wardFlowReducer(afterLeaving, {
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW + 10,
-      releaseId: release.id,
-      actingUnitId: unitId,
-    });
-    expect(afterRelease.rejections.length).toBeGreaterThan(0);
-    expect(unit(afterRelease, unitId).empty.value).toBe(emptyBefore + 1);
-    expect(unit(afterRelease, unitId).allocatable.value).toBe(allocatableBefore + 1);
   });
 
   it("takes the departing person out of the ward's live occupants, without erasing them", () => {

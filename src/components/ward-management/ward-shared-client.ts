@@ -84,6 +84,16 @@ export type SharedAccessRequest = {
   decision: "approved" | "declined" | null;
   minutes: { requested: number | null };
 };
+/** One record opening from the server's access log. `minutes` is when, from the server's now. */
+export type SharedRecordView = {
+  id: number | string;
+  actor_id: string;
+  actor_role: string;
+  actor_scope: unknown;
+  patient_id: string;
+  surface: string;
+  minutes?: number | null;
+};
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
 /** In-memory completion for one command. A failed save may have reached the server. */
@@ -1052,6 +1062,16 @@ export class SharedWorkspaceClient {
       memberships: Array.isArray(value.memberships) ? value.memberships : [],
       requests: Array.isArray(value.requests) ? value.requests : [],
     };
+  }
+  /**
+   * The newest record openings for the Access log (D-80 item 14). Only the statewide coordinator
+   * and the access admin are answered; anyone else is refused.
+   */
+  async listRecordViews(): Promise<SharedRecordView[]> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok)
+      throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
+    return Array.isArray(value.views) ? value.views : [];
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */
   async listCovers(): Promise<SharedMembership[]> {

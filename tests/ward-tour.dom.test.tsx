@@ -39,6 +39,7 @@ import {
   saveTourStep,
 } from "@/components/ward-management/help/ward-help-store";
 import { tourSteps } from "@/components/ward-management/help/ward-tour-steps";
+import { WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
 
 const STEPS = tourSteps("coordinator", "desk", tourFacts.facts);
 
@@ -190,7 +191,13 @@ describe("tour auto-start", () => {
 
   it("starts on its own only once per device, even if the tour was never closed", async () => {
     const onStart = vi.fn();
-    const { unmount } = render(<WardTourAutoStart onStart={onStart} />);
+    // Mounted together, as the help host does for a signed-in desk.
+    const { unmount } = render(
+      <>
+        <WardTourAutoStart onStart={onStart} />
+        <WardWhatsNew />
+      </>,
+    );
     await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
     unmount();
     // A reload or a desk switch: the desk's tour is still unseen, but this device already had it.
