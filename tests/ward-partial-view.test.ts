@@ -14,6 +14,7 @@ import {
   isWardPartialView,
   isBoundWardPartialView,
   bindWardPartialView,
+  filterWardPartialViewAt,
   type SenderReferralPartialView,
 } from "../src/components/ward-management/ward-partial-view-contract";
 import { projectWardPartialView } from "../src/components/ward-management/ward-partial-view-projector";
@@ -88,6 +89,226 @@ const sender = (view: ReturnType<typeof projectWardPartialView>) => {
 };
 
 describe("display-only partial-view projection", () => {
+  it("does not retain a cached sender movement after its own-stay deadline while the receiving row survives", () => {
+    const source = fixture();
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    const leftAt = NOW_ANCHOR - window;
+    source.admissions = [
+      { ...structuredClone(admission), state: "departed", leftAt, arrivedAt: leftAt - 10, pulledAt: leftAt - 20 },
+    ];
+    source.referrals[0].source = "community";
+    delete source.referrals[0].originUnitId;
+    source.referrals[0].destinations.push({
+      ...line(0, "queued"),
+      destination: { ...line(0, "queued").destination, unitId: origin.id },
+    });
+    source.movements[0].referredUnitIds.push(origin.id);
+    const cached = projectWardPartialView(source, access, options);
+    expect(cached.movements[0]).toMatchObject({ kind: "sender", visibleUntil: NOW_ANCHOR });
+    const later = { ...options, now: NOW_ANCHOR + 1 };
+    expect(scopeWorkspace(source, access, later).movements).toHaveLength(1);
+    expect(projectWardPartialView(source, access, later).movements[0]).toMatchObject({
+      kind: "restricted",
+      restriction: "receiving",
+    });
+    expect(filterWardPartialViewAt(cached, later.now).movements).toHaveLength(0);
+  });
+
+  it("caps ward movement summaries at the inclusive closure window even with unlimited referral evidence", () => {
+    const source = fixture();
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.movements[0].closure = { at: NOW_ANCHOR, outcome: "did_not_proceed", reason: "Synthetic closure" };
+    const deadline = NOW_ANCHOR + window;
+    const at = projectWardPartialView(source, access, { ...options, now: deadline });
+    expect(at.movements[0]).toMatchObject({ kind: "sender", visibleUntil: deadline });
+    expect(filterWardPartialViewAt(at, deadline)).toBe(at);
+    expect(filterWardPartialViewAt(at, deadline + 1).movements).toHaveLength(0);
+    expect(projectWardPartialView(source, access, { ...options, now: deadline + 1 }).movements).toHaveLength(0);
+  });
+
+  it("intersects finite stay and closure deadlines without borrowing the remaining receiver window", () => {
+    const source = fixture();
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.admissions = [
+      {
+        ...structuredClone(admission),
+        state: "departed",
+        pulledAt: NOW_ANCHOR - 110,
+        arrivedAt: NOW_ANCHOR - 100,
+        leftAt: NOW_ANCHOR - 10,
+      },
+    ];
+    source.referrals[0].source = "community";
+    source.referrals[0].raisedAt = NOW_ANCHOR - 100;
+    delete source.referrals[0].originUnitId;
+    source.referrals[0].destinations.push({
+      ...line(0, "queued"),
+      destination: { ...line(0, "queued").destination, unitId: origin.id },
+    });
+    source.movements[0].referredUnitIds.push(origin.id);
+    source.movements[0].closure = { at: NOW_ANCHOR - 5, outcome: "did_not_proceed", reason: "Synthetic closure" };
+    const view = projectWardPartialView(source, access, options);
+    const deadline = NOW_ANCHOR - 10 + window;
+    expect(view.movements[0]).toMatchObject({ kind: "sender", visibleUntil: deadline });
+    expect(filterWardPartialViewAt(view, deadline)).toBe(view);
+    const later = { ...options, now: deadline + 1 };
+    expect(scopeWorkspace(source, access, later).movements).toHaveLength(1);
+    expect(projectWardPartialView(source, access, later).movements[0]).toMatchObject({
+      kind: "restricted",
+      restriction: "receiving",
+    });
+    expect(filterWardPartialViewAt(view, later.now).movements).toHaveLength(0);
+  });
+
+  it("preserves the own-sent-referral OR path after a source stay expires, with closure still limiting the result", () => {
+    const source = fixture();
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.admissions = [{ ...structuredClone(admission), state: "departed", leftAt: NOW_ANCHOR - window - 1 }];
+    expect(projectWardPartialView(source, access, options).movements[0]).toMatchObject({
+      kind: "sender",
+      visibleUntil: null,
+    });
+    source.movements[0].closure = { at: NOW_ANCHOR, outcome: "did_not_proceed", reason: "Synthetic closure" };
+    expect(projectWardPartialView(source, access, options).movements[0]).toMatchObject({
+      kind: "sender",
+      visibleUntil: NOW_ANCHOR + window,
+    });
+  });
+
+  it("keeps bed-manager sender movement lifetime unlimited under its existing read rule", () => {
+    const source = fixture();
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.movements[0].closure = {
+      at: NOW_ANCHOR - window * 2,
+      outcome: "did_not_proceed",
+      reason: "Synthetic closure",
+    };
+    const manager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: origin.siteCode } };
+    const view = projectWardPartialView(source, manager, options);
+    expect(view.movements[0]).toMatchObject({ kind: "sender", visibleUntil: null });
+    expect(filterWardPartialViewAt(view, undefined)).toBe(view);
+    expect(filterWardPartialViewAt(view, NOW_ANCHOR + window * 3)).toBe(view);
+  });
+
+  it("uses the latest raised/decision time and an unlimited deadline for any live queued arm", () => {
+    const source = fixture([line(0, "declined")]);
+    source.movements = [];
+    source.admissions = [];
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.referrals[0].raisedAt = NOW_ANCHOR - 10;
+    source.referrals[0].destinations[0].decidedAt = NOW_ANCHOR - 5;
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBe(NOW_ANCHOR - 5 + window);
+    source.referrals[0].raisedAt = NOW_ANCHOR;
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBe(NOW_ANCHOR + window);
+    source.referrals[0].destinations.push(line(1, "queued"));
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBeNull();
+    source.referrals[0].destinations = [
+      {
+        ...line(1, "queued"),
+        destination: {
+          kind: "emergency_department",
+          edId: allEmergencyDepartments()[0].id,
+          purpose: "medical_assessment",
+        },
+      },
+    ];
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBeNull();
+  });
+
+  it("extends ward sender summaries only with linked own visible admissions and movements", () => {
+    const source = fixture([line(0, "declined")]);
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.referrals[0].raisedAt = NOW_ANCHOR - window * 3;
+    source.referrals[0].destinations[0].decidedAt = source.referrals[0].raisedAt;
+    source.movements = [];
+    source.admissions = [
+      { ...structuredClone(admission), referralId: source.referrals[0].id, leftAt: NOW_ANCHOR - 10 },
+    ];
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBe(NOW_ANCHOR - 10 + window);
+    source.admissions[0].leftAt = null;
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBeNull();
+    source.admissions = [];
+    source.movements = [fixture().movements[0]];
+    source.movements[0].closure = { at: NOW_ANCHOR - 5, outcome: "did_not_proceed", reason: "Synthetic closure" };
+    source.admissions = [
+      { ...structuredClone(admission), referralId: source.referrals[0].id, leftAt: NOW_ANCHOR - 10 },
+    ];
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBe(NOW_ANCHOR - 5 + window);
+    delete source.movements[0].closure;
+    expect(sender(projectWardPartialView(source, access, options)).visibleUntil).toBeNull();
+  });
+
+  it("does not extend ward sender lifetime through an active foreign admission", () => {
+    const source = fixture([line(0, "declined")]);
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.referrals[0].raisedAt = NOW_ANCHOR - window - 1;
+    source.referrals[0].destinations[0].decidedAt = source.referrals[0].raisedAt;
+    source.referrals[0].destinations.push({
+      ...line(0, "queued"),
+      destination: { ...line(0, "queued").destination, unitId: origin.id },
+      withdrawnAt: source.referrals[0].raisedAt,
+    });
+    source.movements = [];
+    source.admissions = [
+      { ...structuredClone(admission), unitId: foreign[0].id, referralId: source.referrals[0].id, leftAt: null },
+    ];
+    expect(scopeWorkspace(source, access, options).referrals).toHaveLength(1);
+    expect(projectWardPartialView(source, access, options).referrals[0]).toMatchObject({
+      kind: "restricted",
+      restriction: "receiving",
+    });
+  });
+
+  it("gives bed-manager linked visible movements unlimited time but no direct-admission extension", () => {
+    const source = fixture([line(0, "declined")]);
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    source.referrals[0].raisedAt = NOW_ANCHOR - window - 1;
+    source.referrals[0].destinations[0].decidedAt = source.referrals[0].raisedAt;
+    source.referrals[0].destinations.push({
+      ...line(0, "declined"),
+      destination: { ...line(0, "declined").destination, unitId: origin.id },
+      decidedAt: source.referrals[0].raisedAt,
+    });
+    source.admissions = [{ ...structuredClone(admission), referralId: source.referrals[0].id, leftAt: null }];
+    const manager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: origin.siteCode } };
+    source.movements[0].closure = {
+      at: source.referrals[0].raisedAt,
+      outcome: "did_not_proceed",
+      reason: "Synthetic closure",
+    };
+    expect(sender(projectWardPartialView(source, manager, options)).visibleUntil).toBeNull();
+    source.movements = [];
+    expect(projectWardPartialView(source, manager, options).referrals[0]).toMatchObject({
+      kind: "restricted",
+      restriction: "receiving",
+    });
+  });
+
+  it("publishes the inclusive sender-only deadline without borrowing a receiving fallback", () => {
+    const window = CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    const source = fixture([line(0, "declined")]);
+    source.movements = [];
+    source.admissions = [];
+    source.referrals[0].raisedAt = NOW_ANCHOR - window;
+    source.referrals[0].destinations[0].decidedAt = NOW_ANCHOR - window;
+    source.referrals[0].destinations.push({
+      ...line(0, "queued"),
+      destination: { ...line(0, "queued").destination, unitId: origin.id },
+      withdrawnAt: NOW_ANCHOR - window,
+    });
+    expect(projectWardPartialView(source, access, options).referrals[0]).toMatchObject({
+      kind: "sender",
+      visibleUntil: NOW_ANCHOR,
+    });
+    const later = { ...options, now: NOW_ANCHOR + 1 };
+    expect(scopeWorkspace(source, access, later).referrals).toHaveLength(1);
+    expect(projectWardPartialView(source, access, later).referrals[0]).toEqual({
+      id: source.referrals[0].id,
+      kind: "restricted",
+      restriction: "receiving",
+    });
+  });
+
   it("keeps an own referral's sender READ summary when repatriation also links a foreign stay", () => {
     const source = fixture();
     const foreignStay = { ...structuredClone(admission), id: "AD-SYNTHETIC-FOREIGN", unitId: foreign[0].id };
@@ -361,6 +582,63 @@ describe("display-only partial-view projection", () => {
 });
 
 describe("response-only partial-view lifetime", () => {
+  it("filters expired movement and referral hints together without mutating their bound source", () => {
+    const source = fixture([line(0, "declined")]);
+    source.admissions = [];
+    source.movements[0].closure = { at: NOW_ANCHOR, outcome: "did_not_proceed", reason: "Synthetic closure" };
+    const current = { revision: 7, accessContext: "a".repeat(64) };
+    const bound = bindWardPartialView({ ...current, view: projectWardPartialView(source, access, options) }, current)!;
+    const deadline = NOW_ANCHOR + CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    expect(filterWardPartialViewAt(bound.view, deadline)).toBe(bound.view);
+    for (const clock of [deadline + 1, undefined, null, NaN, Infinity, "642"]) {
+      const filtered = filterWardPartialViewAt(bound.view, clock);
+      expect(filtered.referrals).toHaveLength(0);
+      expect(filtered.movements).toHaveLength(0);
+      expect(Object.isFrozen(filtered.movements)).toBe(true);
+    }
+    expect(bound.view.movements).toHaveLength(1);
+    expect(bound.view.referrals).toHaveLength(1);
+  });
+
+  it.each([undefined, null, NaN, Infinity, "642", {}])(
+    "fails closed for a finite sender deadline without an actual finite clock: %j",
+    (clock) => {
+      const source = fixture([line(0, "declined")]);
+      source.movements = [];
+      source.admissions = [];
+      const finite = projectWardPartialView(source, access, options);
+      expect(filterWardPartialViewAt(finite, clock).referrals).toHaveLength(0);
+      const unlimited = projectWardPartialView(fixture(), access, options);
+      expect(filterWardPartialViewAt(unlimited, clock)).toBe(unlimited);
+    },
+  );
+
+  it("filters finite sender deadlines inclusively and preserves the immutable view when nothing expires", () => {
+    const source = fixture([line(0, "declined")]);
+    source.movements = [];
+    source.admissions = [];
+    const projected = projectWardPartialView(source, access, options);
+    const value = {
+      revision: 7,
+      accessContext: "a".repeat(64),
+      view: {
+        ...projected,
+        referrals: [
+          ...projected.referrals,
+          { id: "RF-RECEIVING", kind: "restricted" as const, restriction: "receiving" as const },
+        ],
+      },
+    };
+    const bound = bindWardPartialView(value, value)!;
+    const deadline = NOW_ANCHOR + CLINICAL_VALUES.wardHandoffWindow.value * 24 * 60;
+    expect(filterWardPartialViewAt(bound.view, deadline)).toBe(bound.view);
+    const after = filterWardPartialViewAt(bound.view, deadline + 1);
+    expect(after.referrals).toEqual([{ id: "RF-RECEIVING", kind: "restricted", restriction: "receiving" }]);
+    expect(after.movements).toBe(bound.view.movements);
+    expect(bound.view.referrals).toHaveLength(2);
+    expect(Object.isFrozen(after.referrals)).toBe(true);
+  });
+
   const context = "a".repeat(64);
   const current = { revision: 7, accessContext: context };
   const response = () => ({ ...current, view: projectWardPartialView(fixture(), access, options) });
@@ -452,6 +730,24 @@ describe("response-only partial-view lifetime", () => {
 
 describe("partial-view validation and authority separation", () => {
   const valid = () => projectWardPartialView(fixture(), access, options);
+  it("requires finite-or-null sender movement deadlines", () => {
+    const view = valid();
+    for (const visibleUntil of [undefined, NaN, Infinity, "642", {}])
+      expect(isWardPartialView({ ...view, movements: [{ ...view.movements[0], visibleUntil }] })).toBe(false);
+    const missing: Record<string, unknown> = { ...view.movements[0] };
+    delete missing.visibleUntil;
+    expect(isWardPartialView({ ...view, movements: [missing] })).toBe(false);
+    expect(isWardPartialView(view)).toBe(true);
+  });
+  it("requires a finite-or-null visibleUntil and rejects missing or malformed deadline metadata", () => {
+    const view = valid();
+    for (const visibleUntil of [undefined, NaN, Infinity, "642", {}])
+      expect(isWardPartialView({ ...view, referrals: [{ ...view.referrals[0], visibleUntil }] })).toBe(false);
+    const without: Record<string, unknown> = { ...sender(view) };
+    delete without.visibleUntil;
+    expect(isWardPartialView({ ...view, referrals: [without] })).toBe(false);
+    expect(isWardPartialView(view)).toBe(true);
+  });
 
   it.each([undefined, null, {}, { version: 2, referrals: [], movements: [] }])(
     "rejects unavailable or incompatible data: %j",

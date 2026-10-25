@@ -5,6 +5,8 @@ import { referralSentByDesk } from "./ward-referral-sender";
 import { referralDecidedAt, referralState, referralWithdrawable, referralWithdrawn } from "./ward-referrals";
 import type { Movement, Referral } from "./ward-model";
 import { edInScope, unitInScope, type WardAccess } from "./ward-role-access";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
+import { MINUTES_PER_DAY } from "./ward-clock";
 import type {
   SenderMovementPartialView,
   SenderReferralPartialView,
@@ -15,6 +17,7 @@ function senderReferral(
   referral: Referral,
   workspace: ScopableWorkspace,
   access: WardAccess,
+  visibleUntil: number | null,
 ): SenderReferralPartialView {
   const needs = new Set(
     referral.destinations.flatMap((line) =>
@@ -29,12 +32,61 @@ function senderReferral(
     state: referralState(referral),
     withdrawn: referralWithdrawn(referral),
     decidedAt: referralDecidedAt(referral) ?? null,
+    visibleUntil,
     canWithdraw: access.role === "ward" && referralWithdrawable(referral, [...workspace.movements]),
     informationNeeds: REFERRAL_INFORMATION_NEED_IDS.filter((need) => needs.has(need)),
   };
 }
 
-function senderMovement(movement: Movement): SenderMovementPartialView {
+/** Exactly the sender READ branches' time span. Receiver fallback does not extend this hint.
+ * Membership still comes from ordinary scopeWorkspace, with grants excluded. */
+function senderReferralDeadline(
+  referral: Referral,
+  own: ScopableWorkspace,
+  access: WardAccess,
+  options: ScopeOptions,
+): number | null {
+  if (referral.destinations.some((line) => line.state === "queued" && line.withdrawnAt === undefined)) return null;
+  const window = CLINICAL_VALUES.wardHandoffWindow.value * MINUTES_PER_DAY;
+  let until = Math.max(referral.raisedAt, referralDecidedAt(referral) ?? referral.raisedAt) + window;
+  for (const movement of own.movements) {
+    if (movement.referralId !== referral.id) continue;
+    if (access.role === "bed_manager" || movement.closure === undefined) return null;
+    until = Math.max(until, movement.closure.at + window);
+  }
+  if (access.role === "ward") {
+    for (const admission of own.admissions) {
+      if (admission.referralId !== referral.id || !unitInScope(access.scope, admission.unitId, options.places))
+        continue;
+      if (admission.leftAt === null) return null;
+      until = Math.max(until, admission.leftAt + window);
+    }
+  }
+  return until;
+}
+
+/** Ward sender READ evidence is an OR: an own retained source stay or an own-sent referral.
+ * The record's closure window separately caps both paths. Undefined means no sender evidence. */
+function wardSenderMovementDeadline(
+  movement: Movement,
+  own: ScopableWorkspace,
+  access: WardAccess,
+  options: ScopeOptions,
+  sentReferrals: ReadonlySet<string>,
+): number | null | undefined {
+  const window = CLINICAL_VALUES.wardHandoffWindow.value * MINUTES_PER_DAY;
+  const admission = own.admissions.find(
+    (row) => row.id === movement.sourceAdmissionId && unitInScope(access.scope, row.unitId, options.places),
+  );
+  let evidence = admission ? (admission.leftAt === null ? null : admission.leftAt + window) : undefined;
+  if (movement.referralId !== undefined && sentReferrals.has(movement.referralId)) evidence = null;
+  if (evidence === undefined) return undefined;
+  const record = movement.closure === undefined ? null : movement.closure.at + window;
+  if (evidence === null) return record;
+  return record === null ? evidence : Math.min(record, evidence);
+}
+
+function senderMovement(movement: Movement, visibleUntil: number | null): SenderMovementPartialView {
   const destinationStatus: SenderMovementPartialView["destinationStatus"] =
     movement.acceptedUnitId !== undefined
       ? "accepted"
@@ -49,6 +101,7 @@ function senderMovement(movement: Movement): SenderMovementPartialView {
   return {
     id: movement.id,
     kind: "sender",
+    visibleUntil,
     destinationStatus,
     nextStep: movementNextStep(movement)?.kind ?? "none",
     progress:
@@ -98,7 +151,7 @@ function bedManagerSenders(workspace: ScopableWorkspace, access: WardAccess, opt
 
 /** Private projection from the FULL source, before destination masking. The result is a separate
  * display value; this function neither redacts nor mutates domain records. Never call it with a
- * previously masked workspace to reconstruct unavailable outcomes. No consumer is wired yet. */
+ * previously masked workspace to reconstruct unavailable outcomes. Hosts bind its display lifetime. */
 export function projectWardPartialView(
   workspace: ScopableWorkspace,
   access: WardAccess,
@@ -118,7 +171,6 @@ export function projectWardPartialView(
   // READ sender membership deliberately differs from journeySentByDesk's command predicate.
   // Match scopeWorkspace's OR rule and retained ward stays, so an expired stay cannot turn a
   // receiving journey into a sender summary, and repatriation keeps an own referral's summary.
-  const wardAdmissions = new Set(own.admissions.map((admission) => admission.id));
   const wardReferrals = new Set(
     workspace.referrals
       .filter((referral) => referralSentByDesk(referral, access, options.places))
@@ -129,18 +181,24 @@ export function projectWardPartialView(
     referrals: visible.referrals.map((referral) => {
       if (!ownReferrals.has(referral.id)) return { id: referral.id, kind: "restricted", restriction: "grant" };
       const full = sourceReferrals.get(referral.id)!;
-      return manager?.referral(full) || (access.role === "ward" && referralSentByDesk(full, access, options.places))
-        ? senderReferral(full, workspace, access)
+      const sent =
+        manager?.referral(full) || (access.role === "ward" && referralSentByDesk(full, access, options.places));
+      if (!sent) return { id: referral.id, kind: "restricted", restriction: "receiving" };
+      const until = senderReferralDeadline(full, own, access, options);
+      return until === null || options.now <= until
+        ? senderReferral(full, workspace, access, until)
         : { id: referral.id, kind: "restricted", restriction: "receiving" };
     }),
     movements: visible.movements.map((movement) => {
       if (!ownMovements.has(movement.id)) return { id: movement.id, kind: "restricted", restriction: "grant" };
       const full = sourceMovements.get(movement.id)!;
-      return manager?.movement(full) ||
-        (access.role === "ward" &&
-          ((full.sourceAdmissionId !== undefined && wardAdmissions.has(full.sourceAdmissionId)) ||
-            (full.referralId !== undefined && wardReferrals.has(full.referralId))))
-        ? senderMovement(full)
+      const until = manager?.movement(full)
+        ? null
+        : access.role === "ward"
+          ? wardSenderMovementDeadline(full, own, access, options, wardReferrals)
+          : undefined;
+      return until === null || (until !== undefined && options.now <= until)
+        ? senderMovement(full, until)
         : { id: movement.id, kind: "restricted", restriction: "receiving" };
     }),
   };

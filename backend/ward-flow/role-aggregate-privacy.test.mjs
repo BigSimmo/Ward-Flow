@@ -97,6 +97,7 @@ test("snapshot factory adds a lifetime-bound sender sibling without changing its
       destinationStatus: "none_found",
       nextStep: "escalate",
       progress: "none_found",
+      visibleUntil: null,
     },
   );
   assert.deepEqual(snapshot.payload, engine.scopeWorld(world, access, at));
@@ -121,6 +122,7 @@ test("engine summary uses the full world for queued and accepted destination pro
         destinationStatus: answer === "accepted" ? "accepted" : "awaiting_answer",
         nextStep: answer === "accepted" ? "pull" : "wait",
         progress: answer === "accepted" ? "accepted" : "awaiting_answer",
+        visibleUntil: null,
       },
     );
     assert.equal(JSON.stringify(world), before);

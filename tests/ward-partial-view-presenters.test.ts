@@ -24,6 +24,7 @@ const summary: SenderReferralPartialView = {
   state: "queued",
   withdrawn: false,
   decidedAt: null,
+  visibleUntil: null,
   canWithdraw: true,
   informationNeeds: ["legal_form_copy"],
 };
@@ -142,6 +143,7 @@ describe("response-only sender presentation", () => {
         id: movement.id,
         kind: "sender",
         destinationStatus: "none_found",
+        visibleUntil: null,
         progress: "escalated",
         nextStep: "wait",
       }),
@@ -152,6 +154,7 @@ describe("response-only sender presentation", () => {
         id: "WF-SYNTHETIC-OTHER",
         kind: "sender",
         destinationStatus: "accepted",
+        visibleUntil: null,
         progress: "accepted",
         nextStep: "pull",
       }),

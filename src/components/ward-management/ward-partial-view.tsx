@@ -4,14 +4,22 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   bindWardPartialView,
   copyWardPartialView,
+  filterWardPartialViewAt,
   type BoundWardPartialView,
   type LocalWardPartialDisplay,
   type WardPartialView,
 } from "./ward-partial-view-contract";
+import { accessIsValid } from "./ward-role-access";
+import type { SenderReadSource } from "./ward-sender-read-collection";
 
 const PartialViewContext = createContext<BoundWardPartialView | null>(null);
 const PartialDisplayContext = createContext<WardPartialView | null>(null);
-const PartialDisplayHostContext = createContext({ shared: false, previewAllowed: false });
+const PartialDisplayHostContext = createContext<{
+  shared: boolean;
+  previewAllowed: boolean;
+  senderRequired: boolean;
+  readSource: SenderReadSource | null;
+}>({ shared: false, previewAllowed: false, senderRequired: false, readSource: null });
 
 /** Host capability only: supplied by the actual connection, never inferred from display metadata. */
 export function useWardPartialDisplayHost() {
@@ -25,40 +33,69 @@ export function WardPartialViewProvider({
   response,
   currentRevision,
   currentAccessContext,
+  currentNow = null,
   shared = true,
   previewAllowed = false,
+  senderRequired = false,
+  readSource = null,
   children,
 }: {
   response: unknown;
   currentRevision: number | null;
   currentAccessContext: string | null;
+  /** The actual current world clock, including cheap clock-only shared polls. */
+  currentNow?: number | null;
   shared?: boolean;
   previewAllowed?: boolean;
+  /** Presentation requirement from the actual shared role, retained when its data is unavailable. */
+  senderRequired?: boolean;
+  /** Genuine already-adopted shared source supplied by the connection host, never status data. */
+  readSource?: SenderReadSource | null;
   children?: ReactNode;
 }) {
-  const value = useMemo(
+  const bound = useMemo(
     () =>
       shared && !previewAllowed
         ? bindWardPartialView(response, { revision: currentRevision, accessContext: currentAccessContext })
         : null,
     [response, currentRevision, currentAccessContext, shared, previewAllowed],
   );
-  // A coordinator legitimately receives no sibling. Its explicit preview capability comes
-  // from the actual adopted full snapshot, not from a ward/manager's unavailable summary.
+  const value = useMemo(() => {
+    if (!bound) return null;
+    const view = filterWardPartialViewAt(bound.view, currentNow);
+    return view === bound.view ? bound : Object.freeze({ ...bound, view });
+  }, [bound, currentNow]);
+  const currentReadSource = useMemo(() => {
+    if (
+      !shared ||
+      !readSource ||
+      !accessIsValid(readSource.access) ||
+      !Number.isSafeInteger(currentRevision) ||
+      currentRevision === null ||
+      currentRevision <= 0 ||
+      typeof currentAccessContext !== "string" ||
+      !/^[a-f0-9]{64}$/u.test(currentAccessContext) ||
+      readSource.snapshot.revision !== currentRevision ||
+      readSource.snapshot.accessContext !== currentAccessContext
+    )
+      return null;
+    // A coordinator legitimately receives no sibling. Its explicit preview capability comes
+    // from the actual adopted full snapshot, never a ward/manager's unavailable summary.
+    if (readSource.access.role === "coordinator") return previewAllowed && response === undefined ? readSource : null;
+    return (readSource.access.role === "ward" || readSource.access.role === "bed_manager") && bound ? readSource : null;
+  }, [shared, readSource, currentRevision, currentAccessContext, previewAllowed, response, bound]);
   const host = useMemo(
     () => ({
       shared,
-      previewAllowed:
+      previewAllowed: currentReadSource?.access.role === "coordinator",
+      senderRequired:
         shared &&
-        previewAllowed &&
-        response === undefined &&
-        Number.isSafeInteger(currentRevision) &&
-        currentRevision !== null &&
-        currentRevision > 0 &&
-        typeof currentAccessContext === "string" &&
-        /^[a-f0-9]{64}$/u.test(currentAccessContext),
+        (senderRequired ||
+          currentReadSource?.access.role === "ward" ||
+          currentReadSource?.access.role === "bed_manager"),
+      readSource: currentReadSource,
     }),
-    [shared, previewAllowed, response, currentRevision, currentAccessContext],
+    [shared, currentReadSource, senderRequired],
   );
   return (
     <PartialDisplayHostContext.Provider value={host}>

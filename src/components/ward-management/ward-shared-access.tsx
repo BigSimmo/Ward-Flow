@@ -33,6 +33,7 @@ import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
+import type { SenderReadSource } from "./ward-sender-read-collection";
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
@@ -449,6 +450,10 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     connection.snapshot !== null &&
     packAccessContext !== null &&
     displaySessionCurrent;
+  const displayReadSource = useMemo<SenderReadSource | null>(() => {
+    if (!displayReady || !serverAccess || !connection.snapshot) return null;
+    return { access: serverAccess, snapshot: connection.snapshot };
+  }, [displayReady, serverAccess, connection.snapshot]);
   const packIdentity = JSON.stringify([
     connection.enabled,
     connection.signedIn,
@@ -515,7 +520,10 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                         response={displayReady ? connection.snapshot?.partialView : null}
                         currentRevision={displayReady ? (connection.snapshot?.revision ?? null) : null}
                         currentAccessContext={displayReady ? packAccessContext : null}
+                        currentNow={displayReady ? (connection.snapshot?.now ?? null) : null}
                         previewAllowed={displayReady && serverAccess?.role === "coordinator"}
+                        senderRequired={serverAccess?.role === "ward" || serverAccess?.role === "bed_manager"}
+                        readSource={displayReadSource}
                       >
                         <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
                           {children}

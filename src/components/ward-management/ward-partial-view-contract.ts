@@ -15,6 +15,10 @@ export type SenderReferralPartialView = {
   readonly state: "queued" | "accepted" | "declined";
   readonly withdrawn: boolean;
   readonly decidedAt: number | null;
+  /** Sender-summary lifetime only, inclusive at this world-clock minute. Null means time alone
+   * does not end it. This is not total record visibility: receiving fallback is independent.
+   * It is never permission to send a command or a saved-state property. */
+  readonly visibleUntil: number | null;
   /** Presentation hint only. Every submitted withdrawal is checked against the full source. */
   readonly canWithdraw: boolean;
   /** Distinct open categories, with no requesting ward, request count or recipient handle. */
@@ -24,6 +28,8 @@ export type SenderReferralPartialView = {
 export type SenderMovementPartialView = {
   readonly id: string;
   readonly kind: "sender";
+  /** Inclusive sender-summary deadline only, not total record visibility or command permission. */
+  readonly visibleUntil: number | null;
   readonly destinationStatus: "not_requested" | "awaiting_answer" | "none_found" | "withdrawn" | "accepted";
   /** Who may perform a step is not conveyed by this display category. */
   readonly nextStep: "refer" | "escalate" | "pull" | "wait" | "none";
@@ -67,11 +73,21 @@ function referral(value: unknown): boolean {
   if (value.kind === "restricted") return restricted(value);
   if (
     value.kind !== "sender" ||
-    !exactKeys(value, ["id", "kind", "state", "withdrawn", "decidedAt", "canWithdraw", "informationNeeds"]) ||
+    !exactKeys(value, [
+      "id",
+      "kind",
+      "state",
+      "withdrawn",
+      "decidedAt",
+      "visibleUntil",
+      "canWithdraw",
+      "informationNeeds",
+    ]) ||
     !oneOf(value.state, ["queued", "accepted", "declined"]) ||
     typeof value.withdrawn !== "boolean" ||
     typeof value.canWithdraw !== "boolean" ||
     !(value.decidedAt === null || (typeof value.decidedAt === "number" && Number.isFinite(value.decidedAt))) ||
+    !(value.visibleUntil === null || (typeof value.visibleUntil === "number" && Number.isFinite(value.visibleUntil))) ||
     !denseArray(value.informationNeeds, REFERRAL_INFORMATION_NEED_IDS.length) ||
     !value.informationNeeds.every((need) => oneOf(need, REFERRAL_INFORMATION_NEED_IDS)) ||
     new Set(value.informationNeeds).size !== value.informationNeeds.length
@@ -87,7 +103,8 @@ function movement(value: unknown): boolean {
   if (value.kind === "restricted") return restricted(value);
   return (
     value.kind === "sender" &&
-    exactKeys(value, ["id", "kind", "destinationStatus", "nextStep", "progress"]) &&
+    exactKeys(value, ["id", "kind", "visibleUntil", "destinationStatus", "nextStep", "progress"]) &&
+    (value.visibleUntil === null || (typeof value.visibleUntil === "number" && Number.isFinite(value.visibleUntil))) &&
     oneOf(value.destinationStatus, ["not_requested", "awaiting_answer", "none_found", "withdrawn", "accepted"]) &&
     oneOf(value.nextStep, ["refer", "escalate", "pull", "wait", "none"]) &&
     (value.progress === value.destinationStatus ||
@@ -169,4 +186,22 @@ function freezeWardPartialView(view: WardPartialView): WardPartialView {
 /** Separate local display validation; never manufactures a server revision or access hash. */
 export function copyWardPartialView(value: unknown): WardPartialView | null {
   return isWardPartialView(value) ? freezeWardPartialView(value) : null;
+}
+
+/** Display-only time filtering of an already validated immutable view. Never restores a record
+ * or invents a receiving entitlement. An unavailable clock cannot retain a finite sender hint. */
+export function filterWardPartialViewAt(view: WardPartialView, now: unknown): WardPartialView {
+  const at = typeof now === "number" && Number.isFinite(now) ? now : null;
+  const keep = (row: WardPartialView["referrals"][number] | WardPartialView["movements"][number]) =>
+    row.kind !== "sender" ||
+    row.visibleUntil === null ||
+    (at !== null && Number.isFinite(row.visibleUntil) && at <= row.visibleUntil);
+  const keepReferrals = view.referrals.every(keep);
+  const keepMovements = view.movements.every(keep);
+  if (keepReferrals && keepMovements) return view;
+  return Object.freeze({
+    ...view,
+    referrals: keepReferrals ? view.referrals : Object.freeze(view.referrals.filter(keep)),
+    movements: keepMovements ? view.movements : Object.freeze(view.movements.filter(keep)),
+  });
 }

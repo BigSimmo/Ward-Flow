@@ -68,6 +68,7 @@ import {
   endDueCovers,
   lockWardDesk,
   markDeskSwitch,
+  sameDesk,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
   type BreakGlassRecord,
@@ -81,8 +82,14 @@ import { SharedAccessContext } from "./ward-shared-access-context";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-access.module.css";
 import { DowntimePackBoundary } from "../reports/downtime-pack-context";
-import { WardLocalPartialViewProvider, useWardPartialDisplayHost } from "../ward-partial-view";
+import {
+  WardLocalPartialViewProvider,
+  WardPartialViewProvider,
+  useWardPartialDisplayHost,
+  useWardPartialView,
+} from "../ward-partial-view";
 import { allEmergencyDepartments } from "../ward-sites";
+import { retainSharedSenderReadCollection } from "../ward-sender-read-collection";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
@@ -233,6 +240,16 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     [records, access.role, now],
   );
   const displayHost = useWardPartialDisplayHost();
+  const sharedPartialView = useWardPartialView();
+  const readSource = displayHost.readSource;
+  const actualAccess = readSource?.access ?? null;
+  const sharedCollectionReady =
+    displayHost.shared &&
+    !previewing &&
+    context.shared?.enabled === true &&
+    readSource !== null &&
+    actualAccess !== null &&
+    sameDesk(actualAccess, access);
   const localDisplay = context.shared?.enabled === false && !displayHost.shared;
   const coordinatorPreview =
     context.shared?.enabled === true &&
@@ -272,7 +289,23 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
   const value = useMemo<{ scoped: WardFlowContextValue; glass: ReadonlySet<string> }>(() => {
     if (accessIsWholeNetwork(access) && activeGrants.length === 0) return { scoped: context, glass: new Set() };
     const places = wardPlaceLookup(context.units);
-    const scoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
+    const baseScoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
+    const collection = retainSharedSenderReadCollection({
+      source: context,
+      scoped: baseScoped,
+      snapshot: readSource?.snapshot,
+      bound: sharedPartialView,
+      actualAccess,
+      effectiveAccess: access,
+      ready: sharedCollectionReady,
+      now,
+    });
+    const scoped = {
+      ...baseScoped,
+      referrals: collection.referrals === baseScoped.referrals ? baseScoped.referrals : [...collection.referrals],
+      patients: collection.patients === baseScoped.patients ? baseScoped.patients : [...collection.patients],
+      breakGlassPatientIds: collection.breakGlassPatientIds,
+    };
     const coordinator = access.role === "coordinator";
     const wholeNetwork = accessIsWholeNetwork(access);
     const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
@@ -442,7 +475,17 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         resolvePatientIdentity: (subject) => resolveSubjectPatient(subject, resolveIndex),
       },
     };
-  }, [context, access, activeGrants, now, previewing]);
+  }, [
+    context,
+    access,
+    activeGrants,
+    now,
+    previewing,
+    readSource,
+    sharedPartialView,
+    actualAccess,
+    sharedCollectionReady,
+  ]);
   const steadyScoped = useSteadyLists(value.scoped);
   const packIdentity = JSON.stringify([
     access,
@@ -450,7 +493,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     activeGrants.map((grant) => [grant.id, grant.patientId, grant.until]),
   ]);
 
-  return (
+  const surface = (
     <WardLocalPartialViewProvider
       display={{ source: coordinatorPreview ? "coordinator-preview" : "local", view: partialDisplay }}
     >
@@ -462,6 +505,22 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         </WardFlowOverride>
       </UnscopedWardFlowContext.Provider>
     </WardLocalPartialViewProvider>
+  );
+  // Match the same UI clock used for collection visibility, even before the next cheap poll.
+  // Coordinator previews retain their explicit source capability and ordinary full-source scope.
+  return displayHost.shared && actualAccess?.role !== "coordinator" ? (
+    <WardPartialViewProvider
+      response={sharedCollectionReady ? sharedPartialView : null}
+      currentRevision={sharedCollectionReady ? (readSource?.snapshot.revision ?? null) : null}
+      currentAccessContext={sharedCollectionReady ? (readSource?.snapshot.accessContext ?? null) : null}
+      currentNow={now}
+      senderRequired={displayHost.senderRequired}
+      readSource={sharedCollectionReady ? readSource : null}
+    >
+      {surface}
+    </WardPartialViewProvider>
+  ) : (
+    surface
   );
 }
 
