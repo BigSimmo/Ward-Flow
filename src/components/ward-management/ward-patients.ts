@@ -644,13 +644,7 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
 /** Fold text the way `findPatients` does before comparing needles and haystacks. */
 export function foldPatientSearchText(value: string): string {
   // Audit 24-7 (CT-23): runs of spaces count as one, so a doubled space still matches.
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/['’-]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’-]/g, "").replace(/\s+/g, " ").trim();
 }
 
 /**
