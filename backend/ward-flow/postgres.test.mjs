@@ -189,13 +189,14 @@ test("real PostgreSQL: an access admin reads only its own place's record opening
     await store.read(randomUUID());
     const north = JSON.stringify({ kind: "service", service: "North Metro" });
     const south = JSON.stringify({ kind: "service", service: "South Metro" });
-    // 250 openings elsewhere, newer than the 3 inside, so a single page would miss them.
+    // 1,250 openings elsewhere, newer than the 3 inside, so any fixed scan of the newest rows would
+    // miss them (Codex review on #724).
     await pool.query(
       "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3::jsonb,'PT-SYN-NORTH-' || n,'patient',$4 FROM generate_series(1,3) n",
       [workspaceId, randomUUID(), north, new Date(at.getTime() - 30 * 60_000)],
     );
     await pool.query(
-      "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3::jsonb,'PT-SYN-SOUTH-' || n,'movement',$4 FROM generate_series(1,250) n",
+      "INSERT INTO ward_flow.record_access(workspace_id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,'coordinator',$3::jsonb,'PT-SYN-SOUTH-' || n,'movement',$4 FROM generate_series(1,1250) n",
       [workspaceId, randomUUID(), south, new Date(at.getTime() - 5 * 60_000)],
     );
     const own = await store.recordViews(viewOf("admin", { kind: "service", service: "North Metro" }));
