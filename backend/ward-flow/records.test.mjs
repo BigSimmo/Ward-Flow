@@ -501,10 +501,13 @@ test(
         [2, 1, 2],
       );
 
-      // The rollback puts every record back in the workspace row, in order (013, 012 and 011 go first).
+      // The rollback puts every record back in the workspace row, in order (014 to 011 go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-013-referral-record-views.sql", import.meta.url), "utf8"),
         );

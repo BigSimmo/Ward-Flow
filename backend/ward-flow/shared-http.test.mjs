@@ -707,3 +707,21 @@ test("every desk logs the records it opens; only the statewide coordinator reads
   assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }] });
   assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
 });
+
+test("History's archive is read with the desk's own view, and a store without one sends an empty list", async () => {
+  const asked = [];
+  const records = [{ collection: "movements", body: { id: "WF-007" } }];
+  const ward = setup(other, "prototype", {
+    viewer: async () => wardView,
+    archive: async (view) => {
+      asked.push(view.access.role);
+      return { archived: 1, records };
+    },
+  });
+  const response = await ward.handler(request("/archive"));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { archived: 1, records });
+  assert.deepEqual(asked, ["ward"]);
+  const older = setup(other, "prototype", { viewer: async () => wardView });
+  assert.deepEqual(await (await older.handler(request("/archive"))).json(), { archived: 0, records: [] });
+});

@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
-_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->13<!-- /fact --> migrations, latest <!-- fact:latest-migration -->013-referral-record-views<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
+_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->14<!-- /fact --> migrations, latest <!-- fact:latest-migration -->014-archived-records<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
 
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
@@ -20,6 +20,7 @@ All tables are in the `ward_flow` schema of the Supabase database named in
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `workspaces`         | The board's version and settings. Before migration 10, the whole board as one saved record                                                              | Yes. Patient details and clinical notes                 |
 | `workspace_records`  | From migration 10, the live board itself: each patient, referral, movement, bed and delay as its own row                                                | Yes. Patient details and clinical notes                 |
+| `archived_records`   | From migration 14, closed movements, referrals and alerts older than 30 days, moved out of the live board. History still shows them                     | Yes. Patient details and clinical notes                 |
 | `audit`              | One row per change or refused change: who, role, place, when, and the before and after values                                                           | Yes. The before and after values copy patient details   |
 | `record_access`      | One row each time someone opens a patient or movement page or, from migration 13, a referral's detail: who, role, place, patient ID, which screen, when | Yes. Patient ID and staff ID                            |
 | `break_glass`        | One row each time someone opens a record outside their own care, with the reason and end time                                                           | Yes. Patient ID and staff ID                            |
@@ -35,7 +36,8 @@ All tables are in the `ward_flow` schema of the Supabase database named in
 
 `record_access` and `session_sign_outs` arrive with migration 11 (readiness items 8 and 9).
 Migration 12 adds indexes only, and migration 13 lets `record_access` log a referral view (D-80).
-Neither adds a table.
+Neither adds a table. Migration 14 adds `archived_records`, which keeps the live board under its
+8 MiB save limit; nothing in it is deleted automatically.
 `audit`, `record_access` and `break_glass` are append-only. The database refuses any change or
 removal, including by the backend itself.
 
@@ -223,11 +225,12 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->013-referral-record-views<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->014-archived-records<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Until then the backend keeps working, but opening a record is not logged and a sign-out takes
    effect only when its token expires. The undo runs one step at a time, newest first:
-   `infra/rollback-013-referral-record-views.sql`, then `infra/rollback-012-foreign-key-indexes.sql`,
+   `infra/rollback-014-archived-records.sql`, then `infra/rollback-013-referral-record-views.sql`,
+   then `infra/rollback-012-foreign-key-indexes.sql`,
    then `infra/rollback-011-record-access-and-sign-out.sql`. Each rollback refuses unless the
    database is at exactly its version, and rollback 13 also refuses once a referral opening has
    been logged.

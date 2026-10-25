@@ -8,6 +8,7 @@ const ROUTES = new Map([
   ["/v1/workspace", "workspace"],
   ["/v1/workspace/commands", "workspace_commands"],
   ["/v1/workspace/audit", "workspace_audit"],
+  ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -343,6 +344,12 @@ export function createSharedHandler({
         const snapshot = await store.read(actorId, view);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
         return reply(200, { ...workspace(), data, snapshot });
+      }
+      if (path === "/v1/workspace/archive" && request.method === "GET") {
+        // History's closed records older than 30 days (migration 14), each desk's own part only,
+        // as its live workspace is. A store without an archive answers with an empty list.
+        if (!store.archive) return reply(200, { archived: 0, records: [] });
+        return reply(200, await store.archive(view));
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads

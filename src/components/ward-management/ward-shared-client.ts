@@ -26,7 +26,13 @@ export type SharedSnapshot = {
   demoControls?: boolean;
   /** Opaque server access lifetime for retained reports; absent on older servers. Never a grant. */
   accessContext?: string;
+  /** How many closed records this world has archived (migration 14); absent on older servers. */
+  archived?: number;
 };
+/** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
+const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
+type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
+type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
 /**
  * `choose-role`: the account holds more than one role and must say which to work as.
  * `no-role`: signed in, but no role is assigned. Neither signs the person out.
@@ -342,8 +348,75 @@ export class SharedWorkspaceClient {
     for (const sheet of sheets ?? [])
       for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
   }
+  /**
+   * History's archived records for this desk and world generation, as the server last sent them.
+   * They are put back beside the live records of every snapshot this tab publishes, so History,
+   * reports and the patient record still show a closed record after it leaves the live workspace.
+   */
+  private archive: { count: number; generation: number; records: ArchivedRecords } | null = null;
+  /** The count the archive read in flight was asked for, so one read serves one change. */
+  private archiveAsked: number | null = null;
+  /** Bumped whenever the board is dropped, so an archive read sent before then is not used. */
+  private archiveEpoch = 0;
+  /** The last snapshot's payload as the server sent it, before archived records were put back. */
+  private rawPayload: SharedSnapshot["payload"] | null = null;
+  private withArchive(payload: SharedSnapshot["payload"]): SharedSnapshot["payload"] {
+    const archive = this.archive;
+    if (!archive || archive.generation !== payload.state.worldGeneration) return payload;
+    const state = { ...payload.state } as Record<string, unknown>;
+    for (const collection of ARCHIVED_COLLECTIONS) {
+      const live = payload.state[collection] as { id: string }[];
+      if (!archive.records[collection].length) continue;
+      const ids = new Set(live.map((record) => record.id));
+      state[collection] = [...archive.records[collection].filter((record) => !ids.has(record.id)), ...live];
+    }
+    return { ...payload, state: state as WardFlowState };
+  }
+  /** Reads the archive again when the server's count for it changed, then shows it. */
+  private async readArchive(count: number) {
+    if (this.archiveAsked === count || this.disposed) return;
+    this.archiveAsked = count;
+    const epoch = this.archiveEpoch;
+    try {
+      const { response, value } = await this.request("/v1/workspace/archive");
+      const held = this.view.snapshot;
+      if (epoch !== this.archiveEpoch || !held || !this.rawPayload || !response.ok || !Array.isArray(value?.records))
+        return;
+      const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
+      for (const record of value.records) {
+        const body = record?.body;
+        if (
+          !(ARCHIVED_COLLECTIONS as readonly string[]).includes(record?.collection) ||
+          !body ||
+          typeof body !== "object" ||
+          typeof body.id !== "string"
+        )
+          return;
+        records[record.collection as ArchivedCollection].push(body);
+      }
+      const archive = { count, generation: this.rawPayload.state.worldGeneration, records };
+      const previous = this.archive;
+      this.archive = archive;
+      const payload = this.withArchive(this.rawPayload);
+      // The records go back only when the board with them still passes the shared-state check.
+      if (!isValidSharedState?.(structuredClone(payload.state))) {
+        this.archive = previous;
+        return;
+      }
+      this.publish({ snapshot: { ...held, payload } });
+    } catch {
+      // History keeps what it had; the next count change asks again.
+    } finally {
+      if (this.archiveAsked === count) this.archiveAsked = null;
+    }
+  }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
+    if (update.snapshot === null) {
+      this.archive = null;
+      this.rawPayload = null;
+      this.archiveEpoch++;
+    }
     this.syncUnloadWarning();
     this.view = {
       ...this.view,
@@ -373,14 +446,24 @@ export class SharedWorkspaceClient {
       if (held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration) this.worldEpoch++;
       // Scoped polls also return full snapshots when only permissions may have changed. Keep
       // identical data stable for the provider and its field selectors, including draft owners.
-      const payload =
-        snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
-          ? held.payload
-          : snapshot.payload;
+      const same =
+        !!held &&
+        !!this.rawPayload &&
+        snapshot.revision === held.revision &&
+        JSON.stringify(snapshot.payload) === JSON.stringify(this.rawPayload);
+      if (!same) this.rawPayload = snapshot.payload;
+      const payload = same ? held.payload : this.withArchive(snapshot.payload);
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
       this.noteOpenSheets();
+      const archived = snapshot.archived;
+      if (
+        typeof archived === "number" &&
+        archived > 0 &&
+        (archived !== this.archive?.count || this.archive.generation !== snapshot.payload.state.worldGeneration)
+      )
+        void this.readArchive(archived);
     }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
