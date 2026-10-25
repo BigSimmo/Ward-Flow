@@ -70,10 +70,4 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
     added: "2026-10-19",
     removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
-  "pilot-measures": {
-    description: "The weekly report adds the pilot's agreed measures.",
-    owner: "Josh",
-    added: "2026-10-19",
-    removeWhen: "Josh agrees the measure definitions with the pilot sponsor.",
-  },
 };
