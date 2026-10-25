@@ -196,7 +196,7 @@ export class SharedWorkspaceClient {
     }
   }
   private async recoverReceipt() {
-    if (!this.options.recoveryStorage) return;
+    if (this.pending || !this.options.recoveryStorage) return;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
     const roleSignal = this.roleLifetime.signal;
@@ -771,7 +771,7 @@ export class SharedWorkspaceClient {
       }
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
       try {
-        this.recoveryPending = !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY);
+        this.recoveryPending = !this.pending && !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY);
       } catch {
         /* Storage unavailable. */
       }
