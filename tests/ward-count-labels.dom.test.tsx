@@ -100,8 +100,9 @@ describe("count labels say what they count", () => {
   it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {
     inProvider(<HandoverPage />);
     const strip = screen.getByTestId("ward-handover-kpi-strip");
-    const act = within(strip).getByRole("button", { name: /Act now$/u });
-    expect(act.textContent).toBe(`${activeActNowItems(state, NOW_ANCHOR).length}Act now`);
+    // Audit 24-4 decision 5 (Josh): the pill names people and alerts separately.
+    const act = within(strip).getByRole("button", { name: /Act now \(\d+ (?:person|people), \d+ alerts?\)$/u });
+    expect(act.textContent).toMatch(new RegExp(`^${activeActNowItems(state, NOW_ANCHOR).length}Act now \\(`, "u"));
     expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
   });
 

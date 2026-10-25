@@ -1,0 +1,99 @@
+/* Coordinated call sheet (closing-the-loop package A). Screen and print only. */
+
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+  break-inside: avoid;
+}
+
+.ward {
+  margin: 0;
+  font-size: var(--wf-fs-14, var(--wf-fs-13));
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}
+
+.facts dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+}
+
+.items {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding-inline-start: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+.link {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) 0 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  min-inline-size: 0;
+}
+
+.legend {
+  padding: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+}
