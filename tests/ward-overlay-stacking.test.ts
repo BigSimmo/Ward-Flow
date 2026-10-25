@@ -32,6 +32,9 @@ describe("in-page slide-overs stay under the modal layer", () => {
     ["coordinator/coordinator.module.css", ".shortlistBackdrop"],
     ["coordinator/home.module.css", ".shortlistColumn"],
     ["coordinator/home.module.css", ".shortlistBackdrop"],
+    ["coordinator/shortlist-panel.module.css", ".shortlistColumn"],
+    ["coordinator/shortlist-panel.module.css", ".shortlistBackdrop"],
+    ["ed/ed.module.css", ".fullscreenBoard"],
   ])("%s %s uses the overlay rung", (file, selector) => {
     const values = zIndexOf(css(file), selector);
     expect(values.length).toBeGreaterThan(0);

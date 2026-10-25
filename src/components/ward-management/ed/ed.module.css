@@ -251,7 +251,7 @@
 .fullscreenBoard {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 1000 !important;
+  z-index: var(--z-overlay) !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
   width: 100vw !important;

@@ -605,6 +605,9 @@ export function ReferralPatientStep({
               onClick={() => {
                 setCatchmentEditing(true);
                 setCatchmentConfirmed(false);
+                // With no catchment chosen the fields are already open, so moving to the suburb field
+                // is the visible answer to the press (Josh, 25 Oct 2026: "Change" did nothing).
+                window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
               }}
             >
               Change
