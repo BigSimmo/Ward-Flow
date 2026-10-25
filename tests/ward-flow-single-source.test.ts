@@ -143,6 +143,9 @@ const NOW_ANCHOR_ALLOWLIST = new Set([
   // from it, and the referral dossier seed builds the rulings overlay at it to find a seeded journey.
   "src/components/ward-management/ward-wa-synthetic-network.ts",
   "src/components/ward-management/ward-referral-dossier-seed.ts",
+  // Closing-the-loop (package E, 24 Oct 2026): a small fixture file authoring synthetic times
+  // as offsets from the anchor: a discharge date moved this shift.
+  "src/components/ward-management/coordinator/since-last-look-seed.ts",
 ]);
 
 /**

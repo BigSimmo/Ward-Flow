@@ -7,6 +7,7 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { headlineAvailable } from "@/components/ward-management/ward-board-derivations";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { bedsReadySummary } from "@/components/ward-management/referrals/referral-board-parts";
 import { WARD_SCENARIOS, scenarioWardNetwork } from "@/components/ward-management/ward-scenarios";
 import { nextEvent, nowFor, seededRandom } from "./helpers/ward-engine-fuzz";
 
@@ -59,6 +60,9 @@ describe("beds ready agrees on every screen after a pull", () => {
           0,
         );
         expect(board, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
+        // NA2-06 (audit 24 Oct 2026): Referrals' "Beds ready statewide" reads the same figure.
+        const referrals = bedsReadySummary(state.units, state.bedReleases, state.leaveBeds, now, state.admissions);
+        expect(referrals.total, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         const old = state.units.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
         if (old !== boxes) oldFormulaSplit += 1;
         checked += 1;

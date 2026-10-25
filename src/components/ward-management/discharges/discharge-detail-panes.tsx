@@ -27,6 +27,8 @@ import {
   recordedMoment,
 } from "./discharge-board-model";
 import { RecordedDischargeMilestones } from "./discharge-board-parts";
+// Closing-the-loop package B (24 Oct 2026): discharge arrangements, loaded when idle.
+import { DischargeDependenciesPanel } from "./discharge-logistics-lazy";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
 /* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
@@ -676,6 +678,13 @@ export function DischargeReleaseDetail({
             <p className={pageStyles.note}>Clinical, pharmacy and transit clearance are not recorded here.</p>
           </div>
         )}
+        <DischargeDependenciesPanel
+          release={detailRelease}
+          now={now}
+          dayZero={dayZero}
+          role={s.releaseActor.role}
+          dispatch={s.dispatch}
+        />
       </div>
 
       {isPhone ? (

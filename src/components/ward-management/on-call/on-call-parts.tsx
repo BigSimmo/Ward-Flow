@@ -6,7 +6,6 @@ import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import {
-  CHECK_DUE_DAYS,
   SERVICE_META,
   availability,
   escalationChain,
@@ -21,6 +20,8 @@ import {
 } from "./on-call-directory";
 
 import styles from "./on-call.module.css";
+// Closing-the-loop (package E): last checked, by whom, and "Mark checked now".
+import { CheckFoot } from "./on-call-check-foot";
 
 /** What a row or card can ask the screen to do. One set of handlers serves desktop and phone. */
 export type ContactActions = {
@@ -452,22 +453,6 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
   );
 }
 
-function RecordFoot({ entry }: { entry: DirectoryEntry }) {
-  const due = entry.checkedDaysAgo > CHECK_DUE_DAYS;
-  return (
-    <div className={styles.recordFoot}>
-      <StatusGlyph tone={due ? "warning" : "success"} size={10} />
-      <span className={styles.recordText}>
-        {/* Shortened so the line no longer cuts twice in the rail (device audit 11 Oct 2026). */}
-        Synthetic · checked {entry.checkedDaysAgo}d ago
-      </span>
-      <Badge size="sm" variant="plain">
-        Not verified
-      </Badge>
-    </div>
-  );
-}
-
 /**
  * Copy the number and email for one contact. Calling never dials, so there is no Call button
  * (overall review, 20 Oct 2026).
@@ -554,7 +539,7 @@ export function ContactCard({
       <EmailBlock entry={entry} actions={actions} />
       <LadderBlock entry={entry} actions={actions} />
       <SiteBlock entry={entry} actions={actions} />
-      <RecordFoot entry={entry} />
+      <CheckFoot entry={entry} />
     </>
   );
 }
