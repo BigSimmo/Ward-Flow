@@ -29,7 +29,16 @@ import {
 import { useForecastHistory, useForecastMissReasons, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 
-const WARDS_SHOWN = 6;
+/**
+ * Discharge dates that held, one row per ward with a recorded planned date, in the wards' own order.
+ * Not sorted or cut to the lowest few (Josh, 25 Oct 2026): a worst-first list ranked wards.
+ */
+export function dischargeDatesHeldByWard(units: readonly Unit[], admissions: Admission[], now: Instant) {
+  return units
+    .map((unit) => ({ unit, outcome: wardStatistics(unit.id, admissions, now).dischargeDateOutcomes }))
+    .filter((row) => row.outcome.consideredCount > 0)
+    .map((row) => ({ name: row.unit.name, ...row.outcome, share: row.outcome.met / row.outcome.consideredCount }));
+}
 
 export function ForecastTrackRecordCard({
   now,
@@ -48,16 +57,7 @@ export function ForecastTrackRecordCard({
   const { entries: reasonEntries, record: recordReason } = useForecastMissReasons();
   const latestReasons = useMemo(() => latestMissReasons(reasonEntries), [reasonEntries]);
   const missSummary = useMemo(() => missReasonSummary(record.days, reasonEntries), [record.days, reasonEntries]);
-  const held = useMemo(
-    () =>
-      units
-        .map((unit) => ({ unit, outcome: wardStatistics(unit.id, admissions, now).dischargeDateOutcomes }))
-        .filter((row) => row.outcome.consideredCount > 0)
-        .map((row) => ({ name: row.unit.name, ...row.outcome, share: row.outcome.met / row.outcome.consideredCount }))
-        .sort((a, b) => a.share - b.share || b.consideredCount - a.consideredCount)
-        .slice(0, WARDS_SHOWN),
-    [units, admissions, now],
-  );
+  const held = useMemo(() => dischargeDatesHeldByWard(units, admissions, now), [units, admissions, now]);
   const hours = useMemo(
     () => referralsByHour(movements.filter(isEdOriginJourney).map((movement) => movement.openedAt)),
     [movements],
@@ -144,7 +144,7 @@ export function ForecastTrackRecordCard({
             ))}
           </ul>
         )}
-        <p className={styles.caption}>Lowest first. A date that moved before the day still counts if it held.</p>
+        <p className={styles.caption}>A date that moved before the day still counts if it held.</p>
 
         <h3 className={styles.groupHead}>ED referrals by hour</h3>
         <div className={styles.hours} aria-hidden="true">
