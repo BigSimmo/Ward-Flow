@@ -7,6 +7,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { saveProblem } from "@/components/ward-management/ward-save-failure";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -42,10 +43,10 @@ function AssignToTeam({ referralId }: { referralId: string }) {
                   ? "Assigned to this team's desk."
                   : outcome.status === "refused"
                     ? "Not assigned. It may already be with this team's desk."
-                    : "Not assigned. The change was not saved.",
+                    : saveProblem("notAssigned"),
               ),
             )
-            .catch(() => setResult("Not assigned. The change was not saved."));
+            .catch(() => setResult(saveProblem("notAssigned")));
         }}
         data-testid={`community-assign-take-${referralId}`}
       >

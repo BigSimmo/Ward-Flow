@@ -102,7 +102,9 @@ describe("ward drawer quick actions report the saved outcome", () => {
       fireEvent.click(screen.getByRole("button", { name: "Record ED transfer" }));
     });
     // A failed save may still have reached the server, so it must not say nothing changed.
-    expect(screen.getByText("Save is not confirmed. Review the board before trying again.")).toBeVisible();
+    expect(
+      screen.getByText("Save is not confirmed. Check the board. If your change is not there, make it again."),
+    ).toBeVisible();
     expect(screen.queryByText(/Nothing was changed|marked away at ED/u)).toBeNull();
   });
 

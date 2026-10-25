@@ -150,12 +150,13 @@ function useTransportCommandFeedback() {
           return true;
         }
         setToastMessage({
-          message: outcome?.message ?? `${action} was not confirmed. Review the board before trying again.`,
+          message:
+            outcome?.message ?? `${action} was not confirmed. Check the board. If it is not there, record it again.`,
           warning: true,
         });
       } catch {
         setToastMessage({
-          message: `${action} was not confirmed. Review the board before trying again.`,
+          message: `${action} was not confirmed. Check the board. If it is not there, record it again.`,
           warning: true,
         });
       } finally {

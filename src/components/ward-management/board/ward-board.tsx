@@ -66,6 +66,7 @@ import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
+import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
 
 /**
@@ -359,7 +360,7 @@ export function WardBoard({
     const msg = unaccepted
       ? check.outcome!.status === "refused"
         ? `Action refused: ${check.outcome!.message ?? "The action was refused."}`
-        : (check.outcome!.message ?? "Save is not confirmed. Review the board before trying again.")
+        : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
@@ -944,8 +945,7 @@ export function WardBoard({
               return {
                 ...unaccepted,
                 status: "failed" as const,
-                message:
-                  "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+                message: saveProblem("partlySaved"),
               };
             return unaccepted ?? outcomes[0];
           };

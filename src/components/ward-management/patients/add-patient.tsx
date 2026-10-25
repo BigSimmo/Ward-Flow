@@ -259,7 +259,9 @@ export function AddPatientForm() {
   const lateSubmissionRef = useRef<typeof priorSubmissionRef.current>(null);
   if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
     setAcceptedSubmission(null);
-    setLastRejection("The workspace changed. Review the record before trying again.");
+    setLastRejection(
+      "The workspace changed before this patient was confirmed. Check the patient list. If they are not there, add them again.",
+    );
     setIsSubmitting(false);
   }
   const submitIntentRef = useRef<"profile" | "refer">("profile");

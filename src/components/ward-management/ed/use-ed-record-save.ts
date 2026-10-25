@@ -6,6 +6,7 @@ import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
 import type { useEdRowPanels } from "./use-ed-screen-state";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 type Kind = "urgency" | "legalStatus" | "receipt";
 type Panels = ReturnType<typeof useEdRowPanels>;
@@ -160,7 +161,7 @@ export function useEdRecordSave({
               if (current.current === failed) setMessage("Save is not confirmed. Use Retry before submitting again.");
             },
           );
-        } else finish(wardCommandFailure(outcome) ?? "Save is not confirmed. Review the board before trying again.");
+        } else finish(wardCommandFailure(outcome) ?? SAVE_NOT_CONFIRMED);
       },
     );
   }
