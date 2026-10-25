@@ -138,7 +138,7 @@ export function isReferencedElsewhere(path, allTrackedFiles, fileCache) {
     }
     if (body.includes(path)) return true;
 
-    // Relative Markdown links like `(testing.md)` from `docs/process-hardening.md`.
+    // Relative Markdown links like `(testing.md)` from `docs/README.md`.
     if (other.endsWith(".md")) {
       MARKDOWN_LINK_RE.lastIndex = 0;
       let match;

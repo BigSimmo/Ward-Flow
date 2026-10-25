@@ -4,13 +4,13 @@
 > `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out
 > of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.
 
-Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **36 files**. The brief also asked about
-`docs/ward-flow/*owner*ruling*.md`: that pattern matched **zero files beyond the first set** — every file it catches already starts with `owner-`.
+Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **40 files**. The brief also asked about
+`docs/ward-flow/*owner*ruling*.md`: that pattern matched **3 additional file(s)**, folded in below: `archive/dated-notes/ward-flow-owner-rulings-2026-08-31-community.md`, `archive/dated-notes/ward-flow-owner-rulings-2026-08-31.md`, `archive/dated-notes/ward-flow-owner-rulings-2026-09-01.md`.
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**562 rulings/items extracted, across 31 of 36 files.**
-**5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
+**575 rulings/items extracted, across 34 of 40 files.**
+**6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
 below — it does NOT prove the ruling is still CURRENT.** Owner rulings in this corpus get
@@ -515,7 +515,7 @@ safe global key across 30 files.
 
 ---
 
-## By file, newest first — 31 files
+## By file, newest first — 34 files
 
 ### `decisions.md` (2026-09-07 – 2026-10-23 (mixed, see file))
 
@@ -1212,6 +1212,16 @@ safe global key across 30 files.
 - `R3` — line 59, heading: "R3–R9 — the seven he approved in the same message, recorded because they were nearly lost"
 - `R10` — line 98, heading: "R10 — A community team sees only its own referrals"
 
+### `archive/dated-notes/ward-flow-owner-rulings-2026-09-01.md` (2026-09-01)
+
+**Title:** Owner rulings — 2026-09-01
+
+3 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 15, heading: "1. The repository is to be treated as PRIVATE"
+- #2 (no owner-issued ID, this file's own numbering) — line 36, heading: "2. The LATEST decision wins, wherever it is written"
+- #3 (no owner-issued ID, this file's own numbering) — line 72, heading: "3. Confidence-decay is CROSSED OFF"
+
 ### `archive/dated-notes/owner-rulings-2026-09-01-vocabulary-and-pathways.md` (2026-09-01)
 
 **Title:** Owner rulings — vocabulary, bed states and pathways, 2026-09-01
@@ -1306,9 +1316,33 @@ safe global key across 30 files.
 - #5 (no owner-issued ID, this file's own numbering) — line 43, heading: "5. A promised bed cannot fail to materialise, because no bed is ever promised"
 - #6 (no owner-issued ID, this file's own numbering) — line 52, heading: "6. The sex counts are real, because some beds are sex-restricted"
 
+### `archive/dated-notes/ward-flow-owner-rulings-2026-08-31.md` (2026-08-31)
+
+**Title:** Owner rulings, 2026-08-31 — five decisions taken in one answer
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 16, heading: "1. The ten urgency-mark reasons — ⚠️ STILL OPEN"
+- #2 (no owner-issued ID, this file's own numbering) — line 30, heading: "2. A bed held for a named patient must NOT count as available"
+- #3 (no owner-issued ID, this file's own numbering) — line 46, heading: "3. A patient every approached ward has declined must be FLAGGED, never auto-escalated"
+- #4 (no owner-issued ID, this file's own numbering) — line 63, heading: "4. The end-to-end walk-through is to be finished"
+- #5 (no owner-issued ID, this file's own numbering) — line 74, heading: "5. Ward Flow is NOT to be pushed to a public repository as it stands"
+
+### `archive/dated-notes/ward-flow-owner-rulings-2026-08-31-community.md` (2026-08-31)
+
+**Title:** Owner rulings, 2026-08-31 — the community hub, and six urgency reasons
+
+5 item(s):
+
+- #1 (no owner-issued ID, this file's own numbering) — line 15, heading: "1. A patient is "this team's" by an EXPLICIT TEAM ON THE REFERRAL, not by home area"
+- #2 (no owner-issued ID, this file's own numbering) — line 21, heading: "2. ✅ A community team CAN see a ward's reason for declining their patient"
+- #6 (no owner-issued ID, this file's own numbering) — line 30, heading: "6. Real transport providers and community teams stay DEFERRED · 7. The refresh-wipes-state gap stays CUT"
+- #4 (no owner-issued ID, this file's own numbering) — line 58, heading: "⚠️ 4. THE SIX URGENCY REASONS — CHOSEN BY ME, ACCEPTED PROVISIONALLY, NOT HIS WORDS"
+- #1 (no owner-issued ID, this file's own numbering) — line 112, heading: "⚠️ 1. A SHORTER LIST IS EASIER TO APPLY AND THEREFORE EASIER TO OVER-APPLY"
+
 ---
 
-## Unparsed files — 5
+## Unparsed files — 6
 
 ✅ **Not a defect in the files — a limitation of this generator, stated rather than hidden.**
 A generator that silently drops what it cannot structure produces a tidy index missing exactly
@@ -1321,5 +1355,6 @@ an open question with no ruling recorded yet.
 - `archive/dated-notes/owner-open-questions-2026-09-02.md` — "Open questions for the owner — the actual list, written down"
 - `archive/dated-notes/owner-question-referral-withdrawal-2026-09-11.md` — "One missing record, two wrong numbers on the community team page"
 - `archive/dated-notes/owner-question-settings-thresholds-2026-09-12.md` — "The Thresholds table on Settings — wrong in both directions"
+- `archive/dated-notes/owner-ruling-2026-09-07-board-columns.md` — "Owner ruling 2026-09-07 — the ward board's five additions, and "Presentation""
 - `archive/dated-notes/owner-ruling-patient-link-2026-09-02.md` — "THE OWNER HAS RULED: A REFERRAL REMEMBERS ITS PATIENT — 2026-09-02"
 

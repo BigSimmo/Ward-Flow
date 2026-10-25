@@ -28,7 +28,7 @@ Companion documents, none of which this file duplicates:
 | The binding specification (14 decisions, D1–D14) | `docs/superpowers/specs/2026-08-26-ward-flow-phase-5-bed-availability-design.md` |
 | Direction, phase order, settled refusals         | `docs/archive/ward-flow-roadmap.md`                                              |
 | What was built and what screenshots caught       | `docs/archive/ward-flow-complete-ledger.md` §5d                                  |
-| Earlier Phase 1–3 rulings                        | `docs/archive/ward-management-decisions.md`                                      |
+| Earlier Phase 1–3 rulings                        | `docs/ward-flow/archive/dated-notes/ward-management-decisions.md`                |
 
 ---
 

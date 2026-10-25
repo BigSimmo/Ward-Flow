@@ -221,7 +221,7 @@ would add overhead, and distinguish requested routing from observed execution.
   sentences, as few lines as will do, and only what he needs to know, do or decide. Include source,
   paths, commands and uncertainty when they help him assess the result or act. Give the result first.
 - The thread that needs the answer asks, in its own thread, as **one numbered list**. Each question is one line in plain English with **one
-  recommendation** and a one-word reply he can send. See [`how-to-write-to-the-owner.md`](how-to-write-to-the-owner.md).
+  recommendation** and a one-word reply he can send. See [`how-to-write-to-the-owner.md`](archive/dated-notes/how-to-write-to-the-owner.md).
 - Record his reply **verbatim** in a dated file, `owner-answers-YYYY-MM-DD.md`. A second round on the
   same day is appended under its own heading, numbered `R2-n`. The asking thread's reading of each answer
   follows, marked as a reading.

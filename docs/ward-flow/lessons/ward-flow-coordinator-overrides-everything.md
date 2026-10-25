@@ -65,7 +65,7 @@ the refusal is the point.
 held back unless a reason is given for it.
 
 Briefs: `docs/ward-flow/engine-gate-implementation-brief.md`,
-`docs/ward-flow/the-engine-enforces-nothing.md`,
+`docs/ward-flow/archive/dated-notes/the-engine-enforces-nothing.md`,
 `docs/ward-flow/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md`.
 
 See [[ward-flow-referral-model]], [[ward-flow-changeable-data-rule]],

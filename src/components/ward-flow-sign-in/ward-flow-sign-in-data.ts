@@ -6,7 +6,7 @@
  * things refused to every role regardless of which is chosen.
  *
  * This module deliberately reads no live application state. Per contract
- * `docs/ward-flow/build-contracts-2026-09-12/contract-sign-in.md` §2, none of these seven role
+ * `docs/ward-flow/archive/build-contracts-2026-09-12/contract-sign-in.md` §2, none of these seven role
  * ids match the app's real `WardFlowRole`/`WardChromeRole` types one-for-one, and the reach named
  * below is "read from the screens index of the Ward Flow design system, which is a drawing of a
  * tool" (the drawing's own §1 disclosure, reproduced in this screen's copy). Treating this table

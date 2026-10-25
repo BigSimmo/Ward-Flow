@@ -8,7 +8,7 @@ import { NOW_ANCHOR, unitById } from "../src/components/ward-management/ward-sit
 import { madeUpForensicWard } from "./helpers/ward-made-up-forensic-ward";
 
 /**
- * The receiving-ward half of `docs/ward-flow/the-engine-enforces-nothing.md`: `eligibility()`
+ * The receiving-ward half of `docs/ward-flow/archive/dated-notes/the-engine-enforces-nothing.md`: `eligibility()`
  * already knows a ward cannot lawfully or safely hold a movement, and nothing told the ward. These
  * pin `eligibilityWarning()` against the exact pair the finding demonstrated — WF-009 (Adult,
  * Secure, Male, specialling, involuntary/detained) referred to `brm-adult-secure`, the network's

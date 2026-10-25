@@ -1,6 +1,6 @@
 /**
  * Regression tests for the P1 findings of the 8 October 2026 review
- * (`docs/ward-flow/audit-2026-10-08-issue-list.md`). Each case replays the reported scenario
+ * (`docs/ward-flow/archive/dated-notes/audit-2026-10-08-issue-list.md`). Each case replays the reported scenario
  * from the standard seed and asserts the corrected behaviour.
  */
 import { describe, expect, it } from "vitest";

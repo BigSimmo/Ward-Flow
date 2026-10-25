@@ -27,7 +27,7 @@ const refusalAlerts = () =>
     .filter((el) => el.getAttribute("data-testid") !== "ward-morning-rollup-overdue-banner");
 
 /**
- * The sub-finding in `docs/ward-flow/the-engine-enforces-nothing.md`: `REFER_TO_UNITS`,
+ * The sub-finding in `docs/ward-flow/archive/dated-notes/the-engine-enforces-nothing.md`: `REFER_TO_UNITS`,
  * `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` check nothing about cohort, security, sex or forensic
  * status, so a ward can accept — and pull — a movement `eligibility()` would refuse outright, and
  * see nothing on its own screen. This suite drives the exact pair the finding demonstrated: WF-009

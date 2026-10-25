@@ -4,15 +4,24 @@ Moved here during docs hardening. **Not live guidance.**
 
 Live entry: [`../../README.md`](../../README.md) · Boot: [`../../LOCAL-FIRST-RUN.md`](../../LOCAL-FIRST-RUN.md) · Status: [`../../STATUS.md`](../../STATUS.md) · [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md)
 
-Count: 38
+Count: 56
 
 On 15 October 2026 the docs trim removed the other dated notes (handovers, prompts, censuses and session records). Owner rulings, owner questions and the clinician check rulings stay here because the owner-rulings index reads them. The retired coverage record stays because `tests/ward-retired-suite-integrity.test.ts` reads it, and the D-5 protected deletion ruling and the unanswered owner questions stay because they are owner decisions. See [`../../ARCHIVE-NOTE.md`](../../ARCHIVE-NOTE.md) to restore a removed note.
+
+On 24 October 2026, with Josh's approval, the rulings and decision records formerly in `docs/archive/` and the board-columns ruling formerly in `docs/ward-flow/design/` moved here, together with ten finished or superseded notes from the top of `docs/ward-flow/`.
 
 ## Files
 
 - [ANSWERS-THAT-NEVER-ARRIVE-2026-09-12.md](ANSWERS-THAT-NEVER-ARRIVE-2026-09-12.md)
+- [assignment-register.md](assignment-register.md)
+- [audit-2026-10-08-issue-list.md](audit-2026-10-08-issue-list.md)
+- [bed-states-options.md](bed-states-options.md)
 - [clinician-check-rulings-2026-09-06.md](clinician-check-rulings-2026-09-06.md)
+- [community-origin-scope.md](community-origin-scope.md)
+- [coordinator-referral-surfaces.md](coordinator-referral-surfaces.md)
 - [D-5-protected-deletion-routing-2026-09-12.md](D-5-protected-deletion-routing-2026-09-12.md)
+- [HIGH-FIDELITY-DESIGN-TO-PRODUCTION-PLAYBOOK.md](HIGH-FIDELITY-DESIGN-TO-PRODUCTION-PLAYBOOK.md)
+- [how-to-write-to-the-owner.md](how-to-write-to-the-owner.md)
 - [owner-answers-2026-09-17.md](owner-answers-2026-09-17.md)
 - [owner-answers-2026-09-18.md](owner-answers-2026-09-18.md)
 - [owner-decision-pending-device-copy-2026-09-04.md](owner-decision-pending-device-copy-2026-09-04.md)
@@ -33,6 +42,7 @@ On 15 October 2026 the docs trim removed the other dated notes (handovers, promp
 - [owner-question-referral-withdrawal-2026-09-11.md](owner-question-referral-withdrawal-2026-09-11.md)
 - [owner-question-settings-thresholds-2026-09-12.md](owner-question-settings-thresholds-2026-09-12.md)
 - [owner-questions-queued-2026-09-10.md](owner-questions-queued-2026-09-10.md)
+- [owner-ruling-2026-09-07-board-columns.md](owner-ruling-2026-09-07-board-columns.md)
 - [owner-ruling-patient-link-2026-09-02.md](owner-ruling-patient-link-2026-09-02.md)
 - [owner-rulings-2026-09-01-bed-model.md](owner-rulings-2026-09-01-bed-model.md)
 - [owner-rulings-2026-09-01-bed-states-and-community.md](owner-rulings-2026-09-01-bed-states-and-community.md)
@@ -47,4 +57,14 @@ On 15 October 2026 the docs trim removed the other dated notes (handovers, promp
 - [owner-rulings-2026-09-05.md](owner-rulings-2026-09-05.md)
 - [owner-wording-page-2026-09-02.md](owner-wording-page-2026-09-02.md)
 - [owner-working-instructions-2026-09-04.md](owner-working-instructions-2026-09-04.md)
+- [publication-runbook.md](publication-runbook.md)
 - [retired-coverage-record-2026-09-06.md](retired-coverage-record-2026-09-06.md)
+- [the-engine-enforces-nothing.md](the-engine-enforces-nothing.md)
+- [UNIVERSAL-MOCKUP-SPECIFICATION.md](UNIVERSAL-MOCKUP-SPECIFICATION.md)
+- [ward-flow-decisions-2026-08-29.md](ward-flow-decisions-2026-08-29.md)
+- [ward-flow-owner-rulings-2026-08-31-community.md](ward-flow-owner-rulings-2026-08-31-community.md)
+- [ward-flow-owner-rulings-2026-08-31.md](ward-flow-owner-rulings-2026-08-31.md)
+- [ward-flow-owner-rulings-2026-09-01.md](ward-flow-owner-rulings-2026-09-01.md)
+- [ward-flow-phase-3-rulings.md](ward-flow-phase-3-rulings.md)
+- [ward-flow-phase-9-decisions.md](ward-flow-phase-9-decisions.md)
+- [ward-management-decisions.md](ward-management-decisions.md)
