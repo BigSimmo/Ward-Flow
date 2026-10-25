@@ -88,6 +88,7 @@ import {
   transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
+import { OfficerOrderNote } from "./officer-order-note";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 export {
@@ -309,8 +310,7 @@ export function OfficerScreen() {
     return priority(a) - priority(b) || stageSince(a) - stageSince(b);
   });
 
-  // The panel opens only when a patient is chosen (Josh, 9 Oct 2026): until then the table runs
-  // the full width of the page.
+  // The panel opens only when a patient is chosen (Josh, 9 Oct 2026); until then the table is full width.
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
 
@@ -672,8 +672,7 @@ export function OfficerScreen() {
     );
   }
 
-  // The job panel's render helpers live in `officer-job-detail.tsx` and read this screen's state
-  // and handlers through this context.
+  // The job panel's render helpers (`officer-job-detail.tsx`) read this screen's state through this context.
   const detailContext: OfficerJobDetailContext = {
     blockedNote,
     destinationLabelFor,
@@ -1018,12 +1017,7 @@ export function OfficerScreen() {
                   />
                 </div>
 
-                {/* Audit 24-1 decision 5 (Josh, 25 Oct): transport jobs, not the ED queue, so this order is allowed. */}
-                {jobs.length > 0 && sortKey === "next" ? (
-                  <p className={styles.panelNote} data-testid="ward-officer-order-note">
-                    Next action order: late jobs first, then forms still to upload, then the jobs furthest along.
-                  </p>
-                ) : null}
+                <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next"} />
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No transport job is currently outstanding &mdash; every job has either arrived or its movement has

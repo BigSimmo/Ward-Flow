@@ -781,8 +781,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 // FD-23: a ward-only view reads no referral records, so the shared reader gets none and
                 // returns the movement's own recorded clearance (recording one writes it here too).
                 const clearance = recordedMovementMedicalClearance(activeMovement, []);
-                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only; the invented history, risk,
-                // "medically stabilised" and "Admit to" text is gone. An absent fact reads "Not recorded".
+                // Audit 1, Josh 20 Oct (CS-02, NB-1): recorded facts only; absent reads "Not recorded".
                 const sbarSections = (
                   <>
                     <div className={styles.sbarSection}>
