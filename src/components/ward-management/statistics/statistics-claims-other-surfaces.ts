@@ -15,9 +15,7 @@ import {
   COMPARE_SCREEN,
   WARD_STATS_SCREEN,
   ED_SCREEN,
-  SECTION_FRAME,
   DERIVATIONS,
-  SECTIONS,
   COMMUNITY_INDEX,
   WARD_NAV,
   COMMUNITY_DERIVATIONS,
@@ -48,24 +46,6 @@ import {
 } from "./statistics-claims-shared";
 
 export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
-  // ── statistics-section-frame.tsx ──────────────────────────────────────────────────────────────
-  {
-    id: "statistics-section-frame/back-link/the-hub-route-is-named-once",
-    renderedIn: SECTION_FRAME,
-    rendered: "className={thirdEditionStyles.backLink}",
-    claim: "The back link resolves through the one constant that names the statistics hub route.",
-    sourceFile: SECTIONS,
-    evidence: 'export const STATISTICS_HOME_HREF = "/ward-flow/statistics";',
-    falsifiedBy: {
-      change:
-        "The constant naming the statistics hub route is removed, so the back link cannot resolve through it. (The " +
-        "'named once' half is an absence: a second hard-coded copy of the path elsewhere would leave this line " +
-        "untouched.)",
-      find: 'export const STATISTICS_HOME_HREF = "/ward-flow/statistics";',
-      replaceWith: "",
-    },
-  },
-
   // ── statistics-overview-screen.tsx ────────────────────────────────────────────────────────────
 
   {

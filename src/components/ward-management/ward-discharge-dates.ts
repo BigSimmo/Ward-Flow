@@ -1,9 +1,4 @@
-import {
-  LEAVING_DESTINATIONS,
-  bedIsOccupied,
-  type Admission,
-  type LeavingDestination,
-} from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
@@ -50,10 +45,6 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  *  A STATED absence, which is the right shape here precisely because the field cannot be left
  *  blank: where a field CAN be blank, blank is the honest answer (see `waitingOn` above). */
 const ROLE_NOT_RECORDED = "Not recorded";
-
-const STATEWIDE_RELEASE_BY_DESTINATION: ReadonlyMap<LeavingDestination, boolean> = new Map(
-  LEAVING_DESTINATIONS.map((destination) => [destination.id, destination.countsAsStatewideRelease]),
-);
 
 /**
  * One admission's forward-looking release — `"confirmed"` when the ward has decided it is
@@ -190,35 +181,6 @@ export function derivedBedReleases(admissions: Admission[], now: Instant): BedRe
 }
 
 /**
- * How many admissions have actually left, as of `now`, by a destination that gives the STATE a
- * bed back (`LEAVING_DESTINATIONS`'s own `countsAsStatewideRelease`).
- *
- * **The one `false` destination — `"transferred-to-another-psychiatric-ward"` — is excluded here
- * on purpose, and only here.** It still produces a `"discharged"` `BedRelease` from
- * `derivedBedReleases` (the SENDING unit's own bed genuinely comes free, and that release must
- * still show up on that unit's board), but it must never inflate the network-wide total: the
- * person still occupies a psychiatric bed, the state gained nothing. Counting it here would let
- * the board report beds coming free that were never free to the network, compounding on every
- * inter-ward transfer.
- *
- * Computed directly from `admissions`, not by inspecting `derivedBedReleases`'s output — a
- * `BedRelease` deliberately carries nothing about where a departing patient went
- * (`BedRelease`'s own field-set doc comment), so the statewide/local distinction can only be
- * read off the `Admission` that produced it.
- */
-export function statewideReleaseCount(admissions: Admission[], now: Instant): number {
-  let count = 0;
-  for (const admission of admissions) {
-    if (admission.state !== "departed") continue;
-    const { leftAt, leavingDestination } = admission;
-    if (leftAt === null || leavingDestination === null) continue;
-    if (!Number.isFinite(leftAt) || !Number.isFinite(now) || leftAt > now) continue;
-    if (STATEWIDE_RELEASE_BY_DESTINATION.get(leavingDestination) === true) count += 1;
-  }
-  return count;
-}
-
-/**
  * How many of the derived releases carry the blocked flag — a CROSS-CUT over
  * `derivedBedReleases`'s output, never a bucket subtracted from a state count. See
  * `CapacityBreakdown.blockedToday`'s own doc comment for the defect this mirrors: sorting
@@ -230,34 +192,6 @@ export function statewideReleaseCount(admissions: Admission[], now: Instant): nu
  */
 export function blockedReleaseCount(admissions: Admission[], now: Instant): number {
   return derivedBedReleases(admissions, now).filter((release) => release.blocker !== null).length;
-}
-
-/**
- * How often a ward's expected discharge date was met (never revised) versus moved (revised at
- * least once), counted over admissions that have actually left and had a date recorded on them
- * at some point.
- *
- * **Returns `null`, never `{ met: 0, moved: 0, total: 0 }`, when nobody qualifies.** Zero and "no
- * data" are different claims: zero would read as "this ward has a perfect record", when the truth
- * is nobody has left yet, or nobody who left ever had a date set to keep or move. Rendering a
- * fabricated 0% (or 100%) accuracy figure from an empty sample is exactly the kind of invented
- * fact this codebase treats as a defect.
- *
- * Gated on `dischargeDateSetAt !== null` rather than on `dischargeDateMoves > 0`, because
- * `dischargeDateMoves` defaults to `0` for an admission that never had a date at all — reading a
- * bare `0` as "met" would silently count every undated departure as a successful prediction.
- */
-export function dischargeDateAccuracy(admissions: Admission[]): { met: number; moved: number; total: number } | null {
-  let met = 0;
-  let moved = 0;
-  for (const admission of admissions) {
-    if (admission.state !== "departed") continue;
-    if (admission.dischargeDateSetAt === null) continue;
-    if (admission.dischargeDateMoves > 0) moved += 1;
-    else met += 1;
-  }
-  const total = met + moved;
-  return total === 0 ? null : { met, moved, total };
 }
 
 export interface EddDriftBadge {

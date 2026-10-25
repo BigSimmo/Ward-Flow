@@ -1,7 +1,6 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
-import type { BedRelease, HealthService, Site, Unit } from "@/components/ward-management/ward-model";
-import { wardSites } from "@/components/ward-management/ward-sites";
+import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
 /**
  * **ONE OCCUPANCY FIGURE — device audit, 11 October 2026 (Recommended, top recommendation 1).**
@@ -59,16 +58,6 @@ export function wardOccupancy(
     beds += unit.beds;
   }
   return { inUse, beds, percent: beds > 0 ? roundOneDecimal((inUse / beds) * 100) : null };
-}
-
-/** The wards that belong to one health service, by their site. */
-export function unitsInService(
-  units: readonly Unit[],
-  service: HealthService,
-  sites: readonly Site[] = wardSites,
-): Unit[] {
-  const codes = new Set(sites.filter((site) => site.service === service).map((site) => site.code));
-  return units.filter((unit) => codes.has(unit.siteCode));
 }
 
 /** Occupancy as printed: "85.2%", or `fallback` when there are no beds. */

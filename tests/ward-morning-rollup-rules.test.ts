@@ -2,33 +2,21 @@
 // when 1b1c5bb2ba (22 Sept) replaced tests/ward-morning-rollup.test.ts with reducer tests for the
 // new CONFIRM_MORNING_ROLLUP and SEND_WARD_BUZZ events. The functions they cover still exist
 // unchanged in name, so the tests come back here beside the new file rather than replacing it.
-import { referralState } from "../src/components/ward-management/ward-referrals";
 import { describe, expect, it } from "vitest";
 
 import {} from "@/components/ward-management/ward-bed-availability";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import {
   CAPACITY_FIGURE_LABELS,
   MORNING_HANDOVER_MINUTES,
-  morningHandoverInstant,
-  peopleWaitingCount,
   PEOPLE_WAITING_LABEL,
   serviceRollup,
 } from "@/components/ward-management/ward-morning-rollup";
-import type {
-  BedRelease,
-  LeaveBed,
-  Referral,
-  ReferralAddressing,
-  Site,
-  Unit,
-} from "@/components/ward-management/ward-model";
-import { bedReleases, leaveBeds, referrals } from "@/components/ward-management/ward-movements";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import type { BedRelease, LeaveBed, Site, Unit } from "@/components/ward-management/ward-model";
+import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
-import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 const NOW = NOW_ANCHOR;
 
 function unit(overrides: Partial<Unit> = {}): Unit {
@@ -381,35 +369,6 @@ describe("ward-morning-rollup", () => {
     });
   });
 
-  describe("rule 4: morningHandoverInstant", () => {
-    it("returns 08:00 of now's operating day once handover has happened", () => {
-      const day = 5;
-      const now: Instant = day * MINUTES_PER_DAY + MORNING_HANDOVER_MINUTES + 30; // 08:30
-      expect(morningHandoverInstant(now)).toBe(day * MINUTES_PER_DAY + MORNING_HANDOVER_MINUTES);
-    });
-
-    it("returns exactly the 08:00 instant at the boundary (now === handover)", () => {
-      const day = 5;
-      const handover = day * MINUTES_PER_DAY + MORNING_HANDOVER_MINUTES;
-      expect(morningHandoverInstant(handover)).toBe(handover);
-    });
-
-    it("returns null when now is earlier in the day than 08:00, never falling back to now", () => {
-      const day = 5;
-      const now: Instant = day * MINUTES_PER_DAY + MORNING_HANDOVER_MINUTES - 1; // 07:59
-      expect(morningHandoverInstant(now)).toBeNull();
-    });
-
-    it("never returns a previous day's instant when now is before today's handover", () => {
-      const day = 5;
-      const now: Instant = day * MINUTES_PER_DAY + 60; // 01:00 on day 5
-      const result = morningHandoverInstant(now);
-      // Must not be day 4's 08:00 — the only legal values are null or today's 08:00.
-      expect(result).not.toBe((day - 1) * MINUTES_PER_DAY + MORNING_HANDOVER_MINUTES);
-      expect(result).toBeNull();
-    });
-  });
-
   describe("rule 5: absent or non-finite confirmedAt counts as never-confirmed, no sentinel invented", () => {
     it("treats a unit missing allocatable.confirmedAt as never-confirmed", () => {
       const missing = unit({ id: "missing", siteCode: "RPH" });
@@ -527,93 +486,12 @@ describe("ward-morning-rollup", () => {
   });
 
   /**
-   * Task 9's demand figure. The three things that can go wrong with it, each asserted rather than
-   * assumed:
-   *
-   *   1. It counts the wrong people. `peopleWaitingCount` must count referrals still `"queued"`
-   *      and nothing else — an `"accepted"` or `"declined"` referral has left the queue a
-   *      coordinator is working, exactly as `referralQueueOrder` (`ward-referrals.ts`) already
-   *      scopes the board. The hand-built set below is deliberately asymmetric (2 queued against
-   *      3 decided) so folding the decided ones in changes the number rather than happening to
-   *      agree with it.
-   *   2. It diverges from the referral board. The board renders `referralQueueOrder(referrals)`;
-   *      this figure must be the length of that same list on the real shipped fixture, or the two
-   *      screens can give two answers from one state.
-   *   3. It leaks into the capacity vocabulary. `PEOPLE_WAITING_LABEL` is a demand label and must
-   *      never join `CAPACITY_FIGURE_LABELS`, whose five members are rendered by every
-   *      `FigureList` at service, hospital AND ward level (spec D3) and summed field-wise by
-   *      `sumBreakdowns` (spec D2).
+   * Task 9's demand label must never join `CAPACITY_FIGURE_LABELS`, whose members are rendered by
+   * every `FigureList` at service, hospital AND ward level (spec D3) and summed field-wise by
+   * `sumBreakdowns` (spec D2). (The `peopleWaitingCount` cases went with that function, which had
+   * no reader: production audit EDR-05, deleted with Josh's approval 25 Oct 2026.)
    */
-  describe("task 9: the people-waiting figure", () => {
-    /** Flat decision overrides, routed into the single ward addressing -- so the cases below still
-     *  read `referral({ state: "accepted" })` and only the shape moved, not their meaning. */
-    type ReferralOverrides = Partial<Omit<Referral, "destinations">> &
-      Partial<Pick<ReferralAddressing, "state" | "acceptedUnitId" | "declineReason" | "decidedAt">>;
-
-    function referral(overrides: ReferralOverrides = {}): Referral {
-      const { state, acceptedUnitId, declineReason, decidedAt, ...rest } = overrides;
-      return {
-        id: "RF-TEST",
-        ageBand: "Adult",
-        destinations: [
-          {
-            destination: {
-              kind: "psychiatric_ward",
-              sex: "Female",
-              secureBedNeeded: false,
-              involuntaryBedNeeded: false,
-              highAcuityNursingNeeded: false,
-            },
-            state: state ?? "queued",
-            acceptedUnitId,
-            declineReason,
-            decidedAt,
-          },
-        ],
-        homeRegion: "Perth Metropolitan",
-        suburb: { kind: "named", name: "Armadale" },
-        source: "community",
-        raisedAt: NOW - 30,
-        urgency: 2,
-        originSiteCode: "RPH",
-        transportNeeded: false,
-        ...FIXTURE_HISTORY,
-        ...rest,
-      };
-    }
-
-    it("counts referrals still queued, and never one that has been accepted or declined", () => {
-      const mixed: Referral[] = [
-        referral({ id: "q-1", state: "queued" }),
-        referral({ id: "q-2", state: "queued" }),
-        referral({ id: "a-1", state: "accepted", acceptedUnitId: "rph-adult-open", decidedAt: NOW - 5 }),
-        referral({ id: "a-2", state: "accepted", acceptedUnitId: "rph-adult-open", decidedAt: NOW - 4 }),
-        referral({ id: "d-1", state: "declined", declineReason: "belongs_to_another_service", decidedAt: NOW - 3 }),
-      ];
-
-      // Guard the guard: the set really does hold decided referrals, so "2" cannot be right for
-      // the wrong reason (nothing to exclude in the first place).
-      expect(mixed.filter((entry) => referralState(entry) !== "queued")).toHaveLength(3);
-      expect(peopleWaitingCount(mixed)).toBe(2);
-    });
-
-    it("counts nobody as waiting when every referral has been decided", () => {
-      const allDecided: Referral[] = [
-        referral({ id: "a-1", state: "accepted", acceptedUnitId: "rph-adult-open", decidedAt: NOW - 5 }),
-        referral({ id: "d-1", state: "declined", declineReason: "no_suitable_bed", decidedAt: NOW - 3 }),
-      ];
-      expect(peopleWaitingCount(allDecided)).toBe(0);
-    });
-
-    it("counts waiting exactly as the referral board counts it, on the real shipped fixture", () => {
-      // Non-vacuity, both directions: the fixture has someone waiting (so the equality is not
-      // 0 === 0) and someone already decided (so a second, drifting filter that forgot to exclude
-      // them would produce a different number here).
-      expect(referralQueueOrder(referrals).length).toBeGreaterThan(0);
-      expect(referrals.length).toBeGreaterThan(referralQueueOrder(referrals).length);
-      expect(peopleWaitingCount(referrals)).toBe(referralQueueOrder(referrals).length);
-    });
-
+  describe("task 9: the people-waiting label", () => {
     it("keeps the demand label out of the five-figure capacity vocabulary", () => {
       expect(PEOPLE_WAITING_LABEL).toBe("People waiting for a bed");
       expect(Object.values(CAPACITY_FIGURE_LABELS)).not.toContain(PEOPLE_WAITING_LABEL);

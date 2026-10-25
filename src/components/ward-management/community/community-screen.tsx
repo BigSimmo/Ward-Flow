@@ -60,6 +60,7 @@ import {
   caseloadRowsForTeam,
   referralsWaitingOnTeam,
   categoriseTeamAdmission,
+  declineTargetIsOpen,
   type ActiveTabType,
   type DrawerType,
   type ModalType,
@@ -88,7 +89,7 @@ import {
 import { CommunityScreenReferralModal, CommunityScreenNoteModal } from "./community-screen-modals";
 import { CommunityScreenDrawer } from "./community-screen-drawer";
 import { useCommunityScreenDemoLists } from "./use-community-screen-demo-lists";
-import { useCommunityScreenWindowBridge } from "./use-community-screen-window-bridge";
+import { useCommunityDrawerTestOpeners } from "./community-drawer-test-openers";
 import { useCommunityScreenOverlayFocus, useCommunityScreenTransport } from "./use-community-screen-overlays";
 
 /**
@@ -508,6 +509,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const handleConfirmDecline = useCallback(
     (referralId: string) => {
       if (declineDraft === undefined) return;
+      if (
+        !declineTargetIsOpen(referralId, declineOpenFor, { declining: phoneDeclining, referralId: phoneReferralId })
+      ) {
+        return;
+      }
       runDecision(
         {
           type: "DECLINE_REFERRAL",
@@ -522,7 +528,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setDeclineOpenFor(undefined);
       setDeclineDraft(undefined);
     },
-    [declineDraft, decisionStep, now, runDecision],
+    [declineDraft, declineOpenFor, phoneDeclining, phoneReferralId, decisionStep, now, runDecision],
   );
 
   /**
@@ -562,21 +568,19 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     [raise, liveReferrals, rejections.length, team, offerDecision, decisionStep],
   );
 
-  useCommunityScreenWindowBridge({
-    referrals,
-    liveReferrals,
-    now,
-    setActiveTab,
-    setSelectedReferralId,
-    setPendingAcceptance,
-    setAcceptanceError,
-    setActiveDrawer,
-    setSelectedPatientId,
-    setActiveModalType,
-    handleConfirmAccept,
-    handleConfirmDecline,
-    handleCompleteContact,
-    openNewReferral,
+  const openReferralDrawerForTest = useCallback((referralId: string) => {
+    setSelectedReferralId(referralId);
+    setPendingAcceptance(null);
+    setAcceptanceError(null);
+    setActiveDrawer("referralDrawer");
+  }, []);
+  const openPatientDrawerForTest = useCallback((patientId: string) => {
+    setSelectedPatientId(patientId);
+    setActiveDrawer("pxDrawer");
+  }, []);
+  useCommunityDrawerTestOpeners({
+    openReferralDrawer: openReferralDrawerForTest,
+    openPatientDrawer: openPatientDrawerForTest,
   });
 
   function handleSaveClinicalContact() {

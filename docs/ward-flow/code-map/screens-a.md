@@ -475,7 +475,8 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - Pure helpers: `community-screen-helpers.ts` (labels, caseload rows, `referralsWaitingOnTeam`,
   `categoriseTeamAdmission`).
 - Hooks: `use-community-screen-overlays.ts` (overlay focus, plus transport booking and cancelling),
-  `use-community-screen-demo-lists.ts`, `use-community-screen-window-bridge.ts`.
+  `use-community-screen-demo-lists.ts`, `community-drawer-test-openers.ts` (two drawer openers on
+  `window`, test builds only).
 - Sections: `community-screen-hero.tsx`, `community-screen-panels.tsx`, `community-screen-phone.tsx`,
   `community-screen-waiting-tab.tsx`, `community-screen-in-bed-tab.tsx`,
   `community-screen-back-tab.tsx`, `community-screen-caseload-tab.tsx`,

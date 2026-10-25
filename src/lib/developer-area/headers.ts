@@ -1,5 +1,6 @@
-// Shared between `src/proxy.ts` and the Server Component it signals to
-// (`src/app/mockups/layout.tsx`). The former `DeveloperAreaGate` sign-in gate was
+// Read by `src/proxy.ts`. The `/mockups` layout that `DEVELOPER_AREA_HEADER` used to
+// signal was deleted as dead code (production audit UISR-05, 25 Oct 2026): `/mockups`
+// holds only a route handler, which no layout wraps. The former `DeveloperAreaGate` sign-in gate was
 // removed with the developer key on 28 September 2026 (owner decision): any
 // "gated" prefix below is publicly exempt from the production mockup block, not
 // guarded by a sign-in, and since Ward Flow left /mockups the list is empty. Pure string constants only

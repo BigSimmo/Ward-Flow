@@ -254,7 +254,7 @@ describe("API CSRF guard beyond Sec-Fetch-Site: cross-site (L28)", () => {
 // The durable fix is that a comment names the constant instead of counting, so this guard
 // checks the naming rather than any particular wording.
 describe("developer-gated area comments name the constant instead of counting (L76/L82)", () => {
-  const commented = ["src/proxy.ts", "src/app/mockups/layout.tsx"] as const;
+  const commented = ["src/proxy.ts"] as const;
 
   it("points every gated-area comment at DEVELOPER_GATED_PATH_PREFIXES", () => {
     for (const relativePath of commented) {
