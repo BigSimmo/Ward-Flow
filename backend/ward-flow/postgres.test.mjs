@@ -15,6 +15,7 @@ import { readFile } from "node:fs/promises";
 import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { verifyRuntimeRole } from "./portable-postgres.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
+import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -1145,7 +1146,7 @@ test(
       await assert.rejects(verifyPostgresNamespace(owner), /Unrecognised or unsafe/);
     } finally {
       for (const pool of pools) await pool.end();
-      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await dropTestDatabase(admin, database);
       await admin.end();
     }
   },
@@ -1172,7 +1173,7 @@ test("real PostgreSQL: the Supabase runtime grants pass the runtime role check",
   } finally {
     await owner.end();
     await runtime.end();
-    await admin.query(`DROP DATABASE ${database}`);
+    await dropTestDatabase(admin, database);
     await admin.end();
   }
 });

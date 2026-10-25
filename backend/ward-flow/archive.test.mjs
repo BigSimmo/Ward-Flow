@@ -9,6 +9,7 @@ import { migrate } from "./migrate.mjs";
 import { WARN_WORLD_BYTES, createWorkspaceStore } from "./postgres.mjs";
 import { planSave } from "./records.mjs";
 import { STATEWIDE_VIEW } from "./viewer.test-support.mjs";
+import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -137,7 +138,7 @@ test(
       assert.equal(rows[0].n, rows[0].ids);
     } finally {
       await pool.end();
-      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await dropTestDatabase(admin, database);
       await admin.end();
     }
   },

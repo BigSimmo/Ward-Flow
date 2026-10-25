@@ -17,6 +17,7 @@ import {
   recordToken,
   splitWorld,
 } from "./records.mjs";
+import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -532,7 +533,7 @@ test(
       assert.deepEqual((await createWorkspaceStore(pool, { workspaceId, engine }).read(actor)).payload, saved);
     } finally {
       await pool.end();
-      await admin.query(`DROP DATABASE IF EXISTS ${database} WITH (FORCE)`);
+      await dropTestDatabase(admin, database);
       await admin.end();
     }
   },
