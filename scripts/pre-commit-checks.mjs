@@ -87,16 +87,47 @@ export function withClaimFiles(logFile, logText) {
     names = readdirSync(dir)
       .filter((name) => name.endsWith(".md"))
       .sort();
-  } catch {
-    return logText;
+  } catch (error) {
+    if (error.code === "ENOENT") return logText;
+    // An existing but unreadable folder may hold releases or claims: never treat it as empty.
+    throw new Error(`claims folder unreadable at ${dir}: ${error.message}`);
   }
-  const lines = [];
+  // Event time: claim files from the name's leading UTC stamp, log lines from their first field.
+  const stamp = (text) => {
+    const match = /^(\d{4})-?(\d{2})-?(\d{2})(?:[T ](\d{2}):?(\d{2}))?/.exec(text);
+    return match ? match.slice(1, match[4] ? 6 : 4).join("") : null;
+  };
+  const files = [];
   for (const name of names) {
-    for (const line of readFileSync(path.join(dir, name), "utf8").split(/\r?\n/)) {
-      if (/^(?:- |RELEASED\b)/.test(line)) lines.push(line);
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (error) {
+      throw new Error(`claim file unreadable at ${path.join(dir, name)}: ${error.message}`);
     }
+    const lines = text.split(/\r?\n/).filter((line) => /^(?:- |RELEASED\b)/.test(line));
+    if (lines.length) files.push({ key: stamp(name), lines });
   }
-  return lines.length ? `${logText.replace(/\n*$/, "")}\n${lines.join("\n")}\n` : logText;
+  if (!files.length) return logText;
+  // Merge into the active section in event order, so a release only clears claims made before it.
+  // A log line with only a date ties with every file that day and stays first.
+  const start = logText.indexOf("## Active sign-outs");
+  const nextHeading = start < 0 ? -1 : logText.indexOf("\n## ", start + 1);
+  const end = nextHeading < 0 ? logText.length : nextHeading;
+  const section = logText.slice(start < 0 ? 0 : start, end).replace(/\n*$/, "");
+  const merged = [];
+  const pending = [...files];
+  for (const line of section.split(/\r?\n/)) {
+    const logKey = stamp(line.replace(/^(?:- |RELEASED )\s*/, ""));
+    if (logKey && /^(?:- |RELEASED )/.test(line)) {
+      while (pending.length && pending[0].key !== null && logKey > pending[0].key.slice(0, logKey.length)) {
+        merged.push(...pending.shift().lines);
+      }
+    }
+    merged.push(line);
+  }
+  for (const file of pending) merged.push(...file.lines);
+  return `${logText.slice(0, start < 0 ? 0 : start)}${merged.join("\n")}\n${logText.slice(end).replace(/^\n*/, nextHeading < 0 ? "" : "\n")}`;
 }
 
 /**
