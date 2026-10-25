@@ -7,7 +7,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
-import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
+import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -306,7 +306,7 @@ export class SharedWorkspaceClient {
         outcome === "accepted"
           ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
           : outcome === "refused"
-            ? "The previous uncertain save was not applied. Review the board before trying again."
+            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
             : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
     });
   }
@@ -598,7 +598,7 @@ export class SharedWorkspaceClient {
                 "failed",
                 "Access expired while this action was being saved. Its outcome is uncertain; review the board after reconnecting.",
               );
-            this.cancelAll("Access expired. Reconnect and review the board before trying again.");
+            this.cancelAll(`Access expired. ${saveProblem("notReady")}`);
             this.clearRecovery();
             forgetDowntimePack();
             this.publish({
@@ -720,10 +720,10 @@ export class SharedWorkspaceClient {
         (path.startsWith("/v1/workspace/access/") || path === "/v1/workspace/break-glass") &&
         !this.accessChangeAllowed(path === "/v1/workspace/access/request")
       )
-        throw new Error("Shared access changes are unavailable. Reconnect before making changes.");
+        throw new Error(`Shared access changes are unavailable. ${saveProblem("notReady")}`);
       if (path === "/v1/workspace/commands" && body && "commandId" in body) {
         if (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
-          throw new Error("Access verification expired. Reconnect before making changes.");
+          throw new Error(`Access verification expired. ${saveProblem("notReady")}`);
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
