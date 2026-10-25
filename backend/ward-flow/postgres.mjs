@@ -48,9 +48,9 @@ const RECORD_COLUMNS = "collection, record_id, kind, ordinal, revision, body";
 function jsonbOrdered(value) {
   if (Array.isArray(value)) return value.map(jsonbOrdered);
   if (!value || typeof value !== "object") return value;
-  const keys = Object.keys(value).map((key) => [key, Buffer.from(key, "utf8")]);
-  keys.sort(([, a], [, b]) => a.length - b.length || Buffer.compare(a, b));
-  return Object.fromEntries(keys.map(([key]) => [key, jsonbOrdered(value[key])]));
+  const keys = Object.keys(value).map((key) => ({ key, bytes: Buffer.from(key, "utf8") }));
+  keys.sort((a, b) => a.bytes.length - b.bytes.length || Buffer.compare(a.bytes, b.bytes));
+  return Object.fromEntries(keys.map(({ key }) => [key, jsonbOrdered(value[key])]));
 }
 /** Whether a stored workspace row stands in for rows of `ward_flow.workspace_records`. */
 const hasMarkers = (payload) =>
