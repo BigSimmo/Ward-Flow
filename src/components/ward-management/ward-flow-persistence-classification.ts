@@ -258,7 +258,6 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // `REFER_TO_UNITS.unitIds` already has on this list.
   "RECORD_WARD_INTAKE_CONSTRAINTS",
   "REFER_TO_UNITS",
-  "RELEASE_BED",
   // Owner answer 8 (second round, 2026-09-17): `movementId`/`actingUnitId` are ids (reviewed
   // above) and the caller's own `role` — no human-typed field, the same shape `RELEASE_PULL`
   // immediately below already has.

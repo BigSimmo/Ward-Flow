@@ -13,7 +13,7 @@
 //   BLOCK_BED_RELEASE         line 4734
 //   CLEAR_BED_RELEASE_BLOCK   line 4780
 //   SET_BED_PREPARATION       line 4814
-//   RELEASE_BED               line 4850
+//   (RELEASE_BED was the sixth; the event was removed by audit 24-1 decision 4, 24 Oct 2026)
 //   RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT   line 4470  (an admission, not a release)
 //
 // ⚠️ WHY THIS PARTICULAR GAP IS EASY TO LEAVE OPEN, AND WHY IT MATTERS ON A WARD. Every one of
@@ -125,16 +125,6 @@ const RELEASE_EVENTS: ReadonlyArray<{
       releaseId,
       actingUnitId,
       preparing: true,
-    }),
-  },
-  {
-    type: "RELEASE_BED",
-    build: (releaseId, actingUnitId) => ({
-      type: "RELEASE_BED",
-      role: "ward",
-      now: NOW,
-      releaseId,
-      actingUnitId,
     }),
   },
 ] as const;
