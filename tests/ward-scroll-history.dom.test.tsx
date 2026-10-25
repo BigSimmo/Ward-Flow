@@ -124,6 +124,61 @@ describe("Ward desktop scroll history", () => {
       expect(getByRole("link", { name: "Later row" })).toHaveFocus();
     });
 
+    it("finds the opened row by its words when an earlier row has gone", async () => {
+      let showEarlier = true;
+      const { getByRole, rerender, view } = renderAt(() => (
+        <>
+          {showEarlier ? <a href={RECORD}>Earlier row</a> : null}
+          <a href={RECORD}>Later row</a>
+        </>
+      ));
+      fireEvent.click(getByRole("link", { name: "Later row" }));
+      showEarlier = false;
+      goToRecordAndBack(rerender, view);
+      await afterFrames();
+      expect(getByRole("link", { name: "Later row" })).toHaveFocus();
+    });
+
+    it("keeps one opener per page so a second Back still returns to the list", async () => {
+      const NEXT = "/ward-flow/patients/synthetic-p2";
+      pathname = LIST;
+      window.history.replaceState(null, "", pathname);
+      const view = () => (
+        <div>
+          <WardGround>
+            {pathname === LIST ? (
+              <a href={RECORD}>Record</a>
+            ) : pathname === RECORD ? (
+              <a href={NEXT}>Next</a>
+            ) : (
+              <p>next</p>
+            )}
+          </WardGround>
+        </div>
+      );
+      const { getByRole, rerender } = render(view());
+      fireEvent.click(getByRole("link", { name: "Record" }));
+      pathname = RECORD;
+      window.history.pushState(null, "", pathname);
+      rerender(view());
+      fireEvent.click(getByRole("link", { name: "Next" }));
+      pathname = NEXT;
+      window.history.pushState(null, "", pathname);
+      rerender(view());
+      for (const [back, name] of [
+        [RECORD, "Next"],
+        [LIST, "Record"],
+      ] as const) {
+        (document.activeElement as HTMLElement | null)?.blur();
+        pathname = back;
+        window.history.replaceState(null, "", pathname);
+        act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+        rerender(view());
+        await afterFrames();
+        expect(getByRole("link", { name })).toHaveFocus();
+      }
+    });
+
     it("leaves focus on <body> without throwing when the link is no longer there", async () => {
       let showLink = true;
       const { getByRole, rerender, view } = renderAt(() => (showLink ? <a href={RECORD}>Second</a> : <p>no rows</p>));

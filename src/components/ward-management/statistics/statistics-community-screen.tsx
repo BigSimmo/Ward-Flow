@@ -367,7 +367,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     data-testid="ward-statistics-community-in-hospital-count"
                     data-unmeasured={isUnmeasured(figures.admitted) || undefined}
                   >
-                    {countText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                    {countText(figures.admitted)} referred to this team and in a bed, or with one pulled, now.
                   </p>
                   <p
                     data-testid="ward-statistics-community-in-hospital-with-date"
@@ -388,7 +388,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     {countText(figures.other)} left a ward another way.
                   </p>
                 </SrOnly>
-                <CardFoot meta="Discharge dates are a subset of people holding a bed">
+                <CardFoot meta="Discharge dates are a subset of people in a bed or with one pulled">
                   <Link
                     href={communityTeamHref(team)}
                     className={buttonClass({ variant: "sec", size: "sm" })}
@@ -664,7 +664,7 @@ function TeamPhone({
 }
 
 const HERO_LABELS: Record<keyof CommunityFigures, string> = {
-  admitted: "In a bed or holding",
+  admitted: "In a bed, or with one pulled",
   expected: "With a discharge date",
   discharged: "Discharged here",
   other: "Left another way",
