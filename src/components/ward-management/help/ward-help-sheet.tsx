@@ -16,12 +16,14 @@ import type { HelpView } from "./ward-help-events";
 import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
+import { WHATS_NEW } from "./ward-whats-new";
 import styles from "./ward-help.module.css";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
   { id: "desk", label: "Your desk" },
   { id: "screen", label: "This screen" },
   { id: "glossary", label: "Glossary" },
+  { id: "new", label: "What's new" },
 ];
 
 type GoLink = { href: string; label: string };
@@ -41,6 +43,13 @@ function goLink(
   const screen = entry ? screenForPath(entry.href)?.screen : undefined;
   if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;
   return { href: entry.href, label: entry.label };
+}
+
+/** "25 Oct" from "2026-10-25", without the time zone shifts a Date would bring. */
+function formatNewDate(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${day} ${months[(month ?? 1) - 1] ?? ""}`.trim();
 }
 
 function deskLabel(role: WardTourRole): string {
@@ -196,6 +205,22 @@ export function WardHelpSheet({
             </button>
           </div>
         )
+      ) : null}
+
+      {view === "new" ? (
+        <section aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
+          <h3 id="ward-help-new-title" className={styles.subTitle}>
+            Recent changes
+          </h3>
+          <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
+          <ul className={styles.list}>
+            {WHATS_NEW.toReversed().map((entry) => (
+              <li key={entry.id}>
+                <b className={styles.job}>{formatNewDate(entry.date)}.</b> {entry.line}
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {view === "glossary" ? (
