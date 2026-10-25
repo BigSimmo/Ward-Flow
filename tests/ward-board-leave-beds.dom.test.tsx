@@ -206,7 +206,7 @@ describe("Mark them back command completion", () => {
       finishes[1 - unaccepted]!({ commandId: "accepted", status: "accepted" });
     });
     expect(screen.getByTestId("ward-board-toast").textContent).toBe(
-      "Part of this return was saved, but the other step is not confirmed. Check the board, then record only the step that is missing.",
+      "Part of this return was saved, but the other step is not confirmed. Check the board, then record only the missing step.",
     );
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Action refused");
     expect(screen.getByTestId("ward-board-toast")).not.toHaveTextContent("Nothing was changed.");

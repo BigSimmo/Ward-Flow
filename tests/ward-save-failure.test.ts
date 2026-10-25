@@ -22,7 +22,7 @@ function sourceFiles(dir: string): string[] {
 
 describe("save problems say what happened, then what to do now (item 11)", () => {
   it.each(Object.keys(SAVE_PROBLEMS) as SaveProblemKind[])("%s has both parts as full sentences", (kind) => {
-    const { happened, doNow } = SAVE_PROBLEMS[kind];
+    const [happened, doNow] = SAVE_PROBLEMS[kind];
     for (const part of [happened, doNow]) {
       expect(part).toMatch(/^[A-Z]/u);
       expect(part).toMatch(/\.$/u);
@@ -35,7 +35,7 @@ describe("save problems say what happened, then what to do now (item 11)", () =>
     expect(SAVE_NOT_CONFIRMED).toBe(
       "Save is not confirmed. Check the board. If your change is not there, make it again.",
     );
-    expect(boardNotRefreshed(true)).toMatch(/^The action was accepted, .* Press Retry to reload the board/u);
+    expect(boardNotRefreshed(true)).toMatch(/^The action was accepted, .* Press Retry to reload it/u);
     expect(boardNotRefreshed(false)).toMatch(/^The action was not applied, /u);
   });
 
