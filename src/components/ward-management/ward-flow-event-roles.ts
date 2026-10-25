@@ -311,6 +311,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ED or community desk takes one for itself (the reducer checks which). The same desks log calls.
   ASSIGN_REFERRAL: ["coordinator", "ed", "community"],
   LOG_REFERRAL_CONTACT: ["coordinator", "ed", "community"],
+  // Closing-the-loop package A: the coordinator records any step; a ward its own (reducer checks).
+  RECORD_REFERRAL_COMMITMENT: ["coordinator", "ward"],
   ASK_MORE_WARDS: ["coordinator"],
   // Smart features idea 7: the ward for itself (reducer checks the acting unit), its site's bed
   // manager (D-80), or the coordinator.
@@ -327,6 +329,14 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
   RECORD_WARD_INCIDENT: ["ward", "coordinator"],
   SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
+  // Closing the loop, package D (24 Oct 2026): records only. A ward for its own accepted move or
+  // itself (the reducer checks the acting unit); the site's bed manager for a ward's restriction
+  // review and closure list, as for the closure itself (D-80); or the coordinator.
+  MARK_CANCELLED_MOVE_CHECK: ["coordinator", "ward"],
+  RECORD_ACCEPTANCE_CONDITION: ["coordinator", "ward"],
+  MARK_ACCEPTANCE_CONDITION_MET: ["coordinator", "ward"],
+  RECORD_RESTRICTION_REVIEW: ["ward", "bed_manager", "coordinator"],
+  MARK_CLOSURE_TRANSITION_ITEM: ["ward", "bed_manager", "coordinator"],
   FLAG_MOVEMENT_URGENT: ["coordinator", "ed"],
   CLEAR_MOVEMENT_URGENT_FLAG: ["coordinator", "ed"],
   /*
@@ -527,6 +537,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SEND_WARD_BUZZ: ["coordinator", "bed_manager"],
   // Out-of-area board is the coordinator's tool. This is a phone-log, not a booking.
   RECORD_REPATRIATION: ["coordinator"],
+  // Closing-the-loop (package E): the out-of-area return plan, the coordinator's tool as above.
+  RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+  // Closing-the-loop (package E): any desk with the on-call directory open may record a check.
+  RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
   // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
@@ -555,6 +569,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
+  // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
+  RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
+  RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
   RECORD_ARRIVAL_CHECK: ["ed", "coordinator"],
   // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
   // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the

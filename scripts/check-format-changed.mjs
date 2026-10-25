@@ -119,13 +119,13 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
   if (write) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
-    const { unsignedWardFiles, signOutConflicts } = await import("./pre-commit-checks.mjs");
+    const { unsignedWardFiles, signOutConflicts, withClaimFiles } = await import("./pre-commit-checks.mjs");
     const log = wardSignOutFile();
     if (!existsSync(log)) {
       // Same fail-closed admission as the commit hook on every host.
       throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
     } else {
-      const claims = readFileSync(log, "utf8");
+      const claims = withClaimFiles(log, readFileSync(log, "utf8"));
       const branch = git(root, ["branch", "--show-current"]).trim();
       const missing = unsignedWardFiles(files, claims, branch, root);
       const clashes = signOutConflicts(files, claims, branch, root);
