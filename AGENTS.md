@@ -54,7 +54,8 @@ Ward Flow is a prototype for psychiatric bed flow in Western Australia, not vali
 9. **Spending.** Every billable run needs the owner's approval first, as set out in the shared block above.
 10. **Stages.** A local commit, push, PR, merge, migration and deployment are separate actions, each needing its own authority and checks. Do only the stage Josh asked for. Ask only when material uncertainty changes scope, safety, ownership or authority; leave clinical, privacy and product decisions to Josh.
 11. **Evidence.** Run the smallest check that could catch a regression, plus required gates. A blocked gate stays blocked; never claim a skipped, advisory or deferred check passed. Do not babysit CI unless asked. Stop processes you started; never stop a peer's.
-12. **Memory.** Use only confirmed services with Ward Flow's explicit scope `wardflow_design`; never an account default or another project. Detail: [shared-context-and-memory.md](docs/agents/shared-context-and-memory.md).
+12. **Releases.** Merging into `main` no longer changes the live site. The live site follows the `live` branch, which only the daily release workflow moves (6 am Perth, or a manual run when Josh says "release now"). Never push to `live` by hand. Before editing, also check and comment on the pinned GitHub issue "Who is editing what". Detail: [HOW-WE-WORK §4](docs/ward-flow/HOW-WE-WORK.md#4-integration-in-the-dedicated-repository).
+13. **Memory.** Use only confirmed services with Ward Flow's explicit scope `wardflow_design`; never an account default or another project. Detail: [shared-context-and-memory.md](docs/agents/shared-context-and-memory.md).
 
 ## Prototype Operating Mode (approved 3 October 2026)
 

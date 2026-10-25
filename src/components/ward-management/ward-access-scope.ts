@@ -27,6 +27,7 @@ import { communityTeamOptions } from "@/components/ward-management/referrals/ref
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { withWardReadmission } from "@/components/ward-management/ward-readmission-copy";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditSubject } from "@/components/ward-management/ward-audit";
@@ -818,6 +819,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
         ),
       );
+      // D-80: the readmission flag on its own accepted journeys, as a discharge time only.
+      movements = withWardReadmission(movements, workspace, unitIn);
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),
@@ -992,15 +995,31 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       admissions: new Set(admissions.map((admission) => admission.id)),
       referrals: new Set(referrals.map((referral) => referral.id)),
     };
+    // A ward or bed manager learns nothing about other wards through break glass either (FD-23,
+    // Audit 24-5 RA-01, Josh 24 Oct 2026): the same trim as its own copies.
+    const wardTrim = access.role === "ward" || access.role === "bed_manager";
     for (const movement of workspace.movements)
       if (movement.patientId && grantIds.has(movement.patientId) && !have.movements.has(movement.id))
-        movements.push(movement);
+        movements.push(wardTrim ? ownReferredUnits(movement, unitIn, false) : movement);
     for (const admission of workspace.admissions)
       if (admission.patientId && grantIds.has(admission.patientId) && !have.admissions.has(admission.id))
         admissions.push(admission);
-    for (const referral of workspace.referrals)
-      if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id))
+    for (const referral of workspace.referrals) {
+      if (!referral.patientId || !grantIds.has(referral.patientId) || have.referrals.has(referral.id)) continue;
+      if (!wardTrim) {
         referrals.push(referral);
+        continue;
+      }
+      const trimmed = trimReferral(
+        referral,
+        (addressing) =>
+          addressing.destination.kind === "psychiatric_ward" &&
+          (addressing.acceptedUnitId !== undefined
+            ? unitIn(addressing.acceptedUnitId)
+            : addressing.destination.unitId === undefined || unitIn(addressing.destination.unitId)),
+      );
+      if (trimmed) referrals.push(trimmed);
+    }
   }
 
   // Apply after grant expansion as well: community and count-only executive snapshots never

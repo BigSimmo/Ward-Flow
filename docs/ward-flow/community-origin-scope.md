@@ -1,5 +1,11 @@
 # Scope — a journey that starts at a community team
 
+> **Historical scope — labelled 24 October 2026.** Written 1 September 2026. D-76 (21 October 2026)
+> later built the full journey for an accepted community referral, with a community origin recorded
+> by team name (#611). The measurements below describe the September model; check current source
+> and [decisions.md](decisions.md#d-76-community-referral-gaps-the-full-move-journey-and-asking-more-wards-21-october-2026)
+> before acting on them.
+
 **Approved by the owner on 2026-09-01.** He was answering my explanation that the app cannot record a
 journey beginning anywhere but an emergency department, and he had already pushed back correctly on
 the framing: _"lots of patients can start by being referred to ED from community"_. He is right about

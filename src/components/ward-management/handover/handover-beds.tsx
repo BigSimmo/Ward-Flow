@@ -61,10 +61,10 @@ export type HandoverBedsProps = {
 type BedChip = "ready" | "stale" | "full" | "holds";
 
 const BED_CHIPS: { id: BedChip; label: string; test: (ward: HandoverWard, now: Instant) => boolean }[] = [
-  { id: "ready", label: "Ready beds", test: (ward) => ward.ready > 0 },
+  { id: "ready", label: "Wards with ready beds", test: (ward) => ward.ready > 0 },
   { id: "stale", label: "Feed over 15 min", test: (ward, now) => wardIsStale(ward, now) },
   { id: "full", label: "Full", test: (ward) => ward.beds > 0 && ward.occupied >= ward.beds },
-  { id: "holds", label: "Held discharges", test: (ward) => ward.holds > 0 },
+  { id: "holds", label: "Wards with discharges held up", test: (ward) => ward.holds > 0 },
 ];
 
 const SERVICE_TOKEN: Record<string, string> = {

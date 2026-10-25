@@ -1,5 +1,6 @@
 "use client";
 
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import {
   startTransition,
@@ -146,7 +147,13 @@ export function HubScreen() {
           event.preventDefault();
           inputRef.current?.focus();
         }
-      } else if (event.key === "Escape" && document.activeElement !== inputRef.current) {
+      } else if (
+        event.key === "Escape" &&
+        document.activeElement !== inputRef.current &&
+        // UISR-01: Escape that closed a sheet on top (or the preview sheet) is not the page's.
+        !event.defaultPrevented &&
+        !hasOpenSheet()
+      ) {
         if (selectedId !== undefined || query !== "" || highlight !== "none") {
           event.preventDefault();
           setQuery("");

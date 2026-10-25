@@ -1,5 +1,9 @@
 # Owner rulings — 2026-09-01
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Three decisions, given directly in response to the decision audit of the same day. Each is quoted
 verbatim, because a paraphrase of a ruling is how a ruling drifts.
 

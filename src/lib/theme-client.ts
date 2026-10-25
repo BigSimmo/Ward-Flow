@@ -90,12 +90,21 @@ export function applyThemeToDocument(preference: ThemePreference): ResolvedTheme
   return resolved;
 }
 
+// Secure over HTTPS only, so plain-http localhost dev can still set the cookie.
+function secureAttribute(): string {
+  try {
+    return location.protocol === "https:" ? "; Secure" : "";
+  } catch {
+    return "";
+  }
+}
+
 function writeCookie(preference: ThemePreference) {
   try {
     document.cookie =
       preference === "system"
-        ? `${THEME_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`
-        : `${THEME_COOKIE_NAME}=${preference}; path=/; max-age=31536000; SameSite=Lax`;
+        ? `${THEME_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax${secureAttribute()}`
+        : `${THEME_COOKIE_NAME}=${preference}; path=/; max-age=31536000; SameSite=Lax${secureAttribute()}`;
   } catch {
     // Cookie write blocked: storage or the in-memory fallback still carries the choice.
   }
@@ -178,8 +187,8 @@ export function setGlarePreference(on: boolean) {
   }
   try {
     document.cookie = on
-      ? `${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}; path=/; max-age=31536000; SameSite=Lax`
-      : `${GLARE_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+      ? `${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}; path=/; max-age=31536000; SameSite=Lax${secureAttribute()}`
+      : `${GLARE_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax${secureAttribute()}`;
   } catch {
     // Cookie write blocked: storage or the in-memory fallback still carries the choice.
   }

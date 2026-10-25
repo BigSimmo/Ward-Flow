@@ -432,6 +432,7 @@ type WardFlowContainer = {
   typedTextFromFile?: boolean;
   restoredElapsed: number;
   recoveryNotice?: string;
+  recoveryNoticeQuiet?: boolean; // Unchanged reload: the notice only names the save beside a storage warning.
   /** Event log, step 1: every dispatch this session, in memory only (see `ward-event-log.ts`).
    *  Starts empty; a reset to a new world starts it again. Never saved. */
   eventLog?: readonly EventLogEntry[];
@@ -529,7 +530,8 @@ function wardFlowContainerReducer(
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 /** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
-const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
+const fixtureWorlds = (offsetMinutes = 0) =>
+  WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
@@ -1101,12 +1103,12 @@ function WardFlowWorld({
           const restoredElapsed =
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
-          // reload) only moves the clock; the screens keep their nodes and their state.
+          // reload) only moves the clock and keeps every node. Nothing was lost: no notice unless storage fails.
           const isSameWorld =
             !current.preAdoptionEvents?.length &&
             JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
-          if (isSameWorld)
-            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined, recoveryNotice };
+          const quiet = { recoveryNotice, recoveryNoticeQuiet: true, sessionAdopted: true };
+          if (isSameWorld) return { ...current, ...quiet, restoredElapsed, preAdoptionEvents: undefined };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
@@ -1405,7 +1407,7 @@ function WardFlowWorld({
               ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
                 ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
                 : STORAGE_UNAVAILABLE
-              : (container.recoveryNotice ?? null)
+              : (!container.recoveryNoticeQuiet && container.recoveryNotice) || null
           }
         >
           <WardDemoNotSavedContext.Provider

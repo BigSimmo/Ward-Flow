@@ -453,3 +453,15 @@ function seedPatientName(movementId: string): string {
     seed,
   ).displayName;
 }
+
+describe("ShortlistPanel record forms (audit A4-01)", () => {
+  it("holds an open urgency form like a popup, so its save is checked against what it opened on", async () => {
+    const { openSheetHandles } = await import("@/components/wf/sheet-focus");
+    renderShortlist();
+    const before = openSheetHandles().length;
+    fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
+    expect(openSheetHandles().length).toBe(before + 1);
+    fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
+    expect(openSheetHandles().length).toBe(before);
+  });
+});

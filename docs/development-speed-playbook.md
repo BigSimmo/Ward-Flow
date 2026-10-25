@@ -14,8 +14,9 @@ measured savings for this repository.
 
 For current Ward Flow commands and selector limits, use the on-demand
 [task-efficiency guide](agents/task-efficiency.md) and the repository boundary in [AGENTS.md](../AGENTS.md).
-The current arbiter has no recognised Ward CI coverage; unknown coverage requires running the
-selected gate or reporting it blocked. Historical CI and browser-deferral examples below grant
+The gate arbiter and receipt store this playbook describes were retired on 18 October 2026 (see
+[scripts-index.md](scripts-index.md)); unknown CI coverage requires running the selected gate or
+reporting it blocked. Historical CI and browser-deferral examples below grant
 no authority to skip a Ward gate. Use observed, equivalent evidence for the actual inputs before
 claiming reuse; a declared workflow alone proves no run. Preserve every required gate and assertion.
 

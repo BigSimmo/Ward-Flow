@@ -1,5 +1,7 @@
 # Ward Flow operational observability
 
+_Updated 2026-10-24 - records the optional Sentry client and the backend uptime check added on 19 to 21 October; Documentation owns._
+
 The Next.js `src/instrumentation.ts` request-error hook emits a structured local
 `ward.request_failed` event through `src/lib/logger.ts`, with an internally generated
 incident UUID and allowlisted method/router/route-type labels. It intentionally
@@ -14,9 +16,18 @@ the local metadata contract, not delivery to a deployed log service.
 
 ## Existing seams and required setup
 
-`registerSentryLogForwarder` is an optional server callback. No Sentry project,
-SDK registration, DSN, alert or external export has been configured by these
-changes. The browser CSP remains same-origin. A named vendor is not required
+Server-side Sentry reporting is in the code but off by default: `src/instrumentation.ts`
+always calls `startServerSentry()` (`src/lib/sentry-server.ts`), which starts the
+`@sentry/core` server client only when `SENTRY_DSN` is set, and then sends server errors
+and, unless `SENTRY_ENABLE_LOGS=false`, logger warn and error lines. See
+[Server error reporting (Sentry)](ward-flow/operations-readiness.md#server-error-reporting-sentry).
+No DSN, Sentry project or alert is configured or observed in this repository. The
+browser has no Sentry client and its CSP remains same-origin.
+
+The [backend uptime workflow](../.github/workflows/backend-uptime.yml) asks the hosted
+backend's `/healthz` every 30 minutes and opens a GitHub issue that notifies the owner
+when the backend or its database stays down. It does not check the signed-in site or
+the public demo. A named vendor is not required
 to collect operational events: first verify the named Ward hosting log sink,
 retention/access/region, health checks and alert ownership.
 

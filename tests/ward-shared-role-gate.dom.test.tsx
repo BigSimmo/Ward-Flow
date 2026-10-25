@@ -5,6 +5,7 @@ import { WardAskForAccess, WardRolePicker } from "../src/components/ward-managem
 import { sharedMembership, sharedRequest } from "../src/components/ward-management/settings/access-shared-source";
 import { phonePushRow } from "../src/components/ward-management/shell/ward-phone-push";
 import { STANDARD_WARD_SITES } from "../src/components/ward-management/ward-sites";
+import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
 
 const unit = STANDARD_WARD_SITES[0]!.units[0]!;
 const membershipId = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
@@ -139,7 +140,7 @@ describe("shared workspace role gate (role access plan, later pass)", () => {
           id: "r1",
           actorId: "a1",
           role: "officer",
-          scope: { kind: "jobs" },
+          scope: { kind: "jobs", service: HEALTH_SERVICES[0] },
           decision: null,
           minutes: { requested: -5 },
         },

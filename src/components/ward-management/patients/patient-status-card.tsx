@@ -178,8 +178,6 @@ function transportCell(
   onBook: () => void,
   waitingFor = "an accepted bed",
   bookingInCard = false,
-  /** B3: before the bed is held, Log booking opens the step that holds it rather than greying. */
-  onPriorStep?: () => void,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -236,21 +234,9 @@ function transportCell(
           },
           event: "BOOK_TRANSPORT",
         }
-      : onPriorStep
-        ? {
-            kind: "button",
-            // UX audit 21 Oct 2026: B3 opens the step that is needed first, so the button names that
-            // step. "Log booking" here opened the ward picker.
-            label: waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed",
-            ariaLabel: `${waitingFor === "an accepted bed" ? "Ask wards" : "Pull the bed"}. Transport is booked after ${waitingFor}`,
-            icon: Truck,
-            secondary: true,
-            onClick: () => {
-              onPriorStep();
-            },
-            event: "BOOK_TRANSPORT",
-          }
-        : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
+      : // UX review 24 Oct 2026: the Bed cell already holds Ask wards or Pull the bed, so this cell
+        // keeps its own action, greyed with the reason, rather than repeating the bed's.
+        { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
 }
 
@@ -321,10 +307,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        withHref(
-          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onOpenPlacement),
-          ctx.transportHref,
-        ),
+        withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
       ],
     });
   }
@@ -371,7 +354,6 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
             ctx.onBookTransport,
             "the bed pulled",
             ctx.bookingInCard,
-            ctx.onOpenPlacement,
           ),
           ctx.transportHref,
         ),

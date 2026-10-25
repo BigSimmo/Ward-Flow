@@ -50,6 +50,7 @@ import {
   healthServiceLabel,
   WORK_STATUS_LABELS,
   WORK_ORDER,
+  dischargeOrderLine,
   kpiCardLabel,
   recordStage,
   recordStatus,
@@ -128,6 +129,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     setPhoneGroupsFolded,
     view,
     setView,
+    sortMode,
     highlight,
     setHighlight,
     copyNote,
@@ -463,6 +465,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     : `${shown} shown`}
               </span>
             </header>
+            {(population === "records" && guarded.status === "denied") || shown === 0 ? null : (
+              <p className={pageStyles.orderNote} data-testid="ward-discharge-order-note">
+                {dischargeOrderLine({
+                  population,
+                  view,
+                  sortMode,
+                  allStatuses: status === "all",
+                  highlighted: highlight !== null,
+                })}
+              </p>
+            )}
             <div
               ref={listRef}
               className={pageStyles.listBody}

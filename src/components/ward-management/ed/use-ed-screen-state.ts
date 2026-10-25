@@ -4,6 +4,7 @@
 // (fix list 2.5 and 9.6, 15 Oct 2026). `EdScreen` calls these hooks in the order their state was
 // declared there, so every effect still runs in the same order.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { hasOpenSheet, holdOpenForm } from "@/components/wf/sheet-focus";
 import type {
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
@@ -102,6 +103,11 @@ export function useEdRowPanels() {
     legalStatus: LegalStatus | undefined;
     reason: LegalStatusChangeReason | undefined;
   }>({ legalStatus: undefined, reason: undefined });
+  // Audit 4 A4-01: an open urgency or legal status form is checked against the board it opened on,
+  // as a popup is, so another desk's change meanwhile is reported, not overwritten.
+  // One hold each, so opening one form never moves the other's basis to a newer board.
+  useEffect(() => (urgencyChangeOpenFor === undefined ? undefined : holdOpenForm()), [urgencyChangeOpenFor]);
+  useEffect(() => (legalStatusChangeOpenFor === undefined ? undefined : holdOpenForm()), [legalStatusChangeOpenFor]);
 
   // `TR-D1`: the sending team books the transport out, and this department is the sending team for
   // its own patients. One open-for id and one draft, the same shape the three toggles above use —
@@ -348,6 +354,8 @@ export function useEdEscapeKey({
 }) {
   useEffect(() => {
     function onKeyDown(e: globalThis.KeyboardEvent) {
+      // URE-04: Escape that a sheet on top (the person sheet) already took is not this screen's.
+      if (e.defaultPrevented || hasOpenSheet()) return;
       if (e.key === "Escape") {
         if (arrivalPlanOpenFor !== undefined) {
           setArrivalPlanOpenFor(undefined);
@@ -355,7 +363,8 @@ export function useEdEscapeKey({
           closeTransportDialog();
         } else if (selectedPatientId !== null) {
           setSelectedPatientId(null);
-        } else if (fullscreenBoard) {
+        } else if (fullscreenBoard && !document.querySelector("dialog[open]")) {
+          // A native dialog (the presentation editor) closes itself on this Escape; the board stays.
           setFullscreenBoard(false);
         }
       }

@@ -116,6 +116,17 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   authority for each consequential action, and report which state was actually reached.
 - After a pause, refresh the branch and target state before integrating. Preserve other threads'
   changes; do not rebase, force or reset unclear work.
+- **Daily release (Josh, 24 Oct 2026).** Railway deploys the live site from the `live` branch, not
+  `main`. Merging into `main` does not change the live site. At 6 am Perth the
+  [daily release workflow](../../.github/workflows/daily-release.yml) fast-forwards `live` to the
+  newest CI-passed `main` commit and writes a GitHub Release (`live-YYYY-MM-DD-HHMM`) with a short
+  "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
+  for an urgent fix means a manual run of that workflow after Josh says so. Never push to `live` by
+  hand; rolling back to an earlier `live-*` tag needs Josh's yes.
+- **One claim board across machines.** Claude threads and Codex work on different machines with
+  separate local sign-out logs (the commit hooks read the local one). Before editing, also check the
+  pinned GitHub issue "Who is editing what" and add a comment naming your branch and files; comment
+  again when you release them. File paths and task names only: the repository is public.
 - Historical fold incidents: `archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim).
 
 ## 5. Testing

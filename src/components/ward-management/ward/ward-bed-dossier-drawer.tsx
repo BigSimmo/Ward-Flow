@@ -21,6 +21,11 @@ import { deriveAfternoonDischarges } from "@/components/ward-management/ward-der
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import {
+  openJourneyFromStay,
+  SentJourneyChanges,
+  useStayJourneyIsMine,
+} from "@/components/ward-management/movements/sent-journey-changes";
 import { WardDischargeCriteriaCard, type DischargeCriteriaUpdate } from "./ward-discharge-criteria-card";
 import {
   criteriaLedDepartureNote,
@@ -49,6 +54,7 @@ import {
   type Observation,
 } from "@/components/ward-management/ward-observation";
 import { WardObservationControl, observationWithReview } from "./ward-observation-control";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -60,7 +66,11 @@ interface WardBedDossierDrawerProps {
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
   /** Records a new observation level for the stay (fix plan item 10). Absent where this desk may not. */
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (
+    admissionId: string,
+    observation: Observation,
+    expected?: string,
+  ) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   /** Steps to the bed before this one. The arrow shows only when the parent passes it. */
@@ -175,10 +185,11 @@ export function WardBedDossierDrawer({
   criteriaEligibility,
   onSetCriteria,
 }: WardBedDossierDrawerProps) {
-  const { admissions, bedReleases, resolvePatientIdentity } = useWardFlowSelect(
+  const { admissions, bedReleases, resolvePatientIdentity, movements } = useWardFlowSelect(
     "admissions",
     "bedReleases",
     "resolvePatientIdentity",
+    "movements",
   );
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
@@ -210,6 +221,11 @@ export function WardBedDossierDrawer({
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
+  // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
+  const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;
+  const sentJourneyControls = useStayJourneyIsMine(sentJourney) ? (
+    <SentJourneyChanges key={sentJourney!.id} movement={sentJourney!} patientWho={occupantAlias} />
+  ) : null;
   const tone = bedTone(bedItem, isReady);
 
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
@@ -495,6 +511,7 @@ export function WardBedDossierDrawer({
           planRows={barrierRow}
           planNote={prepNote}
           planCriteria={criteriaCard}
+          sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
         />
@@ -682,10 +699,25 @@ export function WardBedDossierDrawer({
                     </dl>
                     {bedItem?.observation && bedItem.admissionId ? (
                       <WardObservationControl
+                        key={bedItem.admissionId}
                         observation={bedItem.observation}
                         now={now}
                         showCurrent={false}
-                        onSave={onSetObservation ? (next) => onSetObservation(bedItem.admissionId!, next) : undefined}
+                        editingToken={
+                          admission
+                            ? observationEditingToken(
+                                "admission",
+                                admission.id,
+                                admission.observation,
+                                admission.observationChanges?.length ?? 0,
+                              )
+                            : undefined
+                        }
+                        onSave={
+                          onSetObservation
+                            ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
+                            : undefined
+                        }
                       />
                     ) : null}
                   </Section>
@@ -751,6 +783,11 @@ export function WardBedDossierDrawer({
                     ) : null}
                   </Section>
                   {criteriaCard}
+                  {sentJourneyControls ? (
+                    <Section title="Journey this ward sent">
+                      <div className={styles.cardInner}>{sentJourneyControls}</div>
+                    </Section>
+                  ) : null}
                   {isOccupied && bedItem?.admissionId ? (
                     <Section title="Going to">
                       <div className={styles.cardInner}>
@@ -995,7 +1032,11 @@ interface PhoneBedSheetProps {
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (
+    admissionId: string,
+    observation: Observation,
+    expected?: string,
+  ) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
@@ -1012,6 +1053,8 @@ interface PhoneBedSheetProps {
   /** Top 25: a short note under Plan to leave (flagged). */
   planNote?: ReactNode;
   planCriteria?: ReactNode;
+  /** D-80: the urgency and legal status controls for the journey this ward sent. */
+  sentJourney?: ReactNode;
   /** D-64: the criteria led discharge note beside "Record that they have left". Warns, never blocks. */
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
@@ -1062,6 +1105,7 @@ function PhoneBedSheet({
   planRows,
   planNote,
   planCriteria,
+  sentJourney,
   leavingCriteriaNote,
   readyNote,
 }: PhoneBedSheetProps) {
@@ -1161,6 +1205,7 @@ function PhoneBedSheet({
               </dl>
               {bedItem?.observation && admissionId ? (
                 <WardObservationControl
+                  key={admissionId}
                   observation={bedItem.observation}
                   now={now}
                   showCurrent={false}
@@ -1238,6 +1283,12 @@ function PhoneBedSheet({
                 </div>
               ) : null}
               {planCriteria}
+              {sentJourney ? (
+                <>
+                  <h3 className={styles.phoneSec}>Journey this ward sent</h3>
+                  {sentJourney}
+                </>
+              ) : null}
               <h3 className={styles.phoneSec}>Timeline</h3>
               {timeline.length > 0 ? (
                 <ul className={styles.timeline}>

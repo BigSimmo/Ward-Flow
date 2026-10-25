@@ -67,7 +67,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByTestId("ward-patient-destination-row"));
     expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
     // The clinical context sits beside the placement work on Now, not behind a second switch.
-    expect(screen.getByRole("heading", { name: "Why they're here" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Why" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
   });
   it("refers, accepts, pulls, books, dispatches and arrives through shared reducer state", () => {

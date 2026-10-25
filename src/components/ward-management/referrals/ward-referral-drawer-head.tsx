@@ -25,7 +25,6 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
     recipientLabels,
     inboxCount,
     tier,
-    itemsLeft,
     destination,
     decisionDueAt,
   } = s;
@@ -99,12 +98,9 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
             </>
           ) : (
             <>
-              {/* Audit 11 Oct 2026: one unit (items, as "N of M ready to send" counts), and no
-                          decision time before anything is sent. */}
-              <span className={styles.phFigure}>
-                <b className={styles.mono}>{itemsLeft}</b>
-                <span>Items left</span>
-              </span>
+              {/* UX audit 21 Oct 2026: no count here. "Items left" also held the five contact
+                  fields asked at Send, so it read 18 over steps adding to 13. The stepper counts
+                  each step and the footer names what is left. No decision time before a send. */}
               <span className={styles.phFigure}>
                 <b className={styles.mono}>{tier === undefined ? "–" : `T${tier}`}</b>
                 <span>Urgency</span>

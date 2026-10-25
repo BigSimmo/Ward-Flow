@@ -41,6 +41,8 @@ export type SharedView = {
   error: string | null;
   /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
   unconfirmedSave?: boolean;
+  /** Audit 24-3 SM-4: `unavailable` only because a save waits on Retry; the board itself is current. */
+  boardCurrent?: boolean;
   eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
@@ -155,6 +157,9 @@ function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
     },
   };
 }
+
+/** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
+const FRESH_TOKEN = new Error("Ask again with a fresh token");
 
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
@@ -277,7 +282,7 @@ export class SharedWorkspaceClient {
   constructor(
     private readonly options: {
       baseUrl: string;
-      token: () => Promise<string>;
+      token: (options?: { refresh?: boolean }) => Promise<string>;
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
@@ -340,7 +345,12 @@ export class SharedWorkspaceClient {
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
     this.syncUnloadWarning();
-    this.view = { ...this.view, ...update, unconfirmedSave: this.pending !== null || this.queue.length > 0 };
+    this.view = {
+      ...this.view,
+      boardCurrent: false,
+      ...update,
+      unconfirmedSave: this.pending !== null || this.queue.length > 0,
+    };
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
@@ -374,6 +384,18 @@ export class SharedWorkspaceClient {
     }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
+    try {
+      return await this.requestOnce(path, body, false);
+    } catch (error) {
+      if (error !== FRESH_TOKEN) throw error;
+      return this.requestOnce(path, body, true);
+    }
+  }
+  private async requestOnce(
+    path: string,
+    body: PendingCommand | Record<string, unknown> | undefined,
+    retried: boolean,
+  ) {
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
@@ -385,7 +407,8 @@ export class SharedWorkspaceClient {
     await loadSharedStateCheck();
     let token: string;
     try {
-      token = await this.options.token();
+      // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
+      token = await (retried ? this.options.token({ refresh: true }) : this.options.token());
     } catch (error) {
       if (this.disposed || roleSignal.aborted) throw error;
       if (
@@ -496,8 +519,15 @@ export class SharedWorkspaceClient {
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
       throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
-    if (response.status === 401 || response.status === 403)
-      throw denied("Sign in with an account assigned a Ward Flow role.");
+    // Audit 4 A4-02: only the Ward Flow server's own refusal (JSON with its reason) ends the session.
+    // Its first 401 is asked once more with a fresh token, in case a refresh raced it; a command
+    // keeps its id, so it cannot run twice. A proxy's own 401 or 403 page is a lost connection.
+    if (response.status === 401 || response.status === 403) {
+      if (typeof value?.error !== "string") throw new Error("Workspace unavailable");
+      if (response.status === 401 && !retried) throw FRESH_TOKEN;
+      // Audit 24-3 SV-6: the server's own reason, as for `signed-out` and `session-limit` above.
+      throw denied(value.error);
+    }
     // The server holds more than one role for this account and needs to be told which.
     if (response.status === 409 && value?.code === "choose-role") {
       const choices: SharedRoleChoice[] = Array.isArray(value.choices)
@@ -522,7 +552,9 @@ export class SharedWorkspaceClient {
     return { response, value };
   }
   async refresh() {
-    if (this.busy || this.pending || this.disposed || this.gated()) return;
+    // Audit 4 A4-03: a save waiting on Retry does not stop the board being read: reads change
+    // nothing, and the person sees what changed before deciding to send it again.
+    if (this.busy || this.disposed || this.gated()) return;
     this.busy = true;
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -555,8 +587,13 @@ export class SharedWorkspaceClient {
         this.fullReadAt = Date.now();
       }
       this.publish({
-        status: "ready",
-        error: this.view.status === "unavailable" ? null : this.view.error,
+        ...(this.pending
+          ? {
+              status: "unavailable" as const,
+              boardCurrent: true,
+              error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
+            }
+          : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
         access: value.access,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
@@ -783,7 +820,9 @@ export class SharedWorkspaceClient {
                       : response.status === 422 && typeof value?.error === "string" && value.error.trim()
                         ? // Audit F-08: the workflow's own reason, as the local board shows it.
                           `${sentence(value.error)} Nothing was changed.`
-                        : "The action was not applied. Review the workflow requirements.",
+                        : response.status === 429
+                          ? "The server is busy. Nothing was saved. Try again in a moment."
+                          : "The action was not applied. Review the workflow requirements.",
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
           break;
@@ -812,7 +851,8 @@ export class SharedWorkspaceClient {
       if (generation === this.viewGeneration && !this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({
           status: "unavailable",
-          error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
+          error:
+            "Your change may not have been saved. Press Retry when you are back online. It will not be saved twice.",
         });
     } finally {
       this.busy = false;

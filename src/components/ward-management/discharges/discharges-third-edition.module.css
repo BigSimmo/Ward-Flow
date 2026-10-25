@@ -409,6 +409,15 @@
   white-space: nowrap;
 }
 
+/* Item 4: why the list is in its order, one line under the header. */
+.orderNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .listBody {
   min-width: 0;
 }
@@ -1864,7 +1873,8 @@
     display: none;
   }
 
-  .register .highlightNote {
+  .register .highlightNote,
+  .register .orderNote {
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
