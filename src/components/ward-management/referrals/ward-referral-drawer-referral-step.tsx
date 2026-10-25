@@ -14,7 +14,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "../ward-diagnosis";
-import { StatusGlyph } from "@/components/wf";
+import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import { ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
 import {
   LEGAL_STATUS_FORM_CODES,
@@ -27,7 +27,7 @@ import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-field
 import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
-import { DocumentationPanel } from "./referral-flow-panels";
+import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
 
 const COMMUNITY_PURPOSE_LABELS = {
   follow_up: communityReferralPurposeLabel("follow_up"),
@@ -47,6 +47,7 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
           <Choice
             legend="What is this referral for?"
             name={`${sectionId}-community-purpose`}
+            id={`${sectionId}-community-purpose`}
             options={COMMUNITY_REFERRAL_PURPOSES}
             labels={COMMUNITY_PURPOSE_LABELS}
             value={communityPurpose || undefined}
@@ -71,6 +72,7 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
             <Choice
               legend="First contact within"
               name={`${sectionId}-first-contact`}
+              id={`${sectionId}-first-contact`}
               options={FIRST_CONTACT_TARGETS}
               value={communityNeeds.firstContact}
               required
@@ -155,14 +157,45 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     activePatientKey,
     documentation,
     setDocumentation,
+    communityPurpose,
+    communityNeeds,
+    storyError,
   } = s;
   const community = destType === "community";
+  const fromAsked = !sendingWard && !senderMissing;
+  // The step's faults in the order the step shows them, for the error summary.
+  const problems: ErrorSummaryItem[] = attempted.referral
+    ? [
+        ...(community && !communityPurpose
+          ? [{ id: `${sectionId}-community-purpose`, text: "Choose what the community referral is for" }]
+          : []),
+        ...(community && !communityNeeds.firstContact
+          ? [{ id: `${sectionId}-first-contact`, text: "Choose when the team should first make contact" }]
+          : []),
+        ...(fromAsked && !originValid ? [{ id: `${sectionId}-origin`, text: "Choose the location of referral" }] : []),
+        ...(fromAsked && sourceKind === "community" && !sendingTeam.trim()
+          ? [{ id: `${sectionId}-sending`, text: "Record the referring community service" }]
+          : []),
+        ...(!community && !URGENCY_LEVELS.some((tier) => String(tier) === urgency)
+          ? [{ id: `${sectionId}-urgency`, text: "Choose the referral urgency" }]
+          : []),
+        ...(community ? documentationProblems(documentation, `${sectionId}-refdocs`, true) : []),
+        ...(reasonNoteRequired && !doctorNote.trim()
+          ? [{ id: "refDocInput", text: "Give the reason for referral" }]
+          : []),
+        ...(doctorNote.length > reasonRoom
+          ? [{ id: "refDocInput", text: `Shorten the reason for referral to ${reasonRoom} characters or fewer` }]
+          : []),
+        ...(storyError() ? [{ id: `${sectionId}-refSummaryText`, text: storyError()!.replace(/\.$/u, "") }] : []),
+      ]
+    : [];
   return (
     <div
       id={`${sectionId}-referral`}
       className={styles.sectionPanel}
       hidden={previewOpen || confirmationOpen || activeSection !== "referral"}
     >
+      <ErrorSummary items={problems} action="before the next step" />
       {community ? <CommunityPurposeAndFollowUp s={s} /> : null}
       <section className={styles.refCard}>
         <CardHead icon={MapPin} title="From">
@@ -318,11 +351,12 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               <fieldset className={styles.radioField}>
                 <legend className={styles.required}>Urgency</legend>
                 <div className={styles.tierGrid}>
-                  {URGENCY_LEVELS.map((level) => {
+                  {URGENCY_LEVELS.map((level, index) => {
                     const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
                     return (
                       <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
                         <input
+                          id={index === 0 ? `${sectionId}-urgency` : undefined}
                           type="radio"
                           name={`${sectionId}-urgency`}
                           value={String(level)}
@@ -369,7 +403,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         </div>
       </section>
       {community ? (
-        <DocumentationPanel key={activePatientKey} draft={documentation} onChange={setDocumentation} clearanceOnly />
+        <DocumentationPanel
+          key={activePatientKey}
+          draft={documentation}
+          onChange={setDocumentation}
+          clearanceOnly
+          idBase={`${sectionId}-refdocs`}
+        />
       ) : null}
 
       <section className={styles.refCard}>

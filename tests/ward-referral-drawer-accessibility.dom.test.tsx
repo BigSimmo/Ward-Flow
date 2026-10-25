@@ -79,7 +79,11 @@ describe("referral step recovery and keyboard focus", () => {
     expect(section("Patient")).toHaveAttribute("aria-pressed", "true");
     const region = screen.getByLabelText("Home region");
     expect(region).toHaveAttribute("aria-invalid", "true");
-    await waitFor(() => expect(region).toHaveFocus());
+    // Error summary mock-up (24 Oct 2026): focus lands on the step's summary, whose link reaches the field.
+    const summary = screen.getByRole("group", { name: /to fix before the next step/u });
+    await waitFor(() => expect(within(summary).getByRole("heading")).toHaveFocus());
+    fireEvent.click(within(summary).getByRole("link", { name: "Choose the home region" }));
+    expect(region).toHaveFocus();
     fireEvent.change(region, { target: { value: "Perth Metropolitan" } });
     expect(region).toHaveFocus();
     expect(region).not.toHaveAttribute("aria-invalid");

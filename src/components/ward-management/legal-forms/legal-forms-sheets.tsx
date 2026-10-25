@@ -6,7 +6,20 @@ import { draftSessionVersion, sessionDraftKey } from "../ward-session-drafts";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { ChevronLeft, Clock } from "lucide-react";
 
-import { Badge, Button, Field, Select, Sheet, StatusGlyph, TextInput, Textarea, Timer, cx } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  ErrorSummary,
+  Field,
+  Select,
+  Sheet,
+  StatusGlyph,
+  TextInput,
+  Textarea,
+  Timer,
+  cx,
+  type ErrorSummaryItem,
+} from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -199,6 +212,8 @@ export function RecordFormSheet({
   const [timeOnForm, setTimeOnForm] = useState("");
   const [dateOnForm, setDateOnForm] = useState("");
   const [saving, setSaving] = useState(false);
+  // Counts presses of Save while something is missing; the error summary shows from the first.
+  const [refusedSaves, setRefusedSaves] = useState(0);
   const submissionVersion = useRef(0);
   const world = useOptionalWardFlowSelect("scenario", "sessionAdopted", "worldGeneration", "dayZero");
   const dayZero = world?.dayZero;
@@ -270,6 +285,38 @@ export function RecordFormSheet({
                 ? "Enter the date and time written on the form, no later than now."
                 : "Enter the time written on the form as HH:MM, no later than now."
               : undefined);
+  const typeId = `${baseId}-legal-forms-new-instrument`;
+  const movementId = `${baseId}-legal-forms-new-movement`;
+  const timeId = `${baseId}-legal-forms-new-time`;
+  // Every missing answer at once, in field order, for the summary and the fields. A system reason
+  // (saving, or this route cannot record) is not the person's to fix, so it stays on the button.
+  const typeProblem = !draft.form
+    ? "Choose a form type"
+    : !isOwnedLegalFormCode(draft.form)
+      ? `Form ${draft.form} written time is not recorded on this sheet`
+      : draft.form === "3C" && movementRefuses3C(selectedMovement)
+        ? "Form 3C is refused when the person arrived on a Form 3D"
+        : null;
+  const problems: ErrorSummaryItem[] =
+    saving || recordUnavailable
+      ? []
+      : [
+          ...(typeProblem ? [{ id: typeId, text: typeProblem }] : []),
+          ...(!draft.movement ? [{ id: movementId, text: "Choose a movement" }] : []),
+          ...(parsedWrittenAt === null
+            ? [
+                {
+                  id: timeId,
+                  text:
+                    dayZero && dateOnForm !== ""
+                      ? "Enter the date and time written on the form, no later than now"
+                      : "Enter the time written on the form as HH:MM, no later than now",
+                },
+              ]
+            : []),
+        ];
+  const problemFor = (id: string) =>
+    refusedSaves > 0 ? (problems.find((problem) => problem.id === id)?.text ?? null) : null;
   return (
     <Sheet
       open={open}
@@ -290,6 +337,7 @@ export function RecordFormSheet({
               onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
               setTimeOnForm("");
               setDateOnForm("");
+              setRefusedSaves(0);
               setFormKey((key) => key + 1);
             }}
           >
@@ -301,6 +349,9 @@ export function RecordFormSheet({
             data-testid="ward-legal-forms-register-confirm"
             disabledReason={saveBlockReason}
             title={saveBlockReason}
+            onUnavailablePress={() => {
+              if (problems.length > 0) setRefusedSaves((count) => count + 1);
+            }}
             onClick={() => {
               if (saveBlockReason || parsedWrittenAt === null) return;
               const owner = draftSessionVersion();
@@ -316,6 +367,7 @@ export function RecordFormSheet({
                   clearDraft();
                   setTimeOnForm("");
                   setDateOnForm("");
+                  setRefusedSaves(0);
                   onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
                   onClose();
                 }
@@ -339,7 +391,8 @@ export function RecordFormSheet({
       {!draftSaved ? <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p> : null}
       {draftRestored ? <p role="status">Draft restored from this session — use Clear to remove it.</p> : null}
       <div key={formKey} className={styles.recordForm}>
-        <Field label="Form type" id={`${baseId}-legal-forms-new-instrument`}>
+        {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
+        <Field label="Form type" id={typeId} error={problemFor(typeId)}>
           <Select
             ref={typeRef}
             disabled={saving}
@@ -353,7 +406,7 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
-        <Field label="Movement" id={`${baseId}-legal-forms-new-movement`}>
+        <Field label="Movement" id={movementId} error={problemFor(movementId)}>
           <Select
             disabled={saving}
             value={draft.movement}
@@ -376,7 +429,7 @@ export function RecordFormSheet({
           <Field label="Clinician" id={`${baseId}-legal-forms-new-clinician`}>
             <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
-          <Field label="Time on form" id={`${baseId}-legal-forms-new-time`}>
+          <Field label="Time on form" id={timeId} error={problemFor(timeId)}>
             <TextInput
               icon={Clock}
               placeholder="HH:MM"
