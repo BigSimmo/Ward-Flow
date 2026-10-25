@@ -649,8 +649,14 @@ function pullOverrides(
 /** The planned admissions module, handed this reducer's own rejection and placement refusal. */
 function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   return (
-    reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
-      eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+    reducePlannedAdmissionEvent(
+      state,
+      event,
+      decision,
+      reject,
+      (movement, unit, now, waived) =>
+        eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now, waived),
+      OVERRIDE_REASON_REQUIRED,
     ) ?? state
   );
 }
@@ -687,6 +693,12 @@ function eligibilityRefusal(
   movement: Movement,
   unit: Unit,
   now: Instant,
+  /**
+   * Audit 24-1 CS2-19: gates already answered by a reason recorded elsewhere — only a planned
+   * booking's recorded authorisation reason, for its own ward. Never the gender gate (checked
+   * first, above any waiver) and never a capacity refusal (refused before this is called).
+   */
+  waived: readonly EligibilityGate[] = [],
 ): string | null {
   /**
    * T10 (item 8): the `gender_designation` check runs first, before the override early return
@@ -718,11 +730,13 @@ function eligibilityRefusal(
     return null;
   }
   // `verdict` was already computed above, before the gender check — not recomputed here.
-  const failed = verdict.gates.find((gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate));
+  const failed = verdict.gates.find(
+    (gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate) && !waived.includes(gate.gate),
+  );
   if (!failed) return null;
   return (
     `${unit.name} is not eligible for movement ${movement.id} — failed gate ${failed?.gate}: ` +
-    `${candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
+    `${waived.length > 0 ? failed.detail : candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
   );
 }
 
