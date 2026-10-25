@@ -914,7 +914,7 @@ describe("withdrawing an acceptance while a bed is held (Q16)", () => {
       within(screen.getByTestId("ward-patient-withdraw-acceptance")).getByText(/no ward has accepted this patient/i),
     ).toBeInTheDocument();
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
-    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+    expect(page).toMatch(/withdrawn and its pulled bed released, by coordinator · The bed was lost/);
   });
 
   it("lists a withdrawal from a stepped-back stage, which writes no stage entry, in the timeline", () => {
@@ -927,7 +927,7 @@ describe("withdrawing an acceptance while a bed is held (Q16)", () => {
     fireEvent.click(screen.getByTestId("ward-console-withdraw-acceptance"));
 
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
-    expect(page).toMatch(/withdrawn and its held bed released, by coordinator · The bed was lost/);
+    expect(page).toMatch(/withdrawn and its pulled bed released, by coordinator · The bed was lost/);
   });
 });
 
@@ -1120,10 +1120,10 @@ describe("a transport job that outlived the bed it was booked against", () => {
     expect(within(panel).getByText(/Patient transport service/)).toBeInTheDocument();
     expect(
       within(panel).getByText(
-        /The recorded stage has been moved back behind the booking\. Correcting a stage does not release a bed, so the ward may still be holding one — check with them before cancelling Patient transport service\./,
+        /The recorded stage has been moved back behind the booking\. Correcting a stage does not release a bed, so the ward may still have a bed pulled — check with them before cancelling Patient transport service\./,
       ),
     ).toBeInTheDocument();
-    expect(within(panel).getByText(/the ward may still be holding one/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/the ward may still have a bed pulled/i)).toBeInTheDocument();
   });
 
   it("⚠️ names who may cancel, rather than offering a control that would be refused", () => {
@@ -1147,7 +1147,7 @@ describe("a transport job that outlived the bed it was booked against", () => {
     expect(within(rail).getByText(/Transport booked with Patient transport service/i)).toBeInTheDocument();
     expect(within(rail).getByText(/Record behind/i)).toBeInTheDocument();
     expect(
-      within(rail).getByText(/the ward may still be holding one — check with them before cancelling/i),
+      within(rail).getByText(/the ward may still have a bed pulled — check with them before cancelling/i),
     ).toBeInTheDocument();
   });
 
@@ -1183,7 +1183,7 @@ describe("a transport job that outlived the bed it was booked against", () => {
     fireEvent.click(screen.getByTestId("ward-console-step-back-stage"));
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
-    expect(within(panel).getByText(/the ward may still be holding one/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/the ward may still have a bed pulled/i)).toBeInTheDocument();
     expect(within(panel).queryByText(/given back to the ward/i)).not.toBeInTheDocument();
     // And the rail says check, not act.
     expect(within(screen.getByTestId("ward-console-attention")).getByText(/Record behind/i)).toBeInTheDocument();

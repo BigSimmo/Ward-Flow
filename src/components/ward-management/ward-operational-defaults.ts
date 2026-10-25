@@ -254,7 +254,10 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Leave bed flagged to consider opening after", display: hoursText(LEAVE_BED_OPEN_WARNING_MINUTES) },
   // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull hold rule. The marker every
   // page shows is derived from it (`ward-bed-hold.ts`), so this line names that, not a second timer.
-  { name: "Bed hold shown as running out", display: `${hoursText(DUE_SOON_URGENT_MINUTES)} before the Pull hold ends` },
+  {
+    name: "Pulled bed shown as running out",
+    display: `${hoursText(DUE_SOON_URGENT_MINUTES)} before the Pull time limit ends`,
+  },
   {
     name: "Patient search wait bands",
     display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over`,

@@ -114,12 +114,12 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                 </span>
               </div>
               <div className={styles.pulledDetailItem}>
-                <span className={styles.pulledDetailLabel}>Hold Status</span>
+                <span className={styles.pulledDetailLabel}>Pull status</span>
                 <span className={styles.pulledDetailValue}>
                   {hasArrivalPlan
-                    ? "Hold clock cleared (Arrival time scheduled)"
+                    ? "Pull clock cleared (arrival time scheduled)"
                     : isHoldExpired
-                      ? "4h window passed — review the hold"
+                      ? "4h window passed — review the pull"
                       : "4h standard countdown active"}
                 </span>
               </div>

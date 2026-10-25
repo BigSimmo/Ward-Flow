@@ -1247,7 +1247,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                               </dl>
                               <div className={styles.phoneSheetField}>
                                 <span className={styles.phoneSheetFieldLabel} id={`ward-hold-${activeMovement.id}`}>
-                                  Bed hold once pulled
+                                  Pull time limit
                                 </span>
                                 <div
                                   className={styles.phoneSegment}
@@ -1281,7 +1281,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
                         {isPhone || blocked ? null : (
                           <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
-                            <span className={styles.formLabel}>Bed hold once pulled</span>
+                            <span className={styles.formLabel}>Pull time limit</span>
                             <select
                               id={`ward-accept-hold-${activeMovement.id}`}
                               className={styles.formSelect}
@@ -1650,7 +1650,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               </p>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel} htmlFor="hold-duration-select">
-                  Bed hold once pulled
+                  Pull time limit
                 </label>
                 <select
                   id="hold-duration-select"

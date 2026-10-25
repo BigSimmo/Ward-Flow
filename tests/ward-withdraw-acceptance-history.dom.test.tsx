@@ -39,6 +39,6 @@ describe("the History tab after withdrawing an acceptance that held a bed", () =
 
     const ward = unitName(seeded.movements.find((candidate) => candidate.id === "WF-004")!.acceptedUnitId!)!;
     expect(screen.getByText(`Acceptance withdrawn, ${ward}, by coordinator`)).toBeInTheDocument();
-    expect(screen.getByText(`Held bed released, ${ward}, by coordinator`)).toBeInTheDocument();
+    expect(screen.getByText(`Pulled bed released, ${ward}, by coordinator`)).toBeInTheDocument();
   });
 });
