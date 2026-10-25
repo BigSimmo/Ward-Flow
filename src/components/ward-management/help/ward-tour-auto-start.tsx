@@ -5,9 +5,11 @@ import { useEffect, useRef } from "react";
 
 import { useTourRole, useTourSeen } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
-import { markWhatsNewSeen } from "./ward-whats-new";
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
+// Heard by the what's new note (`ward-whats-new.tsx`), written out so neither loads the other: the
+// note carries the whole change list, which must not ride in this file's first-load chunk too.
+const TOUR_AUTO_STARTED_EVENT = "ward-flow-tour-auto-started";
 
 /**
  * Whether a tour has already started on its own on this device. Josh, 24 Oct 2026: help must not
@@ -64,7 +66,7 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
       started.current = true;
       if (readTourAutoDone() || !markTourAutoDone()) return;
       // A first visit gets the tour, not the what's new note as well.
-      markWhatsNewSeen();
+      window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
       onStart();
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);

@@ -55,8 +55,6 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_DISCHARGE_DEPENDENCY":
     case "RECORD_DISCHARGE_PLAN_CHANGE":
       return event.releaseId;
-    case "RELEASE_BED":
-      return event.releaseId;
     // Admission-scoped: an admission id is not a unit or release id, so these keep their own group.
     case "RECORD_LEAVING":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":

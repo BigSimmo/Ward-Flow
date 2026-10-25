@@ -112,6 +112,6 @@ describe("urgent figures: the ceiling decides the colour, never what the reader 
     expect(flagged.has("deadline")).toBe(true);
     expect(flagged.has("declines")).toBe(true);
     expect(flagged.has("pull")).toBe(false);
-    expect(withheldFlags[0]).toContain("hold on the bed");
+    expect(withheldFlags[0]).toContain("pull on the bed");
   });
 });

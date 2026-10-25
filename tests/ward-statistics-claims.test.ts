@@ -37,9 +37,11 @@ import {
 // The removed overview precedent depended on a home-page explanation that the owner retired.
 // 80 -> 79 on 8 October 2026: the preparation-control claim's page prose was already retired,
 // and its cited filter belonged to unused Ward-screen scaffolding, not a rendered control.
-// 79 -> 78 on 25 October 2026 (production audit USC-07): the back-link claim went with
+// 79 -> 78 on 25 October 2026: releasing-the-bed-overwrites-it. Its page prose was already retired,
+// and audit 24-1 decision 4 removed RELEASE_BED, the code it cited.
+// 78 -> 77 on 25 October 2026 (production audit USC-07): the back-link claim went with
 // `statistics-section-frame.tsx`, a component no page rendered, deleted with Josh's approval.
-const EXPECTED_MODEL_CLAIMS = 78;
+const EXPECTED_MODEL_CLAIMS = 77;
 /*
  * 12 -> 11 on 2026-09-05. The admitted gap that left was
  * `statistics-ward-screen/computed/ward-statistics-has-no-consumer-in-the-app`, and it left because
@@ -98,7 +100,6 @@ const RETIRED_PAGE_CLAIM_IDS = new Set([
   "statistics-screen/bed-readiness/confirming-the-discharge-overwrites-it",
   "statistics-screen/bed-readiness/blocking-the-bed-overwrites-it",
   "statistics-screen/bed-readiness/clearing-the-block-overwrites-it",
-  "statistics-screen/bed-readiness/releasing-the-bed-overwrites-it",
   "statistics-screen/bed-readiness/preparation-begins-only-after-a-release",
   "statistics-screen/not-offered/the-readiness-gap-is-derived-from-those-two-counts",
   "statistics-screen/declines-by-reason/a-decline-carries-one-reason-and-no-free-text",
@@ -381,7 +382,7 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(53);
+    expect(retired).toHaveLength(52);
     expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(25);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(

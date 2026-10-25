@@ -796,7 +796,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "chips",
           { sel: '[aria-label="Team tools"]' },
           "Team actions",
-          "How to reach, On duty, Refer from team, Record contact, the CTO register, Catchment MDT and more.",
+          "How to reach, On duty, Refer from team, Record contact, the CTO register, Catchment counts and more.",
           "Swipe the row to see the rest.",
         ),
         step(

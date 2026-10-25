@@ -126,7 +126,10 @@ describe("Ward answer current facts", () => {
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${MOVEMENT.id}`));
     const form = screen.getByTestId(`ward-decline-form-${MOVEMENT.id}`);
     const choices = within(form).getAllByRole("radio");
-    const submit = within(form).getByRole("button", { name: "Confirm decline" });
+    // Audit 24-7 CT-19: the submit names the patient the view header names.
+    const submit = within(form).getByRole("button", { name: /^Decline for \S/u });
+    const named = submit.textContent!.replace(/^Decline for /u, "");
+    expect(screen.getAllByText(new RegExp(named, "u")).length).toBeGreaterThan(1);
 
     expect(choices).toHaveLength(MOVEMENT_DECLINE_REASONS.length);
     expect(choices.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
@@ -258,7 +261,7 @@ describe("Ward answer current facts", () => {
     // would leave this movement's referredUnitIds untouched and "incoming" — capability_mismatch
     // still declines, which is what "incoming is empty" below needs.
     fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
-    fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
+    fireEvent.click(within(form).getByRole("button", { name: /^Decline for \S/u }));
 
     // Empty state: the v6 card head reads "Bed request" with a quiet "none waiting" count
     // (design/pages-v6/Ward_answer.png), not a coloured badge.

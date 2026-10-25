@@ -12,7 +12,14 @@ import type { SharedWorkspaceClient } from "../ward-shared-client";
 /** The shared workspace's access calls (`SharedWorkspaceClient`). */
 export type SharedAccessApi = Pick<
   SharedWorkspaceClient,
-  "listAccess" | "listCovers" | "grantAccess" | "revokeAccess" | "giveCover" | "decideRequest" | "breakGlass"
+  | "listAccess"
+  | "listCovers"
+  | "listRecordViews"
+  | "grantAccess"
+  | "revokeAccess"
+  | "giveCover"
+  | "decideRequest"
+  | "breakGlass"
 >;
 
 export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId: string | null } | null>(null);
