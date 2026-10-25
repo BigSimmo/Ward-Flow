@@ -17,6 +17,7 @@ import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-redu
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 
 beforeAll(() => {
   // The ED wait field under the ED lens measures its card; jsdom has no ResizeObserver.
@@ -85,12 +86,22 @@ describe("Summary, Map view", () => {
 
   it("the ED lens ranks EDs and opens ED statistics pages", () => {
     renderView();
-    fireEvent.click(screen.getByRole("radio", { name: /^ED waits/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Open ED journeys/ }));
     const rank = screen.getByTestId("ward-statistics-map-rank");
     expect(within(rank).getByRole("heading", { name: "Most open ED journeys" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
     for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
+    const { state, sites } = figuresAtAnchor();
+    const journeys = sites.reduce((sum, site) => sum + lensValue(site, "ed"), 0);
+    expect(journeys).toBeGreaterThan(waitingInEds(state.movements, NOW_ANCHOR).total);
+    expect(screen.getByRole("radio", { name: /^Open ED journeys/u })).toHaveTextContent(String(journeys));
+    expect(screen.getByText(/^Ring: longest time since opening/u)).toHaveTextContent("Centre: open ED journeys.");
+    expect(
+      within(screen.getByTestId("ward-statistics-map-below")).getByRole("heading", {
+        name: "Open ED journeys, by ED",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("choosing a site on the map lists its wards and ED as links, and closes again", () => {
@@ -112,7 +123,7 @@ describe("Summary, Map view", () => {
 
   it("the stay lens is measured, not a preview, and every lens names its key", () => {
     renderView();
-    for (const name of [/^Beds/, /^ED waits/, /^Discharge/, /^Stay/]) {
+    for (const name of [/^Beds/, /^Open ED journeys/, /^Discharge/, /^Stay/]) {
       fireEvent.click(screen.getByRole("radio", { name }));
       expect(screen.getByTestId("ward-statistics-map-view").textContent).not.toContain("Not wired in this prototype.");
       expect(screen.getByText(/^Ring: /)).toBeTruthy();

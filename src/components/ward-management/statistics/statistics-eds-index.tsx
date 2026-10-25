@@ -238,20 +238,20 @@ export function StatisticsEdsIndexScreen() {
               );
             })}
           </PhoneList>
-          <PhoneGroup title="Wait bands" aside="everyone waiting">
+          <PhoneGroup title="Time since opening" aside="Open ED journeys">
             <div className={phone.chartCard}>
               <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={160} />
             </div>
           </PhoneGroup>
           <PhoneSheetRow
             icon={Users}
-            title="Everyone, one mark each"
+            title="Open ED journeys, one mark each"
             sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
             testId="ward-statistics-eds-phone-swarm"
           >
             <StatisticsEdSwarm rows={swarmRows} labelWidth={96} testId="ward-statistics-eds-swarm" />
             <p className={phone.note}>
-              {`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
+              {`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits.`}
             </p>
           </PhoneSheetRow>
         </PhoneBody>
@@ -261,7 +261,7 @@ export function StatisticsEdsIndexScreen() {
             icon={Users}
             id="everyone-waiting"
             className={index.anchorTarget}
-            title="Everyone waiting, by ED"
+            title="Open ED journeys, by ED"
             aside={
               <span
                 className={cx(styles.muted, index.phoneHide)}
@@ -273,7 +273,7 @@ export function StatisticsEdsIndexScreen() {
               <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
             </div>
             <CardFoot
-              meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
+              meta={`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits. Open a row for that ED's page.`}
             />
           </StatCard>
 
@@ -372,14 +372,14 @@ export function StatisticsEdsIndexScreen() {
                 icon={Clock}
                 id="wait-bands"
                 className={index.anchorTarget}
-                title="Wait bands"
-                aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
+                title="Time since opening"
+                aside={<span className={cx(styles.muted, index.phoneHide)}>Open ED journeys</span>}
                 data-testid="ward-statistics-eds-bands"
               >
                 <CardBody>
                   <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={220} />
                 </CardBody>
-                <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+                <CardFoot meta="The bands do not overlap: they add up to all open ED journeys." />
               </StatCard>
             </Follow>
           </FlushRow>

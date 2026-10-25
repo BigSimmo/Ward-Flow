@@ -152,6 +152,15 @@ describe("comparison across departments", () => {
     expect(screen.getByTestId("ward-statistics-eds-population")).toHaveTextContent(
       "not shown still in ED · fewer than 5 in transit",
     );
+    const bands = screen.getByTestId("ward-statistics-eds-bands");
+    expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
+    expect(bands).toHaveTextContent("Open ED journeys");
+    expect(bands).toHaveTextContent("The bands do not overlap: they add up to all open ED journeys.");
+    expect(
+      within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByRole("heading", {
+        name: "Open ED journeys, by ED",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("keeps travelling people in open journeys and names physical ED presence separately", () => {
@@ -167,6 +176,15 @@ describe("comparison across departments", () => {
     expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("2");
     expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
     expect(screen.getByRole("heading", { name: "Open ED journeys" })).toBeInTheDocument();
+    const bands = screen.getByTestId("ward-statistics-ed-bands");
+    expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED journeys")).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED journeys by time since opening")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-statistics-ed-everyone")).getByRole("heading", {
+        name: "Open ED journeys, by ED",
+      }),
+    ).toBeInTheDocument();
   });
   it("has departments to compare at all", () => {
     expect(DEPARTMENTS.length, "ward-sites.ts lists no emergency departments").toBeGreaterThan(1);

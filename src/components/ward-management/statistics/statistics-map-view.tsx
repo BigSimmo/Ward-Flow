@@ -270,9 +270,9 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   },
   {
     id: "ed",
-    label: "ED waits",
+    label: "Open ED journeys",
     rankTitle: "Most open ED journeys",
-    key: `Ring: longest wait, to ${VERY_LONG_WAIT_HOURS}h. Centre: people waiting. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED journeys. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -352,7 +352,7 @@ export function StatisticsMapView({
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "ED waits", count: network.edWaiting },
+    { id: "ed", label: "Open ED journeys", count: network.edWaiting },
     { id: "dis", label: "Discharge", count: network.dischargedToday + network.dueToday },
     { id: "stay", label: "Stay", count: network.meanStay === null ? "none" : daysText(network.meanStay) },
   ];
@@ -640,7 +640,7 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Everyone waiting, by ED"
+        title="Open ED journeys, by ED"
         aside={`${rows.length} EDs`}
         data-testid="ward-statistics-map-below"
       >

@@ -379,14 +379,14 @@ export function StatisticsEdScreen({
               </StatCard>
               <StatCard
                 icon={Activity}
-                title="Wait bands"
-                aside="People waiting now"
+                title="Time since opening"
+                aside="Open ED journeys"
                 id="ed-bands"
                 data-testid="ward-statistics-ed-bands"
               >
                 <CardBody className={styles.bodyStack}>
                   <ColumnChart
-                    label="People waiting by wait band"
+                    label="Open ED journeys by time since opening"
                     height={96}
                     columns={bands.map((band, index) => ({
                       id: band.label,
@@ -449,7 +449,7 @@ export function StatisticsEdScreen({
 
           <StatCard
             icon={Activity}
-            title="Everyone waiting, by ED"
+            title="Open ED journeys, by ED"
             aside={countsOnly ? undefined : "One mark per person"}
             id="ed-everyone"
             data-testid="ward-statistics-ed-everyone"

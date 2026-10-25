@@ -80,6 +80,8 @@ describe("with All services chosen, the screen renders byte-identical to before 
     expect(screen.queryByTestId("ward-capacity-mismatch-service-note")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-capacity-ready-zero-in-service")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-capacity-ready-network-line")).not.toBeInTheDocument();
+    expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(/^Modelled network /u);
+    expect(screen.getByRole("group", { name: "Modelled network Bed Telemetry" })).toBeInTheDocument();
   });
 
   it("renders every ward's row in the table and its block on the map — nothing pre-filtered", () => {
@@ -160,6 +162,10 @@ describe("with South Metro chosen, the map and ward table are scoped", () => {
     renderScreen();
     expect(screen.getByText(/^Capacity · Modelled network, not only South Metro · /u)).toBeInTheDocument();
     expect(screen.queryByText(/^Capacity · South Metro/u)).toBeNull();
+    expect(screen.getByTestId("wf-occupancy-ring")).toHaveAccessibleName(/^Modelled network, not only South Metro /u);
+    expect(
+      screen.getByRole("group", { name: "Modelled network, not only South Metro Bed Telemetry" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the exact scope bar sentence — 'Showing N of M wards, in South Metro.'", () => {
