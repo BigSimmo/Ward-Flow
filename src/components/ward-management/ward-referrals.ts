@@ -125,8 +125,6 @@ function movementWithdrawable(movement: Movement): boolean {
   return true;
 }
 
-export const isMovementWithdrawable = movementWithdrawable;
-
 /**
  * Whether the whole-referral withdrawal (`RECORD_REFERRER_WITHDRAWAL` with no `destinationKind`)
  * would be accepted — the reducer's own refusals, read once so a screen does not offer a
@@ -905,11 +903,6 @@ export function referralSuburbIsAnswered(suburb: ReferralSuburb | undefined): bo
  */
 export function referralSuburbLabel(suburb: ReferralSuburb): string {
   return suburb.kind === "named" ? suburb.name : suburbUnknownLabels[suburb.reason];
-}
-
-/** The suburb to read a catchment for, or `null` when there is no place to read one for. */
-export function catchmentSuburbOf(suburb: ReferralSuburb): string | null {
-  return suburb.kind === "named" ? suburb.name : null;
 }
 
 export function referralClocks(referral: Pick<Referral, "raisedAt" | "triagedAt">, now: Instant): ReferralClocks {

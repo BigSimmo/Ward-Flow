@@ -316,8 +316,7 @@ build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 1
 **Route:** `/handover`. **Mockup:** `handover-third-edition.html`. **Dispatches:**
 `RECORD_HANDOVER_SIGN_OFF`. **Reads:** `COMMUNITY_TEAM_PAGES`/`communityTeamById`
 (`community/community-derivations.ts`), `elapsedLabel`, `handoverSnapshot`, `isOpen`,
-`referralForMovement`, `stageCopy` (`ward-derivations.ts`), `openWorkBeforeShiftEnd` and friends
-(`ward-board-time-features.ts`). **Tests:** the dozen `ward-handover*` files plus
+`referralForMovement`, `stageCopy` (`ward-derivations.ts`). **Tests:** the dozen `ward-handover*` files plus
 `ward-advanced-features.dom.test.tsx`, `ward-community-durations-not-dates.test.ts`,
 `ward-pull-vocabulary.dom.test.tsx`,
 `ward-screen-handover-link.dom.test.tsx`, `ward-service-scope.test.ts`,

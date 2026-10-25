@@ -680,8 +680,7 @@ scope's own directory):
   Node test context with no React dependency. Both maps are `Record<..., LucideIcon>` over the
   exact id union, so an id with no icon (or an icon for a retired id) is a compile error. 3
   importers.
-- **`ward-nav-role-order.ts`** (122 lines) — `orderViewsForRole`/`orderRoleScreensForRole`/
-  `orderBoardsForRole`/`wardNavRoleRank`: **reorders** `ward-nav.ts`'s lists per role, never adds or
+- **`ward-nav-role-order.ts`** (122 lines) — `wardNavRoleRank`: ranks ids so the rail can **reorder** `ward-nav.ts`'s lists per role, never adds or
   removes (owner ruling, 2026-09-06, "reorder real screens only" — the drawn ward/ED sidebars named
   three destinations that were never built). An id a role's list does not mention keeps its source
   position, last, rather than vanishing. 3 importers.

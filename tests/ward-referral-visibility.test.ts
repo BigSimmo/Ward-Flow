@@ -17,7 +17,6 @@ import {
   coordinatorWorklistReferrals,
   coordinatorWorksReferral,
   edScopedReferral,
-  edScopedReferrals,
   referralDestinationDirection,
   wardScopedReferral,
   wardScopedReferrals,
@@ -1986,7 +1985,9 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
     });
 
     it("holds every ED-addressed referral in the shipped seed to the same field sets", () => {
-      const projections = edScopedReferrals(seededReferrals);
+      const projections = seededReferrals
+        .map((referral) => edScopedReferral(referral))
+        .filter((projection) => projection !== undefined);
       expect(
         projections.length,
         "no seeded referral is addressed to an emergency department, so this guard proved nothing. " +
@@ -1997,7 +1998,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
       const withEdArm = seededReferrals.filter((referral) =>
         referral.destinations.some((addressing) => addressing.destination.kind === "emergency_department"),
       );
-      expect(projections.length, "the plural function lost or duplicated an ED-addressed referral").toBe(
+      expect(projections.length, "the projection lost or duplicated an ED-addressed referral").toBe(
         withEdArm.length,
       );
 

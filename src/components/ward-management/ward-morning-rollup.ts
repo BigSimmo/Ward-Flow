@@ -1,8 +1,7 @@
 import { capacityBreakdown, type CapacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitSiteCode } from "@/components/ward-management/ward-derivations";
-import type { BedRelease, LeaveBed, Referral, Site, Unit } from "@/components/ward-management/ward-model";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import type { BedRelease, LeaveBed, Site, Unit } from "@/components/ward-management/ward-model";
 import { MORNING_HANDOVER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
@@ -60,7 +59,7 @@ export const CAPACITY_FIGURE_LABELS = {
 } as const;
 
 /**
- * Task 9's one label, defined once beside the derivation for the same reason the five capacity
+ * Task 9's one label, defined once here for the same reason the five capacity
  * labels are (spec D14): a hardcoded copy in the page would pass every test while quietly costing
  * the cheap rename. Deliberately NOT a member of `CAPACITY_FIGURE_LABELS` — that constant is the
  * five-figure capacity vocabulary spec D3 requires to be identical at service, hospital and ward
@@ -69,30 +68,6 @@ export const CAPACITY_FIGURE_LABELS = {
  * "one vocabulary, never combined" rule D3 exists to hold.
  */
 export const PEOPLE_WAITING_LABEL = "People waiting for a bed";
-
-/**
- * Task 9: how many people are waiting for a bed right now — the count of referrals still in state
- * `"queued"`, and nothing else. Not a forecast, not a shortfall, not a gap between demand and
- * supply.
- *
- * **Counted by `referralQueueOrder` itself (`ward-referrals.ts`), never by a second filter of our
- * own.** The referral board renders `referralQueueOrder(referrals)`; this figure is the length of
- * that same list, so the board and the morning page cannot disagree about how many people are
- * waiting. Two screens giving two answers from one state is this project's most expensive defect
- * class, and it has shipped here more than once — a duplicated `.filter(r => r.state ===
- * "queued")` here would look identical today and drift the first time the queue's own definition
- * of "waiting" changes.
- *
- * **It is not part of `CapacityRollup` and must never become one.** Spec D2's headline is the sum
- * of `availableNow` and nothing else; keeping this figure outside the `CapacityBreakdown` shape
- * means no `sumBreakdowns` reduce, no `ALL_FIGURE_KEYS` iteration and no future field-wise sum can
- * reach the headline through it. The page prints the two numbers side by side and never subtracts
- * one from the other — a subtraction performed by the page would be a claim about a shortfall, and
- * this prototype does not make one.
- */
-export function peopleWaitingCount(referrals: Referral[]): number {
-  return referralQueueOrder(referrals).length;
-}
 
 /**
  * How stale the figures rolled up under one heading are. `"never"` when no unit below has ever
@@ -120,26 +95,6 @@ export type ServiceRollup = {
    *  never silently dropped from the total — see the module doc comment on `serviceRollup`. */
   unplacedUnitIds: string[];
 };
-
-/**
- * `now`'s operating day is `Math.floor(now / MINUTES_PER_DAY)` — the same expression
- * `releaseBand()` uses in `ward-bed-availability.ts`. Reused here rather than redefined so the
- * model never carries two notions of where one day ends and the next begins.
- */
-function operatingDayStart(instant: Instant): Instant {
-  return Math.floor(instant / MINUTES_PER_DAY) * MINUTES_PER_DAY;
-}
-
-/**
- * The 08:00 instant of `now`'s own operating day, but ONLY once that instant has actually
- * arrived. Returns `null` while `now` is still earlier in the day (spec D5) — this is a "has
- * handover happened yet" gate, not a clock-rounding helper, so it must never return a previous
- * day's 08:00 and must never fall back to `now` itself when handover has not yet happened.
- */
-export function morningHandoverInstant(now: Instant): Instant | null {
-  const handoverInstant = operatingDayStart(now) + MORNING_HANDOVER_MINUTES;
-  return now >= handoverInstant ? handoverInstant : null;
-}
 
 /**
  * A unit counts as never-confirmed when `allocatable.confirmedAt` is absent or not a finite
@@ -275,38 +230,4 @@ export function serviceRollup(
   );
 
   return { service, sites: siteRollups, at: now, unplacedUnitIds };
-}
-
-/**
- * **HOW MANY WARDS HAVE EVER CONFIRMED — the one spelling of this fact, for every surface.**
- *
- * 🔴 **IT STATES ITS OWN RANGE, AND THAT IS THE WHOLE DESIGN.** The obvious wording is "18 of 23
- * wards have confirmed", and it was rejected: it is silent on the timeframe, and a sentence silent
- * on its timeframe invites the reader to supply one — "confirmed *today*", almost certainly.
- * `rollupFreshness` above makes exactly one distinction, **ever-confirmed versus never**; there is
- * no day boundary in it, and `operatingDayStart` sits in this same file unused by it. So the
- * sentence says "never" and "at least once", which are the true qualifiers, and a reader cannot
- * guess a recency at a sentence that has already given them the range.
- *
- * ⚠️ **AND IT LEADS WITH THE HALF SOMEBODY CAN ACT ON.** "5 wards have never confirmed" is a gap a
- * coordinator can close; "18 of 23 have confirmed" is a scoreboard. Same derivation, no extra claim.
- *
- * 🔴 **IT MUST NEVER CARRY A TIME — not an absolute one, and not a relative one either.** Ward Lead's
- * D7 ruling, 2026-09-07: a coverage COUNT does not trespass on D7 (which governs when a board's data
- * was last true) precisely because counting an act is not stating when it happened. The moment this
- * string carries "today", "recently", "in the last hour" or a clock face, it becomes a second
- * freshness vocabulary and `ward-freshness.tsx` owns that. **The risk is not this wording; it is the
- * wording somebody adds when a reader asks "confirmed when?" — an obvious question whose answer is a
- * time, and whose addition will look like an improvement.** `tests/ward-freshness-count-wording.test.ts`
- * is what stops it, because a comment cannot compete with a change that looks like a fix.
- */
-export function wardsConfirmedLabel(freshness: RollupFreshness): string {
-  // "ever", not a bare "No ward has confirmed" — caught by this rule's own guard on the day it
-  // was written. Without it the sentence is silent on its range exactly like the scoreboard form it
-  // replaced, and a reader supplies "not today" instead of "not once".
-  if (freshness.kind === "never") return "No ward has ever confirmed";
-  const { unitsConfirmed, unitsTotal } = freshness;
-  const neverConfirmed = unitsTotal - unitsConfirmed;
-  if (neverConfirmed === 0) return "Every ward has confirmed at least once";
-  return `${neverConfirmed} ward${neverConfirmed === 1 ? "" : "s"} ${neverConfirmed === 1 ? "has" : "have"} never confirmed`;
 }
