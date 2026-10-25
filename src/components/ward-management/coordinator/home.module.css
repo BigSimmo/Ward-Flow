@@ -1539,7 +1539,7 @@ button.registerRow:hover {
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 940;
+    z-index: calc(var(--z-overlay) - 1);
     background: var(--scrim);
   }
 
@@ -1548,7 +1548,7 @@ button.registerRow:hover {
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: 950;
+    z-index: var(--z-overlay);
     width: min(28rem, 92vw);
   }
 
