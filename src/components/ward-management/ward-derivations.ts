@@ -38,7 +38,6 @@ import {
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
 import {
-  MOVEMENT_STAGES,
   PARALLEL_REFERRAL_CAP,
   type BedReleaseState,
   type Decline,
@@ -191,21 +190,6 @@ export const BED_RELEASE_BLOCKED_LABEL = "Blocked";
  * up" beside "Blocked" for physically blocked beds can no longer be confused for one another.
  */
 export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Discharges held up";
-
-/** Counts are derived from whatever `movements` list the caller passes — every screen now
- * passes the live provider state (Task 6), so the pipeline strip can never advertise a count
- * a different surface would compute differently from the same instant. */
-export function stageSummaries(movements: Movement[]) {
-  const counts = new Map<MovementStage, number>();
-  for (const movement of movements) {
-    counts.set(movement.stage, (counts.get(movement.stage) ?? 0) + 1);
-  }
-  return MOVEMENT_STAGES.map((id) => ({
-    id,
-    ...stageCopy[id],
-    count: counts.get(id) ?? 0,
-  }));
-}
 
 /**
  * The one canonical order of the health services, and the list every screen that groups by service
