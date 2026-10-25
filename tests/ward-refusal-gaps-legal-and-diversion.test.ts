@@ -336,7 +336,7 @@ describe("RECORD_LEGAL_FORM_CONTINUATION: unrecognised form code (line 8085)", (
       formCode: OFF_LIST,
       startedAt: NOW,
     });
-    expect(added(seeded, off)).toEqual([`Form ${OFF_LIST} is not a recognised legal form in this prototype`]);
+    expect(added(seeded, off)).toEqual(["That form is not a recognised legal form in this prototype"]);
   });
 
   it("CONTROL: a form code the clock recognises is accepted", () => {
@@ -350,7 +350,7 @@ describe("RECORD_LEGAL_FORM_CONTINUATION: unrecognised form code (line 8085)", (
       startedAt: NOW,
     });
     const reasons = added(seeded, on);
-    expect(reasons).not.toContain(`Form ${OFF_LIST} is not a recognised legal form in this prototype`);
+    expect(reasons).not.toContain("That form is not a recognised legal form in this prototype");
     expect(reasons).toEqual([]);
     expect(on.movements.find((m) => m.id === MOVEMENT)?.legalForm?.code).toBe("1A");
   });

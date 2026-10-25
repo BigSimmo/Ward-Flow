@@ -1,5 +1,9 @@
 # Ward Flow shell specification, extracted from the build sheet
 
+> **Historical drawing-era record, September 2026.** Written while the third-edition drawings were being built. It is not current guidance for app screens. The rendered app is the current design authority; start at the [Ward Flow entry point](../../../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 This document is a line by line extraction of `inputs/buildsheet.html` (title "Ward Flow Build Sheet", first edition, frozen 8 September 2026, version 1.0). The sheet's document body runs from line 3841 to the script at line 4422. Every rule below is numbered so a builder can cite it, and every rule carries the line of the sheet it came from. Where the sheet states a rule in words, the words are the sheet's own. Where the sheet uses a table, the rows are rewritten as plain sentences. Contract markup and code are copied verbatim into fenced blocks.
 
 The sheet's own header describes it as "The settled bar, the settled rail, every pop-out and all twelve screens, written as instructions a builder can follow, with the mockups they were proved in. Sits under the design system and above the mockups." (line 3898). The rail note on the sheet says "Every figure quoted from the mockups is invented. The hospital sites, health services and ward names are real WA names." (line 3888).

@@ -1,0 +1,77 @@
+.card {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface, var(--wf-canvas));
+  box-shadow: var(--shadow-overlay);
+  color: var(--wf-ink-2);
+}
+
+/* Above the phone's bottom tab bar. */
+@media (width <= 640px) {
+  .card {
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-16, 1rem);
+  font-weight: 600;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+  font-size: var(--wf-fs-14, 0.875rem);
+  line-height: 1.45;
+}
+
+.list li + li {
+  margin-top: 0.25rem;
+}
+
+.buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.primary,
+.secondary {
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 1rem;
+  border-radius: var(--wf-r-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid var(--wf-accent);
+  background: var(--wf-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
+}
+
+.secondary {
+  border: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}

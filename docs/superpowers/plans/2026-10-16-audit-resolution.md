@@ -1,5 +1,9 @@
 # Ward Flow audit resolution implementation plan
 
+> **Dated plan record, 16 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 > **For agentic workers:** Execute the six bounded workstreams below with the harness subagent tools. The user explicitly requested planning and implementation with multiple subagents; no additional plan approval pause is needed. Use the existing test, ownership and verification contracts.
 
 **Goal:** Resolve or accurately disposition all 44 retained findings against current main, with reproducible evidence and a reviewable local branch.

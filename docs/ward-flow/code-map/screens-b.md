@@ -1,5 +1,14 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Current-tree check — 24 October 2026
+
+Checked against `main` at `899b232e`. The `src/components/ward-management/governance/` folder no
+longer exists; the `/governance` route still renders `WardModeWorkspace mode="governance"`, and its
+pieces are the root `governance-*.tsx` files with `governance-third-edition.module.css`. Also gone:
+`handover/handover-third-edition.module.css` and `out-of-area/out-of-area-third-edition.module.css`.
+`handover/handover-page.tsx` is now 1,428 lines, split across `handover-*.tsx` files, so the line
+outline in the handover section is history. List the folder before trusting a file entry.
+
 ## Confirmed usability fixes — 19 October 2026
 
 Patient transport records a fresh booking with explicit provider and escort answers. Active

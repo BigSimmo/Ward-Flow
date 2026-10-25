@@ -71,7 +71,10 @@ export function WardSharedSaveStatus({
   const message = saving
     ? "Saving shared changes…"
     : connection.status === "unavailable"
-      ? "Connection unavailable — changes are disabled."
+      ? // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
+        connection.boardCurrent
+        ? ""
+        : "Connection unavailable — changes are disabled."
       : `${deskLabel} · shared synthetic workspace`;
   const detail: ReactNode = (
     <>

@@ -568,12 +568,18 @@ function countMovementDeclines(movement: Movement, counts: Map<DeclineReason, nu
     // These producer aliases also live in declines[]. Only a matching recorded waitlist
     // answer identifies them as waitlisting; ambiguous legacy decline history is retained.
     if (
+      decline.reason !== undefined &&
       (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
       movement.referralAnswerHistory?.some(
         (answer) => answer.unitId === decline.unitId && answer.at === decline.at && answer.answer === "waitlisted",
       )
     )
       continue;
+    // A copy without the reason (D-80) still counts the decline, under no reason.
+    if (decline.reason === undefined) {
+      count += 1;
+      continue;
+    }
     const seen = counts.get(decline.reason);
     if (seen === undefined) {
       throw new Error(

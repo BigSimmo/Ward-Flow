@@ -93,7 +93,6 @@ function recordAction() {
 afterEach(() => {
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
-    setWardFeatureFlagOnDevice("bed-meeting-actions", null);
     resetWardAccessStoreForTests();
   });
 });
@@ -214,18 +213,6 @@ describe("bed meeting actions due on a record", () => {
     recordAction();
     fireEvent.click(screen.getByRole("button", { name: "Mark done: Book transport" }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
-    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
-  });
-
-  it("shows nothing while the bed meeting actions switch is off", () => {
-    act(() => setWardFeatureFlagOnDevice("bed-meeting-actions", false));
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <RecordAtMeeting subject={MOVEMENT} owner="ward" />
-        <MeetingActionsDue subject={MOVEMENT} />
-      </WardFlowProvider>,
-    );
-    recordAction();
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 });

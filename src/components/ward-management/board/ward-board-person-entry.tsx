@@ -5,6 +5,8 @@
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import styles from "./board.module.css";
 import { expectedPhrase, movesPhrase, type Occupant } from "./ward-board-model";
 
@@ -46,6 +48,8 @@ export function PersonEntry({
   resolvedPatient?: ResolvedPatientInfo;
   displayDate?: Date;
 }) {
+  // With no date passed, the age is read on the board clock's day, not the device's (audit 24-6 TC-07).
+  const clock = useOptionalWardFlowSelect("now", "dayZero");
   if (idPrefix === "ward-board-person") {
     return (
       <>
@@ -132,7 +136,9 @@ export function PersonEntry({
 
   // Detail panel view (idPrefix === "ward-board-selected-person")
   const patient = resolvedPatient?.patient;
-  const age = patient ? patientAgeYears(patient, displayDate ?? new Date()) : null;
+  const age = patient
+    ? patientAgeYears(patient, displayDate ?? (clock ? calendarDateOf(clock.now, clock.dayZero) : new Date()))
+    : null;
   const displayName = resolvedPatient?.formalName || resolveSubjectPatient({ id: occupant.key }, {}).formalName;
 
   return (

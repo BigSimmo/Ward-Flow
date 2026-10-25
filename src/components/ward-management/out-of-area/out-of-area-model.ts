@@ -209,7 +209,8 @@ export function confirmedAgeText(minutes: number): string {
 
 /**
  * Units in this person's cohort at a site the band table records as shorter travel from their home
- * region than the bed they are in now. Most beds first within the shortest band.
+ * region than the bed they are in now. Shortest band first, then A to Z by ward name: never most beds
+ * first, which would nudge towards one ward (never-build sweep, Josh 24 Oct 2026).
  */
 export function closerBedOptions(entry: OutOfAreaEntry, units: Unit[], now: Instant): BedOption[] {
   const region = entry.admission.homeRegion;
@@ -224,7 +225,9 @@ export function closerBedOptions(entry: OutOfAreaEntry, units: Unit[], now: Inst
     if (band === undefined || rank === undefined || rank >= current) continue;
     options.push(bedOption(unit, band, now));
   }
-  return options.sort((a, b) => (ROAD_RANK[a.band] ?? 0) - (ROAD_RANK[b.band] ?? 0) || b.beds - a.beds);
+  return options.sort(
+    (a, b) => (ROAD_RANK[a.band] ?? 0) - (ROAD_RANK[b.band] ?? 0) || a.unit.name.localeCompare(b.unit.name, "en-AU"),
+  );
 }
 
 export type HomeRegionBeds = {

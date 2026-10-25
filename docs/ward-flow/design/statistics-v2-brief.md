@@ -1,5 +1,9 @@
 # Statistics screens, second pass — the shared brief
 
+> **Historical record, September 2026.** Written for the drawing-era and second-edition build. It is not current guidance, and its paths, line counts and design rules may no longer match the code. The rendered app is the current design authority: start at the [Ward Flow entry point](../README.md) and the [active screen checklist](../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Owner request, 2026-09-06:** redesign and overhaul the statistics prototypes; keep the sleek,
 sophisticated, clean style; improve layout, structure and UX; make them functional and useful based
 on what a coordinator and a health service actually need to know; give each an aesthetic centrepiece

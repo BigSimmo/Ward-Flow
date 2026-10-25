@@ -59,6 +59,7 @@ import {
   type MovementId,
   type MovementStage,
   type StepBackReason,
+  DECLINE_REASON_NOT_SHARED,
 } from "@/components/ward-management/ward-model";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -300,7 +301,7 @@ export function MovementWorkspaceCockpit({
     })),
     ...patient.declines.map((decline) => ({
       at: decline.at,
-      label: `${unitName(decline.unitId)} declined · ${declineReasonLabels[decline.reason]}`,
+      label: `${unitName(decline.unitId)} declined · ${decline.reason ? declineReasonLabels[decline.reason] : DECLINE_REASON_NOT_SHARED}`,
     })),
     ...patient.withdrawnReferrals.map((withdrawal) => ({
       at: withdrawal.at,
@@ -960,7 +961,8 @@ export function MovementWorkspaceCockpit({
                       <li className={styles.timelineItem} key={`${decline.unitId}-${decline.at}-${index}`}>
                         <time className={styles.timelineWhen}>{formatInstantWithDay(decline.at, now)}</time>
                         <span className={styles.timelineWhat}>
-                          {unitName(decline.unitId)} · {declineReasonLabels[decline.reason]}
+                          {unitName(decline.unitId)} ·{" "}
+                          {decline.reason ? declineReasonLabels[decline.reason] : DECLINE_REASON_NOT_SHARED}
                         </span>
                       </li>
                     ))}

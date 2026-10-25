@@ -449,7 +449,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     dischargeDatePlan: "Today 11:30",
     destination: "Community step-down",
     status: "today",
-    kpiStatusLabel: "Due today 4pm",
+    kpiStatusLabel: "Due today 4:30pm",
     kpiTone: "warn",
     assignedCoordinator: "SW M. Davies",
     actionLabel: "Confirm contact",
@@ -539,7 +539,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 high acuity",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 11am (clinic)",
+    lastContact: "20 Sep 11:30am (clinic)",
     nextReview: "Tribunal review 28 Sep",
   },
   {
@@ -565,7 +565,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "cto",
     keyClinician: "RN C. Davis",
-    lastContact: "18 Sep 9am (home)",
+    lastContact: "18 Sep 9:30am (home)",
     nextReview: "CTO expiry 12 Oct 2026",
   },
   {

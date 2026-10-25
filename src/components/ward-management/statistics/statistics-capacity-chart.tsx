@@ -523,7 +523,8 @@ export function StatisticsCapacityChart({
                 tone="warning"
                 count={overLine}
               >
-                At or over the alert line
+                {/* Audit 24-4 NA2-13: names what it counts, as the map does. */}
+                {groupBy === "hospital" ? "Hospitals" : "Wards"} at or over the alert line
               </FilterChip>
             ) : null}
           </span>

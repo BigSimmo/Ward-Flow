@@ -22,6 +22,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { RELEASES_HELD_UP_LABEL } from "@/components/ward-management/ward-nav-counts";
 import {
   deriveServiceBedAlerts,
   formatOccupancyPercent,
@@ -50,7 +51,7 @@ type HomeBedflowProps = {
   now: Instant;
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
-  /** Discharges held up today (`wardNavCounts().discharges`), for the foot. */
+  /** Releases held up, today and tomorrow (`wardNavCounts().discharges`), for the foot. */
   dischargesHeldUp: number;
   service: HealthService | null;
 };
@@ -239,7 +240,7 @@ export function HomeBedflow({
           {dischargesHeldUp > 0 ? (
             <>
               <StatusGlyph tone="warning" size={9} />
-              <span className={styles.mono}>{dischargesHeldUp}</span> held up
+              <span className={styles.mono}>{dischargesHeldUp}</span> {RELEASES_HELD_UP_LABEL.toLowerCase()}
             </>
           ) : null}
         </span>

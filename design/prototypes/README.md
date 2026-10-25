@@ -1,5 +1,9 @@
 # Ward Flow "Board" prototypes — the approved design reference
 
+> **Historical design reference, September 2026.** These "Board" prototypes were approved on 3–4 September 2026 and were later replaced by the third-edition drawings and then by the v9 standard. They do not govern current screens. The rendered app is the current design authority; written rules are in [design-system-v9.md](../v9/design-system-v9.md). Start at the [Ward Flow entry point](../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 These ten HTML files are the design the owner approved on 2026-09-04. They are **reference, not
 routes**: nothing imports them, they are not under `src/app/`, and they are not registered in
 `docs/site-map.md` or the mockup index. They exist so the build plan has something durable to be

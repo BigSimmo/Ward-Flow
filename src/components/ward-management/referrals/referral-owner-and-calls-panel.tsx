@@ -8,6 +8,8 @@ import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import { wardCommandFailure } from "../ward/use-ward-command-completion";
 import type { Referral, Unit } from "../ward-model";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import {
@@ -80,6 +82,8 @@ function OwnerAndCalls({
   const [ownerChoice, setOwnerChoice] = useState<ReferralOwnerDesk | "">("");
   const [contactChoice, setContactChoice] = useState("");
   const [outcomeChoice, setOutcomeChoice] = useState<ReferralContactOutcome | "">("");
+  const [callSaving, setCallSaving] = useState(false);
+  const [callFailure, setCallFailure] = useState<string | undefined>(undefined);
   // Wards and teams in name order only: the list never ranks or suggests a ward (D-71).
   const wards = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const teams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
@@ -213,19 +217,45 @@ function OwnerAndCalls({
               <Button
                 size="sm"
                 variant="sec"
-                aria-disabled={callRefusal !== undefined ? "true" : undefined}
+                aria-disabled={callRefusal !== undefined || callSaving ? "true" : undefined}
                 aria-describedby={callRefusal ? `${baseId}-call-why` : undefined}
                 onClick={() => {
-                  if (callRefusal || !target || outcomeChoice === "") return;
-                  raise("LOG_REFERRAL_CONTACT", { referralId: referral.id, contact: target, outcome: outcomeChoice });
-                  setContactChoice("");
-                  setOutcomeChoice("");
+                  if (callRefusal || callSaving || !target || outcomeChoice === "") return;
+                  setCallFailure(undefined);
+                  // Production audit URE-05: the choices clear only once the call is recorded; a
+                  // shared answer of failed or cancelled keeps them, with the reason beside the button.
+                  // A choice changed while the save was pending is kept.
+                  const sentContact = contactChoice;
+                  const sentOutcome = outcomeChoice;
+                  const finish = (outcome?: WardCommandOutcome | void) => {
+                    setCallSaving(false);
+                    const message = wardCommandFailure(outcome ?? undefined);
+                    if (message) setCallFailure(message);
+                    else {
+                      setContactChoice((current) => (current === sentContact ? "" : current));
+                      setOutcomeChoice((current) => (current === sentOutcome ? "" : current));
+                    }
+                  };
+                  const result = raise("LOG_REFERRAL_CONTACT", {
+                    referralId: referral.id,
+                    contact: target,
+                    outcome: outcomeChoice,
+                  });
+                  if (result instanceof Promise) {
+                    setCallSaving(true);
+                    result.then(finish, () => finish({ commandId: "", status: "failed" }));
+                  } else finish(result);
                 }}
                 data-testid={`ward-referral-call-log-${referral.id}`}
               >
                 Log a call
               </Button>
               {callRefusal ? <DisabledReason id={`${baseId}-call-why`}>{callRefusal}</DisabledReason> : null}
+              {callFailure ? (
+                <p className={styles.note} role="alert" data-testid={`ward-referral-call-failure-${referral.id}`}>
+                  {callFailure}
+                </p>
+              ) : null}
             </div>
             <p className={styles.note}>
               A call does not answer the referral. Record the ward&apos;s answer on its copy. The decision time keeps

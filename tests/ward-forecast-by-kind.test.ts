@@ -15,10 +15,44 @@ import type { Admission, PlannedAdmission } from "@/components/ward-management/w
 import { wardAdmissions, wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 
 const units = allUnits();
 
 describe("forecastByKind", () => {
+  it.each([
+    { oldDate: NOW_ANCHOR + 60, currentDate: NOW_ANCHOR + 3 * MINUTES_PER_DAY },
+    { oldDate: NOW_ANCHOR + 3 * MINUTES_PER_DAY, currentDate: NOW_ANCHOR + 60 },
+    { oldDate: NOW_ANCHOR - 2 * MINUTES_PER_DAY, currentDate: NOW_ANCHOR + 60 },
+    { oldDate: NOW_ANCHOR + 60, currentDate: NOW_ANCHOR - 2 * MINUTES_PER_DAY },
+  ])("agrees with the network after a date moves ($oldDate to $currentDate)", ({ oldDate, currentDate }) => {
+    const unit = units.find((entry) => !entry.isClosed)!;
+    const stay = {
+      ...wardAdmissions[0]!,
+      unitId: unit.id,
+      state: "occupied" as const,
+      expectedDischargeAt: currentDate,
+    };
+    const releases = [
+      {
+        ...bedReleases[0]!,
+        unitId: unit.id,
+        admissionId: stay.id,
+        state: "expected" as const,
+        blocker: null,
+        expectedAt: oldDate,
+      },
+    ];
+    const network = bedsForecast([unit], releases, [stay], [], NOW_ANCHOR);
+    for (const days of [1, 2]) {
+      const byKind = forecastByKind([unit], releases, [stay], [], NOW_ANCHOR, days);
+      const horizon = network.horizons.find((entry) => entry.hours === days * 24)!;
+      for (const key of ["expected", "confirmed", "heldUp", "overdue", "plannedNotFlagged"] as const) {
+        expect(byKind.total[key], key).toBe(horizon[key]);
+      }
+    }
+  });
+
   it("adds up to the network forecast for tomorrow and the day after", () => {
     const network = bedsForecast(units, bedReleases, wardAdmissions, wardMovements, NOW_ANCHOR, wardPlannedAdmissions);
     for (const days of [1, 2]) {

@@ -93,10 +93,13 @@ export function clearWardFlowBrowserData(storages: readonly SweepableStorage[] =
  * each such store registers how to forget itself here (Codex review on PR #487). A store registers
  * when its module loads; one that never loaded holds nothing to forget.
  */
-const sessionEndResets = new Set<() => void>();
+const sessionEndResets = new Set<(scope: WardSessionEndScope) => void>();
+
+/** "tab": only this tab signs out (audit 24-3 SM-1), so local storage, shared with other tabs, stays. */
+export type WardSessionEndScope = "browser" | "tab";
 
 /** Register a module-level store's reset, run once each time a signed-in session ends. */
-export function onWardSessionEnd(reset: () => void): void {
+export function onWardSessionEnd(reset: (scope: WardSessionEndScope) => void): void {
   sessionEndResets.add(reset);
 }
 
@@ -109,10 +112,32 @@ export function endWardFlowBrowserSession(): void {
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
-      reset();
+      reset("browser");
     } catch {
       // Keep going: the remaining stores and the storage still need clearing.
     }
   }
   clearWardFlowBrowserData();
+}
+
+/**
+ * Audit 24-3 SM-1: this tab signs out while another tab on the same sign-in stays in use. Fence
+ * the drafts, forget this tab's memory stores and sweep this tab's session storage, but leave
+ * local storage, which the other tab shares, as it is.
+ */
+export function endWardFlowTabSession(): void {
+  clearSessionDrafts();
+  for (const reset of sessionEndResets) {
+    try {
+      reset("tab");
+    } catch {
+      // Keep going: the remaining stores and the storage still need clearing.
+    }
+  }
+  if (typeof window === "undefined") return;
+  try {
+    clearWardFlowBrowserData([window.sessionStorage]);
+  } catch {
+    // Session storage blocked: nothing was saved there to clear.
+  }
 }

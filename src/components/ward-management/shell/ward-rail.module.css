@@ -1843,6 +1843,13 @@
     width: 0;
   }
 
+  /* R3-09 (device sweep, 24 Oct 2026): the label's companions (Help's "New" mark) have no room in
+     the icon strip and were cut at its edge ("Nev"). The count tag keeps its own place on the icon,
+     and Help's name still says "new". */
+  .rail[data-rail="closed"] .railLine > :not(.railLabel, .tag) {
+    display: none;
+  }
+
   /* Closed counts (Josh, 8 October 2026): just the number in a small edged circle on the icon's
    * top right, ringed in the rail colour so it never blurs into the icon. Urgent counts carry an
    * amber edge in place of the dot. */
@@ -2184,7 +2191,8 @@
   .rail:not([data-tablet]) .userChevron,
   .rail:not([data-tablet]) .utilityLink > span,
   .rail:not([data-tablet]) .railToggle,
-  .rail:not([data-tablet]) .tag {
+  .rail:not([data-tablet]) .tag,
+  .rail:not([data-tablet]) .railLine > * {
     display: none;
   }
 }

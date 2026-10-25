@@ -126,6 +126,22 @@ describe("proxy matcher (PWA plan item 7)", () => {
       expect(runsProxy(path), path).toBe(true);
     }
   });
+
+  it("runs on unknown icon and screenshot paths, whose 404 page needs the CSP", () => {
+    for (const path of [
+      "/icons/anything-else",
+      "/icons/icon-192/extra",
+      "/screenshots/missing",
+      "/screenshots/nested/home-narrow.webp",
+      "/icons/icon-99999",
+      "/icons/startup-1x1",
+      "/screenshots/does-not-exist.webp",
+    ]) {
+      expect(runsProxy(path), path).toBe(true);
+    }
+    for (const { variant } of iconParams()) expect(runsProxy(`/icons/${variant}`), variant).toBe(false);
+    for (const { src } of manifest().screenshots ?? []) expect(runsProxy(src), src).toBe(false);
+  });
 });
 
 describe("response headers (PWA plan item 7)", () => {

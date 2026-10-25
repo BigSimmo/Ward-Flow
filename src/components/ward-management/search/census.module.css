@@ -94,9 +94,12 @@
   flex: none;
 }
 
+/* Device sweep L08/R3-10 (24 Oct 2026): a 100% width made the input its own wrapped line, so the
+ * icon, the placeholder and the DOB chip stacked on three lines. It now shares the pill's one row
+ * and only wraps when the date of birth field opens and there is no room. */
 .searchForm input {
-  flex: 1 1 auto;
-  width: 100%;
+  flex: 1 1 8rem;
+  width: auto;
   min-width: 0;
   min-height: 0;
   align-self: center;
@@ -474,6 +477,28 @@
   overflow-x: auto;
 }
 
+/* Device sweep (24 Oct 2026): at 1024 px the census sits beside the "This shift" panel and scrolls
+   sideways with Time out of sight. The right edge is drawn while there is more to the right, the
+   same scroll-driven edge as the shared ward table: a border, never a fade, and nothing on a
+   table that fits. */
+@keyframes censusMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-ink-3);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll {
+    border-right: 2px solid transparent;
+    animation: censusMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 /* Cells, borders and padding come from the shared wf table; this adds the fixed layout and sticky head. */
 table.censusTable {
   min-width: 720px;
@@ -512,6 +537,8 @@ table.censusTable {
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
   letter-spacing: 0.05em;
+  /* A long header such as "Where now" wraps rather than clips in a narrow column. */
+  white-space: normal;
 }
 
 .censusTable td {

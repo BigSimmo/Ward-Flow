@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 
 import { useIsBreakGlassRecord } from "../shell/ward-access";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
-import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { wardPlaceLookup } from "../ward-access-places";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import type { Unit } from "../ward-model";
@@ -19,19 +18,18 @@ const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) =
  * that belong to the viewer's desk, each with a Mark done button. The coordinator sees every open
  * action; a ward desk only its own wards' actions; a site bed manager the actions of its site's
  * wards (D-80); the ED and community desks only theirs. Nothing
- * shows when there is none, or while the `bed-meeting-actions` switch is off. Nothing shows either
+ * shows when there is none. Nothing shows either
  * while the coordinator previews another desk, or on a record this desk sees only through break
  * glass (the scope layer's own set, so a grant on a patient already in scope hides nothing). Both
  * are read only, so the button could never record anything (review on PR #511). Marking one done
  * changes nothing else on the record.
  */
 export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | undefined }) {
-  const enabled = useWardFeatureFlag("bed-meeting-actions");
   const access = useEffectiveWardAccess();
   const { previewOf } = useWardAccessSnapshot();
   const isBreakGlass = useIsBreakGlassRecord();
   const { movements, admissions, units } = useWardFlowSelect("movements", "admissions", "units");
-  if (!enabled || !subject || previewOf !== null) return null;
+  if (!subject || previewOf !== null) return null;
   const record =
     subject.kind === "movement"
       ? movements.find((movement) => movement.id === subject.id)

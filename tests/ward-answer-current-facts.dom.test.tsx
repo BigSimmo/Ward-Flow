@@ -213,12 +213,12 @@ describe("Ward answer current facts", () => {
 
     const capacityPanel = screen.getByRole("region", { name: "Confirm your beds" });
     expect(screen.getAllByTestId("ward-capacity-form")).toHaveLength(1);
-    expect(within(capacityPanel).getByText("Physically empty")).toBeInTheDocument();
-    expect(within(capacityPanel).getByText("Allocatable")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Empty")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Confirmed free")).toBeInTheDocument();
 
     const nextCapacity = HISTORY_UNIT.allocatable.value + 1;
     // v10: allocatable is a stepper only (no free number box).
-    fireEvent.click(within(capacityPanel).getByRole("button", { name: "Increase allocatable beds" }));
+    fireEvent.click(within(capacityPanel).getByRole("button", { name: "Increase free beds" }));
     expect(within(capacityPanel).getByTestId("ward-capacity-input")).toHaveAttribute(
       "aria-valuenow",
       String(nextCapacity),
@@ -236,7 +236,7 @@ describe("Ward answer current facts", () => {
     });
     declines.forEach(({ movementId, decline, declineIndex }) => {
       const row = within(history).getByTestId(`ward-answer-history-${movementId}-declined-${declineIndex}`);
-      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason]);
+      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason!]);
       expect(row).toHaveTextContent(formatInstant(decline.at));
     });
     expect(within(history).getAllByText("Time not recorded")).toHaveLength(

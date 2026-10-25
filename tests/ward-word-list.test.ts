@@ -60,10 +60,6 @@ const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>
   "src/components/ward-management/ward-history.ts": { "held bed released after transport": 2 },
   // Owned by the trim page size work.
   "src/components/ward-management/ward-derivations.ts": { "the waitlist": 1 },
-  // Owned by the saves fixes work.
-  "src/components/ward-management/ward/ward-screen-overlays.tsx": { "ready vacant": 1 },
-  // Ward directory text ("stabilization", "behavioral"); its 20 Oct claim was not yet closed in the log.
-  "src/components/ward-management/wards/ward-index.tsx": { "US spelling": 10 },
   // Owned by the clinical safety fixes work.
   "src/components/ward-management/ward/ward-screen-derivations.ts": { "ready vacant": 1 },
   // Owned by the usability review work (#680).

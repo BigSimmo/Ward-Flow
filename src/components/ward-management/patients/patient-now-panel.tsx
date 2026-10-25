@@ -160,7 +160,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
       why={
         isLiveBedflow && liveMovement ? (
           <PatientWhyCard
-            title="Why they're here"
+            // UX review 24 Oct 2026: "Why they're here" was cut short beside the Opened chip at 1280px.
+            title="Why"
             chip={`Opened ${formatInstantWithDay(liveMovement.openedAt, now)}`}
             history={resolved.liveReferral?.history}
             fallback={record.reason}
@@ -263,12 +264,19 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               <h2 id="pn-journey-head" className={styles.secH}>
                 Journey so far
               </h2>
-              <JourneyStrip
-                label="Journey since this movement opened"
-                stages={patientJourneyStages(liveMovement, now)}
-                formatDuration={dur}
-                // The note names the stages too short to label on the bar ("Short stages: In ED 18m").
-              />
+              {(() => {
+                const stages = patientJourneyStages(liveMovement, now);
+                return (
+                  <JourneyStrip
+                    label="Journey since this movement opened"
+                    stages={stages}
+                    formatDuration={dur}
+                    // The note names the stages too short to label on the bar ("Short stages: In ED 18m").
+                    // One stage has none, and its Now line would only repeat the label under the bar.
+                    note={stages.length > 1}
+                  />
+                );
+              })()}
             </section>
           ) : null}
         </>

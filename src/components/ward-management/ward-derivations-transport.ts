@@ -227,16 +227,20 @@ export type BedRetentionDecision = {
 };
 
 /**
- * Ruling `FD-19` (owner, 2026-08-30): **a ward→ED-medical trip frees the bed ONLY IF the stay is
- * expected to exceed `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS`, and that is OVERRIDABLE.** Below
- * it, the bed stays theirs and the person reads as on overnight leave.
+ * Ruling `FD-19` (owner, 2026-08-30): a ward→ED-medical trip expected to exceed
+ * `ED_MEDICAL_BED_RELEASE_THRESHOLD_HOURS` is where the bed MAY be given up, and that is
+ * OVERRIDABLE. **This function never frees the bed by itself** (never-build rule: no auto-releasing
+ * held beds). Above the threshold it returns `freesBed: false` with `requiresReview: true`, so a
+ * person decides; at or below it, the bed stays theirs and the person reads as on overnight leave.
+ * Only an override can return `freesBed: true`. (Doc corrected, production audit 24 Oct 2026,
+ * EDR-03; behaviour unchanged.)
  *
  * The threshold is the owner's own operational figure and is **not a statutory period** — see the
  * constant's own doc comment, and `tests/ward-bed-release-threshold-provenance.test.ts`, which
  * fails if it is ever sited beside legal material.
  *
- * ⚠️ **"EXCEED" IS READ STRICTLY: a stay expected to last exactly the threshold does NOT free the
- * bed.** The ruling says *exceed*. Pinned in both directions by the boundary cases in the guard,
+ * ⚠️ **"EXCEED" IS READ STRICTLY: a stay expected to last exactly the threshold is NOT flagged
+ * for review.** The ruling says *exceed*. Pinned in both directions by the boundary cases in the guard,
  * because a later reader softening `>` to `>=` would change a clinical outcome silently.
  *
  * 🔴 **AND THIS BOUNDARY IS EXACTLY BACKWARDS FROM THE USUAL ONE, WHICH IS WHY IT MUST NOT BE

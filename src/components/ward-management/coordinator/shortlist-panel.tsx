@@ -82,6 +82,7 @@ import {
   type Referral,
   type Rejection,
   type Unit,
+  DECLINE_REASON_NOT_SHARED,
 } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS, referralSuburbLabel } from "@/components/ward-management/ward-referrals";
 import {
@@ -2323,7 +2324,11 @@ export function ShortlistPanel({
                     className={styles.shortlistDeclineRow}
                   >
                     <strong>{unit ? unit.name : "Unresolved unit"}</strong>
-                    <span>{DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}</span>
+                    <span>
+                      {decline.reason
+                        ? (DECLINE_REASON_LABELS[decline.reason] ?? decline.reason)
+                        : DECLINE_REASON_NOT_SHARED}
+                    </span>
                     <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
                   </li>
                 );

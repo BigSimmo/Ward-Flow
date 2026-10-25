@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
@@ -86,6 +86,21 @@ describe("ward decision demonstration boundaries", () => {
     expect(screen.getByText("Recorded review")).toBeVisible();
     expect(screen.getByText("20m")).toBeVisible();
     expect(screen.getByText("Review time entered by clinician")).toBeVisible();
+  });
+  it("lists the unsaved reminders in their own group without counting them as to do", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardHomeTab {...props} />
+      </WardFlowProvider>,
+    );
+    const later = screen.getByRole("region", { name: "Later today" });
+    expect(within(later).getByRole("heading", { name: "Reminders, not saved" })).toBeInTheDocument();
+    expect(within(later).getAllByRole("checkbox")).toHaveLength(3);
+    // The column's count leaves the three reminder ticks out.
+    const items = later.querySelectorAll("li").length - 3;
+    expect(later.querySelector("h3 + span")).toHaveTextContent(new RegExp(`^${items}$`, "u"));
+    const actNow = screen.getByRole("region", { name: "Act now" }).querySelectorAll("li").length;
+    expect(screen.getByRole("radio", { name: /^To do/u })).toHaveTextContent(`To do${actNow + items}`);
   });
   it("puts this ward's absences on an order in Act now", () => {
     const absence = {

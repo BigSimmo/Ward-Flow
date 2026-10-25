@@ -70,7 +70,7 @@ The rail on the left (`shell-18` in `src/components/ward-management/ward-rail-en
 
 Two numbers on the rail are worth knowing:
 
-- **The Waiting / Delays badge** reads "N at a time limit or with nowhere to go". It counts only the most
+- **The Waiting badge** reads "N at a time limit or with nowhere to go". It counts only the most
   serious delays: a recorded form time that has passed or is running out, and a patient with no
   suitable bed anywhere.
 - **Occupancy** for each site and service. _(not yet checked on screen)_
@@ -146,7 +146,7 @@ To decline, choose a reason:
 
 ### From accepted to arrived
 
-- **"Pull the bed"** keeps a bed for an accepted patient, with a pull time limit.
+- **"Pull the bed"** pulls a bed for an accepted patient. It stays theirs until they arrive or it is released, within the pull time limit.
 - **"Book transport"** records the transport job. If no transport is needed, record that instead.
   The ED screen then stops warning that transport is not booked.
 - **"Release the pulled bed"** gives the bed back. It is hidden while transport is booked. Cancel the
@@ -168,14 +168,16 @@ screen says which. _(not yet checked on screen)_
 
 ## 6. The screens you will use most
 
-### Command
+### Home
 
-Your starting point: the priority list of patients waiting for a bed, ED pressure, and the flow
-diagram. Choose a patient to open their placement panel (the shortlist of possible wards).
+Your starting point. Its left column, **My list**, shows the alerts and referral decisions waiting
+for you. Choose a patient to open their placement panel. There is no
+suggested-ward shortlist: it was removed in D-71, and you choose the ward.
 
 ### Capacity
 
-Beds across the service: ready now, held, out of service, and what is expected to free up. Where a
+Beds across the service in four boxes: Ready, Pulled, Closed and Occupied (a bed kept for its own
+patient on leave counts inside Occupied), and what is expected to free up. Where a
 ward has not recorded a figure, it says "Not recorded". The ward table has two columns added on
 26 September (Josh's bed board rulings, D-21):
 
@@ -190,7 +192,7 @@ An out-of-service bed says its reason is not recorded.
 Every transfer in progress, by stage. Open one to see the whole movement, with the patient's name at
 the top.
 
-### Waiting / Delays
+### Waiting
 
 What is holding patients up (`D-41`). Rather than separate Delays tabs, the screen presents a **unified Waiting table** with filter chips (such as escalations, attention items, and waits over 24 hours) and a **right-hand detail rail** for inspecting and acting on the selected patient's delay. Waits over
 24 hours are grouped as "Over 24 hours" in a neutral colour: 24 hours describes the wait, not a limit. The causes, in the
@@ -277,7 +279,7 @@ These source-based corrections have not been rechecked on screen.
 - **Not recorded:** nobody has entered this. The app does not guess.
 - **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Ward Flow holds no statutory period table (`D-70`).
 - **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
-- **Pulled (`R-B-05`):** a bed kept for one named, accepted patient, from pull until arrival or release, with a pull time limit. "Held" is used only for a bed kept for its own patient on leave or away (D-81).
+- **Pulled (`R-B-05`):** a bed taken and held for one named, accepted patient, from pull until arrival or release.
 - **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.
 - **Occupied (`R-B-05`):** a bed with an admitted inpatient currently in it.
 

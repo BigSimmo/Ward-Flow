@@ -1,14 +1,17 @@
 # Statistics capacity explorer
 
+_Updated 2026-10-24 - bed boxes checked against `statistics-capacity-chart.tsx` at `899b232e`; the rest is the dated design record; Documentation owns._
+
 The statistics summary uses one shared navigation from the statistics layout, with
 an underline for the current page and a compact section selector on mobile. This
 navigation serves the summary, network, comparisons, health service, ward, emergency
 department and community statistics routes. The duplicate hub navigation is removed.
 
-The graph compares the current bed snapshot by hospital or ward. Ready beds,
-occupied beds and held beds come from `unitCapacity`; held means empty but not
-allocatable. Out-of-service beds are not recorded and are excluded from the graph.
-These measures are aggregate capacity, not a patient-to-bed suitability assessment.
+The graph compares the current bed snapshot by hospital or ward. Its four boxes,
+Ready, Pulled, Closed and Occupied, come from `bedStates` and add up to the ward's
+beds. A bed held for its own patient on leave stays inside Occupied and shows as
+On leave in the CSV. These measures are aggregate capacity, not a patient-to-bed
+suitability assessment.
 
 Users can search, filter by health service, sort, switch between bed counts and
 percentage shares, select bars, follow ward-statistics links, reset the view, and

@@ -9,7 +9,7 @@ import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-
 import { ForecastTomorrowFigure } from "@/components/ward-management/forecast/forecast-tomorrow-cell";
 import type { BedKindGap } from "./capacity-derivations";
 import styles from "./capacity.module.css";
-import { formatGap, gapWord, phoneGap, rowSentence } from "./capacity-gap-words";
+import { gapWord, rowSentence } from "./capacity-gap-words";
 
 /**
  * THE "READY NOW" SECTION — pulled out of `CapacityScreen`'s own JSX, task C1 (build plan §2
@@ -116,18 +116,16 @@ export function GapWord({ gap }: { gap: number }) {
   return (
     <span className={styles.gapWord}>
       <StatusGlyph tone={word.tone} size={9} />
-      {word.text}
+      {gap === 0 ? null : <span className={styles.gapNumber}>{Math.abs(gap)}</span>} <span>{word.text}</span>
     </span>
   );
 }
 
 export function GapRow({
   row,
-  phone = false,
   tomorrow,
 }: {
   row: BedKindGap;
-  phone?: boolean;
   /** Forecasting build (23 Oct 2026): tomorrow's likely figure for this bed type, on desktop. */
   tomorrow?: { likely: number; low: number; high: number };
 }) {
@@ -147,8 +145,7 @@ export function GapRow({
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
       <td data-testid="ward-capacity-gap-value">
         <div className={styles.gapValueContainer}>
-          <GapWord gap={row.gap} />{" "}
-          <span className={styles.gapNumber}>{phone ? phoneGap(row.gap) : formatGap(row.gap)}</span>
+          <GapWord gap={row.gap} />
         </div>
         <div
           className={styles.gapMicroGauge}
