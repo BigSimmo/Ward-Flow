@@ -105,7 +105,7 @@ export function WardGround({ children }: { children: ReactNode }) {
     const ground = groundRef.current;
     if (!ground) return undefined;
     const onClick = (event: MouseEvent) => {
-      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      const link = event.target instanceof Element ? event.target.closest<HTMLElement>("a[href]") : null;
       const href = link?.getAttribute("href");
       if (!link || !href) return;
       // Several rows can link to the same place (two movements to one ward), so remember which one by
