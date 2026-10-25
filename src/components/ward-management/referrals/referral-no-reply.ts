@@ -72,7 +72,9 @@ export function noReplyLine(waits: readonly NoReplyWait[]): string | undefined {
   const longest = stuck.reduce((a, b) => (b.waitedMinutes > a.waitedMinutes ? b : a));
   const places = stuck.map((wait) => wait.place);
   const named = places.length === 1 ? places[0]! : `${places.slice(0, -1).join(", ")} and ${places.at(-1)!}`;
-  return `Stuck: no reply from ${named} for ${splitDuration(longest.waitedMinutes)} (limit ${splitDuration(longest.limitMinutes)})`;
+  // With more than one place named, the time is the longest of their waits, and says so.
+  const waited = `${places.length === 1 ? "" : "longest "}${splitDuration(longest.waitedMinutes)}`;
+  return `Stuck: no reply from ${named} for ${waited} (limit ${splitDuration(longest.limitMinutes)})`;
 }
 
 export type NoReplyByPlace = {
