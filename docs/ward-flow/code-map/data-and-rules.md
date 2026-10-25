@@ -248,9 +248,8 @@ capacity figure anywhere in this group is real.
   `headlineAvailable`, `acceptingBedCounts`, `constraintSentence`, `sinceYesterday`,
   `arrowTargets`, `derivedSexMix`.
 - **`src/components/ward-management/ward-board-time-features.ts`** (89 lines, 6 importers) — Board
-  time labels built only from times a record already holds (pull-hold expiry, transport ETA, the
-  handover open-work list against the 15:00 day-shift end). Invents no Mental Health Act limit or
-  curfew. Key exports: `pullHoldRemainingLabel`, `transportEtaRemainingLabel`,
+  time labels built only from times a record already holds (pull-hold expiry, transport ETA), plus
+  the 15:00 day-shift end the beds matrix shows. Invents no Mental Health Act limit or curfew. Key exports: `pullHoldRemainingLabel`, `transportEtaRemainingLabel`,
   `DAY_SHIFT_END_MINUTE` (15:00).
 - **`src/components/ward-management/ward-discharge-dates.ts`** (255 lines, 6 importers) — Derives
   forward-looking `BedRelease[]` from each admission's single `expectedDischargeAt`. Pure; does no
