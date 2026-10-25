@@ -13,20 +13,33 @@ import { wardSites } from "@/components/ward-management/ward-sites";
  * callers treat as read-only. Every input the derivation reads must be in `keyOf`, the due-soon
  * thresholds and the scenario's sites included, since those are passed in. The module-wide network
  * is added to every key as well, because lookups outside React (`unitById`) still read it.
+ *
+ * `slots` keeps that many recent answers (newest first), for a derivation whose always-mounted
+ * callers pass different inputs and would otherwise evict each other's answer on every render
+ * (production audit PERF-02). The default of one keeps a single remembered answer.
  */
 export function rememberLastCall<A extends unknown[], R>(
   derive: (...args: A) => R,
   keyOf: (...args: A) => readonly unknown[],
+  slots = 1,
 ): (...args: A) => R {
-  let lastKey: readonly unknown[] | undefined;
-  let lastResult: R;
+  const remembered: { key: readonly unknown[]; result: R }[] = [];
   return (...args: A) => {
     const key = [...keyOf(...args), wardSites];
-    if (lastKey && lastKey.length === key.length && lastKey.every((part, index) => Object.is(part, key[index]))) {
-      return lastResult;
+    const index = remembered.findIndex(
+      (entry) => entry.key.length === key.length && entry.key.every((part, at) => Object.is(part, key[at])),
+    );
+    if (index >= 0) {
+      const hit = remembered[index]!;
+      if (index > 0) {
+        remembered.splice(index, 1);
+        remembered.unshift(hit);
+      }
+      return hit.result;
     }
-    lastResult = derive(...args);
-    lastKey = key;
-    return lastResult;
+    const result = derive(...args);
+    remembered.unshift({ key, result });
+    if (remembered.length > slots) remembered.length = slots;
+    return result;
   };
 }

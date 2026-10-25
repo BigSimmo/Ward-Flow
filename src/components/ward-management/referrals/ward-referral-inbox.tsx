@@ -15,6 +15,7 @@ import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-information-needs-lazy";
 import { WardCommitmentControls } from "./referral-commitments-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
+import { readyBedsAllPromised, readyBedsPromisedSentence } from "../ward-ready-bed-promises";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -24,12 +25,13 @@ import styles from "./ward-referral-drawer.module.css";
  * D-30 transfers from another hospital and a gender placement that needs a recorded reason.
  */
 export function WardReferralInbox({ unitId }: { unitId: string }) {
-  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units } = useWardFlowSelect(
+  const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units, movements } = useWardFlowSelect(
     "wardReferralInbox",
     "resolvePatientIdentity",
     "dispatch",
     "rejections",
     "units",
+    "movements",
   );
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
@@ -37,7 +39,8 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   const reasonId = useId();
   const isCoordinator = routeRole === "coordinator";
   const actingUnitId = routeRole === "ward" ? wardRouteUnitId(pathname) : undefined;
-  const unitName = units.find((unit) => unit.id === unitId)?.name ?? "This ward";
+  const thisUnit = units.find((unit) => unit.id === unitId);
+  const unitName = thisUnit?.name ?? "This ward";
   // Mirrors the reducer's own `answerableBy` and acting-unit checks: only this ward or the
   // coordinator answers a ward referral.
   const roleRefusal =
@@ -53,6 +56,10 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   const newestRejection = attempt && rejections.length > attempt.count ? rejections.at(-1) : undefined;
   const lastError = newestRejection?.movementId === attempt?.id ? newestRejection?.reason : null;
   const entries = wardReferralInbox?.(unitId) ?? [];
+  // This ward's own yeses, from its own entries: a ward screen never reads the full referral list (FD-23).
+  const acceptedReferralIds = entries
+    .filter((entry) => entry.state === "accepted" && entry.withdrawnAt === undefined)
+    .map((entry) => entry.id);
   const [reasons, setReasons] = useState<Record<string, ReferralDeclineReason | "">>({});
   // A ward undoes its own decision by naming itself (UNDO_REFERRAL_DECISION, v10 pass 2).
   const watchDecision = useReferralDecisionUndo(routeRole, isCoordinator ? undefined : unitId);
@@ -89,6 +96,11 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
               : needsGenderPlacement
                 ? GENDER_PLACEMENT_REFUSAL
                 : undefined));
+        // Audit 2 E-07: say when this ward's Ready beds are already promised. Refuses nothing.
+        const promised =
+          live && thisUnit
+            ? readyBedsAllPromised({ movements, acceptedReferralIds }, thisUnit, { referralId: entry.id })
+            : undefined;
         const genderReason = genderReasons[entry.id] ?? "";
         const genderTicked = genderChecked[entry.id] === true;
         const acceptReasonId = `${reasonId}-accept-${entry.id}`;
@@ -186,6 +198,15 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                   Accept referral
                 </button>
                 {acceptRefusal ? <DisabledReason id={acceptReasonId}>{acceptRefusal}</DisabledReason> : null}
+                {promised ? (
+                  <p
+                    className={styles.flowError}
+                    role="status"
+                    data-testid={`ward-referral-inbox-ready-promised-${entry.id}`}
+                  >
+                    {readyBedsPromisedSentence(unitName, promised)}
+                  </p>
+                ) : null}
                 {localNote?.id === entry.id ? (
                   <p className={styles.flowError} role="status">
                     {localNote.text}

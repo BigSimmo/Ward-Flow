@@ -1,5 +1,9 @@
 # F05 Statistics Compare/Ward lower review r36
 
+> **Historical evidence, 13 September 2026.** A dated visual-acceptance record for the drawing-era build. It is not current acceptance. For current visual checks see [building-ui.md](../../../../agents/building-ui.md) and the [active screen checklist](../../../SCREEN-DEFINITION-OF-DONE.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 ## Evidence inspected
 
 The requested 12 Ward captures were inspected directly:

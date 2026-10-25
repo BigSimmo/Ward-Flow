@@ -284,6 +284,11 @@ export function isOver24hInEd(row: BoardRow): boolean {
   return isWaitingInEd(row.movement) && row.waited >= OVER_24H;
 }
 
+/** Audit 24-4 NA2-10 (Josh, 24 Oct 2026): "Over 8h" counts people still in an ED, as "Over 24h" does. */
+export function isOver8hInEd(row: BoardRow): boolean {
+  return isWaitingInEd(row.movement) && row.waited >= OVER_8H;
+}
+
 function rowMatchesFilters(
   row: BoardRow,
   filters: BoardFilters,
@@ -297,7 +302,11 @@ function rowMatchesFilters(
     (filters.owner === null || row.owner === filters.owner) &&
     (filters.origin === null || row.origin === filters.origin) &&
     (filters.cause === null || row.cause === filters.cause) &&
-    (filters.threshold === 3 ? isOver24hInEd(row) : row.waited >= WAIT_THRESHOLDS[filters.threshold]) &&
+    (filters.threshold === 3
+      ? isOver24hInEd(row)
+      : filters.threshold === 1
+        ? isOver8hInEd(row)
+        : row.waited >= WAIT_THRESHOLDS[filters.threshold]) &&
     (!filters.locked || row.locked) &&
     (!filters.silent || row.silent) &&
     (!filters.dueSoon || isDueSoon(row, thresholds)) &&
@@ -576,4 +585,13 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
 /** Rows whose recorded legal time is pinned above the rest in the Longest wait view. */
 export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean {
   return isFormDue(row, thresholds);
+}
+
+/**
+ * Item 4 (usability, 24 Oct 2026): one line saying why the table is in its order. Longest wait is
+ * one list sorted by wait alone. By blocker keeps the cause order, whose first two groups are the
+ * form times, and sorts each group by wait. Neither order ranks anybody clinically.
+ */
+export function waitingOrderLine(flat: boolean): string {
+  return flat ? "Longest wait first" : "Form times first, then other blockers. Longest wait first in each.";
 }

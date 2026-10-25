@@ -16,6 +16,7 @@ import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed, bedKindOfNeed, isWaitingForBed } from "./forecast-by-kind";
+import { forecastReleaseAt } from "./forecast-release-date";
 
 type EdAccessRelease = { unitId: string; unitName: string; at: Instant; blocker: BedReleaseBlocker | null };
 
@@ -60,16 +61,17 @@ export function edAccessRisk(
 ): EdAccessRisk {
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
   const gaps = bedKindGaps([...movements], [...units], now, admissions);
   const pending = releases
     .filter(
       (release) =>
-        release.state !== "discharged" && open.has(release.unitId) && dayOf(release.expectedAt) >= dayOf(now),
+        release.state !== "discharged" && open.has(release.unitId) && dayOf(expectedAt(release)) >= dayOf(now),
     )
     .map((release) => ({
       release,
       kind: bedKindOfBed(open.get(release.unitId)!, admissionById.get(release.admissionId)),
-      at: Math.max(release.expectedAt, now),
+      at: Math.max(expectedAt(release), now),
     }))
     .sort((a, b) => a.at - b.at);
 

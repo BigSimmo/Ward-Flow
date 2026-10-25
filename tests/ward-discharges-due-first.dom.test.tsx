@@ -14,6 +14,7 @@ vi.mock("next/link", () => ({
 import { DischargeBoard, groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases } from "@/components/ward-management/ward-movements";
+import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Stream A, 9 Oct 2026: a Due first sort beside the board's own default order. */
@@ -57,5 +58,15 @@ describe("discharges: due first sort", () => {
       compared += ids.length;
     }
     expect(compared, "no open release rendered, so the order was never checked").toBeGreaterThan(1);
+  });
+
+  it("keeps stored order inside one time band, which is why the default line names bands only", () => {
+    const open = groupDischarges(bedReleases, NOW_ANCHOR).expected[0]!;
+    const later = { ...open, id: "band-later", expectedAt: open.expectedAt + 1 };
+    const earlier = { ...open, id: "band-earlier", expectedAt: open.expectedAt };
+    expect(releaseBand(later, NOW_ANCHOR)).toBe(releaseBand(earlier, NOW_ANCHOR));
+    // The later time is stored first, and the default order leaves it first.
+    const ids = groupDischarges([later, earlier], NOW_ANCHOR).expected.map((release) => release.id);
+    expect(ids).toEqual(["band-later", "band-earlier"]);
   });
 });

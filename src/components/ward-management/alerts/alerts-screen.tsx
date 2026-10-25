@@ -54,6 +54,7 @@ import {
   alertActionFor,
   alertGroupOf,
   alertKindOf,
+  alertsOrderLine,
   byOldest,
   escalationAppliesTo,
   effectiveOwner,
@@ -1319,12 +1320,13 @@ function AlertsWorkspace() {
                       <div className={styles.phoneList}>{urgencyView}</div>
                       <p className={styles.phoneNote}>Act now first · longest overdue next</p>
                     </>
-                  ) : view === "lanes" ? (
-                    lanesView
-                  ) : view === "owner" ? (
-                    ownerView
                   ) : (
-                    urgencyView
+                    <>
+                      {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
+                      <p className={styles.orderNote} data-testid="ward-alerts-order-note">
+                        {alertsOrderLine(view)}
+                      </p>
+                    </>
                   )}
                 </TabPanel>
               ) : null}

@@ -44,6 +44,37 @@ const now = NOW_ANCHOR;
 const tomorrow = forecastByKind(units, bedReleases, wardAdmissions, wardMovements, now, 1, wardPlannedAdmissions);
 
 describe("forecastLevers", () => {
+  it("moves held-up and overdue levers with the current plan date", () => {
+    const unit = units.find((entry) => !entry.isClosed)!;
+    const stay = {
+      ...wardAdmissions[0]!,
+      unitId: unit.id,
+      state: "occupied" as const,
+      expectedDischargeAt: now + 3 * MINUTES_PER_DAY,
+    };
+    const release = {
+      ...bedReleases[0]!,
+      unitId: unit.id,
+      admissionId: stay.id,
+      state: "expected" as const,
+      expectedAt: now + 60,
+      blocker: "Awaiting transport" as const,
+    };
+    expect(forecastLevers([unit], [release], [stay], now)).toEqual([]);
+    const overdueStay = { ...stay, expectedDischargeAt: now - 2 * MINUTES_PER_DAY };
+    expect(forecastLevers([unit], [{ ...release, blocker: null }], [overdueStay], now)).toEqual([
+      { kind: "review_overdue", beds: 1 },
+    ]);
+    expect(
+      forecastLevers(
+        [unit],
+        [{ ...release, expectedAt: now - 2 * MINUTES_PER_DAY, blocker: null }],
+        [{ ...stay, expectedDischargeAt: now + 60 }],
+        now,
+      ),
+    ).toEqual([]);
+  });
+
   const levers = forecastLevers(units, bedReleases, wardAdmissions, now);
 
   it("covers exactly the beds the forecast range is made of", () => {
@@ -133,6 +164,57 @@ describe("applyScenario", () => {
 });
 
 describe("edAccessRisk", () => {
+  it("uses the current discharge plan for timed supply and the named next release", () => {
+    const baseUnit = units.find((entry) => !entry.isClosed && entry.cohort === "Adult")!;
+    const unit = {
+      ...baseUnit,
+      empty: { ...baseUnit.empty, value: 0 },
+      allocatable: { ...baseUnit.allocatable, value: 0 },
+    };
+    const stay = {
+      ...wardAdmissions[0]!,
+      unitId: unit.id,
+      bedKind: "locked" as const,
+      state: "occupied" as const,
+      expectedDischargeAt: now + 3 * MINUTES_PER_DAY,
+    };
+    const release = {
+      ...bedReleases[0]!,
+      unitId: unit.id,
+      admissionId: stay.id,
+      state: "expected" as const,
+      blocker: null,
+      expectedAt: now + 60,
+    };
+    const movement = {
+      ...wardMovements.find(isWaitingInEd)!,
+      id: "WF-RESCHEDULED" as (typeof wardMovements)[number]["id"],
+      stage: "accepted_awaiting_bed" as const,
+      security: "Secure" as const,
+      cohort: "Adult" as const,
+      openedAt: now,
+      admissionId: undefined,
+      allocatedBed: undefined,
+      acceptedUnitId: unit.id,
+      closure: undefined,
+    };
+    const postponed = edAccessRisk([movement], [unit], [release], [stay], now, 120);
+    expect(postponed.atRisk).toHaveLength(1);
+    expect(postponed.atRisk[0]).toMatchObject({ slotAt: now + 3 * MINUTES_PER_DAY, nextRelease: null });
+    const broughtForward = edAccessRisk(
+      [movement],
+      [unit],
+      [{ ...release, expectedAt: now + 3 * MINUTES_PER_DAY }],
+      [{ ...stay, expectedDischargeAt: now + 180 }],
+      now,
+      120,
+    );
+    expect(broughtForward.atRisk[0]).toMatchObject({ slotAt: now + 180, nextRelease: { at: now + 180 } });
+    expect(
+      edAccessRisk([movement], [unit], [release], [{ ...stay, expectedDischargeAt: now + 60 }], now, 120).atRisk,
+    ).toEqual([]);
+  });
+
   it("sorts people waiting into bed types the same way as the mismatch table", () => {
     const gaps = bedKindGaps([...wardMovements], [...units], now, wardAdmissions);
     for (const gap of gaps) {

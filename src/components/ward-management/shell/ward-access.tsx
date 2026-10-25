@@ -804,10 +804,17 @@ export function WardIdleLock() {
       // Only this tab: another tab in use keeps its own idle lock (Audit 4 A4-04, A4-06).
       if (session) session.signOut(`Signed out after ${minutes} minutes without use. Sign in again to carry on.`);
       setLocked((current) => current || (session ? "signed-out" : "screen"));
+      // Past this lock, the next use (after "Carry on") starts a new clock rather than locking again.
+      deadline = Number.POSITIVE_INFINITY;
     };
     // A signed-in desk is asked "Still there?" for the last minute, so a person at it is not signed out.
     const warn = () => {
       const secondsTo = () => Math.ceil((deadline - Date.now()) / 1000);
+      // Audit 24-3 SM-5: a laptop woken after the deadline signs out at once, never counts below 1.
+      if (secondsTo() <= 0) {
+        lock();
+        return;
+      }
       setSecondsLeft(Math.min(IDLE_WARNING_SECONDS, secondsTo()));
       countdown = window.setInterval(() => {
         const left = secondsTo();
@@ -853,7 +860,8 @@ export function WardIdleLock() {
         <div className={styles.lockCard}>
           <h1 id="ward-idle-warn-title">Still there?</h1>
           <p data-testid="ward-idle-countdown">
-            This desk has not been used for {minutes - 1} minutes. You will be signed out in {secondsLeft} seconds.
+            This desk has not been used for {minutes - 1} minutes. You will be signed out in{" "}
+            {secondsLeft === 1 ? "1 second" : `${secondsLeft} seconds`}.
           </p>
           <Button variant="pri" data-testid="ward-idle-still-here" onClick={() => stillHere.current()}>
             I&apos;m still here

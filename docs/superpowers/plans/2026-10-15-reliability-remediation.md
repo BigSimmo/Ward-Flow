@@ -1,5 +1,9 @@
 # Ward Flow Reliability Remediation Implementation Plan
 
+> **Dated plan record, 15 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 > **For agentic workers:** Execute task-by-task with the user's requested native parallel agent swarm. Independent edits run concurrently; ownership, integration and broad verification stay serial. Preserve the implementation/review workflow already read; further cloud skills became unavailable during this task.
 
 **Goal:** Correct surviving evidence-backed issues, reuse fixes already landed or proposed, and leave a verified disposition and next action for every earlier concern.

@@ -60,6 +60,89 @@ function horizon(forecast: ReturnType<typeof bedsForecast>, hours: 24 | 48) {
 }
 
 describe("bedsForecast", () => {
+  it.each(["expected", "confirmed"] as const)(
+    "removes a rescheduled %s discharge from both horizons and its source list",
+    (state) => {
+      const flagged = release({ admissionId: "AD-MOVED", state, expectedAt: NOW + 60 });
+      const stay = admission({ id: flagged.admissionId, expectedDischargeAt: NOW + 60 });
+      expect(horizon(bedsForecast([unit], [flagged], [stay], [], NOW), 24)[state]).toBe(1);
+
+      const forecast = bedsForecast(
+        [unit],
+        [flagged],
+        [{ ...stay, expectedDischargeAt: NOW + 3 * MINUTES_PER_DAY }],
+        [],
+        NOW,
+      );
+      for (const entry of forecast.horizons) {
+        expect(entry).toMatchObject({ confirmed: 0, expected: 0, overdue: 0, plannedNotFlagged: 0 });
+        expect(entry.high).toBe(entry.readyNow);
+      }
+      expect(forecast.sources.windows.reduce((sum, window) => sum + window.total, 0)).toBe(0);
+      expect(forecast.sources.laterFlagged).toBe(1);
+      expect(flagged.expectedAt).toBe(NOW + 60);
+    },
+  );
+
+  it.each([
+    { from: NOW + 60, to: NOW + MINUTES_PER_DAY + 60, day: 0, twoDays: 1, overdue: 0 },
+    { from: NOW + 3 * MINUTES_PER_DAY, to: NOW + 60, day: 1, twoDays: 1, overdue: 0 },
+    { from: NOW - 2 * MINUTES_PER_DAY, to: NOW + 60, day: 1, twoDays: 1, overdue: 0 },
+    { from: NOW + 60, to: NOW - 2 * MINUTES_PER_DAY, day: 0, twoDays: 0, overdue: 1 },
+    { from: NOW + 3 * MINUTES_PER_DAY, to: 0, day: 1, twoDays: 1, overdue: 0 },
+  ])("uses a rescheduled date for windows and overdue groups ($from to $to)", ({ from, to, day, twoDays, overdue }) => {
+    const flagged = release({ admissionId: "AD-MOVED", expectedAt: from });
+    const stay = admission({
+      id: flagged.admissionId,
+      expectedDischargeAt: to,
+      dischargeDateSetAt: NOW - 10,
+      dischargeDateSetBy: "Ward manager",
+    });
+    const forecast = bedsForecast([unit], [flagged], [stay], [], NOW);
+    expect(horizon(forecast, 24)).toMatchObject({ expected: day, overdue, plannedNotFlagged: 0 });
+    expect(horizon(forecast, 48)).toMatchObject({ expected: twoDays, overdue, plannedNotFlagged: 0 });
+    const entries = forecast.sources.windows.flatMap((window) => window.wards.flatMap((ward) => ward.entries));
+    expect(entries).toHaveLength(day + overdue);
+    if (entries.length) {
+      expect(entries[0]).toMatchObject({
+        expectedAt: to,
+        saidAt: flagged.confirmedAt,
+        saidBy: flagged.confirmedBy,
+        planDate: { recordedAt: NOW - 10, recordedBy: "Ward manager" },
+      });
+    }
+    const nextDay = horizon(forecast, 24);
+    expect(forecast.sources.windows.reduce((sum, window) => sum + window.total, 0)).toBe(
+      nextDay.confirmed + nextDay.expected + nextDay.heldUp + nextDay.overdue,
+    );
+  });
+
+  it("uses the rescheduled date for held-up releases without putting them in the likely figure", () => {
+    const flagged = release({
+      admissionId: "AD-MOVED",
+      expectedAt: NOW + 60,
+      blocker: BED_RELEASE_BLOCKERS[0],
+      blockedBy: "NUM Test Unit",
+    });
+    const stay = admission({ id: flagged.admissionId, expectedDischargeAt: NOW + MINUTES_PER_DAY + 60 });
+    const forecast = bedsForecast([unit], [flagged], [stay], [], NOW);
+    expect(horizon(forecast, 24)).toMatchObject({ heldUp: 0, expected: 0 });
+    const twoDays = horizon(forecast, 48);
+    expect(twoDays).toMatchObject({ heldUp: 1, expected: 0 });
+    expect(twoDays.likely).toBe(twoDays.readyNow);
+    expect(twoDays.high).toBe(twoDays.likely + 1);
+    expect(forecast.sources.laterFlagged).toBe(1);
+  });
+
+  it("keeps the release date when the linked admission is missing or has no date", () => {
+    const releases = [release({ admissionId: "AD-MISSING" }), release({ admissionId: "AD-NO-DATE" })];
+    const stay = admission({ id: "AD-NO-DATE", expectedDischargeAt: null });
+    const forecast = bedsForecast([unit], releases, [stay], [], NOW);
+    expect(horizon(forecast, 24)).toMatchObject({ expected: 2, plannedNotFlagged: 0 });
+    const entries = forecast.sources.windows.flatMap((window) => window.wards.flatMap((ward) => ward.entries));
+    expect(entries.map((entry) => entry.expectedAt)).toEqual(releases.map((entry) => entry.expectedAt));
+  });
+
   it.each([
     { allocatable: 2, movementId: "WF-RESERVED", ready: 1 },
     { allocatable: 1, movementId: "WF-RESERVED", ready: 1 },

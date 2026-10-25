@@ -54,6 +54,7 @@ import {
   type Observation,
 } from "@/components/ward-management/ward-observation";
 import { WardObservationControl, observationWithReview } from "./ward-observation-control";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -65,7 +66,11 @@ interface WardBedDossierDrawerProps {
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
   /** Records a new observation level for the stay (fix plan item 10). Absent where this desk may not. */
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (
+    admissionId: string,
+    observation: Observation,
+    expected?: string,
+  ) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   /** Steps to the bed before this one. The arrow shows only when the parent passes it. */
@@ -694,10 +699,25 @@ export function WardBedDossierDrawer({
                     </dl>
                     {bedItem?.observation && bedItem.admissionId ? (
                       <WardObservationControl
+                        key={bedItem.admissionId}
                         observation={bedItem.observation}
                         now={now}
                         showCurrent={false}
-                        onSave={onSetObservation ? (next) => onSetObservation(bedItem.admissionId!, next) : undefined}
+                        editingToken={
+                          admission
+                            ? observationEditingToken(
+                                "admission",
+                                admission.id,
+                                admission.observation,
+                                admission.observationChanges?.length ?? 0,
+                              )
+                            : undefined
+                        }
+                        onSave={
+                          onSetObservation
+                            ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
+                            : undefined
+                        }
                       />
                     ) : null}
                   </Section>
@@ -1012,7 +1032,11 @@ interface PhoneBedSheetProps {
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
-  onSetObservation?: (admissionId: string, observation: Observation) => void;
+  onSetObservation?: (
+    admissionId: string,
+    observation: Observation,
+    expected?: string,
+  ) => ReturnType<WardCommandDispatch>;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
@@ -1181,6 +1205,7 @@ function PhoneBedSheet({
               </dl>
               {bedItem?.observation && admissionId ? (
                 <WardObservationControl
+                  key={admissionId}
                   observation={bedItem.observation}
                   now={now}
                   showCurrent={false}
