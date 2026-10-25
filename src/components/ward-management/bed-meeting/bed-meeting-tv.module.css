@@ -37,6 +37,19 @@
   row-gap: calc(var(--tv-gap) * 0.6);
 }
 
+/* 4K TV (Josh, 24 Oct 2026): the main text already scales with the screen, but the controls,
+ * status words, footer and the Brief's own labels and note stopped at 24 px. On a 3840 wide screen
+ * (from 3200 px) they reach 40 px, the same share of the screen as 20 px on a 1080p TV. */
+@media (min-width: 200rem) {
+  .tv {
+    --tv-least: 2.5rem;
+  }
+
+  .panel[data-area="brief"] :is(dt, dl + p) {
+    font-size: var(--tv-least);
+  }
+}
+
 .tv:fullscreen {
   overflow-y: auto;
 }
@@ -416,10 +429,10 @@
 }
 
 /* DR-02: on a 1080p TV the all-services meeting has five panels, and four abreast left "Beds that fit"
- * a letter wide and the Brief overprinting itself. Up to about 2700 px they sit in three columns: the
+ * a letter wide and the Brief overprinting itself. On any TV they now sit in three columns: the
  * Brief runs under the service table and "Beds that fit", where its four parts have room, and the
  * delays sit under the ED waits. Table rows are a little tighter so it all stays on one screen. */
-@container (min-width: 90rem) and (max-width: 170rem) {
+@container (min-width: 90rem) {
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;
@@ -433,31 +446,27 @@
     padding-block: calc(var(--wf-s-2) * 0.5);
   }
 
-  .panels[data-layout="meeting"]:has(> [data-area="brief"]) [data-fit="full"] {
-    display: none;
-  }
-
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) > .panel {
     padding-block: calc(var(--tv-gap) * 0.6);
   }
 
-  .panels[data-layout="meeting"] > [data-area="main"] {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="main"] {
     grid-area: main;
   }
 
-  .panels[data-layout="meeting"] > [data-area="fit"] {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="fit"] {
     grid-area: fit;
   }
 
-  .panels[data-layout="meeting"] > [data-area="brief"] {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="brief"] {
     grid-area: brief;
   }
 
-  .panels[data-layout="meeting"] > [data-area="waits"] {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="waits"] {
     grid-area: waits;
   }
 
-  .panels[data-layout="meeting"] > [data-area="delays"] {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="delays"] {
     grid-area: delays;
   }
 }
@@ -662,7 +671,12 @@
   display: none;
 }
 
+/* Up to about 2700 px only the first delay cause fits under the ED waits; a 4K TV has room for all. */
 @container (min-width: 90rem) and (max-width: 170rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) [data-fit="full"] {
+    display: none;
+  }
+
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) .more[data-fit="short"] {
     display: block;
   }
