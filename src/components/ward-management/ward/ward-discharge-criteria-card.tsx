@@ -297,7 +297,7 @@ export function WardDischargeCriteriaCard({
                       }
                       setSaveMessage(
                         result?.message ??
-                          "Criteria were not confirmed saved. Your draft is still here. Review the board before trying again.",
+                          "Criteria save is not confirmed. Your draft is still here. Check the board, then save again if the criteria are not there.",
                       );
                     }
                   };

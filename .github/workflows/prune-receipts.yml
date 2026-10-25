@@ -1,0 +1,61 @@
+name: Ward Flow receipt clean-up
+
+# Limits audit, 25 October 2026 (approved by Josh the same day). Removes repeat-press receipts
+# (`ward_flow.commands`) older than 7 days from the hosted Supabase database, once a week at 03:00
+# Perth on Monday. Receipts hold an outcome and a version number only, no patient content; the
+# append-only audit keeps the record. Without this they are never removed and grow the database by
+# about 0.5 KB per save. Runs `backend/ward-flow/prune-receipts.mjs`, which deletes in small batches
+# so saves are never held up, and prints only the number removed.
+#
+# Needs one repository secret, added by the owner: WARD_SUPABASE_PRUNE_DATABASE_URL, the connection
+# for the `wardflow_pruner` login (backend/ward-flow/infra/supabase-prune-role.sql). That login can
+# only call a function that removes receipts older than 7 days; it cannot read or change anything
+# else. The migration login is never stored here. Until the secret exists, each run says so and
+# succeeds without connecting. Public repository: free.
+on:
+  schedule:
+    - cron: "0 19 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ward-prune-receipts
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    name: Ward Flow receipt clean-up
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      WARD_SUPABASE_PRUNE_DATABASE_URL: ${{ secrets.WARD_SUPABASE_PRUNE_DATABASE_URL }}
+    steps:
+      - name: Check the connection secret is set
+        id: secrets
+        run: |
+          if [ -n "$WARD_SUPABASE_PRUNE_DATABASE_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Receipt clean-up skipped: add WARD_SUPABASE_PRUNE_DATABASE_URL (the wardflow_pruner login) as a repository secret."
+          fi
+      - name: Check out the locked source
+        if: ${{ steps.secrets.outputs.ready == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the supported Node version
+        if: ${{ steps.secrets.outputs.ready == 'true' }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Install the backend's locked dependencies
+        if: ${{ steps.secrets.outputs.ready == 'true' }}
+        working-directory: backend/ward-flow
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Remove receipts older than 7 days
+        if: ${{ steps.secrets.outputs.ready == 'true' }}
+        working-directory: backend/ward-flow
+        run: npm run prune:receipts:supabase-pruner

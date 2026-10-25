@@ -36,7 +36,9 @@ it("warns on a rejected legal-save completion while keeping the editable draft a
       expect.objectContaining({ movementId: movement.id }),
     ),
   );
-  expect(await screen.findByText("Save is not confirmed. Review the board before trying again.")).toBeVisible();
+  expect(
+    await screen.findByText("Save is not confirmed. Check the board. If your change is not there, make it again."),
+  ).toBeVisible();
   expect(sheet).toBeVisible();
   const time = within(sheet).getByLabelText("Time on form");
   expect(time).toHaveValue("10:00");
