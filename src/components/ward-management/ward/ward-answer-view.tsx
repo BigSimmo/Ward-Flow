@@ -1185,7 +1185,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             height="tall"
                             secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
                             primary={{
-                              label: declinePending ? "Confirming decline…" : "Confirm decline",
+                              label: declinePending ? "Confirming decline…" : `Decline for ${answerSelection.name}`, // 24-7 CT-19
                               disabledReason: declinePending ? "Waiting for confirmation" : undefined,
                               onAction: () => confirmDecline(activeMovement.id),
                             }}
@@ -1391,7 +1391,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             title={!canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined}
                             className={`${styles.btn} ${styles.btnDanger}`}
                           >
-                            {declinePending ? "Confirming decline…" : "Confirm decline"}
+                            {declinePending ? "Confirming decline…" : `Decline for ${answerSelection.name}`}
                           </button>
                           {!canSubmitDecline(declineReason) ? (
                             <span id={`ward-decline-submit-reason-${activeMovement.id}`} className="sr-only">
