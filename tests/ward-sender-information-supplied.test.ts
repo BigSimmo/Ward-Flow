@@ -131,7 +131,8 @@ describe("recipient-free sender information supplied", () => {
   it("validates exactly one target shape and the existing fixed information vocabulary", () => {
     const { command, targets } = fixture();
     expect(validSharedCommand(command)).toBe(true);
-    const { allRequestingWards: _all, ...legacy } = command;
+    const legacy: Record<string, unknown> = { ...command };
+    delete legacy.allRequestingWards;
     expect(validSharedCommand({ ...legacy, wardUnitId: targets[0].id })).toBe(true);
     for (const invalid of [
       legacy,

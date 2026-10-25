@@ -10,7 +10,6 @@ import {
   cancelledAddressings,
   declinedAddressings,
   referralAddressingStateLabel,
-  referralDecidedAt,
   referralDestinationLabel,
   referralState,
   referralClocks,
@@ -21,6 +20,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { durMinutes, type JourneyStage } from "@/components/wf";
 import { wardArm } from "./referral-board-parts";
+import { referralPresentation, type SenderReferralPresentation } from "../ward-partial-view-presenters";
 
 /**
  * Bed board decision 9A (Josh, 26 September 2026): the waiting list flags a queued referral whose
@@ -44,13 +44,29 @@ export function referralNeedsGenderReview(referral: Referral): boolean {
  * so the claim is enforced by there being one spelling rather than by two files agreeing.
  */
 
-export function decidedWaitLabel(referral: Referral): string {
-  const decidedAt = referralDecidedAt(referral);
+export function decidedWaitLabel(referral: Referral, summary?: SenderReferralPresentation): string {
+  const decidedAt = presentationDecidedAt(referral, summary);
   if (decidedAt === undefined) return "No decision time recorded";
   return `${splitDuration(Math.max(0, decidedAt - referral.raisedAt))} before decision`;
 }
 
-export function outcomeLabel(referral: Referral): string {
+export function presentationDecidedAt(referral: Referral, summary?: SenderReferralPresentation): number | undefined {
+  const presentation = referralPresentation(referral, summary);
+  return presentation.kind === "unavailable" ? undefined : (presentation.decidedAt ?? undefined);
+}
+
+export function outcomeLabel(referral: Referral, summary?: SenderReferralPresentation): string {
+  if (summary !== undefined) {
+    const presentation = referralPresentation(referral, summary);
+    if (presentation.kind === "unavailable") return "Progress unavailable";
+    return presentation.withdrawn
+      ? "Withdrawn"
+      : presentation.state === "accepted"
+        ? "Accepted"
+        : presentation.state === "declined"
+          ? "Declined"
+          : "Queued";
+  }
   if (
     referral.destinations.length > 0 &&
     referral.destinations.every((addressing) => addressing.withdrawnAt !== undefined)
@@ -149,7 +165,20 @@ export type DecidedDetail = {
   alsoCancelled: string[];
 };
 
-export function outcomeDetail(referral: Referral, units: Unit[]): DecidedDetail {
+export function outcomeDetail(referral: Referral, units: Unit[], summary?: SenderReferralPresentation): DecidedDetail {
+  if (summary !== undefined) {
+    const presentation = referralPresentation(referral, summary);
+    const accepted =
+      presentation.kind !== "unavailable" && presentation.state === "accepted"
+        ? acceptedAddressing(referral)
+        : undefined;
+    const outcome = accepted
+      ? accepted.destination.kind === "psychiatric_ward"
+        ? (units.find((unit) => unit.id === accepted.acceptedUnitId)?.name ?? "Accepted ward not recorded")
+        : referralDestinationLabel(accepted.destination)
+      : outcomeLabel(referral, summary);
+    return { outcome, alsoRefused: [], alsoCancelled: [] };
+  }
   const refusals = refusalLines(referral);
   const cancelled = cancelledLines(referral);
   const accepted = acceptedAddressing(referral);
@@ -229,7 +258,16 @@ export function journeyDuration(minutes: number): string {
  * v10 phone referral sheet: the referral's own recorded steps as a journey strip (Referred,
  * Triaged, Bed offered), sized by real time. Undefined while there is only one step to show.
  */
-export function referralJourneyStages(referral: Referral, now: Instant): JourneyStage[] | undefined {
+export function referralJourneyStages(
+  referral: Referral,
+  now: Instant,
+  summary?: SenderReferralPresentation,
+): JourneyStage[] | undefined {
+  const presentation = referralPresentation(referral, summary);
+  if (presentation.kind === "unavailable") return undefined;
+  const running = presentation.state === "queued" && !presentation.withdrawn;
+  const endAt =
+    summary !== undefined && !running ? (presentation.decidedAt ?? referral.triagedAt ?? referral.raisedAt) : now;
   // Only a ward's acceptance offers a bed; an ED or community team accepting offers none.
   const offeredAt = referral.destinations
     .filter(
@@ -250,12 +288,12 @@ export function referralJourneyStages(referral: Referral, now: Instant): Journey
   const referredEnd = triagedAt ?? offeredAt ?? now;
   stages.push({ id: "referred", label: "Referred", minutes: Math.max(0, referredEnd - referral.raisedAt) });
   if (triagedAt !== undefined) {
-    const end = offeredAt ?? now;
+    const end = offeredAt ?? endAt;
     stages.push({
       id: "triaged",
       label: "Triaged",
       minutes: Math.max(0, end - triagedAt),
-      now: offeredAt === undefined,
+      now: offeredAt === undefined && (summary === undefined || running),
     });
   }
   if (offeredAt !== undefined) {

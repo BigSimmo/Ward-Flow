@@ -36,7 +36,10 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
-import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { movementPresentation } from "../ward-partial-view-presenters";
+import { movementProgressText } from "./movements-screen-helpers";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -116,7 +119,6 @@ const CANCEL_TRANSPORT_NOT_YOURS =
   "This ward did not book the job, so ask the flow coordinator or the referring emergency department to cancel it.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
-const OPEN_GATE: RoleGate = { allowed: true, buttonProps: {}, note: null };
 
 export function MovementWorkspaceCockpit({
   movementId,
@@ -139,10 +141,12 @@ export function MovementWorkspaceCockpit({
   const now = useWardFlowClock();
   // A ward embed raises in its own name (CodeAnt on #342), so actions only a coordinator may take
   // show as off with the reason instead of borrowing the coordinator's role.
-  const raise = useWardRaise(role);
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(role === "ward" ? "ward" : routeRole);
   const gate = useRoleGate();
+  const sender = useSenderPresentation();
   const baseId = useId();
-  const lock = (type: WardFlowEventType): RoleGate => (role === "ward" ? gate(type) : OPEN_GATE);
+  const lock = (type: WardFlowEventType): RoleGate => gate(type);
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
   const mastheadInfo = patient ? resolveSubjectPatient(patient, { patients, referrals, movements }) : undefined;
@@ -168,6 +172,9 @@ export function MovementWorkspaceCockpit({
     return null;
   }
 
+  const presentation = movementPresentation(patient, sender.movementFor(patient));
+  const progressText = movementProgressText(presentation);
+
   const destination = patient.acceptedUnitId ? units.find((unit) => unit.id === patient.acceptedUnitId) : undefined;
   const verdict = destination ? eligibility(patient, destination, now) : undefined;
   const open = isOpen(patient);
@@ -177,19 +184,29 @@ export function MovementWorkspaceCockpit({
   const originEd = allEmergencyDepartments().find((department) => department.id === patient.originEdId);
   const service = movementHealthService(patient);
   const destinationService = destination ? siteByCode(destination.siteCode)?.service : undefined;
-  const attention = attentionItems({ movement: patient, units, now, thresholds, destination, open, blockerIsActive });
+  const attention = attentionItems({
+    movement: patient,
+    units,
+    now,
+    thresholds,
+    destination,
+    open,
+    blockerIsActive,
+    presentation,
+  });
   const reachedIndex = MOVEMENT_STAGES.indexOf(patient.stage);
 
   const answeredCount = patient.declines.length + (patient.acceptedUnitId === undefined ? 0 : 1);
   const acceptedName = patient.acceptedUnitId === undefined ? undefined : unitName(patient.acceptedUnitId);
   const referredSub =
-    patient.referredUnitIds.length > 0
+    progressText ??
+    (patient.referredUnitIds.length > 0
       ? `Waiting on ${patient.referredUnitIds.map((unitId) => unitName(unitId)).join(", ")}.`
       : answeredCount > 0
         ? `No referral is open. ${patient.declines.length === 0 ? "No ward declined" : `${patient.declines.length} ward${patient.declines.length === 1 ? "" : "s"} declined`}${acceptedName ? `, and ${acceptedName} accepted.` : " and none accepted."}`
         : patient.withdrawnReferrals.length > 0
           ? `No referral is open. ${patient.withdrawnReferrals.length} ${patient.withdrawnReferrals.length === 1 ? "was" : "were"} withdrawn, and no ward has answered.`
-          : "No ward has been asked to take this patient.";
+          : "No ward has been asked to take this patient.");
 
   const ranMinutes = Math.max((open ? now : (patient.closure?.at ?? now)) - patient.openedAt, 0);
 
@@ -199,7 +216,7 @@ export function MovementWorkspaceCockpit({
 
   const { flagged, withheldFlags } = urgentFigureFlags({
     deadlineBreached,
-    declined: open && patient.declines.length > 0,
+    declined: presentation.kind === "record" && open && patient.declines.length > 0,
     pullExpired,
   });
 
@@ -448,11 +465,12 @@ export function MovementWorkspaceCockpit({
             </div>
           ) : (
             <p className={styles.actionSay}>
-              {patient.referredUnitIds.length > 0
-                ? `${patient.referredUnitIds.length} ward${patient.referredUnitIds.length === 1 ? " is" : "s are"} still waiting to answer, and none has accepted, so no destination is recorded.`
-                : patient.declines.length > 0
-                  ? `Every ward that was asked has answered, and all ${patient.declines.length} declined.`
-                  : "No ward has been asked to take this patient yet."}
+              {progressText ??
+                (patient.referredUnitIds.length > 0
+                  ? `${patient.referredUnitIds.length} ward${patient.referredUnitIds.length === 1 ? " is" : "s are"} still waiting to answer, and none has accepted, so no destination is recorded.`
+                  : patient.declines.length > 0
+                    ? `Every ward that was asked has answered, and all ${patient.declines.length} declined.`
+                    : "No ward has been asked to take this patient yet.")}
             </p>
           )}
         </div>
@@ -545,13 +563,14 @@ export function MovementWorkspaceCockpit({
             <span className={styles.trajectoryDest}>
               {destination
                 ? `${open ? "Bound for" : "Was bound for"} ${destination.name}${destinationService ? `, ${destinationService}` : ""}.`
-                : patient.referredUnitIds.length > 0
-                  ? `No destination yet — ${patient.referredUnitIds.length} referral${patient.referredUnitIds.length === 1 ? " is" : "s are"} still open.`
-                  : patient.declines.length > 0
-                    ? `No destination yet. ${patient.declines.length} ward${patient.declines.length === 1 ? " has" : "s have"} declined and none has accepted.`
-                    : patient.referralAbsence?.reason === "none_raised"
-                      ? "No destination yet. It is recorded that no ward has been asked."
-                      : "No destination yet. Nothing is recorded about whether a ward has been asked."}
+                : (progressText ??
+                  (patient.referredUnitIds.length > 0
+                    ? `No destination yet — ${patient.referredUnitIds.length} referral${patient.referredUnitIds.length === 1 ? " is" : "s are"} still open.`
+                    : patient.declines.length > 0
+                      ? `No destination yet. ${patient.declines.length} ward${patient.declines.length === 1 ? " has" : "s have"} declined and none has accepted.`
+                      : patient.referralAbsence?.reason === "none_raised"
+                        ? "No destination yet. It is recorded that no ward has been asked."
+                        : "No destination yet. Nothing is recorded about whether a ward has been asked."))}
             </span>
           </div>
 
@@ -645,17 +664,34 @@ export function MovementWorkspaceCockpit({
             />
             <WardFigure
               label="Referrals still open"
-              value={patient.referredUnitIds.length === 0 ? "None" : String(patient.referredUnitIds.length)}
+              value={
+                progressText
+                  ? presentation.kind === "unavailable"
+                    ? "Unavailable"
+                    : "Not shown"
+                  : patient.referredUnitIds.length === 0
+                    ? "None"
+                    : String(patient.referredUnitIds.length)
+              }
               sub={referredSub}
             />
             <WardFigure
               label="Wards that declined"
-              value={patient.declines.length === 0 ? "None" : String(patient.declines.length)}
+              value={
+                progressText
+                  ? presentation.kind === "unavailable"
+                    ? "Unavailable"
+                    : "Not shown"
+                  : patient.declines.length === 0
+                    ? "None"
+                    : String(patient.declines.length)
+              }
               flagged={flagged.has("declines")}
               sub={
-                patient.declines.length === 0
+                progressText ??
+                (patient.declines.length === 0
                   ? "No ward has refused this patient"
-                  : patient.declines.map((decline) => unitName(decline.unitId)).join(", ")
+                  : patient.declines.map((decline) => unitName(decline.unitId)).join(", "))
               }
             />
             {deadline !== undefined && patient.legalForm ? (
@@ -953,7 +989,7 @@ export function MovementWorkspaceCockpit({
             <div data-testid="ward-patient-declines" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <h2 className={styles.panelCardTitle}>Declines</h2>
-                {patient.declines.length > 0 ? (
+                {presentation.kind === "record" && patient.declines.length > 0 ? (
                   <span className={styles.panelCountBadge}>{patient.declines.length}</span>
                 ) : null}
               </div>
@@ -971,7 +1007,7 @@ export function MovementWorkspaceCockpit({
                     ))}
                   </ol>
                 ) : (
-                  <p className={styles.actionSay}>No declines recorded for this movement.</p>
+                  <p className={styles.actionSay}>{progressText ?? "No declines recorded for this movement."}</p>
                 )}
               </div>
             </div>
@@ -1007,7 +1043,9 @@ export function MovementWorkspaceCockpit({
                 <h2 className={styles.panelCardTitle}>Escalation</h2>
               </div>
               <div className={styles.panelCardBody}>
-                {patient.escalation ? (
+                {progressText ? (
+                  <p className={styles.actionSay}>{progressText}</p>
+                ) : patient.escalation ? (
                   <dl className={styles.factGrid}>
                     <div className={styles.factRow}>
                       <dt className={styles.factLabel}>When</dt>
