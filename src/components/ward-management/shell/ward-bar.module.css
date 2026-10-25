@@ -582,6 +582,17 @@
   }
 }
 
+/* R3-08 (device sweep, 24 Oct 2026): on a desktop bar the search folds first (its group starts from
+ * no width), so the title may still give way once the search is at its floor. Back or page tools
+ * kept it rigid, and a long page name ("Emergency department statistics" at 1024 and 1280) pushed
+ * New referral off the screen. The page name now ends in an ellipsis instead. */
+@media (min-width: 1001px) {
+  .deskBack + .title,
+  .bar:has(.pageTools:not(:empty)) .title {
+    flex-shrink: 1;
+  }
+}
+
 .mark {
   position: absolute;
   width: 1px;
@@ -1750,6 +1761,21 @@
   .unread {
     background: CanvasText;
     forced-color-adjust: none;
+  }
+}
+
+/* R7-08 (device sweep, 24 Oct 2026): the phone's scope line sits right under the title, and its
+ * forced-colours box (drawn on a hit area wider than the words) struck through the title. The
+ * phone draws the scope as plain text there, as it does in normal colours. */
+@media (forced-colors: active) and (max-width: 48rem) {
+  .scopeBadgeBtn::before {
+    border: 0;
+  }
+
+  /* The closed search's magnifier kept the dark band's white ink (an SVG keeps an author colour in
+     forced colours) and vanished on the system canvas. It takes the system text colour instead. */
+  .searchWrap :global([data-testid="ward-global-search"]) svg {
+    forced-color-adjust: auto;
   }
 }
 
@@ -3660,8 +3686,12 @@
     top: var(--wf-header-height, 3.5rem);
   }
 
-  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
+  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. B6-35 (device
+     sweep, 24 Oct 2026): it fills the width too, as below 640px, so no strip of page shows to its
+     left on a portrait tablet or a phone on its side. */
   .drawerSheetReferral {
+    width: 100vw;
+    max-width: 100vw;
     border-radius: 0;
   }
 }
@@ -3688,6 +3718,9 @@
       opacity: 1;
       color: transparent;
       caret-color: transparent;
+      /* R7-08: forced colours repainted the hidden text and its "Search" placeholder over the
+         magnifier. The closed field stays invisible there too; the open field below is themed. */
+      forced-color-adjust: none;
     }
 
     .bar .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
@@ -3735,6 +3768,7 @@
       :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
       color: var(--wf-ink-1);
       caret-color: var(--wf-focus-ring);
+      forced-color-adjust: auto;
     }
 
     .bar

@@ -540,8 +540,11 @@
     display: none;
   }
 
+  /* R7-02 (device sweep, 24 Oct 2026): with the painted hump hidden the foot was see-through, so
+     page text ran into the dock labels. A system Canvas fill keeps the dock solid. */
   .foot {
     border-top: 1px solid CanvasText;
+    background: Canvas;
   }
 
   .rise {
