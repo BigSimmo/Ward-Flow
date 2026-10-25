@@ -75,7 +75,7 @@ export const PEOPLE_WAITING_LABEL = "People waiting for a bed";
  * when all have. `oldestConfirmedAt` is always the OLDEST contributing `confirmedAt` (spec D4) —
  * a rollup is only as fresh as its stalest input, never as fresh as its freshest.
  */
-export type RollupFreshness =
+type RollupFreshness =
   | { kind: "confirmed"; oldestConfirmedAt: Instant; unitsConfirmed: number; unitsTotal: number }
   | { kind: "partial"; oldestConfirmedAt: Instant; unitsConfirmed: number; unitsTotal: number }
   | { kind: "never" };
