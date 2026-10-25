@@ -18,8 +18,8 @@ import styles from "./ward-referral-drawer.module.css";
 import { communityTeamOptions } from "./referral-destination-options";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { communityTeamsMatching } from "./community-short-form";
-import { DocumentationPanel } from "./referral-flow-panels";
-import { StatusGlyph } from "@/components/wf";
+import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
+import { ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_CHECK_LABELS,
@@ -111,13 +111,16 @@ export function ReferralDocumentationStep({ s }: { s: WardReferralDrawerState })
     clearanceChecks,
     setClearanceChecks,
     checksDone,
+    attempted,
   } = s;
+  const problems = attempted.documentation ? documentationProblems(documentation, `${sectionId}-docs`) : [];
   return (
     <div
       id={`${sectionId}-documentation`}
       className={styles.sectionPanel}
       hidden={previewOpen || confirmationOpen || activeSection !== "documentation"}
     >
+      <ErrorSummary items={problems} action="before the next step" />
       {destType === "ward" && (
         <section className={styles.refCard} data-testid="ward-referral-clearance-checklist">
           <CardHead icon={Stethoscope} title="Medical clearance checklist">
@@ -143,7 +146,12 @@ export function ReferralDocumentationStep({ s }: { s: WardReferralDrawerState })
           </div>
         </section>
       )}
-      <DocumentationPanel key={activePatientKey} draft={documentation} onChange={setDocumentation} />
+      <DocumentationPanel
+        key={activePatientKey}
+        draft={documentation}
+        onChange={setDocumentation}
+        idBase={`${sectionId}-docs`}
+      />
     </div>
   );
 }
@@ -194,6 +202,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     referralGender,
     legalStatus,
     highAcuity,
+    attempted,
   } = s;
   // The person's own needs, as the send will carry them, for the engine's check on each ward.
   const [needs] = wardReferralDestinations([""], {
@@ -225,6 +234,19 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
       className={styles.sectionPanel}
       hidden={previewOpen || confirmationOpen || activeSection !== "placement"}
     >
+      <ErrorSummary
+        items={
+          attempted.placement && !selectedDestinations.length
+            ? [
+                {
+                  id: `${sectionId}-destination`,
+                  text: community ? "Choose the community team" : "Select at least one referral location",
+                },
+              ]
+            : []
+        }
+        action="before sending"
+      />
       {destType === "ward" ? (
         <section className={styles.refCard}>
           <CardHead icon={Users} title="Wards to refer">
@@ -269,7 +291,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <span>Waitlist</span>
             </div>
             <div role="list" aria-label="Placement Destination Options">
-              {realTimeMatch.sortedUnits.map((unit) => {
+              {realTimeMatch.sortedUnits.map((unit, index) => {
                 const selected = selectedUnitIds.includes(unit.unitId);
                 const model = units.find((candidate) => candidate.id === unit.unitId);
                 const cohort = effectiveCohort || undefined;
@@ -300,6 +322,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     data-selected={selected}
                   >
                     <input
+                      id={index === 0 ? `${sectionId}-destination` : undefined}
                       type="checkbox"
                       checked={selected}
                       onChange={() => {
@@ -409,7 +432,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     (movement) => movement.originEdId === ed.id && !movement.closure && movement.stage !== "arrived",
                   ).length,
                 }))
-            ).map((option) => (
+            ).map((option, index) => (
               <label
                 key={option.value}
                 className={styles.wardRow}
@@ -417,6 +440,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                 data-selected={selectedRecipient === option.value}
               >
                 <input
+                  id={index === 0 ? `${sectionId}-destination` : undefined}
                   type="radio"
                   name={`${sectionId}-recipient`}
                   value={option.value}

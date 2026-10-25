@@ -3,11 +3,7 @@ import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 
 import { demoNetwork } from "@/components/ward-management/ward-demo-network";
 import { mixSexOf } from "@/components/ward-management/ward-eligibility";
-import {
-  WA_SYNTHETIC_BENCHMARK,
-  waSyntheticNetwork,
-  waSyntheticOccupancy,
-} from "@/components/ward-management/ward-wa-synthetic-network";
+import { WA_SYNTHETIC_BENCHMARK, waSyntheticNetwork } from "@/components/ward-management/ward-wa-synthetic-network";
 
 describe("the opt-in fictional WA-like network", () => {
   it("keeps every retained demonstration unchanged and builds deterministically", () => {
@@ -124,23 +120,10 @@ describe("the opt-in fictional WA-like network", () => {
     }
   });
 
-  it("reports an illustrative present-bed comparison, excluding private, held and leave stays", () => {
+  // The present-bed figure (`waSyntheticOccupancy`) had no reader and was deleted with Josh's
+  // approval (production audit EDR-05, 25 Oct 2026); the stays the builder adds are still pinned.
+  it("adds only plain synthetic stays to reach its illustrative occupancy", () => {
     const network = waSyntheticNetwork();
-    const metrics = waSyntheticOccupancy(network);
-    expect(metrics).toEqual({ beds: 303, present: 265, rate: 265 / 303 });
-    expect(metrics.present).toBe(Math.round(metrics.beds * WA_SYNTHETIC_BENCHMARK.referenceOccupancy));
-    const withAbsence = structuredClone(network);
-    const leaveIds = new Set(withAbsence.leaveBeds.map((leave) => leave.admissionId));
-    const stay = withAbsence.admissions.find(
-      (candidate) =>
-        candidate.state === "occupied" &&
-        !leaveIds.has(candidate.id) &&
-        withAbsence.sites.some(
-          (site) => site.service !== "Private" && site.units.some((unit) => unit.id === candidate.unitId),
-        ),
-    )!;
-    stay.awayAtEmergencyDepartmentSince = 1;
-    expect(waSyntheticOccupancy(withAbsence).present).toBe(metrics.present - 1);
     expect(WA_SYNTHETIC_BENCHMARK.limitation).toContain("not population calibration");
     const added = network.admissions.filter((candidate) => candidate.id.startsWith("AD-WS-EXTRA-"));
     expect(added).toHaveLength(6);

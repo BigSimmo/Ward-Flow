@@ -315,7 +315,6 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "SEND_RELEASE_SUPPORT_NOTICE":
     case "RECORD_LEAVING":
     case "RECORD_ADMISSION_CARE":
@@ -460,7 +459,6 @@ function bedRequest(event: WardFlowEvent): BedReleaseAuditRequest | null {
       };
     case "CONFIRM_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
-    case "RELEASE_BED":
       return { action: event.type };
     case "SEND_RELEASE_SUPPORT_NOTICE":
       return { action: event.type, service: enumValue(SUPPORT_SERVICE_TYPES, event.service) };
@@ -841,7 +839,6 @@ export function captureAuditEvent(
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "SEND_RELEASE_SUPPORT_NOTICE": {
       const requested = bedRequest(event);
       if (!requested) return null;

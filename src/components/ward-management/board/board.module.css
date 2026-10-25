@@ -6169,6 +6169,26 @@
   padding: 0.25rem 0.5rem;
 }
 
+/* DR-09: the departure and ED transfer confirm takes touch-sized controls: 44 px for close and
+ * Cancel, and 48 px for the recording button on a touch screen. */
+.confirmDialogPanel .confirmCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--wf-row-default, 44px);
+  min-height: var(--wf-row-default, 44px);
+}
+
+.confirmDialogPanel .modalActions > button {
+  min-height: var(--wf-row-default, 44px);
+}
+
+@media (pointer: coarse) {
+  .confirmDialogPanel .modalActions > .detailPrimaryBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
 .confirmDialogText {
   margin: 0;
   font-size: 0.95rem;

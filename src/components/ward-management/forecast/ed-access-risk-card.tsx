@@ -7,7 +7,9 @@
 // phone script budgets do not grow (`forecast-lazy.tsx`).
 //
 // Ward names on the card are the coordinator's only (build plan decision 5, approved by Josh at
-// 10:12Z 23 Oct). Any other desk sees the time and whether a suitable release is recorded.
+// 10:12Z 23 Oct), and only the ward that has accepted the person (Josh, 25 Oct): naming the
+// earliest release elsewhere read as a best-match ward suggestion. Any other desk sees the time
+// and whether a suitable release is recorded.
 import Link from "next/link";
 import { useMemo } from "react";
 
@@ -27,7 +29,7 @@ export function targetText(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60} hour` : splitDuration(minutes);
 }
 
-function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
+export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
   const kind = BED_KIND_LABEL[row.kind].toLowerCase();
   const lookahead = `the next ${RELEASE_LOOKAHEAD_DAYS} days`;
   if (!row.nextRelease) {
@@ -37,7 +39,7 @@ function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): st
       : `No ${kind} release due in ${lookahead}.${declined}`;
   }
   const when = formatInstantWithDay(row.nextRelease.at, now);
-  const where = showWards ? ` at ${row.nextRelease.unitName}` : "";
+  const where = showWards && row.acceptedUnitName ? ` at ${row.nextRelease.unitName}` : "";
   const held = row.nextRelease.blocker ? `, held up for ${shortBlocker(row.nextRelease.blocker).toLowerCase()}` : "";
   return `Next ${kind} release ${when}${where}${held}. Others are ahead in the line.`;
 }

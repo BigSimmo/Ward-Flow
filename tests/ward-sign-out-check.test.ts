@@ -131,6 +131,19 @@ describe("ward sign-out-check", () => {
     expect(run("file.ts").status).toBe(0);
   });
 
+  it("reads claim and release lines from separate files in the claims folder", () => {
+    writeFileSync(signOut, "## Active sign-outs\n");
+    const claims = path.join(gitRoot, "claims");
+    mkdirSync(claims);
+    writeFileSync(path.join(claims, "20261025T1000Z-ward-other.md"), `# claim\n${claim("file.ts").split("\n")[1]}\n`);
+    expect(run("file.ts").status).toBe(1);
+    writeFileSync(
+      path.join(claims, "20261025T1001Z-ward-other-release.md"),
+      "RELEASED 2026-10-25 | Fixture owner | ward/other | complete\n",
+    );
+    expect(run("file.ts").status).toBe(0);
+  });
+
   it("an approved takeover applies only to its exact file", () => {
     writeFileSync(
       signOut,

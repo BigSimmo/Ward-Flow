@@ -532,3 +532,55 @@
     inset: -12px;
   }
 }
+
+/* Error summary: one counted list at the top of a form after a refused submit. A full hairline
+   in the danger colour, never an edge bar; the heading's words carry the state. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-danger);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summaryHead:focus-visible,
+.summaryHead:focus {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0 0 0 calc(9px + 6px);
+  list-style: none;
+}
+
+.summaryLink {
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.summaryLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}

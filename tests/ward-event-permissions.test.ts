@@ -329,7 +329,6 @@ describe("who may raise which event", () => {
     // Fix plan item 10 (21 Oct 2026): ED records the level at intake, the ward and coordinator after.
     RECORD_OBSERVATION_LEVEL: ["ed", "ward", "coordinator"],
     CLEAR_STAY_DISCHARGE_BLOCKER: ["ward", "bed_manager", "coordinator"],
-    RELEASE_BED: ["ward", "coordinator"],
     // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.
     RELEASE_HELD_BED: ["coordinator", "ward", "ed"],
     // Build plan item 29 (T4a) / OA-29: the coordinator, the accepting ward, or the original referrer.

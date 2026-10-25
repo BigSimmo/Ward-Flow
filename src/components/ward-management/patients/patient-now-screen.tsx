@@ -1,5 +1,6 @@
 "use client";
 
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
@@ -148,7 +149,7 @@ function usePatientFormSave(scope: string) {
       else
         setError({
           scope: submittedScope,
-          message: outcome?.message ?? "Save was not confirmed. Review the record before trying again.",
+          message: outcome?.message ?? SAVE_NOT_CONFIRMED,
         });
     };
     try {

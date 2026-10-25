@@ -198,7 +198,6 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   BLOCK_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
   CLEAR_BED_RELEASE_BLOCK: ["ward", "bed_manager", "coordinator"],
   SET_BED_PREPARATION: ["ward", "bed_manager", "coordinator"],
-  RELEASE_BED: ["ward", "coordinator"],
   RECORD_LEAVE_BED: ["ward", "coordinator"],
   END_LEAVE_BED: ["ward", "coordinator"],
   // Owner approval 9 Oct 2026 (Patient page gate board). An absence is the ward's to record, like

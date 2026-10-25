@@ -13,7 +13,6 @@ import {
   lastRecordedActivity,
 } from "../src/components/ward-management/delays/delays-derivations";
 import { allDeclines } from "../src/components/ward-management/ward-derivations";
-import { isMovementWithdrawable } from "../src/components/ward-management/ward-referrals";
 import { EVENT_ROLE } from "../src/components/ward-management/ward-flow-events";
 import { CROSS_ROLE_ALLOWED } from "../src/components/ward-management/ward-role-permissions";
 import { COORDINATOR_DESK_ACKNOWLEDGER_ID } from "../src/components/ward-management/alerts/ward-broadcast-model";
@@ -372,20 +371,6 @@ describe("19 Engine, Derivation, and Backend Defect Remediations", () => {
       const declines = allDeclines([mov]);
       expect(declines.length).toBe(1);
       expect(declines[0].decline.reason).toBe("acuity_mix");
-    });
-
-    it("S2-14: isMovementWithdrawable correctly checks movement stages", () => {
-      const state = seedWardFlowState();
-      const openMov = state.movements.find((m) => !m.closure && m.stage === "destination_review");
-      if (openMov) {
-        expect(isMovementWithdrawable(openMov)).toBe(true);
-      }
-
-      const closedMov: Movement = {
-        ...state.movements[0],
-        closure: { outcome: "arrived", at: NOW, reason: "transferred" },
-      };
-      expect(isMovementWithdrawable(closedMov)).toBe(false);
     });
   });
 

@@ -9,6 +9,7 @@ const ROUTES = new Map([
   ["/v1/workspace/commands", "workspace_commands"],
   ["/v1/workspace/receipt", "workspace_receipt"],
   ["/v1/workspace/audit", "workspace_audit"],
+  ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -360,6 +361,12 @@ export function createSharedHandler({
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
         return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
       }
+      if (path === "/v1/workspace/archive" && request.method === "GET") {
+        // History's closed records older than 30 days (migration 14), each desk's own part only,
+        // as its live workspace is. A store without an archive answers with an empty list.
+        if (!store.archive) return reply(200, { archived: 0, records: [] });
+        return reply(200, await store.archive(view));
+      }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
         // them all; the access admin reads role changes only. Nobody else reads the audit.
@@ -373,9 +380,11 @@ export function createSharedHandler({
         return reply(200, { events, complete, nextCursor: complete ? null : String(events.at(-1).sequence) });
       }
       if (path === "/v1/workspace/record-access") {
-        // Every desk logs the records it opens. Only the statewide coordinator reads the log.
+        // Every desk logs the records it opens. The statewide coordinator reads the whole log; the
+        // access admin reads it for the desks inside its own place (D-80 item 14, Access log).
         if (request.method === "GET") {
-          if (!whole) return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
+          if (!whole && view.access.role !== "admin")
+            return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
           return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });

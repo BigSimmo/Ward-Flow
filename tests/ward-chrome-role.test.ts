@@ -9,8 +9,7 @@ import {
   wardTasksAreActionableForRole,
 } from "../src/components/ward-management/ward-chrome-role";
 import type { Notice } from "../src/components/ward-management/ward-model";
-import { WARD_NAV } from "../src/components/ward-management/ward-nav";
-import { orderRoleScreensForRole } from "../src/components/ward-management/ward-nav-role-order";
+import { wardNavRoleRank } from "../src/components/ward-management/ward-nav-role-order";
 
 const officerNotice: Notice = {
   id: "notice:movement:transport_cancelled_officer:0",
@@ -26,7 +25,7 @@ describe("route-derived Ward Flow chrome roles", () => {
     expect(wardChromeRole("/ward-flow/transport/officer")).toBe("officer");
     expect(wardChromeRole("/ward-flow/transport/officer/")).toBe("officer");
     expect(CHROME_ROLE_LABELS.officer).toBe("Transport officer");
-    expect(orderRoleScreensForRole(WARD_NAV, "officer")[0]?.id).toBe("officer");
+    expect(wardNavRoleRank("officer", "officer")).toBe(0);
   });
 
   it("keeps coordinator, ward and ED route behavior", () => {

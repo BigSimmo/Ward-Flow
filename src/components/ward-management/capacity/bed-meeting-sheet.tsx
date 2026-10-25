@@ -45,7 +45,7 @@ function More({ count, noun }: { count: number; noun: string }) {
 function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Instant }) {
   const flow = useOptionalWardFlowSelect("dayZero");
   const stamp = asAtStamp(now, flow?.dayZero);
-  const { capacity, discharges, ed, delays } = sheet;
+  const { capacity, discharges, ed, delays, stuckReferrals } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
 
   return (
@@ -221,11 +221,45 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
             </>
           )}
         </section>
+
+        {stuckReferrals !== undefined && (
+          <section
+            className={styles.section}
+            aria-labelledby="bed-meeting-stuck"
+            data-testid="bed-meeting-stuck-referrals"
+          >
+            <h3 id="bed-meeting-stuck" className={styles.sectionTitle}>
+              Referrals stuck: no reply
+            </h3>
+            {stuckReferrals.places.length === 0 ? (
+              <p className={styles.empty}>
+                No referral has waited longer than {splitDuration(stuckReferrals.limitMinutes)} for a reply.
+              </p>
+            ) : (
+              <ul className={styles.list}>
+                {stuckReferrals.places.map((row) => (
+                  <li key={row.place} className={styles.row}>
+                    <span className={styles.rowLead}>{row.place}</span>
+                    <span className={styles.rowNote}>
+                      {row.referrals} {row.referrals === 1 ? "referral" : "referrals"} · longest{" "}
+                      {splitDuration(row.longestMinutes)} with no reply
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <More count={stuckReferrals.morePlaces} noun="wards or services" />
+            <p className={styles.note}>
+              No reply recorded within {splitDuration(stuckReferrals.limitMinutes)}, the limit set in Settings. A plain
+              timer: nothing is scored or re-ordered.
+            </p>
+          </section>
+        )}
       </div>
 
       <p className={styles.footer}>
-        Figures come from the Capacity, Discharges, ED and Waiting screens at the moment above. Legal time limits are
-        not checked in this prototype.
+        Figures come from the Capacity, Discharges, ED, Waiting and Referrals screens at the moment above. Legal time
+        limits are not checked in this prototype.
       </p>
       {flow !== null ? <WardPrintFooter /> : null}
     </article>

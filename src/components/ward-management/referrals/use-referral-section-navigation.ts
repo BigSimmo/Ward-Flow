@@ -49,14 +49,17 @@ export function useReferralSectionNavigation({
       sectionFocusFrame.current = null;
       const panel = document.getElementById(`${sectionId}-${section}`);
       if (!panel?.isConnected || panel.closest("[hidden], [inert]") || !canRestoreFocusTo(panel)) return;
-      const control = invalid
-        ? Array.from(
-            panel.querySelectorAll<HTMLElement>(
-              'input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"], button[data-referral-invalid]',
-            ),
-          ).find((element) => !element.matches(":disabled") && !element.closest("[hidden], [inert]"))
-        : null;
-      (control ?? panel.querySelector<HTMLElement>("h3[tabindex]"))?.focus({ preventScroll: true });
+      // A refused step leads with its error summary, so the count is read before the fields.
+      const summary = invalid ? panel.querySelector<HTMLElement>("[data-error-summary] [tabindex='-1']") : null;
+      const control =
+        invalid && !summary
+          ? Array.from(
+              panel.querySelectorAll<HTMLElement>(
+                'input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"], button[data-referral-invalid]',
+              ),
+            ).find((element) => !element.matches(":disabled") && !element.closest("[hidden], [inert]"))
+          : null;
+      (summary ?? control ?? panel.querySelector<HTMLElement>("h3[tabindex]"))?.focus({ preventScroll: true });
       // Audit 7 RC-N2: the body was scrolled to the top, so a field lower in the step sat under the
       // phone sheet's pinned footer or off screen. Centre the field the error points to.
       control?.scrollIntoView?.({ block: "center" });

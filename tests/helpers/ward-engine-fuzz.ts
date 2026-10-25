@@ -822,7 +822,6 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     },
   ],
   [2, bedReleaseEvent("CONFIRM_BED_RELEASE")],
-  [2, bedReleaseEvent("RELEASE_BED")],
   [1, bedReleaseEvent("REVERT_BED_RELEASE", (_state, random) => ({ waitingOn: pick(random, BED_RELEASE_WAITING_ON) }))],
   [1, bedReleaseEvent("BLOCK_BED_RELEASE", (_state, random) => ({ blocker: pick(random, BED_RELEASE_BLOCKERS) }))],
   [1, bedReleaseEvent("CLEAR_BED_RELEASE_BLOCK")],

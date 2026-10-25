@@ -30,7 +30,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const SOVEREIGN_TABS = ["Waiting answer", "In a bed", "Expected back", "Caseload and CTOs"] as const;
 
-const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "CTO register", "Catchment MDT"] as const;
+const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "CTO register", "Catchment counts"] as const;
 
 /*
  * v10 (10 Oct 2026): at most five hero chips. The four list chips stay in the hero; the caseload

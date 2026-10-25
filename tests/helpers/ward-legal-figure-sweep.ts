@@ -1059,14 +1059,6 @@ export function candidateEvents(
           blocker,
         })),
       );
-    case "RELEASE_BED":
-      return state.bedReleases.map((release) => ({
-        type,
-        role,
-        now,
-        releaseId: release.id,
-        actingUnitId: release.unitId,
-      }));
     case "RECORD_LEAVE_BED":
       // One candidate per unit. This used to cross BOTH `usable` values, because the ward's
       // usable/not-usable statement was a real domain value the reducer stored verbatim. The owner
@@ -3064,12 +3056,6 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     expect(country.admissions).toBe(countryBase.admissions);
     expect(country.referrals).toBe(countryBase.referrals);
     expect(country.notices).toBe(countryBase.notices);
-    // Owner ruling 25 September 2026: a bed release names its stay and completes when the ward
-    // records the person leaving; that departure discharges the release in the same write, and
-    // RELEASE_BED refuses while the person is still in the bed. So no event sequence leaves a
-    // release RELEASE_BED can accept. Named, not "at most N", for the reason given above; its
-    // refusal while occupied is pinned in tests/ward-bed-release-lifecycle.test.ts (4 and 13).
-    const UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE = new Set(["RELEASE_BED"]);
     // Fix plan item 16 (D-76): asking more wards needs an open community referral already sent to a
     // NAMED ward, to copy its bed questions from. The seed has none open, and this sweep's only new
     // referral is the broad RECEIVE_REFERRAL_CANDIDATE, which asks no named ward. Named, not "at most
@@ -3082,7 +3068,6 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
         type !== "SET_SCENARIO" &&
         type !== "RECORD_COUNTRY_EXTENSION" && // explicit unchanged-state refusal proof above
         !NO_COMMITMENT_ROW_TO_ACT_ON.has(type) &&
-        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type) &&
         !NO_NAMED_WARD_REFERRAL_TO_ASK_FROM.has(type),
     );
     expect(

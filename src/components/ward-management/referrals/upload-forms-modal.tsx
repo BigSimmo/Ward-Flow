@@ -10,6 +10,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useWardModalFocus } from "../ward-modal-focus";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import styles from "./upload-forms-modal.module.css";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 export interface UploadFormsModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
       pending.current = false;
       setSaving(false);
       if (outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true)) onClose();
-      else setSaveError(outcome?.message ?? "Save is not confirmed. Review the board before trying again.");
+      else setSaveError(outcome?.message ?? SAVE_NOT_CONFIRMED);
     };
     try {
       const result = dispatch({

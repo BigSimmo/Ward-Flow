@@ -6,6 +6,7 @@ import type { WardCommandOutcome } from "../ward-shared-client";
 import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
 import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 type Attempt = {
   movementId: string;
@@ -156,7 +157,7 @@ export function useEdExpirySave({
             },
           );
         } else {
-          finish(wardCommandFailure(outcome) ?? "Save is not confirmed. Review the board before trying again.");
+          finish(wardCommandFailure(outcome) ?? SAVE_NOT_CONFIRMED);
         }
       },
     );

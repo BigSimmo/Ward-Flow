@@ -1778,7 +1778,6 @@ export function reduceClinicalEvent(
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "END_LEAVE_BED":
     case "END_COMMUNITY_TREATMENT_ORDER":
     case "REQUEST_CAPACITY_REFRESH":

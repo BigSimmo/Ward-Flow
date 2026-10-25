@@ -1288,19 +1288,6 @@ export type WardFlowEvent =
       note?: BedPreparationNote;
     }
   | {
-      type: "RELEASE_BED";
-      role: WardFlowRole;
-      now: Instant;
-      /**
-       * Completes a release only when its named admission has already left. While the person is
-       * still in the bed it is refused — record the leaving (`RECORD_LEAVING`), which completes the
-       * release itself. Changes no bed figure.
-       */
-      releaseId: string;
-      /** Same claim-not-proof discipline as `CONFIRM_BED_RELEASE`'s own field. */
-      actingUnitId: string;
-    }
-  | {
       type: "RECORD_LEAVE_BED";
       role: WardFlowRole;
       now: Instant;

@@ -7,7 +7,11 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 
 import styles from "./home.module.css";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+import {
+  noteWardSessionAccount,
+  wardLeaveSaveAllowed,
+  wardLeaveSaveTicket,
+} from "@/components/ward-management/ward-browser-data";
 import {
   changesSinceInstant,
   scopedChangesSinceLastLook,
@@ -68,12 +72,6 @@ function subscribe(onChange: () => void) {
 }
 
 const pendingLeaveSaves = new Map<string, number>();
-// Audit 4 A4-07: a leave-save scheduled as the signed-in screen closes ran after the sign-out
-// sweep and left this picture behind. Each session end moves this on, and a save from before stops.
-let sessionEpoch = 0;
-onWardSessionEnd(() => {
-  sessionEpoch += 1;
-});
 
 const serverLastLook = () => null;
 
@@ -128,6 +126,7 @@ export function useSinceLastLook(
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
+  noteWardSessionAccount(account);
   const storageKey = scopeKey
     ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
     : LAST_LOOK_STORAGE_KEY;
@@ -153,12 +152,13 @@ export function useSinceLastLook(
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
     if (scopeKey) return;
-    const epoch = sessionEpoch;
+    const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
-      // A cleanup from another account/world must never write that world's picture.
+      // A cleanup from another account/world must never write that world's picture, and none may
+      // write after its session ended, even one scheduled by a signed-out re-render (A4-07).
       const snapshot = latest.current;
       if (
-        epoch === sessionEpoch &&
+        wardLeaveSaveAllowed(ticket) &&
         snapshot.userId === userId &&
         snapshot.worldGeneration === generation &&
         snapshot.scopeKey === scopeKey
@@ -176,7 +176,7 @@ export function useSinceLastLook(
         }, 0),
       );
     };
-  }, [storageKey, userId, generation, scopeKey]);
+  }, [storageKey, userId, generation, scopeKey, account]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).

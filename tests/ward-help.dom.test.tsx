@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +36,7 @@ import {
 import { DESK_GUIDES, SAVED_OR_NOT } from "@/components/ward-management/help/ward-help-guide";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
+import { WHATS_NEW } from "@/components/ward-management/help/ward-whats-new";
 import {
   TOUR_SEEN_STORAGE_KEY,
   TOUR_STEP_STORAGE_KEY,
@@ -173,6 +174,13 @@ describe("help sheet", () => {
     render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Take the tour" }));
     expect(onView).toHaveBeenCalledWith("tour");
+  });
+
+  it("lists recent changes, newest first, under What's new", () => {
+    render(<WardHelpSheet view="new" onView={vi.fn()} onClose={vi.fn()} />);
+    const items = within(screen.getByTestId("ward-help-new")).getAllByRole("listitem");
+    expect(items).toHaveLength(WHATS_NEW.length);
+    expect(items[0]?.textContent).toContain((WHATS_NEW.at(-1) as { line: string }).line);
   });
 });
 

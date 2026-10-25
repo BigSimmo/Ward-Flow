@@ -317,7 +317,7 @@ describe("criteria save confirmation (WF-026)", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Save criteria" }));
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("not confirmed saved");
+    expect(screen.getByRole("alert")).toHaveTextContent("Criteria save is not confirmed");
     expect(screen.getByTestId("ward-drawer-criteria-typed-1")).toHaveValue("Synthetic typed draft");
   });
 });

@@ -42,6 +42,9 @@ const unavailableAccessApi: SharedAccessApi = {
   listCovers: async () => {
     throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
   },
+  listRecordViews: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
   grantAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
   revokeAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
   giveCover: async () => UNAVAILABLE_ACCESS_MESSAGE,
@@ -168,6 +171,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     return {
       listAccess: async () => connected().listAccess(),
       listCovers: async () => connected().listCovers(),
+      listRecordViews: async () => connected().listRecordViews(),
       grantAccess: async (input): Promise<SharedChangeResult> => connected().grantAccess(input),
       revokeAccess: async (id) => connected().revokeAccess(id),
       giveCover: async (input) => connected().giveCover(input),

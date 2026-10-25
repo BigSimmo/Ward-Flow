@@ -136,7 +136,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                       Days in Bed
                     </th>
                     <th scope="col">Legal Status</th>
-                    <th scope="col">Community Key Clinician</th>
+                    <th scope="col">Community key clinician</th>
                     <th scope="col">Liaison / MDT Status</th>
                     <th scope="col" className={styles.actionsCol}>
                       Actions

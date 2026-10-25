@@ -1,0 +1,27 @@
+[
+  {
+    "id": "2026-10-24-help-guide",
+    "date": "2026-10-24",
+    "line": "Help now has a guide for your desk: your main jobs, step by step, each with a link to its screen."
+  },
+  {
+    "id": "2026-10-24-help-tour",
+    "date": "2026-10-24",
+    "line": "The tour starts by itself only once on each device. Open it again any time from Help."
+  },
+  {
+    "id": "2026-10-24-help",
+    "date": "2026-10-24",
+    "line": "On a computer, the ? beside each screen's name opens help for that screen."
+  },
+  {
+    "id": "2026-10-25-whats-new",
+    "date": "2026-10-25",
+    "line": "Help now lists recent changes under What's new, and this note shows them after each update."
+  },
+  {
+    "id": "2026-10-25-bed-flow-reliability",
+    "date": "2026-10-25",
+    "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
+  }
+]
