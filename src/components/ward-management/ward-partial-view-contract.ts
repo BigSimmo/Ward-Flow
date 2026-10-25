@@ -37,6 +37,12 @@ export type WardPartialView = {
   readonly movements: readonly (SenderMovementPartialView | RestrictedPartialView)[];
 };
 
+/** Synthetic/local or coordinator-preview display data has no authenticated response lifetime. */
+export type LocalWardPartialDisplay = {
+  readonly source: "local" | "coordinator-preview";
+  readonly view: WardPartialView | null;
+};
+
 const MAX_RECORDS = 10_000;
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype;
@@ -143,19 +149,24 @@ export function bindWardPartialView(value: unknown, current: WardPartialViewLife
     value.accessContext !== current.accessContext
   )
     return null;
-  const referrals = value.view.referrals.map((row) =>
+  return Object.freeze({
+    revision: value.revision,
+    accessContext: value.accessContext,
+    view: freezeWardPartialView(value.view),
+  });
+}
+
+function freezeWardPartialView(view: WardPartialView): WardPartialView {
+  const referrals = view.referrals.map((row) =>
     Object.freeze(
       row.kind === "sender" ? { ...row, informationNeeds: Object.freeze([...row.informationNeeds]) } : { ...row },
     ),
   );
-  const movements = value.view.movements.map((row) => Object.freeze({ ...row }));
-  return Object.freeze({
-    revision: value.revision,
-    accessContext: value.accessContext,
-    view: Object.freeze({
-      version: 1,
-      referrals: Object.freeze(referrals),
-      movements: Object.freeze(movements),
-    }),
-  });
+  const movements = view.movements.map((row) => Object.freeze({ ...row }));
+  return Object.freeze({ version: 1, referrals: Object.freeze(referrals), movements: Object.freeze(movements) });
+}
+
+/** Separate local display validation; never manufactures a server revision or access hash. */
+export function copyWardPartialView(value: unknown): WardPartialView | null {
+  return isWardPartialView(value) ? freezeWardPartialView(value) : null;
 }

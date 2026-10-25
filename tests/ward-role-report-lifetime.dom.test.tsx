@@ -1,6 +1,20 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { WardPartialViewProvider, useWardPartialView } from "@/components/ward-management/ward-partial-view";
+import "@testing-library/jest-dom/vitest";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import {
+  WardPartialViewProvider,
+  WardLocalPartialViewProvider,
+  useWardPartialView,
+  useWardPartialDisplay,
+} from "@/components/ward-management/ward-partial-view";
+import { WardSharedAccess, type WardSharedConnection } from "@/components/ward-management/ward-shared-access";
+import { bindWardPartialView } from "@/components/ward-management/ward-partial-view-contract";
+import { WardFlowProvider, WardFlowOverride, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
+import { setWardAccess, startAccessPreview } from "@/components/ward-management/shell/ward-access-store";
+import type { ReactNode } from "react";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { STATEWIDE_COORDINATOR } from "@/components/ward-management/ward-role-access";
 import {
   ExecutiveStatisticsProvider,
   useExecutiveStatistics,
@@ -14,6 +28,271 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const CONTEXT_A = "a".repeat(64);
 const CONTEXT_B = "b".repeat(64);
+
+function DisplayProbe() {
+  const display = useWardPartialDisplay();
+  const bound = useWardPartialView();
+  return (
+    <p role="status" aria-label="Sender display">
+      {display
+        ? `${display.referrals.length} referral summaries (${bound ? "shared" : "local/preview"})`
+        : "Display unavailable"}
+    </p>
+  );
+}
+
+/** Transport double only: the data/actions remain the actual full synthetic provider value. */
+function AdoptedSharedWorld({ children }: { children: ReactNode }) {
+  const context = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...context, shared: { enabled: true, status: "ready", error: null } }}>
+      {children}
+    </WardFlowOverride>
+  );
+}
+
+function sharedDisplayConnection(): WardSharedConnection {
+  return {
+    enabled: true,
+    signedIn: true,
+    reportSnapshotReady: true,
+    status: "ready",
+    receivedAt: 100,
+    error: null,
+    actorId: "synthetic-current-actor",
+    workingAs: "00000000-0000-4000-8000-000000000001",
+    access: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
+    snapshot: {
+      revision: 9,
+      now: NOW_ANCHOR,
+      dataMode: "prototype",
+      accessContext: CONTEXT_A,
+      partialView: bindWardPartialView(senderResponse(), { revision: 9, accessContext: CONTEXT_A })!,
+      payload: {
+        version: 1,
+        state: seedWardFlowState(),
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+      },
+    },
+    signIn: () => {},
+    signOut: () => {},
+    retry: () => {},
+    dispatch: async () => ({ commandId: "synthetic-test", status: "cancelled" }),
+    pushApi: {
+      pushKey: async () => ({ enabled: false }),
+      pushStatus: async () => false,
+      pushSubscribe: async () => "role",
+      pushUnsubscribe: async () => false,
+    },
+  };
+}
+
+describe("sender display hosts", () => {
+  it("derives a local display from the actual full provider before the ward scope masks it", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [seedWardFlowState().units[0]!.id] } });
+    });
+    const mounted = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardAccessScope>
+          <DisplayProbe />
+        </WardAccessScope>
+      </WardFlowProvider>,
+    );
+    try {
+      await waitFor(() =>
+        expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent(
+          /referral summaries \(local\/preview\)/,
+        ),
+      );
+    } finally {
+      mounted.unmount();
+      act(() => {
+        setWardAccess(STATEWIDE_COORDINATOR);
+        setWardFeatureFlagOnDevice("role-access", null);
+      });
+    }
+  });
+
+  it("keeps local/preview display data separate from the authenticated Bound hook", () => {
+    render(
+      <WardLocalPartialViewProvider display={{ source: "local", view: senderResponse().view }}>
+        <DisplayProbe />
+      </WardLocalPartialViewProvider>,
+    );
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent(
+      "1 referral summaries (local/preview)",
+    );
+  });
+
+  it("lets shared-unavailable shadow local data in either nesting order", () => {
+    const local = { source: "local" as const, view: senderResponse().view };
+    const { rerender } = render(
+      <WardLocalPartialViewProvider display={local}>
+        <WardPartialViewProvider response={null} currentRevision={9} currentAccessContext={CONTEXT_A}>
+          <DisplayProbe />
+        </WardPartialViewProvider>
+      </WardLocalPartialViewProvider>,
+    );
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+    rerender(
+      <WardPartialViewProvider response={null} currentRevision={9} currentAccessContext={CONTEXT_A}>
+        <WardLocalPartialViewProvider display={local}>
+          <DisplayProbe />
+        </WardLocalPartialViewProvider>
+      </WardPartialViewProvider>,
+    );
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+  });
+
+  it("requires current host permission for a coordinator preview and removes it on the same render", () => {
+    const preview = { source: "coordinator-preview" as const, view: senderResponse().view };
+    const tree = (allowed: boolean, response: unknown = undefined) => (
+      <WardPartialViewProvider
+        response={response}
+        currentRevision={9}
+        currentAccessContext={CONTEXT_A}
+        previewAllowed={allowed}
+      >
+        <WardLocalPartialViewProvider display={preview}>
+          <DisplayProbe />
+        </WardLocalPartialViewProvider>
+      </WardPartialViewProvider>
+    );
+    const { rerender } = render(tree(true));
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent(
+      "1 referral summaries (local/preview)",
+    );
+    rerender(tree(false));
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+    rerender(tree(true, null));
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+    rerender(tree(true, senderResponse()));
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+  });
+
+  it("mounts the genuine adopted shared sibling around the application's children", () => {
+    render(
+      <WardSharedAccess connection={sharedDisplayConnection()}>
+        <DisplayProbe />
+      </WardSharedAccess>,
+    );
+    expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("1 referral summaries (shared)");
+  });
+
+  it("removes an existing shared display on the same render when its current source is unavailable or mismatched", () => {
+    const tree = (connection: WardSharedConnection) => (
+      <WardSharedAccess connection={connection}>
+        <DisplayProbe />
+      </WardSharedAccess>
+    );
+    const mounted = render(tree(sharedDisplayConnection()));
+    try {
+      const changes: ((connection: WardSharedConnection) => void)[] = [
+        (connection) => {
+          connection.reportSnapshotReady = false;
+        },
+        (connection) => {
+          connection.actorId = null;
+        },
+        (connection) => {
+          connection.status = "unavailable";
+        },
+        (connection) => {
+          connection.snapshot!.accessContext = CONTEXT_B;
+        },
+        (connection) => {
+          connection.snapshot!.revision = 10;
+        },
+        (connection) => {
+          delete connection.snapshot!.partialView;
+        },
+        (connection) => {
+          connection.sessionEndsAt = Date.now() - 1;
+        },
+        (connection) => {
+          connection.sessionEndsAt = NaN;
+        },
+      ];
+      for (const change of changes) {
+        const connection = sharedDisplayConnection();
+        change(connection);
+        mounted.rerender(tree(connection));
+        expect(screen.getByText("Display unavailable")).toBeInTheDocument();
+        mounted.rerender(tree(sharedDisplayConnection()));
+        expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent(
+          "1 referral summaries (shared)",
+        );
+      }
+      mounted.rerender(tree({ ...sharedDisplayConnection(), signedIn: false }));
+      expect(screen.queryByText("1 referral summaries (shared)")).not.toBeInTheDocument();
+    } finally {
+      mounted.unmount();
+    }
+  });
+
+  it("expires the supplied shared session lifetime without a poll or retained report effect", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z"));
+    const connection = sharedDisplayConnection();
+    connection.sessionEndsAt = Date.now() + 1000;
+    const mounted = render(
+      <WardSharedAccess connection={connection}>
+        <DisplayProbe />
+      </WardSharedAccess>,
+    );
+    try {
+      expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("1 referral summaries (shared)");
+      act(() => vi.advanceTimersByTime(1000));
+      expect(screen.getByText("Display unavailable")).toBeInTheDocument();
+    } finally {
+      mounted.unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  it("derives an authorised coordinator preview without inventing its legitimately absent sibling", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(STATEWIDE_COORDINATOR);
+      startAccessPreview({ role: "ward", scope: { kind: "ward", unitIds: [seedWardFlowState().units[0]!.id] } });
+    });
+    const coordinator = sharedDisplayConnection();
+    coordinator.access = STATEWIDE_COORDINATOR;
+    delete coordinator.snapshot!.partialView;
+    const tree = (connection: WardSharedConnection) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AdoptedSharedWorld>
+          <WardSharedAccess connection={connection}>
+            <WardAccessScope>
+              <DisplayProbe />
+            </WardAccessScope>
+          </WardSharedAccess>
+        </AdoptedSharedWorld>
+      </WardFlowProvider>
+    );
+    const mounted = render(tree(coordinator));
+    try {
+      await waitFor(() =>
+        expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent(
+          /referral summaries \(local\/preview\)/,
+        ),
+      );
+      const wardMissing = sharedDisplayConnection();
+      delete wardMissing.snapshot!.partialView;
+      mounted.rerender(tree(wardMissing));
+      expect(screen.getByRole("status", { name: "Sender display" })).toHaveTextContent("Display unavailable");
+    } finally {
+      mounted.unmount();
+      act(() => {
+        setWardAccess(STATEWIDE_COORDINATOR);
+        setWardFeatureFlagOnDevice("role-access", null);
+      });
+    }
+  });
+});
 
 function senderResponse(accessContext = CONTEXT_A, revision = 9) {
   return {
@@ -34,7 +313,7 @@ function senderResponse(accessContext = CONTEXT_A, revision = 9) {
       ],
       movements: [],
     },
-  };
+  } as const;
 }
 
 function SenderProbe() {

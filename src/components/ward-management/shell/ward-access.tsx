@@ -81,6 +81,8 @@ import { SharedAccessContext } from "./ward-shared-access-context";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-access.module.css";
 import { DowntimePackBoundary } from "../reports/downtime-pack-context";
+import { WardLocalPartialViewProvider, useWardPartialDisplayHost } from "../ward-partial-view";
+import { allEmergencyDepartments } from "../ward-sites";
 
 export { useUnscopedWardFlow } from "./ward-access-context";
 
@@ -230,6 +232,42 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     () => records.filter((record) => record.role === access.role && record.until > now),
     [records, access.role, now],
   );
+  const displayHost = useWardPartialDisplayHost();
+  const localDisplay = context.shared?.enabled === false && !displayHost.shared;
+  const coordinatorPreview =
+    context.shared?.enabled === true &&
+    displayHost.shared &&
+    displayHost.previewAllowed &&
+    previewOf?.role === "coordinator";
+  const deriveDisplay =
+    (localDisplay || coordinatorPreview) && (access.role === "ward" || access.role === "bed_manager");
+  // Load code only. No projected row is held in an effect, and children remain mounted while
+  // the code loads. Until then the display is unavailable, never an invented empty response.
+  const [projectPartialView, setProjectPartialView] = useState<
+    typeof import("../ward-partial-view-projector").projectWardPartialView | null
+  >(null);
+  useEffect(() => {
+    if (!deriveDisplay || projectPartialView) return;
+    let current = true;
+    void import("../ward-partial-view-projector")
+      .then((module) => {
+        if (current) setProjectPartialView(() => module.projectWardPartialView);
+      })
+      .catch(() => {
+        /* Display remains unavailable; no shared-data fallback. */
+      });
+    return () => {
+      current = false;
+    };
+  }, [deriveDisplay, projectPartialView]);
+  const partialDisplay = useMemo(() => {
+    if (!deriveDisplay || !projectPartialView) return null;
+    return projectPartialView({ ...context, edDepartments: allEmergencyDepartments() }, access, {
+      now,
+      places: wardPlaceLookup(context.units),
+      grants: activeGrants,
+    });
+  }, [deriveDisplay, projectPartialView, context, access, activeGrants, now]);
 
   const value = useMemo<{ scoped: WardFlowContextValue; glass: ReadonlySet<string> }>(() => {
     if (accessIsWholeNetwork(access) && activeGrants.length === 0) return { scoped: context, glass: new Set() };
@@ -413,13 +451,17 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
   ]);
 
   return (
-    <UnscopedWardFlowContext.Provider value={context}>
-      <WardFlowOverride value={steadyScoped}>
-        <BreakGlassContext.Provider value={value.glass}>
-          <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
-        </BreakGlassContext.Provider>
-      </WardFlowOverride>
-    </UnscopedWardFlowContext.Provider>
+    <WardLocalPartialViewProvider
+      display={{ source: coordinatorPreview ? "coordinator-preview" : "local", view: partialDisplay }}
+    >
+      <UnscopedWardFlowContext.Provider value={context}>
+        <WardFlowOverride value={steadyScoped}>
+          <BreakGlassContext.Provider value={value.glass}>
+            <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+          </BreakGlassContext.Provider>
+        </WardFlowOverride>
+      </UnscopedWardFlowContext.Provider>
+    </WardLocalPartialViewProvider>
   );
 }
 
