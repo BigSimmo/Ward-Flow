@@ -962,3 +962,78 @@
   background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--wf-ink-1) 12%, transparent));
   pointer-events: none;
 }
+
+/* L27 (device sweep, 24 Oct 2026): a bar pinned to the far edge keeps its 4px start margin, so it
+   used to run 4px past the track into the Corridors panel. A transparent end border narrows the
+   bars' containing block (the padding box) by twice that margin, leaving a 4px gap; the tick header matches so the hour
+   columns still line up. */
+.ganttColTicks,
+.ganttLaneTrack {
+  box-sizing: border-box;
+  border-right: var(--wf-s-2) solid transparent;
+}
+
+/* R7-03 (device sweep): forced colours drop background fills, so every bar and legend swatch drew
+   as the same outline. Each state gets a system-colour shape of its own: admit solid, transit
+   outlined, leave dotted, discharge double, predicted dashed, and a passed bed hold marked. */
+@media (forced-colors: active) {
+  .ganttColTicks,
+  .ganttLaneTrack {
+    border-right-color: Canvas;
+  }
+
+  .ganttSwatch,
+  .ganttBar,
+  .barDelay::before {
+    forced-color-adjust: none;
+  }
+
+  .barAdmit,
+  .barDelay,
+  .swatchAdmit {
+    border: 1px solid CanvasText;
+    background: CanvasText;
+    color: Canvas;
+  }
+
+  .barTransit,
+  .swatchTransit {
+    border: 2px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .barLeave {
+    border: 2px dotted CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .barDisch {
+    border: 3px double CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .barPred {
+    border: 1px dashed CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .barDelay::before,
+  .swatchDelay {
+    border: 1px solid Canvas;
+    background: Mark;
+  }
+
+  .swatchDelay {
+    border-color: CanvasText;
+  }
+
+  .activeSelect,
+  .ganttBar.scrubActive {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}

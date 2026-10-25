@@ -4,9 +4,12 @@ import { LATEST_MIGRATION, MIGRATIONS, readMigration } from "./migrations.mjs";
 /**
  * Applies every migration after the database's current version, in order, in one transaction.
  * Run by migrate-supabase.mjs or migrate-postgres.mjs. Every file is checked against its checksum
- * before any SQL runs, so a changed file never half-applies.
+ * before any SQL runs, so a changed file never half-applies. `afterMigrations` runs on the same client
+ * before COMMIT, so the CLIs' runtime grants commit with the schema they cover, or not at all.
+ * @param {any} pool
+ * @param {{ afterMigrations?: (client: { query(sql: string): Promise<unknown> }) => Promise<void> }} [options]
  */
-export async function migrate(pool) {
+export async function migrate(pool, { afterMigrations } = {}) {
   const sql = await Promise.all(MIGRATIONS.map(readMigration));
   const client = await pool.connect();
   let rollbackFailure;
@@ -20,6 +23,7 @@ export async function migrate(pool) {
       throw new Error("Unsupported database migration version");
     for (const [index, migration] of MIGRATIONS.entries())
       if (migration.version > version) await client.query(sql[index]);
+    if (afterMigrations) await afterMigrations(client);
     await client.query("COMMIT");
   } catch (error) {
     try {

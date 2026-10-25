@@ -21,6 +21,7 @@ import { EdObservationControl } from "./ed-observation-control";
 import type { EdScreenContext } from "./ed-screen-context";
 import { formExpiryLine, movementMedicalClearance, outstandingItem } from "./ed-screen-model";
 import { edStageLabel } from "./ed-referral-status";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import styles from "./ed.module.css";
 
 export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext; selectedPatient: Movement }) {
@@ -216,12 +217,20 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
             <section className={styles.pxBlock} data-testid="ward-ed-observation">
               <h3>Observation level</h3>
               <EdObservationControl
+                key={selectedPatient.id}
                 observation={selectedPatient.observation}
                 now={now}
-                onSave={(observation) =>
+                editingToken={observationEditingToken(
+                  "movement",
+                  selectedPatient.id,
+                  selectedPatient.observation,
+                  selectedPatient.observationChanges?.length ?? 0,
+                )}
+                onSave={(observation, expected) =>
                   raise("RECORD_OBSERVATION_LEVEL", {
                     target: { kind: "movement", movementId: selectedPatient.id },
                     observation,
+                    expected,
                   })
                 }
               />

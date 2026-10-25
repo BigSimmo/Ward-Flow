@@ -5029,7 +5029,9 @@
     clip: auto;
     clip-path: none;
     display: flex;
-    flex-direction: column-reverse;
+    /* B6-23 / L14 / R3-25 / R7-18 (device sweep, 24 Oct 2026): number over label, as the band
+       figures beside it read (they reverse a label-first list; this one is value-first). */
+    flex-direction: column;
     gap: 2px;
     margin: 0 0 0 auto;
     padding: 0 var(--wf-s-4);
@@ -5091,6 +5093,17 @@
     border-radius: var(--wf-r-lg);
     background: var(--wf-surface);
     box-shadow: var(--wf-e1);
+  }
+
+  /* B6-24 / L14 (device sweep): the "Who is in a bed" head bar runs to the card's edges, as the
+     Every bed card's head does, rather than floating inside the card's padding. */
+  .screen .detail:has(> .detailBar:first-child) {
+    padding-top: 0;
+  }
+
+  .screen .detail > .detailBar {
+    margin: 0 calc(-1 * var(--ward-space-12)) var(--wf-s-2);
+    border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
   }
 
   .screen .workZone {
@@ -5156,6 +5169,9 @@
     gap: var(--wf-s-2);
     min-width: 0;
     width: 100%;
+    /* Device sweep (24 Oct 2026): the sex and legal line wraps under the days figure on a narrow
+       card instead of being cut to "Male · Gr…". */
+    flex-wrap: wrap;
   }
 
   .screen .bedFigureRow .days {
@@ -5175,13 +5191,17 @@
   }
 
   .screen .bedFigureRow .bedWho {
+    display: -webkit-box;
+    flex: 1 1 8rem;
     min-width: 0;
     overflow: hidden;
     color: var(--wf-ink-2);
     font-size: var(--wf-fs-12);
     font-weight: 400;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .stayBar {
@@ -6255,6 +6275,7 @@
   }
 
   .screen .phoneBeds .bedWho {
+    display: block;
     flex-basis: 100%;
     overflow: visible;
     text-overflow: clip;

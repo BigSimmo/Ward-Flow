@@ -1,6 +1,7 @@
 "use client";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import type { DeclineEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -77,7 +78,9 @@ export function DeclineRegister({ entries, units, now }: DeclineRegisterProps) {
                 {/* `DeclineReason` is a controlled-vocabulary identifier (`DECLINE_REASONS`), never
                     free text. D-78: shown in the one list's wording, the coordinator's labels. */}
                 <span className={styles.entryReason} data-testid={`ward-decline-reason-${entry.movement.id}-${index}`}>
-                  {DECLINE_REASON_LABELS[entry.decline.reason] ?? entry.decline.reason}
+                  {entry.decline.reason
+                    ? (DECLINE_REASON_LABELS[entry.decline.reason] ?? entry.decline.reason)
+                    : DECLINE_REASON_NOT_SHARED}
                 </span>
               </span>
             </span>

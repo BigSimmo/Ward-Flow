@@ -413,8 +413,10 @@ export function WardScreenTopBar({
                   )
                 }
                 data-testid="ward-open-full-referral-form-link"
+                aria-label="Open the full referral form"
               >
-                Open full referral form…
+                {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
+                Referral form
               </Link>
               {raiseReferralGate.note}
               {wardRoleLockNote}

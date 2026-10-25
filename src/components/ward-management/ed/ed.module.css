@@ -5026,11 +5026,17 @@
   outline-offset: 2px;
 }
 
+/* A6/B6-13/L11 (device sweep, 24 Oct 2026): "Step 2, over 8 hours" was cut to "Step 2, ov…" in the
+ * narrow Wait column at every desktop width. It wraps to a second line now, and only a longer line
+ * ends in an ellipsis. */
 .a2Sub {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
 }

@@ -1,5 +1,9 @@
 # Brief: build or perfect one Ward Flow third-edition mockup
 
+> **Historical drawing-era record, September 2026.** Written while the third-edition drawings were being built. It is not current guidance for app screens. The rendered app is the current design authority; start at the [Ward Flow entry point](../../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Give this to one agent per page. It is the brief that moved sixteen pages onto the third edition on 9
 and 10 September 2026, generalised. The lead fills in the page name, the file and the page notes.
 

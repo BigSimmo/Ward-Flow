@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
 import { Badge, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { DeclineRegister } from "@/components/ward-management/decline-register";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -114,6 +115,8 @@ export function ExceptionDrawer({
   useEffect(() => {
     if (!open) return;
     function handleKeyDown(event: KeyboardEvent) {
+      // UISR-01: Escape that a sheet on top already took closes only that sheet.
+      if (event.defaultPrevented || hasOpenSheet()) return;
       if (event.key === "Escape") {
         event.preventDefault();
         onToggle();

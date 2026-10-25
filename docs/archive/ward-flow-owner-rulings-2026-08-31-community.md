@@ -1,5 +1,9 @@
 # Owner rulings, 2026-08-31 — the community hub, and six urgency reasons
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **All first-hand to the orchestrator.** He was given nine questions with one recommendation each,
 said _"if not below I give permission and agree with your recommendations"_, and listed five
 exceptions.

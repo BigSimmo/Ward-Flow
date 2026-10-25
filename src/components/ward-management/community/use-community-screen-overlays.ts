@@ -13,6 +13,7 @@ import { useModalFocus } from "@/components/wf";
 import type { CancelTransportReason } from "@/components/ward-management/ward-change-reasons";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { cancelTransportBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
@@ -123,7 +124,9 @@ export function useCommunityScreenTransport({
   useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
   useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, closeTransportCancel);
 
-  function submitBookTransport(movementId: string) {
+  // Audit 24-3 SV-2: each dialog closes only once its save is accepted. The dialog's own
+  // `useWardFormSave` keeps the answers and says why when it is refused or not confirmed.
+  function submitBookTransport(movementId: string, save: WardFormSave["submit"]) {
     const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = transportDraft;
     const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
     if (
@@ -135,36 +138,44 @@ export function useCommunityScreenTransport({
     ) {
       return;
     }
-    raise("BOOK_TRANSPORT", {
-      movementId,
-      actingPlaceId: teamId,
-      provider,
-      escortRequired,
-      cadNumber: cadNumber.trim(),
-      transportLegalStatus,
-      estimatedAt,
-    });
-    closeTransportBook();
-    if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>(`[data-testid="ward-community-cancel-transport-${movementId}"]`)?.focus();
-      });
-    }
+    save(
+      () =>
+        raise("BOOK_TRANSPORT", {
+          movementId,
+          actingPlaceId: teamId,
+          provider,
+          escortRequired,
+          cadNumber: cadNumber.trim(),
+          transportLegalStatus,
+          estimatedAt,
+        }),
+      () => {
+        closeTransportBook();
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            document
+              .querySelector<HTMLElement>(`[data-testid="ward-community-cancel-transport-${movementId}"]`)
+              ?.focus();
+          });
+        }
+      },
+    );
   }
 
-  function submitCancelTransport(movementId: string) {
+  function submitCancelTransport(movementId: string, save: WardFormSave["submit"]) {
     if (cancelTransportReason === undefined) return;
-    raise("CANCEL_TRANSPORT", {
-      movementId,
-      actingPlaceId: teamId,
-      reason: cancelTransportReason,
-    });
-    closeTransportCancel();
-    if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>(`[data-testid="ward-community-book-transport-${movementId}"]`)?.focus();
-      });
-    }
+    const reason = cancelTransportReason;
+    save(
+      () => raise("CANCEL_TRANSPORT", { movementId, actingPlaceId: teamId, reason }),
+      () => {
+        closeTransportCancel();
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>(`[data-testid="ward-community-book-transport-${movementId}"]`)?.focus();
+          });
+        }
+      },
+    );
   }
 
   return {

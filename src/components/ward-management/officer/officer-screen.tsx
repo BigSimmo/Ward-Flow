@@ -872,8 +872,13 @@ export function OfficerScreen() {
             </div>
             <strong className={styles.nextCardName}>{officerListPatientName(topJob)}</strong>
             <span className={styles.nextCardLine}>
-              <span className={styles.mono}>{umrnFor(topJob)}</span> · {originShortFor(topJob)} to{" "}
-              {destinationLabelFor(topJob)}
+              {/* B6-36: no leading separator when this desk is not shown the UMRN. */}
+              {umrnFor(topJob) ? (
+                <>
+                  <span className={styles.mono}>{umrnFor(topJob)}</span> ·{" "}
+                </>
+              ) : null}
+              {originShortFor(topJob)} to {destinationLabelFor(topJob)}
             </span>
             {late(topJob) && topJob.arrivalDetails ? (
               <span className={cx(styles.nextCardLine, styles.warnText)}>

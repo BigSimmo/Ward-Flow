@@ -27,7 +27,7 @@ export function WardRolePicker({
   onSignOut: () => void;
 }) {
   const named = choices
-    .map((choice) => ({ id: choice.workingAs, access: parseStoredAccess(JSON.stringify(choice)) }))
+    .map((choice) => ({ id: choice.workingAs, access: parseStoredAccess(JSON.stringify(choice), { shared: true }) }))
     .filter((choice): choice is { id: string; access: WardAccess } => choice.access !== null);
   return (
     <main id="main-content" className={styles.notice} aria-label="Choose a role" data-testid="ward-role-picker">
@@ -63,14 +63,20 @@ const ASKABLE: readonly WardAccessRole[] = WARD_ACCESS_ROLES.filter(
   (role) => role !== "admin" && role !== "coordinator",
 );
 
+/** The server's reason for a role it will not open: an officer role naming no health service. */
+export const ROLE_NEEDS_SERVICE = "role-needs-service";
+
 export function WardAskForAccess({
   canRequest,
   api,
+  reason,
   onRetry,
   onSignOut,
 }: {
   canRequest: boolean;
   api: RequestApi | null;
+  /** The server's refusal code. `role-needs-service` says what to ask the access admin for. */
+  reason?: string | null;
   onRetry: () => void;
   onSignOut: () => void;
 }) {
@@ -89,7 +95,9 @@ export function WardAskForAccess({
     api.ownRequest().then(
       (request) => {
         if (!cancelled && request)
-          setAsked({ access: parseStoredAccess(JSON.stringify({ role: request.role, scope: request.scope })) });
+          setAsked({
+            access: parseStoredAccess(JSON.stringify({ role: request.role, scope: request.scope }), { shared: true }),
+          });
       },
       () => {},
     );
@@ -100,8 +108,17 @@ export function WardAskForAccess({
 
   return (
     <main id="main-content" className={styles.notice} aria-label="Ask for access" data-testid="ward-ask-for-access">
-      <h1>No Ward Flow role yet</h1>
-      <p>You are signed in, but no role is assigned to this account. An access admin gives roles.</p>
+      {reason === ROLE_NEEDS_SERVICE ? (
+        <>
+          <h1>Your role needs a health service</h1>
+          <p>Your transport officer role names no health service. Ask your access admin to give it again with one.</p>
+        </>
+      ) : (
+        <>
+          <h1>No Ward Flow role yet</h1>
+          <p>You are signed in, but no role is assigned to this account. An access admin gives roles.</p>
+        </>
+      )}
       {asked ? (
         <p role="status">
           You have asked for {asked.access ? sharedDeskLabel(asked.access) : "a role"}. An access admin will answer it.

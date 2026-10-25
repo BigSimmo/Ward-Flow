@@ -10,6 +10,11 @@ _Updated 2026-10-23 - qualify the dated AWOL pause against current source defaul
 
 ## Current programme — 17 October 2026
 
+> **Not refreshed since 17 October — noted 24 October 2026.** Later owner decisions D-72 to D-80
+> (fix plan, community journeys, the ten bigger UX changes, one decline list, full referral first,
+> role access plan version 2) are not reflected in the six steps below. Their build state is in the
+> [STATUS decision table](STATUS.md#decision-status-d-numbers).
+
 For current repository status, completed local verification, and active open work, see
 [`docs/ward-flow/STATUS.md`](STATUS.md) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82).
 

@@ -1,5 +1,7 @@
 # Desk guide: Bed meeting TV board
 
+<!-- last-checked: 2026-10-24 -->
+
 The TV view puts the bed meeting on a wall screen. It is for looking at together, not for
 recording. It may be switched off in some builds.
 

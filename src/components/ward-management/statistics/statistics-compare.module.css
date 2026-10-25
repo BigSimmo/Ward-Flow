@@ -47,18 +47,27 @@
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
+/* R1-12 / R2-07 (device sweep, 24 Oct 2026): the code sits in its own column at the label's end,
+   so the codes line up, and a long ward name wraps to a second line rather than being cut where
+   similar wards can no longer be told apart. */
 .rowName {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
+  column-gap: var(--wf-s-2);
   min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
+  width: 100%;
+  white-space: normal;
 }
 
 .rowNameText {
+  display: -webkit-box;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .unrecorded {

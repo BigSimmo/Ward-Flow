@@ -2,7 +2,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
+import { classifyLegalStatus, legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
 
 /**
  * A STAY'S LEGAL STATUS, READ ONE WAY (audit A3-1/A3-18, 13 Oct 2026). The movement that brought
@@ -35,12 +35,21 @@ export function isOnOrder(status: string | undefined): boolean {
 
 /**
  * The short legal word for a stay's second line: "Form 6A" when a form is recorded and the person
- * is on an order, else "Voluntary", "Involuntary" or undefined when nothing is recorded.
+ * is on an order, else the recorded status in its shortest words, or undefined when nothing is
+ * recorded. The word comes from `classifyLegalStatus`, not from `isOnOrder`: that yes/no is
+ * fail-safe for the absence steps and would call a CTO, a referral or "Not recorded"
+ * "Involuntary" (production audit 24 Oct 2026, EDR-02). A recorded status only; nothing is computed.
  */
 export function stayLegalShort(admission: Admission, source: StayLegalSource): string | undefined {
   const status = stayLegalStatus(admission, source);
-  if (status === undefined || status.trim() === "") return undefined;
-  if (!isOnOrder(status)) return "Voluntary";
+  const kind = classifyLegalStatus(status);
+  if (status === undefined || kind === "not_recorded") return undefined;
+  if (kind === "voluntary") return "Voluntary";
   const code = stayMovement(admission, source)?.legalForm?.code;
-  return code ? `Form ${code}` : "Involuntary";
+  if (code) return `Form ${code}`;
+  if (kind === "cto") return "CTO";
+  if (kind === "referred") return "Referred for exam";
+  if (kind === "detained")
+    return /^detained awaiting examination$/i.test(status.trim()) ? "Awaiting exam" : "Involuntary";
+  return "Status unrecognised";
 }

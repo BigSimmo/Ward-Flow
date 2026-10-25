@@ -2731,3 +2731,103 @@ test(
     }
   },
 );
+
+test("a stored role that names no health service is told apart from one that is simply refused", async () => {
+  const engine = await import("./dist/engine.mjs");
+  // An officer granted before the service was required (D-80 item 7), with no service or an unknown one.
+  assert.equal(engine.parseAccess("officer", { kind: "jobs" }), null);
+  assert.equal(engine.accessNeedsService("officer", { kind: "jobs" }), true);
+  assert.equal(engine.accessNeedsService("officer", { kind: "jobs", service: "Nowhere" }), true);
+  assert.equal(engine.accessNeedsService("coordinator", { kind: "service" }), true);
+  // A role that reads, or one no service would mend, is not marked.
+  assert.equal(engine.accessNeedsService("officer", { kind: "jobs", service: "North Metro" }), false);
+  assert.equal(engine.accessNeedsService("ward", { kind: "ward", unitIds: [] }), false);
+  assert.equal(engine.accessNeedsService("ward", { kind: "ward" }), false);
+  assert.equal(engine.accessNeedsService("officer", { kind: "jobs", extra: 1 }), false);
+  assert.equal(engine.accessNeedsService("nobody", { kind: "jobs" }), false);
+  assert.equal(engine.accessNeedsService("officer", null), false);
+  assert.equal(engine.accessNeedsService("officer", ["jobs"]), false);
+});
+
+test(
+  "real PostgreSQL: the 12-month ceiling, and a role that names no health service (RA-02, RA-06)",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const at = new Date("2026-10-07T10:00:00Z");
+    const workspaceId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+    const [lead, nurse, asker, officer, old, recent] = Array.from({ length: 6 }, () => randomUUID());
+    const term = engine.ACCESS_MAX_TERM_MINUTES * 60_000;
+    const ceiling = new Date(at.getTime() + term);
+    const pastCeiling = new Date(at.getTime() + term + 24 * 60 * 60_000);
+    try {
+      await migrate(pool);
+      const leadView = await store.viewer(lead, { bootstrap: true });
+      const world = (await store.read(lead, leadView)).payload;
+      const ward = { kind: "ward", unitIds: [world.state.units[0].id] };
+
+      // Granting: 12 months and a day is refused, 12 months exactly is given.
+      const tooLong = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: pastCeiling,
+      });
+      assert.equal(tooLong.status, 400);
+      assert.equal(tooLong.body.error, engine.ACCESS_TOO_LONG);
+      assert.deepEqual(await store.viewer(nurse), { status: "none" });
+      const given = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: ceiling,
+      });
+      assert.equal(given.status, 200);
+
+      // Approving a request: the same ceiling, and the request stays open when refused.
+      const asked = await store.requestAccess(asker, { role: "ward", scope: ward });
+      assert.equal(asked.status, 200);
+      const refusedDecision = await store.decideRequest(leadView, asked.body.request.id, "approved", pastCeiling);
+      assert.equal(refusedDecision.status, 400);
+      assert.equal(refusedDecision.body.error, engine.ACCESS_TOO_LONG);
+      assert.deepEqual(await store.viewer(asker), { status: "none" });
+      assert.equal((await store.decideRequest(leadView, asked.body.request.id, "approved", ceiling)).status, 200);
+      assert.deepEqual((await store.viewer(asker)).access, { role: "ward", scope: ward });
+
+      // A grant stored before the ceiling was checked stops 12 months after it was given.
+      /** @type {(actorId: string, grantedAt: Date, expiresAt: Date, role?: string, scope?: object) => Promise<unknown>} */
+      const insert = (actorId, grantedAt, expiresAt, role = "ward", scope = ward) =>
+        pool.query(
+          "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at, last_used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+          [randomUUID(), workspaceId, actorId, role, scope, lead, grantedAt, expiresAt, at],
+        );
+      const thirteenMonthsAgo = new Date(at.getTime() - term - 30 * 24 * 60 * 60_000);
+      await insert(old, thirteenMonthsAgo, new Date(at.getTime() + term));
+      await insert(recent, new Date(at.getTime() - 24 * 60 * 60_000), new Date(at.getTime() + term));
+      assert.deepEqual(await store.viewer(old), { status: "none" });
+      assert.equal((await store.viewer(recent)).status, "ok");
+
+      // An officer granted with no health service gets nothing, is told why, and is listed to a
+      // statewide access admin to be given again.
+      await insert(officer, at, ceiling, "officer", { kind: "jobs" });
+      assert.deepEqual(await store.viewer(officer), { status: "none", needsService: true });
+      const listed = (await store.listAccess(leadView)).body.memberships;
+      const unnamed = listed.filter((row) => row.actorId === officer);
+      assert.equal(unnamed.length, 1);
+      assert.equal(unnamed[0].needsGrantAgain, true);
+      assert.deepEqual(unnamed[0].scope, { kind: "jobs" });
+      assert.equal(
+        listed.filter((row) => row.needsGrantAgain).length,
+        1,
+        "only the row that names no service is marked",
+      );
+      // A statewide admin may end it, after which the account reads as plain no role.
+      assert.equal((await store.revokeAccess(leadView, unnamed[0].id)).status, 200);
+      assert.deepEqual(await store.viewer(officer), { status: "none" });
+    } finally {
+      await pool.end();
+    }
+  },
+);

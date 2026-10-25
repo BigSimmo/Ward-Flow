@@ -912,12 +912,13 @@
   border-top: 0;
 }
 
+/* Device sweep (24 Oct 2026): a sign-off check wraps rather than cutting its point off
+   ("Graylands Older Adult counts …"), even at 1920 and 3840 px. */
 .checks li > span {
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding-block: var(--wf-s-1);
+  overflow-wrap: anywhere;
 }
 
 .who {

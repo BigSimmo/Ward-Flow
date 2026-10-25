@@ -1,5 +1,9 @@
 # Ward Flow Phase 9 — decisions taken during the autonomous session
 
+> **Archived record.** Kept for history; not current guidance. Later decisions may supersede it: check [decisions.md](../ward-flow/decisions.md) and the [owner-rulings index](../ward-flow/OWNER-RULINGS.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Written 2026-08-28**, while the product owner was away and had authorised decisions to be made on
 his behalf, grounded in the repository. Companion to `docs/archive/ward-flow-phase-8-9-questions.md`, which
 states the questions; this states the answers.

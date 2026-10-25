@@ -110,6 +110,29 @@
   overflow-x: auto;
 }
 
+/* Device sweep (24 Oct 2026): at 1024 and 1280 px the wards table and the community handover table
+   scroll sideways inside their cards with no sign that Blocked, Longest stay or People are off to
+   the right. The right edge is drawn while there is more to the right, the same scroll-driven
+   edge as the shared ward table (ward-table.module.css): a border, never a fade, and nothing on a
+   table that fits. */
+@keyframes statsMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-ink-3);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .tableWrap {
+    border-right: 2px solid transparent;
+    animation: statsMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 .tableWrap:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
@@ -288,7 +311,9 @@
 .tiles {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  /* Each tile is at least as wide as its longest label word, so no word breaks; spare room is
+     shared out evenly. */
+  grid-auto-columns: minmax(min-content, 1fr);
   margin: 0;
   overflow: hidden;
   border: 1px solid var(--wf-line);
@@ -332,8 +357,9 @@
   line-height: var(--wf-lh-12);
   font-weight: 400;
   color: var(--wf-ink-3);
-  /* Labels wrap rather than cut to "Allocatabl" or "Ready, not gon" (UX audit 21 Oct 2026). */
-  overflow-wrap: anywhere;
+  /* Labels wrap rather than cut to "Allocatabl" or "Ready, not gon" (UX audit 21 Oct 2026), but
+     between words: "anywhere" also broke "Allocatabl / e" at 1280 px (device sweep, 24 Oct 2026). */
+  overflow-wrap: break-word;
 }
 
 .tileValue {
@@ -598,13 +624,17 @@
   color: var(--wf-ink-1);
 }
 
+/* Device sweep (24 Oct 2026): the hospital list wraps to a second line before it cuts, so the
+   last hospitals are not lost even at 1920 and 3840 px. */
 .serviceSites {
+  display: -webkit-box;
   overflow: hidden;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 @media (max-width: 1100px) {

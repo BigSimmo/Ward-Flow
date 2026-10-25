@@ -5,7 +5,7 @@
 // sent and never changes a record: it is arithmetic on the forecast already on screen.
 import type { BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
-import type { ForecastByKind } from "./forecast-by-kind";
+import { bedKindOfBed, type ForecastByKind } from "./forecast-by-kind";
 
 export type ForecastScenario = {
   /** Every held-up release due tomorrow goes ahead. */
@@ -34,11 +34,13 @@ export function scenarioIsEmpty(scenario: ForecastScenario): boolean {
   );
 }
 
-/** The bed type a ward's opened or closed beds count against. An adult ward's are open beds. */
+/**
+ * The bed type a ward's opened or closed beds count against, by the forecast's own rule
+ * (`bedKindOfBed` with no admission): an adult ward with no open beds can only change locked
+ * ones (production audit USC-01). A mixed adult ward's changes still count as open beds.
+ */
 function scenarioKindOfUnit(unit: Unit): BedKindId {
-  if (unit.cohort === "Older adult") return "older_adult";
-  if (unit.cohort === "Youth") return "youth";
-  return "open_adult";
+  return bedKindOfBed(unit, undefined);
 }
 
 export type ScenarioResult = {

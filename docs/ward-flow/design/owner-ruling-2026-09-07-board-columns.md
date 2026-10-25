@@ -1,5 +1,9 @@
 # Owner ruling 2026-09-07 — the ward board's five additions, and "Presentation"
 
+> **Dated owner ruling, 7 September 2026.** Kept as the record of that decision. Later decisions may change it, and this file is not read by the owner-rulings index generator. Check [decisions.md](../decisions.md) and the [owner-rulings index](../OWNER-RULINGS.md) before relying on it.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **All five are approved. Route B, in the build plan's terms.**
 
 | Column                | Status | Note                                                                                                       |

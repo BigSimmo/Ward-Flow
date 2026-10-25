@@ -124,17 +124,16 @@
   min-width: 0;
 }
 
+/* Device sweep R7-15: a narrow cell wraps its value ("Not recorded") rather than cutting it. */
 .value > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Decision 2: a value that opens its record reads as the value, underlined as a link. */
 .valueLink {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--wf-line-2);
@@ -196,7 +195,18 @@
   }
 }
 
-@media (max-width: 760px) {
+/* Device sweep L26: wide cells end on a stretching row, so each cell's action sits on the same
+   baseline at the foot of the strip whatever the lines above it. */
+@container (min-width: 720.02px) {
+  .cell:not([data-ph-quiet]) {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-content: stretch;
+  }
+}
+
+/* Device sweep R3-02: the same breakpoint as useIsPhone (48rem), so the phone rows never sit three
+   abreast at 761-768px with their actions over the labels. */
+@media (max-width: 48rem) {
   .cells {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -406,6 +416,18 @@
   .phBar {
     bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
     padding-bottom: calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
+  }
+}
+
+/* Device sweep R1-02: on a short screen (320x568/640, landscape) the hero, this bar and the dock
+   left one line of the card. There the bar scrolls with the pane, as the last row of the Now tab. */
+@media (max-width: 48rem) and (max-height: 40rem) {
+  .phBar {
+    position: static;
+    margin-bottom: 0;
+    padding-bottom: var(--wf-s-2);
+    border-top: 0;
+    background: transparent;
   }
 }
 

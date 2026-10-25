@@ -78,7 +78,8 @@
 
 .meanLine {
   position: absolute;
-  top: -6px;
+  /* R2-07 (device sweep): starts at the first bar, so it never runs into the mean label above. */
+  top: 0;
   bottom: 0;
   width: 0;
   border-left: 1px dashed var(--wf-ink-3);
