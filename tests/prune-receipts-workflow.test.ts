@@ -7,7 +7,9 @@ const workflow = readFileSync(new URL("../.github/workflows/prune-receipts.yml",
   "\n",
 );
 const backendPackage = JSON.parse(readFileSync(new URL("../backend/ward-flow/package.json", import.meta.url), "utf8"));
-const { APPROVED_SUPABASE_PROJECT } = await import("../backend/ward-flow/supabase-config.mjs");
+const APPROVED_SUPABASE_PROJECT = /APPROVED_SUPABASE_PROJECT = "([a-z]+)"/u.exec(
+  readFileSync(new URL("../backend/ward-flow/supabase-config.mjs", import.meta.url), "utf8"),
+)?.[1];
 
 describe("weekly receipt clean-up (limits audit, 25 Oct 2026)", () => {
   it("runs weekly and on request only, never on a push or PR", () => {
