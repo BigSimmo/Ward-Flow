@@ -6,15 +6,15 @@ import {
   perthCalendarDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { WA_PUBLIC_HOLIDAYS } from "@/components/ward-management/wa-public-holidays";
 import type { DischargeDependencyOwner } from "./discharge-dependencies";
 
 /**
  * ⚠️ **REFERENCE DATA TO CHECK — NOT A LIVE TIMETABLE.** Closing-the-loop package B (24 Oct 2026).
  *
  * The opening hours below are SYNTHETIC: invented, plausible hours for a prototype, not any real
- * hospital's. The public holiday dates are public facts for Western Australia, copied by hand and
- * not yet checked against the WA Government's published list (wa.gov.au, "Public holidays in
- * Western Australia"); check them before relying on them.
+ * hospital's. The public holiday dates are public facts for Western Australia, kept in
+ * `wa-public-holidays.ts`.
  *
  * Used only to say, on the discharges board, which outstanding items belong to a service that is
  * about to close over a weekend or public holiday. It decides nothing and changes no order.
@@ -44,24 +44,6 @@ const SYNTHETIC_SERVICE_HOURS: Record<DischargeDependencyOwner, WeeklyHours | "a
   social_work: weekdays(8 * 60 + 30, 16 * 60 + 30),
   community_team: weekdays(8 * 60 + 30, 17 * 60),
 };
-
-/** Western Australian public holidays, 2026 (and New Year's Day 2027). Reference to check. */
-const WA_PUBLIC_HOLIDAYS: readonly { readonly date: string; readonly name: string }[] = [
-  { date: "2026-01-01", name: "New Year's Day" },
-  { date: "2026-01-26", name: "Australia Day" },
-  { date: "2026-03-02", name: "Labour Day" },
-  { date: "2026-04-03", name: "Good Friday" },
-  { date: "2026-04-05", name: "Easter Sunday" },
-  { date: "2026-04-06", name: "Easter Monday" },
-  { date: "2026-04-25", name: "Anzac Day" },
-  { date: "2026-04-27", name: "Anzac Day (additional day)" },
-  { date: "2026-06-01", name: "Western Australia Day" },
-  { date: "2026-09-28", name: "King's Birthday" },
-  { date: "2026-12-25", name: "Christmas Day" },
-  { date: "2026-12-26", name: "Boxing Day" },
-  { date: "2026-12-28", name: "Boxing Day (additional day)" },
-  { date: "2027-01-01", name: "New Year's Day" },
-];
 
 /** The Perth calendar date and weekday of a whole demo day (`dayOf` numbering). */
 function calendarOfDay(day: number, dayZero: Date) {
