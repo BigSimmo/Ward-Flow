@@ -66,13 +66,15 @@ export function WardTelemetryRibbon({
     return (
       <>
         <HeroStat
-          value={
-            <span data-testid="ward-hero-ready">
-              {capacity.available}
+          value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
+          // LEAD-a (H-0181): one plain name, "2 Ready now, 1 being made ready", not the figure, the
+          // preparation count and then the label run together.
+          label={
+            <>
+              Ready now
               {pendingPreparation > 0 ? <SrOnly>, {pendingPreparation} being made ready</SrOnly> : null}
-            </span>
+            </>
           }
-          label="Ready now"
           tone="success"
           pressed={filter === "free"}
           onToggle={() => {
