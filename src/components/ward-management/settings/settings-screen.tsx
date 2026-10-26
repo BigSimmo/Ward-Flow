@@ -842,7 +842,7 @@ export function SettingsScreen() {
               unavailableReason={configurationBlockReason}
               setting="pull-hold"
               title="Pull time limit"
-              sub="Before a pulled bed returns"
+              sub="How long a pulled bed is kept"
               value={rules.hold}
               saved={saved.hold}
               savedDisplay={shortDuration(saved.hold)}

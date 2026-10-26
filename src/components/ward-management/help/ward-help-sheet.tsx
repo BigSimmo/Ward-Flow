@@ -10,6 +10,7 @@ import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-rol
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
+import { WardHelpAsk } from "./ward-help-ask";
 import { filterGlossary, glossaryForSites, KEYBOARD_SHORTCUTS, screenHelpFor } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
@@ -63,10 +64,13 @@ function deskLabel(role: WardTourRole): string {
  */
 export function WardHelpSheet({
   view,
+  ask,
   onView,
   onClose,
 }: {
   view: HelpView;
+  /** The Ask box's starting words, or undefined while the Ask help preview flag is off. */
+  ask?: string;
   onView: (view: HelpView) => void;
   onClose: () => void;
 }) {
@@ -121,6 +125,10 @@ export function WardHelpSheet({
           The tour starts by itself only once on this device. Open it again here or in Settings.
         </p>
       </section>
+
+      {ask !== undefined ? (
+        <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />
+      ) : null}
 
       <div className={styles.views} role="group" aria-label="Help sections">
         {VIEWS.map((item) => (
