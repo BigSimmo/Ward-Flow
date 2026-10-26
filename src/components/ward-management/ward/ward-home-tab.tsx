@@ -1273,7 +1273,12 @@ export function WardHomeTab({
                     const declineOpen = declineOpenFor === movement.id;
 
                     return (
-                      <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
+                      <li
+                        key={movement.id}
+                        className={styles.awaitingRow}
+                        data-testid={`ward-incoming-${movement.id}`}
+                        data-held-form={`movement:${movement.id}`}
+                      >
                         <AwaitingIdentity
                           movement={movement}
                           person={resolvePatientIdentity(movement)}

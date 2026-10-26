@@ -230,6 +230,7 @@ export function WardArrivalsCorridor({
                 className={styles.inboundCard}
                 data-state={canPull ? "warn" : canArrive ? "good" : "accent"}
                 data-testid={`ward-accepted-${movement.id}`}
+                data-held-form={`movement:${movement.id}`}
               >
                 {/* Column 1: Patient Demographics & Legal Status */}
                 <div className={styles.patientMeta}>

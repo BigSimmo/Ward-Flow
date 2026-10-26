@@ -91,6 +91,7 @@ import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -318,6 +319,8 @@ export function OfficerScreen() {
   const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
+  // Audit CS3-01: the diversion form is checked against the board as it was when it opened.
+  useHoldOpenForm(diversionOpen);
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
 

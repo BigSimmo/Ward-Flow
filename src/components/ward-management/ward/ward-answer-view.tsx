@@ -64,6 +64,7 @@ import {
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
@@ -137,6 +138,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
+  // Audit CS3-01: the decline form is checked against the board as it was when it opened, not
+  // only from its first touch. The view answers one referral at a time, so the hold is unscoped.
+  useHoldOpenForm(declineOpenFor !== undefined);
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
   const [declineNudge, setDeclineNudge] = useState(false);
   const declinePendingRef = useRef(false);

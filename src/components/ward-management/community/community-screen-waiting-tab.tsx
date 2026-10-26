@@ -324,6 +324,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         className={`${styles.card} ${styles.refCard} refCard`}
                         data-testid={`ward-community-waiting-${referral.id}`}
                         data-ref-id={referral.id}
+                        data-held-form={`referral:${referral.id}`}
                         data-prio={`p${referral.urgency}${referral.source === "ed_medical" ? " ed" : ""}`}
                       >
                         <div className={styles.refCardHead}>
