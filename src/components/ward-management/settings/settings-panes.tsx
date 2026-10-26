@@ -25,6 +25,7 @@ import { phonePushRow, type PhonePushState } from "@/components/ward-management/
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
+import { saveTourStep, useTourRole } from "@/components/ward-management/help/ward-help-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { clinicalValueStatusText, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import {
@@ -203,6 +204,7 @@ export function DisplayPane({
   characterShortcuts: boolean;
   onCharacterShortcutsChange: (next: boolean) => void;
 }) {
+  const tourRole = useTourRole();
   return (
     <>
       <ScopeLine kind="live" />
@@ -303,7 +305,16 @@ export function DisplayPane({
               title="First-run tour"
               sub="Starts by itself once for this desk on this device. Replay it here or from Help."
             >
-              <Button variant="ghost" size="sm" onClick={() => openWardHelp("tour")} data-testid="settings-replay-tour">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Replay starts from the first step, not the step the tour was left at.
+                  saveTourStep(tourRole, 0);
+                  openWardHelp("tour");
+                }}
+                data-testid="settings-replay-tour"
+              >
                 Replay the tour
               </Button>
             </SettingRow>
