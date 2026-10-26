@@ -138,7 +138,7 @@ export function reduceTransportEvent(
           return reject(
             state,
             event,
-            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still held — a coordinator must release the bed first`,
+            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still pulled — a coordinator must release the bed first`,
           );
         }
       }
@@ -188,7 +188,7 @@ export function reduceTransportEvent(
           return reject(
             state,
             event,
-            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still held — a coordinator must release the bed first`,
+            `cannot advance transport for movement ${movement.id}: the examination was revoked and the bed is still pulled — a coordinator must release the bed first`,
           );
         }
       }

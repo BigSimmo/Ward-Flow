@@ -349,6 +349,87 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     }
     this.save({ ...session, recovery: false });
   }
+  /**
+   * Part B item 49 groundwork (26 October 2026): signing in with a second step. Nothing in the app
+   * calls these yet. They wait for the health service's sign-in or for Supabase factors to be set up.
+   *
+   * The second-step factors on this account: an authenticator app code (TOTP).
+   */
+  async secondStepFactors(): Promise<{ id: string; verified: boolean }[]> {
+    const token = await this.token();
+    const user = (await this.request("/user", {}, token)) as { factors?: unknown } | null;
+    if (!Array.isArray(user?.factors)) return [];
+    return user.factors.flatMap((factor: Record<string, unknown>) =>
+      factor && typeof factor.id === "string" && factor.factor_type === "totp"
+        ? [{ id: factor.id, verified: factor.status === "verified" }]
+        : [],
+    );
+  }
+  /** Start adding an authenticator app. The QR code and link are shown once and never stored. */
+  async enrolSecondStep(name: string): Promise<{ id: string; qrCode: string; uri: string }> {
+    const token = await this.token();
+    const result = (await this.request(
+      "/factors",
+      { method: "POST", body: JSON.stringify({ factor_type: "totp", friendly_name: name }) },
+      token,
+    )) as { id?: unknown; totp?: { qr_code?: unknown; uri?: unknown } } | null;
+    const { id } = result ?? {};
+    const qrCode = result?.totp?.qr_code;
+    const uri = result?.totp?.uri;
+    if (
+      typeof id !== "string" ||
+      typeof qrCode !== "string" ||
+      typeof uri !== "string" ||
+      !uri.startsWith("otpauth://")
+    )
+      throw new WardAuthError("unavailable", "The second step could not be set up. Try again.");
+    return { id, qrCode, uri };
+  }
+  /** Check a 6-digit code from the authenticator app. The raised sign-in replaces the current one. */
+  async verifySecondStep(factorId: string, code: string): Promise<void> {
+    if (!/^[0-9a-f-]{36}$/i.test(factorId) || !/^\d{6}$/.test(code))
+      throw new WardAuthError("credentials", "Enter the 6-digit code from your authenticator app.");
+    const id = this.userId;
+    const token = await this.token();
+    const generation = this.generation;
+    const path = "/factors/" + factorId;
+    const challenge = (await this.request(path + "/challenge", { method: "POST" }, token, generation)) as {
+      id?: unknown;
+    } | null;
+    if (typeof challenge?.id !== "string")
+      throw new WardAuthError("unavailable", "Sign-in service is unavailable. Try again.");
+    const value = await this.request(
+      path + "/verify",
+      { method: "POST", body: JSON.stringify({ challenge_id: challenge.id, code }) },
+      token,
+      generation,
+    );
+    await this.verify({ ...this.readSession(value, false), user: id ? { id } : undefined }, generation);
+  }
+  /**
+   * Where to send this browser to sign in with the health service's own sign-in (single sign-on).
+   * Its identity provider applies the service's multi-factor rule.
+   */
+  async singleSignOnUrl(domain: string, redirectTo: string): Promise<string> {
+    const redirect = new URL(redirectTo);
+    if (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash)
+      throw new WardAuthError("unavailable", "Invalid sign-in destination.");
+    const result = (await this.request("/sso", {
+      method: "POST",
+      body: JSON.stringify({
+        domain: domain.trim().toLowerCase(),
+        redirect_to: redirect.toString(),
+        skip_http_redirect: true,
+      }),
+    })) as { url?: unknown } | null;
+    try {
+      const url = new URL(String(result?.url));
+      if (url.protocol === "https:") return url.toString();
+    } catch {
+      // Not a usable address: refused below.
+    }
+    throw new WardAuthError("unavailable", "The health service sign-in is not available. Try again.");
+  }
   /** Capture a verified token only for bounded phone-alert cleanup during sign-out. */
   captureAccessTokenForSignOut() {
     return !this.disposed && this.session?.user && !this.isRecovery && this.session.expiresAt > Date.now()
