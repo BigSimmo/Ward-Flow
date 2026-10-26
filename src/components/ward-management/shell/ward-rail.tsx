@@ -29,7 +29,8 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -346,7 +347,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
-  const currentPersona = DESK_PERSONAS[personaRole];
+  // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
+  const currentPersona = useEffectiveWardAccess().role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
   const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
