@@ -49,9 +49,20 @@ export function receiptEventAccepts(code: string | undefined): boolean {
   return isOwnedLegalFormCode(code);
 }
 
+/**
+ * Forms 3B and 3C share the opening words of their register titles, so each names the other and
+ * the one difference, in words taken from the 3C title itself. Text only: no time is worked out.
+ */
+const LOOK_ALIKE_NOTES: Record<string, string> = {
+  "3B": "Not the same as Form 3C, which continues detention for a further examination by a psychiatrist.",
+  "3C": "Not the same as Form 3B. This one continues detention for a further examination by a psychiatrist.",
+};
+
 function catalogFormLabel(code: string): string {
   const form = SELECTABLE_LEGAL_FORMS.find((entry) => entry.code === code);
-  return form ? legalFormName(form) : legalFormName({ code });
+  const name = form ? legalFormName(form) : legalFormName({ code });
+  const note = LOOK_ALIKE_NOTES[code];
+  return note ? `${name}. ${note}` : name;
 }
 
 /** The forms the requirements sheet lists, in register order. Titles come from the register. */
