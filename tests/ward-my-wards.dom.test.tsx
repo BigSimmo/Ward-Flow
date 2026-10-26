@@ -113,6 +113,18 @@ describe("My wards section", () => {
     expect(screen.queryByRole("link", { name: first.name })).toBeNull();
   });
 
+  it("says beside the pin that My wards is full, rather than only announcing it (H-0125)", () => {
+    act(() => {
+      for (const unit of units.slice(1, MY_WARDS_LIMIT + 1)) toggleMyWard(unit.id);
+    });
+    route.pathname = `/ward-flow/ward/${first.id}`;
+    renderSection();
+    expect(screen.queryByTestId("ward-my-wards-pin")).toBeNull();
+    expect(screen.getByTestId("ward-my-wards-full").textContent).toBe(
+      `My wards holds ${MY_WARDS_LIMIT}. Remove one to pin this ward.`,
+    );
+  });
+
   it("drops the pins from a mounted section when the session ends", () => {
     route.pathname = `/ward-flow/ward/${first.id}`;
     renderSection();
