@@ -1,55 +1,5 @@
 [
   {
-    "id": "2026-10-24-help-guide",
-    "date": "2026-10-24",
-    "line": "Help now has a guide for your desk: your main jobs, step by step, each with a link to its screen."
-  },
-  {
-    "id": "2026-10-24-help-tour",
-    "date": "2026-10-24",
-    "line": "The tour starts by itself only once on each device. Open it again any time from Help."
-  },
-  {
-    "id": "2026-10-24-help",
-    "date": "2026-10-24",
-    "line": "On a computer, the ? beside each screen's name opens help for that screen."
-  },
-  {
-    "id": "2026-10-25-whats-new",
-    "date": "2026-10-25",
-    "line": "Help now lists recent changes under What's new, and this note shows them after each update."
-  },
-  {
-    "id": "2026-10-26-bed-flow-reliability",
-    "date": "2026-10-26",
-    "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
-  },
-  {
-    "id": "2026-10-26-archived-referral-progress",
-    "date": "2026-10-26",
-    "line": "Older referrals and moves in History now show their progress too, with other wards still private."
-  },
-  {
-    "id": "2026-10-26-ward-referral-privacy",
-    "date": "2026-10-26",
-    "line": "Ward referrals show permitted progress while keeping other destinations private."
-  },
-  {
-    "id": "2026-10-26-stopped-transport-wording",
-    "date": "2026-10-26",
-    "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
-  },
-  {
-    "id": "2026-10-26-agreed-wording",
-    "date": "2026-10-26",
-    "line": "Clearer words: Accepted, no bed yet, Ask for a bed and Gender mix. ED rows turn red only at the access target."
-  },
-  {
-    "id": "2026-10-26-wording-pulled-held-up",
-    "date": "2026-10-26",
-    "line": "Clearer wording: pulled beds say pulled, delayed discharges say held up, and form times say as written."
-  },
-  {
     "id": "2026-10-26-inline-forms-changed-meanwhile",
     "date": "2026-10-26",
     "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
@@ -98,5 +48,55 @@
     "id": "2026-10-26-arrival-check-and-refusal-warnings",
     "date": "2026-10-26",
     "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
+  },
+  {
+    "id": "2026-10-27-sign-in-says-ward-flow",
+    "date": "2026-10-27",
+    "line": "Sign-in screens now say Ward Flow for every role, and explain why some desks are not listed."
+  },
+  {
+    "id": "2026-10-27-desk-actions",
+    "date": "2026-10-27",
+    "line": "Broadcast alert is greyed out for desks that cannot send one, and admins cannot remove their own admin role."
+  },
+  {
+    "id": "2026-10-27-officer-health-service",
+    "date": "2026-10-27",
+    "line": "A transport officer whose role names no health service is told to ask for it again with one."
+  },
+  {
+    "id": "2026-10-27-handover-own-places",
+    "date": "2026-10-27",
+    "line": "Handover offers only your own wards and places, and Beds totals count your wards only."
+  },
+  {
+    "id": "2026-10-27-ward-inbox-referral-number",
+    "date": "2026-10-27",
+    "line": "The ward Referral inbox now shows the referral number."
+  },
+  {
+    "id": "2026-10-27-restore-closed-open-items",
+    "date": "2026-10-27",
+    "line": "After a refresh, if loading your saved board closed something you had just opened, the notice now says so."
+  },
+  {
+    "id": "2026-10-27-charts-to-follow",
+    "date": "2026-10-27",
+    "line": "Referrals can mark the medication or observation chart To follow when it is not to hand."
+  },
+  {
+    "id": "2026-10-27-one-transport-form",
+    "date": "2026-10-27",
+    "line": "Transport bookings use one form on every screen, with legal status filled in from Legal now."
+  },
+  {
+    "id": "2026-10-27-plain-words",
+    "date": "2026-10-27",
+    "line": "Screens now say Bed coordinator, pulled for incoming beds, and plain words in place of codes."
+  },
+  {
+    "id": "2026-10-27-ed-quick-answers",
+    "date": "2026-10-27",
+    "line": "The ED Ask for a bed form keeps every answer when you choose quickly on a phone."
   }
 ]
