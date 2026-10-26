@@ -3,16 +3,15 @@
 // `thisEdId` is the resolved department's own id, as it always was.
 import type { FormEvent } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
-import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import type { TransportBookingSubmission } from "@/components/ward-management/transport/transport-booking-form";
+import type { WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 import type { useEdRecordSave } from "./use-ed-record-save";
 
 export function edScreenActions({
   raise,
-  now,
   thisEdId,
   submitExamination,
   submitLegalFormExpiry,
@@ -35,37 +34,17 @@ export function edScreenActions({
   >;
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
-  const { setWithdrawOpenFor, transportDraft, closeTransportDialog } = panels;
+  const { setWithdrawOpenFor, closeTransportDialog } = panels;
 
   function confirmWithdrawReferral(movementId: string) {
     raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
   }
 
-  function submitBookTransport(movementId: string) {
-    const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = transportDraft;
-    const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
-    // Never dispatched half-answered. The reducer would refuse it — that refusal is the rule's
-    // real home — but a refusal raised from here would be invisible to whoever pressed the button,
-    // so the control declines to advertise a booking it knows would be rejected.
-    if (
-      provider === undefined ||
-      escortRequired === undefined ||
-      cadNumberProblem(cadNumber) !== undefined ||
-      transportLegalStatus === undefined ||
-      estimatedAt === undefined
-    ) {
-      return;
-    }
-    raise("BOOK_TRANSPORT", {
-      movementId,
-      provider,
-      escortRequired,
-      cadNumber: cadNumber.trim(),
-      transportLegalStatus,
-      estimatedAt,
-    });
-    closeTransportDialog();
+  // A34: the shared booking form hands over a complete booking only. The popup stays open with its
+  // answers until the save is accepted (audit 24-3 SV-2), and says why when it is not.
+  function submitBookTransport(movementId: string, booking: TransportBookingSubmission, save: WardFormSave["submit"]) {
+    save(() => raise("BOOK_TRANSPORT", { movementId, ...booking }), closeTransportDialog);
   }
 
   return {

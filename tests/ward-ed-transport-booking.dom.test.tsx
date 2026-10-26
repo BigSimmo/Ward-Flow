@@ -252,7 +252,8 @@ describe("booking transport from the sending emergency department", () => {
       target: { value: TRANSPORT_PROVIDERS[0] },
     });
     fireEvent.click(escortRadios(movement.id).yes);
-    fillPhoneLoggedFields(movement.id, "CAD-1200", "voluntary");
+    // The status Legal now gives: a different one would also ask why (A34).
+    fillPhoneLoggedFields(movement.id, "CAD-1200", "involuntary");
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-confirm-${movement.id}`));
     expect(screen.getByTestId("transport-probe")).toHaveTextContent(`${TRANSPORT_PROVIDERS[0]}|escort=true`);
 
