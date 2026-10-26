@@ -1,7 +1,24 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { WardFlowEvent } from "./ward-flow-events";
-import { loadReducerSlices, reducerSlicesLoaded } from "./ward-flow-reducer-slice-registry";
+import { reducerSlicesLoaded } from "./ward-flow-reducer-slice-registry";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
+
+let loading: Promise<void> | null = null;
+
+/** Loads the reducer's slices once. A failed load (offline, a stale chunk) is retried by the next call. */
+export function loadReducerSlices(): Promise<void> {
+  if (reducerSlicesLoaded()) return Promise.resolve();
+  loading ??= import("./ward-flow-reducer-slices").then(
+    () => {
+      loading = null;
+    },
+    (error: unknown) => {
+      loading = null;
+      throw error;
+    },
+  );
+  return loading;
+}
 
 type LocalDispatch = (event: WardFlowEvent) => WardCommandOutcome | Promise<WardCommandOutcome>;
 

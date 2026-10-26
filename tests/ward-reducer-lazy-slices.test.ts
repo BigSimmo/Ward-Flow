@@ -17,6 +17,7 @@ describe("lazily loaded reducer slices", () => {
     vi.resetModules();
     const registry = await import("@/components/ward-management/ward-flow-reducer-slice-registry");
     const { seedWardFlowState, wardFlowReducer } = await import("@/components/ward-management/ward-flow-reducer");
+    const { loadReducerSlices } = await import("@/components/ward-management/ward-flow-slice-dispatch");
     expect(registry.reducerSlicesLoaded()).toBe(false);
     // Seeding and the reducer's own cases need no slice.
     const state = seedWardFlowState();
@@ -31,7 +32,7 @@ describe("lazily loaded reducer slices", () => {
       actingUnitId: "none",
     } as const;
     expect(() => wardFlowReducer(state, opened)).toThrow("not loaded");
-    await registry.loadReducerSlices();
+    await loadReducerSlices();
     expect(registry.reducerSlicesLoaded()).toBe(true);
     expect(() => wardFlowReducer(state, opened)).not.toThrow();
   });
