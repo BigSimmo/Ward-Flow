@@ -149,13 +149,17 @@ describe("Supabase shared sign-in", () => {
           return new Promise<Response>((r) => {
             complete = r;
           });
-        if (String(url).endsWith("/user")) return Response.json(user);
+        if (String(url).endsWith("/user")) return Response.json({ ...user, email: "coordinator@example.test" });
         return Response.json({}, { status: 503 });
       }),
     );
     render(<Probe />);
     await screen.findByRole("heading", { name: "Set a new password" });
     expect(window.location.hash).toBe("");
+    // Fresh audit X-1: the recovery screen names the account the link signs in to.
+    expect(screen.getByTestId("ward-recovery-account")).toHaveTextContent(
+      "This link is for coordinator@example.test. If that is not your account, choose Cancel.",
+    );
     expect(calls.some((url) => url.includes("/v1/workspace"))).toBe(false);
     expect(screen.queryByText("Workspace contents")).toBeNull();
     fireEvent.change(screen.getByLabelText("New password"), { target: { value: "new-password" } });

@@ -79,6 +79,8 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
 export type WardCredentialForm = {
   open: boolean;
   recovery: boolean;
+  /** Fresh audit X-1: the account a recovery link is for, so a link from someone else is noticed. */
+  accountEmail?: string | null;
   signupAvailable: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   busy: boolean;
@@ -133,7 +135,14 @@ export function useWardSupabaseShared(
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   const [endsAt, setEndsAt] = useState<number | null>(null);
-  const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  const [form, setForm] = useState<{
+    open: boolean;
+    recovery: boolean;
+    busy: boolean;
+    message: string | null;
+    /** Fresh audit X-1: the account a recovery link signs in to, shown on "Set a new password". */
+    accountEmail?: string | null;
+  }>({ open: false, recovery: false, busy: false, message: null });
   // Latest factory, read when the session boots. Updated in an effect (not during render) and
   // declared before the boot effect so it is current when that effect runs; the boot effect keys
   // on `enabled` only, so an inline factory with a new identity each render does not reconnect.
@@ -428,7 +437,7 @@ export function useWardSupabaseShared(
               }
               await auth!.restore();
               if (auth!.isRecovery) {
-                setForm((old) => ({ ...old, open: true, recovery: true }));
+                setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth!.accountEmail }));
                 setView({ ...emptyView, status: "ready" });
               } else if (auth!.userId) {
                 await connect();
@@ -461,7 +470,7 @@ export function useWardSupabaseShared(
         await auth.restore(recovery);
         if (closed) return;
         if (auth.isRecovery) {
-          setForm((old) => ({ ...old, open: true, recovery: true }));
+          setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
           setView({ ...emptyView, status: "ready" });
         } else if (auth.userId) await connect();
         else {

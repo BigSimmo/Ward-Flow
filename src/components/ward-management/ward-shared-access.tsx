@@ -287,6 +287,15 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
       }}
     >
       <h2>{form.recovery ? "Set a new password" : signup ? "Create a Ward Flow account" : "Sign in to Ward Flow"}</h2>
+      {form.recovery && (
+        // Fresh audit X-1: a recovery link someone else sent signs this tab in to their account.
+        // Naming the account lets the person see that before setting a password for it.
+        <p data-testid="ward-recovery-account">
+          {form.accountEmail
+            ? `This link is for ${form.accountEmail}. If that is not your account, choose Cancel.`
+            : "This link's account could not be shown. If you did not ask for this link, choose Cancel."}
+        </p>
+      )}
       {!form.recovery && (
         <label>
           Email

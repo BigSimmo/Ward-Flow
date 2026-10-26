@@ -44,6 +44,8 @@ function readSavedSession(parsed: unknown): Session | null {
 export type WardBrowserAuthAdapter = {
   readonly isRecovery: boolean;
   readonly userId: string | null;
+  /** The signed-in account's email, from the provider's own answer. Memory only. */
+  readonly accountEmail: string | null;
   reauthenticate(password: string): Promise<void>;
   restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
   signUp(email: string, password: string, redirectTo?: string): Promise<void>;
@@ -90,6 +92,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   }
   get userId() {
     return this.session?.user?.id ?? null;
+  }
+  get accountEmail() {
+    return this.email;
   }
   private assert(generation: number) {
     if (this.disposed || generation !== this.generation)
