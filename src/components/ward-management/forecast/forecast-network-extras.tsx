@@ -75,7 +75,7 @@ export function ForecastNetworkExtras({ now }: { now: Instant }) {
       <section className={styles.section} aria-labelledby="forecast-blockers-title" data-testid="forecast-blockers">
         <div className={styles.header}>
           <h3 id="forecast-blockers-title" className={styles.title}>
-            Beds held by blockers
+            Beds held up by a blocker
           </h3>
           <span className={styles.meta}>{blockers.total} recorded</span>
         </div>

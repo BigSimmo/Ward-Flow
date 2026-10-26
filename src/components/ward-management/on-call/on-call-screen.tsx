@@ -454,7 +454,7 @@ export function OnCallScreen() {
                       <ServiceTag service={entry.service} label="" />
                       <span className={styles.truncate}>{keyLineLabel(entry)}</span>
                     </span>
-                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not held"}</span>
+                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not recorded"}</span>
                     <span className={styles.keyUntil}>
                       {now.kind === "on" ? (
                         now.allDay ? (
@@ -1093,9 +1093,9 @@ function DowntimeCard({
         `${entry.name} (${entry.siteCode ?? SERVICE_META[entry.service].short}): ` +
         (entry.lines.length
           ? entry.lines
-              .map((item) => `${item.label} ${item.number ?? "not held"}, ${windowText(item.window)}`)
+              .map((item) => `${item.label} ${item.number ?? "not recorded"}, ${windowText(item.window)}`)
               .join("; ")
-          : `email ${entry.email ?? "not held"}`),
+          : `email ${entry.email ?? "not recorded"}`),
     )
     .join("\n");
   return (
@@ -1135,7 +1135,7 @@ function DowntimeCard({
                   </span>
                 </span>
               </td>
-              <td className={styles.number}>{item.number ?? "Not held"}</td>
+              <td className={styles.number}>{item.number ?? "Not recorded"}</td>
               <td className={styles.mono}>{windowText(item.window)}</td>
             </tr>
           ))}

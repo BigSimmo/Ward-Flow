@@ -242,7 +242,7 @@ describe("CANCEL_TRANSPORT when no bed is held", () => {
     );
     for (const notice of raised) {
       expect(notice.sentence.toLowerCase()).not.toContain("replacement");
-      expect(notice.sentence.toLowerCase()).toContain("the bed is still held and nothing has been rebooked");
+      expect(notice.sentence.toLowerCase()).toContain("the bed is still pulled and nothing has been rebooked");
     }
   });
 
@@ -274,7 +274,7 @@ describe("CANCEL_TRANSPORT when no bed is held", () => {
     expect(raised).toHaveLength(2);
     for (const notice of raised) {
       expect(notice.sentence.toLowerCase()).not.toContain("replacement");
-      expect(notice.sentence.toLowerCase()).toContain("the bed is still held and nothing has been rebooked");
+      expect(notice.sentence.toLowerCase()).toContain("the bed is still pulled and nothing has been rebooked");
     }
   });
 

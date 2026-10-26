@@ -490,7 +490,7 @@ export function buildCensus(state: {
       formCode: null,
       formDueAt: null,
       waitMinutes: null,
-      timeText: since === null ? "Not held" : since < MINUTES_PER_DAY ? durMinutes(since) : daysText(since),
+      timeText: since === null ? "Not recorded" : since < MINUTES_PER_DAY ? durMinutes(since) : daysText(since),
       timeSub: "on ward",
       longWait: false,
       pastExpected: past,

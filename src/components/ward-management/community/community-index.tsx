@@ -927,7 +927,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </div>
                 <div>
                   <dt>Roster and hours</dt>
-                  <dd>Not held</dd>
+                  <dd>Not recorded</dd>
                 </div>
               </dl>
               <p className={styles.muted}>

@@ -263,7 +263,7 @@ function rowDetail(
 ): string {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
-    return `${unit?.name ?? "The pulled bed"} was held until ${formatInstantWithDay(movement.pullExpiresAt, now)} and has lapsed`;
+    return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
     return `Form ${movement.legalForm.code} recorded due time ${formatInstantWithDay(movement.legalForm.dueAt, now)} has passed`;
@@ -424,7 +424,7 @@ export function WardTasksDrawer({
           <span>{row.role}</span>
         </span>
         <span className={styles.callNumber}>
-          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
+          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line recorded</span>}
           {row.hours ? <span>{row.hours}</span> : null}
         </span>
       </li>
