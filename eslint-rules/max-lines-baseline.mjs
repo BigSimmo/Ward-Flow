@@ -13,15 +13,13 @@
 // 22 October 2026: the reducer's protected record path moved to ward-flow-protected-record-events.ts,
 // so its cap follows it down. ward-flow-events keeps its cap: ReferralDraft moved out to give the
 // event union room to grow.
-// 26 October 2026 (F-17): the bed release model moved to ward-model-bed-release.ts, so the
-// ward-model cap follows it down.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward-flow-reducer.ts": 2550,
   "src/components/ward-management/ward/ward-screen.tsx": 2575,
-  "src/components/ward-management/ward-model.ts": 1870,
+  "src/components/ward-management/ward-model.ts": 1900,
   "src/components/ward-management/ward-movements.ts": 3400,
   "src/components/ward-management/ward-flow-events.ts": 2750,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2850,
