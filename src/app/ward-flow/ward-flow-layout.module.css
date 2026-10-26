@@ -142,7 +142,11 @@
 /* H-0161: on the TV the pinned banners (offline, broadcast, downtime) sit in the page above the TV's
    own control row instead of pinning to the top of the window. Pinned, they slid over Full screen,
    Lock as TV and Leave TV view as soon as the screen scrolled. The TV marks itself offline too. */
-.shellContent:has([data-wf-tv-clean]) > .bannerHolder,
+.shellContent:has([data-wf-tv-clean]) > .bannerHolder {
+  position: static;
+}
+
+/* Its own rule: a browser without :has() drops a whole selector list that holds one. */
 :global(html[data-wf-tv-clean]) .shellContent > .bannerHolder {
   position: static;
 }
@@ -323,7 +327,10 @@
 
 /* H-0791: the TV has no top bar, so the bar never marks itself ready there and the note would stay
    on the room's screen. */
-.shellContent:has([data-wf-tv-clean]) > .loadingNote,
+.shellContent:has([data-wf-tv-clean]) > .loadingNote {
+  display: none;
+}
+
 :global(html[data-wf-tv-clean]) .shellContent > .loadingNote {
   display: none;
 }
