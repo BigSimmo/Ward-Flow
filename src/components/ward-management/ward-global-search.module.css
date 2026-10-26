@@ -451,6 +451,25 @@
   color: var(--wf-ink-3);
 }
 
+/* Ask help (26 Oct 2026): a typed question is handed to Help instead of ending at "No matches". */
+.askHelp {
+  min-height: 2.5rem;
+  margin-top: 0.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--wf-accent);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-accent-strong);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.askHelp:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 .list {
   list-style: none;
   margin: 0;

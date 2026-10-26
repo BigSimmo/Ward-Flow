@@ -68,7 +68,7 @@ describe("TV session end (TV-13, H-0787)", () => {
         <p>Synthetic desk</p>
       </WardSharedAccess>,
     );
-    expect(screen.getByRole("main", { name: "Coordinator sign-in" })).toBeVisible();
+    expect(screen.getByRole("main", { name: "Ward Flow sign-in" })).toBeVisible();
     expect(screen.queryByTestId("ward-tv-signed-out")).toBeNull();
   });
 

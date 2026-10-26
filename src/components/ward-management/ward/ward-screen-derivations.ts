@@ -2,7 +2,7 @@
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,
@@ -213,9 +213,14 @@ export function wardBedRoster({
       recordLegalStatus === undefined || recordLegalStatus === linkedMovement?.legalStatus
         ? linkedMovement?.legalForm
         : undefined;
-    const legalStatusLabel = patientLegalForm
-      ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
-      : patientLegalStatus;
+    // WT-03 (walk-through, 26 Oct 2026): a form the examination or arrival moved on from is not the
+    // stay's authority, so the card names the form still to record, as the person page does.
+    const progression = patientLegalForm ? formProgression(linkedMovement) : undefined;
+    const legalStatusLabel = progression
+      ? `Form ${progression.nextCode} not recorded (Form ${progression.endedCode} ended ${progression.endedWhen})`
+      : patientLegalForm
+        ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
+        : patientLegalStatus;
 
     const stayBandObj = admission && stayDays !== null ? stayBand(admission, now) : null;
     const isPastDate = admission ? isPastExpectedDischarge(admission, now) : false;

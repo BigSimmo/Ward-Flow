@@ -32,7 +32,10 @@ export type ObservationLevelEvent = {
   type: "RECORD_OBSERVATION_LEVEL";
   role: WardFlowRole;
   now: Instant;
-  target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
+  /** A `ward` caller on a movement target must name itself as the movement's accepted ward. */
+  target:
+    | { kind: "movement"; movementId: string; actingUnitId?: string }
+    | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
   /** When supplied, a stale editor cannot replace a newer record. Omitting it is allowed only while the
    *  target has no recorded observation changes (Audit F2, Option A, owner decision 26 Oct 2026). */
@@ -68,11 +71,31 @@ export function reduceObservationLevelEvent(
     movement = findMovement(state, event.target.movementId);
     if (!movement) return reject(state, event, `no movement found for id ${event.target.movementId}`);
     if (movement.closure) return reject(state, event, `movement ${movement.id} is closed`);
+    // Fix plan item 10 role rule: the ward changes the level only for its own beds. On a movement
+    // that is the accepted ward, named as the acting unit; any other ward records it on the admission.
+    if (
+      event.role === "ward" &&
+      (movement.acceptedUnitId === undefined || event.target.actingUnitId !== movement.acceptedUnitId)
+    ) {
+      return reject(
+        state,
+        event,
+        `RECORD_OBSERVATION_LEVEL was raised as ward ${event.target.actingUnitId ?? "(unnamed)"} but movement ${movement.id} is not accepted by that ward; record the level on the admission instead`,
+      );
+    }
     const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
     admission = held && held.movementId === movement.id && bedIsOccupied(held) ? held : undefined;
   } else {
     admission = findAdmission(state, event.target.admissionId);
     if (!admission) return reject(state, event, `no admission found for id ${event.target.admissionId}`);
+    // Fix plan item 10 role rule: an admission's level is the ward's or the coordinator's, never the ED's.
+    if (event.role === "ed") {
+      return reject(
+        state,
+        event,
+        `RECORD_OBSERVATION_LEVEL on admission ${admission.id} cannot be raised by role ed; only the ward or coordinator may change it`,
+      );
+    }
     if (event.target.actingUnitId !== admission.unitId) {
       return reject(
         state,

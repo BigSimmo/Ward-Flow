@@ -2,7 +2,7 @@
 
 // src/components/ward-management/forecast/ed-access-risk-card.tsx
 //
-// "Access risk in the next day" on the ED screen, and its one-line summary under Home's ED strip
+// "May pass the access target in the next day" on the ED screen, and its one-line summary under Home's ED strip
 // (forecasting build, Josh, 23 Oct 2026, screens 1 and 4). Loaded lazily on both routes so their
 // phone script budgets do not grow (`forecast-lazy.tsx`).
 //
@@ -64,7 +64,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
       <div className={styles.section}>
         <div className={styles.header}>
           <h2 id="forecast-ed-risk-title" className={styles.title}>
-            Access risk in the next day
+            May pass the access target in the next day
           </h2>
           <span className={styles.meta}>{summary}</span>
         </div>

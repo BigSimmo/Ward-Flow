@@ -31,6 +31,12 @@ account are in [DATABASE.md](DATABASE.md). Settings names (never values) are in 
 [frontend template](../../backend/ward-flow/infra/frontend.env.example). Secrets live only in
 Railway and Supabase. Never copy them into the repo, a log, a ticket or a chat.
 
+**One backend replica.** The shared backend runs as one Railway replica. Its board, archive-count
+and reply caches are held per process. A second replica stays correct, but it reads the whole
+board until its caches warm up, and database traffic roughly doubles. From PR #870 the backend
+logs `ward_backend_process_cache_notice` once at startup when `RAILWAY_REPLICA_ID` is set. Adding
+replicas is a hosted change and needs Josh's yes.
+
 There is no `supabase/` folder and no Railway config file in the repo. Build commands, start
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
@@ -70,6 +76,17 @@ Weekly, or before a demonstration. All read-only.
    secret `WARD_SUPABASE_PRUNE_DATABASE_URL`; check its weekly run succeeded. To prune by hand, run
    `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
+6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
+   - GitHub turns off every scheduled workflow after 60 days without repository activity:
+     backend uptime, the daily release, receipt pruning, the dependency audit and the scheduled CI
+     run. In each workflow's Actions page, check it still shows recent scheduled runs. Turn a
+     disabled one back on there; a manual run alone does not re-enable the schedule.
+   - A Supabase project on the Free plan pauses after about a week without activity. The backend
+     `/healthz` should then report `database: unavailable`, and every save fails. Restoring it is done in
+     the Supabase dashboard and is a live change, so it needs Josh's yes. The current plan is not
+     recorded in the repo; on a paid plan this does not happen.
+
+   Before a quiet spell (a holiday, or a paused pilot), note the date, and check both on return.
 
 ## How a deploy happens
 
@@ -103,6 +120,22 @@ Rollback candidates are listed in
 [operations-readiness.md](operations-readiness.md#application-rollback). **No live rollback has
 been run or proven.**
 
+### During a pilot
+
+The daily release changes the app under staff who are using it. Josh agreed on 26 October 2026
+(Part A item 42) that during a pilot:
+
+- the scheduled release is turned off, and releases are run by hand once a week at an agreed
+  time, outside bed meetings and handover, with sites told the day before;
+- an urgent safety fix may still be released at once, with Josh's yes, and sites are told the
+  same day;
+- no release goes out while a merged change to a hazard control is waiting for the clinical
+  safety owner's review; and
+- one rollback is rehearsed on synthetic data before the pilot starts: record the current `live`
+  commit and each service's deployment, roll back to the previous `live-*` tag with Josh's yes,
+  run the health and signed-in save, reload and conflict checks, then roll forward the same way.
+  Record the times and results. The database is never restored as part of an app rollback.
+
 ## Common incidents: first steps
 
 Start every incident by writing down the time, the service and what users see. Read before you
@@ -114,11 +147,15 @@ change anything. Do not paste tokens, passwords or record contents anywhere.
 | **Sign-in failing**             | Check Supabase Auth status and the backend's `/healthz`. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                          |
 | **Saves failing, Retry banner** | The banner reads "Connection unavailable — changes are disabled." with a Retry button. Ask the user to stay on the page and press Retry, not reload, or the unconfirmed action is lost. Then check backend `/healthz`: `database: unavailable` points at Supabase. HTTP 409 is a normal conflict, not an outage.                                                |
 | **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                |
+| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.            |
 | **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants. |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry
-tokens, user IDs or payloads ([observability.md](../observability.md)). Optional Sentry reporting
-exists in code but **no DSN is configured**, so no error export is running.
+tokens, user IDs or payloads ([observability.md](../observability.md)). Sentry error reporting
+was switched on on 26 October 2026 (organisation `clinibase-xz`, US region, synthetic data only,
+per project notes). It receives error types and stack frames, never messages, URLs or users
+([operations-readiness.md](operations-readiness.md#server-error-reporting-sentry)). Its settings
+were not re-read for this page and **no event has been seen arriving**.
 
 ## Backup and restore
 

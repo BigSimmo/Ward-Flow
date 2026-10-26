@@ -688,7 +688,16 @@ describe("Fix 7: CANCEL_TRANSPORT copies bookedBy onto the replacement job", () 
         actingUnitId: BOOKING_WARD,
       },
     ] as const;
+    // A ward-to-ward transfer: the journey leaves BOOKING_WARD's own occupied stay, so that ward is
+    // its sender (BOOK_TRANSPORT refuses a ward on an ED or community start).
+    const stay = seedWardFlowState().admissions.find((a) => a.unitId === BOOKING_WARD && a.state === "occupied")!;
     let state = seedWardFlowState();
+    state = {
+      ...state,
+      movements: state.movements.map((m) =>
+        m.id === movementId ? { ...m, sourceAdmissionId: stay.id, patientId: stay.patientId ?? undefined } : m,
+      ),
+    };
     for (const event of events) {
       state = wardFlowReducer(state, { ...event, now: NOW, movementId } as never);
     }
