@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, ChevronDown, ChevronRight, MousePointerClick, Search } from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
@@ -12,10 +13,9 @@ import { showWardHowTo } from "./ward-help-events";
 import { askHelp, questionWords, type HowTo } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
-import helpStyles from "./ward-help.module.css";
-import styles from "./ward-help-ask.module.css";
+import styles from "./ward-help-sheet.module.css";
 
-const EXAMPLES = ["How do I pull a bed?", "Book transport", "Dark mode", "Sign off handover"];
+const EXAMPLES = ["Pull a bed", "Book transport", "Dark mode", "Sign off handover"];
 
 /**
  * Where a how-to is done, as a link this desk may follow: its own home, a Settings tab, or a rail
@@ -69,7 +69,7 @@ export function WardHelpAsk({
     const href = forThisDesk ? howToHref(howTo.go, role, home) : undefined;
     const expanded = shownId === howTo.id;
     return (
-      <li key={howTo.id} className={styles.answer} data-testid={`ward-help-ask-answer-${howTo.id}`}>
+      <li key={howTo.id} data-testid={`ward-help-ask-answer-${howTo.id}`}>
         <button
           type="button"
           className={styles.answerTitle}
@@ -78,25 +78,28 @@ export function WardHelpAsk({
           onClick={() => setOpenId(expanded ? "" : howTo.id)}
         >
           {howTo.title}
+          <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
         </button>
         {expanded ? (
           <div id={`${id}-${howTo.id}`} className={styles.answerBody}>
-            <p className={helpStyles.text}>{howTo.answer}</p>
+            <p className={styles.text}>{howTo.answer}</p>
             {forThisDesk && (howTo.showMe?.length || href) ? (
-              <div className={styles.answerActions}>
+              <div className={styles.actions}>
                 {howTo.showMe?.length ? (
                   <button
                     type="button"
-                    className={styles.showMe}
+                    className={styles.primaryButton}
                     onClick={() => showWardHowTo(howTo.id)}
                     data-testid="ward-help-ask-show-me"
                   >
+                    <MousePointerClick aria-hidden="true" strokeWidth={2} />
                     Show me
                   </button>
                 ) : null}
                 {href ? (
-                  <Link href={href} className={helpStyles.goLink} onClick={onClose} data-testid="ward-help-ask-go">
+                  <Link href={href} className={styles.secondaryButton} onClick={onClose} data-testid="ward-help-ask-go">
                     Go there
+                    <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
                 ) : null}
               </div>
@@ -116,19 +119,21 @@ export function WardHelpAsk({
       <label htmlFor={`${id}-input`} id={`${id}-title`} className={styles.label}>
         Ask a question
       </label>
-      <input
-        id={`${id}-input`}
-        type="search"
-        className={helpStyles.search}
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-          setOpenId(undefined);
-        }}
-        autoComplete="off"
-        placeholder="For example: how do I pull a bed?"
-        data-testid="ward-help-ask-input"
-      />
+      <div className={styles.searchField}>
+        <Search aria-hidden="true" strokeWidth={1.75} />
+        <input
+          id={`${id}-input`}
+          type="search"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpenId(undefined);
+          }}
+          autoComplete="off"
+          placeholder="For example: how do I pull a bed?"
+          data-testid="ward-help-ask-input"
+        />
+      </div>
       {!asked ? (
         <div className={styles.examples} aria-label="Example questions" role="group">
           {EXAMPLES.map((example) => (
@@ -139,53 +144,57 @@ export function WardHelpAsk({
         </div>
       ) : null}
       <div aria-live="polite" className={styles.results}>
-        {mine.length ? <ul className={styles.answers}>{mine.map((m) => answer(m.howTo, true))}</ul> : null}
+        {mine.length ? <ul className={styles.card}>{mine.map((m) => answer(m.howTo, true))}</ul> : null}
         {others.length ? (
-          <>
-            <h4 className={helpStyles.subTitle}>Done by another desk</h4>
-            <ul className={styles.answers}>{others.map((m) => answer(m.howTo, false))}</ul>
-          </>
+          <div className={styles.group}>
+            <h4 className={styles.groupHeading}>Done by another desk</h4>
+            <ul className={styles.card}>{others.map((m) => answer(m.howTo, false))}</ul>
+          </div>
         ) : null}
         {words.length ? (
-          <>
-            <h4 className={helpStyles.subTitle}>Words</h4>
-            <dl className={helpStyles.glossary}>
+          <div className={styles.group}>
+            <h4 className={styles.groupHeading}>Words</h4>
+            <dl className={styles.card}>
               {words.map((entry) => (
-                <div key={entry.term} className={helpStyles.term}>
+                <div key={entry.term} className={styles.entry}>
                   <dt>{entry.term}</dt>
                   <dd>{entry.meaning}</dd>
                 </div>
               ))}
             </dl>
-          </>
+          </div>
         ) : null}
         {settings.length ? (
-          <>
-            <h4 className={helpStyles.subTitle}>Settings</h4>
-            <ul className={helpStyles.list}>
+          <div className={styles.group}>
+            <h4 className={styles.groupHeading}>Settings</h4>
+            <ul className={styles.card}>
               {settings.map((entry) => (
                 <li key={entry.id}>
                   <Link
                     href={`/ward-flow/settings#${entry.tab}`}
-                    className={helpStyles.goLink}
+                    className={styles.linkRow}
                     onClick={onClose}
                     data-testid="ward-help-ask-setting"
                   >
-                    {entry.label}, {settingsTabLabel(entry.tab)}
+                    <span className={styles.rowText}>
+                      <strong>{entry.label}</strong>
+                      <span>Settings, {settingsTabLabel(entry.tab)}</span>
+                    </span>
+                    <ChevronRight aria-hidden="true" className={styles.chevron} strokeWidth={1.75} />
                   </Link>
                 </li>
               ))}
             </ul>
-          </>
+          </div>
         ) : null}
         {nothing ? (
-          <p className={helpStyles.text} data-testid="ward-help-ask-none">
+          <p className={styles.empty} data-testid="ward-help-ask-none">
             No answer matches those words. Try fewer words, such as the button name, or look in Your desk below.
           </p>
         ) : null}
       </div>
       {asked ? (
-        <p className={helpStyles.note} data-testid="ward-help-ask-stuck">
+        <p className={styles.note} data-testid="ward-help-ask-stuck">
           Still stuck? Ask your nurse unit manager or the bed coordinator on shift. If Ward Flow is down, switch to the
           paper process.
         </p>
