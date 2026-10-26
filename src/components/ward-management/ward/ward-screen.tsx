@@ -7,7 +7,9 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  type Dispatch,
   type FormEvent,
+  type SetStateAction,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -17,6 +19,7 @@ import {
   useTransition,
 } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -148,6 +151,11 @@ type WardScreenProps = {
  * counters and patient lists continue to come from authoritative state.
  */
 
+type WardTab = "attn" | "board" | "coming" | "out" | "beds" | "return";
+const WARD_TABS: readonly WardTab[] = ["attn", "board", "coming", "out", "beds", "return"];
+const WARD_FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "discharges"];
+const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log", "stay"];
+
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
     return <WardAnswerFromLink key={unitId} unitId={unitId} />;
@@ -277,8 +285,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
-    departurePlanning ? "return" : "attn",
+  // H-0186: the chosen tab, flow list and shift view stay in the address, so a reload opens the same
+  // view. `?tab=board` from other screens' links is the same key.
+  const [activeTab, chooseActiveTab] = useAddressTab("tab", WARD_TABS, departurePlanning ? "return" : "attn");
+  const setActiveTab = useCallback<Dispatch<SetStateAction<WardTab>>>(
+    (next) => chooseActiveTab(typeof next === "function" ? next(activeTab) : next),
+    [activeTab, chooseActiveTab],
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
   // Ward Hub (9 Oct 2026): the hero pills, the Find box and the home panels share this state.
@@ -286,8 +298,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [bedFilter, setBedFilter] = useState<WardBedFilter>("all");
   const [bedQuery, setBedQuery] = useState("");
   const deferredBedQuery = useDeferredValue(bedQuery);
-  const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
-  const [shiftView, setShiftView] = useState<WardShiftView>("todo");
+  const [flowTab, setFlowTab] = useAddressTab<WardFlowTab>("flow", WARD_FLOW_TABS, "referrals");
+  const [shiftView, setShiftView] = useAddressTab<WardShiftView>("shift", WARD_SHIFT_VIEWS, "todo");
   const selectActiveTab = useCallback(
     (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => {
       startTransition(() => {

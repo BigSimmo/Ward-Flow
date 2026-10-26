@@ -123,6 +123,30 @@
   }
 }
 
+/* H-0167: the same clean TV for TV browsers without :has(). While the TV screen is on view,
+   bed-meeting-tv.tsx sets `data-wf-tv-clean` on <html> (it is not set while the phone card hides the
+   screen). The :has() rules above stay for the first paint, before the page's code runs. */
+:global(html[data-wf-tv-clean]) .shellRow {
+  --wf-header-height: 0px;
+}
+
+:global(html[data-wf-tv-clean]) .shellRow > [data-testid="ward-rail"],
+:global(html[data-wf-tv-clean]) .shellRow > .shellContent > [data-testid="ward-bar"] {
+  display: none;
+}
+
+:global(html[data-wf-tv-clean]) .shellRow > .shellContent {
+  padding-bottom: 0;
+}
+
+/* H-0161: on the TV the pinned banners (offline, broadcast, downtime) sit in the page above the TV's
+   own control row instead of pinning to the top of the window. Pinned, they slid over Full screen,
+   Lock as TV and Leave TV view as soon as the screen scrolled. The TV marks itself offline too. */
+.shellContent:has([data-wf-tv-clean]) > .bannerHolder,
+:global(html[data-wf-tv-clean]) .shellContent > .bannerHolder {
+  position: static;
+}
+
 /*
  * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
  * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row
@@ -294,6 +318,13 @@
    (It once took a line in the page, and hidden-but-present space pushed a page's Hero below the band
    threshold: journeys, 18 Oct 2026.) */
 :global(html[data-wf-bar-ready]) .loadingNote {
+  display: none;
+}
+
+/* H-0791: the TV has no top bar, so the bar never marks itself ready there and the note would stay
+   on the room's screen. */
+.shellContent:has([data-wf-tv-clean]) > .loadingNote,
+:global(html[data-wf-tv-clean]) .shellContent > .loadingNote {
   display: none;
 }
 
