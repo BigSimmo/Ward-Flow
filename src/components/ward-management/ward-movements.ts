@@ -1019,7 +1019,7 @@ function fallbackUnitId(
   const lawful = requiresAuthorisedDestination(legalStatus) ? allUnits().filter((unit) => unit.authorised) : allUnits();
   if (lawful.length === 0) {
     throw new Error(
-      `No unit in this network is recorded as involuntary-capable, so no destination can be generated for a ${legalStatus} movement.`,
+      `No unit in this network is recorded as an authorised hospital, so no destination can be generated for a ${legalStatus} movement.`,
     );
   }
   const exact = lawful.filter(
