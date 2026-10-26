@@ -122,7 +122,10 @@ describe("supermemory autosave stop hook", () => {
 
   it("bounds recall content and filters before either cloud query", () => {
     const context = sessionStart(cloud)?.hookSpecificOutput.additionalContext;
-    expect(context).toMatch(/three combined results and 6,000 combined text characters/);
+    expect(context).toMatch(/retain at most three combined results and 6,000 combined text characters/);
+    expect(context).toMatch(/no server-side result-count control and may return more/);
+    expect(context).toMatch(/retained context, not the server response size/);
+    expect(context).toMatch(/Windows adapter limits remain enforced/);
     expect(context).toMatch(/no reranking, rewriting or automatic expansion/);
     expect(context).toMatch(/Filter queries before transmission/);
     expect(context).toMatch(/If unverified or unavailable, make no content call/);
