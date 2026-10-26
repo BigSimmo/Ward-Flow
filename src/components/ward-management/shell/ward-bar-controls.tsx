@@ -25,6 +25,8 @@ import type {
   ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { useCanOpenHref } from "./ward-access";
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { hasMovedInWardFlow, markWardRouteReplace } from "./ward-back";
@@ -431,6 +433,9 @@ export function WardBarPrimaryAction({
 }) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
+  const canOpen = useCanOpenHref();
+  // A desk that cannot open the intake (bed manager, #820) gets no New referral button.
+  if (primaryAction?.kind === "new-referral" && !canOpen(WARD_REFERRAL_INTAKE_HREF)) return null;
   return (
     <>
       {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}

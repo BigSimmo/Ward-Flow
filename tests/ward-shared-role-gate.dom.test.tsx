@@ -45,6 +45,8 @@ describe("shared workspace role gate (role access plan, later pass)", () => {
     const roles = [...(screen.getByLabelText("Role") as HTMLSelectElement).options].map((option) => option.value);
     expect(roles).not.toContain("coordinator");
     expect(roles).not.toContain("admin");
+    // The form says why, so a person who needs one is not left guessing (#812).
+    expect(screen.getByText(/Bed coordinator and Access admin roles are given by an access admin/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Role"), { target: { value: "ward" } });
     fireEvent.change(screen.getByLabelText("Place"), {
       target: { value: JSON.stringify({ kind: "ward", unitIds: [unit.id] }) },

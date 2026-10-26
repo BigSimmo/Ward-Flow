@@ -34,6 +34,7 @@ export function AlertsHero({
   handleNext,
   broadcastTriggerRef,
   openComposer,
+  broadcastDisabledReason,
   activeBroadcast,
   setTab,
   directiveTone,
@@ -62,6 +63,8 @@ export function AlertsHero({
   handleNext: () => void;
   broadcastTriggerRef: RefObject<HTMLButtonElement | null>;
   openComposer: (trigger: HTMLButtonElement) => void;
+  /** Why this desk cannot broadcast, or undefined when it may. */
+  broadcastDisabledReason?: string;
   activeBroadcast: ReturnType<typeof getActiveBroadcastAlert>;
   setTab: (tab: AlertsTab) => void;
   directiveTone: WfTone;
@@ -130,6 +133,7 @@ export function AlertsHero({
                   ref={broadcastTriggerRef}
                   variant="onHero"
                   icon={Radio}
+                  disabledReason={broadcastDisabledReason}
                   onClick={(event) => openComposer(event.currentTarget)}
                 >
                   Broadcast
@@ -205,6 +209,7 @@ export function AlertsHero({
                 variant="light"
                 size="sm"
                 icon={Radio}
+                disabledReason={broadcastDisabledReason}
                 onClick={(event) => openComposer(event.currentTarget)}
               >
                 Broadcast alert

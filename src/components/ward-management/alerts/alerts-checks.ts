@@ -32,7 +32,7 @@ export function alertChecks({
     {
       key: "legal",
       kind: "legal",
-      label: "Form due passed",
+      label: "Legal due time passed",
       n: countKind("legal"),
       scope: `Watches every movement carrying a recorded form expiry. ${countKind("legal")} of ${withDeadline.length} with a written deadline passed.`,
     },

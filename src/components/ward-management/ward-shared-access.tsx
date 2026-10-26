@@ -656,6 +656,19 @@ function WardSharedWorkspaceContent({
     return (
       <WardAskForAccess
         canRequest={connection.canRequest === true}
+        reason={connection.noRoleReason}
+        api={connection.accessApi ?? null}
+        onRetry={connection.retry}
+        onSignOut={connection.signOut}
+      />
+    );
+  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
+  // with the desk it held before, so it falls back to the no-role screen. A server that names no
+  // access at all (`connection.access` absent) is the older shared workspace and still opens.
+  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
+    return (
+      <WardAskForAccess
+        canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
         onSignOut={connection.signOut}
@@ -682,10 +695,7 @@ function WardSharedWorkspaceContent({
         aria-busy={connection.signedIn && connection.status === "loading"}
       >
         <h1>Ward Flow sign-in</h1>
-        <p>
-          Shared synthetic workspace. Sign in to reach the Ward Flow workflows your access covers. Coordinator access
-          still needs to be set up.
-        </p>
+        <p>Shared synthetic workspace. You see the screens your role needs.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
         {connection.signedIn && connection.status === "loading" && !connection.error && (
           <p role="status" data-testid="ward-shared-connecting">
