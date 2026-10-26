@@ -383,7 +383,7 @@ export function MovementHorizonGantt({
             <ul className={styles.ganttLegend} aria-label="Movement horizon legend">
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true" />
-                Inbound admit
+                Incoming admission
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true" />

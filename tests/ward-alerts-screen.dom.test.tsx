@@ -400,10 +400,10 @@ describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
       await vi.waitFor(() => expect(reason).toHaveFocus());
       // CT-19: the reason-gated release names its patient on the button itself.
       const submits = screen
-        .getAllByRole("button", { name: /^Release bed/ })
-        .filter((button) => button.textContent?.startsWith("Release bed for "));
+        .getAllByRole("button", { name: /^Release pulled bed/ })
+        .filter((button) => button.textContent?.startsWith("Release pulled bed for "));
       expect(submits.length).toBeGreaterThan(0);
-      for (const button of submits) expect(button.textContent).toMatch(/^Release bed for \S/);
+      for (const button of submits) expect(button.textContent).toMatch(/^Release pulled bed for \S/);
       expect(screen.queryByRole("button", { name: /^Release bed$/ })).not.toBeInTheDocument();
     } finally {
       address.query = "";

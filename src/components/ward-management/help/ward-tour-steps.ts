@@ -242,7 +242,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "tools",
           { sel: '[data-testid="ward-bar-tools-trigger"]' },
           "Tools",
-          "Find a bed, catchment lookup, on-call, form times and the bed summary for the exec on-call email.",
+          "Find a bed, catchment lookup, on-call, form times and the bed summary for the executive on-call email.",
         ),
         step(
           "Finding your way",

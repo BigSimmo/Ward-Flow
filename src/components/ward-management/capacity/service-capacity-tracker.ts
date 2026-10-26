@@ -92,8 +92,7 @@ export interface ServiceEdSummary {
 /** Compound escalation alert combining inpatient bed capacity and ED pressure. */
 export interface CompoundEscalationAlert {
   level: CapacityAlertCode;
-  protocolTier:
-    "Level 1 (Standard)" | "Level 2 (Amber Alert)" | "Level 3 (Red Escalation)" | "Level 4 (Black Gridlock)";
+  protocolTier: "Level 1 (Standard)" | "Level 2 (Amber Alert)" | "Level 3 (Red Escalation)" | "Level 4 (No beds)";
   title: string;
   description: string;
   actionRequired: boolean;
@@ -292,9 +291,9 @@ export function evaluateCompoundEscalation(
   ) {
     return {
       level: "black",
-      protocolTier: "Level 4 (Black Gridlock)",
+      protocolTier: "Level 4 (No beds)",
       title: `${service}: no beds`,
-      description: `Critical access block: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} waiting in ED (${edSummary.totalPastAccessTarget} past target). Immediate executive bed diversion protocol active.`,
+      description: `Critical access block: ${remainingBeds} free beds (${remainingPercent}% capacity) with ${edSummary.totalWaiting} waiting in ED (${edSummary.totalPastAccessTarget} past target).`,
       actionRequired: true,
     };
   }

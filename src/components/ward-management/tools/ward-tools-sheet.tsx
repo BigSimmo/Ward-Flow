@@ -383,7 +383,7 @@ export function WardToolsSheet({
           "bed-summary",
           ClipboardCopy,
           "Copy bed summary",
-          "Text for the exec on-call email or Teams",
+          "Text for the executive on-call email or Teams",
           <BedSummary />,
         )}
         <LinkRow

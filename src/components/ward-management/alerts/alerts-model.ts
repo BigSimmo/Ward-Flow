@@ -254,7 +254,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "unsuitable":
       return { kind: "link", label: "Review", href: patientHref };
     case "hold":
-      return { kind: "release", label: "Release bed" };
+      return { kind: "release", label: "Release pulled bed" };
     case "transport":
       return { kind: "link", label: "Chase transport", href: "/ward-flow/movements" };
     case "planned":

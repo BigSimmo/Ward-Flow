@@ -67,7 +67,8 @@ export function ForecastNetworkExtras({ now }: { now: Instant }) {
             {listWords(stayShort.map((kind) => `${BED_KIND_LABEL[kind.id].toLowerCase()} beds`)).replace(/^./, (c) =>
               c.toUpperCase(),
             )}{" "}
-            stay short even if everything on record goes ahead. Consider out of area or an early step down.
+            stay short even if everything on record goes ahead. Out of area or an early step down may be needed. The
+            coordinator decides.
           </p>
         ) : null}
       </section>

@@ -83,7 +83,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 wordBreak: "break-all",
               }}
             >
-              Digest: {error.digest}
+              Error reference: {error.digest}
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
