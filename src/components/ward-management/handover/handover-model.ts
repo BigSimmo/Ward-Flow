@@ -83,6 +83,32 @@ export function handoverNewSince(id: HandoverShiftId, now: Instant): Instant {
 }
 
 /**
+ * Audit TC2-02: the handover a page has chosen, held as the instant it meant when chosen. Re-read
+ * against each new "now", a page left open over midnight meant tonight's handover instead, and its
+ * "new since" lay in the future, so the page read "Nothing has changed". A held handover more than
+ * a day from now (a page left for a day, or a demo jump) starts again from the next one.
+ */
+export type HeldHandover = { id: HandoverShiftId; at: Instant };
+
+export function holdHandover(id: HandoverShiftId, now: Instant): HeldHandover {
+  return { id, at: handoverAt(id, now) };
+}
+
+export function currentHeldHandover(held: HeldHandover, now: Instant): HeldHandover {
+  return Math.abs(held.at - now) <= MINUTES_PER_DAY ? held : holdHandover(defaultHandoverShift(now), now);
+}
+
+/** "Due by" for the handover held at `at`: its own time, or the next one still to come once it has passed. */
+export function heldHandoverCutoff(at: Instant, now: Instant): Instant {
+  return at > now ? at : handoverAt(defaultHandoverShift(now), now);
+}
+
+/** "New since" for the handover held at `at`: the one before it, and never later than now. */
+export function heldHandoverNewSince(at: Instant, now: Instant): Instant {
+  return Math.min(at - 8 * 60, now);
+}
+
+/**
  * When this handover was signed off, or null. Sign-off closes once the handover starts, so a
  * record belongs to the handover whose window (from the one before it up to its start) holds it.
  */
@@ -91,8 +117,12 @@ export function handoverSignedAt(
   id: HandoverShiftId,
   now: Instant,
 ): Instant | null {
-  const from = handoverNewSince(id, now);
-  const to = handoverAt(id, now);
+  return handoverSignedBefore(signOffs, handoverAt(id, now));
+}
+
+/** The latest sign-off in the window before the handover at `to`, or null. */
+export function handoverSignedBefore(signOffs: readonly { at: Instant }[], to: Instant): Instant | null {
+  const from = to - 8 * 60;
   let signed: Instant | null = null;
   for (const record of signOffs) {
     if (record.at >= from && record.at < to && (signed === null || record.at > signed)) signed = record.at;
