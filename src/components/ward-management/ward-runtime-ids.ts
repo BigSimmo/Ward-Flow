@@ -17,3 +17,16 @@ export function nextRuntimeIdNumber(ids: Iterable<string>, prefix: string, floor
   }
   return next;
 }
+
+/**
+ * A runtime bed release id, "WR-9NN": the length-based number while nothing has been removed, and
+ * otherwise one past the highest runtime release still held (H-0334).
+ */
+export function nextBedReleaseId(releases: readonly { id: string }[]): string {
+  const number = nextRuntimeIdNumber(
+    releases.map((release) => release.id),
+    "WR-9",
+    releases.length,
+  );
+  return `WR-9${String(number).padStart(2, "0")}`;
+}

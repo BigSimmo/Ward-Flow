@@ -508,3 +508,63 @@ describe("ADD_PATIENT added at", () => {
     expect(isValidStoredWardFlowState(stored(tampered as unknown as WardFlowState))).toBe(false);
   });
 });
+
+describe("an older toast's Undo after a newer step on the same subject (H-0246)", () => {
+  const stayOf = (state: WardFlowState) =>
+    state.admissions.filter((a) => a.unitId === UNIT && a.state === "occupied")[0]!;
+  const place = (admissionId: string, bedNumber: number, now: number) =>
+    ({ type: "PLACE_IN_BED", role: "ward", now, admissionId, bedNumber, actingUnitId: UNIT }) as WardFlowEvent;
+  const placementSeq = (state: WardFlowState, admissionId: string) =>
+    state.undoRecords?.find((record) => record.kind === "bed-placement" && record.admissionId === admissionId)?.seq;
+
+  it("refuses the first move's Undo once a second move replaced its record, and keeps the newer move", () => {
+    const state = seedWardFlowState();
+    const stay = stayOf(state);
+    const first = wardFlowReducer(state, place(stay.id, 4, NOW));
+    const firstSeq = placementSeq(first, stay.id);
+    const second = wardFlowReducer(first, place(stay.id, 6, NOW + 1));
+    const secondSeq = placementSeq(second, stay.id);
+    expect(firstSeq).toBeTypeOf("number");
+    expect(secondSeq).not.toBe(firstSeq);
+    const stale = wardFlowReducer(second, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      now: NOW + 2,
+      admissionId: stay.id,
+      actingUnitId: UNIT,
+      recordSeq: firstSeq,
+    } as WardFlowEvent);
+    expect(stale.rejections.at(-1)?.reason).toBe("A later bed move replaced this one, so this Undo no longer applies");
+    expect(stale.admissions.find((a) => a.id === stay.id)?.bedNumber).toBe(6);
+    const current = wardFlowReducer(second, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "ward",
+      now: NOW + 2,
+      admissionId: stay.id,
+      actingUnitId: UNIT,
+      recordSeq: secondSeq,
+    } as WardFlowEvent);
+    expect(current.rejections).toEqual([]);
+    expect(current.admissions.find((a) => a.id === stay.id)?.bedNumber).toBe(4);
+  });
+
+  it("refuses a decision Undo that names another decision's record", () => {
+    const { state: before, referralId } = withQueuedReferral();
+    const accepted = wardFlowReducer(before, accept(referralId));
+    const seq = accepted.undoRecords?.find(
+      (record) => record.kind === "referral-decision" && record.referralId === referralId,
+    )?.seq;
+    expect(seq).toBeTypeOf("number");
+    const stale = wardFlowReducer(accepted, {
+      ...undoDecision(referralId, "ward", NOW + 1, UNIT),
+      recordSeq: (seq ?? 0) - 1,
+    } as WardFlowEvent);
+    expect(stale.rejections.at(-1)?.reason).toBe("A later decision replaced this one, so this Undo no longer applies");
+    expect(referralState(referralOf(stale, referralId))).toBe("accepted");
+    const current = wardFlowReducer(accepted, {
+      ...undoDecision(referralId, "ward", NOW + 1, UNIT),
+      recordSeq: seq,
+    } as WardFlowEvent);
+    expect(current.rejections).toEqual([]);
+  });
+});

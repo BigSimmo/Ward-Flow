@@ -2565,6 +2565,8 @@ export type WardFlowEvent =
       type: "UNDO_REFERRAL_DECISION";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       referralId: string;
       /** A ward undoing its own decision names itself; refused when it is not the unit that answered. */
       actingUnitId?: string;
@@ -2593,6 +2595,8 @@ export type WardFlowEvent =
       type: "UNDO_PLACE_IN_BED";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       admissionId: string;
       actingUnitId?: string;
     }

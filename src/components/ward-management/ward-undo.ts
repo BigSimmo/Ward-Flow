@@ -36,6 +36,8 @@ export type ReferralDecisionUndo = {
   after: Referral;
   /** The notices the decision raised, withdrawn again by the undo. */
   noticeIds: string[];
+  /** Unique and rising, as on a step record, so an older toast's Undo cannot take back a newer decision. */
+  seq?: number;
 };
 
 export type BedPlacementUndo = {
@@ -51,6 +53,8 @@ export type BedPlacementUndo = {
   /** Exact destination slot changed by the move; absent on older saves. */
   beforeReferralArmIndex?: number;
   afterBed: number;
+  /** Unique and rising, as on a step record, so an older toast's Undo cannot take back a newer move. */
+  seq?: number;
   /** Absent on older saves. Null preserves a seed's unrecorded historical bed kind on Undo. */
   bedKindChange?: {
     before: "locked" | "open" | null;
@@ -163,11 +167,10 @@ const STEP_UNDO_IGNORED_KEYS: ReadonlySet<string> = new Set([
   "undoRecords",
 ]);
 
-/** The next step record number: above every record kept and above `floor` (the audit sequence). */
+/** The next undo record number: above every record kept and above `floor` (the audit sequence). */
 export function nextStepUndoSeq(records: readonly UndoRecord[] | undefined, floor: number): number {
   let highest = Number.isFinite(floor) ? floor : 0;
-  for (const record of records ?? [])
-    if (record.kind === "step" && (record.seq ?? 0) > highest) highest = record.seq ?? 0;
+  for (const record of records ?? []) if ((record.seq ?? 0) > highest) highest = record.seq ?? 0;
   return highest + 1;
 }
 
