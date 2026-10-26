@@ -54,7 +54,7 @@ export function receiptEventAccepts(code: string | undefined): boolean {
  * the one difference, in words taken from the 3C title itself. Text only: no time is worked out.
  */
 const LOOK_ALIKE_NOTES: Record<string, string> = {
-  "3B": "Not the same as Form 3C, which continues detention for a further examination by a psychiatrist.",
+  "3B": "Not the same as Form 3C. That one continues detention for a further examination by a psychiatrist.",
   "3C": "Not the same as Form 3B. This one continues detention for a further examination by a psychiatrist.",
 };
 
