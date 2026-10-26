@@ -1014,6 +1014,14 @@ function undoSubjectField(state: WardFlowState, subjectId: string): Record<strin
   return {};
 }
 
+/** H-0150: a bed meeting action's Undo record is filed as `<subject id>:<action>`. */
+function bedMeetingUndoFields(state: WardFlowState, subjectId: string): Record<string, unknown> {
+  const cut = subjectId.lastIndexOf(":");
+  const id = subjectId.slice(0, cut);
+  const kind = state.admissions.some((stay) => stay.id === id) ? "admission" : "movement";
+  return { subject: { kind, id }, action: subjectId.slice(cut + 1) };
+}
+
 /** A legal form code for a movement: mostly one the model recognises, now and then 5B over a 5A. */
 const formCodeFor = (random: Random, movement: Movement) =>
   movement.legalForm?.code === "5A" && chance(random, 0.6) ? "5B" : pick(random, LEGAL_CLOCK_FORM_CODES)!;
@@ -1340,6 +1348,7 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
           type: undoType,
           ...(role ? { role } : {}),
           ...(record ? undoSubjectField(state, record.subjectId) : {}),
+          ...(record && undoType === "UNDO_BED_MEETING_ACTION" ? bedMeetingUndoFields(state, record.subjectId) : {}),
           ...(record?.unitId ? { actingUnitId: record.unitId } : {}),
           ...(record?.seq !== undefined && chance(random, 0.5) ? { recordSeq: record.seq } : {}),
         };
