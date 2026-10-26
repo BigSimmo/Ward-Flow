@@ -21,6 +21,9 @@ import { referralSentByDesk, routeSentKind } from "../ward-referral-sender";
 import { wardPlaceLookup } from "../ward-access-places";
 import { useHoldOpenForm } from "../use-hold-open-form";
 
+/** A second tap this soon after "Accept presentation" is the same double tap (audit CS3-08). */
+export const ACCEPT_SECOND_TAP_GUARD_MS = 600;
+
 /**
  * The match view's state, its rejection check, the ward arm under review and the controls built
  * before any early return, moved unchanged and in their original order from `referral-match.tsx`.
@@ -108,7 +111,15 @@ export function useReferralMatchState({
   const [communityWithdrawReason, setCommunityWithdrawReason] = useState<WardRequestWithdrawalReason | undefined>(
     undefined,
   );
-  const [edAcceptConfirmOpen, setEdAcceptConfirmOpen] = useState(false);
+  const [edAcceptConfirmOpen, setEdAcceptConfirmOpenState] = useState(false);
+  // Audit CS3-08: "Confirm acceptance" takes the place of "Accept" under the same finger, so a
+  // second tap this soon after opening is the same double tap and is ignored (as Pull a bed does).
+  const edAcceptConfirmOpenedAtRef = useRef(0);
+  const setEdAcceptConfirmOpen = (open: boolean) => {
+    if (open) edAcceptConfirmOpenedAtRef.current = Date.now();
+    setEdAcceptConfirmOpenState(open);
+  };
+  const edAcceptConfirmJustOpened = () => Date.now() - edAcceptConfirmOpenedAtRef.current < ACCEPT_SECOND_TAP_GUARD_MS;
   /**
    * Who is recording the referrer's whole-referral withdrawal. Owner, 4 October 2026: the community
    * team and the ED may record it "if they are cancelling their referral", so the choice offered is
@@ -277,6 +288,7 @@ export function useReferralMatchState({
     setCommunityWithdrawReason,
     edAcceptConfirmOpen,
     setEdAcceptConfirmOpen,
+    edAcceptConfirmJustOpened,
     withdrawRecorder,
     setWithdrawRecorder,
     withdrawConfirmOpen,
