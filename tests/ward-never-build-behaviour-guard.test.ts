@@ -58,12 +58,14 @@ function hits(pattern: RegExp, files: string[] = FILES): string[] {
   );
 }
 
-/** The text of a block that starts at `opener` and ends at its matching closing bracket. */
+/** The text from `opener` to the bracket that closes the one `opener` ends with. Matching starts at
+ *  that last bracket, so a method's `()` parameter list cannot end the block before its `{` body. */
 function blockFrom(source: string, opener: string): string {
   const start = source.indexOf(opener);
   expect(start, `"${opener}" must still exist; update this guard if it moved`).toBeGreaterThanOrEqual(0);
+  expect(opener.at(-1), "an opener ends with the bracket that opens its block").toMatch(/[({]/u);
   let depth = 0;
-  for (let index = start; index < source.length; index += 1) {
+  for (let index = start + opener.length - 1; index < source.length; index += 1) {
     const char = source[index];
     if (char === "(" || char === "{") depth += 1;
     if (char === ")" || char === "}") {
