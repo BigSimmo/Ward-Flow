@@ -127,6 +127,10 @@ describe("the record's facts, read without guessing", () => {
     const text = draftFingerprint({ documentation: { charts: [{ ...chart, base64: big }] } });
     expect(text.length).toBeLessThan(400);
     expect(text).not.toBe(draftFingerprint({ documentation: { charts: [{ ...chart, base64: `${big}B` }] } }));
+    // Codex review on #864: a replacement with the same name, size and ending is still a change.
+    const sameEnding = `B${big.slice(1)}`;
+    expect(text).not.toBe(draftFingerprint({ documentation: { charts: [{ ...chart, base64: sameEnding }] } }));
+    expect(text).toBe(draftFingerprint({ documentation: { charts: [{ ...chart, base64: big }] } }));
     expect(draftFingerprint({ a: 1 })).toBe(JSON.stringify({ a: 1 }));
   });
 });
