@@ -290,17 +290,6 @@ export const WARD_WORKSPACE_MODES = ["governance"] as const satisfies readonly W
  */
 export type WardWorkspaceMode = (typeof WARD_WORKSPACE_MODES)[number];
 
-/**
- * The `<h1>` a workspace mode actually renders. Exported because a browser test needs to find the
- * mode header by its heading, and ⚠️ **`WARD_VIEWS`' label is not guaranteed to be that string**
- * (the retired `network` mode was labelled *"Network"* in the rail and titled *"Network diagram"*
- * on the page). A test deriving the heading from the rail label could look for text the screen
- * never renders.
- */
-export function wardWorkspaceModeTitle(mode: WardWorkspaceMode): string {
-  return modeCopy[mode].title;
-}
-
 export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
   const [role, setRole] = useState<WardRole>("flow");
   return (
