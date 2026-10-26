@@ -100,18 +100,25 @@ export type WardNavCountInput = {
  * the delay groups behind them are costly, so the answer is shared until a record or the clock
  * minute changes (`ward-last-call.ts`).
  */
-export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardNavCountInput) => [
-  input.movements,
-  input.units,
-  input.sites,
-  input.referrals,
-  input.bedReleases,
-  input.leaveBeds,
-  input.admissions,
-  input.now,
-  input.thresholds,
-  input.service,
-]);
+export const wardNavCounts = rememberLastCall(
+  deriveWardNavCounts,
+  (input: WardNavCountInput) => [
+    input.movements,
+    input.units,
+    input.sites,
+    input.referrals,
+    input.bedReleases,
+    input.leaveBeds,
+    input.admissions,
+    input.now,
+    input.thresholds,
+    // Audit EDR-04: no service chosen is one answer, whether a caller passes null or leaves it out.
+    input.service ?? null,
+  ],
+  // The coordinator screen asks across every service while the rail asks for the chosen one: keep
+  // both answers so neither evicts the other on each render.
+  2,
+);
 
 function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
   const { movements, units, sites, referrals, bedReleases, leaveBeds, admissions, now, thresholds, service } = input;

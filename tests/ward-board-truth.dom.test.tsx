@@ -52,6 +52,11 @@ describe("the bed board says what the reducer actually did", () => {
     const before = probeRef.current!.rejections.length;
 
     fireEvent.click(button);
+    // Audit CS3-07: the shift row has no destination picker, so the confirmation asks for one.
+    fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
+      target: { value: "discharged-to-the-community" },
+    });
+    fireEvent.click(screen.getByTestId("ward-board-confirm-proceed"));
 
     const toast = screen.getByTestId("ward-board-toast");
     const after = probeRef.current!.rejections;

@@ -62,6 +62,11 @@ describe("WardBoard Patient Safety Confirmations", () => {
     fireEvent.click(leaveBtn);
     const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
     expect(proceedBtn).toHaveTextContent("Record departure");
+    // Audit CS3-07: where they went starts blank and must be chosen before the departure records.
+    expect(proceedBtn).toBeDisabled();
+    fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
+      target: { value: "discharged-to-the-community" },
+    });
     fireEvent.click(proceedBtn);
 
     // Dialog closes and toast appears confirming departure

@@ -2,8 +2,9 @@ import type { Movement, Referral, Unit } from "@/components/ward-management/ward
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /*
- * Audit 2 E-07 (Josh, decision 3, 20 Oct 2026; built 24 Oct as a warning while Josh chooses how
- * strict it is): a ward's yes uses up one of its Ready beds. Ready (`min(allocatable, empty)`)
+ * Audit 2 E-07 (Josh, decision 3, 20 Oct 2026; built 24 Oct as a warning). Josh, 26 Oct 2026
+ * (Part A 6, audit CS3-14): it stays a warning, never a refusal. A ward's yes uses up one of its
+ * Ready beds. Ready (`min(allocatable, empty)`)
  * already nets out pulled beds, because `PULL_PATIENT` lowers `allocatable`. An acceptance changes
  * no figure, so this counts the yeses the ward's own numbers cannot see yet, and the accept screens
  * say so before a person says yes again. It reports a count; it never refuses, picks a ward or

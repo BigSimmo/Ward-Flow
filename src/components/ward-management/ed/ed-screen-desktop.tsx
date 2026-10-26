@@ -11,6 +11,7 @@ import {
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
+import { noFormWords as formNotHeldWords } from "@/components/ward-management/ward-legal-status";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { buttonClass, StatusGlyph } from "@/components/wf";
@@ -70,11 +71,7 @@ export function renderEdBoardTableRow(
   // CS-14 (Audit 1, Josh 20 Oct 2026): no form is "None" only for a voluntary patient; for anyone
   // else nothing is recorded, which is not the same as no form.
   const noFormWords = movement.legalStatus === "Voluntary" ? "None" : "Not recorded";
-  const formWords = movement.legalForm
-    ? `Form ${movement.legalForm.code}`
-    : movement.legalStatus === "Voluntary"
-      ? "No form"
-      : "Form not recorded";
+  const formWords = movement.legalForm ? `Form ${movement.legalForm.code}` : formNotHeldWords(movement.legalStatus);
   // CS-11 (Audit 1, Josh 20 Oct 2026): past the expiry typed on the form shows in words with the
   // danger mark, never the same amber dot as "close". The typed time only: nothing is computed.
   const formExpiryPassed =

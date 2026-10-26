@@ -25,6 +25,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { OccupancyFigure } from "@/components/ward-management/ward-occupancy";
 import type { WardScreenBed } from "./ward-screen-derivations";
 import { observationSummary } from "@/components/ward-management/ward-observation";
+import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 
 /** The Confirm capacity figures dialog, drawn from the ward screen's own state. */
 type WardScreenCapacityModalProps = {
@@ -188,7 +189,7 @@ type WardScreenBedDrawerProps = {
   pendingBedReleases: BedRelease[];
   raise: WardRaise;
   unitId: string;
-  setToastMessage: Dispatch<SetStateAction<string | null>>;
+  setToastMessage: Dispatch<SetStateAction<ActionToast | null>>;
   leaveBeds: LeaveBed[];
   bedDrawerRef: RefObject<HTMLElement | null>;
   handleBedDrawerKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
@@ -255,14 +256,15 @@ export function WardScreenBedDrawer({
   function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
     completeCommand(`bed:${selectedBed}`, record, (outcome) => {
       // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
-      if (outcome?.status === "refused") setToastMessage(notRecordedMessage(outcome.message));
-      else setToastMessage(wardCommandFailure(outcome) ?? success);
+      // Walk-through WT-10: a refusal or a save not confirmed shows as a warning.
+      const failure = outcome?.status === "refused" ? notRecordedMessage(outcome.message) : wardCommandFailure(outcome);
+      setToastMessage(failure ? { warning: failure } : success);
       // Audit 24-3 SV-7: a Retry that saves replaces this save's "not confirmed" message, not a newer one.
       const unconfirmed = outcome?.status === "failed" ? wardCommandFailure(outcome) : undefined;
       void outcome?.confirmation?.then(
         (later) => {
           if (unconfirmed && later.status === "accepted" && later.isCurrent?.() !== false)
-            setToastMessage((shown) => (shown === unconfirmed ? success : shown));
+            setToastMessage((shown) => (typeof shown !== "string" && shown?.warning === unconfirmed ? success : shown));
         },
         () => {},
       );
@@ -374,9 +376,9 @@ export function WardScreenBedDrawer({
               // rather than report a change that did not happen.
               const heldBed = leaveBeds.find((bed) => bed.admissionId === selectedBedItem.admissionId);
               if (heldBed) {
-                setToastMessage(
-                  `Not recorded: bed ${bedNum} patient is ${heldBed.absentWithoutLeave ? "absent without leave" : "on leave"}. Record their return first.`,
-                );
+                setToastMessage({
+                  warning: `Not recorded: bed ${bedNum} patient is ${heldBed.absentWithoutLeave ? "absent without leave" : "on leave"}. Record their return first.`,
+                });
                 return;
               }
               recordFeedback(
