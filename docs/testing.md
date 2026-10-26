@@ -136,13 +136,7 @@ Author component tests to assert **user-visible behaviour**, not markup snapshot
 - The shared setup (`tests/setup/jsdom.setup.ts`) registers jest-dom matchers, auto-unmounts between tests, and polyfills `matchMedia` (override per test with the exported `installMatchMediaStub`) and `Element.scrollIntoView`.
 - Mock hooks/modules with `vi.mock`; when the factory needs a spy, create it with `vi.hoisted` so it exists when the hoisted mock runs.
 
-<!-- docs-script-refs:historical-start -->
-
-> **Historical component examples:** some example files below were removed; consult current tests before reusing a path.
-
-Reference examples: `tests/icon-button.dom.test.tsx` (accessible-name contract), `tests/sheet.dom.test.tsx` (stacked-overlay keyboard + scroll-lock), `tests/scroll-behavior.dom.test.tsx` (reduced-motion), `tests/registry-retry.dom.test.tsx` (`vi.hoisted` hook mock + error recovery).
-
-<!-- docs-script-refs:historical-end -->
+Reference examples: `tests/icon-button.dom.test.tsx` (accessible-name contract), `tests/sheet.dom.test.tsx` (stacked-overlay keyboard + scroll-lock), `tests/ward-scroll.dom.test.tsx` (reduced-motion), `tests/navigation-back-button.dom.test.tsx` (`vi.hoisted` router mock), `tests/route-error-boundary-diagnostics.dom.test.tsx` (error-boundary diagnostics are redacted before copying).
 
 ## Playwright ownership
 
