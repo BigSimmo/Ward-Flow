@@ -87,6 +87,8 @@ describe("Referral summary (ISBAR) reads what the referral form wrote (#836)", (
         now={NOW_ANCHOR}
       />,
     );
-    expect(screen.getByText("Assessment").nextElementSibling).toHaveTextContent("risk flags on the referral letter none selected");
+    expect(screen.getByText("Assessment").nextElementSibling).toHaveTextContent(
+      "risk flags on the referral letter none selected",
+    );
   });
 });
