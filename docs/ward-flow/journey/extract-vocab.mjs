@@ -7,6 +7,8 @@ const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z
 const dir = path.resolve(here, "../../../src/components/ward-management") + "/";
 const files = [
   "ward-model.ts",
+  // F-17 (26 Oct 2026): the bed release word lists moved out of ward-model.ts to this sibling.
+  "ward-model-bed-release.ts",
   "ward-change-reasons.ts",
   "ward-admissions.ts",
   "ward-bed-availability.ts",

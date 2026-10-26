@@ -10,6 +10,10 @@ import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-redu
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearSessionDrafts } from "@/components/ward-management/ward-session-drafts";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
+import { dateInputFor } from "./helpers/ward-date-input";
+
+// Audit CS3-05: every extension types the date written on the form as well as the time.
+const SHEET_DAY_ZERO = perthMidnight(2026, 9, 24);
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -59,6 +63,9 @@ describe("legal extension completion and recovery", () => {
     // The sheet hands focus back on the next animation frame, so wait for it.
     await waitFor(() => expect(trigger).toHaveFocus());
     await user.click(trigger);
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
+      target: { value: dateInputFor(1242, flow.dayZero) },
+    });
     const input = screen.getByTestId("ward-legal-forms-renew-expiry");
     fireEvent.change(input, { target: { value: "23:59" } });
     await user.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
@@ -90,11 +97,13 @@ describe("legal extension completion and recovery", () => {
           target={target}
           label="Synthetic record"
           now={1242}
+          dayZero={SHEET_DAY_ZERO}
           onClose={() => closed++}
           onExtendForm={() => completion.promise}
         />
       </WardFlowProvider>,
     );
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
     expect(closed).toBe(0);
@@ -113,11 +122,13 @@ describe("legal extension completion and recovery", () => {
           target={target}
           label="Synthetic record"
           now={1242}
+          dayZero={SHEET_DAY_ZERO}
           onClose={() => closed++}
           onExtendForm={() => completion.promise}
         />
       </WardFlowProvider>,
     );
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
     clearSessionDrafts();

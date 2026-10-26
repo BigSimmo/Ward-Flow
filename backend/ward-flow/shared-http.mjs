@@ -387,7 +387,10 @@ export function createSharedHandler({
         // History's closed records older than 30 days (migration 14), each desk's own part only,
         // as its live workspace is. A store without an archive answers with an empty list.
         if (!store.archive) return reply(200, { archived: 0, records: [] });
-        return reply(200, await store.archive(view));
+        // Audit PS-01: a desk that holds the archive names the revision it holds, and is sent only
+        // what was archived after it. Anything else reads the whole archive.
+        const since = new URL(request.url).searchParams.get("since");
+        return reply(200, await store.archive(view, since && /^\d{1,15}$/.test(since) ? Number(since) : undefined));
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads

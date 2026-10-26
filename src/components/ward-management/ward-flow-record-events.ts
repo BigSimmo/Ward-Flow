@@ -434,7 +434,7 @@ export function reduceRecordedFactEvent(
             "transport_cancelled_officer",
             { role: "officer" },
             { movementId: movement.id },
-            `Transport for ${movement.id} was cancelled (${reasonLabel.toLowerCase()}); no bed is held and nothing has been rebooked.`,
+            `Transport for ${movement.id} was cancelled (${reasonLabel.toLowerCase()}); no bed is pulled and nothing has been rebooked.`,
           ),
         );
       }
@@ -654,8 +654,8 @@ export function reduceRecordedFactEvent(
             { role: "ward", placeId: movement.acceptedUnitId },
             { movementId: movement.id, unitId: movement.acceptedUnitId },
             transportAlreadyCommitted
-              ? `The examination for ${movement.id} was revoked after transport was booked. The bed stays held until a person decides whether to release it.`
-              : `The examination for ${movement.id} was revoked. The bed stays held until a person decides whether to release it.`,
+              ? `The examination for ${movement.id} was revoked after transport was booked. The bed stays pulled until a person decides whether to release it.`
+              : `The examination for ${movement.id} was revoked. The bed stays pulled until a person decides whether to release it.`,
           ),
         ]);
       }
@@ -731,7 +731,7 @@ export function reduceRecordedFactEvent(
             "transport_cancelled_officer",
             { role: "officer" },
             { movementId: movement.id },
-            `Transport for ${movement.id} was cancelled (examination outcome ${event.outcome}); no bed is held and nothing has been rebooked.`,
+            `Transport for ${movement.id} was cancelled (examination outcome ${event.outcome}); no bed is pulled and nothing has been rebooked.`,
           ),
         );
       }
@@ -1188,7 +1188,7 @@ export function reduceRecordedFactEvent(
             "diversion_recorded_ward",
             { role: "ward", placeId: receivingUnitId },
             { movementId: movement.id, unitId: receivingUnitId },
-            `The patient for ${movement.id} was diverted (${event.reason}). Where they are now: ${event.place}. The bed stays held until it is released.`,
+            `The patient for ${movement.id} was diverted (${event.reason}). Where they are now: ${event.place}. The bed stays pulled until it is released.`,
           ),
         );
       }

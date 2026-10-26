@@ -55,7 +55,9 @@ describe("Pull a bed feedback (DA-11)", () => {
     const movementId = pull.dataset.testid!.replace("ward-pull-", "");
     pull.focus();
     fireEvent.click(pull);
-    expect(screen.getByText("Bed pulled for this arrival.")).toBeInTheDocument();
+    // Audit CS3-16: the message names the person, never "this arrival".
+    expect(screen.getAllByText(/^Bed pulled for .+\.$/u).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Bed pulled for this arrival.")).not.toBeInTheDocument();
     expect(screen.queryByTestId(`ward-pull-${movementId}`)).not.toBeInTheDocument();
     expect(document.activeElement).toBe(document.getElementById(`ward-arrival-${movementId}`));
   });

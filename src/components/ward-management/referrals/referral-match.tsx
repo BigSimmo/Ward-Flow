@@ -168,6 +168,7 @@ export function ReferralMatchView({
     setCommunityWithdrawReason,
     edAcceptConfirmOpen,
     setEdAcceptConfirmOpen,
+    edAcceptConfirmJustOpened,
     lastRejection,
     priorRejectionCountRef,
     setCheckToken,
@@ -462,6 +463,7 @@ export function ReferralMatchView({
   }
 
   function handleEdAccept() {
+    if (edAcceptConfirmJustOpened()) return;
     priorRejectionCountRef.current = rejections.length;
     const completion = dispatch({
       type: "ACCEPT_REFERRAL",

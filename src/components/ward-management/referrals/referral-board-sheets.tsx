@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { ClipboardCopy } from "lucide-react";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -167,15 +167,41 @@ export function BedMeetingSheet({
 
 /* ─── Selected referral: alerts, decision clock and ISBAR summary ───────────────────────────── */
 
-function isbarText(referral: Referral, name: string, umrn: string, demographics: string, now: Instant): string {
+/** What the current record holds, apart from what the referral letter said when it was sent. */
+export type IsbarRecorded = {
+  legalStatus?: string;
+  clearance?: { cleared: boolean; at: Instant };
+};
+
+/**
+ * Audit CS3-02: the letter's legal status and clearance were shown as if they were the record. The
+ * summary now gives the recorded legal status and clearance, or "not recorded", and names what came
+ * from the letter as the letter's.
+ */
+export function isbarText(
+  referral: Referral,
+  name: string,
+  umrn: string,
+  demographics: string,
+  now: Instant,
+  recorded: IsbarRecorded = {},
+): string {
   const intake = referral.intake;
   const { waited, due } = waitWords(referral, now);
   const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+  const reason = intake?.reasonForReferral?.trim();
+  const letterLegal = intake?.legalStatus?.trim();
+  const legal = recorded.legalStatus?.trim();
+  const clearance = recorded.clearance;
+  const clearanceWords = clearance
+    ? `${clearance.cleared ? "cleared" : "not cleared"}, recorded ${formatInstantWithDay(clearance.at, now)}`
+    : "not recorded";
+  const flags = intake?.riskFlags.join(", ");
   return [
     `Identify: ${name}, ${umrn}, ${demographics}.`,
     `Situation: tier ${referral.urgency} referral from ${site} (${REFERRAL_SOURCE_WORDS[referral.source]}), waiting ${waited}, ${due}. Asking for ${askingForShort(referral)}.`,
-    `Background: ${intake?.reasonForReferral?.trim() || "Reason not recorded"}. Legal status ${intake?.legalStatus?.trim() || "not recorded"}.`,
-    `Assessment: risk flags ${intake?.riskFlags.join(", ") || "not recorded"}. Medical clearance ${intake ? (intake.medicalClearance.cleared ? "cleared" : "pending") : "not recorded"}.`,
+    `Background: ${reason ? `On the referral letter, ${reason}` : "Reason not recorded"}. Legal status ${legal || "not recorded"}${letterLegal ? ` (on the referral letter: ${letterLegal})` : ""}.`,
+    `Assessment: risk flags on the referral letter ${flags || "not recorded"}. Medical clearance ${clearanceWords}.`,
     `Recommendation: ${needWords(referral).join(", ") || "no bed needs recorded"}.`,
   ].join("\n");
 }
@@ -188,6 +214,7 @@ export function IsbarSheet({
   umrn,
   demographics,
   now,
+  recorded,
 }: {
   open: boolean;
   onClose: () => void;
@@ -196,8 +223,9 @@ export function IsbarSheet({
   umrn: string;
   demographics: string;
   now: Instant;
+  recorded?: IsbarRecorded;
 }) {
-  const text = isbarText(referral, name, umrn, demographics, now);
+  const text = isbarText(referral, name, umrn, demographics, now, recorded);
   return (
     <Sheet
       open={open}

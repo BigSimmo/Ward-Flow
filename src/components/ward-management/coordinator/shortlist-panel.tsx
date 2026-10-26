@@ -250,7 +250,7 @@ const GATE_LABELS: Record<EligibilityGate, string> = {
   // 🔴 RENAMED FROM `sex_designation`, T10 (item 8, owner answer 17 September 2026): the ward's
   // own designation gate now reads the gender recorded at referral, never sex.
   gender_designation: "Gender designation",
-  sex_mix: "Sex mix",
+  sex_mix: "Gender mix",
   specialling: "Specialling capacity",
 };
 
