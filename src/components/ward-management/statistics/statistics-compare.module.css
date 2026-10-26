@@ -60,6 +60,13 @@
   white-space: normal;
 }
 
+/* Layout sweep STATS-10: the statistics ward cell forces one clipped line on its children, which
+   sliced long names mid-glyph and stopped the two-line clamp below. The name grid wraps instead. */
+.rowName.rowName {
+  overflow: visible;
+  white-space: normal;
+}
+
 .rowNameText {
   display: -webkit-box;
   min-width: 0;
@@ -268,5 +275,12 @@ table.pinTable {
 
   .chooserGrid li {
     border-right: 0;
+  }
+}
+
+/* Layout sweep STATS-12: a full touch target for each chooser row on a touch tablet. */
+@media (pointer: coarse) and (min-width: 48.0625rem) {
+  .chooserLink {
+    min-height: var(--wf-touch);
   }
 }

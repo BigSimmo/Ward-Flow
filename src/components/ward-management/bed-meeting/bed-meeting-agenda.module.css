@@ -78,6 +78,11 @@
   padding: var(--wf-s-2) 0;
 }
 
+/* Layout sweep MEET-07: the detail text wraps; the button keeps its whole label. */
+.row > button {
+  flex: none;
+}
+
 .rowText {
   display: flex;
   flex-direction: column;
@@ -100,4 +105,16 @@
   align-items: end;
   gap: var(--wf-s-3);
   padding: 0 0 var(--wf-s-3);
+}
+
+/* Layout sweep MEET-06: a printed agenda keeps its title and time, and a card never splits. */
+@media print {
+  .header {
+    display: flex !important;
+  }
+
+  .main > section {
+    break-inside: avoid;
+    box-shadow: none;
+  }
 }
