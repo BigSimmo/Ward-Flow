@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
   // never wires up its listeners.
   allowedDevOrigins: ["127.0.0.1"],
   devIndicators: false,
+  // /ward-flow/patients was never a route: the patient finder is /ward-flow/search. People type it,
+  // so it goes there rather than to a Page not found.
+  async redirects() {
+    return [{ source: "/ward-flow/patients", destination: "/ward-flow/search", permanent: false }];
+  },
   // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
