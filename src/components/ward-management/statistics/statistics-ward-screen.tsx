@@ -724,7 +724,7 @@ function WardPhone({
           ) : (
             <PhoneList
               label={
-                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Blocked discharges"
+                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Discharges held up"
               }
             >
               {shown.map((admission) => {
@@ -1011,7 +1011,7 @@ function Barriers({
           ) : (
             <>
               <p className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-population">
-                {said(small(ready.total), "blocked discharge", "blocked discharges")} on this ward, out of{" "}
+                {said(small(ready.total), "discharge held up", "discharges held up")} on this ward, out of{" "}
                 {said(small(ready.population), "admission", "admissions")} on this ward that have not departed.
               </p>
               {rows.length === 0 ? (

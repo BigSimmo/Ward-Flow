@@ -63,10 +63,22 @@ describe("forecast miss reasons", () => {
       { forecastAt: cancelled.closure!.at - 10, actualAt: cancelled.closure!.at + 10 },
       state.movements,
       state.admissions,
+      () => "Name, Ward",
     );
     expect(candidates).toContainEqual(
       expect.objectContaining({ fits: "transfer_cancelled", source: { kind: "movement", id: cancelled.id } }),
     );
-    expect(missCandidates({ forecastAt: -99999, actualAt: -99998 }, state.movements, state.admissions)).toEqual([]);
+    expect(
+      missCandidates({ forecastAt: -99999, actualAt: -99998 }, state.movements, state.admissions, () => ""),
+    ).toEqual([]);
+  });
+
+  // W-5 (fresh audit 26 Oct 2026): a moved discharge date names the person and ward, never the id.
+  it("names the person and ward for a moved discharge date, not the admission id", () => {
+    const state = seedWardFlowState();
+    const moved = { ...state.admissions[0]!, dischargeDateMoves: 1, dischargeDateSetAt: 50 };
+    const [candidate] = missCandidates({ forecastAt: 40, actualAt: 60 }, [], [moved], () => "Synthetic Person, Ward A");
+    expect(candidate?.label).toBe("Discharge date moved, Synthetic Person, Ward A");
+    expect(candidate?.label).not.toContain(moved.id);
   });
 });

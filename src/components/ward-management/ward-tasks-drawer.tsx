@@ -1123,7 +1123,7 @@ export function WardTasksDrawer({
               </span>
               <h3>
                 {role !== "coordinator"
-                  ? "Bed coordinator's list"
+                  ? `Nothing for ${WARD_FLOW_ROLE_LABELS[role]}`
                   : snoozedItems.length > 0
                     ? "Nothing active"
                     : "No outstanding work"}
@@ -1131,7 +1131,7 @@ export function WardTasksDrawer({
               <p>
                 {role === "coordinator"
                   ? `New ${words.plural} appear here`
-                  : `${words.name} is the bed coordinator's list.`}
+                  : `${words.name} here is worked by the bed coordinator.`}
               </p>
             </div>
           ) : filteredItems.length === 0 ? (

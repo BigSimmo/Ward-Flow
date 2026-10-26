@@ -499,3 +499,20 @@
     min-height: var(--wf-touch);
   }
 }
+
+/* Phone Home, My list (Josh, 26 Oct 2026): the list switch and Registers stay under the top bar
+ * while My list scrolls, the same strip Everyone waiting keeps with its own filters (`.queueTools`
+ * in home.module.css). Everyone waiting is left alone so the phone never stacks two strips. The
+ * canvas band runs to the screen edges, so rows slide under a solid strip, not through it. */
+@media (max-width: 48rem) {
+  .workCol:has([data-testid="home-my-list"]) > .switchRow {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+    padding-block: var(--wf-s-2);
+    background: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-4) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+  }
+}
