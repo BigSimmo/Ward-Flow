@@ -1991,6 +1991,12 @@
   flex: 0 0 auto;
 }
 
+/* Layout sweep (CRIT-02): the Lists card is the workspace's only panel, so it takes the whole row
+   rather than half the page with its fifth tab cut off at the card edge. */
+.departmentWorkspace > .panel:only-child {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 1024px) {
   .departmentWorkspace {
     grid-template-columns: 1fr;
@@ -5160,6 +5166,17 @@
   display: revert;
 }
 
+/* Layout sweep (REF-18): an alert is read in full, so a late arrival or an overdue ETA wraps inside
+   the patient cell rather than being cut ("Arrival late — more than 60 minutes pa…"). Doubled to
+   outrank `.a2Facts [class]:not(svg)` above. */
+.a2Facts .arrivalLate.arrivalLate,
+.a2Facts .transitBadgeOverdue.transitBadgeOverdue {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .a2Mono {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
@@ -5485,4 +5502,16 @@
     min-height: var(--spacing-tap, 3rem);
     padding: 0 var(--wf-s-3);
   }
+}
+
+/* Layout sweep (CRIT-04): in the phone patient sheet the "On the board" editors (legal form and
+   medical clearance selects, the psychiatric review pill and the clearance buttons) are full-size
+   phone controls, as the 48px action rows beside them, not 24-28px desktop ones. */
+[data-testid^="ward-ed-phone-sheet-"] :is(.thinSelect, .reviewPill, .inboxBtn) {
+  height: auto;
+  min-height: 44px;
+}
+
+[data-testid^="ward-ed-phone-sheet-"] :is(.reviewPill, .inboxBtn) {
+  font-size: var(--wf-fs-14);
 }
