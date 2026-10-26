@@ -457,7 +457,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   {
     term: "Access target",
     meaning:
-      "An ED performance target, 24 hours by default, counted from when the patient's wait began. It is not a legal deadline.",
+      "An ED performance target set in Settings, counted from when the patient's wait began. It is not a legal deadline.",
   },
   { term: "Fit to travel", meaning: "The ED doctor's recorded medical clearance. It is needed before transport." },
 

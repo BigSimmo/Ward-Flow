@@ -92,7 +92,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **CLD**                  | Criteria led discharge, with the criteria the treating psychiatrist set.                         |
 | **CLD ready**            | Every criterion for criteria led discharge is met.                                               |
 | **Fit to travel**        | The ED doctor's recorded medical clearance, needed before transport.                             |
-| **Access target**        | An ED performance target, 24 hours by default. Never a legal deadline.                           |
+| **Access target**        | An ED performance target set in Settings. Never a legal deadline.                                |
 | **Overdue waits**        | Patients waiting longer than the target for their urgency tier.                                  |
 | **T1**                   | Urgency tier 1, most urgent, as recorded on the referral.                                        |
 | **T2**                   | Urgency tier 2, urgent.                                                                          |
