@@ -13,6 +13,30 @@ export function movementPatientIdentityMatchesRecord(movement: Movement, record:
   return movement.patientId === undefined || movement.patientId === record.patientId;
 }
 
+/** UI read collection: keep the people linked directly to already-entitled sender referrals.
+ * The caller must first establish the adopted snapshot, current desk and sender lifetime. This
+ * projection supplies no entitlement itself and never follows a movement, history or fallback id. */
+export function retainSenderReadPatients(
+  shown: readonly Patient[],
+  all: readonly Patient[],
+  senderReferrals: readonly Pick<Referral, "patientId">[],
+  breakGlassPatientIds: ReadonlySet<string>,
+): { patients: readonly Patient[]; breakGlassPatientIds: ReadonlySet<string> } {
+  const ownPatientIds = new Set<string>(senderReferrals.flatMap(({ patientId }) => (patientId ? [patientId] : [])));
+  const patientsById = new Map(shown.map((row) => [row.id, row]));
+  for (const patient of all) if (ownPatientIds.has(patient.id)) patientsById.set(patient.id, patient);
+  const patients = all.filter(({ id }) => patientsById.has(id)).map(({ id }) => patientsById.get(id)!);
+  // Restore the existing own-versus-grant-only label, not command authority. The backend still
+  // checks every command against its complete source without consuming this UI collection.
+  const glass = new Set([...breakGlassPatientIds].filter((id) => !ownPatientIds.has(id)));
+  const sameRows = (a: readonly Patient[], b: readonly Patient[]) =>
+    a.length === b.length && a.every((row, index) => row === b[index]);
+  return {
+    patients: sameRows(patients, all) ? all : sameRows(patients, shown) ? shown : patients,
+    breakGlassPatientIds: glass.size === breakGlassPatientIds.size ? breakGlassPatientIds : glass,
+  };
+}
+
 export interface ResolvedPatientInfo {
   patient?: Patient;
   displayName: string;

@@ -77,6 +77,8 @@ import {
 } from "@/components/ward-management/ward-turnaround-priority";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { outcomeDetail, outcomeLabel } from "./referral-board-model";
+import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 
 type ReferralMatchViewProps = {
   referral: Referral;
@@ -183,6 +185,19 @@ export function ReferralMatchView({
     communityAddressing,
     wholeWithdrawControl,
   } = s;
+  if (s.senderSummary !== undefined) {
+    return (
+      <section className={styles.matchSummary} data-testid="ward-referral-sender-progress">
+        <h3>{outcomeLabel(referral, s.senderSummary)}</h3>
+        {s.presentation.kind !== "unavailable" && s.presentation.state === "accepted" ? (
+          <p>{outcomeDetail(referral, units, s.senderSummary).outcome}</p>
+        ) : null}
+        <ReferralInformationNeedsPanel referral={referral} now={now} />
+        {wholeWithdrawControl}
+        {phone}
+      </section>
+    );
+  }
   if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */

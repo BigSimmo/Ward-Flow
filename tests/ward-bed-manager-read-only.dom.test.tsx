@@ -32,13 +32,13 @@ import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 /** Role access plan v2 (D-80): the site bed manager reads Referrals and Discharges in its own name. */
 const SEED = seedWardFlowState();
 const bedManagerAt = (siteCode: string): WardAccess => ({ role: "bed_manager", scope: { kind: "site", siteCode } });
+const QUEUED_IDS = new Set(referralQueueOrder(SEED.referrals).map(({ id }) => id));
 // A site whose own lines include a referral still in the queue.
-const QUEUED_SITE = [...new Set(SEED.units.map((unit) => unit.siteCode))].find(
-  (siteCode) =>
-    referralQueueOrder(
-      scopeWardFlowState(SEED, bedManagerAt(siteCode), { now: NOW_ANCHOR, places: wardPlaceLookup(SEED.units) }).state
-        .referrals,
-    ).length > 0,
+const QUEUED_SITE = [...new Set(SEED.units.map((unit) => unit.siteCode))].find((siteCode) =>
+  scopeWardFlowState(SEED, bedManagerAt(siteCode), {
+    now: NOW_ANCHOR,
+    places: wardPlaceLookup(SEED.units),
+  }).state.referrals.some(({ id }) => QUEUED_IDS.has(id)),
 )!;
 // Every control the board could offer to answer, place, assign, call about or amend a referral.
 const ACTION = /accept|decline|assign|take this|log a call|ask more|refer to|place|pull|escalat|withdraw|correction/i;
@@ -70,8 +70,8 @@ function renderScoped(children: ReactNode) {
   );
 }
 
-function openFirstReferral(): { id: string; detail: HTMLElement } {
-  const rows = screen.getAllByTestId(/^ward-referral-board-select-(?!decided)/);
+async function openFirstReferral(): Promise<{ id: string; detail: HTMLElement }> {
+  const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
   expect(rows.length).toBeGreaterThan(0);
   const id = rows[0]!.getAttribute("data-testid")!.replace("ward-referral-board-select-", "");
   fireEvent.click(rows[0]!);
@@ -96,7 +96,7 @@ describe("the site bed manager's Referrals board (D-80)", () => {
     expect(QUEUED_SITE).toBeDefined();
     deskAs(bedManagerAt(QUEUED_SITE));
     renderScoped(<ReferralBoard />);
-    const { id, detail } = openFirstReferral();
+    const { id, detail } = await openFirstReferral();
 
     expect(within(detail).getByTestId("ward-referral-read-only")).toHaveTextContent(
       "Read only. The coordinator and the receiving ward answer this referral.",
@@ -120,7 +120,7 @@ describe("the site bed manager's Referrals board (D-80)", () => {
   it("keeps the coordinator's Place tab and Assign on the same board", async () => {
     deskAs(null);
     renderScoped(<ReferralBoard />);
-    const { id, detail } = openFirstReferral();
+    const { id, detail } = await openFirstReferral();
     expect(within(detail).queryByTestId("ward-referral-read-only")).not.toBeInTheDocument();
     expect(within(detail).getByRole("tab", { name: /^(Place|Decide)/ })).toBeInTheDocument();
     fireEvent.click(within(detail).getByRole("tab", { name: /^Patient/ }));
