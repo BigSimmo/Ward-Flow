@@ -16,7 +16,6 @@ import {
 import { useState } from "react";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -49,9 +48,10 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     closeTransportBook,
     transportBookDialogRef,
     submitBookTransport,
+    movements,
+    umrnLookup,
   } = view;
   const save = useWardFormSave(transportBookFor ?? "");
-  const { movements, patients, referrals } = useWardFlowSelect("movements", "patients", "referrals");
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   // A new opening starts with no reason, as it starts with a blank draft.
   const [reasonFor, setReasonFor] = useState(transportBookFor);
@@ -63,7 +63,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
   // The patient's name, as every other screen shows it. The movement id is never a person's name.
   const patientName = movement
-    ? resolveSubjectPatient(movement, { patients, referrals, movements }).displayName
+    ? resolveSubjectPatient(movement, umrnLookup).displayName
     : "the patient";
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
