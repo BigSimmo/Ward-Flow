@@ -259,7 +259,13 @@ export function WardBedDossierDrawer({
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
   const leavePaper =
     useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination) && admission ? (
-      <WardLeavePaperAuthority admissionId={admission.id} who={occupantAlias} unitId={unit.id} />
+      <WardLeavePaperAuthority
+        key={admission.id}
+        admissionId={admission.id}
+        who={occupantAlias}
+        unitId={unit.id}
+        againstAdvice={drawerLeavingDestination === "left-against-advice"}
+      />
     ) : null;
   // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
   const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;

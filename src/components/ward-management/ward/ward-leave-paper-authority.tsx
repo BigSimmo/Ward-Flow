@@ -44,10 +44,13 @@ export function WardLeavePaperAuthority({
   admissionId,
   who,
   unitId,
+  againstAdvice = false,
 }: {
   admissionId: string;
   who: string;
   unitId: string;
+  /** A community treatment order is a discharge to the community, so leaving against advice needs the revocation. */
+  againstAdvice?: boolean;
 }) {
   // The ward screen records as the ward, as it does the departure. The bed manager may not record
   // a care step, so it is told who does.
@@ -63,7 +66,10 @@ export function WardLeavePaperAuthority({
   const save = useWardFormSave(`leave-paper-${admissionId}`);
   const [handle, setHandle] = useState<DischargeOpenHandle | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
-  const reason = INVOLUNTARY_DEPARTURE_REFUSAL.replace("This patient", who);
+  const reason = againstAdvice
+    ? `${who} is recorded as involuntary. Record the revocation of the order from the paper before recording that they left against advice.`
+    : INVOLUNTARY_DEPARTURE_REFUSAL.replace("This patient", who);
+  const authorities = againstAdvice ? AUTHORITIES.filter(({ id }) => id === "revocation") : AUTHORITIES;
   if (!actor) {
     return (
       <p className={styles.note} data-testid="ward-drawer-leave-paper">
@@ -93,7 +99,7 @@ export function WardLeavePaperAuthority({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const authority = AUTHORITIES.find(({ id }) => id === data.get("authority"))?.id;
+    const authority = authorities.find(({ id }) => id === data.get("authority"))?.id;
     const written = data.get("written");
     const date = typeof written === "string" ? perthDateTimeLocal(written) : undefined;
     const read = readDischargeRecord(actor, admissionId, handle);
@@ -134,16 +140,18 @@ export function WardLeavePaperAuthority({
       <p>{reason}</p>
       <fieldset>
         <legend>Paper authority</legend>
-        {AUTHORITIES.map(({ id, label }) => (
+        {authorities.map(({ id, label }) => (
           <label key={id}>
             <input type="radio" name="authority" value={id} required /> {label}
           </label>
         ))}
       </fieldset>
-      <p className={styles.hint}>
-        A community treatment order also needs the community clinician and appointment, recorded in the stay&apos;s care
-        journey on Discharges.
-      </p>
+      {againstAdvice ? null : (
+        <p className={styles.hint}>
+          A community treatment order also needs the community clinician and appointment, recorded in the stay&apos;s
+          care journey on Discharges.
+        </p>
+      )}
       <label>
         Date and time written on it
         <input name="written" type="datetime-local" required />

@@ -270,4 +270,45 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|discharged-to-the-community");
   });
+
+  it("offers only the revocation when an involuntary patient is leaving against advice (WT-02)", () => {
+    const release = INVOLUNTARY_RELEASE!;
+    function DayZero() {
+      return (
+        <span hidden data-testid="day-zero">
+          {useWardFlow().dayZero.toISOString()}
+        </span>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DayZero />
+        <WardProbe unitId={release.unitId} admissionId={release.admissionId} />
+        <WardScreen unitId={release.unitId} />
+      </WardFlowProvider>,
+    );
+    const dayZero = new Date(screen.getByTestId("day-zero").textContent!);
+    openAndPick(release.admissionId, "left-against-advice");
+    fireEvent.click(
+      within(screen.getByTestId("ward-drawer-leave-paper")).getByRole("button", { name: "Record the paper" }),
+    );
+    const form = screen.getByTestId("ward-drawer-leave-paper");
+    expect(
+      within(form)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["revocation"]);
+    fireEvent.click(within(form).getByLabelText("Revocation of the order"));
+    fireEvent.change(within(form).getByLabelText("Date and time written on it"), {
+      target: { value: perthLocalBefore(dayZero, 5) },
+    });
+    fireEvent.click(within(form).getByLabelText(/I have checked the paper/u));
+    fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
+
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    expect(screen.getByTestId("named-state")).toHaveTextContent("departed|left-against-advice");
+  });
 });

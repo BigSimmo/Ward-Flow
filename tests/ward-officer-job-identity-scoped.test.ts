@@ -45,6 +45,7 @@ describe("transport officer sees who to collect with role access on (WT-01)", ()
       scoped,
     );
     expect(seen.patient).toBeDefined();
+    expect(seen.patient?.id).toBe(referral!.patientId);
     expect(seen.displayName).toBe(full.displayName);
     // The officer's copy still carries no record number (role access plan, 15 Oct 2026).
     expect(seen.patient?.umrn).toBe("");
