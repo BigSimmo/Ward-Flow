@@ -167,7 +167,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
     },
   ];
-  const { toastMessage, setToastMessage, triggerToast } = useAnswerToast();
+  const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();
   const decline = useDeclineFailure(triggerToast);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -378,7 +378,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
         setDeclineOpenFor(undefined);
         setDeclineReason(undefined);
-        triggerToast("Referral declined.");
+        toastDeclined(declineReason);
       } else {
         setAnsweredHereId(undefined);
         decline.fail(movementId, outcome?.message);

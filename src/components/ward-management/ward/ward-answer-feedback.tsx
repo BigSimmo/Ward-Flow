@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useRefocusAfterRowLeaves } from "@/components/ward-management/use-refocus-after-row-leaves";
 import { StatusGlyph } from "@/components/wf";
@@ -19,7 +20,18 @@ export function useAnswerToast() {
     const timer = setTimeout(() => setToastMessage(null), 3500);
     return () => clearTimeout(timer);
   }, [toastMessage]);
-  return { toastMessage, setToastMessage, triggerToast };
+  const toastDeclined = (reason: string | undefined) => triggerToast(declineToastText(reason));
+  return { toastMessage, setToastMessage, triggerToast, toastDeclined };
+}
+
+/**
+ * "No suitable bed" and "Bed pulled for earlier referral" put the referral on this ward's waitlist
+ * in the engine, so the toast says so rather than "declined".
+ */
+export function declineToastText(reason: string | undefined) {
+  return reason && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(reason)
+    ? "Referral waitlisted for this ward."
+    : "Referral declined.";
 }
 
 type DeclineFailure = { movementId: string; message: string };
