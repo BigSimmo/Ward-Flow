@@ -483,7 +483,7 @@ export function nextStep(
     const ready = row.to ? readyBeds(row.to.unitId) : 0;
     text =
       ready > 0
-        ? `Pull a bed, ${row.to!.name} shows ${ready} ready`
+        ? `Pull the bed, ${row.to!.name} shows ${ready} ready`
         : `Wait for a bed at ${row.to?.name ?? "the ward"}`;
   } else if (row.asked.length) {
     text =

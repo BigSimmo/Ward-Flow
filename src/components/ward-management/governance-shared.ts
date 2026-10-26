@@ -69,7 +69,7 @@ export const reasonLabels: Record<AuditEvent["reasonCode"], string> = {
 };
 export const actionLabels: Record<AuditEvent["action"], string> = {
   REFER_TO_UNITS: "Refer to wards",
-  PULL_PATIENT: "Pull bed",
+  PULL_PATIENT: "Pull the bed",
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   ACCEPT_REFERRAL: "Accept referral",
   HOLD_REFERRAL_BED: "Hold referral bed",
