@@ -3421,9 +3421,6 @@
   .heroMeta {
     font-size: var(--wf-fs-13);
     color: var(--wf-hero-ink-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .heroBedListLink {
@@ -3765,13 +3762,13 @@
     outline-offset: 2px;
   }
 
+  /* Layout sweep WARD-15: the shift line wraps at every width, so the involuntary and staffing
+     status at its end is never cut off (a touch screen cannot hover to read it). */
   .heroMeta {
     display: block;
     min-width: 0;
     font-size: var(--wf-fs-12);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
   }
 
   .heroMetaIcon {
@@ -3913,6 +3910,12 @@
 @media (min-width: 48.0625rem) and (max-width: 64rem) {
   .toolSolo {
     display: none;
+  }
+
+  /* Layout sweep CRIT-08: the find box shrinks so Find, More and Raise referral stay on one row
+     beside the tabs instead of Raise referral dropping to a second line. */
+  .tabTools {
+    flex-wrap: nowrap;
   }
 
   .toolMore {
@@ -4097,6 +4100,10 @@
   flex: none;
 }
 
+.phoneHeroTitle .wardSwitchName {
+  overflow: hidden;
+}
+
 .phoneHeroTitle {
   position: relative;
   display: flex;
@@ -4111,6 +4118,11 @@
    name never pushes it off the right edge of a phone. */
 .phoneHeroTitle > .wardSwitchAnchor {
   position: static;
+  /* Layout sweep WARD-03: the anchor may shrink, so a long ward name ends in an ellipsis rather
+     than pushing the hero past a 360px screen. */
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .phoneHeroTitle > .wardSwitchAnchor > [role="menu"] {
