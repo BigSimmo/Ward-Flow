@@ -278,7 +278,7 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
             : form.signIn(email.trim(), entered));
       }}
     >
-      <h2>{form.recovery ? "Set a new password" : signup ? "Create coordinator account" : "Coordinator sign-in"}</h2>
+      <h2>{form.recovery ? "Set a new password" : signup ? "Create account" : "Sign in"}</h2>
       {!form.recovery && (
         <label>
           Email
@@ -356,7 +356,7 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
             setError(null);
           }}
         >
-          {signup ? "Use existing account" : "Create coordinator account"}
+          {signup ? "Use existing account" : "Create account"}
         </button>
       )}
       <button type="button" disabled={form.busy} onClick={form.cancel}>
@@ -646,6 +646,7 @@ function WardSharedWorkspaceContent({
     return (
       <WardAskForAccess
         canRequest={connection.canRequest === true}
+        reason={connection.noRoleReason}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
         onSignOut={connection.signOut}
@@ -656,11 +657,11 @@ function WardSharedWorkspaceContent({
       <main
         id="main-content"
         className={styles.notice}
-        aria-label="Coordinator sign-in"
+        aria-label="Ward Flow sign-in"
         aria-busy={connection.signedIn && connection.status === "loading"}
       >
-        <h1>Ward Flow coordinator</h1>
-        <p>Shared synthetic workspace. Your coordinator account has access to all Ward Flow workflows.</p>
+        <h1>Ward Flow</h1>
+        <p>Shared synthetic workspace. You see the screens your role needs.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
         {connection.signedIn && connection.status === "loading" && !connection.error && (
           <p role="status" data-testid="ward-shared-connecting">
