@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/wf";
 import { formatInstantWithDay } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import { useWardFormSave } from "../use-ward-form-save";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { DISCHARGE_DAYS, dayOptionLabel, typedTimeToInstant } from "../patients/patient-ward-change-card";
@@ -24,9 +25,10 @@ export function WardDrawerDischargeDate({
   unitId: string;
   hasDate: boolean;
 }) {
-  const { dispatch, dayZero } = useWardFlowSelect("dispatch", "dayZero");
+  const { dayZero } = useWardFlowSelect("dayZero");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
   const gate = useRoleGate()("UPDATE_EXPECTED_DISCHARGE", `drawer-${admissionId}`);
   const save = useWardFormSave(`drawer-discharge-${admissionId}`);
   const [open, setOpen] = useState(false);
@@ -57,10 +59,7 @@ export function WardDrawerDischargeDate({
     if (!future || parsed === undefined || !gate.allowed) return;
     save.submit(
       () =>
-        dispatch({
-          type: "UPDATE_EXPECTED_DISCHARGE",
-          role: routeRole,
-          now,
+        raise("UPDATE_EXPECTED_DISCHARGE", {
           admissionId,
           expectedDischargeAt: parsed,
           ...(routeRole === "ward" ? { actingUnitId: unitId } : {}),
