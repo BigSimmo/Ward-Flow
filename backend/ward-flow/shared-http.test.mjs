@@ -877,7 +877,7 @@ test("a bootstrap coordinator past its end date has no role (H-0057)", async () 
       read: async () => ({ revision: 1, dataMode: "prototype" }),
       sessionLimitMinutes: 720,
     },
-    authenticate: async (_token, { session } = {}) => {
+    authenticate: async (_token, /** @type {{ session?: any }} */ { session } = {}) => {
       if (session) session.signedInAt = session.startedAt = Date.now();
       return coordinator;
     },
