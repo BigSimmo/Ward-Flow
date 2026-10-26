@@ -865,6 +865,7 @@ export function PatientDocumentsTab({
           level={2}
           icon={Scale}
           title="Legal forms"
+          className={styles.legalHead}
           aside={<span className={styles.chip}>Current {current}</span>}
           meta={
             (movementInForce ? movement?.legalStatus : undefined) ?? patient?.legalStatus ?? "Legal status not recorded"

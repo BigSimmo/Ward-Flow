@@ -178,6 +178,12 @@
   border-top: 1px solid var(--wf-line);
 }
 
+/* Layout sweep MEET-13: a row followed by its own note draws no divider of its own, so the note
+   reads with its person and only the line between people separates them. */
+.rowItem > :first-child:not(:last-child) {
+  border-bottom: 0;
+}
+
 /* F-05 (phone review, Oct 2026): a row's ward, form or follow-up line wraps to a second line rather
    than losing its end. */
 .rowItem [class*="rowMeta"] {

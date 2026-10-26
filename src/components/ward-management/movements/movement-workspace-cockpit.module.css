@@ -815,10 +815,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  padding: 0 var(--space-3, 0.75rem);
+  /* Layout sweep PT-19: a long label ("Withdraw acceptance for <name>") wraps inside the button with
+     its side padding kept, rather than running into the border. */
+  min-height: 34px;
+  max-width: 100%;
+  padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
   font-size: 12px;
   font-weight: 600;
+  text-align: center;
   border-radius: var(--radius-sm, 0.25rem);
   border: 1px solid var(--ward-border, var(--border));
   background: var(--surface-raised, var(--surface));
@@ -831,7 +835,6 @@
     box-shadow 150ms ease,
     transform 150ms ease,
     opacity 150ms ease;
-  white-space: nowrap;
 }
 
 .controlButton:hover:not([disabled]):not([aria-disabled="true"]) {
@@ -885,6 +888,13 @@
   .blockerInput {
     font-size: max(1rem, 16px);
   }
+}
+
+/* Layout sweep PT-18: in the destination drawer a reason select is never squeezed beside its button
+   ("Choose a reas"); below 12rem of room the button takes the next line. */
+.controlRow > .controlSelect {
+  flex: 1 1 12rem;
+  min-width: min(12rem, 100%);
 }
 
 /* Phone (visual check, 21 Oct 2026): inside the transit deck its "select { min-width: 44px }" rule

@@ -833,7 +833,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               ) : null}
               {view === "history" ? historyList : null}
             </Card>
-            <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell" height="tall">
+            <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
             </PhoneSheet>
             <PhoneSheet

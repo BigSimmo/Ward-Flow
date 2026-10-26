@@ -128,6 +128,8 @@
 }
 
 .emptyCell {
+  margin: 0;
+  padding: var(--wf-s-6) var(--wf-s-4);
   color: var(--wf-ink-3);
   text-align: center;
 }
@@ -445,9 +447,9 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(9rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 8rem 7rem;
+  grid-template-columns: 4.5rem minmax(8rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 7.5rem 6.5rem;
   align-items: center;
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-2);
   min-width: 44rem;
   padding: 0 var(--wf-s-4);
   box-sizing: border-box;

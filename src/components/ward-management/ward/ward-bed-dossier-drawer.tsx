@@ -21,6 +21,7 @@ import { deriveAfternoonDischarges } from "@/components/ward-management/ward-der
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { BlockerEditor, useBlockerSave, type BlockerSave } from "./ward-bed-blocker-editor";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -64,7 +65,9 @@ interface WardBedDossierDrawerProps {
   drawerLeavingDestination: LeavingDestination;
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
-  onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
+  /** Records or clears the stay's discharge blocker. Absent where this desk may not: the blocker
+   *  controls are then not offered, rather than a Save that does nothing. */
+  onUpdateBlocker?: (admissionId: string, blocker: string | null) => ReturnType<WardCommandDispatch>;
   /** Records a new observation level for the stay (fix plan item 10). Absent where this desk may not. */
   onSetObservation?: (
     admissionId: string,
@@ -201,6 +204,14 @@ export function WardBedDossierDrawer({
   const tabRefs = useRef<TabButtons>(new Map());
   const isPhone = useIsPhone();
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
+  const blockerSave = useBlockerSave(
+    bedItem?.stayAdmissionId ?? bedItem?.admissionId,
+    bedItem?.admissionId,
+    onUpdateBlocker,
+    setQuickBlockerOpen,
+  );
+  const saveBlocker = blockerSave.submit;
+  const setBlockerOpen = blockerSave.setOpen;
   // Audit 24-1 B-04: the drawer follows the person it was opened for, not the bed number. A pulled
   // stay keeps the same admission when it arrives, so the stay's id is the key.
   const personKey = bedItem?.stayAdmissionId ?? bedItem?.admissionId;
@@ -419,7 +430,7 @@ export function WardBedDossierDrawer({
 
   const openBlockerEditor = () => {
     const opening = !quickBlockerOpen;
-    setQuickBlockerOpen(opening);
+    setBlockerOpen(opening);
     if (opening) {
       setTab("plan");
       setTimeout(() => blockerSelectRef.current?.focus(), 0);
@@ -561,7 +572,7 @@ export function WardBedDossierDrawer({
           personHref={personHref}
           selectedBed={selectedBed}
           quickBlockerOpen={quickBlockerOpen}
-          setQuickBlockerOpen={setQuickBlockerOpen}
+          setQuickBlockerOpen={setBlockerOpen}
           selectedBlocker={selectedBlocker}
           setSelectedBlocker={setSelectedBlocker}
           blockerSelectRef={blockerSelectRef}
@@ -569,7 +580,7 @@ export function WardBedDossierDrawer({
           setDrawerLeavingDestination={setDrawerLeavingDestination}
           onClose={onClose}
           onRecordLeft={() => setConfirmStep("leave")}
-          onUpdateBlocker={onUpdateBlocker}
+          blockerSave={blockerSave}
           onSetObservation={onSetObservation}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
           onMarkBack={onMarkBack}
@@ -809,51 +820,14 @@ export function WardBedDossierDrawer({
                         (bedItem?.dischargeBarrier ? <Row label="Barrier">{bedItem.dischargeBarrier}</Row> : null)}
                     </dl>
                     {prepNote}
-                    {bedItem?.blockReason && bedItem?.admissionId && onUpdateBlocker ? (
-                      <div className={styles.editor}>
-                        <Button
-                          variant="ghost"
-                          className={styles.pill}
-                          onClick={() => {
-                            if (bedItem.admissionId) onUpdateBlocker(bedItem.admissionId, null);
-                            setQuickBlockerOpen(false);
-                          }}
-                        >
-                          Clear blocker
-                        </Button>
-                      </div>
-                    ) : null}
-                    {quickBlockerOpen ? (
-                      <div className={styles.editor}>
-                        <select
-                          ref={blockerSelectRef}
-                          className={styles.select}
-                          value={selectedBlocker}
-                          aria-label="Discharge blocker"
-                          onChange={(e) => {
-                            setSelectedBlocker(e.target.value as BedReleaseBlocker);
-                          }}
-                        >
-                          {BED_RELEASE_BLOCKERS.map((blocker) => (
-                            <option key={blocker} value={blocker}>
-                              {blocker}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          variant="sec"
-                          className={styles.pill}
-                          onClick={() => {
-                            if (bedItem?.admissionId && onUpdateBlocker) {
-                              onUpdateBlocker(bedItem.admissionId, selectedBlocker);
-                            }
-                            setQuickBlockerOpen(false);
-                          }}
-                        >
-                          Save blocker
-                        </Button>
-                      </div>
-                    ) : null}
+                    <BlockerEditor
+                      save={blockerSave}
+                      blockReason={bedItem?.blockReason}
+                      open={quickBlockerOpen}
+                      selected={selectedBlocker}
+                      setSelected={setSelectedBlocker}
+                      selectRef={blockerSelectRef}
+                    />
                   </Section>
                   {criteriaCard}
                   {sentJourneyControls ? (
@@ -990,15 +964,17 @@ export function WardBedDossierDrawer({
                   bed) has nothing for them to change, so they are not offered. */}
               {bedItem?.admissionId ? (
                 <>
-                  <Button
-                    variant="sec"
-                    size="lg"
-                    className={styles.pill}
-                    aria-expanded={quickBlockerOpen}
-                    onClick={openBlockerEditor}
-                  >
-                    {bedItem.blockReason ? "Update blocker" : "Record blocker"}
-                  </Button>
+                  {saveBlocker ? (
+                    <Button
+                      variant="sec"
+                      size="lg"
+                      className={styles.pill}
+                      aria-expanded={quickBlockerOpen}
+                      onClick={openBlockerEditor}
+                    >
+                      {bedItem.blockReason ? "Update blocker" : "Record blocker"}
+                    </Button>
+                  ) : null}
                   <Button
                     variant="sec"
                     size="lg"
@@ -1104,7 +1080,8 @@ interface PhoneBedSheetProps {
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onClose: () => void;
   onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination) => void;
-  onUpdateBlocker?: (admissionId: string, blocker: string | null) => void;
+  /** The blocker save; its `submit` is absent where this desk may not record one. */
+  blockerSave: BlockerSave;
   onSetObservation?: (
     admissionId: string,
     observation: Observation,
@@ -1163,7 +1140,7 @@ function PhoneBedSheet({
   setDrawerLeavingDestination,
   onClose,
   onRecordLeft,
-  onUpdateBlocker,
+  blockerSave,
   onSetObservation,
   onMarkAtEd,
   onMarkBack,
@@ -1312,49 +1289,14 @@ function PhoneBedSheet({
                 ) : null}
               </dl>
               {planNote}
-              {bedItem?.blockReason && admissionId && onUpdateBlocker ? (
-                <div className={styles.editor}>
-                  <Button
-                    variant="ghost"
-                    className={styles.pill}
-                    onClick={() => {
-                      onUpdateBlocker(admissionId, null);
-                      setQuickBlockerOpen(false);
-                    }}
-                  >
-                    Clear blocker
-                  </Button>
-                </div>
-              ) : null}
-              {quickBlockerOpen ? (
-                <div className={styles.editor}>
-                  <select
-                    ref={blockerSelectRef}
-                    className={styles.select}
-                    value={selectedBlocker}
-                    aria-label="Discharge blocker"
-                    onChange={(e) => {
-                      setSelectedBlocker(e.target.value as BedReleaseBlocker);
-                    }}
-                  >
-                    {BED_RELEASE_BLOCKERS.map((blocker) => (
-                      <option key={blocker} value={blocker}>
-                        {blocker}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    variant="sec"
-                    className={styles.pill}
-                    onClick={() => {
-                      if (admissionId && onUpdateBlocker) onUpdateBlocker(admissionId, selectedBlocker);
-                      setQuickBlockerOpen(false);
-                    }}
-                  >
-                    Save blocker
-                  </Button>
-                </div>
-              ) : null}
+              <BlockerEditor
+                save={blockerSave}
+                blockReason={bedItem?.blockReason}
+                open={quickBlockerOpen}
+                selected={selectedBlocker}
+                setSelected={setSelectedBlocker}
+                selectRef={blockerSelectRef}
+              />
               {planCriteria}
               {sentJourney ? (
                 <>
@@ -1481,7 +1423,7 @@ function PhoneBedSheet({
                 Move bed
               </Button>
             ) : null}
-            {admissionId ? (
+            {admissionId && blockerSave.submit ? (
               <Button
                 variant={heldUpNow ? "pri" : "sec"}
                 size="lg"

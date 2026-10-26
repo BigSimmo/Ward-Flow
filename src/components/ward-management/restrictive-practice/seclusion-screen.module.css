@@ -78,8 +78,14 @@
   padding: var(--wf-s-2) 0;
 }
 
+/* The row's action keeps its whole label; the text beside it wraps instead. */
+.row > :last-child:not(.rowText) {
+  flex: none;
+}
+
 .rowText {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
