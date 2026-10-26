@@ -824,7 +824,7 @@ test("an unsupported receipt lookup returns not found rather than an internal er
   assert.equal(receipt.status, 404);
 });
 
-test("the server logs each full read of a desk's list or TV board, never an unchanged poll (H-0731)", async () => {
+test("the server logs each full read of a desk's list or TV board, and the TV's unchanged polls (H-0731)", async () => {
   const logged = [];
   let changed = false;
   const { calls, handler } = setup(coordinator, "prototype", {
@@ -848,11 +848,17 @@ test("the server logs each full read of a desk's list or TV board, never an unch
   const odd = request();
   odd.headers.set("x-ward-screen", "patient");
   assert.equal((await handler(odd)).status, 200);
+  // A desk that moves to the TV board polls unchanged records, and the TV still logs them.
+  changed = false;
+  const tvPoll = request("?since=7");
+  tvPoll.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tvPoll)).status, 200);
   assert.deepEqual(logged, [
     [coordinator, "list"],
     [coordinator, "list"],
     [coordinator, "tv"],
     [coordinator, "list"],
+    [coordinator, "tv"],
   ]);
   assert.equal(calls.length, 3);
   // A log that cannot be written fails the read, so nothing goes out unlogged.

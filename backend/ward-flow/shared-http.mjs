@@ -361,9 +361,12 @@ export function createSharedHandler({
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // H-0731: the server logs, before sending them, that this desk read its records. An
-        // unchanged poll sends none, so it is not logged. A failed log write fails the read.
+        // unchanged poll sends none, so it is not logged, except on the TV board: a desk that moves
+        // to the TV keeps showing the records it already holds, so the TV logs its own polls too
+        // (the store logs at most once a window). A failed log write fails the read.
+        const tvScreen = request.headers.get(SCREEN) === "tv";
         const logListRead = async () => {
-          if (store.logList) await store.logList(view, request.headers.get(SCREEN) === "tv" ? "tv" : "list");
+          if (store.logList) await store.logList(view, tvScreen ? "tv" : "list");
         };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const params = new URL(request.url).searchParams;
@@ -379,6 +382,7 @@ export function createSharedHandler({
           );
           if (polled.notModified) {
             if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+            if (tvScreen) await logListRead();
             return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });
           }
           if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
