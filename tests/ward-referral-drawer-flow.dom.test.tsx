@@ -137,7 +137,7 @@ describe("approved four-tab referral drawer journey", () => {
     });
     next("Next, wards");
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
-    const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
+    const first = within(locations).getByRole("checkbox", { name: /Dabakarn/ });
     fireEvent.click(first);
     expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();
     // The seeded referrals already carry authored intakes, so count from that baseline.
