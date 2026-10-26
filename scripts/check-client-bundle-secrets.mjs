@@ -4,7 +4,10 @@
 // It does not prove the absence of all exposed secrets.
 //
 // Usage:
-//   node scripts/check-client-bundle-secrets.mjs
+//   node scripts/check-client-bundle-secrets.mjs [--require-bundle]
+//
+// --require-bundle (CI, after `next build`): a missing or empty `.next/static` fails instead of
+// passing with only the source scan, so the built-chunk scan cannot be skipped silently (H-0295).
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -91,6 +94,12 @@ for (const chunk of chunks) {
       violations.push({ file: chunk, line, rule: pattern.name });
     }
   }
+}
+if (process.argv.includes("--require-bundle") && chunks.length === 0) {
+  console.error(
+    `[check-client-bundle-secrets] FAILED: --require-bundle was given but no built client chunks were found in ${BUNDLE_DIR}. Run it after next build.`,
+  );
+  process.exit(1);
 }
 const bundleSummary =
   chunks.length > 0

@@ -265,6 +265,12 @@ function requireWorkflow(source) {
   exact("build", "Check the phone script budget", "node scripts/check-script-budget.mjs", installed);
   exact(
     "build",
+    "Scan the built client bundle for secrets",
+    "npm run check:client-bundle-secrets -- --require-bundle",
+    installed,
+  );
+  exact(
+    "build",
     "Merge the latest main before measuring",
     "node scripts/ward-ci-public/merge-latest-main.mjs",
     expression("github.event_name == 'pull_request'"),

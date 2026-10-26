@@ -615,6 +615,10 @@ jobs:
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/check-script-budget.mjs
+      # H-0295: the scan reads .next/static only when a build has left it, so it runs after the build.
+      - name: Scan the built client bundle for secrets
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:client-bundle-secrets -- --require-bundle
       - name: Save production Next cache on main
         if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.production-cache.outcome == 'success' && steps.production-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
