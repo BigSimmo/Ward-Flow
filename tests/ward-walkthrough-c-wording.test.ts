@@ -31,7 +31,10 @@ describe("walk-through C wording", () => {
   });
 
   it("WT-40: no risks reads as a sentence", () => {
-    const text = referralIsbarText({ ...input, risks: [], clearanceChecklist: "" }, { referralId: "R-1", sentAt: "10:50" });
+    const text = referralIsbarText(
+      { ...input, risks: [], clearanceChecklist: "" },
+      { referralId: "R-1", sentAt: "10:50" },
+    );
     expect(text).toContain("A: Risks: None selected. Medical clearance: Cleared.");
   });
 
