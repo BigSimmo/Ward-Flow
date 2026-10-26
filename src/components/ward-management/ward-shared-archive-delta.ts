@@ -10,7 +10,7 @@
 export const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
 export type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
 
-export type ArchiveEntry = {
+type ArchiveEntry = {
   collection: ArchivedCollection;
   body: { id: string };
   closedAt?: number;
