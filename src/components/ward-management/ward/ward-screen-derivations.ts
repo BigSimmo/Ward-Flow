@@ -230,9 +230,9 @@ export function wardBedRoster({
     const tentDiag = admission?.tentativeDiagnosis
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
       : undefined;
-    const patientAge = patientInfo?.patient
-      ? patientAgeYears(patientInfo.patient, dayZero ? calendarDateOf(now, dayZero) : new Date())
-      : null;
+    // TC-07 (H-0776): the age is read on the board's own day. `dayZero` is always passed, so there is
+    // no real-date fallback here: a demo jumped past a birthday shows the age on the demo day.
+    const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, calendarDateOf(now, dayZero)) : null;
     const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? null;
     const patientHomeRegion = admission?.homeRegion ?? null;
 
