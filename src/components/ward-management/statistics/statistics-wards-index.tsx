@@ -220,7 +220,7 @@ export function StatisticsWardsIndexScreen() {
     // These count wards, so they say so: the hero's "Pulled, not arrived" counts beds (UX audit 21 Oct 2026).
     { id: "pending", label: "With a bed being made ready", count: count((row) => row.pending > 0) },
     { id: "pulled", label: "With a pulled bed", count: count((row) => row.pulled > 0) },
-    { id: "blocked", label: "With a blocked discharge", count: count((row) => row.blocked > 0) },
+    { id: "blocked", label: "With a discharge held up", count: count((row) => row.blocked > 0) },
   ];
 
   return (
@@ -244,7 +244,7 @@ export function StatisticsWardsIndexScreen() {
       }
       phone={{
         title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,
-        sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${blockedTotal} blocked ${plural(blockedTotal, "discharge", "discharges")}`,
+        sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${blockedTotal} ${plural(blockedTotal, "discharge", "discharges")} held up`,
         stats: (
           <>
             <HeroStat
@@ -278,7 +278,7 @@ export function StatisticsWardsIndexScreen() {
             label={pendingBeds > 0 ? `Ready beds, ${pendingBeds} being made ready` : "Ready beds"}
           />
           <HeroStat value={pulledBeds} label="Pulled, not arrived" />
-          <HeroStat value={blockedTotal} label="Blocked discharges" />
+          <HeroStat value={blockedTotal} label="Discharges held up" />
         </>
       }
     >
@@ -499,7 +499,7 @@ export function StatisticsWardsIndexScreen() {
               icon={CalendarClock}
               id="mean-stay"
               className={index.anchorTarget}
-              title="Mean stay by ward"
+              title="Stay so far, people in a bed now"
               aside={<span className={cx(styles.muted, index.phoneHide)}>Top 10, days</span>}
               data-testid="ward-statistics-wards-mean-stay"
             >
@@ -527,7 +527,7 @@ export function StatisticsWardsIndexScreen() {
               icon={Lock}
               id="blocked"
               className={index.anchorTarget}
-              title="Blocked discharges"
+              title="Discharges held up"
               aside={<span className={cx(styles.muted, index.phoneHide)}>{blockedTotal} in all</span>}
               data-testid="ward-statistics-wards-blocked"
             >

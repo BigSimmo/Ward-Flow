@@ -254,7 +254,6 @@ export function ReferralBoard({
     patients = [],
     admissions = [],
     bedReleases = [],
-    leaveBeds = [],
   } = useWardFlowSelect(
     "referrals",
     "units",
@@ -264,7 +263,6 @@ export function ReferralBoard({
     "patients",
     "admissions",
     "bedReleases",
-    "leaveBeds",
   );
   const now = useWardFlowClock();
   const sender = useSenderPresentation();
@@ -476,8 +474,8 @@ export function ReferralBoard({
     value: decidedToday.filter((r) => Math.floor(minuteOfDay(decidedAtFor(r)!) / 60) === hour).length,
   }));
   const bedsSummary = useMemo(
-    () => bedsReadySummary(units, bedReleases, leaveBeds, now),
-    [units, bedReleases, leaveBeds, now],
+    () => bedsReadySummary(units, admissions, bedReleases, now),
+    [units, admissions, bedReleases, now],
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
     const person = resolveSubjectPatient(referral, resolverState);

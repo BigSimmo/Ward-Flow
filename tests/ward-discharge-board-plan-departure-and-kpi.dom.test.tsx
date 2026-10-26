@@ -83,9 +83,7 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     // "Confirmed"/"Expected" also label per-row badges elsewhere on the board, so each assertion
     // is scoped to its own KPI card (by the testid added alongside this fix) rather than matched
     // against the whole document.
-    expect(
-      within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Discharges held up"),
-    ).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Releases held up")).toBeInTheDocument();
     // "Confirmed today"/"Discharged today"/"Expected on round" are gone — none of the three
     // buckets is scoped to a calendar day or an invented "round" workflow.
     expect(screen.queryByText("Confirmed today")).not.toBeInTheDocument();

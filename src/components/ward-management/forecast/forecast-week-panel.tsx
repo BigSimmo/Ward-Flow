@@ -8,7 +8,8 @@
 import { useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { BED_KIND_LABEL, kindRangeWord } from "./forecast-by-kind";
 import { horizonDays, sevenDayHorizon } from "./forecast-horizon";
@@ -31,6 +32,8 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
     0,
   );
   const hasWeekend = days.some((day) => day.weekend || day.holiday);
+  // H-0766: the last day shown is past the WA holiday list, so say holidays there are not marked.
+  const pastHolidayList = !holidaysListedFor(calendarDateOf(now + (days.length - 1) * MINUTES_PER_DAY, dayZero));
 
   return (
     <WardPanel
@@ -106,6 +109,9 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
             : ""}
           Days after tomorrow are in italics because dates that far out often move. On Fridays and before WA public
           holidays the forecast adds a third day. Tomorrow is likely {kindRangeWord(tomorrow.total.likely)}.
+          {pastHolidayList
+            ? ` WA public holidays after ${WA_PUBLIC_HOLIDAYS_LAST_YEAR} are not listed yet, so they are not marked.`
+            : ""}
         </p>
       </div>
     </WardPanel>

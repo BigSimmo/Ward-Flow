@@ -281,6 +281,16 @@ describe("brief and alerts", () => {
     for (const line of brief) expect(line.text).toMatch(/\.$/);
   });
 
+  // H-0361: a target that is not a whole number of hours is stated as Settings gives it.
+  it("states a 4h 30m access target as it is set, never rounded to whole hours", () => {
+    const halfHour = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 4 * 60 + 30);
+    const ed = forecastBrief(tomorrow, levers, halfHour, (id) => `ED ${id}`).find((line) => line.label === "ED waits")!;
+    expect(ed.text).toContain("4h 30m access target");
+    expect(ed.text).not.toMatch(/\b[45] hours\b/);
+    const whole = forecastBrief(tomorrow, levers, risk, (id) => `ED ${id}`).find((line) => line.label === "ED waits")!;
+    expect(whole.text).toContain("24 hour access target");
+  });
+
   it("raises a bed type alert only at or past its threshold", () => {
     const worst = Math.min(...tomorrow.kinds.map((kind) => kind.likely));
     const thresholds = { shortBeds: Math.max(1, -worst), edLeadMinutes: 12 * 60, worseBeds: 2 };

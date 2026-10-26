@@ -14,7 +14,7 @@ import type { HealthService, Movement, Referral, Unit } from "@/components/ward-
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { inEdOver } from "@/components/ward-management/ward-shared-figures";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import { type MovementLegState } from "./movements-derivations";
 import { type WfFill, type WfTone } from "@/components/wf";
@@ -242,7 +242,6 @@ export type HeroHighlight = { id: string; label: string; tone?: WfTone; test: (m
  * form expiry keeps its own "Next expiry" jump beside the title, and an escort shows on its row.
  */
 export function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
-  const waited = (movement: Movement) => Math.max(now - movement.openedAt, 0);
   const hours = (minutes: number) => `${Math.round(minutes / 60)}h`;
   return [
     { id: "tier1", label: "Tier 1", test: (m) => isOpen(m) && m.urgency === 1 },
@@ -251,14 +250,16 @@ export function heroHighlights(now: Instant, accessTarget: number): HeroHighligh
       label: `Past ${hours(accessTarget)}`,
       tone: "danger",
       // Audit 24-4 NA2-10 (25 Oct 2026): people still in an ED, as Waiting's "Over 24h" counts them.
-      test: (m) => isOpen(m) && isWaitingInEd(m) && waited(m) >= accessTarget,
+      test: (m) => inEdOver(m, now, accessTarget),
     },
     {
       id: "over",
       label: `Over ${hours(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
       tone: "warning",
       // Audit 6 (Josh, 20 Oct 2026): 8 hours or more, past 24 hours included, as Waiting counts it.
-      test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+      // NA3-03 (audit 26 Oct 2026): and the same people, those still in an ED. Counting every open
+      // journey read 19 here against Waiting's 15.
+      test: (m) => inEdOver(m, now, ED_SEVERE_PRESSURE_WAIT_MINUTES),
     },
   ];
 }

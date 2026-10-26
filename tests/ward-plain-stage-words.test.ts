@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { kpiCardLabel } from "@/components/ward-management/discharges/discharge-board-model";
 
 describe("discharge labels a ward nurse reads at a glance", () => {
-  it('says "Discharges held up", the owner-approved words, not "Blocked releases"', () => {
-    expect(kpiCardLabel("blocked", "releases")).toBe("Discharges held up");
+  it('says "Releases held up", not "Blocked releases", and keeps "Discharges held up" for patients (decision 15)', () => {
+    expect(kpiCardLabel("blocked", "releases")).toBe("Releases held up");
     expect(kpiCardLabel("blocked", "records")).toBe("Records held up");
   });
 });

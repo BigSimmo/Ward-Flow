@@ -984,7 +984,7 @@ export function StatisticsScreen({
             <div className={styles.grid3}>
               <StatCard
                 icon={Lock}
-                title="Blocked discharges"
+                title="Discharges held up"
                 data-testid="ward-statistics-blocked-discharges-by-reason"
                 aside={
                   <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
@@ -999,7 +999,7 @@ export function StatisticsScreen({
               >
                 <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
                   <BarList
-                    label="Blocked discharges by blocker"
+                    label="Discharges held up, by reason"
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
