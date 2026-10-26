@@ -126,6 +126,8 @@ describe("clinical values file", () => {
       // Role access plan v2 (Josh, 23 Oct 2026, D-80): the longest a role may be granted for.
       accessMaxTerm: 365,
       // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
+      // Audit F3, Option A (26 Oct 2026): General's interval, synthetic until Josh approves it.
+      observationGeneral: 1,
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,
     });
@@ -301,8 +303,9 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   },
 ];
 
-/** Synthetic fixtures build made-up records; their times are data, not thresholds. */
-const FIXTURE_FILE = /(?:-seed\.ts|^ward-movements\.ts)$/;
+/** Synthetic fixtures build made-up records; their times are data, not thresholds.
+ *  F-17 (26 Oct 2026): the seeded referrals moved out of ward-movements.ts into its sibling. */
+const FIXTURE_FILE = /(?:-seed\.ts|^ward-movements(?:-referrals)?\.ts)$/;
 const VALUES_FILE = "ward-clinical-values.ts";
 
 function wardFiles(dir: string): string[] {

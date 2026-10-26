@@ -15,6 +15,7 @@ import {
 
 import { useIsPhone } from "@/components/wf";
 import { isGlobalSearchShortcut } from "./search/search-shortcut";
+import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import type { WardGlobalSearchProps } from "./ward-global-search";
 import styles from "./ward-global-search.module.css";
 // The palette's preview styles stay in the shell's own stylesheet, in the same order as before, so
@@ -32,7 +33,16 @@ import "./search/global-search-preview.module.css";
 const loadSearch = () => import("./ward-global-search");
 const SearchLoaded = dynamic(() => loadSearch().then((m) => m.WardGlobalSearch));
 
+/**
+ * WT-38 (walk-through, 26 Oct 2026): a new desk starts with an empty search, not the last desk's
+ * text. The search itself stays role-blind; only this wrapper starts it afresh when the desk changes.
+ */
 export function WardGlobalSearch(props: WardGlobalSearchProps) {
+  const desk = useEffectiveWardAccess();
+  return <DeskSearch key={`${desk.role}:${JSON.stringify(desk.scope)}`} {...props} />;
+}
+
+function DeskSearch(props: WardGlobalSearchProps) {
   const phone = useIsPhone();
   // Settled by the first render (the server's phone guess), so resizing a window never swaps a
   // working search back to the placeholder.

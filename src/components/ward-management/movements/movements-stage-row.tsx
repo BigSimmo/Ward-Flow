@@ -12,7 +12,7 @@ import {
   transportLeg,
   transportNeedState,
 } from "@/components/ward-management/ward-derivations";
-import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useRef } from "react";
@@ -204,7 +204,8 @@ export function StageRow({
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
-    const formTitle = legalFormNameLabelFirst(movement.legalForm);
+    // Code first, so a cut-off cell still tells Form 3B from Form 3C (their titles start alike).
+    const formTitle = legalFormName(movement.legalForm);
     if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
       // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
       legalText = `${formTitle} - ended`;
