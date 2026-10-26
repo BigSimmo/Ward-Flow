@@ -366,7 +366,7 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Find a patient",
     keywords: "search patient name umrn look up lookup",
     answer:
-      "Type a name or UMRN in the header search. / or Ctrl+K jumps there on a keyboard. Questions such as over 24 hours or no bed yet also work.",
+      "Type a name or UMRN in the header search. / or Ctrl+K jumps there on a keyboard. Questions such as no bed yet also work.",
     desks: CLINICAL_DESKS,
     showMe: [
       {
