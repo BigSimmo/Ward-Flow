@@ -172,7 +172,7 @@ function onAnOpenJourney(state: WardFlowState, patientId: string): boolean {
 
 /**
  * The bookings still to count as beds needed: booked, on a known ward, due by `until`, and not a
- * linked patient already counted through an open movement waiting for a bed (`waitingMovements`).
+ * linked patient already counted through a waiting movement or already holding a pulled/occupied bed.
  * Initials-only bookings are always counted: nothing links them to a movement.
  */
 export function plannedAdmissionsStillNeedingABed(
@@ -180,16 +180,24 @@ export function plannedAdmissionsStillNeedingABed(
   unitIds: ReadonlySet<string>,
   until: Instant,
   waitingMovements: readonly Movement[],
+  admissions: readonly Admission[] = [],
 ): PlannedAdmission[] {
-  const waitingPatientIds = new Set(
+  const accountedPatientIds = new Set(
     waitingMovements.map((movement) => movement.patientId).filter((id): id is NonNullable<typeof id> => Boolean(id)),
   );
+  // The booking remains on the calendar after an ordinary movement is pulled or arrives.
+  // Its bed has already left Ready; do not count that same person as fresh demand again.
+  for (const admission of admissions) {
+    if (admission.patientId && (admission.state === "pulled" || admission.state === "occupied")) {
+      accountedPatientIds.add(admission.patientId);
+    }
+  }
   return planned.filter(
     (booking) =>
       booking.state === "booked" &&
       unitIds.has(booking.unitId) &&
       booking.expectedArrivalAt <= until &&
-      (booking.patientId === null || !waitingPatientIds.has(booking.patientId)),
+      (booking.patientId === null || !accountedPatientIds.has(booking.patientId)),
   );
 }
 

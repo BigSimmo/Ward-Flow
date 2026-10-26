@@ -10,6 +10,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
+import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
 import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
@@ -394,16 +395,7 @@ export function WardHomeTab({
   const shiftChecks = [capacityConfirmedThisShift, morningRollupConfirmed, referralsClear];
   const checksDone = shiftChecks.filter(Boolean).length;
 
-  type LogRow = {
-    key: string;
-    at: number;
-    timeLabel: string;
-    title: string;
-    detail: string;
-    status: string;
-    nested?: Array<{ key: string; detail: string }>;
-  };
-  const logRows: LogRow[] = [];
+  const logRows: WardShiftLogRow[] = [];
   if (capacityConfirmed && unit.allocatable.confirmedAt !== undefined) {
     logRows.push({
       key: "capacity",
@@ -414,32 +406,7 @@ export function WardHomeTab({
       status: "Verified",
     });
   }
-  if (pendingBedReleases.length === 1) {
-    const release = pendingBedReleases[0];
-    logRows.push({
-      key: release.id,
-      at: release.confirmedAt,
-      timeLabel: formatInstantWithDay(release.confirmedAt, now),
-      title: "Bed expected out",
-      detail: `Departure ${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
-      status: release.state === "confirmed" ? "Confirmed" : "Expected",
-    });
-  } else if (pendingBedReleases.length > 1) {
-    const ordered = [...pendingBedReleases].sort((left, right) => left.expectedAt - right.expectedAt);
-    const next = ordered[0];
-    logRows.push({
-      key: "releases",
-      at: Math.max(...pendingBedReleases.map((release) => release.confirmedAt)),
-      timeLabel: formatInstantWithDay(Math.max(...pendingBedReleases.map((release) => release.confirmedAt)), now),
-      title: `${pendingBedReleases.length} beds expected out`,
-      detail: `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
-      status: "Expected",
-      nested: ordered.map((release) => ({
-        key: release.id,
-        detail: `${formatInstant(release.expectedAt)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
-      })),
-    });
-  }
+  logRows.push(...pendingDepartureLogRows(pendingBedReleases, admissions, now));
   for (const release of dischargedBedReleases) {
     logRows.push({
       key: `clean-${release.id}`,
