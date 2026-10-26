@@ -364,7 +364,13 @@ export function OnCallScreen() {
         eyebrow={
           atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
         }
-        title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
+        // H-0887: the page heading names the page, not only the count.
+        title={
+          <>
+            <SrOnly>On-call:</SrOnly>{" "}
+            {answering.length} {answering.length === 1 ? "line" : "lines"} answering
+          </>
+        }
         // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
         titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
         stats={

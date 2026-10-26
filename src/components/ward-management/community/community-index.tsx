@@ -458,7 +458,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
           title={
             <>
-              <SrOnly>Community: </SrOnly>
+              <SrOnly>Community:</SrOnly>{" "}
               <b className={styles.heroFigure}>{allTeams.length}</b> names
             </>
           }

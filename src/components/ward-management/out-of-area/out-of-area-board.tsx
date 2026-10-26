@@ -793,7 +793,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         <Hero
           level={1}
           eyebrow={`Out of area · Statewide · ${bedDays} bed days · longest ${longest} days`}
-          title={`${entries.length} away from home`}
+          // H-0887: the page heading names the page, not only the count.
+          title={
+            <>
+              <SrOnly>Out of area:</SrOnly>{" "}
+              {entries.length} away from home
+            </>
+          }
           aside={
             <span className={styles.heroActs}>
               <span className={styles.since} data-testid="ward-out-of-area-since">

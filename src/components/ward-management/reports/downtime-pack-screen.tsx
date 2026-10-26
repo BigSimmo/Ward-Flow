@@ -405,7 +405,7 @@ export function DowntimePackScreen() {
             </span>
           }
         />
-        <div className={styles.tableWrap}>
+        <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Beds by ward table">
           <table
             className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
             data-testid="ward-downtime-beds"
@@ -508,7 +508,7 @@ export function DowntimePackScreen() {
         {pack.edQueue.length === 0 ? (
           <p className={styles.cardNote}>0 waiting. Nobody was in an ED queue when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="ED queue table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-ed"
@@ -570,7 +570,7 @@ export function DowntimePackScreen() {
         {pack.pendingMoves.length === 0 ? (
           <p className={styles.cardNote}>0 pending. No accepted move was under way when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pending moves table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-moves"
@@ -620,7 +620,7 @@ export function DowntimePackScreen() {
         {pack.legalForms.length === 0 ? (
           <p className={styles.cardNote}>0 forms. No legal form was on an open movement when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Legal forms table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-legal"
