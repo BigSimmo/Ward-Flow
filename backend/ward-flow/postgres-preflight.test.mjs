@@ -58,6 +58,7 @@ const ALL_VERSIONS = Array.from({ length: LATEST_MIGRATION }, (_, index) => inde
 
 function fixture(version = LATEST_MIGRATION) {
   const owner = "migration_admin";
+  /** @type {{ owner: string, objects: any[], constraints: any[], functions: any[], triggers: any[], sequences: any[], unknown_types: number, rules: number, policies: any[], extensions: number }} */
   const catalog = {
     owner,
     objects: [],
@@ -115,6 +116,7 @@ function fixture(version = LATEST_MIGRATION) {
   for (const sql of sqlFiles.slice(0, version)) {
     for (const match of sql.matchAll(/CREATE TABLE ward_flow\.(\w+) \(([\s\S]*?)\n\);/g)) {
       const [, name, body] = match;
+      /** @type {{ name: string, kind: string, owner: string, persistence: string, rls: boolean, force_rls: boolean, columns: any[] }} */
       const table = { name, kind: "r", owner, persistence: "p", rls: false, force_rls: false, columns: [] };
       catalog.objects.push(table);
       for (const line of body.split(/\r?\n/).map((line) => line.trim())) {
@@ -216,10 +218,12 @@ function fixture(version = LATEST_MIGRATION) {
   for (const object of catalog.objects) object.inherited = false;
   if (version >= 8) {
     const sql = sqlFiles[7];
-    const [, role] = /ADD CONSTRAINT audit_actor_role_check\s+CHECK \(([^;]+)\);/.exec(sql);
+    const [, role] = /** @type {RegExpExecArray} */ (
+      /ADD CONSTRAINT audit_actor_role_check\s+CHECK \(([^;]+)\);/.exec(sql)
+    );
     catalog.constraints.find((c) => c.table_name === "audit" && c.definition.includes("actor_role")).definition =
       `CHECK (${checkExpressions("CHECK (" + role + ")")[0]})`;
-    const [, scope] = /ADD COLUMN actor_scope ([^;]+);/.exec(sql);
+    const [, scope] = /** @type {RegExpExecArray} */ (/ADD COLUMN actor_scope ([^;]+);/.exec(sql));
     catalog.objects.find((o) => o.name === "audit").columns.push(column("actor_scope", scope));
     checks("audit", scope);
   }
@@ -238,7 +242,9 @@ function fixture(version = LATEST_MIGRATION) {
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
   if (version >= 13) {
-    const [, surface] = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[12]);
+    const [, surface] = /** @type {RegExpExecArray} */ (
+      /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[12])
+    );
     catalog.constraints.find((c) => c.table_name === "record_access" && c.definition.includes("surface")).definition =
       `CHECK (${checkExpressions(surface)[0]})`;
   }

@@ -71,7 +71,7 @@ export function readConfig(env = process.env, dependencies = {}) {
         ? injected[databaseProvider]
         : DATABASE_PROVIDERS[databaseProvider];
     postgres = readDatabase(env);
-    if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
+    if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has((env.WARD_WORKSPACE_ID ?? "").toLowerCase()))
       throw new Error("Invalid workspace configuration");
   }
   return {

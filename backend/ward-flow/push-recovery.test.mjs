@@ -38,13 +38,14 @@ test("sweeps retire an interrupted final push claim only after its lease, withou
     engine: {},
     clock: () => now,
     retryAfterMs: 60_000,
-    push: {
+    // This sweep never subscribes a device, so it has no per-account limit.
+    push: /** @type {any} */ ({
       coordinatorIds: [],
       send: async () => {
         sends++;
       },
       payload: () => ({}),
-    },
+    }),
     log: (entry) => assert.fail(JSON.stringify(entry)),
   });
   await store.sweepPush();

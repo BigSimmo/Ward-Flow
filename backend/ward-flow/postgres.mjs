@@ -148,6 +148,16 @@ export function storedAuditChanges(changes) {
 }
 
 /**
+ * Phone push as createWorkspaceStore uses it: push.mjs `createPush`.
+ * @typedef {{
+ *   send: (subscription: any, payload: any) => Promise<any>,
+ *   payload: (alerts: any) => any,
+ *   coordinatorIds: string[],
+ *   maxPerAccount: number,
+ * }} WorkspacePush
+ */
+
+/**
  * @param push Optional phone push from push.mjs `createPush`: `{ send, payload, coordinatorIds,
  *   maxPerAccount }`. `send(subscription, payload)` resolves `{ outcome }` as in push.mjs.
  *   Absent means the feature is off.
@@ -166,7 +176,7 @@ export function createWorkspaceStore(
     workspaceId,
     engine,
     clock = () => new Date(),
-    push = null,
+    push = /** @type {WorkspacePush | null} */ (null),
     log = (event) => console.error(JSON.stringify(event)),
     // The operator alert when the live workspace nears its limit: the backend error report.
     alert = logFailure,
@@ -533,7 +543,7 @@ export function createWorkspaceStore(
         return row;
       } catch (error) {
         forgetVersionOnMissing(error);
-        if (attempt === 0 && error?.code === "42P01") continue;
+        if (attempt === 0 && /** @type {{ code?: unknown } | null | undefined} */ (error)?.code === "42P01") continue;
         throw error;
       }
     }
@@ -592,6 +602,7 @@ export function createWorkspaceStore(
    * Saves `world` at `revision` over `row` from `lockedWorld`. From migration 10 only the records
    * whose content or place in a list changed are written, and each keeps the revision its content
    * last changed at; before 10 the whole world is the workspace row.
+   * @param {number} [measured]
    */
   async function saveWorld(client, row, world, revision, at, measured = undefined) {
     if (!row.core) {
@@ -660,6 +671,7 @@ export function createWorkspaceStore(
    * is written before the record leaves the workspace, so nothing is lost if the save fails.
    * `afterMinutes` is the shorter window used once the workspace is near its limit (audit PS-02).
    * Returns the world and how many archive rows this save added.
+   * @param {number} [afterMinutes]
    */
   async function archiveOld(client, world, revision, at, afterMinutes = undefined) {
     const { world: kept, archived } = engine.archiveClosed(world, at, afterMinutes);
@@ -688,6 +700,7 @@ export function createWorkspaceStore(
    * read) or when the count cannot be read, so a read never fails over the History extra. Inside a transaction
    * the count runs under a savepoint: a failed count (the table rolled back under a cached version)
    * must never abort the save it rides on, which would otherwise end in a silent rollback.
+   * @param {((entry: { generation: number, revision: number, count: number }) => void) | null} [settle]
    */
   async function archivedCount(connection, world, revision, settle = null) {
     // The version this store last read, never a new read: the History count must not change when
@@ -748,7 +761,7 @@ export function createWorkspaceStore(
   function heldArchive(generation) {
     const refresh = archiveRefresh.then(async () => {
       if (archiveHeld?.generation !== generation) archiveHeld = { generation, through: 0, total: 0, rows: [] };
-      const held = archiveHeld;
+      const held = /** @type {NonNullable<typeof archiveHeld>} */ (archiveHeld);
       const { rows } = await pool
         .query(
           'SELECT collection, record_id, closed_at, body, archived_revision, count(*) OVER ()::integer AS archived, max(archived_revision) OVER () AS through FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 AND archived_revision > $3 ORDER BY closed_at DESC, collection COLLATE "C", record_id COLLATE "C" LIMIT $4',
@@ -909,6 +922,7 @@ export function createWorkspaceStore(
         );
         if (!desks.length) break;
         const accesses = await deskAccesses(client, desks, at);
+        /** @type {{ desks: string[], items: string[] }} */
         const pairs = { desks: [], items: [] };
         for (const desk of desks) {
           const access = accesses.get(desk.id);
@@ -978,7 +992,8 @@ export function createWorkspaceStore(
           `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth${desk}`,
           [
             workspaceId,
-            push.coordinatorIds,
+            // A delivery runs only while push is on.
+            /** @type {WorkspacePush} */ (push).coordinatorIds,
             MAX_DELIVERY_ATTEMPTS,
             new Date(at.getTime() - retryAfterMs),
             at,
@@ -995,7 +1010,9 @@ export function createWorkspaceStore(
         if (!read) return;
         const { world, red } = read;
         const devices = new Map();
+        /** @type {{ ids: string[], items: string[] }} */
         const unseen = { ids: [], items: [] };
+        /** @type {{ ids: string[], items: string[] }} */
         const outside = { ids: [], items: [] };
         const deskIds = [...new Set(rows.map((row) => row.desk_id).filter(Boolean))];
         const accesses = deskIds.length
@@ -1052,7 +1069,9 @@ export function createWorkspaceStore(
             [outside.ids, outside.items, at],
           );
         const list = [...devices.values()];
-        const results = await Promise.all(list.map((device) => push.send(device, push.payload(device.items))));
+        const sender = /** @type {WorkspacePush} */ (push);
+        const results = await Promise.all(list.map((device) => sender.send(device, sender.payload(device.items))));
+        /** @type {Record<"sent" | "expired" | "retry" | "rejected", string[]>} */
         const ids = { sent: [], expired: [], retry: [], rejected: [] };
         results.forEach((result, index) => {
           counts[result.outcome] += 1;
@@ -1413,7 +1432,10 @@ export function createWorkspaceStore(
       engine.PUSH_ROLES.includes(view.access.role)
     );
   }
-  /** A bounded audit page; its cursor includes progress through rows outside this desk. */
+  /**
+   * A bounded audit page; its cursor includes progress through rows outside this desk.
+   * @param {string | null} [cursor]
+   */
   async function auditPage(view, cursor = null) {
     const whole = !view || engine.wholeNetwork(view.access);
     const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
@@ -1559,6 +1581,10 @@ export function createWorkspaceStore(
      * otherwise the full snapshot, as `read` does. A member desk also names its `knownContext`, and
      * gets the cheap answer only while that still matches; its browser reads in full every minute,
      * because what a desk may see also changes with time (hand-off windows).
+     * @param {any} actorId
+     * @param {any} knownRevision
+     * @param {any} [view]
+     * @param {string | null} [knownContext]
      */
     async poll(actorId, knownRevision, view, knownContext = null) {
       const at = clock();
@@ -1628,7 +1654,7 @@ export function createWorkspaceStore(
         sum = (sum + Number.parseInt(hash, 16)) % ARCHIVE_SUM_MODULUS;
         return { record, hash };
       });
-      const partial = Number.isSafeInteger(since) && since >= 0 && since <= held.through;
+      const partial = typeof since === "number" && Number.isSafeInteger(since) && since >= 0 && since <= held.through;
       const last = held.total > records.length ? records.at(-1) : undefined;
       // The sender progress for the archived records shown, worked out here from the full stored
       // records (never from the masked copies sent below) and bound to this desk's access view and
@@ -1644,7 +1670,7 @@ export function createWorkspaceStore(
         ...(partial ? { since } : {}),
         ...(last ? { floor: [last.closedAt, last.collection, last.id] } : {}),
         records: hashed
-          .filter(({ record }) => !partial || record.archivedRevision > since)
+          .filter(({ record }) => !partial || record.archivedRevision > /** @type {number} */ (since))
           .map(({ record, hash }) => ({
             collection: record.collection,
             body: record.body,
@@ -2299,7 +2325,13 @@ export function createWorkspaceStore(
                 ? worlds.map((world) => engine.scopeWorld(world, view.access, at, view.grants))
                 : worlds;
               const visible = scoped.every((world, index) => world === worlds[index]) ? null : scoped;
-              covered = coveredRecords({ core: row.core, before, after: applied.world, event, visible });
+              covered = coveredRecords({
+                core: row.core,
+                before,
+                after: applied.world,
+                event,
+                visible: /** @type {any} */ (visible),
+              });
             }
             row.revision = priorRevision + 1;
             row.payload = applied.world;

@@ -717,7 +717,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
   };
   const unsubStore = createWorkspaceStore(
     { connect: async () => unsubClient, query: async () => ({ rows: [] }) },
-    { workspaceId: randomUUID(), engine: {}, push: { coordinatorIds: [] } },
+    { workspaceId: randomUUID(), engine: {}, push: /** @type {any} */ ({ coordinatorIds: [] }) },
   );
   assert.equal(await unsubStore.unsubscribe("coordinator-1", "https://fcm.googleapis.com/fcm/send/e1"), "unsubscribed");
   assert.deepEqual(

@@ -158,7 +158,8 @@ export class LruCache {
   set(key, value) {
     this.entries.delete(key);
     this.entries.set(key, value);
-    while (this.entries.size > this.limit) this.entries.delete(this.entries.keys().next().value);
+    while (this.entries.size > this.limit)
+      this.entries.delete(/** @type {string} */ (this.entries.keys().next().value));
   }
   clear() {
     this.entries.clear();
