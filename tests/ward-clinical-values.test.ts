@@ -126,6 +126,8 @@ describe("clinical values file", () => {
       // Role access plan v2 (Josh, 23 Oct 2026, D-80): the longest a role may be granted for.
       accessMaxTerm: 365,
       // Observation levels (Josh, 21 Oct 2026): fix plan item 10.
+      // Audit F3, Option A (26 Oct 2026): General's interval, synthetic until Josh approves it.
+      observationGeneral: 1,
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,
     });

@@ -86,7 +86,10 @@ export function observationLevelName(level: ObservationLevel): string {
  */
 export function observationSummary(observation: Observation): string {
   const name = observationLevelName(observation.level);
-  if (observation.level === "general") return `${name}, hourly`;
+  if (observation.level === "general") {
+    const hours = CLINICAL_VALUES.observationGeneral.value;
+    return hours === 1 ? `${name}, hourly` : `${name}, every ${hours} hours`;
+  }
   if (observation.level === "intermittent") {
     return observation.intervalMinutes === null ? name : `${name}, every ${observation.intervalMinutes} minutes`;
   }
