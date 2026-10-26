@@ -64,6 +64,8 @@ import {
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
+import { declineTargetLeftNote } from "./decline-target-left";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
@@ -72,7 +74,7 @@ const ANSWER_ALERT_LINE = 95;
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
-  PATIENT_ARRIVED: "Confirm Arrival",
+  PATIENT_ARRIVED: "Confirm arrival",
 };
 
 // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -137,6 +139,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
+  useHoldOpenForm(declineOpenFor !== undefined); // Audit CS3-01: held from opening; one referral at a time.
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
   const [declineNudge, setDeclineNudge] = useState(false);
   const declinePendingRef = useRef(false);
@@ -163,7 +166,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
     },
   ];
-  const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ message: string; warning: boolean } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -180,9 +183,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       ? newestRejection
       : undefined;
 
-  function triggerToast(message: string) {
-    setToastMessage({ message });
-  }
+  // Walk-through WT-10: a refusal shows as a warning, never with the success tick.
+  const triggerToast = (message: string, tone: "success" | "warning" = "success") =>
+    setToastMessage({ message, warning: tone === "warning" });
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -305,15 +308,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
   // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
   const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
-  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), so this ward reads the same
-  // percentage here as on its Ward page, the rail and Capacity.
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), the same as the Ward page.
   const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
-  // Owner ruling 2026-09-05, carried here: the ready figure above does not subtract a bed being
-  // made ready (it must not lurch as cleaning starts and stops), so this sentence — using the
-  // reducer's own `bedsPendingPreparation`, never re-derived — is what keeps a coordinator from
-  // reading a bare "ready" count and being refused at the moment of pulling a patient.
+  // Owner ruling 2026-09-05: "ready" does not subtract a bed being made ready, so this sentence (the
+  // reducer's own `bedsPendingPreparation`) keeps a coordinator from pulling into a bed not yet made.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
-
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
@@ -337,8 +336,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   if ((acceptModalFor !== undefined && !acceptModalOpen) || phoneAcceptLeft) {
     setAcceptModalFor(undefined);
     if (phoneAcceptLeft) setPhoneSheet(null);
-    setToastMessage({ message: "This request was answered or withdrawn." });
+    setToastMessage({ message: "This request was answered or withdrawn.", warning: true });
   }
+  // A4-10 (H-0121): a decline form goes with its row and says nothing; the empty cards say why.
+  const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
+    movements.some((m) => m.id === id && m.withdrawnReferrals.some((entry) => entry.unitId === currentUnit.id)),
+  );
   function openPhoneAccept() {
     selectAnswer(activeAnswerIndex);
     setHoldChoice(undefined);
@@ -386,11 +389,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         setAnsweredHereId(undefined);
         triggerToast(
           outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
+          "warning",
         );
       }
     } catch {
       setAnsweredHereId(undefined);
-      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.");
+      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.", "warning");
     } finally {
       declinePendingRef.current = false;
       setDeclinePending(false);
@@ -749,6 +753,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 <p className={styles.phoneClearText}>
                   No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
                 </p>
+                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : selectionLeft ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
@@ -764,6 +769,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             ) : incoming.length === 0 ? (
               <div className={styles.sbarCard}>
                 <p>No referral is currently awaiting an answer from {unit.name}.</p>
+                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : activeMovement ? (
               (() => {
@@ -1724,20 +1730,14 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
 
       {/* Action Toast */}
       {toastMessage ? (
-        <div className={styles.toast} role="status" aria-live="polite">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+        <div
+          className={styles.toast}
+          role="status"
+          aria-live="polite"
+          data-testid="ward-answer-toast"
+          data-tone={toastMessage.warning ? "warning" : "success"}
+        >
+          <StatusGlyph tone={toastMessage.warning ? "warning" : "success"} size={10} />
           <span>{toastMessage.message}</span>
         </div>
       ) : null}

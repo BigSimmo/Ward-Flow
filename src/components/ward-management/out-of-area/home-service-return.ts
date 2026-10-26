@@ -2,7 +2,7 @@ import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-manageme
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { siteByCode } from "@/components/ward-management/ward-sites";
+import { scenarioHasSite } from "@/components/ward-management/ward-scenarios";
 
 /**
  * Closing-the-loop features (24 Oct 2026, package E): "Repatriation: asked vs agreed".
@@ -133,7 +133,7 @@ export function reduceHomeServiceReturn(
   const existing = homeServiceReturnOf(records, admission.id);
   let next: HomeServiceReturnRecord;
   if (event.step === "requested") {
-    if (event.homeHospital === undefined || !siteByCode(event.homeHospital)) {
+    if (event.homeHospital === undefined || !scenarioHasSite(state.scenario, event.homeHospital)) {
       return reject(state, event, `RECORD_HOME_SERVICE_RETURN homeHospital ${event.homeHospital} is not a listed site`);
     }
     // A fresh request starts over: an earlier answer belonged to the earlier request.

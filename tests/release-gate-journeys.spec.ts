@@ -287,6 +287,8 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await openWardList(page, "Admissions");
   await expectAccessible(page, testInfo, "ward arrivals with the delivered patient");
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
+  // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
+  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   // One patient, one bed: Occupied rises by exactly one.
@@ -346,6 +348,8 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   const departure = page.getByRole("dialog", { name: "Confirm patient departure" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
+  // Audit CS3-07: where they went starts blank and must be chosen.
+  await departure.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
   await departure.getByRole("button", { name: "Record departure", exact: true }).click();
   await expect(departure).toHaveCount(0);
   // The person has left, so the board no longer lists their discharge.
