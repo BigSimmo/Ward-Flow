@@ -309,6 +309,15 @@ export function SettingsScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the hash is only readable after mount
     if (fromHash) setTab(fromHash);
   }, []);
+  // A hash change while Settings is open (Help's Show me naming a tab) opens that tab too.
+  useEffect(() => {
+    const openFromHash = () => {
+      const fromHash = readTabFromHash();
+      if (fromHash) setTab(fromHash);
+    };
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, []);
   const chooseTab = useCallback((next: SettingsTab) => {
     setTab(next);
     try {

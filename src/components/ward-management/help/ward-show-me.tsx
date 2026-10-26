@@ -62,13 +62,16 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const step = steps[index];
   const last = index >= steps.length - 1;
 
-  // Open the screen the job is done on, once, when Show me starts somewhere else.
+  // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
+  // screen, a different Settings tab is opened through the hash, which Settings listens for.
   const href = howToHref(howTo?.go, role, deskHome ?? home);
   const went = useRef(false);
   useEffect(() => {
     if (went.current || !href) return;
     went.current = true;
-    if (pathname !== href.split("#")[0]) router.push(href);
+    const [path, tab] = href.split("#");
+    if (pathname !== path) router.push(href);
+    else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
   }, [href, pathname, router]);
 
   const target = step?.target;
