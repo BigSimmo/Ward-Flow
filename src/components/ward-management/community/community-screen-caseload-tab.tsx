@@ -178,14 +178,10 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
 
       {/* ── Active Caseload & CTO Statutory Register Table ── */}
       <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-        <section
-          className={styles.caseloadSection}
-          id="section-caseload"
-          aria-label="Catchment active caseload and statutory CTO register"
-        >
+        <section className={styles.caseloadSection} id="section-caseload" aria-label="Active caseload (synthetic)">
           <div className={styles.caseloadHead}>
             <h3 className={styles.caseloadTitle}>
-              <span id={`${baseId}-caseloadTitle`}>Catchment active caseload &amp; statutory register</span>
+              <span id={`${baseId}-caseloadTitle`}>Active caseload (synthetic)</span>
               <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
                 {caseloadRows.length} patients
               </span>

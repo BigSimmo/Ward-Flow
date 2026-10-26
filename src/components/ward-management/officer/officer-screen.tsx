@@ -1408,7 +1408,7 @@ export function OfficerScreen() {
               </span>
               <span className={styles.modalTitles}>
                 <h3 id="form-verify-title" className={styles.modalTitle}>
-                  Form verification
+                  Paperwork checks (not saved)
                 </h3>
                 <span className={styles.modalSub}>
                   {formRequiredLabel(formModalJob.transport!)} · {umrnFor(formModalJob)} ·{" "}
@@ -1421,7 +1421,7 @@ export function OfficerScreen() {
                 iconOnly
                 icon={X}
                 onClick={closeFormModal}
-                aria-label="Close form verification dialog"
+                aria-label="Close paperwork checks"
               />
             </header>
             <div className={styles.modalBody}>
@@ -1433,10 +1433,10 @@ export function OfficerScreen() {
               <h4 className={styles.sectionTitle}>Transfer checks</h4>
               <div className={styles.checklist}>
                 {[
-                  "Patient identity confirmed with ED clinical liaison nurse",
-                  "Authorisation documentation intact with transfer manifest",
-                  "Personal effects manifest signed and secured in transit lockbox",
-                  "Destination receiving ward notified of vehicle dispatch departure",
+                  "Identity checked with the sending team",
+                  "Paper form seen",
+                  "Belongings with the patient",
+                  "Receiving ward told we are leaving",
                 ].map((label, idx) => {
                   const isChecked = verifiedChecks[formModalJob.id]?.[idx] ?? false;
                   return (
