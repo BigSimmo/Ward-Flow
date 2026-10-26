@@ -851,7 +851,7 @@ test.describe("@mockup Emergency department screen", () => {
     const unfoldEd16 = page.getByTestId("ward-ed-unfold-WF-016");
     if (await unfoldEd16.isVisible()) await unfoldEd16.click();
     await page.getByTestId("ward-ed-book-transport-toggle-WF-016").click();
-    await page.getByTestId("ward-ed-transport-provider-WF-016").selectOption("Ambulance service");
+    await page.getByTestId("ward-ed-transport-provider-WF-016").selectOption("Ambulance (St John)");
     await page.getByTestId("ward-ed-transport-escort-no-WF-016").check();
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-016").fill("CAD-ROLES-0016");

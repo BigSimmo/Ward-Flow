@@ -181,7 +181,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   await openReferralStep(sheet, "Wards");
   const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
   await tapChoice(wards.getByRole("checkbox", { name: wardChoiceName(UNIT_ID) }));
-  await sheet.getByLabel("Transport", { exact: true }).selectOption("carer");
+  await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
   await expectAccessible(page, testInfo, "referral slide-out, ward and transport chosen");
 
   await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
