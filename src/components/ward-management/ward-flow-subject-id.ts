@@ -94,7 +94,9 @@ export function subjectId(event: WardFlowEvent): string {
       return event.subject.id;
     // H-0150: an Undo comes from a toast or the wire, so a missing subject is refused, never thrown on.
     case "UNDO_BED_MEETING_ACTION":
-      return typeof event.subject === "object" && event.subject !== null ? event.subject.id : "none";
+      return typeof event.subject === "object" && event.subject !== null && typeof event.subject.id === "string"
+        ? event.subject.id
+        : "none";
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":

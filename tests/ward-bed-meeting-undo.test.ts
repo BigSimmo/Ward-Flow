@@ -52,7 +52,11 @@ describe("UNDO_BED_MEETING_ACTION", () => {
     const actions = (s: WardFlowState) => s.movements.find((candidate) => candidate.id === movementId)!.meetingActions;
     expect(actions(undone)).toEqual(actions(state));
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...undone, rejections: [] })))).toBe(true);
-    expect(undone.auditEvents.at(-1)).toMatchObject({ action: "UNDO_BED_MEETING_ACTION", outcome: "accepted" });
+    expect(undone.auditEvents.at(-1)).toMatchObject({
+      action: "UNDO_BED_MEETING_ACTION",
+      outcome: "accepted",
+      subject: { kind: "movement", movementId },
+    });
     expect(wardFlowReducer(undone, { ...undo, now: NOW + 32 }).rejections.at(-1)?.reason).toBe(
       "There is no bed meeting action marked done here to undo",
     );

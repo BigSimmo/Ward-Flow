@@ -83,8 +83,14 @@ describe("copiedText", () => {
     ],
     ["Date of birth: 1988-03-14", "Alex Testperson (Date of birth: 1988-03-14) to Ward 3", "Alex Testperson to Ward 3"],
     ["DOB 14 March 1988", "Alex Testperson; DOB 14 March 1988. Ward 3", "Alex Testperson. Ward 3"],
+    ["DOB: March 14, 1988", "Alex Testperson, DOB: March 14, 1988, Ward 3", "Alex Testperson, Ward 3"],
   ])("strips an inline date of birth (%s) mid-line (H-0332)", (_label, input, expected) => {
     expect(withoutCopiedIdentifiers(input)).toBe(expected);
+  });
+
+  it("keeps a month-first date that is not a date of birth", () => {
+    const text = "Alex Testperson admitted March 14, 1988 review, Ward 3";
+    expect(withoutCopiedIdentifiers(text)).toBe(text);
   });
 
   it("leaves text without identifiers untouched", () => {

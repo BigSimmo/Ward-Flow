@@ -609,7 +609,12 @@ export function HandoverPrintSheet({
     const nodes = Array.from(
       stackRef.current?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]") ?? [],
     );
-    if (nodes.length === measure.observed.length && nodes.every((node, index) => node === measure.observed[index])) {
+    // Without a ResizeObserver nothing reports a reflow, so measure after every render instead.
+    if (
+      measure.observer &&
+      nodes.length === measure.observed.length &&
+      nodes.every((node, index) => node === measure.observed[index])
+    ) {
       return;
     }
     const kept = new Set(nodes);

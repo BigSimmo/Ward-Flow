@@ -23,7 +23,7 @@ function stripUmrnFromLine(line: string): string {
       .replace(/\s*[,;·]?\s*(?:UMRN\s*:?\s*(?:UM\d{6}|not recorded)|\bUM\d{6})\b/gi, "")
       // H-0332: an inline date of birth, such as "Name, DOB: 14/03/1988, Ward 3".
       .replace(
-        /\s*[,;·]?\s*\b(?:DOB|Date of birth)\s*:?\s*(?:\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}|\d{1,2} [A-Za-z]{3,9} \d{4}|not recorded)\b/gi,
+        /\s*[,;·]?\s*\b(?:DOB|Date of birth)\s*:?\s*(?:\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}|\d{1,2} [A-Za-z]{3,9},? \d{4}|[A-Za-z]{3,9} \d{1,2},? \d{4}|not recorded)\b/gi,
         "",
       )
       // Tidy what that leaves: "Name ()", "Identify:, legal", "- , name" and "Name .".
