@@ -17,6 +17,7 @@ import {
   validCareChange,
   currentCareContact,
   separationHandoff,
+  careRecordedByLabel,
 } from "../ward-care-journey";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -118,7 +119,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       </form>
     </details>
   );
-  const fact = (at: number, by: string) => `${by} · ${formatInstantWithDay(at, now)}`;
+  const fact = (at: number, by: string) => `${careRecordedByLabel(by)} · ${formatInstantWithDay(at, now)}`;
   return (
     <section className={`${styles.drawerSection} ${styles.careJourney}`} aria-label="Care journey">
       <h4>Care journey</h4>

@@ -4,6 +4,7 @@ import {
   recordedCommunityTransition,
   validCareChange,
   validCareJourney,
+  careRecordedByLabel,
   emptyCareJourney,
   currentCareContactCompleted,
   separationHandoff,
@@ -175,6 +176,18 @@ describe("complete guarded local care journey", () => {
       status: "completed",
       recordedBy: "Bed coordinator",
     });
+  });
+  it("still restores a fact a coordinator saved before the A19 rename, and shows it as Bed coordinator", () => {
+    const { state, admission } = fixture();
+    const next = wardFlowReducer(
+      state,
+      command(state, admission.id, { kind: "plan", item: CARE_PLAN_ITEMS[0], status: "completed" }),
+    );
+    const saved = JSON.parse(JSON.stringify(next.admissions.find((a) => a.id === admission.id)!.careJourney));
+    saved.plan[CARE_PLAN_ITEMS[0]].recordedBy = "Flow coordinator";
+    expect(validCareJourney(saved)).toBe(true);
+    expect(careRecordedByLabel("Flow coordinator")).toBe("Bed coordinator");
+    expect(careRecordedByLabel("Ward manager")).toBe("Ward manager");
   });
   it.each(CARE_DOCUMENTS)("tracks adult %s documentation", (document) => {
     const { state, admission } = fixture();
