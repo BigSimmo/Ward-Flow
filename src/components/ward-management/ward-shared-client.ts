@@ -1,4 +1,4 @@
-import { anySignal, sentence, withoutChartContent } from "./ward-shared-client-helpers";
+import { anySignal, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -764,11 +764,13 @@ export class SharedWorkspaceClient {
     };
     await loadSharedStateCheck();
     let token: string;
+    // #817: a queued save stops the poll even while the poll still waits for its token.
+    const pollSignal = workspaceRead ? this.pollAbort?.signal : undefined;
     try {
       // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
-      token = await (retried ? this.options.token({ refresh: true }) : this.options.token());
+      token = await untilAborted(retried ? this.options.token({ refresh: true }) : this.options.token(), pollSignal);
     } catch (error) {
-      if (this.disposed || roleSignal.aborted) throw error;
+      if (this.disposed || roleSignal.aborted || pollSignal?.aborted) throw error;
       if (
         generation === this.viewGeneration &&
         (!workspaceRead || grantGeneration === this.grantGeneration) &&

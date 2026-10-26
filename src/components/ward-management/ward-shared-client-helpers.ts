@@ -24,6 +24,26 @@ export function anySignal(signals: readonly AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
+/** Settles with `promise`, or rejects with an AbortError as soon as `signal` aborts. */
+export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new DOMException("The poll was stopped", "AbortError"));
+  return new Promise<T>((resolve, reject) => {
+    const stop = () => reject(new DOMException("The poll was stopped", "AbortError"));
+    signal.addEventListener("abort", stop, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", stop);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", stop);
+        reject(error);
+      },
+    );
+  });
+}
+
 /** The engine's refusal as a sentence: capitalised, ending in a full stop. */
 export function sentence(reason: string): string {
   const trimmed = reason.trim();

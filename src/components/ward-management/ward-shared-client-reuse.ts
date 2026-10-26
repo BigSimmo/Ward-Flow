@@ -74,7 +74,10 @@ function reuse(previous: unknown, next: unknown, depth: number, remember: boolea
     for (const key of keys) {
       const kept = Object.hasOwn(previous, key) ? reuse(previous[key], next[key], depth - 1, remember) : next[key];
       if (kept !== previous[key] || !Object.hasOwn(previous, key)) unchanged = false;
-      result[key] = kept;
+      // An own `__proto__` key must stay a key, not reset the copy's prototype.
+      if (key === "__proto__")
+        Object.defineProperty(result, key, { value: kept, enumerable: true, writable: true, configurable: true });
+      else result[key] = kept;
     }
     return unchanged ? previous : result;
   }

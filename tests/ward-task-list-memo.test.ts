@@ -58,5 +58,9 @@ describe("shell figures reuse the shared task list", () => {
     expect(taskItemsSpy.sources).toHaveLength(2);
     for (const source of taskItemsSpy.sources)
       expect((source as { leaveBeds: unknown }).leaveBeds).toBe(state.leaveBeds);
+    // The fallbacks for an omitted configuration and snooze list are stable too, so the memo can hit.
+    const [first, second] = taskItemsSpy.sources as { configuration: unknown; inboxSnoozes: unknown }[];
+    expect(second.configuration).toBe(first.configuration);
+    expect(second.inboxSnoozes).toBe(first.inboxSnoozes);
   });
 });

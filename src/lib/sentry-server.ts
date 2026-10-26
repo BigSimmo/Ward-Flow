@@ -119,8 +119,11 @@ export function allowServerReport(kind: string, at: number = Date.now()): boolea
   const last = lastReported.get(kind);
   if (last !== undefined && at - last < SERVER_REPORT_INTERVAL_MS) return false;
   if (lastReported.size >= REPORT_KINDS_KEPT && last === undefined) {
-    const oldest = lastReported.keys().next().value;
-    if (oldest !== undefined) lastReported.delete(oldest);
+    // Only a kind whose interval has run out may make room; otherwise the new kind waits, so cycling
+    // through many kinds cannot make a recently reported one eligible again.
+    const [oldest, oldestAt] = lastReported.entries().next().value!;
+    if (at - oldestAt < SERVER_REPORT_INTERVAL_MS) return false;
+    lastReported.delete(oldest);
   }
   lastReported.delete(kind);
   lastReported.set(kind, at);

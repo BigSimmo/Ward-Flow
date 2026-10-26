@@ -103,10 +103,13 @@ describe("server Sentry rate limit (PS-13, H-0961)", () => {
     expect(allowServerReport("failure:TypeError", 1_000 + SERVER_REPORT_INTERVAL_MS)).toBe(true);
   });
 
-  it("keeps a bounded list of kinds", () => {
+  it("keeps a bounded list of kinds without letting a full list reopen a throttled kind", () => {
     resetServerReportThrottle();
-    for (let i = 0; i < 600; i += 1) allowServerReport(`kind-${i}`, 1_000);
-    expect(allowServerReport("kind-0", 2_000)).toBe(true);
-    expect(allowServerReport("kind-599", 2_000)).toBe(false);
+    for (let i = 0; i < 500; i += 1) expect(allowServerReport(`kind-${i}`, 1_000)).toBe(true);
+    // Full, and every kind is still inside its interval: a new kind waits, and old kinds stay throttled.
+    expect(allowServerReport("kind-500", 2_000)).toBe(false);
+    expect(allowServerReport("kind-0", 2_000)).toBe(false);
+    // Once the oldest kind's interval has run out, it makes room for a new one.
+    expect(allowServerReport("kind-500", 1_000 + SERVER_REPORT_INTERVAL_MS)).toBe(true);
   });
 });

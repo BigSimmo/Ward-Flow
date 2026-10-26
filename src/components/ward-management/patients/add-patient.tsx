@@ -969,8 +969,7 @@ export function AddPatientForm() {
               <div className={styles.submitLead}>
                 {isSubmitting && slowSave ? (
                   <p data-testid="ward-add-patient-slow-save" role="status">
-                    Still saving to the shared workspace. Keep this page open. The record opens once the save is
-                    confirmed.
+                    Still saving to the shared workspace. Keep this page open until the save is confirmed.
                   </p>
                 ) : null}
                 {savedOutsideView ? (

@@ -52,6 +52,37 @@ describe("a save does not wait behind a poll (#817)", () => {
   });
 });
 
+describe("a save does not wait behind a poll's token refresh (#817)", () => {
+  it("stops a poll still waiting for its token and sends the save", async () => {
+    let tokens = 0;
+    let releaseSlowToken: ((token: string) => void) | undefined;
+    let polls = 0;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      // The second poll's token waits on a slow session refresh; every other token is immediate.
+      token: () => {
+        tokens += 1;
+        if (tokens === 2) return new Promise<string>((resolve) => (releaseSlowToken = resolve));
+        return Promise.resolve("test");
+      },
+      changed: () => {},
+      fetch: async (url) => {
+        if (String(url).endsWith("/commands")) return Response.json({ snapshot: snapshot(2) });
+        polls += 1;
+        return Response.json({ snapshot: snapshot(1) });
+      },
+    });
+    await client.refresh();
+    void client.refresh();
+    await vi.waitFor(() => expect(releaseSlowToken).toBeDefined());
+    const outcome = await client.dispatch(event);
+    expect(outcome.status).toBe("accepted");
+    expect(polls).toBe(1);
+    releaseSlowToken?.("late");
+    client.dispose();
+  });
+});
+
 describe("anySignal (H-0304)", () => {
   it("follows the first signal to abort when AbortSignal.any is missing, and lets go of the rest", () => {
     const any = AbortSignal.any;
