@@ -69,30 +69,30 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 
 ## People, services and short forms
 
-| Say               | Means                                                                               |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| **ECT**           | Electroconvulsive therapy.                                                          |
-| **NIC**           | Nurse in charge.                                                                    |
-| **NUM**           | Nurse unit manager.                                                                 |
-| **CAHS**          | Child and Adolescent Health Service.                                                |
-| **EMHS**          | East Metropolitan Health Service.                                                   |
-| **NMHS**          | North Metropolitan Health Service.                                                  |
-| **SMHS**          | South Metropolitan Health Service.                                                  |
-| **WACHS**         | WA Country Health Service.                                                          |
-| **ED**            | Emergency department, after first use.                                              |
-| **AWOL**          | Absent without leave. On screen, written in full where there is room.               |
-| **CTO**           | Community treatment order.                                                          |
-| **EDD**           | Expected date of discharge.                                                         |
-| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.         |
-| **MDT**           | Multidisciplinary team.                                                             |
-| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014". |
-| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                       |
-| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                     |
-| **PSP**           | Personal support person, under the Mental Health Act.                               |
-| **MHAS**          | Mental Health Advocacy Service.                                                     |
-| **GP**            | General practitioner.                                                               |
-| **BPSD**          | Behavioural and psychological symptoms of dementia.                                 |
-| Sign in, sign out | Never log in or log out.                                                            |
+| Say               | Means                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **ECT**           | Electroconvulsive therapy.                                                           |
+| **NIC**           | Nurse in charge.                                                                     |
+| **NUM**           | Nurse unit manager.                                                                  |
+| **CAHS**          | Child and Adolescent Health Service.                                                 |
+| **EMHS**          | East Metropolitan Health Service.                                                    |
+| **NMHS**          | North Metropolitan Health Service.                                                   |
+| **SMHS**          | South Metropolitan Health Service.                                                   |
+| **WACHS**         | WA Country Health Service.                                                           |
+| **ED**            | Emergency department, after first use.                                               |
+| **AWOL**          | Absent without leave. On screen, written in full where there is room.                |
+| **CTO**           | Community treatment order.                                                           |
+| **EDD**           | Expected date of discharge.                                                          |
+| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.          |
+| **MDT**           | Multidisciplinary team.                                                              |
+| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".  |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                        |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                      |
+| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian. |
+| **MHAS**          | Mental Health Advocacy Service.                                                      |
+| **GP**            | General practitioner.                                                                |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                  |
+| Sign in, sign out | Never log in or log out.                                                             |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
 "flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.

@@ -575,7 +575,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "MHA", meaning: "The Mental Health Act, the WA law the legal forms are named from." },
   { term: "ATS", meaning: "Australasian Triage Scale category, as recorded at ED triage." },
   { term: "RAMP", meaning: "Risk Assessment and Management Plan, the WA mental health form." },
-  { term: "PSP", meaning: "Personal support person, under the Mental Health Act." },
+  { term: "PSP", meaning: "Personal support person: a carer, close family member, nominated person or guardian." },
   { term: "MHAS", meaning: "Mental Health Advocacy Service." },
   { term: "GP", meaning: "General practitioner." },
   { term: "BPSD", meaning: "Behavioural and psychological symptoms of dementia." },
