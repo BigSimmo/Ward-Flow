@@ -86,6 +86,12 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 | **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.         |
 | **MDT**           | Multidisciplinary team.                                                             |
 | **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014". |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                       |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                     |
+| **PSP**           | Personal support person, under the Mental Health Act.                               |
+| **MHAS**          | Mental Health Advocacy Service.                                                     |
+| **GP**            | General practitioner.                                                               |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                 |
 | Sign in, sign out | Never log in or log out.                                                            |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
