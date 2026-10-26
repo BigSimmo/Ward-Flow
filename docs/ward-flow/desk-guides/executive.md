@@ -1,12 +1,13 @@
 # Desk guide: Executive (read only)
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You see how the network or your health service is going, as numbers. You do not see patients.
 
 ## What you see first
 
-**Statistics**. It is your only working screen, apart from your own **Settings**.
+**Statistics**. It is your only working screen, apart from your own **Settings**. On a phone,
+**Settings** is under **Menu**.
 
 ## Jobs you do most
 

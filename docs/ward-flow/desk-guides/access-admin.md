@@ -1,12 +1,14 @@
 # Desk guide: Access admin
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You give staff access to the right desk and place. You never see patients.
 
 ## What you see first
 
-**Settings**, where access is managed.
+**Settings**, where access is managed. The first time you sign in, the tour starts on
+**Governance**, which lists overrides, refused actions and record access waiting for review. On a
+phone, both are under **Menu**.
 
 ## Jobs you do most
 

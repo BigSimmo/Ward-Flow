@@ -77,6 +77,8 @@ export type SharedView = {
   choices?: readonly SharedRoleChoice[];
   /** With `no-role`: whether this server takes requests for access. */
   canRequest?: boolean;
+  /** With `no-role`: the server's refusal code, such as `role-needs-service`. */
+  noRoleReason?: string;
   /** The signed-in account's id, to say "You" in the access lists. */
   actorId?: string | null;
   /** This tab chose its role, so it can go back and choose another. */
@@ -905,7 +907,8 @@ export class SharedWorkspaceClient {
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
-    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
+    const noRoleReason = typeof value?.code === "string" ? value.code : undefined;
+    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true, noRoleReason });
     // A role refusal on an access step or the record access log comes back as its reason, not as a sign-out.
     if (response.status === 403 && (path.startsWith("/v1/workspace/access") || path === "/v1/workspace/record-access"))
       return { response, value };

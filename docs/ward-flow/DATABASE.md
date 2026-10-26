@@ -80,6 +80,24 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 | Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                                                                      |
 | Tests that cover every registered provider    | `backend/ward-flow/provider-routing.test.mjs`, `tests/ward-auth-provider-parity.test.ts`, `tests/security-headers.test.ts`                                                   |
 
+## Migrations the app expects
+
+The backend accepts a database at migration 5 through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
+
+| Migration | What the app needs it for                                | If it is missing                                                                 |
+| --------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 5         | Minimum the backend accepts                              | Backend refuses to start                                                         |
+| 6 to 7    | Row-level security; synthetic data only                  | Safety checks only; no screen changes                                            |
+| 8         | Roles and places in `ward_flow.memberships`, break glass | Only `WARD_COORDINATOR_USER_IDS` accounts can sign in                            |
+| 9         | Cover, access requests, phone alerts by role             | No cover, no access requests, no alerts by role                                  |
+| 10        | Each record saved as its own row                         | Any change refuses every older save, so more save conflicts                      |
+| 11        | Record access history, server-side sign-outs             | Opening a record is not logged; sign-out does not end the token on the server    |
+| 12        | Foreign-key indexes                                      | Nothing behaves differently                                                      |
+| 13        | Referral full detail is logged as a record view          | Opening that detail is not logged                                                |
+| 14        | Closed records older than 30 days move to an archive     | Live workspace keeps growing toward its 8 MB limit, so loads and saves slow down |
+
+As of the 26 October 2026 access test the hosted database stopped at migration 12, so 13 and 14 were not yet applied there. Applying them is a separate, approved step (see Railway and Supabase operations); this page does not apply anything.
+
 ## Settings
 
 | Setting                          | Values                 | Default    |

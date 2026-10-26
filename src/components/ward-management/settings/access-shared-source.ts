@@ -129,6 +129,8 @@ export type SharedAdminSource = {
   readonly memberships: readonly AccessMembership[];
   readonly requests: readonly AccessRequest[];
   readonly people: null;
+  /** The signed-in account, so the roles list can keep an admin from removing their own admin role. */
+  readonly self: string | null;
   readonly problem: string | null;
   readonly loading: boolean;
   readonly label: (actorId: string) => string;
@@ -152,6 +154,7 @@ export function useSharedAdminSource(
       memberships: (value?.memberships ?? []).map((row) => sharedMembership(row, at)).filter(present),
       requests: (value?.requests ?? []).map((row) => sharedRequest(row, at)).filter(present),
       people: null,
+      self,
       problem,
       loading,
       label: (actorId) => accountLabel(actorId, self),

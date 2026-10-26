@@ -141,6 +141,11 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
   const actionDisabledReason = access.role === "coordinator" ? undefined : "Only the coordinator can change alerts.";
+  // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
+  const broadcastDisabledReason =
+    access.role === "coordinator" || access.role === "bed_manager"
+      ? undefined
+      : "Only the coordinator or a bed manager can broadcast.";
 
   const state = useWardFlowSelect(
     "movements",
@@ -1167,6 +1172,7 @@ function AlertsWorkspace() {
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}
           openComposer={openComposer}
+          broadcastDisabledReason={broadcastDisabledReason}
           activeBroadcast={activeBroadcast}
           setTab={setTab}
           directiveTone={directiveTone}
