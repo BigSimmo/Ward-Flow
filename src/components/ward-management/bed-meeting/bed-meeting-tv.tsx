@@ -61,8 +61,6 @@ import { TvLockControl, useTvLock } from "./tv-lock";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
-/** TV-06: how long a not-updating screen waits before its warning turns red. */
-const TV_STALE_RED_MINUTES = 5;
 
 /**
  * THE TV VIEWS (Josh, 15 Oct 2026): a bed meeting screen for the whole state or one health service,
@@ -1260,11 +1258,12 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
               <strong
                 className={styles.stale}
                 data-testid="bed-meeting-tv-stale"
-                // TV-06: after five minutes the warning turns red and says how long, and the time now.
-                data-level={staleMinutes >= TV_STALE_RED_MINUTES ? "danger" : undefined}
+                // TV-06: a frozen screen warns in red at once, with no invented wait; from the first
+                // minute it also says how old the figures are, and the time now.
+                data-level="danger"
               >
                 {!online ? "offline, not updating" : "connection unavailable, not updating"}
-                {staleMinutes >= TV_STALE_RED_MINUTES
+                {staleMinutes >= 1
                   ? `. Figures are ${splitDuration(staleMinutes)} old. Now ${asAtStamp(now).time ?? ""}`
                   : ""}
               </strong>

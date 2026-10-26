@@ -121,7 +121,7 @@
   font-weight: 700;
 }
 
-/* TV-06: past five minutes not updating, the warning turns red. */
+/* TV-06: a screen that is not updating warns in red. */
 .stale[data-level="danger"] {
   border-color: var(--wf-danger-ink);
   color: var(--wf-danger-ink);

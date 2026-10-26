@@ -609,7 +609,7 @@ describe("the ward and ED TV views", () => {
     expect(asAt).not.toHaveTextContent("updates on its own");
   });
 
-  it("freezes its figures while not updating and turns the warning red after five minutes (TV-06)", () => {
+  it("freezes its figures while not updating and warns in red with the figures' age (TV-06)", () => {
     const online = vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
     function Clock() {
       const { dispatch, now } = useWardFlow();
@@ -635,8 +635,9 @@ describe("the ward and ED TV views", () => {
     act(() => {
       window.dispatchEvent(new Event("offline"));
     });
+    expect(screen.getByTestId("bed-meeting-tv-stale")).toHaveAttribute("data-level", "danger");
+    expect(screen.getByTestId("bed-meeting-tv-stale")).not.toHaveTextContent(/Figures are/u);
     act(() => advance(2));
-    expect(screen.getByTestId("bed-meeting-tv-stale")).not.toHaveAttribute("data-level");
     act(() => advance(5));
     // The figures stay where they were when the screen last updated; the warning says how old.
     expect(longest()).toBe(before);
