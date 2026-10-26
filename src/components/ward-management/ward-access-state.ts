@@ -28,6 +28,7 @@ import { movementSourceAdmission, type WardFlowState } from "@/components/ward-m
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
+import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -655,6 +656,12 @@ export function commandScopeRefusal(
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
+  }
+  // A ward records a written form only for a person admitted to one of its own beds (WT-03).
+  if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_WRITTEN") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
+    if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
   }
   // Every desk names its own place when it adds a patient, so the record it adds stays in its own
   // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.

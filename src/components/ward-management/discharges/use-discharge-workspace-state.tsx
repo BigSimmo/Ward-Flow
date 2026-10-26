@@ -213,7 +213,8 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
       (blockerCategory === "all" ||
         (release.blocker !== null && release.blocker.toLowerCase().includes(blockerCategory.toLowerCase()))),
   );
-  const groupedReleases = groupDischarges(scopedReleases, now);
+  // WT-17: held up counts every blocked release on this board, as on the ward.
+  const groupedReleases = groupDischarges(scopedReleases, now, { heldUpAnyDate: true });
   // Stream A, 9 Oct 2026: "Due first" orders each release group by its expected time, earliest
   // first; the groups themselves keep their order. Default keeps the band order.
   const releaseDue = (release: BedRelease) => release.expectedAt;
