@@ -656,7 +656,7 @@ test("a database outage while checking a sign-out is a 503, never a pass", async
   assert.equal(calls.length, 0);
 });
 
-test("every desk logs the records it opens; only the statewide coordinator reads the log", async () => {
+test("every desk logs the records it opens; only a coordinator reads the log and the openings", async () => {
   const logged = [];
   const store = {
     logView: async (view, patientId, surface) => {
@@ -664,6 +664,7 @@ test("every desk logs the records it opens; only the statewide coordinator reads
       return { status: 200, body: { logged: true } };
     },
     recordViews: async (_view, patient) => [{ patient_id: patient ?? "PT-1001" }],
+    breakGlassOpenings: async (view) => [{ id: "7", scope: view.access.scope.kind }],
   };
   const ward = setup(other, "prototype", { ...store, viewer: async () => wardView });
   const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
@@ -687,6 +688,22 @@ test("every desk logs the records it opens; only the statewide coordinator reads
   assert.equal(logged.length, 1);
   const lead = setup(coordinator, "prototype", store);
   const views = await lead.handler(request("/record-access?patient=PT-2002"));
-  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }] });
+  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }], openings: [] });
   assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
+  // The review list reads the openings too (D-80 item 14).
+  assert.deepEqual(await (await lead.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+    openings: [{ id: "7", scope: "statewide" }],
+  });
+  // A service coordinator reads them too; the store keeps it to its own service's records.
+  const service = setup(other, "prototype", {
+    ...store,
+    viewer: async () => ({
+      ...wardView,
+      access: { role: "coordinator", scope: { kind: "service", service: "Synthetic" } },
+    }),
+  });
+  assert.deepEqual((await (await service.handler(request("/record-access"))).json()).openings, [
+    { id: "7", scope: "service" },
+  ]);
 });

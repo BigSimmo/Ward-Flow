@@ -32,9 +32,9 @@ import {
   smallNumberText,
 } from "@/components/ward-management/ward-access-scope";
 import type { AuditReview } from "@/components/ward-management/ward-audit";
+import { isBreakGlassReviewId } from "@/components/ward-management/ward-break-glass-review-id";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
@@ -68,7 +68,6 @@ import {
   markDeskSwitch,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
-  type BreakGlassRecord,
 } from "./ward-access-store";
 
 import { UnscopedWardFlowContext, useUnscopedWardFlow } from "./ward-access-context";
@@ -311,7 +310,8 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       // A review can be of a seeded governance entry, so the governance read is the fuller list.
       const read = context.readGovernanceAuditEvents?.(actor) ?? context.readAuditEvents(actor);
       const kept = new Set(read.status === "allowed" ? scope.auditEvents(read.value).map((event) => event.id) : []);
-      return (review: AuditReview) => kept.has(review.eventId);
+      // D-80 item 14: a break glass opening's review names no record here; the server scopes the openings.
+      return (review: AuditReview) => kept.has(review.eventId) || isBreakGlassReviewId(review.eventId);
     };
     // A refusal names its subject: a journey, ward, stay, release, leave bed or ED, or for a
     // community treatment order a person this desk already sees. A refused record command names none, so it follows its own audit row and stays only when that row is in
@@ -715,45 +715,6 @@ function WardBreakGlassNote({ patientId }: { patientId: string }) {
     <p className={styles.readOnly} role="status" data-testid="ward-break-glass-note">
       Opened outside your care, read only. It is listed for the coordinator to review.
     </p>
-  );
-}
-
-/** The coordinator's review list of break glass openings this session (plan section 7). */
-export function WardBreakGlassReview() {
-  const on = useWardFeatureFlag("role-access");
-  const access = useEffectiveWardAccess();
-  const { records } = useWardAccessSnapshot();
-  const { now } = useUnscopedWardFlow();
-  if (!on || access.role !== "coordinator") return null;
-  const perShift = CLINICAL_VALUES.breakGlassPerShift.value;
-  // One desk is its role at its place, and the pattern counts this shift only (review on PR #330).
-  const deskKey = (record: BreakGlassRecord) => `${record.role}|${record.placeLabel}`;
-  const shiftStart = currentShiftStartInstant(now);
-  const counts = new Map<string, number>();
-  for (const record of records)
-    if (record.openedAt >= shiftStart) counts.set(deskKey(record), (counts.get(deskKey(record)) ?? 0) + 1);
-  return (
-    <section aria-labelledby="ward-break-glass-review" data-testid="ward-break-glass-review">
-      <h2 id="ward-break-glass-review">Records opened outside care</h2>
-      {records.length === 0 ? (
-        <p>None this session.</p>
-      ) : (
-        <ul className={styles.list}>
-          {records.map((record: BreakGlassRecord) => {
-            const reason = BREAK_GLASS_REASONS.find((option) => option.id === record.reason)?.label ?? "Other";
-            const pattern = record.openedAt >= shiftStart && (counts.get(deskKey(record)) ?? 0) > perShift;
-            return (
-              <li key={record.id}>
-                {formatInstantWithDay(record.openedAt, now)}, {record.roleLabel}, {record.placeLabel}. {reason}
-                {record.otherText ? `: ${record.otherText}` : ""}
-                {pattern ? ". More than " + perShift + " this shift, check with them." : "."}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <p>Kept for this session only in the demo. The shared workspace keeps them on the server.</p>
-    </section>
   );
 }
 

@@ -5,7 +5,7 @@
 
 import { ChevronRight, ClipboardList, FileText, History, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -34,6 +34,7 @@ import {
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
 import { EventFacts } from "./governance-event-facts";
+import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
 import {
   OUTCOME_TONE,
   actionLabels,
@@ -70,6 +71,8 @@ type GovernancePhoneInputs = {
   phoneMore: "registers" | "reports" | null;
   phoneSheet: boolean;
   phoneSubjectLabel: (event: AuditEvent) => string;
+  /** D-80 item 14: who opened the chosen row's record, for the sheet. */
+  recordViews?: ReactNode;
   recordReview: (
     decision: AuditReview["decision"],
     onSettled?: (accepted: boolean) => void,
@@ -116,6 +119,7 @@ export function GovernancePhone({
   phoneSheet,
   phoneSubjectLabel,
   recordReview,
+  recordViews,
   refusedCount,
   reviewGate,
   reviewState,
@@ -171,9 +175,17 @@ export function GovernancePhone({
             <span className={thirdEdition.phoneMetaLine}>{phoneSubjectLabel(event)}</span>
             <span className={thirdEdition.phoneMetaLine}>
               <StatusGlyph tone={tone} size={9} />
-              {categoryLabels[event.category]} · {outcomeLabels[event.outcome]}
-              {event.actor.role ? ` · ${deskRoleLabel(event.actor.role)}` : ""}
+              {event.action === "BREAK_GLASS" && event.details.desk
+                ? `${reasonLabel(event.details.reason)} · ${shortDeskLabel(event.details.desk)}, ${event.details.place}`
+                : `${categoryLabels[event.category]} · ${outcomeLabels[event.outcome]}${event.actor.role ? ` · ${deskRoleLabel(event.actor.role)}` : ""}`}
             </span>
+            {isPattern(event) ? (
+              <span className={thirdEdition.phoneMetaLine}>
+                <Badge tone="warning" size="sm">
+                  More than {PATTERN_LIMIT} in {PATTERN_HOURS} hours
+                </Badge>
+              </span>
+            ) : null}
           </>
         }
         value={event.at === null ? "–" : formatInstantWithDay(event.at, now)}
@@ -439,7 +451,13 @@ export function GovernancePhone({
                 {
                   id: "reason",
                   label: "Reason",
-                  value: selected.reasonCode !== "none" ? reasonLabels[selected.reasonCode] : "None recorded",
+                  // D-80 item 14: a break glass opening carries its own reason.
+                  value:
+                    selected.action === "BREAK_GLASS"
+                      ? reasonLabel(selected.details.reason)
+                      : selected.reasonCode !== "none"
+                        ? reasonLabels[selected.reasonCode]
+                        : "None recorded",
                 },
               ]}
             />
@@ -449,6 +467,7 @@ export function GovernancePhone({
               <h3 className={thirdEdition.subheading}>Recorded facts</h3>
               <EventFacts event={selected} units={units} now={now} />
             </div>
+            {recordViews}
             {phoneMovementId ? (
               <div className={thirdEdition.entityLinks}>
                 <Link href={movementHref(phoneMovementId)} className={buttonClass({ size: "sm" })}>

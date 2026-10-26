@@ -154,6 +154,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       ownRequest: async () => connected().ownRequest(),
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
+      readRecordAccess: async () => connected().readRecordAccess(),
     };
   }, [supabase.client, accountBinding]);
   if (!supabaseMode)

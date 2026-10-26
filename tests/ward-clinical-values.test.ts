@@ -225,6 +225,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
     name: "ROLE_ALERT_WINDOW_MINUTES",
     why: "how long a phone alert id stays live for a retried delivery (D-80); never shown",
   },
+  {
+    file: "governance-access-review.ts",
+    name: "RECORD_VIEW_DAYS",
+    why: "how far back Governance lists who opened a record (D-80 item 14, the plan's 7 days); a log window, not a limit",
+  },
   { file: "ward-model.ts", name: "PULL_HOLD_MINUTES", why: "legal figure guard provenance; listed as pullHold" },
   {
     file: "ward-model.ts",

@@ -258,6 +258,46 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* D-80 item 14: who opened the chosen record, time then desk, place and screen. */
+.whoOpened {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each row shares the list's columns, so the times line up. */
+.whoOpened li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* The segmented filter above the review list, with the source note at its end. */
+.reviewFilter {
+  justify-content: space-between;
+}
+
+/* Record views: When and Where size to their text; Desk and Record share the rest. */
+.viewTable td {
+  vertical-align: top;
+  --wf-cell-pad-y: var(--wf-s-2);
+}
+
+.viewTable th:first-child,
+.viewTable td:first-child,
+.viewTable th:last-child,
+.viewTable td:last-child {
+  width: 1%;
+  max-width: none;
+  overflow: visible;
+}
+
 .quiet {
   margin: 0;
   color: var(--wf-ink-3);
@@ -373,7 +413,11 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(9rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 8rem 7rem;
+  /* D-80 item 14: Outcome is wide enough for "More than 3 in 12 hours"; What and By give way. */
+  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(7.5rem, 1.6fr) minmax(7rem, 1.2fr) minmax(
+      5rem,
+      0.8fr
+    ) 10.5rem 7rem;
   align-items: center;
   gap: var(--wf-s-3);
   min-width: 44rem;

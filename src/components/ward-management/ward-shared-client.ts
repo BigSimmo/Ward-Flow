@@ -67,6 +67,26 @@ export type SharedMembership = {
   approvedBy: string | null;
   minutes: { granted: number | null; expires: number | null; lastUsed: number | null };
 };
+/**
+ * D-80 item 14: who opened a record, and the break glass openings, as the server lists them for a
+ * coordinator. Times are minutes from the server's now.
+ */
+export type SharedRecordView = {
+  id: string;
+  actor_role: string;
+  actor_scope: unknown;
+  patient_id: string;
+  surface: string;
+  minutes: number;
+};
+export type SharedBreakGlassOpening = {
+  id: string;
+  actor_role: string;
+  actor_scope: unknown;
+  patient_id: string;
+  reason: string;
+  minutes: { opened: number; until: number };
+};
 /** A request for access as the server lists it. */
 export type SharedAccessRequest = {
   id: string;
@@ -879,6 +899,15 @@ export class SharedWorkspaceClient {
     } catch {
       // Logged on the next opening; the page itself is unaffected.
     }
+  }
+  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
+  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok) throw new Error("Record access could not be read");
+    return {
+      views: Array.isArray(value?.views) ? value.views : [],
+      openings: Array.isArray(value?.openings) ? value.openings : [],
+    };
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

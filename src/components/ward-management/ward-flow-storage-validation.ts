@@ -62,6 +62,7 @@ import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -1168,8 +1169,14 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   const seededAuditIds = new Set(
     (isGovernanceSeedReadableState(value) ? syntheticGovernanceAuditEvents(value) : []).map((e) => e.id),
   );
+  // D-80 item 14: a review of a break glass opening names the opening, which is kept outside the workspace.
   for (const row of state.auditReviews)
-    if (!auditIds.has(row.eventId) && !seededAuditIds.has(row.eventId) && !row.eventId.startsWith("audit-seed-"))
+    if (
+      !auditIds.has(row.eventId) &&
+      !seededAuditIds.has(row.eventId) &&
+      !row.eventId.startsWith("audit-seed-") &&
+      !isBreakGlassReviewId(row.eventId)
+    )
       return false;
 
   for (const row of state.undoRecords ?? []) {

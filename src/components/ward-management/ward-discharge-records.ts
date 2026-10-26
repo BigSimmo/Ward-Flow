@@ -253,7 +253,7 @@ export function newDischargeRequestNamespace(): string {
 
 export function isDischargeOpenReceipt(entry: AuditEvent, handle: DischargeOpenHandle): boolean {
   return (
-    entry.category === "record-access" &&
+    entry.action === "OPEN_DISCHARGE_RECORD" &&
     entry.generation === handle.generation &&
     entry.details.requestId === handle.requestId &&
     entry.details.requestNamespace === handle.requestNamespace

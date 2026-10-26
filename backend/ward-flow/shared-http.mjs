@@ -347,12 +347,17 @@ export function createSharedHandler({
         return reply(200, { events: await store.audit(view) });
       }
       if (path === "/v1/workspace/record-access") {
-        // Every desk logs the records it opens. Only the statewide coordinator reads the log.
+        // Every desk logs the records it opens. A coordinator reads the log and the break glass
+        // openings for its review list: statewide every record, a service its own (D-80 item 14).
         if (request.method === "GET") {
-          if (!whole) return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
+          if (view.access.role !== "coordinator")
+            return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
-          return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });
+          return reply(200, {
+            views: store.recordViews ? await store.recordViews(view, patient) : [],
+            openings: store.breakGlassOpenings && patient === null ? await store.breakGlassOpenings(view) : [],
+          });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;

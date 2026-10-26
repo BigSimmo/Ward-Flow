@@ -41,6 +41,10 @@ const hasMarkers = (payload) =>
 const VIEW_REPEAT_MS = 60_000;
 /** Most record access rows one read returns. */
 const VIEW_LIST_LIMIT = 200;
+/** How far back the coordinator's record views reach (D-80 item 14). */
+const REVIEW_DAYS = 7;
+/** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
+const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;
 
@@ -275,6 +279,23 @@ export function createWorkspaceStore(
         throw error;
       }
     }
+  }
+  /**
+   * D-80 item 14: the patient and journey ids in this desk's own part of the workspace, which are
+   * the records whose openings it may review. `null` for the statewide coordinator: every record.
+   * A break glass grant of the coordinator's own never widens it.
+   */
+  async function recordsInPlace(view, at) {
+    if (engine.wholeNetwork(view.access)) return null;
+    const stored = await readWorld(pool, "payload");
+    if (!stored || !engine.validWorld(stored.payload)) return [];
+    const { state } = engine.scopeWorld(stored.payload, view.access, at, []);
+    const ids = [
+      ...state.patients.map((patient) => patient.id),
+      ...state.movements.flatMap((movement) => [movement.id, movement.patientId]),
+      ...state.referrals.map((referral) => referral.patientId),
+    ];
+    return [...new Set(ids.filter((id) => typeof id === "string"))];
   }
   /**
    * The workspace row under `lock` ("UPDATE" or "SHARE"), with its whole world in `payload`, the
@@ -1423,16 +1444,45 @@ export function createWorkspaceStore(
       });
     },
     /**
-     * The newest record openings, optionally for one patient. Only the statewide coordinator reads
-     * them; the HTTP layer refuses everyone else before this runs.
+     * The newest record openings of the last 7 days, optionally for one patient. A coordinator
+     * reads them: the statewide one every record, a service one only the records in its own part of
+     * the workspace (D-80 item 14). The HTTP layer refuses everyone else before this runs. Each row
+     * says how many minutes before the server's now it was opened.
      */
     async recordViews(view, patientId = null) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
+      const at = clock();
+      const inPlace = await recordsInPlace(view, at);
+      if (inPlace?.length === 0) return [];
+      const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+      const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
+      const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
       const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype'${patientId ? " AND patient_id=$2" : ""} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
-        patientId ? [workspaceId, patientId] : [workspaceId],
+        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        params,
       );
-      return rows;
+      return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
+    },
+    /**
+     * D-80 item 14: the newest break glass openings for the coordinator's review list, with the
+     * desk that opened each (its role and place, from its membership) and why. Scoped and refused
+     * as `recordViews`. The record itself shows only on the screens the coordinator already has.
+     */
+    async breakGlassOpenings(view) {
+      if (!(view.version >= ROLE_ACCESS_MIGRATION)) return [];
+      const at = clock();
+      const inPlace = await recordsInPlace(view, at);
+      if (inPlace?.length === 0) return [];
+      const params = [workspaceId];
+      const place = inPlace ? ` AND b.patient_id = ANY($${params.push(inPlace)})` : "";
+      const { rows } = await pool.query(
+        `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype'${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        params,
+      );
+      return rows.map(({ opened_at: opened, until, ...row }) => ({
+        ...row,
+        minutes: { opened: minutesBefore(opened, at), until: minutesBefore(until, at) },
+      }));
     },
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token

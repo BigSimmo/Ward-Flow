@@ -372,6 +372,23 @@ export function breakGlass(input: {
   return record;
 }
 
+/**
+ * D-80 item 14: this tab's openings in the shape of the coordinator's review list, which also holds
+ * the server's openings and the demo's synthetic ones. Local demo only; never stored.
+ */
+export function breakGlassOpeningsForReview(records: readonly BreakGlassRecord[]) {
+  return records.map((record) => ({
+    key: `local-${record.id}-${Math.max(0, Math.round(record.openedAt))}`,
+    at: record.openedAt,
+    until: record.until,
+    record: record.patientId,
+    reason: record.reason,
+    desk: record.role,
+    place: record.placeLabel,
+    ...(record.otherText ? { otherText: record.otherText } : {}),
+  }));
+}
+
 /** The desk as it stands, outside React (tests and one-off reads). */
 export function readWardAccessSnapshot(): Snapshot {
   return getSnapshot();
