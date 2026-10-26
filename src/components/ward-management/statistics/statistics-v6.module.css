@@ -898,4 +898,14 @@
   .finderLink {
     min-height: var(--wf-touch);
   }
+
+  /* H-0618 / H-0879: a sortable column head is a full-height tap target too. */
+  .sortTh button {
+    min-width: var(--wf-touch);
+    min-height: var(--wf-touch);
+  }
+
+  .sortTh.num button {
+    justify-content: flex-end;
+  }
 }
