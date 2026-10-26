@@ -234,11 +234,12 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   loadScenarioFile?: (text: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
-  /** Shared workspace connection status and error for forms that must await shared save completion. */
+  /** Shared workspace status, error and receivedAt (device time of the last good read, 0 before one) for shared-save forms. */
   shared?: {
     enabled: boolean;
     status: WardSharedConnection["status"];
     error: string | null;
+    receivedAt?: number;
   };
   /** False when the shared workspace has switched demo controls off. Optional for test contexts. */
   demoControlsAvailable?: boolean;
@@ -1316,10 +1317,8 @@ function WardFlowWorld({
   );
 
   // One object per change of status, so readers of `shared` do not wake on every clock tick.
-  const sharedStatus = useMemo(
-    () => ({ enabled: sharedConnection.enabled, status: sharedConnection.status, error: sharedConnection.error }),
-    [sharedConnection.enabled, sharedConnection.status, sharedConnection.error],
-  );
+  const { enabled, status, error, receivedAt } = sharedConnection;
+  const sharedStatus = useMemo(() => ({ enabled, status, error, receivedAt }), [enabled, status, error, receivedAt]);
 
   const value = useMemo<WardFlowContextValue>(
     () => ({
