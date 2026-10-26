@@ -69,11 +69,17 @@ export function WardTelemetryRibbon({
           value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
           // LEAD-a (H-0181): one plain name, "2 Ready now, 1 being made ready", not the figure, the
           // preparation count and then the label run together.
+          // The screen-reader name is one hidden run, so browsers do not read a stray space before
+          // the comma.
           label={
-            <>
-              Ready now
-              {pendingPreparation > 0 ? <SrOnly>, {pendingPreparation} being made ready</SrOnly> : null}
-            </>
+            pendingPreparation > 0 ? (
+              <>
+                <span aria-hidden="true">Ready now</span>
+                <SrOnly>Ready now, {pendingPreparation} being made ready</SrOnly>
+              </>
+            ) : (
+              "Ready now"
+            )
           }
           tone="success"
           pressed={filter === "free"}

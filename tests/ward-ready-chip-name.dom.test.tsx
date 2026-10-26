@@ -27,6 +27,8 @@ describe("the phone Ready now chip's accessible name (LEAD-a, H-0181)", () => {
       </WardFlowProvider>,
     );
     const chip = screen.getByTestId("ward-hero-ready").closest("button")!;
-    expect(chip.textContent?.replace(/\s+/gu, " ").trim()).toBe(`2Ready now, ${pending} being made ready`);
+    expect(chip).toBe(
+      screen.getByRole("button", { name: new RegExp(`^2\\s*Ready now, ${pending} being made ready$`, "u") }),
+    );
   });
 });
