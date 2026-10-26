@@ -110,6 +110,8 @@ import {
   wardActNowCount,
 } from "./ward-home-tab";
 import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon";
+import { type OpenBedAsk, WardBedMoveReasonForm } from "./ward-bed-move-reason-form";
+import { OPEN_BED_MOVE_REASON_REQUIRED } from "@/components/ward-management/ward-bed-move-reason";
 import {
   arrivalIsLate,
   type BoardCheck,
@@ -346,6 +348,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // v10 pass 3, Bed board: who is picked up, what the board says and the bed placed last.
   const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
   const [boardSay, setBoardSay] = useState("");
+  const [openBedAsk, setOpenBedAsk] = useState<OpenBedAsk | null>(null);
   const [placedBed, setPlacedBed] = useState<number | null>(null);
   // Each settled place or undo waits here for the effect below, so two in flight both get their answer.
   const boardChecksRef = useRef<(BoardCheck & { outcome?: WardCommandOutcome })[]>([]);
@@ -548,6 +551,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (refused) {
         const said = `Not recorded: ${refused.reason.replace(/\.$/, "")}. Nothing was changed.`;
         setBoardSay(said);
+        if (check.ask && refused.reason.includes(OPEN_BED_MOVE_REASON_REQUIRED)) setOpenBedAsk(check.ask);
         if (toast) toast.push({ tone: "warning", title: said });
         return;
       }
@@ -1227,6 +1231,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       setBoardPick(null);
       return;
     }
+    setOpenBedAsk(null);
     setBoardPick(pick);
     setPlacedBed(null);
     setBoardSay(pickedUpSay(pick, fitCount(bedsList, pick, isMixed)));
@@ -1247,6 +1252,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       fromBed,
       name: bed.patientAlias ?? `the person in bed ${bedNumberLabel(fromBed)}`,
     });
+  }
+
+  /** A Bed board move; a refusal that asks for a reason opens the reason form (audit CS3-12). */
+  function moveStay(move: OpenBedAsk, reason?: OverrideReason) {
+    setOpenBedAsk(null);
+    const check: BoardCheck = {
+      prior: rejections.length,
+      bed: move.bedNumber,
+      success: `Moved ${move.name} from bed ${bedNumberLabel(move.fromBed)} to bed ${bedNumberLabel(move.bedNumber)}.`,
+      undo: { kind: "stay", admissionId: move.admissionId, unitId: boardUnitId },
+      ...(reason === undefined ? { ask: move } : {}),
+    };
+    runBoardCommand(
+      () =>
+        raise("PLACE_IN_BED", {
+          admissionId: move.admissionId,
+          bedNumber: move.bedNumber,
+          actingUnitId: boardUnitId,
+          ...(reason === undefined ? {} : { overrideReason: reason }),
+        }),
+      check,
+    );
   }
 
   /** A bed pressed on the board: place what is picked up, or open the bed when nothing is. */
@@ -1271,25 +1298,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // waits; its answer still arrives through the queued board check.
     setBoardPick(null);
     if (pick.kind === "stay") {
-      const check: BoardCheck = {
-        prior: rejections.length,
-        bed: bedNumber,
-        success: `Moved ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bedNumberLabel(bedNumber)}.`,
-        undo: {
-          kind: "stay",
-          admissionId: pick.admissionId,
-          unitId: boardUnitId,
-        },
-      };
-      runBoardCommand(
-        () =>
-          raise("PLACE_IN_BED", {
-            admissionId: pick.admissionId,
-            bedNumber,
-            actingUnitId: boardUnitId,
-          }),
-        check,
-      );
+      moveStay({ admissionId: pick.admissionId, fromBed: pick.fromBed, bedNumber, name: pick.name });
     } else if (pick.kind === "movement") {
       // v10 pass 3: a coordinator-sent person, accepted in principle into this numbered bed.
       const check: BoardCheck = {
@@ -2367,6 +2376,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           boardPick={boardPick}
           pickOnBoard={pickOnBoard}
           boardSay={boardSay}
+          boardReasonForm={
+            openBedAsk ? (
+              <WardBedMoveReasonForm
+                key={`${openBedAsk.admissionId}:${openBedAsk.bedNumber}`}
+                ask={openBedAsk}
+                onMove={(reason) => moveStay(openBedAsk, reason)}
+                onCancel={() => setOpenBedAsk(null)}
+              />
+            ) : null
+          }
           pressBoardBed={pressBoardBed}
           placedBed={placedBed}
           latestRefreshRequest={latestRefreshRequest}

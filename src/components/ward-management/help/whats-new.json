@@ -33,5 +33,10 @@
     "id": "2026-10-26-inline-forms-changed-meanwhile",
     "date": "2026-10-26",
     "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
+  },
+  {
+    "id": "2026-10-26-bed-move-open-bed-reason",
+    "date": "2026-10-26",
+    "line": "Moving someone from a locked bed to an open bed on the Bed board now asks for a reason, unless they are Voluntary."
   }
 ]

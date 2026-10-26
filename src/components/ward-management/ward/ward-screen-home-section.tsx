@@ -113,6 +113,8 @@ type WardScreenHomeSectionProps = {
   boardPick: BoardPick | null;
   pickOnBoard: (pick: BoardPick | null) => void;
   boardSay: string;
+  /** Audit CS3-12: the reason form for a move to an open bed, under the board. */
+  boardReasonForm?: ReactElement | null;
   pressBoardBed: (bed: BedItem) => void;
   placedBed: number | null;
   latestRefreshRequest: CapacityRefreshRequest | undefined;
@@ -190,6 +192,7 @@ export function WardScreenHomeSection({
   boardPick,
   pickOnBoard,
   boardSay,
+  boardReasonForm,
   pressBoardBed,
   placedBed,
   latestRefreshRequest,
@@ -317,21 +320,24 @@ export function WardScreenHomeSection({
         }}
         bedArea={
           activeTab === "board" ? (
-            <WardBedBoard
-              unit={unit}
-              beds={bedsList}
-              isMixed={isMixed}
-              waiting={boardWaiting}
-              picked={boardPick}
-              onPick={pickOnBoard}
-              say={boardSay}
-              onBedPress={pressBoardBed}
-              placedBed={placedBed}
-              query={deferredBedQuery}
-              onOpenList={() => {
-                selectActiveTab("attn");
-              }}
-            />
+            <>
+              <WardBedBoard
+                unit={unit}
+                beds={bedsList}
+                isMixed={isMixed}
+                waiting={boardWaiting}
+                picked={boardPick}
+                onPick={pickOnBoard}
+                say={boardSay}
+                onBedPress={pressBoardBed}
+                placedBed={placedBed}
+                query={deferredBedQuery}
+                onOpenList={() => {
+                  selectActiveTab("attn");
+                }}
+              />
+              {boardReasonForm}
+            </>
           ) : undefined
         }
         figures={
