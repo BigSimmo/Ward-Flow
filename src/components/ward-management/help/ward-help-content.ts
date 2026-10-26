@@ -11,8 +11,10 @@
  * The words describe the current screens. Nothing here is clinical or legal advice: every screen is
  * a synthetic prototype, and the help says so once, at the top of the sheet.
  */
+import { formTitleForCode } from "@/lib/form-register";
 import { BED_FINDER_MENU_ID, ROLE_MENUS } from "@/components/ward-management/shell/ward-rail-entries";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CONTINUATION_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { WARD_COMMAND_HREF } from "@/components/ward-management/ward-nav";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
@@ -24,6 +26,8 @@ export type ScreenHelp = {
   purpose: string;
   /** Its main actions, at most three, each a short sentence. */
   actions: readonly string[];
+  /** The same actions on a phone, where a keyboard line would mean nothing (HF-14). */
+  phoneActions?: readonly string[];
   /** Questions people ask on this screen, each answered in a sentence or two. */
   questions?: readonly HelpQuestion[];
 };
@@ -34,6 +38,16 @@ const WHY_NO_ANSWER: HelpQuestion = {
   question: "Why can't I answer this referral?",
   answer:
     "Only the ward itself accepts or declines its referrals. A bed manager sees them but cannot answer, so ask the ward to answer from its own desk.",
+};
+
+/**
+ * The meeting room TV hides the header, so Help cannot open there. Its help sits on the screens
+ * that open it: Capacity, a ward and an ED (HF-10).
+ */
+const TV_QUESTION: HelpQuestion = {
+  question: "How do I put this on the meeting room TV?",
+  answer:
+    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows initials rather than full names and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back.",
 };
 
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
@@ -54,6 +68,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Open a ward to see its beds and who is coming in.",
       "Use the service selector in the header to look at one health service.",
     ],
+    questions: [TV_QUESTION],
   },
   movements: {
     title: "Movements",
@@ -71,6 +86,11 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Open a referral to see where it was sent and each destination's answer.",
       "Accept or decline it for your own ward or team, with a reason when declining.",
       "On a keyboard, J and K step through referrals. Press ? for the rest.",
+    ],
+    phoneActions: [
+      "Open a referral to see where it was sent and each destination's answer.",
+      "Accept or decline it for your own ward or team, with a reason when declining.",
+      "Tap a referral to open it, and the back arrow to return to the list.",
     ],
     questions: [
       {
@@ -124,9 +144,9 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   [BED_FINDER_MENU_ID]: {
     title: "Find a bed",
-    purpose: "Shows which wards have a bed that fits, before you raise a referral.",
+    purpose: "Lists which wards meet the checks you choose, A to Z by name, before you raise a referral.",
     actions: [
-      "Choose the age group, bed type, sex and legal status, then read the wards that fit and their free beds.",
+      "Choose the age group, bed type, sex and legal status, then read the wards that meet those checks and their ready beds. Wards are never ranked.",
     ],
   },
   officer: {
@@ -262,7 +282,7 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Bed board places patients in beds. Decisions holds what is due this shift.",
       "Confirm numbers when the bed figures change. Notices, Shift brief and Handover are in the toolbar.",
     ],
-    questions: [WHY_NO_ANSWER],
+    questions: [WHY_NO_ANSWER, TV_QUESTION],
   },
   {
     id: "board",
@@ -330,6 +350,7 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready.",
       "Raise referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
+    questions: [TV_QUESTION],
   },
   {
     id: "community-team",
@@ -378,6 +399,21 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
 ];
 
+/**
+ * Settings as the access admin sees it: it opens on Access, the desk's only job (HF-02). The other
+ * desks read the Settings help above.
+ */
+export const ADMIN_SETTINGS_HELP: ScreenHelp & { id: string } = {
+  id: "settings",
+  title: "Settings",
+  purpose: "Where you give, check and remove roles. It opens on Access. You see no patients from this desk.",
+  actions: [
+    "Answer Requests for access with Give for 90 days or Decline.",
+    "Use Give a role for a new role: the person, one desk, one place and an end date.",
+    "Check Everyone with a role, and Remove a role when someone changes job or leaves.",
+  ],
+};
+
 /** Rail screens whose own pages sit under their address, so they share its help. */
 const OWNS_SUB_PAGES: ReadonlySet<string> = new Set(["statistics"]);
 
@@ -401,7 +437,14 @@ export function screenHelpFor(
   let menuId: string | undefined;
   const page = PAGE_HELP.find((candidate) => candidate.path.test(path));
   if (page) {
-    help = { id: page.id, title: page.title, purpose: page.purpose, actions: page.actions, questions: page.questions };
+    help = {
+      id: page.id,
+      title: page.title,
+      purpose: page.purpose,
+      actions: page.actions,
+      phoneActions: page.phoneActions,
+      questions: page.questions,
+    };
     menuId = page.menuId;
   } else {
     const entry = entries.find(
@@ -423,7 +466,7 @@ export type GlossaryTerm = { term: string; meaning: string };
 
 /** Ward Flow's own words. Codes for sites and services are added below from their one source. */
 const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
-  { term: "Act now", meaning: "Something due now or overdue. It shows first on every list that has it." },
+  { term: "Act now", meaning: "Something due now or overdue. Lists that have it keep it in its own Act now group." },
   { term: "Movement", meaning: "One patient's journey to a bed, from the request to arrival." },
   { term: "Referred", meaning: "A destination has been asked for, and nothing has answered yet." },
   { term: "Review", meaning: "At least one unit is weighing up whether it can take the patient." },
@@ -437,7 +480,11 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
   { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },
   { term: "Held bed", meaning: "A bed kept for a patient on leave or away from the ward, ready for their return." },
-  { term: "Pull time limit", meaning: "How long a pulled bed is kept before it returns to the ward." },
+  {
+    term: "Pull time limit",
+    meaning:
+      "How long a pulled bed is kept for the patient. When it passes, the bed shows Pull expired and a person moves or releases it.",
+  },
   { term: "Being made ready", meaning: "A released bed still being prepared. It may not be offered as Ready yet." },
   { term: "Ready", meaning: "A bed the ward has confirmed is clean and staffed for an admission." },
   { term: "Held up", meaning: "A discharge or move that is delayed. It is not a bed state." },
@@ -461,6 +508,11 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   {
     term: "CLD ready",
     meaning: "Every criterion for criteria led discharge is met. CLD review means the criteria have lapsed.",
+  },
+  {
+    term: "Tier",
+    meaning:
+      "The urgency recorded on the referral, from T1 (most urgent) to T3. Lists stay in wait order; the tier only marks a row.",
   },
   { term: "T1", meaning: "Urgency tier 1, most urgent. The tier is recorded on the referral." },
   { term: "T2", meaning: "Urgency tier 2, urgent." },
@@ -513,6 +565,16 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Legal form", meaning: "The legal form a person recorded for a movement, with its due time as recorded." },
 
   { term: "Out of area", meaning: "A patient in a bed outside their home health service." },
+  { term: "AWOL", meaning: "Absent without leave: a patient who has left the ward without approved leave." },
+  {
+    term: "CTO",
+    meaning: "Community treatment order. The community team's CTO register lists the people on one.",
+  },
+  { term: "ETA", meaning: "Estimated time of arrival, as quoted by the transport provider or the ward." },
+  { term: "MDT", meaning: "Multidisciplinary team, such as the catchment MDT a community team holds." },
+  { term: "MHA", meaning: "The Mental Health Act 2014 (WA)." },
+  { term: "ED", meaning: "Emergency department." },
+  { term: "EDD", meaning: "Expected date of discharge." },
   { term: "UMRN", meaning: "Unit medical record number. Ward Flow uses invented ones only." },
   { term: "CAD number", meaning: "The St John WA booking number for an ambulance transfer." },
   { term: "ECT", meaning: "Electroconvulsive therapy." },
@@ -525,9 +587,21 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "WACHS", meaning: "WA Country Health Service." },
 ];
 
+/**
+ * The legal forms people can record, named from the Chief Psychiatrist's register, so the glossary
+ * cannot drift from the titles the screens show (HF-08).
+ */
+const FORM_TERMS: readonly GlossaryTerm[] = CONTINUATION_LEGAL_FORMS.flatMap(({ code }) => {
+  const title = formTitleForCode(code);
+  return title === null
+    ? []
+    : [{ term: `Form ${code}`, meaning: `${title}. Any time shown is as typed from the paper form.` }];
+});
+
 /** Initial glossary retained for existing imports. The help sheet reads the active directory below. */
 export const GLOSSARY: readonly GlossaryTerm[] = [
   ...WARD_FLOW_TERMS,
+  ...FORM_TERMS,
   ...siteDirectory.map((site) => ({ term: site.code, meaning: site.name })),
 ].toSorted((left, right) => left.term.localeCompare(right.term, "en-AU"));
 
@@ -537,9 +611,11 @@ const glossaries = new WeakMap<readonly SiteIdentity[], readonly GlossaryTerm[]>
 export function glossaryForSites(sites: readonly SiteIdentity[]): readonly GlossaryTerm[] {
   const existing = glossaries.get(sites);
   if (existing) return existing;
-  const terms = [...WARD_FLOW_TERMS, ...sites.map((site) => ({ term: site.code, meaning: site.name }))].toSorted(
-    (left, right) => left.term.localeCompare(right.term, "en-AU"),
-  );
+  const terms = [
+    ...WARD_FLOW_TERMS,
+    ...FORM_TERMS,
+    ...sites.map((site) => ({ term: site.code, meaning: site.name })),
+  ].toSorted((left, right) => left.term.localeCompare(right.term, "en-AU"));
   glossaries.set(sites, terms);
   return terms;
 }
