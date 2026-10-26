@@ -1009,7 +1009,17 @@ export function createWorkspaceStore(
     return resolveViewer(actorId, options, pool, clock(), await schemaVersion());
   }
   /** Resolve through the caller's connection so locked writes never use a stale joined scope. */
-  async function resolveViewer(actorId, { bootstrap = false, workingAs = null }, connection, at, version) {
+  /**
+   * `touch: false` (fresh audit X-2) skips the "last worked as" write, for the push opt-out that a
+   * signed-out or expired sign-in may still call, so it cannot keep an unused role switched on.
+   */
+  async function resolveViewer(
+    actorId,
+    { bootstrap = false, workingAs = null, touch = true },
+    connection,
+    at,
+    version,
+  ) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
     let needsService = false;
     if (version >= ROLE_ACCESS_MIGRATION) {
@@ -1090,6 +1100,7 @@ export function createWorkspaceStore(
     let recentGrant = false;
     const writeEvery = new Date(at.getTime() - LAST_USED_EVERY_MS);
     if (
+      touch &&
       chosen.membershipId &&
       version >= ACCESS_COVER_MIGRATION &&
       (!chosen.lastUsed || new Date(chosen.lastUsed) < writeEvery)

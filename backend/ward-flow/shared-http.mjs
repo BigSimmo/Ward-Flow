@@ -269,6 +269,9 @@ export function createSharedHandler({
       const view = await store.viewer(actorId, {
         bootstrap: bootstrapCoordinators(config).includes(actorId),
         workingAs,
+        // Fresh audit X-2: the push opt-out skips the sign-in checks above, so it must not count
+        // as working the role, or a signed-out phone could keep an unused role on for good.
+        ...(path === "/v1/workspace/push-unsubscribe" ? { touch: false } : {}),
       });
       // Asking for access is for a signed-in account with no role (feature 7), so it is answered
       // before the role checks below. An account that already holds a role is given another by an
@@ -625,7 +628,10 @@ export function createSharedHandler({
         return reply(400, { error: "The command is invalid; no change was saved" });
       // H-0291: the save would take the workspace past its size limit. It rolled back, so this
       // change is definitely not saved, and retrying the same change cannot succeed.
-      if (messageOf(error) === "Workspace too large")
+      if (
+        (typeof error === "object" && error !== null && "name" in error && error.name === "WorkspaceTooLargeError") ||
+        messageOf(error) === "Workspace too large"
+      )
         return reply(
           413,
           { code: "workspace-full", error: "The shared workspace is full, so this change was not saved." },

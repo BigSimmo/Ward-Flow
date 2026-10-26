@@ -914,3 +914,16 @@ test("a save past the workspace size limit is refused as full, never as a server
   assert.equal((await response.json()).code, "workspace-full");
   assert.equal(logs.at(-1).outcome, "workspace_full");
 });
+
+test("turning phone alerts off never counts as working the role (fresh audit X-2)", async () => {
+  const seen = [];
+  const { handler } = setup(coordinator, "prototype", {
+    viewer: async (actorId, options) => {
+      seen.push(options.touch);
+      return bootstrapViewer(actorId, options);
+    },
+  });
+  await handler(request("/push-unsubscribe", { endpoint: "https://push.example/1" }));
+  await handler(request());
+  assert.deepEqual(seen, [false, undefined]);
+});
