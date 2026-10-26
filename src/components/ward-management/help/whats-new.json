@@ -23,5 +23,10 @@
     "id": "2026-10-26-bed-flow-reliability",
     "date": "2026-10-26",
     "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
+  },
+  {
+    "id": "2026-10-26-tour-skip-closes",
+    "date": "2026-10-26",
+    "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
   }
 ]
