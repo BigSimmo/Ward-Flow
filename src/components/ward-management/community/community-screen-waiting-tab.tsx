@@ -104,7 +104,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     aria-pressed={triageFilter === "p1"}
                     onClick={() => setTriageFilter("p1")}
                   >
-                    <span>Priority 1 Immediate</span>
+                    <span>Priority 1 immediate</span>
                     <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                       {demoTeamReferrals.filter((r) => r.urgency === 1).length}
                     </span>
@@ -260,7 +260,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   aria-pressed={triageFilter === "p1"}
                   onClick={() => setTriageFilter("p1")}
                 >
-                  <span>Priority 1 Immediate</span>
+                  <span>Priority 1 immediate</span>
                   <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                     {p1ReferralsCount}
                   </span>

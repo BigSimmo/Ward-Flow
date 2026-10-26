@@ -49,7 +49,7 @@ describe("community demonstration queue totals", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Priority 2 Urgent/u }));
     expect(within(screen.getByTestId("ward-community-waiting-list")).getAllByRole("listitem")).toHaveLength(1);
     expectTotals(2, 1);
-    fireEvent.click(screen.getByRole("button", { name: /^Priority 1 Immediate/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Priority 1 immediate/u }));
     expect(screen.getByTestId("ward-community-waiting-empty")).toBeInTheDocument();
     expectTotals(2, 1);
   });
