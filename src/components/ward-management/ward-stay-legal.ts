@@ -1,4 +1,4 @@
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -13,18 +13,28 @@ export type StayLegalSource = {
   movements?: readonly Movement[];
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
+  plannedAdmissions?: readonly PlannedAdmission[];
 };
 
+/**
+ * The movement that brought the stay. A stay can be linked either way: `admission.movementId`, or
+ * only `movement.admissionId` (seeded stays and converted bookings keep `movementId: null`). Reading
+ * one link alone missed an absent patient on an order (fresh audit S-1, 26 Oct 2026).
+ */
 function stayMovement(admission: Admission, source: StayLegalSource): Movement | undefined {
-  return admission.movementId
-    ? source.movements?.find((candidate) => candidate.id === admission.movementId)
-    : undefined;
+  if (admission.movementId) return source.movements?.find((candidate) => candidate.id === admission.movementId);
+  return source.movements?.find((candidate) => candidate.admissionId === admission.id);
 }
 
-/** The recorded legal status for a stay: the movement that brought them, then the record. */
+/** The recorded legal status for a stay: the movement that brought them, the converted booking, then the record. */
 export function stayLegalStatus(admission: Admission, source: StayLegalSource): string | undefined {
   const movement = stayMovement(admission, source);
   if (movement?.legalStatus) return movement.legalStatus;
+  const planned =
+    admission.plannedLegalStatus ??
+    source.plannedAdmissions?.find((booking) => booking.state === "arrived" && booking.admissionId === admission.id)
+      ?.legalStatus;
+  if (planned) return planned;
   return resolveSubjectPatient(admission, source).patient?.legalStatus;
 }
 

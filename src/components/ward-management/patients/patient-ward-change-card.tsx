@@ -220,10 +220,10 @@ export function PatientWardChangeCard({
               ))}
             </div>
           </div>
-          <p className={styles.phSummary} aria-live="polite">
-            {parsed !== undefined
-              ? `Back ${formatInstantWithDay(parsed, now)}, in ${splitDuration(parsed - now)}. The bed is held while away.`
-              : null}
+          {/* Only the chosen time is live: the countdown moves each minute and was re-announced (fresh audit A-9). */}
+          <p className={styles.phSummary}>
+            <span aria-live="polite">{parsed !== undefined ? `Back ${formatInstantWithDay(parsed, now)}` : null}</span>
+            {parsed !== undefined ? `, in ${splitDuration(parsed - now)}. The bed is held while away.` : null}
           </p>
           <button type="button" className={styles.phOther} onClick={() => setCustomTime(true)}>
             Other time
