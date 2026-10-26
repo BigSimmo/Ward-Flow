@@ -39,8 +39,11 @@ function markRoutineSeen() {
  * shows every time, does not fade, and has the close button.
  */
 export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string; fadeAfterMs: number }) {
-  const closedOpenItems = notice.endsWith(OPEN_ITEMS_CLOSED_NOTICE);
-  const routine = notice.startsWith(RESTORED_NOTICE_PREFIX) && !closedOpenItems;
+  // Only a notice that is still a successful restore can close. A failed save is put in front of
+  // the restore notice, so it starts with the failure and stays until the problem is fixed.
+  const restored = notice.startsWith(RESTORED_NOTICE_PREFIX);
+  const closedOpenItems = restored && notice.endsWith(OPEN_ITEMS_CLOSED_NOTICE);
+  const routine = restored && !closedOpenItems;
   const [hidden, setHidden] = useState(false);
   // True once this notice has claimed the tab's one showing. StrictMode re-runs the effect on the
   // same instance, and this ref survives that, so the re-run keeps the notice it already claimed.

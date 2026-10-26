@@ -7,10 +7,12 @@ import { tryWriteDemoState } from "@/components/ward-management/ward-flow-demo-s
 import {
   OPEN_ITEMS_CLOSED_NOTICE,
   RESTORED_NOTICE_PREFIX,
+  STORAGE_UNAVAILABLE,
 } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
+import { WardRecoveryNoticeBody } from "@/components/ward-management/shell/ward-recovery-notice-body";
 
 // CS3-17 (26 Oct 2026): a saved day that differs from the first screen redraws every screen when it
 // loads, so a panel opened in the first moments closes. The restore notice now says so, and only
@@ -74,5 +76,15 @@ describe("the first restore after a click (CS3-17)", () => {
     expect(notice).toHaveTextContent(RESTORED_NOTICE_PREFIX);
     expect(notice).not.toHaveTextContent(OPEN_ITEMS_CLOSED_NOTICE);
     expect(notice).toHaveAttribute("data-routine", "true");
+  });
+
+  it("keeps a later save failure on screen after the restore notice was closed", () => {
+    const closed = `${RESTORED_NOTICE_PREFIX} 10:00. ${OPEN_ITEMS_CLOSED_NOTICE}`;
+    const { rerender } = render(<WardRecoveryNoticeBody notice={closed} fadeAfterMs={5000} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close notice" }));
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
+    rerender(<WardRecoveryNoticeBody notice={`${STORAGE_UNAVAILABLE} ${closed}`} fadeAfterMs={5000} />);
+    expect(screen.getByTestId("ward-recovery-notice")).toHaveTextContent(STORAGE_UNAVAILABLE);
+    expect(screen.queryByRole("button", { name: "Close notice" })).toBeNull();
   });
 });
