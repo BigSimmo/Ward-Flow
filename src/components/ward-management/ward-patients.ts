@@ -641,6 +641,14 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
   };
 }
 
+/**
+ * Whether two record numbers (UMRNs) name the same person: surrounding spaces and letter case do
+ * not count, the rule ADD_PATIENT's uniqueness check uses. Shared so every record-number match agrees.
+ */
+export function sameRecordNumber(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
 /** Fold text the way `findPatients` does before comparing needles and haystacks. */
 export function foldPatientSearchText(value: string): string {
   // Audit 24-7 (CT-23): runs of spaces count as one, so a doubled space still matches.
