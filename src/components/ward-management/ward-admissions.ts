@@ -836,10 +836,18 @@ export function liveMovementForAdmission(admission: Admission, movements: readon
 export function remainingSpeciallingCapacity(unit: Unit, admissions: readonly Admission[]): number {
   const authored = unit.speciallingCapacity;
   const staffable = Number.isFinite(authored) ? Math.max(0, Math.floor(authored)) : 0;
-  const staffed = admissions
-    .filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission))
+  return Math.max(0, staffable - observationStaffOnWard(unit.id, admissions));
+}
+
+/**
+ * Staff this ward is committing to constant observation: every bed it holds (pulled or occupied, as
+ * edIsOccupied says), so the ward screen's figure and the placement check count the same beds.
+ * Audit F1, Josh approved 26 Oct 2026: a pulled patient takes the staff from the pull onward.
+ */
+export function observationStaffOnWard(unitId: string, admissions: readonly Admission[]): number {
+  return admissions
+    .filter((admission) => admission.unitId === unitId && bedIsOccupied(admission))
     .reduce((total, admission) => total + observationStaff(admission.observation.level), 0);
-  return Math.max(0, staffable - staffed);
 }
 
 /**
