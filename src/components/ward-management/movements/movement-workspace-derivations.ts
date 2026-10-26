@@ -27,6 +27,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { movementProgressText, type MovementPresentation } from "../ward-partial-view-presenters";
 
 /**
  * Task 10 (spec item 8). `changeReasonLabels` covers the four reason lists in
@@ -321,6 +322,7 @@ export function attentionItems({
   destination,
   open,
   blockerIsActive,
+  presentation,
 }: {
   movement: Movement;
   units: Unit[];
@@ -329,6 +331,7 @@ export function attentionItems({
   destination: Unit | undefined;
   open: boolean;
   blockerIsActive: boolean;
+  presentation?: MovementPresentation;
 }): Attention[] {
   if (!open) {
     /*
@@ -350,7 +353,6 @@ export function attentionItems({
   }
 
   const items: Attention[] = [];
-
   /*
    * ⚠️ FIRST IN THE RAIL, DELIBERATELY. This is the only item here about a real vehicle rather than
    * about a record, and Ward Lead ruled it the most serious thing found on 2026-09-06. Pushed
@@ -358,6 +360,14 @@ export function attentionItems({
    */
   const orphaned = orphanedTransportAttention(movement);
   if (orphaned) items.push(orphaned);
+
+  if (
+    presentation?.kind === "unavailable" ||
+    (presentation?.kind === "sender" && ["none_found", "escalated"].includes(presentation.progress))
+  ) {
+    const progress = movementProgressText(presentation)!;
+    items.push({ key: "sender-progress", who: "Overall progress", chip: progress, level: "routine", say: progress });
+  }
 
   const deadline = movement.legalForm?.dueAt;
   if (movement.legalForm && deadline !== undefined) {
@@ -423,7 +433,11 @@ export function attentionItems({
     });
   }
 
-  if (movement.declines.length > 0 && movement.acceptedUnitId === undefined) {
+  if (
+    (!presentation || presentation.kind === "record") &&
+    movement.declines.length > 0 &&
+    movement.acceptedUnitId === undefined
+  ) {
     items.push({
       key: "stalled",
       who: `${movement.declines.length} ward${movement.declines.length === 1 ? "" : "s"} declined`,
@@ -433,7 +447,7 @@ export function attentionItems({
     });
   }
 
-  if (movement.escalation) {
+  if ((!presentation || presentation.kind === "record") && movement.escalation) {
     items.push({
       key: "escalation",
       who: movement.escalation.contact,

@@ -45,6 +45,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
+import { acceptedAddressing, referralState } from "@/components/ward-management/ward-referrals";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
 /** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
@@ -107,32 +108,44 @@ function movementUnitIds(movement: Movement): string[] {
  */
 function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolean, sent: boolean): Movement {
   const copy = { ...movement, referredUnitIds: movement.referredUnitIds.filter(unitIn) };
-  if (sent) return copy;
+  const placementIn = (unitId: string) => unitIn(unitId) || (sent && movement.acceptedUnitId === unitId);
   // Records naming one ward keep only this desk's own; records naming several keep only its own ids.
   for (const key of ["declines", "withdrawnReferrals", "unwinds", "referralAnswerHistory"] as const) {
     const items: { unitId?: string }[] | undefined = movement[key];
-    if (items) Object.assign(copy, { [key]: items.filter((item) => item.unitId === undefined || unitIn(item.unitId)) });
+    if (items)
+      Object.assign(copy, {
+        [key]: items.filter((item) => (item.unitId === undefined ? !sent : unitIn(item.unitId))),
+      });
   }
   for (const key of ["overrides", "genderPlacements"] as const) {
     const items: { unitIds: string[] }[] | undefined = movement[key];
     if (items)
       Object.assign(copy, {
         [key]: items.flatMap((item) => {
-          const unitIds = item.unitIds.filter(unitIn);
-          return unitIds.length || !item.unitIds.length ? [{ ...item, unitIds }] : [];
+          const unitIds = item.unitIds.filter(placementIn);
+          return unitIds.length || (!sent && !item.unitIds.length) ? [{ ...item, unitIds }] : [];
         }),
       });
   }
   if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
-  if (movement.escalation)
+  if (sent) {
+    // The sender's truthful escalation progress is a response sibling. Neither a contact nor a
+    // reason copied into the chronology may reveal a foreign request through this record.
+    delete copy.escalation;
+    copy.stageChanges = movement.stageChanges.map((change) => {
+      const chronology = { ...change };
+      delete chronology.reason;
+      return chronology;
+    });
+  } else if (movement.escalation)
     copy.escalation = { ...movement.escalation, triedUnitIds: movement.escalation.triedUnitIds.filter(unitIn) };
-  if (movement.acceptedUnitId && !unitIn(movement.acceptedUnitId)) {
+  if (movement.acceptedUnitId && !placementIn(movement.acceptedUnitId)) {
     delete copy.acceptedUnitId;
     delete copy.heldBedNumber;
     delete copy.allocatedBed;
   }
   // The legal mismatch names the accepting ward too, so it goes with that ward's acceptance.
-  if (movement.legalMismatch && !unitIn(movement.legalMismatch.unitId)) delete copy.legalMismatch;
+  if (movement.legalMismatch && !placementIn(movement.legalMismatch.unitId)) delete copy.legalMismatch;
   return copy;
 }
 
@@ -179,7 +192,8 @@ function withinHandoffWindow(closedAt: Instant, now: Instant, window: number): b
 }
 
 /**
- * Keep only the destination lines a predicate allows. A referral left with none is not this role's.
+ * Keep only the destination lines a predicate allows. A referral left with none is not this role's,
+ * except a sender record whose membership was already established from the full source.
  * Its call log (fix plan item 4) is trimmed with it: a call names the ward or team rung, so a
  * trimmed copy keeps only calls to the referrer and to the places on the lines it kept, or it would
  * say where else the person was referred (FD-23).
@@ -187,23 +201,26 @@ function withinHandoffWindow(closedAt: Instant, now: Instant, window: number): b
 function trimReferral(
   referral: Referral,
   keep: (addressing: Referral["destinations"][number]) => boolean,
+  keepEmpty = false,
 ): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
-  if (destinations.length === 0) return undefined;
+  if (destinations.length === 0 && !keepEmpty) return undefined;
   if (
     destinations.length === referral.destinations.length &&
     referral.genderPlacements === undefined &&
     referral.contactLog === undefined
   )
     return referral;
-  const trimmed: Referral = { ...referral, destinations };
+  const kept = new Set(destinations);
+  const hidden = referral.destinations.filter((line) => !kept.has(line));
+  const trimmed = withoutHiddenReassessmentCopies(referral, { ...referral, destinations }, hidden);
   const keptUnits = new Set(referralDestinationUnitIds(trimmed));
   // Placement history names wards independently of the addressing lines. A receiving desk must
   // not recover a hidden destination from that history, even when all its lines were kept.
   if (referral.genderPlacements)
     trimmed.genderPlacements = referral.genderPlacements.flatMap((placement) => {
       const unitIds = placement.unitIds.filter((id) => keptUnits.has(id));
-      return unitIds.length || !placement.unitIds.length ? [{ ...placement, unitIds }] : [];
+      return unitIds.length || (!keepEmpty && !placement.unitIds.length) ? [{ ...placement, unitIds }] : [];
     });
   if (referral.contactLog === undefined) return trimmed;
   const keptTeams = new Set(
@@ -219,6 +236,72 @@ function trimReferral(
         : true,
   );
   return { ...trimmed, contactLog };
+}
+
+function withoutHiddenReassessmentCopies(referral: Referral, copy: Referral, hidden: readonly Addressing[]): Referral {
+  if (hidden.length === 0) return copy;
+  // ACCEPT_REFERRAL duplicates destination reassessments onto the parent. Keep provenance
+  // from the full source: hiding an arm must also hide every duplicate parent copy of its
+  // entry. Unrelated common/coordinator entries remain, including their original order.
+  const hiddenHistory = hidden.flatMap((line) => line.reassessmentHistory ?? []);
+  const hiddenNotes = new Set<string>();
+  const legacyHiddenNotes = new Set<string>();
+  for (const line of hidden) {
+    if (line.reassessmentNote !== undefined) {
+      hiddenNotes.add(line.reassessmentNote);
+      if (!(line.reassessmentHistory ?? []).some((entry) => entry.note === line.reassessmentNote))
+        legacyHiddenNotes.add(line.reassessmentNote);
+    }
+    for (const entry of line.reassessmentHistory ?? []) if (entry.note !== undefined) hiddenNotes.add(entry.note);
+  }
+  const reassessmentHistory = referral.reassessmentHistory?.filter(
+    (entry) =>
+      !(entry.note !== undefined && legacyHiddenNotes.has(entry.note)) &&
+      !hiddenHistory.some(
+        (origin) =>
+          entry.at === origin.at &&
+          entry.by === origin.by &&
+          entry.note === origin.note &&
+          entry.clinicalUpdate === origin.clinicalUpdate &&
+          entry.clearanceUpdated === origin.clearanceUpdated &&
+          entry.urgency === origin.urgency &&
+          entry.highAcuity === origin.highAcuity,
+      ),
+  );
+  // Legacy loose arm notes and the loose parent latest note have no author/time tuple.
+  // Omit matching parent text conservatively; permitted arms themselves stay unchanged.
+  // Never guess an allowed origin or manufacture a replacement from an older entry.
+  const { reassessmentNote, ...parent } = copy;
+  return {
+    ...parent,
+    ...(reassessmentHistory === undefined ? {} : { reassessmentHistory }),
+    ...(reassessmentNote !== undefined && !hiddenNotes.has(reassessmentNote) ? { reassessmentNote } : {}),
+  };
+}
+
+/** Sender membership and handoff windows are decided from the full source before this copy.
+ * Own receiving arms remain available to a mixed ward/site desk. Of the foreign arms only the
+ * actual primary acceptance survives; community follow-up cannot settle an open bed question. */
+function senderReferralCopy(referral: Referral, ownLine: (addressing: Addressing) => boolean): Referral {
+  const primary = referralState(referral) === "accepted" ? acceptedAddressing(referral) : undefined;
+  const hidden = referral.destinations.filter((line) => line !== primary && !ownLine(line));
+  const destinations = referral.destinations.flatMap((line) => {
+    if (line !== primary && !ownLine(line)) return [];
+    if (
+      line === primary &&
+      line.destination.kind === "psychiatric_ward" &&
+      line.acceptedUnitId !== undefined &&
+      line.destination.unitId !== undefined &&
+      line.destination.unitId !== line.acceptedUnitId
+    ) {
+      const destination = { ...line.destination };
+      delete destination.unitId;
+      return [{ ...line, destination }];
+    }
+    return [line];
+  });
+  const copy = trimReferral({ ...referral, destinations }, () => true, true)!;
+  return withoutHiddenReassessmentCopies(referral, copy, hidden);
 }
 
 /**
@@ -824,7 +907,15 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             referralIsOpen(referral) ||
             withinHandoffWindow(referralClosedAt(referral), now, wardWindow))
         ) {
-          return [referral];
+          return [
+            senderReferralCopy(
+              referral,
+              (line) =>
+                (line.destination.kind === "psychiatric_ward" &&
+                  (line.destination.unitId === undefined || unitIn(line.destination.unitId))) ||
+                (line.destination.kind === "emergency_department" && edIn(line.destination.edId)),
+            ),
+          ];
         }
         const linked = referralIds.has(referral.id) || referralDestinationUnitIds(referral).some(unitIn);
         if (!linked) return [];
@@ -880,7 +971,16 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             referralIsOpen(referral) ||
             withinHandoffWindow(referralClosedAt(referral), now, wardWindow))
         ) {
-          return [referral];
+          return [
+            senderReferralCopy(
+              referral,
+              (line) =>
+                line.destination.kind === "psychiatric_ward" &&
+                (line.acceptedUnitId !== undefined
+                  ? unitIn(line.acceptedUnitId)
+                  : line.destination.unitId === undefined || unitIn(line.destination.unitId)),
+            ),
+          ];
         }
         const current = (addressing: Addressing) => lineIsCurrent(referral, addressing, now, wardWindow);
         if (!referralIds.has(referral.id) && !referralDestinationUnitIds(referral, current).some(unitIn)) return [];

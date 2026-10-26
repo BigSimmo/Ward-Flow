@@ -430,3 +430,13 @@
 tr[data-dim="true"] .rowSub {
   color: var(--wf-dim);
 }
+
+/* Layout sweep STATS-12: on a touch tablet a row's name link is a full-height tap target, not a
+   line of text. */
+@media (pointer: coarse) and (min-width: 48.0625rem) {
+  .rowLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-touch);
+  }
+}

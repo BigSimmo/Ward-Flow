@@ -774,10 +774,10 @@ button.taskLabel[aria-pressed="true"] {
 
 .focusClockLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px 8px;
   min-width: 0;
-  white-space: nowrap;
 }
 
 .focusClockLine > :first-child {
@@ -801,14 +801,12 @@ button.taskLabel[aria-pressed="true"] {
 
 .clockWord {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .focusTabs {
-  margin: 0 var(--wf-s-4) var(--wf-s-3);
+  margin: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
 .reqChecks {
@@ -925,7 +923,7 @@ button.taskLabel[aria-pressed="true"] {
 
 .reqBody {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
   gap: var(--wf-s-4);
   min-height: 320px;
 }
@@ -966,9 +964,6 @@ button.taskLabel[aria-pressed="true"] {
 
 .reqTitle {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .reqDetail {
@@ -1080,6 +1075,20 @@ button.taskLabel[aria-pressed="true"] {
 
   .nextCard {
     display: none;
+  }
+}
+
+/* iPad portrait: wrapped form names keep clear of the row borders (layout sweep 25 Oct 2026). */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .screen .row:not(.headRow) {
+    padding-block: var(--wf-s-2);
+  }
+}
+
+/* A finger needs a 44px target for "Add the time". */
+@media (pointer: coarse) {
+  .rowLink {
+    min-height: 44px;
   }
 }
 

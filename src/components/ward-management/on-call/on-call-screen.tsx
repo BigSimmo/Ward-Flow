@@ -1025,7 +1025,7 @@ function DirectoryRow({
           <span className={styles.roleCell}>
             <b>
               {byRole ? <ServiceTag service={entry.service} label="" /> : null}
-              {name}
+              <span className={styles.truncate}>{name}</span>
             </b>
             <span>{sub}</span>
           </span>
