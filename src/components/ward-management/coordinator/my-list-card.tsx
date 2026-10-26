@@ -3,7 +3,7 @@
 // Home's "My list" (approved Home mock-up v7, 22 Oct 2026): the Alerts queue rows and
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -77,13 +77,6 @@ function isYours(entry: QueueEntry): boolean {
 }
 
 /** Clicking a row anywhere that is not itself a control opens it; the row's buttons are the keyboard route. */
-function onRowClick(open: () => void) {
-  return (event: MouseEvent<HTMLLIElement>) => {
-    if ((event.target as HTMLElement).closest("a, button")) return;
-    open();
-  };
-}
-
 /**
  * Home's desktop row: glyph, a two-line body (what, then who and where), how long, one action. Text
  * wraps instead of being cut, and the owner shows only when it is someone other than you.
@@ -96,6 +89,7 @@ function HomeRow({
   title,
   openLabel,
   onOpen,
+  href,
   name,
   umrn,
   where,
@@ -110,7 +104,9 @@ function HomeRow({
   selected: boolean;
   title: string;
   openLabel: string;
-  onOpen: () => void;
+  onOpen?: () => void;
+  /** Opens a page rather than Placement: the title is then a link, and the row click follows it. */
+  href?: string;
   name: string;
   umrn: string;
   where: string;
@@ -119,28 +115,39 @@ function HomeRow({
   ageNote: string;
   action: ReactNode;
 }) {
+  const linkRef = useRef<HTMLAnchorElement>(null);
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
       className={styles.hrow}
       data-act={act ? "true" : undefined}
       data-selected={selected ? "true" : undefined}
-      onClick={onRowClick(onOpen)}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("a, button")) return;
+        if (href) linkRef.current?.click();
+        else onOpen?.();
+      }}
       {...data}
     >
       <span className={styles.hrowGlyph}>
         <StatusGlyph tone={tone} />
       </span>
       <span className={styles.hrowMain}>
-        <button
-          type="button"
-          className={styles.hrowTitle}
-          aria-current={selected ? "true" : undefined}
-          aria-label={openLabel}
-          onClick={onOpen}
-        >
-          {title}
-        </button>
+        {href ? (
+          <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={openLabel}>
+            {title}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={styles.hrowTitle}
+            aria-current={selected ? "true" : undefined}
+            aria-label={openLabel}
+            onClick={onOpen}
+          >
+            {title}
+          </button>
+        )}
         <span className={styles.hrowLine}>
           <strong className={styles.hrowName}>{name}</strong> <span className={styles.mono}>{umrn}</span>
           <span className={styles.hrowWhere}>{` · ${where}`}</span>
@@ -234,6 +241,7 @@ function PhoneRow({
   title,
   openLabel,
   onOpen,
+  href,
   name,
   umrn,
   line,
@@ -246,35 +254,48 @@ function PhoneRow({
   selected: boolean;
   title: string;
   openLabel: string;
-  onOpen: () => void;
+  onOpen?: () => void;
+  /** Opens a page rather than Placement: the title is then a link, and the row click follows it. */
+  href?: string;
   name: string;
   umrn: string;
   line: string;
   age: string | undefined;
   owner: string | undefined;
 }) {
+  const linkRef = useRef<HTMLAnchorElement>(null);
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
       className={alertStyles.phoneRow}
       data-act={act ? "true" : undefined}
       data-selected={selected ? "true" : undefined}
-      onClick={onRowClick(onOpen)}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("a, button")) return;
+        if (href) linkRef.current?.click();
+        else onOpen?.();
+      }}
       {...data}
     >
       <span className={alertStyles.phoneRowGlyph}>
         <StatusGlyph tone={tone} />
       </span>
       <span className={alertStyles.phoneRowText}>
-        <button
-          type="button"
-          className={alertStyles.rowOpen}
-          aria-current={selected ? "true" : undefined}
-          aria-label={openLabel}
-          onClick={onOpen}
-        >
-          <span className={alertStyles.rowOpenText}>{title}</span>
-        </button>
+        {href ? (
+          <Link ref={linkRef} href={href} className={alertStyles.rowOpen} aria-label={openLabel}>
+            <span className={alertStyles.rowOpenText}>{title}</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={alertStyles.rowOpen}
+            aria-current={selected ? "true" : undefined}
+            aria-label={openLabel}
+            onClick={onOpen}
+          >
+            <span className={alertStyles.rowOpenText}>{title}</span>
+          </button>
+        )}
         <span className={alertStyles.phoneRowLine}>
           <span className={alertStyles.who}>
             <strong className={alertStyles.name}>{name}</strong> <strong className={alertStyles.umrn}>{umrn}</strong>
@@ -321,7 +342,7 @@ export function MyListCard({
   phone,
   handlers,
   selectedReferralId,
-  onDecide,
+  decideHref,
   focus = "all",
   onShowAll,
 }: {
@@ -335,7 +356,11 @@ export function MyListCard({
   phone: boolean;
   handlers: QueueHandlers;
   selectedReferralId: string | undefined;
-  onDecide: (referralId: string) => void;
+  /**
+   * WS-04 (workflow speed audit, 26 Oct 2026): where Decide goes, the referral on the Referrals
+   * board with Accept and Decline in view. It used to open a read-only preview with neither.
+   */
+  decideHref: (referralId: string) => string;
   /** Hero counts narrow the list to one group; "all" shows every group. */
   focus?: "all" | "act" | "decide";
   onShowAll?: () => void;
@@ -382,7 +407,7 @@ export function MyListCard({
           selected: selectedReferralId === referral.id,
           title,
           openLabel: `Decide referral for ${name}`,
-          onOpen: () => onDecide(referral.id),
+          href: decideHref(referral.id),
           name,
           umrn: who.umrn,
         };
@@ -403,9 +428,13 @@ export function MyListCard({
             age={age}
             ageNote="waiting"
             action={
-              <Button size="sm" aria-label={`Decide referral for ${name}`} onClick={() => onDecide(referral.id)}>
+              <Link
+                href={decideHref(referral.id)}
+                className={buttonClass({ size: "sm" })}
+                aria-label={`Decide referral for ${name}`}
+              >
                 Decide
-              </Button>
+              </Link>
             }
           />
         );
@@ -544,7 +573,7 @@ export function MyListCard({
           open
           onClose={() => setPulling(undefined)}
           title="Pull the bed"
-          description="The details already recorded are filled in. Check them, then pull the bed."
+          description="Anything already recorded is filled in. Check the details, then pull the bed."
           testId="home-pull-accepted-sheet"
         >
           <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />

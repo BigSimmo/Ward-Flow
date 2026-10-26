@@ -65,8 +65,11 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
     recorded.observation?.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
   );
   const [startedMovementId, setStartedMovementId] = useState<string | undefined>();
-  // Set once the journey has started; read when the journey reaches the record.
-  const waitingForJourney = useRef(false);
+  // True once the start is accepted. The journey can reach the record before or after that answer
+  // (local or shared), so the pull waits for both: this flag and the journey on the record.
+  const [journeyStarted, setJourneyStarted] = useState(false);
+  // The journey whose bed this sheet has asked to pull, so a re-render never asks twice.
+  const pullAsked = useRef<string | undefined>(undefined);
   const [message, setMessage] = useState<string | undefined>();
 
   const accepted = acceptedAddressing(referral);
@@ -81,32 +84,43 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       : null;
   // This raises as the coordinator, so only the coordinator's desk may use it.
   const refusal =
+    (journeyStarted
+      ? message
+        ? "The journey has started. Open it to pull the bed."
+        : "Pulling the bed"
+      : undefined) ??
     (role === "coordinator" ? undefined : "Coordinator only") ??
     gate("RAISE_REFERRAL").reason ??
     gate("PULL_PATIENT").reason ??
     (!destination || (referral.source === "ed_medical" && !ed)
       ? "This referral has no accepted ward place to pull from"
       : undefined) ??
+    (referral.source === "community" && !referral.sendingTeamName
+      ? "This community referral has no referring team recorded"
+      : undefined) ??
+    (referral.ageBand === undefined ? "This referral has no age band recorded" : undefined) ??
     (legalStatus === "" ? "Choose the legal status" : undefined) ??
     (legalForm === "" ? "Choose a legal form or no form" : undefined) ??
     (level === "" ? "Choose an observation level" : undefined);
 
   // The journey starts first; its bed is pulled once the journey is on the record.
+  const journey = journeyStarted
+    ? movements.find(
+        (movement) =>
+          movement.referralId === referral.id && !movement.closure && movement.stage === "accepted_awaiting_bed",
+      )
+    : undefined;
+  const journeyId = journey?.id;
   useEffect(() => {
-    if (!waitingForJourney.current) return;
-    const journey = movements.find(
-      (movement) =>
-        movement.referralId === referral.id && !movement.closure && movement.stage === "accepted_awaiting_bed",
-    );
-    if (!journey) return;
-    waitingForJourney.current = false;
+    if (journeyId === undefined || pullAsked.current === journeyId) return;
+    pullAsked.current = journeyId;
     completeCommand(
-      `pull:${journey.id}`,
-      () => raise("PULL_PATIENT", { movementId: journey.id, unitId }),
+      `pull:${journeyId}`,
+      () => raise("PULL_PATIENT", { movementId: journeyId, unitId }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) {
-          setStartedMovementId(journey.id);
+          setStartedMovementId(journeyId);
           setMessage(`The journey has started, but the bed is not pulled. ${failure}`);
           return;
         }
@@ -114,11 +128,20 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         onDone();
       },
     );
-  }, [movements, referral.id, unitId, unitName, raise, completeCommand, toast, onDone]);
+  }, [journeyId, unitId, unitName, raise, completeCommand, toast, onDone]);
 
   function pull(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (refusal || !destination || legalStatus === "" || legalForm === "" || level === "") return;
+    if (
+      refusal ||
+      journeyStarted ||
+      !destination ||
+      !referral.ageBand ||
+      legalStatus === "" ||
+      legalForm === "" ||
+      level === ""
+    )
+      return;
     setMessage(undefined);
     // The recorded level is carried whole, with any review time a person typed; a changed level is new.
     const observation: Observation =
@@ -153,7 +176,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) setMessage(failure);
-        else waitingForJourney.current = true;
+        else setJourneyStarted(true);
       },
     );
   }

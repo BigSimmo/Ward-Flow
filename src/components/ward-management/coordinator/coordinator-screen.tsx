@@ -2,7 +2,6 @@
 
 import { ChevronRight, Copy } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -163,7 +162,6 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * queue and the ED card, never Beds that fit or the shortlist.
  */
 export function CoordinatorScreen() {
-  const router = useRouter();
   const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
@@ -1021,7 +1019,7 @@ export function CoordinatorScreen() {
                   selectedReferralId={selectedReferralId}
                   // WS-04 (workflow speed audit, 26 Oct 2026): Decide opens the decision itself, the
                   // referral on the Referrals board with Accept and Decline, never a read-only preview.
-                  onDecide={(referralId) => router.push(referralBoardHref(referralId))}
+                  decideHref={referralBoardHref}
                   focus={needsFocus}
                   onShowAll={() => setNeedsFocus("all")}
                 />

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, referralPresentationLists } from "../ward-partial-view-presenters";
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
-import { acceptedReferralsAwaitingPull, acceptedWardOf } from "./accepted-ward-referral";
+import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -312,7 +312,9 @@ export function ReferralBoard({
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
   const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
-  const [pullingId, setPullingId] = useState<string>();
+  // Held whole, not looked up: the referral leaves the awaiting list once its journey starts,
+  // before the bed is pulled, and the sheet must stay open for that second step.
+  const [pulling, setPulling] = useState<AcceptedAwaitingPull>();
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -426,7 +428,6 @@ export function ReferralBoard({
     [readOnly, referrals, units, movements],
   );
   const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
-  const pulling = awaitingPull.find((entry) => entry.referral.id === pullingId);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
@@ -506,6 +507,17 @@ export function ReferralBoard({
     setView("queue");
     handleSelect((after ?? overdueQueued[0]!).id);
   }
+
+  // WS-04 (workflow speed audit, 26 Oct 2026): Decide on Home opens this board on its referral. The
+  // decision is brought into view once, so Accept and Decline are not left below the board's header.
+  const linkedOpenScrolled = useRef(false);
+  const openedFromLink = chosenReferralId === undefined && linkedReferralId !== null;
+  useEffect(() => {
+    if (!openedFromLink || selectedReferralId !== linkedReferralId || linkedOpenScrolled.current) return;
+    linkedOpenScrolled.current = true;
+    if (typeof detailRef.current?.scrollIntoView === "function")
+      detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+  }, [openedFromLink, selectedReferralId, linkedReferralId]);
 
   useEffect(() => {
     if (!selectedReferralId) return;
@@ -1031,7 +1043,7 @@ export function ReferralBoard({
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setPullingId(selectedReferral.id)}
+                              onClick={() => setPulling(selectedToPull)}
                               data-testid="ward-referral-pull-bed"
                             >
                               Pull the bed
@@ -1318,12 +1330,12 @@ export function ReferralBoard({
         {pulling ? (
           <Sheet
             open
-            onClose={() => setPullingId(undefined)}
+            onClose={() => setPulling(undefined)}
             title="Pull the bed"
-            description="The details already recorded are filled in. Check them, then pull the bed."
+            description="Anything already recorded is filled in. Check the details, then pull the bed."
             testId="ward-referral-pull-sheet"
           >
-            <PullAcceptedReferral item={pulling} onDone={() => setPullingId(undefined)} />
+            <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
           </Sheet>
         ) : null}
 

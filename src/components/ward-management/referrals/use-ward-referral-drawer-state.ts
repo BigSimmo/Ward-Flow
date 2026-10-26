@@ -14,11 +14,9 @@ import {
   ATS_CATEGORIES,
   URGENCY_LEVELS,
   HEALTH_SERVICES,
-  RECORDED_SEXES,
   type AtsCategory,
   type HomeRegion,
   type RecordedSex,
-  type ReferralGender,
   type ReferralDestination,
   type Cohort,
   type HealthService,
@@ -109,6 +107,9 @@ import {
   type EdNeeds,
   needsFor,
   patientKeyFor,
+  GENDER_UNANSWERED,
+  recordedSexAndGender,
+  type ReferralGenderAnswer,
   isOwnLeaveGuardAnchor,
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
@@ -370,12 +371,10 @@ export function useWardReferralDrawerState({
     effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? deskOriginSite ?? "",
   );
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? deskSendingTeam ?? "");
-  const [referralSex, setReferralSex] = useState<RecordedSex>(
-    kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
-  );
-  const [referralGender, setReferralGender] = useState<ReferralGender | "">(
-    kept?.referralGender ?? patientRecord?.gender ?? "",
-  );
+  // WS-01 (workflow speed audit, 26 Oct 2026): from the record, else the journey the ED board shows.
+  const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement, movements));
+  const [referralSex, setReferralSex] = useState<RecordedSex>(kept?.referralSex ?? known.sex);
+  const [referralGender, setReferralGender] = useState<ReferralGenderAnswer>(kept?.referralGender ?? known.gender);
   const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
   const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
@@ -654,8 +653,9 @@ export function useWardReferralDrawerState({
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
-    setReferralSex(RECORDED_SEXES.find((sex) => sex === record?.sex) ?? "Not recorded");
-    setReferralGender(record?.gender ?? "");
+    const identity = recordedSexAndGender(record, matchedMovement, movements);
+    setReferralSex(identity.sex);
+    setReferralGender(identity.gender);
     setHighAcuity(false);
     setArrivalEta("");
     setConfirmationOpen(false);
@@ -817,6 +817,8 @@ export function useWardReferralDrawerState({
     if (!homeRegion) return "Choose the patient's home region.";
     return null;
   }
+  // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
+  const genderUnanswered = destType === "ward" && referralGender === "";
   function referralError() {
     if (senderMissing) return NO_SENDING_WARD;
     if (
@@ -831,6 +833,7 @@ export function useWardReferralDrawerState({
       return "Record the referring community service.";
     if (!URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency))
       return community ? "Choose when the team should first make contact." : "Choose the referral urgency.";
+    if (genderUnanswered) return GENDER_UNANSWERED;
     const shortForm = community ? communityReferralError(communityPurpose, documentation) : null;
     if (shortForm) return shortForm;
     if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
@@ -859,6 +862,7 @@ export function useWardReferralDrawerState({
         !URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency),
         community && !communityPurpose,
         (reasonNoteRequired && !doctorNote.trim()) || doctorNote.length > reasonRoom,
+        genderUnanswered,
       ].filter(Boolean).length + (community ? clearanceNeeded(documentation) : 0),
     documentation: community ? 0 : documentationNeeded(documentation),
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
@@ -872,6 +876,7 @@ export function useWardReferralDrawerState({
   const itemsTotal =
     4 +
     (needsSendingTeam ? 3 : 2) +
+    (destType === "ward" ? 1 : 0) +
     (community ? 1 + clearanceItems(documentation) : documentationItems(documentation)) +
     1 +
     CONTACT_FIELD_COUNT;

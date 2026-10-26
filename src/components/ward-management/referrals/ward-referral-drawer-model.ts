@@ -8,6 +8,7 @@ import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
+  RECORDED_SEXES,
   type AtsCategory,
   type HomeRegion,
   type RecordedSex,
@@ -26,7 +27,15 @@ import { type NotOnSendingWardReason } from "@/components/ward-management/ward-c
 import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { type DocumentationDraft } from "./referral-flow-panels";
-import { type ClearanceChecklist, type ReferralContact, type ReferralNeeds } from "./referral-submission";
+import {
+  GENDER_UNANSWERED,
+  REFERRAL_GENDER_NOT_RECORDED,
+  referralGenderOf,
+  type ClearanceChecklist,
+  type ReferralContact,
+  type ReferralGenderAnswer,
+  type ReferralNeeds,
+} from "./referral-submission";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /**
@@ -143,12 +152,40 @@ export const NOT_RECORDED = "Not recorded";
  */
 export { involuntaryBedNeededForLegalStatus };
 
+export { GENDER_UNANSWERED, REFERRAL_GENDER_NOT_RECORDED, referralGenderOf, type ReferralGenderAnswer };
+
+/**
+ * WS-01: the person's recorded sex and gender identity, for the drawer to start from. The patient
+ * record comes first; where it has none, the person's open journey (the ED board row a referral is
+ * written from) is used, because that is what the board already shows. Nothing is guessed: with
+ * neither recorded, sex reads "Not recorded" and gender stays unanswered for the referrer.
+ */
+export function recordedSexAndGender(
+  record: Pick<Patient, "id" | "sex" | "gender"> | undefined,
+  movement: Pick<Movement, "sex" | "gender"> | undefined,
+  movements: readonly Pick<Movement, "patientId" | "sex" | "gender" | "closure" | "openedAt">[],
+): { sex: RecordedSex; gender: ReferralGender | "" } {
+  const journey =
+    movement ??
+    (record
+      ? movements
+          .filter((candidate) => candidate.patientId === record.id && candidate.closure === undefined)
+          .sort((a, b) => b.openedAt - a.openedAt)[0]
+      : undefined);
+  const recordSex = RECORDED_SEXES.find((sex) => sex === record?.sex && sex !== "Not recorded");
+  const journeySex = journey?.sex === "Not recorded" ? undefined : journey?.sex;
+  return {
+    sex: recordSex ?? journeySex ?? "Not recorded",
+    gender: record?.gender ?? journey?.gender ?? "",
+  };
+}
+
 /** The ward destinations a referral drawer sends, one per chosen unit, from what the drawer records. */
 export function wardReferralDestinations(
   unitIds: readonly string[],
   needs: {
     sex: RecordedSex;
-    gender: ReferralGender | "";
+    gender: ReferralGenderAnswer;
     security: string;
     legalStatus: string | null | undefined;
     highAcuity: boolean;
@@ -158,7 +195,7 @@ export function wardReferralDestinations(
     kind: "psychiatric_ward",
     unitId,
     sex: needs.sex,
-    gender: needs.gender || undefined,
+    gender: referralGenderOf(needs.gender),
     secureBedNeeded: needs.security === "Secure",
     involuntaryBedNeeded: involuntaryBedNeededForLegalStatus(needs.legalStatus),
     highAcuityNursingNeeded: needs.highAcuity,
@@ -531,7 +568,7 @@ export type KeptDraft = {
   originSiteCode: string;
   sendingTeam: string;
   referralSex: RecordedSex;
-  referralGender: ReferralGender | "";
+  referralGender: ReferralGenderAnswer;
   highAcuity: boolean;
   arrivalEta: string;
   legalStatus: string;
