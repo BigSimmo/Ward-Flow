@@ -147,7 +147,7 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
         "four and update this list, because nothing else compares them.",
     ).toEqual([
       // Owner ruling 13 Oct 2026: the single sanctioned home. Any second assignment is refused.
-      "src/components/ward-management/ward-ready-beds.ts:14",
+      "src/components/ward-management/ward-ready-beds.ts:22",
     ]);
   });
 });
