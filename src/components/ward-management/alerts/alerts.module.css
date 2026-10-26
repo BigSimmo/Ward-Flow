@@ -403,6 +403,7 @@ button.check[aria-pressed="true"] {
 }
 
 .row {
+  position: relative;
   display: grid;
   grid-template-columns: 1rem minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 0.9fr) 6rem auto;
   align-items: center;
@@ -526,6 +527,8 @@ button.check[aria-pressed="true"] {
 }
 
 .rowAction {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
 }
@@ -580,6 +583,7 @@ button.check[aria-pressed="true"] {
 }
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -638,6 +642,8 @@ button.check[aria-pressed="true"] {
 }
 
 .cardFoot > :last-child {
+  position: relative;
+  z-index: 1;
   flex: none;
 }
 
@@ -1625,8 +1631,8 @@ button.check[aria-pressed="true"] {
   margin-block: -12px;
 }
 
-/* The open button covers the row, so the whole row is the tap target. */
-.phoneRowText .rowOpen::after {
+/* The open button covers the row (desk row, card and phone row), so the whole row is its target. */
+.rowOpen::after {
   content: "";
   position: absolute;
   inset: 0;
