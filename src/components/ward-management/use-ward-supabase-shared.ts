@@ -331,7 +331,7 @@ export function useWardSupabaseShared(
                 setForm((old) => ({
                   ...old,
                   message:
-                    "Check your email and confirm the account, then sign in. An access admin still needs to give you a role.",
+                    "Check your email and confirm your Ward Flow account, then sign in. Coordinator access still needs to be set up.",
                 }));
                 setView({ ...emptyView, status: "ready" });
               }
