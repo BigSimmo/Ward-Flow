@@ -76,7 +76,7 @@ export function forecastLevers(
     {
       kind: "clear_held_up" as const,
       beds: heldUp.length,
-      likelyUplift: heldUp.filter((release) => dayOf(release.expectedAt) >= dayOf(now)).length,
+      likelyUplift: heldUp.filter((release) => dayOf(expectedAt(release)) >= dayOf(now)).length,
       reasons,
     },
   ]

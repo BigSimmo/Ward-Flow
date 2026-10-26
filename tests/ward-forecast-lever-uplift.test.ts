@@ -80,6 +80,35 @@ describe("forecast lever likely uplift", () => {
   });
 
   it.each([
+    ["stored past but current plan is today", now - MINUTES_PER_DAY, now, 1],
+    ["stored future but current plan is overdue", now + MINUTES_PER_DAY, now - MINUTES_PER_DAY, 0],
+  ])("follows the stay's current plan when the release date is stale: %s", (_, storedAt, planAt, expectedUplift) => {
+    const base = fixture(planAt, true);
+    const before: WardFlowState = {
+      ...base,
+      bedReleases: base.bedReleases.map((release) => ({ ...release, expectedAt: storedAt })),
+    };
+    const after = wardFlowReducer(before, {
+      type: "CLEAR_BED_RELEASE_BLOCK",
+      role: "ward",
+      now,
+      releaseId: original.id,
+      actingUnitId: unit.id,
+    });
+    expect(after.rejections).toHaveLength(0);
+    const lever = forecastLevers([unit], before.bedReleases, before.admissions, now).find(
+      (entry) => entry.kind === "clear_held_up",
+    )!;
+    expect(lever.beds).toBe(1);
+    expect(lever.likelyUplift).toBe(expectedUplift);
+    expect(forecast(after).total.likely - forecast(before).total.likely).toBe(expectedUplift);
+    expect(
+      bedsForecast([unit], after.bedReleases, after.admissions, [], now).horizons[0]!.likely -
+        bedsForecast([unit], before.bedReleases, before.admissions, [], now).horizons[0]!.likely,
+    ).toBe(expectedUplift);
+  });
+
+  it.each([
     ["past date", now - MINUTES_PER_DAY, false, 0],
     ["current date", now, false, 1],
     ["inherited blocker", now, true, 0],
@@ -147,8 +176,8 @@ describe("forecast lever likely uplift", () => {
       { targetMinutes: 24 * 60, horizonMinutes: 24 * 60, atRisk: [], alreadyOver: 0, byEd: [] },
       () => "ED",
     );
-    expect(brief.find((line) => line.label === "Best single action")!.text).toContain("range only");
-    expect(brief.find((line) => line.label === "Best single action")!.text).not.toContain("Up to 1");
+    expect(brief.find((line) => line.label === "Biggest lever")!.text).toContain("range only");
+    expect(brief.find((line) => line.label === "Biggest lever")!.text).not.toContain("Up to 1");
   });
 
   it("keeps a pulled stay in the operational count without promising an unavailable flag action", () => {
@@ -188,8 +217,8 @@ describe("forecast lever likely uplift", () => {
       { targetMinutes: 24 * 60, horizonMinutes: 24 * 60, atRisk: [], alreadyOver: 0, byEd: [] },
       () => "ED",
     );
-    expect(brief.find((line) => line.label === "Best single action")!.text).toContain("range only");
-    expect(brief.find((line) => line.label === "Best single action")!.text).not.toContain("Up to 1");
+    expect(brief.find((line) => line.label === "Biggest lever")!.text).toContain("range only");
+    expect(brief.find((line) => line.label === "Biggest lever")!.text).not.toContain("Up to 1");
   });
 
   it("ranks an action that can lift likely ahead of a larger group needing new dates", () => {
