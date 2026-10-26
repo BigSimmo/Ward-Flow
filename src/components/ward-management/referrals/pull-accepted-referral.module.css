@@ -1,0 +1,36 @@
+/* Pull the bed in one step (WS-03, 26 Oct 2026). */
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+.lead {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.warning {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+}
+
+.status {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.status:empty {
+  display: none;
+}
