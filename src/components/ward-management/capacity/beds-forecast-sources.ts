@@ -20,6 +20,7 @@ import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/componen
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardClosedLine } from "./ward-closure";
+import { forecastReleaseAt } from "../forecast/forecast-release-date";
 
 type ForecastSourceWindowId = "overdue" | "this_shift" | "next_shift" | "rest_of_day";
 
@@ -149,12 +150,12 @@ export function bedsForecastSources(
     .filter((release) => release.state !== "discharged" && openIds.has(release.unitId))
     .map((release) => {
       const admission = admissionsById.get(release.admissionId);
-      const expectedAt = release.expectedAt;
+      const expectedAt = forecastReleaseAt(release, admission);
       return {
         ...release,
         expectedAt,
         planDate:
-          admission?.expectedDischargeAt == null || admission.expectedDischargeAt !== expectedAt
+          admission?.expectedDischargeAt == null
             ? undefined
             : {
                 recordedAt: admission?.dischargeDateSetAt ?? null,
