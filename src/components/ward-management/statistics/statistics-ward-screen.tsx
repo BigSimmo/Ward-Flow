@@ -1055,7 +1055,7 @@ function Barriers({
 type RosterFilter = "all" | "no-date" | "long" | "blocked" | "pulled";
 
 const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
-  waitlisted: "Waitlisted",
+  waitlisted: "On waiting list",
   pulled: "Pulled",
   occupied: "In bed",
   departed: "Departed",

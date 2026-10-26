@@ -161,7 +161,7 @@ describe("PR15 recorded facts and unavailable data", () => {
       .getByText("Recorded admission roster; numbered bed assignments are not recorded")
       .closest("table")!;
     const row = (id: string) => within(roster).getByText(new RegExp(id)).closest("tr")!;
-    expect(within(row("AD-WAIT")).getByText("Waitlisted")).toBeTruthy();
+    expect(within(row("AD-WAIT")).getByText("On waiting list")).toBeTruthy();
     expect(within(row("AD-PULL")).getByText("Pulled")).toBeTruthy();
     expect(within(row("AD-WAIT")).getByText("Not arrived")).toBeTruthy();
     expect(within(row("AD-HOUR")).getByText("0d")).toBeTruthy();

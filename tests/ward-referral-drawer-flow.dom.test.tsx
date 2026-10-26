@@ -163,7 +163,7 @@ describe("approved four-tab referral drawer journey", () => {
     const inbox = screen.getByRole("region", { name: "Ward referral inbox" });
     expect(inbox).toHaveTextContent("Synthetic patient story for inbox review");
     fireEvent.click(within(inbox).getByRole("button", { name: "Waitlist" }));
-    expect(inbox).toHaveTextContent("Waitlisted");
+    expect(inbox).toHaveTextContent("On waiting list");
     const board = screen.getByTestId("ward-referral-board-screen");
     // Option A (9 Oct 2026): filters highlight and never hide, so the waitlisted referral is on the queue as it stands.
     // Phone review F-06 (Oct 2026): queue rows read family name first, as the census does.

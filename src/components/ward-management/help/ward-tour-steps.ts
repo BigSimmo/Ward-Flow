@@ -447,7 +447,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "transport",
           { sel: '[data-testid^="ward-community-transport-cell-"]' },
           "Open a person's record",
-          "Open dossier shows the person's record. When a move needs transport, Log transport booking appears here too.",
+          "Open record shows the person's record. When a move needs transport, Log transport booking appears here too.",
         ),
         step(
           "Finding your way",

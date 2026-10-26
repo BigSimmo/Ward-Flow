@@ -37,7 +37,7 @@ const DETAIL_TABS = [
   ["milestones", "Milestones"],
   ["barriers", "Barriers"],
   ["transport", "Transport"],
-  ["dossier", "Dossier"],
+  ["dossier", "Record"],
 ] as const;
 
 function tabPanelProps(
@@ -694,7 +694,7 @@ export function DischargeReleaseDetail({
           aria-expanded={phoneReleaseMore}
           onClick={() => setPhoneReleaseMore((open) => !open)}
         >
-          {phoneReleaseMore ? "Hide transport and dossier" : "Show transport and dossier"}
+          {phoneReleaseMore ? "Hide transport and record" : "Show transport and record"}
         </button>
       ) : null}
       <div {...releasePanelProps("transport")} className={releasePaneClass("transport")}>

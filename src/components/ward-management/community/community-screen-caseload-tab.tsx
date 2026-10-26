@@ -164,7 +164,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                             setActiveDrawer("pxDrawer");
                           }}
                         >
-                          Open dossier
+                          Open record
                         </button>
                       </td>
                     </tr>
