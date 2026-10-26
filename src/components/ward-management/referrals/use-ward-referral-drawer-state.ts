@@ -173,7 +173,6 @@ export function useWardReferralDrawerState({
   const searchId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const touchStartY = useRef<number | null>(null);
-
   const capacityRecords = useWardCapacity();
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const pathname = usePathname() ?? "";
@@ -183,7 +182,6 @@ export function useWardReferralDrawerState({
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
-
   const {
     movements,
     patients,
@@ -253,7 +251,6 @@ export function useWardReferralDrawerState({
   // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
   // never a demo person from another site.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
-
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
     initialPatientKey in SAMPLE_PATIENTS ? [] : [initialPatientKey],
@@ -1131,6 +1128,7 @@ export function useWardReferralDrawerState({
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
   const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
+  const letterCharts = intakeCharts(documentation, community);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
     patientName: patientRecord ? currentPatient.name : unidentifiedName,
@@ -1147,6 +1145,8 @@ export function useWardReferralDrawerState({
     clearance: clearance.label,
     clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
     needs: draftNeeds ? referralNeedsWords(draftNeeds) : [],
+    chartKinds: letterCharts.charts.map(({ kind }) => kind),
+    chartsToFollow: letterCharts.chartsToFollow,
     referrer: { name: contact.name, role: contact.role, phone: contact.phone },
   };
   async function copyText(text: string, done: string) {

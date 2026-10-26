@@ -267,7 +267,12 @@ function ChartUpload({
       </div>
       {onToFollow && !file ? (
         <label className={styles.toFollow}>
-          <input type="checkbox" checked={!!toFollow} onChange={(event) => onToFollow(event.target.checked)} />
+          <input
+            type="checkbox"
+            aria-label={`${label} to follow`}
+            checked={!!toFollow}
+            onChange={(event) => onToFollow(event.target.checked)}
+          />
           To follow
         </label>
       ) : null}

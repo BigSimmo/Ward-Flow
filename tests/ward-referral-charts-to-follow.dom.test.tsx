@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import {
@@ -82,7 +82,13 @@ describe("charts to follow", () => {
     expect(documentationNeeded(marked)).toBe(0);
   });
 
-  it("offers To follow on the two required charts, and attaching a file clears it", () => {
+  it("names each required chart's To follow checkbox independently", () => {
+    render(<DocumentationPanel draft={EMPTY_DOCUMENTATION} onChange={() => {}} idBase="doc" />);
+    expect(screen.getByRole("checkbox", { name: "Medication chart to follow" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Observation chart to follow" })).not.toBeChecked();
+  });
+
+  it("clears To follow on upload, replaces one chart and does not restore the flag on removal", async () => {
     let latest: DocumentationDraft = answered;
     function Harness() {
       const [draft, setDraft] = useState<DocumentationDraft>(answered);
@@ -91,12 +97,33 @@ describe("charts to follow", () => {
     }
     render(<Harness />);
     // Observation is attached, so only the medication chart offers To follow.
-    const toFollow = screen.getAllByRole("checkbox", { name: "To follow" });
+    const toFollow = screen.getAllByRole("checkbox", { name: "Medication chart to follow" });
     expect(toFollow).toHaveLength(1);
     fireEvent.click(toFollow[0]!);
     expect(latest.toFollow).toEqual(["medication"]);
     expect(screen.getByText("To follow. The referral says it is not attached yet.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox", { name: "To follow" }));
+    const upload = (name: string) => {
+      const contents = "%PDF-1.7\nSynthetic chart";
+      const file = new File([contents], name, { type: "application/pdf" });
+      Object.defineProperty(file, "arrayBuffer", { value: async () => new TextEncoder().encode(contents).buffer });
+      fireEvent.change(screen.getByLabelText("Medication chart", { selector: 'input[type="file"]' }), {
+        target: { files: [file] },
+      });
+    };
+    upload("synthetic-medication.pdf");
+    await waitFor(() =>
+      expect(latest.charts.find((file) => file.kind === "medication")?.name).toBe("synthetic-medication.pdf"),
+    );
+    expect(latest.toFollow).toEqual([]);
+    expect(screen.queryByRole("checkbox", { name: "Medication chart to follow" })).not.toBeInTheDocument();
+    upload("synthetic-replacement.pdf");
+    await waitFor(() =>
+      expect(latest.charts.find((file) => file.kind === "medication")?.name).toBe("synthetic-replacement.pdf"),
+    );
+    expect(latest.charts.filter((file) => file.kind === "medication")).toHaveLength(1);
+    expect(latest.charts.find((file) => file.kind === "observation")).toEqual(chart("observation"));
+    fireEvent.click(screen.getByRole("button", { name: "Remove medication chart" }));
+    expect(screen.getByRole("checkbox", { name: "Medication chart to follow" })).not.toBeChecked();
     expect(latest.toFollow).toEqual([]);
   });
 
