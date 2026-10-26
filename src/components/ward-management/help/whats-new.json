@@ -47,7 +47,7 @@
   {
     "id": "2026-10-26-departure-destination-chosen",
     "date": "2026-10-26",
-    "line": "Recording that someone has left on the Bed board now asks where they went. Nothing is chosen for you, and the confirmation shows your answer."
+    "line": "Recording that someone has left now asks where they went. Nothing is chosen for you, and the confirm shows it."
   },
   {
     "id": "2026-10-26-pull-names-patient",
@@ -57,12 +57,12 @@
   {
     "id": "2026-10-26-form-not-recorded",
     "date": "2026-10-26",
-    "line": "The handover and phone ED now say \"Form not recorded\" instead of \"No form\" unless the person is Voluntary, and a patient's expected out day says \"Not recorded\" when no date is set."
+    "line": "Handover and phone ED say \"Form not recorded\" unless the person is Voluntary. A blank expected out says \"Not recorded\"."
   },
   {
     "id": "2026-10-26-hospital-feed-names",
     "date": "2026-10-26",
-    "line": "The practice hospital feed in Tools now names each person with their record number and bed, and a confirmed message can be undone."
+    "line": "The practice hospital feed in Tools names each person with their record number and bed, and a confirm can be undone."
   },
   {
     "id": "2026-10-26-handover-over-midnight",
@@ -72,26 +72,26 @@
   {
     "id": "2026-10-26-phone-ed-umrn",
     "date": "2026-10-26",
-    "line": "Each row of the ED board on a phone now shows the person's UMRN beside their name, so similar names are easier to tell apart."
+    "line": "Each ED board row on a phone now shows the UMRN beside the name, so similar names are easier to tell apart."
   },
   {
     "id": "2026-10-26-forecast-long-weekend",
     "date": "2026-10-26",
-    "line": "Before a long weekend, the forecast's weekend or holiday figure now runs to the first working day after it, not just the third day."
+    "line": "Before a long weekend, the forecast's holiday figure now runs to the first working day after it."
   },
   {
     "id": "2026-10-26-ed-accept-double-tap",
     "date": "2026-10-26",
-    "line": "A quick double tap on Accept presentation no longer confirms the acceptance as well. Confirm acceptance needs its own tap."
+    "line": "A quick double tap on Accept presentation no longer confirms it too. Confirm acceptance needs its own tap."
   },
   {
     "id": "2026-10-26-shift-summary-dates-label",
     "date": "2026-10-26",
-    "line": "The ward's shift summary now says \"Expected dates last changed this shift\", because a date changed again later counts in the later shift."
+    "line": "The shift summary now says \"Expected dates last changed this shift\", as a later change counts in the later shift."
   },
   {
     "id": "2026-10-26-referral-summary-recorded",
     "date": "2026-10-26",
-    "line": "The referral summary now gives the recorded legal status and medical clearance, or says not recorded. What the referral letter said is labelled as the letter's."
+    "line": "The referral summary gives the recorded legal status and clearance, or says not recorded, and labels the letter's words."
   }
 ]
