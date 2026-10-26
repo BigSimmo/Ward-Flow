@@ -4,6 +4,7 @@
 import {
   type ModelClaim,
   WARD_MODEL,
+  WARD_MODEL_BED_RELEASE,
   WARD_MODEL_MOVEMENT_PARTS,
   WARD_ADMISSIONS,
   WARD_BED_EVENTS,
@@ -533,7 +534,7 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     renderedIn: DERIVATIONS,
     rendered: "`BedRelease.preparing` is a boolean",
     claim: "Bed readiness is held on `BedRelease.preparing`, and it is a boolean.",
-    sourceFile: WARD_MODEL,
+    sourceFile: WARD_MODEL_BED_RELEASE,
     evidence: "preparing: boolean;",
     falsifiedBy: PREPARING_STOPS_BEING_A_BOOLEAN,
   },
@@ -542,7 +543,7 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     renderedIn: DERIVATIONS,
     rendered: "`expected` is a member of `BED_RELEASE_STATES`",
     claim: "`expected` is one of the bed-release states, and means the discharge has not happened yet.",
-    sourceFile: WARD_MODEL,
+    sourceFile: WARD_MODEL_BED_RELEASE,
     evidence: 'export const BED_RELEASE_STATES = ["expected", "confirmed", "discharged"] as const;',
     falsifiedBy: {
       change: "`expected` is dropped from the bed-release states, so it stops being a member of that vocabulary.",
