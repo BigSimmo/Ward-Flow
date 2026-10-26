@@ -2205,6 +2205,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </li>
   );
 
+  // The service sentence and the referral inbox open the page on desktop. On a phone they sit
+  // under the hero and the view tabs, so the dark hero still joins the header.
+  const wardLead = (
+    <>
+      {service !== null && unitHealthService(unit) !== undefined ? (
+        <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
+          {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+        </p>
+      ) : null}
+
+      <WardReferralInbox unitId={unit.id} />
+    </>
+  );
+
   return (
     <div
       className={styles.screen}
@@ -2220,13 +2234,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
          *  hidden", S4) and is never itself narrowed by the chosen service — this states how the
          *  choice relates to it rather than changing anything below. `ownService` unresolved (no
          *  real seeded unit today) renders nothing rather than a sentence naming an unknown. */}
-        {service !== null && unitHealthService(unit) !== undefined ? (
-          <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-            {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
-          </p>
-        ) : null}
-
-        <WardReferralInbox unitId={unit.id} />
+        {isPhone ? null : wardLead}
         {phoneCardOpen ? null : (
           <WardScreenTopBar
             unit={unit}
@@ -2291,6 +2299,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </ul>
           </nav>
         ) : null}
+        {isPhone ? wardLead : null}
 
         {(() => {
           // Top 25 item 1: shown only once the confirm was accepted, named by bed, never by person.

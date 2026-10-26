@@ -838,7 +838,6 @@ export function HandoverPage() {
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
-        <HandoverOpenPromises referrals={referrals} units={units} now={now} />
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -867,6 +866,7 @@ export function HandoverPage() {
           patientHrefOf={(row) => (row.patientId ? patientHref(row.patientId) : undefined)}
           since={formatInstantWithDay(newSince, now)}
           sinceItems={sinceItems}
+          carryOver={<HandoverOpenPromises referrals={referrals} units={units} now={now} layout="phone" />}
           onCopySince={copySince}
           chips={HANDOVER_CHIPS.map((chip) => ({
             id: chip.id,
