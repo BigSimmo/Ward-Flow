@@ -91,6 +91,7 @@ import { CommunityScreenDrawer } from "./community-screen-drawer";
 import { useCommunityScreenDemoLists } from "./use-community-screen-demo-lists";
 import { useCommunityDrawerTestOpeners } from "./community-drawer-test-openers";
 import { useCommunityScreenOverlayFocus, useCommunityScreenTransport } from "./use-community-screen-overlays";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 /**
  * 🔴 **THE CONFIRM CONTROL IS WIRED — engine fix, 2026-09-17, closing audit finding ISSUE-P1-83
@@ -326,6 +327,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const openNewReferral = useCallback(() => openReferralSheet(referFromTeamHref), [referFromTeamHref]);
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
+  // Audit CS3-01: the waiting row's decline form is checked against the board it opened on.
+  useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `referral:${declineOpenFor}`);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
   const [activeModal, setActiveModal] = useState<{ referral: CommunityScopedReferral } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
