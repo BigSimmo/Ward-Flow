@@ -65,9 +65,9 @@ import {
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
-/** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
-const ANSWER_ALERT_LINE = 95;
+const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",

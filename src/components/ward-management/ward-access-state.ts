@@ -330,7 +330,9 @@ export function scopeWardFlowState(
         ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
         : event.category === "record-access" &&
           event.subject.kind === "admission" &&
-          admissionIds.has(event.subject.admissionId)),
+          admissionIds.has(event.subject.admissionId) &&
+          // A dates-only stay opens no record, so it has no receipt to read (audit 26 Oct).
+          !scoped.datesOnlyAdmissionIds.has(event.subject.admissionId)),
   );
   const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;
@@ -611,7 +613,8 @@ export function commandScopeRefusal(
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
     if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
-  if (command.type === "RECORD_TRANSPORT_NEED") {
+  // Booking follows the same sender rule as recording the need (audit 26 Oct).
+  if (command.type === "RECORD_TRANSPORT_NEED" || command.type === "BOOK_TRANSPORT") {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && access.role === "ward") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
@@ -718,6 +721,13 @@ export function commandScopeRefusal(
   const actsFrom = (id: string) =>
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
+  // RECORD_OBSERVATION_LEVEL names its acting unit on the target (audit 26 Oct).
+  const observationTarget = command.target as { actingUnitId?: unknown } | undefined;
+  if (
+    typeof observationTarget?.actingUnitId === "string" &&
+    !unitInScope(scope, observationTarget.actingUnitId, places)
+  )
+    return outside;
   if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
   const targets = [command.unitId, command.acceptedUnitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)
