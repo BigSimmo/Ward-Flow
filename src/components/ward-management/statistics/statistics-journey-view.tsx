@@ -445,7 +445,7 @@ export function StatisticsJourneyView({
         </CardBody>
       </StatCard>
 
-      <FlushRow layout="halves">
+      <FlushRow layout="halves" className={styles.bedsRow}>
         <StatCard
           id="journey-beds"
           icon={BedDouble}

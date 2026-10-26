@@ -30,6 +30,11 @@
     "line": "Ward referrals show permitted progress while keeping other destinations private."
   },
   {
+    "id": "2026-10-26-stopped-transport-wording",
+    "date": "2026-10-26",
+    "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
+  },
+  {
     "id": "2026-10-26-agreed-wording",
     "date": "2026-10-26",
     "line": "Clearer words: Accepted, no bed yet, Ask for a bed and Gender mix. ED rows turn red only at the access target."

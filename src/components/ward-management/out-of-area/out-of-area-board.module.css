@@ -1645,6 +1645,26 @@ fieldset.formRow {
   font-size: var(--wf-fs-13);
 }
 
+/* Layout sweep PT-25: the next step wraps rather than being cut after a few words. */
+.peekWho span {
+  white-space: normal;
+}
+
+/* Layout sweep PT-23 (iPad portrait): the drawer's own title bar names the patient and closes it, so
+   the plan inside keeps only the UMRN and the pager, not a second name and a second close. */
+:global([data-testid="ward-out-of-area-plan-sheet"]) .planName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:global([data-testid="ward-out-of-area-plan-sheet"]) .planHead > button:last-child {
+  display: none;
+}
+
 .peekActs {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
