@@ -521,6 +521,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         return (
                           <tr
                             key={record.id}
+                            /* Return to your place: Back focuses the row that was opened. */
+                            data-record-key={record.id}
                             data-selected={isSelected}
                             data-highlighted={recordLit(record) || undefined}
                             data-dim={dimmed(recordLit(record))}
