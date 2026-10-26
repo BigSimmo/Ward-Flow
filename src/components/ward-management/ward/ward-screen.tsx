@@ -51,6 +51,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
+  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
   isOpen,
   isStoppedTransportAwaitingRelease,
@@ -1790,7 +1791,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
-  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Discharges held up). A
+  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Releases held up). A
   // release dated beyond today is not a decision for this shift, so it no longer inflates the
   // Decisions badge past the ward's own expected discharges.
   const departureDecisions = pendingBedReleases
@@ -2017,7 +2018,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
           {
             id: "held",
-            label: "Discharges held up",
+            label: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
             value: blockedReleases.length,
             tone: blockedReleases.length > 0 ? "danger" : undefined,
           },

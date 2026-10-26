@@ -18,16 +18,11 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { RELEASE_LOOKAHEAD_DAYS, type EdAccessRiskRow } from "./ed-access-risk";
+import { RELEASE_LOOKAHEAD_DAYS, targetText, type EdAccessRiskRow } from "./ed-access-risk";
 import { BED_KIND_LABEL } from "./forecast-by-kind";
 import { shortBlocker } from "./forecast-levers";
 import { forecastEdName, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
-
-/** "24 hour" for a whole-hour target, else "20h 30m": the access target as Settings states it. */
-export function targetText(minutes: number): string {
-  return minutes % 60 === 0 ? `${minutes / 60} hour` : splitDuration(minutes);
-}
 
 export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
   const kind = BED_KIND_LABEL[row.kind].toLowerCase();
