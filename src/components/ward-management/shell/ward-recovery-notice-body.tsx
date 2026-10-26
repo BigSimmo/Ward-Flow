@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { RESTORED_NOTICE_PREFIX } from "../ward-flow-demo-storage-constants";
+import { OPEN_ITEMS_CLOSED_NOTICE, RESTORED_NOTICE_PREFIX } from "../ward-flow-demo-storage-constants";
 import styles from "./ward-offline-banner.module.css";
 
 /** Holds no record content: only that this tab has already seen a routine restore notice. */
@@ -34,9 +34,13 @@ function markRoutineSeen() {
  * DA-27 (overall review, 20 Oct 2026): it is marked seen the moment it first shows, so leaving the
  * page within those few seconds no longer brings it back on the next page in this tab, and it has
  * a close button. The failure notices have none: they stay until the problem is fixed.
+ *
+ * CS3-17 (26 Oct 2026): a restore that closed something the user had open is not routine. It
+ * shows every time, does not fade, and has the close button.
  */
 export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string; fadeAfterMs: number }) {
-  const routine = notice.startsWith(RESTORED_NOTICE_PREFIX);
+  const closedOpenItems = notice.endsWith(OPEN_ITEMS_CLOSED_NOTICE);
+  const routine = notice.startsWith(RESTORED_NOTICE_PREFIX) && !closedOpenItems;
   const [hidden, setHidden] = useState(false);
   // True once this notice has claimed the tab's one showing. StrictMode re-runs the effect on the
   // same instance, and this ref survives that, so the re-run keeps the notice it already claimed.
@@ -57,7 +61,7 @@ export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string
     return () => window.clearTimeout(timer);
   }, [routine, notice, fadeAfterMs]);
 
-  if (routine && hidden) return null;
+  if ((routine || closedOpenItems) && hidden) return null;
   return (
     <p
       className={`${styles.quiet} ${styles.recovery}`}
@@ -67,7 +71,7 @@ export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string
       data-print-hide
     >
       {notice}
-      {routine ? (
+      {routine || closedOpenItems ? (
         <button
           type="button"
           className={styles.recoveryClose}
