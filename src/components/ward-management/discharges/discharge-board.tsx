@@ -464,7 +464,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 {population === "records" && guarded.status === "denied"
                   ? "Unavailable"
                   : population === "releases" && status === "all" && shown === total && counts.departed > 0
-                    ? `${shown - counts.departed} open · ${counts.departed} discharged`
+                    ? `${shown - counts.departed} listed · ${counts.departed} discharged`
                     : `${shown} shown`}
               </span>
             </header>
