@@ -26,6 +26,7 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 }));
 
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
+import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
 
 function renderSheet(ask: string | undefined) {
   return render(<WardHelpSheet view="screen" ask={ask} onView={vi.fn()} onClose={vi.fn()} />);
@@ -62,5 +63,21 @@ describe("Ask help in the Help sheet", () => {
       .flatMap((store) => Object.keys(store).map((key) => store.getItem(key) ?? ""))
       .join(" ");
     expect(stored).not.toMatch(/Wren|Tobias/);
+  });
+
+  it("counts an answer as used when someone opens it, as its id only", () => {
+    window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
+    renderSheet("");
+    fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "how do I cancel transport" } });
+    // The first answer shows by itself, which is not a use.
+    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBeNull();
+    const second = screen.getAllByTestId(/^ward-help-ask-answer-/)[1] as HTMLElement;
+    const id = second.dataset.testid?.replace("ward-help-ask-answer-", "");
+    const title = within(second).getAllByRole("button")[0] as HTMLElement;
+    fireEvent.click(title);
+    fireEvent.click(title);
+    fireEvent.click(title);
+    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBe(`${id}:2`);
+    window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
   });
 });

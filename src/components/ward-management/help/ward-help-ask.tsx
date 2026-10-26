@@ -10,7 +10,8 @@ import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-r
 
 import { filterGlossary, glossaryForSites } from "./ward-help-content";
 import { showWardHowTo } from "./ward-help-events";
-import { askHelp, questionWords, type HowTo } from "./ward-help-howto";
+import { askHelp, HOW_TO_IDS, questionWords, type HowTo } from "./ward-help-howto";
+import { recordHowToUsed } from "./ward-help-usage";
 import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
 import styles from "./ward-help-sheet.module.css";
@@ -75,7 +76,10 @@ export function WardHelpAsk({
           className={styles.answerTitle}
           aria-expanded={expanded}
           aria-controls={`${id}-${howTo.id}`}
-          onClick={() => setOpenId(expanded ? "" : howTo.id)}
+          onClick={() => {
+            if (!expanded) recordHowToUsed(howTo.id, HOW_TO_IDS);
+            setOpenId(expanded ? "" : howTo.id);
+          }}
         >
           {howTo.title}
           <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
@@ -89,7 +93,10 @@ export function WardHelpAsk({
                   <button
                     type="button"
                     className={styles.primaryButton}
-                    onClick={() => showWardHowTo(howTo.id)}
+                    onClick={() => {
+                      recordHowToUsed(howTo.id, HOW_TO_IDS);
+                      showWardHowTo(howTo.id);
+                    }}
                     data-testid="ward-help-ask-show-me"
                   >
                     <MousePointerClick aria-hidden="true" strokeWidth={2} />
@@ -97,7 +104,15 @@ export function WardHelpAsk({
                   </button>
                 ) : null}
                 {href ? (
-                  <Link href={href} className={styles.secondaryButton} onClick={onClose} data-testid="ward-help-ask-go">
+                  <Link
+                    href={href}
+                    className={styles.secondaryButton}
+                    onClick={() => {
+                      recordHowToUsed(howTo.id, HOW_TO_IDS);
+                      onClose();
+                    }}
+                    data-testid="ward-help-ask-go"
+                  >
                     Go there
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>

@@ -589,6 +589,9 @@ function stem(word: string): string {
   return STEM_FAMILY.get(bare) ?? bare;
 }
 
+/** Every answer id, for checking a stored count against the answers that exist. */
+export const HOW_TO_IDS: ReadonlySet<string> = new Set(HOW_TOS.map((howTo) => howTo.id));
+
 /** The question's meaningful word stems, in order, without repeats. */
 export function questionWords(query: string): readonly string[] {
   const words = query
