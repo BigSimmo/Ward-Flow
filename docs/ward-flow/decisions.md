@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-26 - added D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-26 - added D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -953,3 +953,12 @@ is inferred.
 - **Replaces:** the working practice of asking Josh for each raise, and the 21 October 2026 "no raises" instruction, which asked for trims instead. Trimming first is still required.
 - **Where it lives:** the rule text is in [HOW-WE-WORK section 6](HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews); this entry is the record.
 - **Why:** each owner approval for a 1 to 4 KB raise held up otherwise finished PRs, and the cap keeps the total growth small and visible.
+
+## D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)
+
+- **Date:** 26 October 2026 (`2026-10-26`), 4:03 PM AWST (08:03 UTC). **Decided by:** Josh, in the Ward Flow project chat, answering the 26 October list of open decisions. His words: "Go ahead with all your recommendations above please. However... hide names is not required. I prefer names to be shown as it is more useful and clear. Keep names on TV view also. For privacy... dont let it impact anything that makes the app less useful or intuitive."
+- **Decision:** patient names are shown in full wherever the app shows them today, including copies, prints, downloads and every TV view. There is no "Hide names" default and no initials-only mode. Privacy and security work goes ahead only where it does not make the app less useful or less intuitive for the people using it.
+- **Closed as won't fix by this decision:** initials plus UMRN by default and copies following "Hide names" (handover question A10; NB-26-14, GV-11, PR-17, CS-12, PS-11); the read-only, locking TV login (A11, TV-01); alert type only on TV broadcast banners (A12, TV-02); no initials on the ED tea-room TV (A13, TV-D4); and counts only on the bed-meeting TV (A14).
+- **Still going ahead, because it does not reduce usefulness:** clearing half-typed text when the app signs someone out (A30, SM2-12, PS-10), deleting dead security-shaped code (A39, CQ-14, BCC-06), and groundwork for the health service's own sign-in with a second step (Part B item 49, GV-05, SRC-3). The other answers in the same message are recorded in the 26 October handover list and in each work thread.
+- **Boundary:** synthetic data only. This is not approval to use real patient data. Whether full names may be shown with real data is still for the privacy officer and the privacy impact assessment before any real-data pilot (Part B). This authorises no deployment, provider change or spending.
+- **Why:** names make the boards clearer and faster to use, and masking them would make the app harder to use for no benefit while the data is synthetic.
