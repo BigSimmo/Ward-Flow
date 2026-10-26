@@ -1,6 +1,6 @@
 # Desk guide: Transport officer
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You move patients between places for your own health service.
 
@@ -8,6 +8,8 @@ You move patients between places for your own health service.
 
 **My jobs**: the open transport jobs for your service, with the flags recorded on each referral.
 Your main menu: **My jobs, Alerts**.
+
+On a phone, the bar at the bottom has **My jobs, Alerts, Create, On-call, Activity**.
 
 ## Jobs you do most
 
