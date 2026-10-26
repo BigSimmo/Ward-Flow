@@ -70,6 +70,17 @@ Weekly, or before a demonstration. All read-only.
    secret `WARD_SUPABASE_PRUNE_DATABASE_URL`; check its weekly run succeeded. To prune by hand, run
    `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
+6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
+   - GitHub turns off every scheduled workflow after 60 days without repository activity:
+     backend uptime, the daily release, receipt pruning, the dependency audit and the scheduled CI
+     run. In each workflow's Actions page, check it still shows recent scheduled runs. Turn a
+     disabled one back on there; a manual run alone does not re-enable the schedule.
+   - A Supabase project on the Free plan pauses after about a week without activity. The backend
+     `/healthz` should then report `database: unavailable`, and every save fails. Restoring it is done in
+     the Supabase dashboard and is a live change, so it needs Josh's yes. The current plan is not
+     recorded in the repo; on a paid plan this does not happen.
+
+   Before a quiet spell (a holiday, or a paused pilot), note the date, and check both on return.
 
 ## How a deploy happens
 
@@ -103,6 +114,22 @@ Rollback candidates are listed in
 [operations-readiness.md](operations-readiness.md#application-rollback). **No live rollback has
 been run or proven.**
 
+### During a pilot
+
+The daily release changes the app under staff who are using it. Josh agreed on 26 October 2026
+(Part A item 42) that during a pilot:
+
+- the scheduled release is turned off, and releases are run by hand once a week at an agreed
+  time, outside bed meetings and handover, with sites told the day before;
+- an urgent safety fix may still be released at once, with Josh's yes, and sites are told the
+  same day;
+- no release goes out while a merged change to a hazard control is waiting for the clinical
+  safety owner's review; and
+- one rollback is rehearsed on synthetic data before the pilot starts: record the current `live`
+  commit and each service's deployment, roll back to the previous `live-*` tag with Josh's yes,
+  run the health and signed-in save, reload and conflict checks, then roll forward the same way.
+  Record the times and results. The database is never restored as part of an app rollback.
+
 ## Common incidents: first steps
 
 Start every incident by writing down the time, the service and what users see. Read before you
@@ -117,8 +144,11 @@ change anything. Do not paste tokens, passwords or record contents anywhere.
 | **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants. |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry
-tokens, user IDs or payloads ([observability.md](../observability.md)). Optional Sentry reporting
-exists in code but **no DSN is configured**, so no error export is running.
+tokens, user IDs or payloads ([observability.md](../observability.md)). Sentry error reporting
+was switched on on 26 October 2026 (organisation `clinibase-xz`, US region, synthetic data only,
+per project notes). It receives error types and stack frames, never messages, URLs or users
+([operations-readiness.md](operations-readiness.md#server-error-reporting-sentry)). Its settings
+were not re-read for this page and **no event has been seen arriving**.
 
 ## Backup and restore
 
@@ -137,15 +167,19 @@ What the repo knows, from [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#back
 
 Tested so far: one **local** `pg_dump` and `pg_restore` drill on 18 October 2026 against a
 throwaway PostgreSQL server with synthetic data. It did not touch Supabase. Its migration row
-count has an unresolved discrepancy. **No hosted backup has been observed and no hosted restore
-has been tested.** The owner has not set a data-loss window (RPO) or recovery time (RTO).
+count has an unresolved discrepancy. On 26 October 2026 a read-only `pg_dump -Fc` of the hosted
+`ward_flow` data was restored into a local copy and passed (sign-in over HTTP not tested; see
+[RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-pg_dump-restore-drill-26-october-2026-second-run)).
+**No Supabase backup has been observed and no Supabase restore has been tested.** The owner has not set a data-loss window (RPO) or recovery time (RTO).
 
 ## Backup-restore drill
 
-**Run once, 26 October 2026, and failed** (record in
+**Run twice on 26 October 2026.** The first run failed (record in
 [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-copy-restore-drill-26-october-2026)): the
 data came back complete, but the copy had been made by a script that copies tables and rows through
-Supabase's management service, so the audit locks were lost. **Only a `pg_dump -Fc` counts as a
+Supabase's management service, so the audit locks were lost. The second run, with `pg_dump -Fc`,
+passed every check except a sign-in through the restored backend, which it did not test (record in
+[RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-pg_dump-restore-drill-26-october-2026-second-run)). **Only a `pg_dump -Fc` counts as a
 backup for this drill.** Running it touches the hosted Supabase project and needs Josh's explicit
 yes first. Steps that create a new Supabase project are billable and need spending approval too.
 
@@ -175,7 +209,12 @@ It never writes to the live database.
    grants.
 5. Start a throwaway local PostgreSQL that matches the live major version (17 as of October 2026).
    Loopback only, or no network at all.
-6. Restore with `pg_restore --exit-on-error` into an empty database.
+6. Roles are not in a `ward_flow` dump. Create the `wardflow_backend` login role first (`NOINHERIT`,
+   or the backend refuses to start), then restore with `pg_restore --exit-on-error` into an empty
+   database. Afterwards run `backend/ward-flow/infra/postgres-runtime-role.sql` (or
+   `supabase-runtime-role.sql` on Supabase) as administrator to put back the grants and timeouts,
+   and set the role's password privately. A local target also needs TLS, because the backend
+   insists on a verified encrypted connection; a throwaway local certificate is enough.
 7. Run the backend locally with the `postgres` adapter against the restored copy, as described in
    [operations-readiness.md](operations-readiness.md#backup-and-recovery-acceptance) step 5.
 

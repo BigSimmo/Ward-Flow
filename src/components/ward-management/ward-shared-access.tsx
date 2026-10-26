@@ -664,6 +664,18 @@ function WardSharedWorkspaceContent({
         onSignOut={connection.signOut}
       />
     );
+  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
+  // with the desk it held before, so it falls back to the no-role screen. A server that names no
+  // access at all (`connection.access` absent) is the older shared workspace and still opens.
+  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
+    return (
+      <WardAskForAccess
+        canRequest={connection.canRequest === true}
+        api={connection.accessApi ?? null}
+        onRetry={connection.retry}
+        onSignOut={connection.signOut}
+      />
+    );
   if (!connection.signedIn || !connection.snapshot)
     return (
       <main

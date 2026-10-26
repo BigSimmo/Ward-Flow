@@ -38,6 +38,30 @@ import {
   stageTone,
 } from "./discharge-board-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
+
+const DISCHARGES_ROUTE = "/ward-flow/discharges";
+/**
+ * What Back brings back (`use-return-to-place.ts`): the board's own fixed choices. Nothing typed is
+ * kept, and neither is the open drawer — a return shows the list, not the record it was left from.
+ */
+type DischargesPlace = {
+  population: Population;
+  status: WorkStatus | "all";
+  service: string;
+  ward: string;
+  identity: string;
+  destination: string;
+  blockerCategory: string;
+  sortMode: DueSortMode;
+  view: TableView;
+  highlight: Highlight | null;
+  phoneGroupsOpen: Partial<Record<GroupKey, boolean>>;
+  phoneGroupsFolded: Partial<Record<GroupKey, boolean>>;
+};
+/** Either list's row: an admission record carries `data-record-key`, a bed release `data-release-id`. */
+const boardRow = (id: string) =>
+  rowWithAttribute("data-record-key", id, "tr") ?? rowWithAttribute("data-release-id", id, "tr");
 
 /**
  * The discharge workspace's state, effects, derived lists and handlers, moved unchanged and in
@@ -75,14 +99,16 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const recordActor = recordActors[0]!;
   const toast = useOptionalToast();
   const now = useWardFlowClock();
-  const [population, setPopulation] = useState<Population>("releases");
-  const [status, setStatus] = useState<WorkStatus | "all">("all");
-  const [service, setService] = useState("all");
-  const [ward, setWard] = useState("all");
-  const [identity, setIdentity] = useState("all");
-  const [destination, setDestination] = useState<string>("all");
-  const [blockerCategory, setBlockerCategory] = useState<string>("all");
-  const [sortMode, setSortMode] = useState<DueSortMode>("default");
+  // Return to your place (usability item 3, 24 Oct 2026): null unless Back brought us here.
+  const returned = useReturnedView<DischargesPlace>(DISCHARGES_ROUTE);
+  const [population, setPopulation] = useState<Population>(returned?.population ?? "releases");
+  const [status, setStatus] = useState<WorkStatus | "all">(returned?.status ?? "all");
+  const [service, setService] = useState(returned?.service ?? "all");
+  const [ward, setWard] = useState(returned?.ward ?? "all");
+  const [identity, setIdentity] = useState(returned?.identity ?? "all");
+  const [destination, setDestination] = useState<string>(returned?.destination ?? "all");
+  const [blockerCategory, setBlockerCategory] = useState<string>(returned?.blockerCategory ?? "all");
+  const [sortMode, setSortMode] = useState<DueSortMode>(returned?.sortMode ?? "default");
   const [selected, setSelected] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
   const [showUpdateDate, setShowUpdateDate] = useState(false);
@@ -95,15 +121,35 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   // v10 phone: a long group shows its first rows and a "Show N more" row, not every row.
   // v10 phone: the release sheet scrolls as one; transport and dossier open under it on request.
   const [phoneReleaseMore, setPhoneReleaseMore] = useState(false);
-  const [phoneGroupsOpen, setPhoneGroupsOpen] = useState<Partial<Record<GroupKey, boolean>>>({});
+  const [phoneGroupsOpen, setPhoneGroupsOpen] = useState<Partial<Record<GroupKey, boolean>>>(
+    returned?.phoneGroupsOpen ?? {},
+  );
   // v10 phone: each group header folds its rows; "Discharged · 24h" starts folded.
-  const [phoneGroupsFolded, setPhoneGroupsFolded] = useState<Partial<Record<GroupKey, boolean>>>({
-    "discharged-today": true,
-  });
+  const [phoneGroupsFolded, setPhoneGroupsFolded] = useState<Partial<Record<GroupKey, boolean>>>(
+    returned?.phoneGroupsFolded ?? { "discharged-today": true },
+  );
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
-  const [view, setView] = useState<TableView>("list");
-  const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [view, setView] = useState<TableView>(returned?.view ?? "list");
+  const [highlight, setHighlight] = useState<Highlight | null>(returned?.highlight ?? null);
   const [copyNote, setCopyNote] = useState("");
+  useReturnToPlace<DischargesPlace>(
+    DISCHARGES_ROUTE,
+    {
+      population,
+      status,
+      service,
+      ward,
+      identity,
+      destination,
+      blockerCategory,
+      sortMode,
+      view,
+      highlight,
+      phoneGroupsOpen,
+      phoneGroupsFolded,
+    },
+    boardRow,
+  );
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -341,6 +387,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   };
   const openRecord = (record: DischargeRecord, opener?: HTMLElement | null) => {
     if (opener) triggerRef.current = opener;
+    rememberReturnRow(DISCHARGES_ROUTE, record.id);
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
@@ -357,6 +404,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   };
   const selectRelease = (id: string, opener: HTMLElement) => {
     triggerRef.current = opener;
+    rememberReturnRow(DISCHARGES_ROUTE, id);
     setSelected(null);
     setPhoneReleaseMore(false);
     setReleaseId(id);
