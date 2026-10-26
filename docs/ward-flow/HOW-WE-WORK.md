@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-26 - phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -203,6 +203,11 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
   and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
   disclosure and understandable status. Compact badges still need meaningful accessible labels.
+- **Line caps never change on-screen words (Josh, 26 October 2026, decision list item 36).** When a
+  file is at its `max-lines` cap (`eslint-rules/max-lines-baseline.mjs`), make room by moving code
+  out or splitting the file, never by shortening, merging or dropping text a person reads. A cap is
+  about code size; staff wording is a product decision. One squeeze turned "beds still pulled" into
+  "beds pulled" (commit `0f38d544`), and it has been put back. Split at-cap files first (F-17).
 - New events go in EVENT_ROLE (`ward-flow-event-roles.ts`) and `tests/ward-event-permissions.test.ts`.
 - **Phone size limits (owner rule [D-82](decisions.md#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026), 26 October 2026).**
   The five phone first-load script limits live in `script-budget.json` and are checked by

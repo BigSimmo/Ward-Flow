@@ -608,7 +608,7 @@ function AlertsWorkspace() {
       track({
         type: "RELEASE_PULL",
         ok: `Bed released for ${nameOf(item)}. The ward has a notice.`,
-        refused: "Release was not accepted. The bed is still held.",
+        refused: "Release was not accepted. The bed is still pulled.",
       });
       dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
     },

@@ -113,6 +113,27 @@ it("shows unavailable progress without falling back to an empty destination arra
   expect(buildPatientStatus("find", contextFor(movement)).cells[0]?.value).toBe("No ward asked");
 });
 
+it.each(["find", "held", "transit"] as const)(
+  "shows unavailable progress in %s mode when the sender has no entry for the movement",
+  (mode) => {
+    const movement = { ...seedWardFlowState().movements[0]!, referredUnitIds: [], declines: [] };
+    expect(buildPatientStatus(mode, contextFor(movement), null).verdict).toBe("Progress unavailable");
+  },
+);
+
+it("keeps a leave status when the movement has no sender progress (closed or hidden movement)", () => {
+  const movement = { ...seedWardFlowState().movements[0]!, referredUnitIds: [], declines: [] };
+  const leaveBed = {
+    id: "LB-test",
+    kind: "leave",
+    confirmedAt: NOW_ANCHOR - 60 * 60_000,
+    expectedReturn: NOW_ANCHOR + 60 * 60_000,
+  } as unknown as NonNullable<PatientStatusContext["leaveBed"]>;
+  const status = buildPatientStatus("leave", contextFor(movement, { leaveBed }), null);
+  expect(status.verdict).toBe("On leave");
+  expect(status.verdict).not.toBe("Progress unavailable");
+});
+
 it.each([
   [false, "Pull the bed"],
   [true, "Move or release"],
