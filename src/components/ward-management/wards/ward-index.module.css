@@ -429,12 +429,6 @@
   color: var(--wf-ink-1);
 }
 
-.profileTitleSm {
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
 .profileStats {
   display: grid;
   grid-template-columns: repeat(4, auto);
@@ -511,22 +505,6 @@
   border-top: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
-}
-
-.numOnShift {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.mono {
-  overflow: hidden;
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Table */

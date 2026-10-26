@@ -510,6 +510,7 @@ describe("the hook script end to end", () => {
     expect(passed.stderr).toContain("admission ok");
   });
 
+  // Skipped on Windows: the default sign-out log is fixed at D:/Repos/ward-flow-logs, so HOME cannot redirect it.
   it.skipIf(process.platform === "win32")("blocks when the default log is absent off Windows", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });

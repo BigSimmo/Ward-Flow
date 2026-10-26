@@ -19,7 +19,13 @@ import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from 
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
-import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
+import {
+  markSignInLanding,
+  parseStoredAccess,
+  readWardAccessSnapshot,
+  sameDesk,
+  setWardAccess,
+} from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
 import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
@@ -182,6 +188,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       ownRequest: async () => connected().ownRequest(),
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
+      readRecordAccess: async () => connected().readRecordAccess(),
     };
   }, [supabase.client, accountBinding]);
   if (!supabaseMode)
@@ -391,8 +398,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   useEffect(() => {
     if (!serverAccess) return;
     const { desk, previewOf, covers } = readWardAccessSnapshot();
-    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0)
+    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0) {
       setWardAccess(serverAccess, { fromServer: true });
+      // #804, #797: a page closed to this desk opens its home, not "Not part of your role".
+      if (!sameDesk(previewOf ?? desk, serverAccess)) markSignInLanding(window.location.pathname);
+    }
   }, [serverAccess]);
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled

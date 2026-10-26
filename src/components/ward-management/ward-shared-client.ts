@@ -15,6 +15,8 @@ import {
   type ArchivedCollection,
   type HeldArchive,
 } from "./ward-shared-archive-delta";
+import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -107,16 +109,6 @@ export type SharedAccessRequest = {
   scope: unknown;
   decision: "approved" | "declined" | null;
   minutes: { requested: number | null };
-};
-/** One record opening from the server's access log. `minutes` is when, from the server's now. */
-export type SharedRecordView = {
-  id: number | string;
-  actor_id: string;
-  actor_role: string;
-  actor_scope: unknown;
-  patient_id: string;
-  surface: string;
-  minutes?: number | null;
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -1327,6 +1319,15 @@ export class SharedWorkspaceClient {
     } catch {
       // Logged on the next opening; the page itself is unaffected.
     }
+  }
+  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
+  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok) throw new Error("Record access could not be read");
+    return {
+      views: Array.isArray(value?.views) ? value.views : [],
+      openings: Array.isArray(value?.openings) ? value.openings : [],
+    };
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

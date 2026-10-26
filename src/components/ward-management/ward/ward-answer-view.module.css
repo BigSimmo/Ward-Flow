@@ -850,7 +850,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: var(--z-modal);
   padding: 1rem;
 }
 
@@ -997,7 +997,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  z-index: 1000;
+  z-index: var(--z-toast);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;

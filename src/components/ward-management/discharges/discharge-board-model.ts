@@ -56,18 +56,20 @@ export const PHONE_GROUP_CAP = 6;
  */
 export const GROUP_ORDER: readonly GroupKey[] = ["blocked", "confirmed", "expected", "discharged-today"];
 
-export const BAND_LABELS: Record<ReleaseBand, string> = {
+/** "Later" names a held up release two or more days ahead, which the board now lists (WT-17). */
+export const BAND_LABELS: Record<ReleaseBand | "beyond-today", string> = {
   now: "Now",
   "by-midday": "By midday",
   "by-1600": "By 4pm",
   tonight: "Tonight",
   tomorrow: "Tomorrow",
+  "beyond-today": "Later",
 };
 
 /** The timing word for a release: how far past its date when late, never "Now" for a late one. */
 export function releaseTimingWords(release: BedRelease, now: Instant): string {
   if (release.state !== "discharged" && release.expectedAt < now) return `${durMinutes(now - release.expectedAt)} past`;
-  return BAND_LABELS[releaseBand(release, now) as ReleaseBand];
+  return BAND_LABELS[releaseBand(release, now)];
 }
 
 export const EMPTY_REASON: Record<GroupKey, string> = {
@@ -98,14 +100,27 @@ export type DischargeGroups = {
    * *expected beyond tonight*, and the footer used to declare it under that phrase.
    */
   completedBeforeToday: number;
+  /** WT-17: every open release two or more days ahead, held up or not, for the "later" figure. */
+  openLater: number;
 };
+
+/**
+ * WT-17 (Josh, 26 Oct 2026): on the ward and Discharges screens held up counts every open release
+ * with a blocker, whatever its date. The bed meeting and its TV keep today and tomorrow (NA3-02),
+ * which their own label states, so this is a choice the caller makes.
+ */
+export type DischargeGrouping = { heldUpAnyDate?: boolean };
 
 /**
  * The one place this board's grouping and ordering rules live, so the component itself is pure
  * rendering. Pure function of the live `releases` and `now` the provider hands the board — takes
  * no fixture and no clock read of its own, per this phase's single-source rule.
  */
-export function groupDischarges(releases: BedRelease[], now: Instant): DischargeGroups {
+export function groupDischarges(
+  releases: BedRelease[],
+  now: Instant,
+  { heldUpAnyDate = false }: DischargeGrouping = {},
+): DischargeGroups {
   const buckets: Record<GroupKey, BedRelease[]> = {
     blocked: [],
     confirmed: [],
@@ -114,6 +129,7 @@ export function groupDischarges(releases: BedRelease[], now: Instant): Discharge
   };
   let excludedBeyondToday = 0;
   let completedBeforeToday = 0;
+  let openLater = 0;
 
   for (const release of releases) {
     const band = releaseBand(release, now);
@@ -138,7 +154,8 @@ export function groupDischarges(releases: BedRelease[], now: Instant): Discharge
       completedBeforeToday += 1;
       continue;
     }
-    if (band === "beyond-today") {
+    if (band === "beyond-today") openLater += 1;
+    if (band === "beyond-today" && !(heldUpAnyDate && release.blocker !== null)) {
       excludedBeyondToday += 1;
       continue;
     }
@@ -153,12 +170,12 @@ export function groupDischarges(releases: BedRelease[], now: Instant): Discharge
     else buckets.expected.push(release);
   }
 
-  const byBand = (list: BedRelease[]) =>
-    [...list].sort(
-      (a, b) =>
-        RELEASE_BANDS.indexOf(releaseBand(a, now) as ReleaseBand) -
-        RELEASE_BANDS.indexOf(releaseBand(b, now) as ReleaseBand),
-    );
+  // A held up release two or more days ahead has no band, so it sorts after tomorrow.
+  const bandOrder = (release: BedRelease) => {
+    const index = RELEASE_BANDS.indexOf(releaseBand(release, now) as ReleaseBand);
+    return index < 0 ? RELEASE_BANDS.length : index;
+  };
+  const byBand = (list: BedRelease[]) => [...list].sort((a, b) => bandOrder(a) - bandOrder(b));
 
   return {
     blocked: byBand(buckets.blocked),
@@ -167,6 +184,7 @@ export function groupDischarges(releases: BedRelease[], now: Instant): Discharge
     "discharged-today": byBand(buckets["discharged-today"]),
     excludedBeyondToday,
     completedBeforeToday,
+    openLater,
   };
 }
 

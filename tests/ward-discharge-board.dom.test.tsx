@@ -21,6 +21,9 @@ vi.mock("next/link", () => ({
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { DischargeBoard, groupDischarges } from "@/components/ward-management/discharges/discharge-board";
+
+/** WT-17: the board counts every held up release, whatever its date. */
+const BOARD_GROUPING = { heldUpAnyDate: true };
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // CHANGED 25 September 2026: the fixture's nine hand-written `WR-00N` bed releases (owner ruling,
@@ -280,7 +283,7 @@ describe("DischargeBoard", () => {
     // applied to the same exported `bedReleases`, rather than a number read off the old fixture —
     // and every group is required to be genuinely non-empty, so this cannot pass by the seed
     // happening to leave a group at zero.
-    const expectedGroups = groupDischarges(seededBedReleases, NOW_ANCHOR);
+    const expectedGroups = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING);
     expect(expectedGroups.blocked.length).toBeGreaterThan(0);
     expect(expectedGroups.confirmed.length).toBeGreaterThan(0);
     expect(expectedGroups.expected.length).toBeGreaterThan(0);
@@ -354,7 +357,7 @@ describe("DischargeBoard", () => {
     // by their rendered Stage text (`blockedRowByStage`) rather than a hand-picked ward name, and
     // the row COUNT is computed from the same `groupDischarges` the board itself calls rather than
     // typed in.
-    const expectedBlockedCount = groupDischarges(seededBedReleases, NOW_ANCHOR).blocked.length;
+    const expectedBlockedCount = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING).blocked.length;
     const dataRows = releaseRows("blocked");
     expect(dataRows).toHaveLength(expectedBlockedCount);
 
@@ -385,8 +388,11 @@ describe("DischargeBoard", () => {
       throw new Error("the confirmed-and-blocked row's ward button has no text");
     }
 
-    expect(within(releaseGroup("confirmed")).queryByRole("button", { name: wardName })).not.toBeInTheDocument();
-    expect(within(releaseGroup("blocked")).getByRole("button", { name: wardName })).toBeInTheDocument();
+    // WT-17: Blocked can now hold two rows for one ward, so the row is matched by its release.
+    const releaseId = confirmedBlockedRow.closest("[data-release-id]")?.getAttribute("data-release-id");
+    expect(releaseId).toBeTruthy();
+    expect(releaseGroup("confirmed").querySelector(`[data-release-id="${releaseId}"]`)).toBeNull();
+    expect(releaseGroup("blocked")).toContainElement(confirmedBlockedRow);
   });
 
   it("shows a selected release's confirming role exactly once with its freshness detail", () => {
@@ -417,7 +423,7 @@ describe("DischargeBoard", () => {
     // codebase treats as a bug. The count is computed independently, from the same exported
     // `bedReleases` the board itself reads, and the test requires it be a real positive number
     // rather than accepting a coincidental 0.
-    const expectedExcluded = groupDischarges(seededBedReleases, NOW_ANCHOR).excludedBeyondToday;
+    const expectedExcluded = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING).excludedBeyondToday;
     expect(
       expectedExcluded,
       "the live seed has nothing 2+ days out any more, so this count can no longer prove the figure is real",
@@ -452,7 +458,7 @@ describe("DischargeBoard", () => {
     // release `groupDischarges` places into one of the four buckets, excluding whatever it counts
     // as excluded-beyond-today or completed-before-today — rather than a number read off the old
     // fixture and typed in here.
-    const expectedGroups = groupDischarges(seededBedReleases, NOW_ANCHOR);
+    const expectedGroups = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING);
     const expectedTotal =
       expectedGroups.blocked.length +
       expectedGroups.confirmed.length +
@@ -646,7 +652,7 @@ describe("DischargeBoard", () => {
     // The harness adds exactly one confirmed-and-unblocked release on top of however many the
     // live seed already carries — computed rather than hard-coded, so a future seed change that
     // adds or removes its own confirmed releases cannot silently make this a coincidence.
-    const expectedConfirmedCount = groupDischarges(seededBedReleases, NOW_ANCHOR).confirmed.length + 1;
+    const expectedConfirmedCount = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING).confirmed.length + 1;
     expect(timingColumn("confirmed")).toHaveLength(expectedConfirmedCount);
 
     const wardName = unitDisplayName("rph-adult-secure");
@@ -684,7 +690,7 @@ describe("DischargeBoard", () => {
     // are computed from the live seed (`groupDischarges`) rather than assumed, because the exact
     // split is a fact about `ward-admissions-seed.ts`'s departure list, not something to hard-code
     // here and risk drifting from silently.
-    const before = groupDischarges(seededBedReleases, NOW_ANCHOR);
+    const before = groupDischarges(seededBedReleases, NOW_ANCHOR, BOARD_GROUPING);
     const dischargedBefore = before["discharged-today"].length;
     expect(dischargedBefore, "no discharged-today row exists in the live seed to exercise this drop").toBeGreaterThan(
       0,
@@ -719,7 +725,7 @@ describe("DischargeBoard", () => {
      * clock, is the honest replacement — the same `groupDischarges` the board itself calls,
      * applied to the same exported `bedReleases`, at the `now` this render has just moved to.
      */
-    const after = groupDischarges(seededBedReleases, NOW_ANCHOR + MINUTES_PER_DAY);
+    const after = groupDischarges(seededBedReleases, NOW_ANCHOR + MINUTES_PER_DAY, BOARD_GROUPING);
     expect(after["discharged-today"]).toHaveLength(0);
 
     const completed = screen.getByTestId("ward-discharge-completed-before-today");

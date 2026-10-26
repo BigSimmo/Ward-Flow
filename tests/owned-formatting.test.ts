@@ -63,6 +63,7 @@ it("refuses to format when an explicitly named sign-out log is missing", () => {
       else process.env.WARD_SIGNOUT_FILE = previous;
     });
 });
+// Skipped on Windows: the default sign-out log is fixed at D:/Repos/ward-flow-logs, so HOME cannot redirect it.
 it.skipIf(process.platform === "win32")(
   "rejects named files when the default sign-out log is absent off Windows",
   async () => {
