@@ -137,6 +137,16 @@ describe("tour player", () => {
     // The shift block is not drawn in this test, so the card waits, then shows in the middle.
     await waitFor(() => expect(card().dataset.place).toBe("centre"), { timeout: 3000 });
     expect(screen.queryByTestId("ward-tour-spot")).toBeNull();
+    // With no control there is no spotlight re-measure, so the card is placed again on resize.
+    const centred = card().style.transform;
+    const width = window.innerWidth;
+    try {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width + 100 });
+      act(() => fireEvent(window, new Event("resize")));
+      expect(card().style.transform).not.toBe(centred);
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+    }
   });
 
   it("keeps the same step when the window crosses the phone width", () => {
