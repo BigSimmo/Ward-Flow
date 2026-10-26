@@ -118,6 +118,16 @@ test(
       assert.equal(archive.records.length, Math.min(after.archived, 5000));
       const archivedIds = new Set(world.state.movements.filter((row) => row.closure).map((row) => row.id));
       for (const record of archive.records) assert.ok(archivedIds.has(record.body.id), record.body.id);
+      // Audit PS-01: a desk holding the archive is sent only what was archived after it. Nothing
+      // new has been archived, so the delta is empty and sums the same; a fresh store agrees.
+      assert.equal(archive.through, 7);
+      const delta = await store.archive({ ...STATEWIDE_VIEW, actorId: actor }, archive.through);
+      assert.equal(delta.since, 7);
+      assert.deepEqual(delta.records, []);
+      assert.equal(delta.sum, archive.sum);
+      if (after.archived > 5000) assert.equal(delta.floor?.length, 3, "a capped archive names its floor");
+      const elsewhere = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+      assert.equal((await elsewhere.archive({ ...STATEWIDE_VIEW, actorId: actor })).sum, archive.sum);
 
       // A ward desk reads only what its own live rule would show it.
       const unitId = after.payload.state.units[0].id;

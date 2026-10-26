@@ -39,6 +39,7 @@ import { TransportExceptionDialog } from "@/components/ward-management/transport
 import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import { clock, dur } from "./patient-now-records";
 import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
@@ -71,7 +72,8 @@ export function PatientTransitOperations({
       "configuration",
     );
   // Audit 1 (CS-09, Josh 20 Oct): the gap dialogs name the person and UMRN, never "this patient".
-  const identity = patientIdentityLine(resolveSubjectPatient(movement, { patients, referrals, movements }));
+  const subjectPatient = resolveSubjectPatient(movement, { patients, referrals, movements });
+  const identity = patientIdentityLine(subjectPatient);
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
@@ -123,6 +125,8 @@ export function PatientTransitOperations({
   const [booking, setBooking] = useState(false);
   const [collectCheck, setCollectCheck] = useState(false);
   const [arriveCheck, setArriveCheck] = useState(false);
+  // Walk-through WT-11: an arrival with nothing open still checks the name and UMRN first.
+  const [arriveConfirm, setArriveConfirm] = useState(false);
   const [provider, setProvider] = useState<TransportProvider | "">("");
   const [cad, setCad] = useState("");
   // Blank is the form's own "required" prompt; a typed placeholder gets the reason (HAZ-03, #430).
@@ -829,10 +833,20 @@ export function PatientTransitOperations({
                   onClick={() => {
                     if (!arrivedGate.allowed) return;
                     // Audit r1 item 4: no transport leg and fit to travel open warns, never blocks.
-                    if (arrivalGaps(movement).length > 0) {
-                      setArriveCheck(true);
-                      return;
-                    }
+                    if (arrivalGaps(movement).length > 0) setArriveCheck(true);
+                    else setArriveConfirm(true);
+                  }}
+                >
+                  Confirm arrival · receiving ward
+                </button>
+                <ArrivalIdentityDialog
+                  open={arriveConfirm}
+                  who={subjectPatient.displayName}
+                  identity={identity}
+                  wardName={destination.name}
+                  onClose={() => setArriveConfirm(false)}
+                  onConfirm={() => {
+                    setArriveConfirm(false);
                     noteAttempt();
                     dispatch({
                       type: "PATIENT_ARRIVED",
@@ -842,9 +856,8 @@ export function PatientTransitOperations({
                       ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
                     });
                   }}
-                >
-                  Confirm arrival · receiving ward
-                </button>
+                  testId="ward-patient-arrival-identity"
+                />
                 <TransportExceptionDialog
                   open={arriveCheck}
                   who={identity}

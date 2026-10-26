@@ -1012,8 +1012,11 @@ function ScreenPicker({ current }: { current: string }) {
     { key: "all", label: "All services", service: null },
     ...tvHealthServices(units).map((service) => ({ key: tvServiceParam(service), label: service, service })),
   ];
+  // WT-21: a choice only changes the query, so the page stays mounted. Close the menu on a choice.
+  const pickerRef = useRef<HTMLDetailsElement>(null);
+  const close = () => pickerRef.current?.removeAttribute("open");
   return (
-    <details className={styles.picker} data-testid="bed-meeting-tv-picker">
+    <details ref={pickerRef} className={styles.picker} data-testid="bed-meeting-tv-picker">
       <summary className={styles.action}>
         Change screen
         <ChevronDown aria-hidden="true" />
@@ -1025,6 +1028,7 @@ function ScreenPicker({ current }: { current: string }) {
             <Link
               key={meeting.key}
               href={bedMeetingTvHref({ service: meeting.key })}
+              onClick={close}
               aria-current={current === `service:${meeting.key}` ? "page" : undefined}
             >
               {meeting.label}
@@ -1037,6 +1041,7 @@ function ScreenPicker({ current }: { current: string }) {
             <Link
               key={ed.id}
               href={bedMeetingTvHref({ ed: ed.id })}
+              onClick={close}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
             >
               {edName(ed.name)}
@@ -1049,6 +1054,7 @@ function ScreenPicker({ current }: { current: string }) {
             <Link
               key={unit.id}
               href={bedMeetingTvHref({ ward: unit.id })}
+              onClick={close}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
             >
               {unit.name}

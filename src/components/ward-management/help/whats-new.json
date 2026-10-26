@@ -25,6 +25,11 @@
     "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
   },
   {
+    "id": "2026-10-26-archived-referral-progress",
+    "date": "2026-10-26",
+    "line": "Older referrals and moves in History now show their progress too, with other wards still private."
+  },
+  {
     "id": "2026-10-26-ward-referral-privacy",
     "date": "2026-10-26",
     "line": "Ward referrals show permitted progress while keeping other destinations private."
@@ -48,5 +53,50 @@
     "id": "2026-10-26-inline-forms-changed-meanwhile",
     "date": "2026-10-26",
     "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
+  },
+  {
+    "id": "2026-10-26-pull-the-bed-home",
+    "date": "2026-10-26",
+    "line": "Home lists accepted referrals with no bed pulled, and Pull the bed now takes two taps in one sheet."
+  },
+  {
+    "id": "2026-10-26-pilot-measures-pulled",
+    "date": "2026-10-26",
+    "line": "Weekly report shows the four agreed pilot measures. Forms 3B and 3C read differently. Incoming beds say pulled."
+  },
+  {
+    "id": "2026-10-26-tour-skip-closes",
+    "date": "2026-10-26",
+    "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
+  },
+  {
+    "id": "2026-10-26-bed-move-and-extension-checks",
+    "date": "2026-10-26",
+    "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
+  },
+  {
+    "id": "2026-10-26-departures-and-pulls-named",
+    "date": "2026-10-26",
+    "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
+  },
+  {
+    "id": "2026-10-26-not-recorded-wording",
+    "date": "2026-10-26",
+    "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
+  },
+  {
+    "id": "2026-10-26-names-and-umrn",
+    "date": "2026-10-26",
+    "line": "Phone ED rows show the UMRN beside the name. The practice hospital feed names each person and a confirm can be undone."
+  },
+  {
+    "id": "2026-10-26-handover-forecast-double-tap",
+    "date": "2026-10-26",
+    "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
+  },
+  {
+    "id": "2026-10-26-arrival-check-and-refusal-warnings",
+    "date": "2026-10-26",
+    "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
   }
 ]

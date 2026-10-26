@@ -14,6 +14,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { openSheetHandles } from "../src/components/wf/sheet-focus";
 
 const NOW = NOW_ANCHOR;
 
@@ -114,6 +115,24 @@ describe("officer diversion control — T4b", () => {
         place: TRANSPORT_WHEREABOUTS[1],
       }),
     );
+  });
+
+  it("holds the diversion form from opening until it closes (audit CS3-01)", async () => {
+    const user = userEvent.setup();
+    const { state, movementId } = collectedState();
+    mockedUseWardFlow.mockReturnValue({
+      ...state,
+      dispatch: vi.fn(),
+      rejections: state.rejections,
+    } as unknown as ReturnType<typeof useWardFlow>);
+
+    render(<OfficerScreen />);
+    await user.click(screen.getByTestId(`ward-officer-select-${movementId}`));
+    const before = openSheetHandles().length;
+    await user.click(screen.getByTestId(`ward-officer-divert-${movementId}`));
+    expect(openSheetHandles().length).toBe(before + 1);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(openSheetHandles().length).toBe(before);
   });
 
   it("hides the diversion form once diverted and shows the recorded fact", async () => {

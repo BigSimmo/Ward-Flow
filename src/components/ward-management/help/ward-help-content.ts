@@ -42,12 +42,12 @@ const WHY_NO_ANSWER: HelpQuestion = {
 
 /**
  * The meeting room TV hides the header, so Help cannot open there. Its help sits on the screens
- * that open it: Capacity, a ward and an ED (HF-10).
+ * that open it: Capacity, a ward and an ED (HF-10). Full names on every TV view (D-83, WT-20).
  */
 const TV_QUESTION: HelpQuestion = {
   question: "How do I put this on the meeting room TV?",
   answer:
-    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows initials rather than full names and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back.",
+    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back.",
 };
 
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
@@ -347,7 +347,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     purpose: "One emergency department's mental health patients, each row with its next step.",
     actions: [
       "Work down My list first. Act-now items have a red edge.",
-      "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready.",
+      "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready. A referral waiting in the inbox has Ask for a bed.",
       "Raise referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
     questions: [TV_QUESTION],

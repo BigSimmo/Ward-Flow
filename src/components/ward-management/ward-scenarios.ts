@@ -1,6 +1,6 @@
 import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
 import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
-import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
+import type { EmergencyDepartment, Site, Unit } from "@/components/ward-management/ward-model";
 import {
   activateWardNetwork,
   STANDARD_WARD_SITES,
@@ -96,6 +96,20 @@ export function scenarioEmergencyDepartments(scenario: WardScenario): EmergencyD
   return scenarioWardNetwork(scenario).sites.flatMap((site) =>
     site.emergencyDepartment ? [site.emergencyDepartment] : [],
   );
+}
+
+/**
+ * Whether a site code belongs to one world's own network: the list its save check reads (audit
+ * CS3-21, the same kind of fix as CS2-20). Home service returns and repatriations check this, not
+ * the module-wide active network, so an accepted step never makes the world unsaveable.
+ */
+export function scenarioHasSite(scenario: WardScenario, siteCode: string): boolean {
+  return scenarioSite(scenario, siteCode) !== undefined;
+}
+
+/** One site of a world's own network, by code (audit CS3-21). */
+export function scenarioSite(scenario: WardScenario, siteCode: string): Site | undefined {
+  return scenarioWardNetwork(scenario).sites.find((site) => site.code === siteCode);
 }
 
 /**
