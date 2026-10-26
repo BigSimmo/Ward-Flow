@@ -118,15 +118,16 @@
 
 .fact dt {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* Layout sweep STATS-06: a label and its note (a step name, why a figure is a dash) wrap onto a
+     second line instead of being sliced mid-word, which no ellipsis could mark in a flex box. */
+  white-space: normal;
 }
 
 /* Phone review F-33: a fact can be words ("Not known") or a duration ("3d 14h"), so it takes the
@@ -520,6 +521,9 @@
     );
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
+  /* Layout sweep STATS-07: paint the strip between the bar and the dock, so rows never show
+     through it. */
+  box-shadow: 0 var(--wf-s-3) 0 0 var(--wf-canvas);
 }
 
 .pinnedButton {
