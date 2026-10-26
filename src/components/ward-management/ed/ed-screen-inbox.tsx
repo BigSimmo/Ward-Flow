@@ -171,7 +171,7 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                         setReferralOpen(true);
                       }}
                     >
-                      Raise into a movement
+                      Ask for a bed
                     </button>
                   )}
                   {addressing.state !== "queued" ? null : (

@@ -23,8 +23,11 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
-import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
-import { observationStaffOnWard } from "@/components/ward-management/ward-observation";
+import {
+  LEAVING_DESTINATIONS,
+  observationStaffOnWard,
+  type LeavingDestination,
+} from "@/components/ward-management/ward-admissions";
 import {
   bedsPendingPreparation,
   capacityBreakdown,

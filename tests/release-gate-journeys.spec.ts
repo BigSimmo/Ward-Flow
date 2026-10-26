@@ -84,7 +84,7 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
     .getByRole("button", { name: /View referral/u })
     .click();
   await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
-  await expect(page.getByRole("region", { name: "Raise into a movement" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
   await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
   await page.getByTestId("ward-ed-referral-security").selectOption("Open");
   await page.getByTestId("ward-ed-referral-sex").selectOption("Male");

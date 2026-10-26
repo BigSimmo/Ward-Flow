@@ -1565,7 +1565,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 <div className={styles.milieuList}>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>Not recorded</span>
-                    <span className={styles.milieuValue}>nurse ratio, sex mix</span>
+                    <span className={styles.milieuValue}>nurse ratio, gender mix</span>
                   </div>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>Constant observation</span>

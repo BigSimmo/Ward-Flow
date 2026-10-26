@@ -323,9 +323,17 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     return times.length ? Math.min(...times) * 1000 : undefined;
   };
   /**
+   * Whether this sign-in finished a second step (Part B item 49, 26 October 2026): a Supabase
+   * factor raised it to `aal2`, or it came through the health service's own single sign-on, whose
+   * identity provider applies its multi-factor rule (`amr` method `sso/saml`).
+   */
+  const secondStep = (claims) =>
+    claims?.aal === "aal2" || (Array.isArray(claims?.amr) && claims.amr.some((entry) => entry?.method === "sso/saml"));
+  /**
    * `session`, when given, is filled once the token is verified: `signedInAt` and `startedAt`
-   * (above), `aal`, and `sessionId`, the sign-in's own id, which a sign-out names so this server
-   * refuses that sign-in's tokens before they expire. The subject is still the only return value.
+   * (above), `aal`, `secondStep`, and `sessionId`, the sign-in's own id, which a sign-out names so
+   * this server refuses that sign-in's tokens before they expire. The subject is still the only
+   * return value.
    */
   return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
     const verified = (userId, claims) => {
@@ -333,6 +341,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
         session.signedInAt = signedInAt(claims);
         session.startedAt = startedAt(claims);
         session.aal = typeof claims?.aal === "string" ? claims.aal : undefined;
+        session.secondStep = secondStep(claims);
         session.sessionId =
           typeof claims?.session_id === "string" && UUID.test(claims.session_id)
             ? claims.session_id.toLowerCase()
