@@ -9,6 +9,12 @@ import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
+import {
+  ARCHIVED_COLLECTIONS,
+  foldArchiveReply,
+  type ArchivedCollection,
+  type HeldArchive,
+} from "./ward-shared-archive-delta";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -43,8 +49,6 @@ export type SharedSnapshot = {
   archived?: number;
 };
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
-const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
-type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
 /**
  * `choose-role`: the account holds more than one role and must say which to work as.
@@ -509,6 +513,8 @@ export class SharedWorkspaceClient {
     generation: number;
     accessContext: SharedSnapshot["accessContext"];
     records: ArchivedRecords;
+    /** What a delta read builds on (audit PS-01); null when this archive came from an older server. */
+    held: HeldArchive | null;
     /** The server's sender progress for these records, bound to the same access view and a
      * revision no older than the snapshot held when the read was asked. Null when absent or invalid. */
     view: WardPartialView | null;
@@ -562,30 +568,40 @@ export class SharedWorkspaceClient {
     const epoch = this.archiveEpoch;
     const accessContext = this.view.snapshot?.accessContext;
     const askedAtRevision = this.view.snapshot?.revision ?? Number.POSITIVE_INFINITY;
+    // Audit PS-01: an archive already held for this world and access view asks only for what was
+    // archived since; a delta that does not check out is followed by one whole read.
+    const base =
+      this.archive?.held &&
+      this.archive.accessContext === accessContext &&
+      this.archive.generation === this.rawPayload?.state.worldGeneration
+        ? this.archive.held
+        : null;
     try {
-      const { response, value } = await this.request("/v1/workspace/archive");
-      const held = this.view.snapshot;
-      if (
-        epoch !== this.archiveEpoch ||
-        !held ||
-        held.accessContext !== accessContext ||
-        !this.rawPayload ||
-        !response.ok ||
-        !Array.isArray(value?.records)
-      )
-        return;
-      const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
-      for (const record of value.records) {
-        const body = record?.body;
+      const read = async (path: string) => {
+        const { response, value } = await this.request(path);
+        const held = this.view.snapshot;
         if (
-          !(ARCHIVED_COLLECTIONS as readonly string[]).includes(record?.collection) ||
-          !body ||
-          typeof body !== "object" ||
-          typeof body.id !== "string"
+          epoch !== this.archiveEpoch ||
+          !held ||
+          held.accessContext !== accessContext ||
+          !this.rawPayload ||
+          !response.ok
         )
-          return;
-        records[record.collection as ArchivedCollection].push(body);
+          return null;
+        return { held, value };
+      };
+      let reply = await read(base ? `/v1/workspace/archive?since=${base.through}` : "/v1/workspace/archive");
+      if (!reply) return;
+      let folded = foldArchiveReply(reply.value, base);
+      if (folded === "reread") {
+        reply = await read("/v1/workspace/archive");
+        if (!reply) return;
+        folded = foldArchiveReply(reply.value, null);
       }
+      if (folded === "invalid" || folded === "reread" || !this.rawPayload) return;
+      const { held, value } = reply;
+      const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
+      for (const entry of folded.entries) records[entry.collection].push(entry.body);
       // The sender progress for these records is trusted only as the live sibling is: bound to the
       // reply's own revision and this desk's access view, and not older than what was held when
       // the read was asked. A reply without a valid one still shows the records.
@@ -601,6 +617,7 @@ export class SharedWorkspaceClient {
         generation: this.rawPayload.state.worldGeneration,
         accessContext,
         records,
+        held: folded.held,
         view: sibling?.view ?? null,
       };
       const previous = this.archive;
