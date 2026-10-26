@@ -20,6 +20,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 | Path            | Current role                                                        |
 | --------------- | ------------------------------------------------------------------- |
+| `.claude/`      | Cloud Supermemory recall and save hooks only (`settings.json`)      |
 | `.design/`      | Design briefs, reviews and screenshot evidence; not runtime modules |
 | `.githooks/`    | Local commit/push hooks                                             |
 | `.github/`      | Ward Flow CI workflows and repository metadata                      |
