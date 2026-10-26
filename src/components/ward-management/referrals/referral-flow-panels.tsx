@@ -4,6 +4,7 @@ import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, UserRound, X 
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
+import { uploadedFileTypeOf } from "../ward-uploaded-file";
 import { useWardDataMode } from "../ward-shared-access";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
@@ -176,7 +177,9 @@ function ChartUpload({
       if (current !== generation.current) return;
       latestOnChange.current({
         kind,
-        name: selected.name,
+        // H-0049: the file's own name never leaves this form. A real file name can carry a
+        // patient's name, so the chart keeps only its type ("PDF", "PNG" or "JPEG").
+        name: uploadedFileTypeOf(selected.name, selected.type),
         mimeType: selected.type as ReferralChart["mimeType"],
         sizeBytes: selected.size,
         base64: bytesToBase64(bytes),
@@ -199,7 +202,9 @@ function ChartUpload({
             {label}
           </label>
           <span>
-            {file ? `${file.name} · ${(file.sizeBytes / 1024).toFixed(1)} KB` : "PDF, PNG or JPEG, up to 2 MB"}
+            {file
+              ? `${uploadedFileTypeOf(undefined, file.mimeType)} · ${(file.sizeBytes / 1024).toFixed(1)} KB`
+              : "PDF, PNG or JPEG, up to 2 MB"}
           </span>
         </div>
         <input
@@ -435,7 +440,7 @@ export function DocumentationPanel({
             <p className={styles.bodyMeta}>
               <Lock aria-hidden="true" />
               {shared
-                ? "Synthetic documents only. The shared board keeps the file name and size, not the file"
+                ? "Synthetic documents only. The shared board keeps the file type and size, not the file or its name"
                 : "Synthetic documents only, kept for this session"}
             </p>
           </div>

@@ -15,6 +15,7 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import type { Dispatch, SetStateAction } from "react";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
 import type { PatientMode } from "./patient-mode";
 
 /** The values and handlers `PatientNowScreen` passes to its arrival-plan section. */
@@ -171,7 +172,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                     <div key={form.id} className={styles.pulledFormChip}>
                       <span className={styles.formChipName}>{form.formName}</span>
                       <span className={styles.pulledFormChipMeta}>
-                        {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
+                        {uploadedFileLabel(form)} · {clock(form.uploadedAt)} ({form.uploadedBy})
                       </span>
                     </div>
                   ))}

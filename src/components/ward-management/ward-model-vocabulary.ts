@@ -167,11 +167,26 @@ export type MovementArrivalDetails = {
   updatedBy?: WardFlowRole;
 };
 
+/**
+ * H-0049 (privacy, owner-approved 26 Oct 2026): a recorded document keeps the KIND of file and its
+ * size, never the file's name, because a real file name can carry a patient's name. The type is read
+ * from the chosen file's extension or media type on the person's device (`ward-uploaded-file.ts`)
+ * and only this fixed label reaches the event and the shared board.
+ */
+export const UPLOADED_FILE_TYPES = ["PDF", "JPEG", "PNG", "Other"] as const;
+export type UploadedFileType = (typeof UPLOADED_FILE_TYPES)[number];
+
 export type MovementUploadedForm = {
   id: string;
   formName: string;
   formType?: string;
-  fileName: string;
+  /** The kind of file (H-0049). Absent on documents recorded before 26 Oct 2026. */
+  fileType?: UploadedFileType;
+  /**
+   * Legacy only: documents recorded before 26 Oct 2026 kept the file's name. Nothing writes it now
+   * and no screen shows it, so an older save still loads without the name being displayed.
+   */
+  fileName?: string;
   sizeBytes?: number;
   uploadedAt: Instant;
   uploadedBy: WardFlowRole;
