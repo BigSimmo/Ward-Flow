@@ -4,7 +4,7 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import type { RecordedFactEventHelpers } from "@/components/ward-management/ward-flow-record-events";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, liveMovementForAdmission } from "@/components/ward-management/ward-admissions";
 import { isObservation, sameObservation, type Observation } from "@/components/ward-management/ward-observation";
 
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
@@ -84,7 +84,18 @@ export function reduceObservationLevelEvent(
       );
     }
     const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
-    admission = held && held.movementId === movement.id && bedIsOccupied(held) ? held : undefined;
+    // Audit S-2: a seeded stay may be joined only by `movement.admissionId` (its own `movementId`
+    // is null), so the shared live-movement join decides the link, not `held.movementId` alone.
+    // A pair that joined that way already disagreeing (an older record) stays unlinked here, so the
+    // refusal below for disagreeing linked records cannot lock it; arrival reconciles it.
+    admission =
+      held &&
+      bedIsOccupied(held) &&
+      (held.movementId === movement.id ||
+        (liveMovementForAdmission(held, state.movements)?.id === movement.id &&
+          sameObservation(held.observation, movement.observation)))
+        ? held
+        : undefined;
   } else {
     admission = findAdmission(state, event.target.admissionId);
     if (!admission) return reject(state, event, `no admission found for id ${event.target.admissionId}`);
@@ -104,7 +115,12 @@ export function reduceObservationLevelEvent(
       );
     }
     if (!bedIsOccupied(admission)) return reject(state, event, `admission ${admission.id} is ${admission.state}`);
-    const source = admission.movementId ? findMovement(state, admission.movementId) : undefined;
+    const joined = admission.movementId ? undefined : liveMovementForAdmission(admission, state.movements);
+    const source = admission.movementId
+      ? findMovement(state, admission.movementId)
+      : joined && sameObservation(joined.observation, admission.observation)
+        ? joined
+        : undefined;
     movement = source && !source.closure ? source : undefined;
   }
 

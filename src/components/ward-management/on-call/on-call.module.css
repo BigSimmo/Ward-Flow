@@ -2069,3 +2069,20 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* H-0438 (26 Oct 2026): on an iPad and a laptop the directory's narrow columns cut the role name
+   ("Mental Health Emergency Telehealth…") and the line that says who answers next ("then on-call…"),
+   which is the fact a caller needs. Above the phone these take a second line instead. */
+@media (min-width: 48.0625rem) {
+  .roleCell b,
+  .roleCell b .truncate,
+  .roleCell > span,
+  .cellSub,
+  .untilSub,
+  .ladderRole b,
+  .ladderRole span,
+  .sibling b {
+    white-space: normal;
+    text-overflow: clip;
+  }
+}

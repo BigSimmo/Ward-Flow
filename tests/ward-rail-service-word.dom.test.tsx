@@ -208,3 +208,14 @@ describe("rail bed alerts (live figures)", () => {
     expect(trigger).toHaveTextContent(`Metro ${expected.metroOccupancyPercent}%`);
   });
 });
+
+describe("rail bed alert count (#793)", () => {
+  it("says it counts services over the bed alert line, never a bare 'N alerts' like the Alerts page", () => {
+    setRailOpenPreference(true);
+    renderRail();
+    const trigger = screen.getByTestId("ward-rail-capacity-alerts-trigger");
+    const label = trigger.getAttribute("aria-label") ?? "";
+    expect(label).toMatch(/Bed alerts: (None|\d+) over 85%/u);
+    expect(label).not.toMatch(/\b(No alerts|\d+ alerts?)\b/u);
+  });
+});

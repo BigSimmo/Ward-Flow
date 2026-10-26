@@ -139,6 +139,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* H-0612: a fact's note sits on its own muted line under the label, rather than in brackets on
+   the label. The tile stacks bottom up (column-reverse), so a lower order puts it last. */
+.fact .factNote {
+  order: -1;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .card {
   display: flex;
   flex-direction: column;

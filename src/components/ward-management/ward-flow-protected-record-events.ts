@@ -2,6 +2,8 @@ import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
+import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
+import { openReturnMovementRefusal } from "./ward-flow-record-stay-events";
 import {
   INVOLUNTARY_DEPARTURE_REFUSAL,
   departureNeedsPaperAuthority,
@@ -329,6 +331,10 @@ export function reduceProtectedRecordEvent(
         )
       )
         return deny("transition", "denied", "The patient already has another occupied or held bed.");
+      const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
+      if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
+      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+      if (returnRefusal) return deny("transition", "denied", returnRefusal);
       if (
         lacksObservationStaff(admission.observation, receiving, state.admissions) ||
         (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
@@ -452,6 +458,10 @@ export function reduceProtectedRecordEvent(
   if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
+  const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
+  if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
+  const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+  if (returnRefusal) return deny("transition", "denied", returnRefusal);
   return appendAudit(
     state,
     departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),

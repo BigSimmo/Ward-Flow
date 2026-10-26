@@ -329,6 +329,16 @@
   box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
 
+/* Design regression review (26 Oct 2026): the kit paints the phone track inside a transparent 48px
+ * band and masks the track for its scroll fade, which also clipped the canvas collar. Pinned, rows
+ * showed through the band and above it. The two-option track never scrolls, so it drops the mask and
+ * fills its band with the canvas, as the kit's band note asks of a pinned track. */
+.segGroup .segPinned {
+  -webkit-mask-image: none;
+  mask-image: none;
+  background-color: var(--wf-canvas);
+}
+
 :global(body:has([data-scrolled="true"])) .segPinned {
   top: calc(3.25rem + var(--wf-s-2));
 }
