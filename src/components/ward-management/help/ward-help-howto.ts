@@ -21,7 +21,7 @@ import type { TourTarget } from "./ward-tour-steps";
  * step can name the desktop control and a phone stand-in. A step whose control is not on screen
  * shows its card with no spotlight.
  */
-export type ShowMeStep = {
+type ShowMeStep = {
   readonly target?: TourTarget | readonly TourTarget[];
   readonly title: string;
   readonly body: string;
