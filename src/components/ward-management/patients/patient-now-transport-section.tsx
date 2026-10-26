@@ -152,10 +152,11 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
             testIds={{ prefix: "ward-patient", names: PATIENT_PART_NAMES }}
             blockedReason={bookGate.allowed ? undefined : (bookGate.reason ?? "You cannot book transport here.")}
             pending={transportPending}
+            // A save error is shown as written, as the other screens show it: it may say the save is
+            // uncertain. Only the engine's own refusal is a definite "not recorded".
             error={
-              transportSaveError || bookingRejection
-                ? `Booking was not recorded: ${transportSaveError ?? bookingRejection?.reason}`
-                : undefined
+              transportSaveError ??
+              (bookingRejection ? `Booking was not recorded: ${bookingRejection.reason}` : undefined)
             }
             note={bookGate.note}
             onSubmit={saveTransportBooking}

@@ -300,7 +300,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         expect(within(form).getByTestId("ward-patient-input-eta")).toHaveValue(eta);
         expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("Patient transport service");
         expect(within(form).getByTestId("ward-patient-escort-no")).toBeChecked();
-        expect(screen.getByRole("alert")).toHaveTextContent("Booking was not recorded: no movement found");
+        expect(screen.getByRole("alert")).toHaveTextContent("no movement found");
         expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).not.toHaveAttribute("aria-disabled");
       } else {
         expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
