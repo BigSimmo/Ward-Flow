@@ -125,6 +125,8 @@ const ADMISSION_SEED_ALLOWLIST = new Set([
 const NOW_ANCHOR_ALLOWLIST = new Set([
   "src/components/ward-management/ward-sites.ts", // declares the constant and uses it to build the fixture's capacity timestamps
   "src/components/ward-management/ward-movements.ts", // the movement fixture; every synthetic timestamp derives from it
+  // F-17 (26 Oct 2026): the seeded referrals, moved out of ward-movements.ts unchanged. Same fixture, same anchor.
+  "src/components/ward-management/ward-movements-referrals.ts",
   // Added 2026-09-25: the EMHS demo and surge fixture. Like `ward-movements.ts`, it authors every
   // synthetic time as an offset from the anchor, and is shifted onto the live clock by the reducer.
   "src/components/ward-management/ward-demo-network.ts",
@@ -605,7 +607,8 @@ describe("one source of truth", () => {
   it("has no component reading the frozen fixture directly", () => {
     const offenders = wardDirFiles()
       .filter(({ file }) => !ALLOWED.has(file.split(/[\\/]/).pop()!))
-      .filter(({ source }) => /from "[^"]*ward-movements"/.test(source))
+      // F-17 (26 Oct 2026): the seeded referrals live in ward-movements-referrals.ts, part of the same fixture.
+      .filter(({ source }) => /from "[^"]*ward-movements(?:-referrals)?"/.test(source))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
   });

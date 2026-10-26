@@ -65,6 +65,11 @@
     "line": "Weekly report shows the four agreed pilot measures. Forms 3B and 3C read differently. Incoming beds say pulled."
   },
   {
+    "id": "2026-10-26-tour-skip-closes",
+    "date": "2026-10-26",
+    "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
+  },
+  {
     "id": "2026-10-26-bed-move-and-extension-checks",
     "date": "2026-10-26",
     "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
