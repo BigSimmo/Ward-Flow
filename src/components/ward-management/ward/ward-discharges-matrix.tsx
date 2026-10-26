@@ -55,7 +55,7 @@ export function WardDischargesMatrix({
       </div>
 
       {/* Stream Tabs */}
-      <nav className={styles.streamTabs} aria-label="Discharge Operational Streams">
+      <nav className={styles.streamTabs} aria-label="Discharge streams">
         <button
           type="button"
           className={styles.streamTabBtn}

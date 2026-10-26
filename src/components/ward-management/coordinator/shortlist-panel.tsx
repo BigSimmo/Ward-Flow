@@ -1666,12 +1666,12 @@ export function ShortlistPanel({
           <h4 className={styles.shortlistSectionHeading}>Inbound Transit &amp; Arrival Telemetry</h4>
           <dl className={shortlistStyles.factGrid}>
             <Fact
-              label="Accepting Inpatient Ward"
+              label="Accepting inpatient ward"
               value={acceptedUnit ? acceptedUnit.name : (movement.acceptedUnitId ?? "No accepted ward recorded")}
               testId="ward-shortlist-transit-accepting-ward"
             />
             <Fact
-              label="Arrival Mode"
+              label="Arrival mode"
               value={
                 movement.arrivalDetails?.modeOfArrival ??
                 (movement.arrivalDetails?.mode
@@ -1684,7 +1684,7 @@ export function ShortlistPanel({
             />
             {movement.arrivalDetails?.trackingNumber ? (
               <Fact
-                label="Tracking Number"
+                label="Tracking number"
                 value={movement.arrivalDetails.trackingNumber}
                 testId="ward-shortlist-transit-tracking"
               />

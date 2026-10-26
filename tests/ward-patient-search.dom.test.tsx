@@ -981,13 +981,13 @@ describe("Third Edition dropdown filters and yield strip", () => {
 
     expect(screen.getByLabelText("Service")).toBeInTheDocument();
     expect(screen.getByLabelText("Setting")).toBeInTheDocument();
-    expect(screen.getByLabelText("Legal Status")).toBeInTheDocument();
-    expect(screen.getByLabelText("Wait Band")).toBeInTheDocument();
+    expect(screen.getByLabelText("Legal status")).toBeInTheDocument();
+    expect(screen.getByLabelText("Wait band")).toBeInTheDocument();
 
     expect(screen.getByLabelText("Service")).toHaveValue("all");
     expect(screen.getByLabelText("Setting")).toHaveValue("all");
-    expect(screen.getByLabelText("Legal Status")).toHaveValue("all");
-    expect(screen.getByLabelText("Wait Band")).toHaveValue("all");
+    expect(screen.getByLabelText("Legal status")).toHaveValue("all");
+    expect(screen.getByLabelText("Wait band")).toHaveValue("all");
   });
 
   it("renders the yield summary strip with all 5 metric cards", () => {
@@ -1039,7 +1039,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
   it("narrows results when selecting a Legal Status dropdown filter", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Legal Status"), { target: { value: "Form 1A" } });
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Form 1A" } });
 
     const total = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
     expect(total).toBeGreaterThan(0);
@@ -1078,7 +1078,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
     renderSearch();
     const before = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
 
-    fireEvent.change(screen.getByLabelText("Acuity Tier"), { target: { value: "Tier 1" } });
+    fireEvent.change(screen.getByLabelText("Acuity tier"), { target: { value: "Tier 1" } });
 
     const total = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
     expect(total).toBeGreaterThan(0);
@@ -1091,7 +1091,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
   it("narrows results when selecting a Wait Band dropdown filter", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Wait Band"), { target: { value: "over24" } });
+    fireEvent.change(screen.getByLabelText("Wait band"), { target: { value: "over24" } });
 
     const total = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
     expect(total).toBeGreaterThan(0);
@@ -1112,8 +1112,8 @@ describe("Third Edition dropdown filters and yield strip", () => {
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "WF-003" } });
     fireEvent.change(screen.getByLabelText("Service"), { target: { value: "East Metro" } });
     fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "transit" } });
-    fireEvent.change(screen.getByLabelText("Legal Status"), { target: { value: "Voluntary" } });
-    fireEvent.change(screen.getByLabelText("Wait Band"), { target: { value: "under6" } });
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Voluntary" } });
+    fireEvent.change(screen.getByLabelText("Wait band"), { target: { value: "under6" } });
 
     const resetBtn = screen.getByTestId("ward-patient-search-reset-filters");
     fireEvent.click(resetBtn);
@@ -1121,8 +1121,8 @@ describe("Third Edition dropdown filters and yield strip", () => {
     expect(screen.getByLabelText("Search")).toHaveValue("");
     expect(screen.getByLabelText("Service")).toHaveValue("all");
     expect(screen.getByLabelText("Setting")).toHaveValue("all");
-    expect(screen.getByLabelText("Legal Status")).toHaveValue("all");
-    expect(screen.getByLabelText("Wait Band")).toHaveValue("all");
+    expect(screen.getByLabelText("Legal status")).toHaveValue("all");
+    expect(screen.getByLabelText("Wait band")).toHaveValue("all");
     expect(Number(screen.getByTestId("ward-patient-search-yield-total").textContent)).toBe(
       openCount + queuedReferrals.length,
     );
@@ -1139,11 +1139,11 @@ describe("Third Edition dropdown filters and yield strip", () => {
     renderSearch();
 
     const optionLabels = Array.from(
-      (screen.getByLabelText("Legal Status") as HTMLSelectElement).options,
+      (screen.getByLabelText("Legal status") as HTMLSelectElement).options,
       (option) => option.textContent?.replace(/\s*\(\d+\)\s*$/, "") ?? "",
     );
     expect(optionLabels).toEqual([
-      "All Legal Statuses",
+      "All legal statuses",
       "Voluntary",
       "Involuntary",
       ...SELECTABLE_LEGAL_FORMS.map((form) => legalFormName(form)),
