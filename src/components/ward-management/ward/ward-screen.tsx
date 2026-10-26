@@ -2037,8 +2037,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     <span>
       {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
       {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
-      {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-      {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+      {formatInstant(unit.allocatable.confirmedAt)} · {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
     </span>
   );
 
