@@ -5,6 +5,7 @@ import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-prov
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management/ward-eligibility";
+import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
@@ -47,10 +48,16 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
  * Psychiatrist register at render time by `legalStatusOptionLabel` below — never written here.
  *
+ * WT-14 (walk-through, 26 Oct 2026): the referral offered only 1A, 4A and 5A while the ED raise,
+ * Pull the bed and the ward's placement form offered the full intake list, so a patient on a 3B
+ * could not be referred as one. The codes now come from the one intake list
+ * (`SELECTABLE_LEGAL_FORMS`), in its order. The clinician chooses the form (product owner,
+ * 24 Aug 2026), so no stage narrows it.
+ *
  * `"Voluntary"` is not a form code and the register has no entry for it, so that option keeps its
  * own label and is not in this list.
  */
-export const LEGAL_STATUS_FORM_CODES = ["1A", "4A", "5A"] as const;
+export const LEGAL_STATUS_FORM_CODES: readonly string[] = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
 /**
  * "Form 4A (Transport order)" — the register's own title, looked up at render time.
