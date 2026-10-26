@@ -79,7 +79,7 @@ function edStepper() {
 }
 
 function rollupStepper() {
-  return screen.getByRole("spinbutton", { name: "Morning rollup deadline" });
+  return screen.getByRole("spinbutton", { name: "Morning bed numbers due time" });
 }
 
 /** The ED target at its range minimum, 12h (720 minutes). */
@@ -144,7 +144,7 @@ describe("settings screen configuration draft", () => {
     const firstToast = within(screen.getByTestId("toast-region"))
       .getByText(/saved and recorded\./)
       .closest<HTMLElement>('[data-testid="toast"]')!;
-    fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
     fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("585");
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent("720");
@@ -223,20 +223,20 @@ describe("settings screen configuration draft", () => {
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "570");
 
     // Click plus button (increase by 15m to 09:45 AM / 585)
-    fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
     expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "585");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570"); // not saved yet
 
     // Click minus button twice (decrease by 30m to 09:15 AM / 555)
-    fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
-    fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
+    fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
+    fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
     expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "555");
 
     // Step up three times to 600 (10:00 AM)
     for (let press = 0; press < 3; press += 1) {
-      fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
+      fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
     }
     expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");

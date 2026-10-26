@@ -1555,13 +1555,13 @@ function addressingFixtureFor(state: ReferralAddressingState): ReferralAddressin
     case "queued":
       return { destination, state };
     case "accepted":
-      return { destination, state, decidedAt: NOW_ANCHOR, decidedBy: "Flow coordinator" };
+      return { destination, state, decidedAt: NOW_ANCHOR, decidedBy: "Bed coordinator" };
     case "declined":
       return {
         destination,
         state,
         decidedAt: NOW_ANCHOR,
-        decidedBy: "Flow coordinator",
+        decidedBy: "Bed coordinator",
         declineReason: "belongs_to_another_service",
       };
     case "cancelled":

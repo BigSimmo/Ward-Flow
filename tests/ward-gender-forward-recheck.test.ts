@@ -60,7 +60,7 @@ function movement(overrides: Partial<Movement> = {}): Movement {
     urgencyChanges: [],
     overrides: [],
     stage: "pulled",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [],
     declines: [],
     withdrawnReferrals: [],

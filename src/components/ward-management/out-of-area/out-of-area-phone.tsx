@@ -302,7 +302,12 @@ export function OutOfAreaPhone({
         level={1}
         eyebrow="Out of area · Statewide"
         chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
-        title={`${totalAway} away from home`}
+        // H-0887: the page heading names the page, not only the count.
+        title={
+          <>
+            <SrOnly>Out of area:</SrOnly> {totalAway} away from home
+          </>
+        }
         sub={since}
         figures={[
           {

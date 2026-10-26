@@ -96,7 +96,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     events.push({
       at: movement.escalation.at,
       tone: "info",
-      text: `Escalated after ${movement.escalation.triedUnitIds.length} wards tried`,
+      text: `Escalated after ${movement.escalation.triedUnitIds.length} ${movement.escalation.triedUnitIds.length === 1 ? "ward" : "wards"} tried`,
     });
   if (movement.acceptedAt !== undefined && movement.acceptedUnitId)
     events.push({
@@ -432,7 +432,7 @@ export function PatientHistoryTab({
 /** One label per admission state: a waitlisted person has no bed yet, a pulled bed is kept for them
  * ("Bed pulled", the one bed vocabulary; "hold" is for a leave bed only). */
 const STAY_CHIP: Record<Admission["state"], string> = {
-  waitlisted: "Waitlisted",
+  waitlisted: "On waiting list",
   pulled: "Bed pulled",
   occupied: "Current",
   departed: "Closed",

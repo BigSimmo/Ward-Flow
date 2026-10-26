@@ -216,7 +216,7 @@ describe("the coordinator's override register", () => {
     // The reason, verbatim from the owner's list.
     expect(within(entry).getByTestId(`ward-override-reason-${REFERABLE}`)).toHaveTextContent(REASON_A);
     // A ROLE, never a person: the reducer writes `WARD_FLOW_ROLE_LABELS[event.role]`.
-    expect(within(entry).getByTestId(`ward-override-by-${REFERABLE}`)).toHaveTextContent("Flow coordinator");
+    expect(within(entry).getByTestId(`ward-override-by-${REFERABLE}`)).toHaveTextContent("Bed coordinator");
     // The party overridden, named.
     expect(within(entry).getByTestId(`ward-override-units-${REFERABLE}`)).toHaveTextContent(UNIT_A.name);
     // And the empty state is gone — a register showing both would be a register showing neither.
@@ -246,7 +246,7 @@ describe("a ward's own override register", () => {
 
     const entry = screen.getByTestId(`ward-override-entry-${REFERABLE}`);
     expect(within(entry).getByTestId(`ward-override-reason-${REFERABLE}`)).toHaveTextContent(REASON_A);
-    expect(within(entry).getByTestId(`ward-override-by-${REFERABLE}`)).toHaveTextContent("Flow coordinator");
+    expect(within(entry).getByTestId(`ward-override-by-${REFERABLE}`)).toHaveTextContent("Bed coordinator");
   });
 
   it("NEVER shows a ward an override made against a DIFFERENT ward", () => {

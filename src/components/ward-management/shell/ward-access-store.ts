@@ -30,7 +30,7 @@ import {
 import type { BreakGlassGrant } from "@/components/ward-management/ward-access-scope";
 import { withCover } from "@/components/ward-management/ward-access-shell-rules";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 
@@ -253,6 +253,12 @@ function chromeRoleForAccess(access: WardAccess): WardChromeRole {
 export function useAccessShellRole(fallback: WardChromeRole): WardChromeRole {
   const access = useEffectiveWardAccess();
   return access.role === "coordinator" ? fallback : chromeRoleForAccess(access);
+}
+
+/** The desk's name in the menus. The access admin borrows the executive chrome but is named for itself. */
+export function useDeskRoleLabel(role: WardChromeRole): string {
+  const access = useEffectiveWardAccess();
+  return access.role === "admin" ? ACCESS_ROLE_LABELS.admin : CHROME_ROLE_LABELS[role];
 }
 
 /**

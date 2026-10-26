@@ -75,7 +75,7 @@ describe("the on-call screen", () => {
   it("names the page and opens on a contact card", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(within(hud).getByRole("heading", { level: 1, name: /^\d+ lines? answering$/u })).toBeVisible();
+    expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: \d+ lines? answering$/u })).toBeVisible();
     expect(panel().getByRole("heading", { level: 2, name: "Bed flow coordinator" })).toBeVisible();
     expect(panel().getByText("Not verified")).toBeVisible();
   });

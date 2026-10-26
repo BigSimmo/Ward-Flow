@@ -403,7 +403,7 @@ export function PriorityQueue({
                     {legalBreached ? (
                       <span className={styles.queueMark}>
                         <StatusGlyph tone="danger" size={9} />
-                        {legalFactor ? legalFactor.detail : "Form due time passed"}
+                        {legalFactor ? legalFactor.detail : "Form due time (as written) passed"}
                         <LegalLimitsNotChecked variant="tag" />
                       </span>
                     ) : null}

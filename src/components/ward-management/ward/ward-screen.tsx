@@ -1366,7 +1366,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {
           prior: rejections.length,
           bed: bedNumber,
-          success: `Held bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+          success: `Pulled bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
         },
       );
     } else {
@@ -1658,7 +1658,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity & ${morningRollupTimeLabel} morning roll-up confirmed (${releasesCountedToday.length} discharges planned today).`,
+            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();
@@ -1674,7 +1674,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }),
           (rollupOutcome) => {
             const rollupFailure = wardCommandFailure(rollupOutcome);
-            if (rollupFailure) warnToast(`Capacity saved. Morning roll-up is not confirmed. ${rollupFailure}`);
+            if (rollupFailure) warnToast(`Capacity saved. Morning bed numbers are not confirmed. ${rollupFailure}`);
             else confirmed();
           },
         );
@@ -1717,7 +1717,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 handleConfirmBedsAndMorningRollup();
               }}
             >
-              Confirm beds &amp; morning roll-up ({morningRollupTimeLabel})
+              Confirm beds and morning bed numbers ({morningRollupTimeLabel})
             </button>
           ) : null}
           <button

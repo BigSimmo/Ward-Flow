@@ -573,7 +573,7 @@ export function NetworkServiceGroupRows({
           </td>
           {/* A real count against the group's OWN wards ("M of N"), never a bare number that could
            *  be mistaken for a sum of a per-ward true/false flag. */}
-          <td>{`${totals.authorised} of ${totals.wards} involuntary-capable`}</td>
+          <td>{`${totals.authorised} of ${totals.wards} are authorised hospitals`}</td>
           {/* Freshness is a per-ward timestamp and attribution, not a quantity — stated in words for
            *  the same reason bed kinds served is, above. */}
           <td className={styles.groupNoSummary}>By ward</td>

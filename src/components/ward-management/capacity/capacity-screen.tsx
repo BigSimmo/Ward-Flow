@@ -540,7 +540,7 @@ export function CapacityScreen() {
                   <th scope="col">{BED_STATE_LABELS.occupied}</th>
                   <th scope="col">Gender mix</th>
                   <th scope="col">Specialling</th>
-                  <th scope="col">Involuntary-capable</th>
+                  <th scope="col">Authorised hospital</th>
                   <th scope="col">Confirmed</th>
                   <th scope="col">Ask for an update</th>
                 </tr>

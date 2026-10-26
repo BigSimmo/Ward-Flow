@@ -44,7 +44,7 @@ export function HandoverHistory({
           <li key={`sign-${record.at}-${record.by}`}>
             <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
             <StatusGlyph tone="success" size={9} />
-            <span>Handover signed off as {record.by === "coordinator" ? "flow coordinator" : record.by}</span>
+            <span>Handover signed off as {record.by === "coordinator" ? "bed coordinator" : record.by}</span>
           </li>
         ))}
         {preparedAt !== null ? (

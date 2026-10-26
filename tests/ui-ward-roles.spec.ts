@@ -380,7 +380,7 @@ test.describe("@mockup Transport officer screen", () => {
       /Accepted/,
       /En route/,
       /Collected/,
-      /Delivered/,
+      /Arrived at ward/,
     ]);
     const stageButtons = sheet.locator(
       '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
@@ -405,7 +405,7 @@ test.describe("@mockup Transport officer screen", () => {
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
     const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
-    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Delivered"]);
+    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Arrived at ward"]);
   });
 
   /**
@@ -1387,7 +1387,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     );
     await closeEdPatientSheet(page, "WF-315");
 
-    // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
+    // --- Steps 7-10: Officer — Accepted, En route, Collected, Arrived at ward. ---
     await switchTo("Transport officer");
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
@@ -1408,9 +1408,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
     const panel = page.getByTestId("ward-officer-detail");
     await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);
-    // Item 31 (owner's 17 September answers): the officer's own fourth action reads "Delivered",
-    // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
-    for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
+    // Josh, 26 Oct 2026 (H-0808, H-0809): the officer's own fourth action reads "Arrived at ward",
+    // replacing "Delivered" — the event dispatched is still PATIENT_ARRIVED.
+    for (const label of ["Accepted", "En route", "Collected", "Arrived at ward"]) {
       await panel.getByRole("button", { name: label }).click();
       // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
       // for a coded reason before it records. The officer is warned, never blocked.
@@ -1423,7 +1423,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     }
 
     // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
-    // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
+    // Arrived at ward ends the transport leg only and leaves the movement open; the receiving ward closes
     // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
     // so the switch goes through the coordinator, as step 4 did. ---
     await switchTo("Bed coordinator");

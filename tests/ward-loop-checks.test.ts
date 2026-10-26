@@ -64,7 +64,7 @@ describe("MARK_CANCELLED_MOVE_CHECK", () => {
       item: "pulled_bed",
       mark: "not_applicable",
       at: NOW,
-      by: "Flow coordinator",
+      by: "Bed coordinator",
     });
     expect({ ...after, cancellationChecks: undefined }).toEqual({ ...before, cancellationChecks: undefined });
     expect(next.units).toEqual(state.units);
@@ -154,7 +154,7 @@ describe("acceptance conditions", () => {
       condition: "escort_required",
     });
     expect(outstandingAcceptanceConditions(movementOf(met, "WF-004"))).toHaveLength(0);
-    expect(currentAcceptanceConditions(movementOf(met, "WF-004"))[0]?.met).toEqual({ at: NOW, by: "Flow coordinator" });
+    expect(currentAcceptanceConditions(movementOf(met, "WF-004"))[0]?.met).toEqual({ at: NOW, by: "Bed coordinator" });
   });
 
   it("needs a later bed-after time, and refuses a ward that did not accept", () => {
@@ -262,7 +262,7 @@ describe("MARK_CLOSURE_TRANSITION_ITEM", () => {
     });
     expect(next.rejections).toEqual([]);
     expect(unitOf(next, unit.id).admissionsClosure?.transitionMarks).toEqual([
-      { ...item, at: NOW, by: "Flow coordinator" },
+      { ...item, at: NOW, by: "Bed coordinator" },
     ]);
     expect(next.movements).toEqual(state.movements);
     expect(next.referrals).toEqual(state.referrals);

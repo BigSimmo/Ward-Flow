@@ -109,7 +109,7 @@ describe("decision targets through the real event walk", () => {
       [pending.id]: [
         {
           at: NOW + 30,
-          by: "Flow coordinator",
+          by: "Bed coordinator",
           kind: "snoozed" as const,
           until: NOW + 30 + 240,
           reason: "awaiting_call_back" as const,

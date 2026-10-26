@@ -496,7 +496,7 @@ export function ReferralPatientStep({
           <div
             className={styles.priorityGrid}
             role="region"
-            aria-label="Clinical Priority Grid"
+            aria-label="Clinical priority grid"
             hidden={noPatientChosen}
           >
             <div className={styles.priorityCell}>

@@ -367,7 +367,7 @@ describe("the Access tab", () => {
     const rows = await within(log).findAllByTestId("ward-access-log-row");
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveTextContent("PT-1001, Referral detail");
-    expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED mental health clinician");
+    expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED clinician");
     expect(rows[0]).toHaveTextContent("2 hours ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
     expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 minutes ago.");
