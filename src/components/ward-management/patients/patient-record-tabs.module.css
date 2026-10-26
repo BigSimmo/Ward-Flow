@@ -165,10 +165,33 @@
   white-space: nowrap;
 }
 
-/* Forms register: the shared wf table (`tableClasses`); only the cell contents are styled here. */
-.wrap {
+/* Forms register: the shared wf table (`tableClasses`); only the cell contents are styled here.
+   Layout sweep PT-03: `td.wrap` outranks the shared `.table td` (nowrap, ellipsis), so the paper
+   expiry and time left wrap under the status instead of collapsing to "P…". */
+.wrap,
+td.wrap {
   white-space: normal;
   overflow: visible;
+  text-overflow: clip;
+}
+
+.wrap .cellSub {
+  display: block;
+}
+
+/* Layout sweep PT-07: on a phone the Legal forms head puts the legal status under the title, and
+   both wrap rather than being cut. */
+@media (max-width: 48rem) {
+  .legalHead > div:has(> h2) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .legalHead > div:has(> h2) > * {
+    white-space: normal;
+    overflow: visible;
+  }
 }
 
 .form {

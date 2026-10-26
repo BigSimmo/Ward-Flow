@@ -45,7 +45,7 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-export function isTvPath(pathname: string): boolean {
+function isTvPath(pathname: string): boolean {
   return pathname === WARD_BED_MEETING_TV_HREF;
 }
 

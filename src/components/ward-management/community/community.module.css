@@ -1014,6 +1014,9 @@
 }
 .cardList {
   gap: 0;
+  /* Layout sweep MEET-14: these are compact list rows with first and last resets, so one column;
+     two columns put every pair out of line. */
+  grid-template-columns: minmax(0, 1fr);
 }
 .card {
   gap: 0.375rem;
@@ -3590,4 +3593,35 @@ button.searchBox:hover {
     animation: communityMoreRight linear both;
     animation-timeline: scroll(self inline);
   }
+}
+
+/* Layout sweep MEET-12: the admitted-while-already-with-the-team table wraps its long headings and
+   names, so all five columns fit inside the card. */
+.tableScroll[data-testid="ward-community-accepted-before-admission-table"] th,
+.tableScroll[data-testid="ward-community-accepted-before-admission-table"] .patientIdWrap {
+  white-space: normal;
+}
+
+/* Layout sweep MEET-15: the follow-up filter keeps a field's width, not the panel's. */
+.followUpFilter {
+  max-inline-size: 24rem;
+}
+
+/* Layout sweep MEET-23: Open and View dossier stay one line in the table's action column. */
+.table :is(.btnSmPrimary, .btnSmSec) {
+  white-space: nowrap;
+}
+
+/* Layout sweep MEET-17/23: on a touch screen the small dialog and drawer buttons are full touch
+   targets. */
+@media (pointer: coarse) {
+  .btnSmPrimary,
+  .btnSmSec {
+    min-height: var(--wf-touch);
+  }
+}
+
+/* Layout sweep MEET-17: a dialog's status line reads above its buttons, which close the dialog. */
+.stackLg > .modalFootInline {
+  order: 1;
 }

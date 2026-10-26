@@ -551,14 +551,23 @@
     border-left: 0;
     border-top: 1px solid var(--line);
   }
+  /* Layout sweep PT-21: the title takes the full row beside the icon, and the status pill sits under
+     it, so "Form 4A (Transport order)" is not squeezed onto three lines. */
   .document > summary {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 11px;
   }
   .document > summary > .tag {
-    margin-left: 45px;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
   }
   .document > summary::after {
-    margin-left: auto;
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 0;
   }
   .facts {
     grid-template-columns: 108px minmax(0, 1fr);

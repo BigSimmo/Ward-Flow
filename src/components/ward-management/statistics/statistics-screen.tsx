@@ -1173,22 +1173,23 @@ export function StatisticsScreen({
                   movements={sourceMovements}
                 />
               )}
-            </div>
 
-            {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. Their
-                own full-width row (STATS-01): in the three-column grid they were squeezed into one column. */}
-            {countsOnly ? null : (
-              <div className={styles.grid2}>
-                <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
-                <FixedQuestionsCard
-                  movements={sourceMovements}
-                  bedReleases={sourceBedReleases}
-                  admissions={sourceAdmissions}
-                  units={units}
-                  now={now}
-                />
-              </div>
-            )}
+              {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
+              {countsOnly ? null : (
+                // Layout sweep STATS-01: the two wide closing-the-loop cards take full rows of their
+                // own instead of two narrow cells of the three-up grid.
+                <div className={styles.gridRow}>
+                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
+                  <FixedQuestionsCard
+                    movements={sourceMovements}
+                    bedReleases={sourceBedReleases}
+                    admissions={sourceAdmissions}
+                    units={units}
+                    now={now}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 

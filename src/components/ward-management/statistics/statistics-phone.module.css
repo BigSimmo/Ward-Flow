@@ -163,14 +163,30 @@
 
 .tile dt {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* Layout sweep STATS-05: the label is bare text in a flex box, so an ellipsis never shows and a
+     narrow phone sliced it mid-word. It wraps between words instead. */
+  white-space: normal;
+}
+
+/* Layout sweep STATS-05: on a narrow phone the four tiles sit two by two, so each label has room. */
+@media (max-width: 26rem) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .tile:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
 }
 
 .tile dd {

@@ -20,7 +20,7 @@ import { StepUpReauthContext } from "@/components/ward-management/shell/ward-ste
 
 import { lockTv, readLock, useTvLock, writeLock } from "./tv-lock-guard";
 
-export { TV_LOCK_STORAGE_KEY, TvLockGuard, isTvPath, lockTv, useTvLock } from "./tv-lock-guard";
+export { TV_LOCK_STORAGE_KEY, TvLockGuard, lockTv, useTvLock } from "./tv-lock-guard";
 
 /**
  * The TV header's own control: "Lock as TV" while unlocked, "Unlock" while locked. Unlocking asks

@@ -239,8 +239,10 @@
 }
 
 .searchBox {
-  flex: 0 1 18rem;
+  /* Layout sweep PT-15: wide enough for the whole placeholder at the 16px touch font. */
+  flex: 1 1 19rem;
   min-width: 10rem;
+  max-width: 26rem;
 }
 
 .highlightNote {
@@ -254,6 +256,13 @@
 
 .toolbarSpacer {
   flex: 1;
+}
+
+.sortGroup {
+  /* Layout sweep PT-12: the Sort label and its control wrap together. */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
 }
 
 .sortLabel {
@@ -315,6 +324,11 @@
 
 .layout[data-open="true"] .jobsTable th:nth-child(5) {
   width: 15%;
+}
+
+/* Layout sweep PT-12: "Not needed" wraps in the narrow forms column rather than being cut. */
+.jobsTable .muted {
+  white-space: normal;
 }
 
 .layout[data-open="true"] .formsCell > span:last-child {
@@ -423,12 +437,12 @@
   outline-offset: -2px;
 }
 
+/* Layout sweep PT-15: a long name takes a second line rather than an ellipsis at iPad width, and
+   the route column keeps its room. */
 .jobName {
-  overflow: hidden;
+  overflow-wrap: anywhere;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .jobRoute {
@@ -1276,6 +1290,7 @@
   .tabsRow .headNote,
   .arrivalsCard .headNote,
   .toolbarSpacer,
+  .sortGroup,
   .sortLabel,
   .sortControl {
     display: none;
@@ -1950,6 +1965,12 @@
     line-height: var(--wf-lh-14);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Layout sweep PT-11: the provider name wraps rather than being cut ("Patient transport ser…"). */
+  .phGrid dd:not(.mono) {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .phCard {

@@ -78,7 +78,7 @@
   padding: var(--wf-s-2) 0;
 }
 
-/* MEET-07: on a phone the text column wraps; the button keeps its whole label ("Add action", "Done"). */
+/* Layout sweep MEET-07: the detail text wraps; the button keeps its whole label. */
 .row > button {
   flex: none;
 }
@@ -107,16 +107,14 @@
   padding: 0 0 var(--wf-s-3);
 }
 
-/* MEET-06: the printed agenda keeps its title, and each card prints whole with a real border rather
- * than a shadow edge that breaks into fragments. */
+/* Layout sweep MEET-06: a printed agenda keeps its title and time, and a card never splits. */
 @media print {
   .header {
     display: flex !important;
   }
 
-  .main section {
+  .main > section {
     break-inside: avoid;
     box-shadow: none;
-    border: 1px solid var(--wf-line);
   }
 }

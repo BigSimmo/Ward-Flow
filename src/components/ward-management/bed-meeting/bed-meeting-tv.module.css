@@ -46,10 +46,31 @@
   }
 }
 
-/* MEET-03: the Brief's labels and note were 12 px on a 1080p TV; they take the TV minimum on every
- * screen, not only 4K. */
+/* Layout sweep MEET-03: the Brief's labels and note read at the smallest TV size on every TV, not
+ * the forecast card's 12 px, and the note sits clear of the figures above it. The list sits a little
+ * tighter to pay for the larger type, so the Brief still ends on a 1080p screen. */
 .panel[data-area="brief"] :is(dt, dl + p) {
   font-size: var(--tv-least);
+}
+
+.panel[data-area="brief"] .panelTitle {
+  margin-bottom: var(--wf-s-1);
+}
+
+.panel[data-area="brief"] dl {
+  margin-top: 0;
+}
+
+.panel[data-area="brief"] dt {
+  margin-bottom: 0;
+}
+
+.panel[data-area="brief"] dd {
+  line-height: 1.2;
+}
+
+.panel[data-area="brief"] dl + p {
+  margin-top: var(--wf-s-1);
 }
 
 .tv:fullscreen {
@@ -63,18 +84,32 @@
     overflow: visible;
   }
 
-  /* MEET-05: a panel or tile never splits across two printed pages. */
+  /* Layout sweep MEET-04/05: a printed TV keeps its title and its bars, and a panel or tile never
+   * splits across a page. Only the screen controls are left off. */
+  .header {
+    display: flex !important;
+  }
+
+  .actions {
+    display: none !important;
+  }
+
+  /* The print theme turns fills white, so bars and meters print in ink, as in forced colours. */
+  .trendBar,
+  .tileMeter > span,
+  .tile[data-tone="neutral"] .tileMeter > span {
+    background: currentColor !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .tileMeter {
+    border: 1px solid currentColor;
+  }
+
   .panel,
   .tile {
     break-inside: avoid;
-  }
-
-  /* MEET-04: the ED trend bars and tile meters are drawn in colour, so they print as drawn. */
-  .trendBar,
-  .tileMeter,
-  .tileMeter > span {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
   }
 }
 
@@ -237,20 +272,20 @@
 
 /* On a tablet the menu reflows to one column and each choice is a full touch target. */
 @media (max-width: 80rem) {
-  .pickerMenu {
-    grid-template-columns: minmax(0, 1fr);
-    inline-size: min(32rem, calc(100vw - 2 * var(--tv-gap)));
-  }
-
-  /* MEET-01: on a tablet the controls may wrap under the title at the left, where a menu anchored to
-   * the picker's right edge opened off the left of the screen. The menu hangs from the header instead,
-   * against its right edge, so it stays on screen whether or not the controls wrap. */
+  /* Layout sweep MEET-01: the controls can wrap under the title here, which would put the picker at
+   * the left and push a right-anchored menu off the screen. The menu hangs from the header's right
+   * edge instead, so it is on screen wherever the controls sit. */
   .header {
     position: relative;
   }
 
   .picker {
     position: static;
+  }
+
+  .pickerMenu {
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: min(32rem, calc(100vw - 2 * var(--tv-gap)));
   }
 }
 
@@ -764,5 +799,27 @@
 
   .panel[data-wide] {
     grid-column: 1 / -1;
+  }
+}
+
+/* Layout sweep MEET-02: a phone (after Show anyway) gets two tiles a row and one panel a row, so
+ * service codes and the Beds that fit table have the width they need. */
+@media (max-width: 40rem) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .panels,
+  .panels[data-layout="meeting"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Columns size to their words, so a service code is never broken a letter a line. */
+  .table {
+    table-layout: auto;
+  }
+
+  .table tbody th {
+    overflow-wrap: normal;
   }
 }

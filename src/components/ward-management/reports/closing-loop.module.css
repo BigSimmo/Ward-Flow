@@ -17,12 +17,17 @@
   white-space: normal;
 }
 
-/* STATS-02: a stage name is a row label, not a column header, so it drops the header's capitals. */
+/* Layout sweep STATS-12: column headings wrap, so the larger touch counts still fit a tablet. */
+.tableWrap .table thead th {
+  white-space: normal;
+}
+
 .table tbody th {
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-align: left;
+  /* Layout sweep STATS-02: a stage name is a row label, not a column header. */
   text-transform: none;
   letter-spacing: 0;
+  text-align: left;
   color: var(--wf-ink-1);
 }
 
@@ -138,4 +143,12 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Layout sweep STATS-12: on a touch screen each count is a full-size tap target. */
+@media (pointer: coarse) {
+  .countButton {
+    min-width: var(--wf-touch);
+    min-height: var(--wf-touch);
+  }
 }
