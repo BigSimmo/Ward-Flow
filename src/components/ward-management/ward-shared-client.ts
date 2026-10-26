@@ -75,9 +75,8 @@ export type SharedView = {
   workingAs?: string | null;
   /** With `choose-role`: the roles to choose from. */
   choices?: readonly SharedRoleChoice[];
-  /** With `no-role`: whether this server takes requests for access. */
+  /** With `no-role`: whether this server takes requests for access, and its refusal code (`role-needs-service`). */
   canRequest?: boolean;
-  /** With `no-role`: the server's refusal code, such as `role-needs-service`. */
   noRoleReason?: string;
   /** The signed-in account's id, to say "You" in the access lists. */
   actorId?: string | null;
@@ -779,6 +778,7 @@ export class SharedWorkspaceClient {
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
+    const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
@@ -823,7 +823,6 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
-
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -832,9 +831,7 @@ export class SharedWorkspaceClient {
           ...(body ? { "content-type": "application/json" } : {}),
           ...(as ? { "x-ward-working-as": as } : {}),
           // The server logs a whole read from the bed meeting TV board as "tv" (H-0731).
-          ...(workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting")
-            ? { "x-ward-screen": "tv" }
-            : {}),
+          ...(tvRead ? { "x-ward-screen": "tv" } : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal, roleSignal]),
