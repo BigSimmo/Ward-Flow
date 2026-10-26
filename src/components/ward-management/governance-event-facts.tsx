@@ -8,7 +8,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "./ward-configuration";
 import type { AuditEvent, BedReleaseAuditFacts, BedReleaseAuditRequest } from "./ward-audit";
-import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
+import { changeReasonLabels, legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { deskRoleLabel } from "./settings/workstation-desks";
 import thirdEdition from "./governance-third-edition.module.css";
@@ -126,6 +126,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
             ["Before", display(event.details.before)],
             ["Requested", display(event.details.requested)],
             ["After", display(event.details.after)],
+            ...(event.details.reason ? [["Reason", changeReasonLabels[event.details.reason]] as const] : []),
           ]}
         />
       );

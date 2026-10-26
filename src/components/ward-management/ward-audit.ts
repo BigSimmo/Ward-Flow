@@ -12,12 +12,14 @@ import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
+  LEGAL_STATUS_CHANGE_REASONS,
   OVERRIDE_REASONS,
   REFERRAL_CAP_REASONS,
   type ReferralCapReason,
   type BedPreparationNote,
   type BedReleaseBlocker,
   type LegalFormReceiptCorrectionReason,
+  type LegalStatusChangeReason,
   type OverrideReason,
 } from "./ward-change-reasons";
 import type { Instant } from "./ward-clock";
@@ -184,7 +186,13 @@ export type AuditEvent = AuditBase &
     | {
         category: "legal-status";
         action: "CHANGE_LEGAL_STATUS";
-        details: { before: LegalStatus | null; requested: LegalStatus | null; after: LegalStatus | null };
+        details: {
+          before: LegalStatus | null;
+          requested: LegalStatus | null;
+          after: LegalStatus | null;
+          /** The chosen reason. Absent on entries recorded before 27 Oct 2026, which did not keep it. */
+          reason?: LegalStatusChangeReason | null;
+        };
       }
     | {
         category: "legal-form";
@@ -705,6 +713,7 @@ export function captureAuditEvent(
           before: enumValue(legalStatuses, uniqueRecord(before.movements, event.movementId)?.legalStatus),
           requested: enumValue(legalStatuses, event.legalStatus),
           after: enumValue(legalStatuses, uniqueRecord(after.movements, event.movementId)?.legalStatus),
+          reason: enumValue(LEGAL_STATUS_CHANGE_REASONS, event.reason),
         },
       };
       break;
