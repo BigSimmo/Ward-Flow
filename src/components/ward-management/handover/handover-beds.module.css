@@ -730,17 +730,6 @@
   width: 170px;
 }
 
-/* iPad landscape: a shorter bar so the whole table fits the 926px card (layout sweep 25 Oct 2026). */
-@media (max-width: 64rem) {
-  .bedsTable {
-    min-width: 926px;
-  }
-
-  .colBeds {
-    width: 126px;
-  }
-}
-
 .colNarrow {
   width: 70px;
 }
@@ -763,4 +752,31 @@
 
 .colPastEdd {
   width: 88px;
+}
+
+/* iPad landscape: a shorter bar so the whole table fits the 926px card (layout sweep 25 Oct 2026). */
+@media (max-width: 64rem) {
+  .bedsTable {
+    min-width: 926px;
+  }
+
+  .colBeds {
+    width: 126px;
+  }
+
+  /* Two-word headers take two lines rather than lose their end ('PUL…'). */
+  .bedsTable thead th {
+    white-space: normal;
+    overflow-wrap: normal;
+    letter-spacing: 0;
+  }
+
+  /* Room for the whole 'Pulled' header; 'Out today' takes two lines. */
+  .colHeld {
+    width: 72px;
+  }
+
+  .colOutToday {
+    width: 80px;
+  }
 }

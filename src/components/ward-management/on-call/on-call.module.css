@@ -1910,6 +1910,12 @@
 }
 
 @media (max-width: 48rem) {
+  /* Before hydration the server paints the desktop hero; keep its desktop-only parts out at phone
+     width so it does not overlap until the phone hero arrives. */
+  .keys,
+  .previewButton {
+    display: none;
+  }
   .main {
     padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
   }
