@@ -911,12 +911,8 @@ export class SharedWorkspaceClient {
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
-    if (noRole)
-      throw gate({
-        status: "no-role",
-        canRequest: value?.canRequest === true,
-        noRoleReason: typeof value?.code === "string" ? value.code : undefined,
-      });
+    const noRoleReason = typeof value?.code === "string" ? value.code : undefined;
+    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true, noRoleReason });
     // A role refusal on an access step comes back as its reason, not as a sign-out.
     if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
     // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
@@ -1013,7 +1009,6 @@ export class SharedWorkspaceClient {
         canSwitch: !!this.workingAs(),
         choices: undefined,
         canRequest: undefined,
-        noRoleReason: undefined,
         accessUntil: Number.isFinite(value.accessUntil) ? value.accessUntil : undefined,
         receiptScope: typeof value.receiptScope === "string" ? value.receiptScope : undefined,
       });
