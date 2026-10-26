@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The tour player (Josh approved the mock-up on 22 Oct 2026): a spotlight on the step's control with
- * the card beside it, Back and Next, Skip tour to what the desk can do, Done, and Close, which keeps
+ * the card beside it, Back and Next, Skip tour, which ends it as Done does, and Close, which keeps
  * the step so Help picks the tour up there. It starts on its own once, on a signed-in desk's home.
  */
 
@@ -77,9 +77,19 @@ describe("tour player", () => {
     expect(readTourStep("coordinator")).toBe(0);
   });
 
-  it("skips to what the desk can do, and replays from there", () => {
-    render(<WardTour onClose={vi.fn()} />);
+  it("closes the tour on Skip tour and marks it seen, so it does not come back on its own", () => {
+    const onClose = vi.fn();
+    saveTourStep("coordinator", 2);
+    render(<WardTour onClose={onClose} />);
     fireEvent.click(screen.getByTestId("ward-tour-skip"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(parseTourSeen(window.localStorage.getItem(TOUR_SEEN_STORAGE_KEY) ?? "")).toContain("coordinator");
+    expect(readTourStep("coordinator")).toBe(0);
+  });
+
+  it("replays from the first step on the last step", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    for (let index = 1; index < STEPS.length; index++) fireEvent.click(screen.getByTestId("ward-tour-next"));
     expect(card().dataset.step).toBe("can-do");
     fireEvent.click(screen.getByRole("button", { name: "Replay" }));
     expect(card().dataset.step).toBe("welcome");
@@ -127,7 +137,7 @@ describe("tour player", () => {
 
   it("keeps the same step when the window crosses the phone width", () => {
     const { rerender } = render(<WardTour onClose={vi.fn()} />);
-    fireEvent.click(screen.getByTestId("ward-tour-skip"));
+    for (let index = 1; index < STEPS.length; index++) fireEvent.click(screen.getByTestId("ward-tour-next"));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(card().dataset.step).toBe("help");
     phone.on = true;
@@ -276,7 +286,6 @@ describe("tour auto-start", () => {
     saveTourStep("coordinator", 3);
     render(<WardTour onClose={vi.fn()} />);
     fireEvent.click(screen.getByTestId("ward-tour-skip"));
-    fireEvent.click(screen.getByTestId("ward-tour-done"));
     expect(readTourStep("coordinator")).toBe(0);
   });
 });

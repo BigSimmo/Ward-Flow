@@ -7,6 +7,8 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFeedInbox } from "@/components/ward-management/tools/ward-feed-inbox";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import {
   receiveFeedMessage,
   resetFeedInboxForTests,
@@ -139,6 +141,36 @@ describe("feed inbox in Tools", () => {
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
     expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
+  });
+
+  it("names the person by name, record number and ward, says who it recorded, and offers Undo (audit CS3-06)", async () => {
+    const first = readFeedMessage(messages[0]!);
+    if (!first.ok) throw new Error("first simulated message should be readable");
+    const suggestion = feedSuggestion(first.message, seed);
+    if (suggestion.kind !== "arrival") throw new Error("first simulated message should be an arrival");
+    const movement = seed.movements.find((candidate) => candidate.id === suggestion.movementId)!;
+    const person = createPatientResolver(seed)(movement);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardFeedInbox />
+          <MovementStage id={suggestion.movementId} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const before = screen.getByTestId("probe-stage").textContent;
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    const note = document.getElementById("ward-feed-note-1")!;
+    expect(note).toHaveTextContent(person.formalName.trim());
+    expect(note).toHaveTextContent(first.message.umrn);
+
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
+    expect(
+      screen.getAllByText(`Message 1: Arrival confirmed: ${person.displayName}`, { exact: false }).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(screen.getByTestId("probe-stage").textContent).toBe(before));
   });
 
   it("holds Confirm and Reject while a confirmation is still saving", async () => {

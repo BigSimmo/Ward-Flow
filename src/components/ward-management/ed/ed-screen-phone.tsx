@@ -11,6 +11,7 @@ import { EdBoardChips } from "./ed-board-chips";
 import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
+import { noFormWords } from "@/components/ward-management/ward-legal-status";
 import styles from "./ed.module.css";
 import foldRow from "./ed-phone-fold.module.css";
 
@@ -87,7 +88,14 @@ export function renderEdBoardPhoneRow(
             <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
           </span>
         }
-        name={patientInfo.formalName}
+        // Audit CS3-09: the UMRN beside the name, as on the desktop row, so two look-alike names on
+        // a phone are told apart by a second identifier before a row is opened.
+        name={
+          <>
+            <span>{patientInfo.formalName}</span>
+            <span className={styles.phoneUmrn}> · {patientInfo.umrn}</span>
+          </>
+        }
         meta={[
           // No em-dash and no truncated destination; the form lives in the sheet. Change 2 (D-77):
           // the second line says where the referral stands, the same words as the board.
@@ -96,7 +104,8 @@ export function renderEdBoardPhoneRow(
           ...(isPhone
             ? []
             : [
-                movement.legalForm ? `Form ${movement.legalForm.code}` : "No form",
+                // Audit CS3-04: the desktop rule, "No form" only for a recorded Voluntary status.
+                movement.legalForm ? `Form ${movement.legalForm.code}` : noFormWords(movement.legalStatus),
                 medicalClearance === undefined
                   ? "Clearance pending"
                   : medicalClearance.cleared

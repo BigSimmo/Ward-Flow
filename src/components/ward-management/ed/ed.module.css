@@ -5557,3 +5557,10 @@
 [data-testid^="ward-ed-phone-sheet-"] :is(.reviewPill, .inboxBtn) {
   font-size: var(--wf-fs-14);
 }
+
+/* Audit CS3-09: the UMRN after the name on a phone ED row, quieter than the name it follows. */
+.phoneUmrn {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
