@@ -2712,7 +2712,6 @@ export type WardFlowEvent =
       type: "UNDO_BED_MEETING_ACTION";
       role: WardFlowRole;
       now: Instant;
-      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
       recordSeq?: number;
       subject: BedMeetingSubject;
       action: BedMeetingActionKind;
