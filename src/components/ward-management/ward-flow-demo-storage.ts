@@ -74,8 +74,10 @@ let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 
 /** Loads the restore module once; afterwards a mount reads its save in the same render as before. */
 export function loadDemoRestore(): Promise<typeof import("./ward-flow-demo-restore")> {
-  // A saved day may be a demonstration scenario, whose wards its check reads.
-  return Promise.all([import("./ward-flow-demo-restore"), loadScenarioNetworks()]).then(
+  // A saved day may be a demonstration scenario, whose wards its check reads. A failed network load
+  // does not hold back a standard or scarce save: a demonstration save then fails its own check,
+  // which reads as unavailable storage, so it is neither restored nor overwritten.
+  return Promise.all([import("./ward-flow-demo-restore"), loadScenarioNetworks().catch(() => undefined)]).then(
     ([module]) => (demoRestore = module),
   );
 }
