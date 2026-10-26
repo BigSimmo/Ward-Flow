@@ -48,5 +48,10 @@
     "id": "2026-10-26-departure-destination-chosen",
     "date": "2026-10-26",
     "line": "Recording that someone has left on the Bed board now asks where they went. Nothing is chosen for you, and the confirmation shows your answer."
+  },
+  {
+    "id": "2026-10-26-pull-names-patient",
+    "date": "2026-10-26",
+    "line": "Pulling a bed now names the person it was pulled for."
   }
 ]

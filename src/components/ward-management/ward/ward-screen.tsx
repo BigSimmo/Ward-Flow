@@ -815,8 +815,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : (refusal as Rejection | undefined);
     setLastActionRejection(refused);
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
+    // Audit CS3-16: the message names who the bed was pulled for.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      toast?.push({ tone: "success", title: "Bed pulled for this arrival." });
+      const who = resolvePatientIdentity(movements.find((movement) => movement.id === check.movementId)).displayName;
+      toast?.push({ tone: "success", title: `Bed pulled for ${who}.` });
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
