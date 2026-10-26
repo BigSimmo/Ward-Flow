@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -21,6 +22,7 @@ import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
 import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
@@ -104,6 +106,22 @@ export function ReferralPatientStep({
     heldBedWardName,
   } = s;
   const someoneChosen = !!patientRecord || unidentified !== null;
+  // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
+  // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
+  const [highlight, setHighlight] = useState(-1);
+  const resultsKey = filteredPatients.map((p) => p.id).join("|");
+  const [seenResultsKey, setSeenResultsKey] = useState(resultsKey);
+  if (resultsKey !== seenResultsKey) {
+    setSeenResultsKey(resultsKey);
+    setHighlight(-1);
+  }
+  // Change patient opens the full list before anything is typed; "No patient matches" needs a search.
+  const searching = isSearchOpen && searchQuery.trim().length > 0;
+  const showResults = isSearchOpen && filteredPatients.length > 0;
+  const resultsId = `${searchId}-results`;
+  useEffect(() => {
+    if (showResults && highlight >= 0) revealWardOption(document.getElementById(`${searchId}-opt-${highlight}`));
+  }, [highlight, showResults, searchId]);
   // The step's faults in field order, worded as the fields word them, for the error summary.
   const problems: ErrorSummaryItem[] = patientShowErrors
     ? [
@@ -268,6 +286,10 @@ export function ReferralPatientStep({
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                aria-controls={showResults ? resultsId : undefined}
+                aria-activedescendant={showResults && highlight >= 0 ? `${searchId}-opt-${highlight}` : undefined}
                 placeholder="Find a patient by name or UMRN"
                 autoCorrect="off"
                 autoCapitalize="none"
@@ -279,6 +301,34 @@ export function ReferralPatientStep({
                 }}
                 onFocus={() => {
                   if (searchQuery.trim().length > 0) setIsSearchOpen(true);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    // Closes the list only; the drawer's own Escape stays for the next press.
+                    if (!showResults) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setIsSearchOpen(false);
+                    setHighlight(-1);
+                    return;
+                  }
+                  if (!showResults) {
+                    if (event.key === "ArrowDown" && searchQuery.trim().length > 0) {
+                      event.preventDefault();
+                      setIsSearchOpen(true);
+                    }
+                    return;
+                  }
+                  const last = filteredPatients.length - 1;
+                  if (event.key === "ArrowDown") setHighlight((i) => (i >= last ? 0 : i + 1));
+                  else if (event.key === "ArrowUp") setHighlight((i) => (i <= 0 ? last : i - 1));
+                  else if (event.key === "Home") setHighlight(0);
+                  else if (event.key === "End") setHighlight(last);
+                  else if (event.key === "Enter" && highlight >= 0) {
+                    setHighlight(-1);
+                    handleSelectPatient(filteredPatients[highlight]!.id);
+                  } else return;
+                  event.preventDefault();
                 }}
                 autoComplete="off"
                 spellCheck="false"
@@ -300,16 +350,35 @@ export function ReferralPatientStep({
               ) : null}
               {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
 
-              {isSearchOpen && filteredPatients.length > 0 ? (
-                <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
-                  {filteredPatients.map((p) => (
+              <p className="sr-only" role="status" aria-live="polite">
+                {showResults || searching
+                  ? filteredPatients.length > 0
+                    ? `${filteredPatients.length} ${filteredPatients.length === 1 ? "patient matches" : "patients match"}.`
+                    : "No patient matches."
+                  : ""}
+              </p>
+              {searching && filteredPatients.length === 0 ? (
+                <p className={styles.patientSearchResults} data-testid="referral-patient-no-match">
+                  No patient matches. Check the name or UMRN, or add a new patient.
+                </p>
+              ) : null}
+              {showResults ? (
+                <div
+                  id={resultsId}
+                  className={styles.patientSearchResults}
+                  role="listbox"
+                  aria-label="Matching patients"
+                >
+                  {filteredPatients.map((p, index) => (
                     <button
                       key={p.id}
+                      id={`${searchId}-opt-${index}`}
                       type="button"
                       role="option"
-                      aria-selected={activePatientKey === p.id}
+                      tabIndex={-1}
+                      aria-selected={highlight === index}
                       className={styles.patientSearchResultItem}
-                      data-active={activePatientKey === p.id}
+                      data-active={highlight === index || activePatientKey === p.id}
                       onClick={() => handleSelectPatient(p.id)}
                     >
                       <span className={styles.resultAvatar} aria-hidden="true">
