@@ -13,7 +13,7 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
@@ -125,7 +125,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -195,7 +195,17 @@ These source files do not establish a current hosted connection or deployment.
     live. History reads the archive through `GET /v1/workspace/archive` (newest 5,000, scoped to
     the desk as its live workspace is). `infra/rollback-014-archived-records.sql` puts the current
     generation's archived records back first, then drops the table. Reapply runtime grants after 14.
-    The backend accepts versions 5 to 14.
+  - `015-list-and-tv-views.sql`: the record access log also takes `list` and `tv` (H-0731). The
+    server writes a row itself each time it sends a desk its whole workspace, at most once per
+    account, desk and screen every 15 minutes, before the data goes out: a failed write fails the
+    read. An unchanged poll sends no records and is not logged. `tv` comes from the
+    `X-Ward-Screen: tv` header the bed meeting TV board sends. Such rows name no single record, so
+    their `patient_id` is `*`. `infra/rollback-015-list-and-tv-views.sql` takes a database back to
+    14, and refuses once a list or TV read has been logged. Reapply runtime grants after 15.
+    The backend accepts versions 5 to 15.
+- `WARD_COORDINATOR_UNTIL` (optional, `YYYY-MM-DD`, at most a year ahead) ends the
+  `WARD_COORDINATOR_USER_IDS` bootstrap coordinators at the end of that Perth day, without a
+  restart (H-0057). Unset, they keep working and the shared server warns at startup.
 
 ## Boundaries
 

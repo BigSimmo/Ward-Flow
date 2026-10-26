@@ -2884,3 +2884,44 @@ test(
     }
   },
 );
+
+test("real PostgreSQL: whole-list and TV reads are logged once per window per desk (H-0731)", { skip: !url }, async () => {
+  const engine = await import("./dist/engine.mjs");
+  const pool = new Pool({ connectionString: url, max: 4 });
+  const workspaceId = randomUUID();
+  let at = new Date("2026-10-20T10:00:00Z");
+  const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+  const view = {
+    version: LATEST_MIGRATION,
+    actorId: randomUUID(),
+    membershipId: null,
+    access: { role: "coordinator", scope: { kind: "statewide" } },
+    grants: [],
+  };
+  try {
+    await migrate(pool);
+    await store.ready();
+    // As in the shared API, the workspace is read before its sending is logged.
+    await store.read(view.actorId);
+    assert.equal(await store.logList(view, "list"), true);
+    assert.equal(await store.logList(view, "list"), false, "a repeat inside 15 minutes adds nothing");
+    assert.equal(await store.logList(view, "tv"), true, "the TV board is its own screen");
+    assert.equal(await store.logList(view, "patient"), false, "only list and tv are list reads");
+    assert.equal(await store.logList({ ...view, version: 14 }, "list"), false, "before 15 nothing is kept");
+    at = new Date("2026-10-20T10:15:01Z");
+    assert.equal(await store.logList(view, "list"), true);
+    const { rows } = await pool.query(
+      "SELECT patient_id, surface FROM ward_flow.record_access WHERE workspace_id=$1 ORDER BY id",
+      [workspaceId],
+    );
+    assert.deepEqual(rows, [
+      { patient_id: "*", surface: "list" },
+      { patient_id: "*", surface: "tv" },
+      { patient_id: "*", surface: "list" },
+    ]);
+    // The access log reads them back like any other opening.
+    assert.equal((await store.recordViews(view)).filter((row) => row.patient_id === "*").length, 3);
+  } finally {
+    await pool.end();
+  }
+});

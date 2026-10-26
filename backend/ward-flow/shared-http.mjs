@@ -44,6 +44,8 @@ const STEP_UP_PATHS = new Set([
 ]);
 /** Names one of the account's roles when it holds more than one: a membership ID or "bootstrap". */
 const WORKING_AS = "x-ward-working-as";
+/** "tv" when the desk is showing the bed meeting TV board, so the access log can say so (H-0731). */
+const SCREEN = "x-ward-screen";
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
@@ -160,7 +162,7 @@ export function createSharedHandler({
         headers: {
           ...headers,
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As",
+          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As, X-Ward-Screen",
           "access-control-max-age": "600",
         },
       });
@@ -358,6 +360,11 @@ export function createSharedHandler({
               }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
+        // H-0731: the server logs, before sending them, that this desk read its records. An
+        // unchanged poll sends none, so it is not logged. A failed log write fails the read.
+        const logListRead = async () => {
+          if (store.logList) await store.logList(view, request.headers.get(SCREEN) === "tv" ? "tv" : "list");
+        };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const params = new URL(request.url).searchParams;
         const since = Number(params.get("since"));
@@ -375,10 +382,12 @@ export function createSharedHandler({
             return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });
           }
           if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+          await logListRead();
           return reply(200, { ...workspace(), data, snapshot: polled.snapshot });
         }
         const snapshot = await store.read(actorId, view);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+        await logListRead();
         return reply(200, { ...workspace(), data, snapshot });
       }
       if (path === "/v1/workspace/receipt" && request.method === "GET") {
