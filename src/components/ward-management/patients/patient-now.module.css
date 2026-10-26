@@ -2511,7 +2511,7 @@
 @media (min-width: 48.0625rem) and (max-width: 1024px) {
   .v6Step {
     flex: 0 1 auto;
-    min-width: 0;
+    min-width: min-content;
   }
 
   .v6StepBtn {

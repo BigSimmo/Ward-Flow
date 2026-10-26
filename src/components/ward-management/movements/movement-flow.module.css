@@ -1162,6 +1162,18 @@
     white-space: normal;
   }
 
+  /* Beside the outcome chip ("Arrived", "Did not proceed") the closure reason has a third line. */
+  .row .chip + .main {
+    flex: 1 1 9rem;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .row .line:has(> .chip + .main) {
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
   /* Layout sweep PT-14: the Arrange row and search line up with the tabs and cards above. */
   .toolbar {
     padding-inline: 0;
