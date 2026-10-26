@@ -64,6 +64,13 @@ const hasMarkers = (payload) =>
 const VIEW_REPEAT_MS = 60_000;
 /** Most record access rows one read returns. */
 const VIEW_LIST_LIMIT = 200;
+/** How far back the coordinator's record views reach (D-80 item 14). */
+const REVIEW_DAYS = 7;
+/** A break glass opening's review id (`ward-break-glass-review-id.ts`) and the scope refusal. */
+const BREAK_GLASS_REVIEW_PREFIX = "audit-break-glass-";
+const OUTSIDE_PLACE = "This change names a record outside your role's place.";
+/** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
+const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;
 /** A desk's whole-list or TV reads are logged at most once in this window for each account (H-0731). */
@@ -400,6 +407,46 @@ export function createWorkspaceStore(
         throw error;
       }
     }
+  }
+  /**
+   * D-80 item 14: the patient and journey ids in this desk's own part of the workspace, which are
+   * the records whose openings it may review. `null` for the statewide coordinator: every record.
+   * A break glass grant of the coordinator's own never widens it.
+   */
+  async function recordsInPlace(view, at) {
+    if (engine.wholeNetwork(view.access)) return null;
+    const stored = await readWorld(pool, "payload");
+    if (!stored || !engine.validWorld(stored.payload)) return [];
+    return placeRecords(stored.payload, view.access, at);
+  }
+  /** The ids `recordsInPlace` lists, from a world already in hand. */
+  function placeRecords(world, access, at) {
+    const { state } = engine.scopeWorld(world, access, at, []);
+    const ids = [
+      ...state.patients.map((patient) => patient.id),
+      ...state.movements.flatMap((movement) => [movement.id, movement.patientId]),
+      ...state.referrals.map((referral) => referral.patientId),
+    ];
+    return [...new Set(ids.filter((id) => typeof id === "string"))];
+  }
+  /**
+   * D-80 item 14: a review mark on a break glass opening names an opening the workspace does not
+   * hold, so the engine's scope check cannot look it up. Here the opening must exist in this
+   * workspace and, below statewide, be of a record in the coordinator's own part of the workspace
+   * (the same rule as reading the openings). Anything else is refused as outside the role's place.
+   */
+  async function breakGlassReviewRefusal(client, world, view, event, at) {
+    if (event?.type !== "REVIEW_AUDIT_EVENT" || typeof event.eventId !== "string") return null;
+    if (!event.eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
+    const id = event.eventId.slice(BREAK_GLASS_REVIEW_PREFIX.length);
+    if (!/^[1-9][0-9]{0,17}$/.test(id) || !(view.version >= ROLE_ACCESS_MIGRATION)) return OUTSIDE_PLACE;
+    const { rows } = await client.query(
+      "SELECT patient_id FROM ward_flow.break_glass WHERE id=$1 AND workspace_id=$2 AND data_mode='prototype'",
+      [id, workspaceId],
+    );
+    if (!rows[0]) return OUTSIDE_PLACE;
+    if (engine.wholeNetwork(view.access)) return null;
+    return placeRecords(world, view.access, at).includes(rows[0].patient_id) ? null : OUTSIDE_PLACE;
   }
   /**
    * The workspace row under `lock` ("UPDATE" or "SHARE"), with its whole world in `payload`, the
@@ -1838,15 +1885,28 @@ export function createWorkspaceStore(
     },
     /**
      * The newest record openings, optionally for one patient. The statewide coordinator reads them
-     * all; an access admin below statewide reads the openings by desks inside its own place. The
-     * place filter runs in the query, so openings elsewhere never crowd those out of the limit: the
-     * desks that have opened anything are few, so each is checked here and only those inside are
-     * asked for. The HTTP layer refuses everyone else before this runs. `minutes` is the opening's
-     * time as minutes from the server's now.
+     * all. A service coordinator reads those of the last 7 days for the records in its own part of
+     * the workspace, for its review list (D-80 item 14). An access admin below statewide reads the
+     * openings by desks inside its own place. That place filter runs in the query, so openings
+     * elsewhere never crowd those out of the limit: the desks that have opened anything are few, so
+     * each is checked here and only those inside are asked for. The HTTP layer refuses everyone else
+     * before this runs. `minutes` is the opening's time as minutes from the server's now.
      */
     async recordViews(view, patientId = null) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
       const at = clock();
+      if (view.access.role === "coordinator" && view.access.scope.kind !== "statewide") {
+        const inPlace = await recordsInPlace(view, at);
+        if (inPlace?.length === 0) return [];
+        const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+        const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
+        const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
+        const { rows } = await pool.query(
+          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+          params,
+        );
+        return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
+      }
       const params = [workspaceId];
       let where = "workspace_id=$1 AND data_mode='prototype'";
       if (patientId) {
@@ -1910,6 +1970,27 @@ export function createWorkspaceStore(
           });
         return rowCount > 0;
       });
+    },
+    /**
+     * D-80 item 14: the newest break glass openings for the coordinator's review list, with the
+     * desk that opened each (its role and place, from its membership) and why. Scoped as a service
+     * coordinator's `recordViews`; the HTTP layer gives them to coordinators only. The record itself shows only on the screens the coordinator already has.
+     */
+    async breakGlassOpenings(view) {
+      if (!(view.version >= ROLE_ACCESS_MIGRATION)) return [];
+      const at = clock();
+      const inPlace = await recordsInPlace(view, at);
+      if (inPlace?.length === 0) return [];
+      const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+      const place = inPlace ? ` AND b.patient_id = ANY($${params.push(inPlace)})` : "";
+      const { rows } = await pool.query(
+        `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype' AND b.opened_at > $2${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        params,
+      );
+      return rows.map(({ opened_at: opened, until, ...row }) => ({
+        ...row,
+        minutes: { opened: minutesBefore(opened, at), until: minutesBefore(until, at) },
+      }));
     },
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token
@@ -2097,7 +2178,10 @@ export function createWorkspaceStore(
         // The sender's own role and place, checked before the revision, so a desk never learns
         // whether a record outside its place changed. A refusal can still show that an id
         // exists, because ids it cannot find fall through to the engine's own not-found reply.
-        const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
+        const scopeRefusal = view
+          ? (engine.commandRefusal(row.payload, view.access, event, at, view.grants) ??
+            (await breakGlassReviewRefusal(client, row.payload, view, event, at)))
+          : null;
         if (privacyRefusal) {
           outcome = "denied";
           status = 422;

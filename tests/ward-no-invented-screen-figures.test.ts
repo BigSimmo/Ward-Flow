@@ -192,6 +192,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS|TOUR_SETTLE_MS)$/,
   },
   {
+    id: "governance-access-read-pace",
+    why: "Governance's break glass rows (D-80 item 14, 24 Oct 2026): how often the open page reads the server's openings again; network pacing, never shown, not a limit.",
+    file: /^use-governance-access-review\.ts$/,
+    name: /^READ_EVERY_MS$/,
+  },
+  {
     id: "desk-switch-wait",
     why: "Go to a desk (23 Oct 2026): how long the page a switch leaves says the desk is opening before the closed screen returns; a UI wait, never shown, not a limit.",
     file: /^settings\/operator-switcher-modal\.tsx$/,

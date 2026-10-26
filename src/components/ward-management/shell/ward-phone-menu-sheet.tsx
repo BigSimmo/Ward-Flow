@@ -21,8 +21,7 @@ import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { useCanOpenHref } from "./ward-access";
+import { usePhoneCreateOptions, type PhoneCreateId } from "./ward-phone-create-options";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
@@ -43,7 +42,7 @@ import actNowStyles from "./ward-phone-menu-act-now.module.css";
  * not something to start, and the menu already lists Transport.
  */
 const CREATE_LINKS: readonly {
-  id: string;
+  id: PhoneCreateId;
   label: string;
   meta: string;
   icon: LucideIcon;
@@ -325,18 +324,11 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
-  // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
-  // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
-  const gate = useRoleGate();
-  const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
-  // Add patient is not a Menu entry, so it asks the same access table and the route's own gate
-  // itself: a desk that cannot add a patient is not offered a page that refuses it (D-80).
-  const canOpen = useCanOpenHref();
-  const canAddPatient = canOpen(WARD_ADD_PERSON_HREF) && gate("ADD_PATIENT").allowed;
+  const { canRefer, ids } = usePhoneCreateOptions(byId);
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
-    if (item.id === "add-patient" && !canAddPatient) return [];
+    if (!ids.includes(item.id)) return [];
     const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
     return entry
       ? [
