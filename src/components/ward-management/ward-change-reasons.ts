@@ -505,9 +505,9 @@ export const GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL =
  * value and a provisional value look identical in code; the difference is whether anybody can find
  * it again (`docs/ward-flow-provisional-values.md`). This block is that finding.
  *
- * WHY THIS LIST EXISTS AT ALL. Urgency is the primary sort and outranks every wait, so a tier that
- * is easy to apply inflates until it means nothing — and the wait ordering underneath it stops
- * mattering too. The threshold is the safeguard. It is expressed as a fixed list a HUMAN PICKS
+ * WHY THIS LIST EXISTS AT ALL. Urgency once outranked every wait; the queue is now wait order only
+ * (never-build rule, 19 Oct 2026) and urgency is a mark. A mark that is easy to apply still inflates
+ * until it means nothing, so the threshold is the safeguard. It is expressed as a fixed list a HUMAN PICKS
  * FROM, never a number the software evaluates: a computed threshold would breach "nothing predicts,
  * scores, ranks or recommends a person", and a sourced clinical one would breach "no figure,
  * timeframe or threshold from the Mental Health Act" without a named accountable owner.
