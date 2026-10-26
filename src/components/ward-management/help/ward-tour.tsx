@@ -137,8 +137,8 @@ function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void
 
 /**
  * THE ROLE-TAILORED TOUR PLAYER. A spotlight on each step's control with the card beside it, Back
- * and Next, Skip tour (straight to what the desk can do), and Close, which keeps the step so the
- * tour picks up there from Help. It runs on the desk's home screen and goes there first.
+ * and Next, Skip tour (ends the tour and marks it seen, as Done does), and Close, which keeps the
+ * step so the tour picks up there from Help. It runs on the desk's home screen and goes there first.
  */
 export function WardTour({ onClose }: { onClose: () => void }) {
   const role = useTourRole();
@@ -282,7 +282,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           <div
             ref={spotRef}
             className={styles.spot}
-            style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+            style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
             data-testid="ward-tour-spot"
             aria-hidden="true"
           />
@@ -372,7 +372,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               className={styles.skip}
-              onClick={() => go(last ? 0 : steps.length - 1)}
+              onClick={last ? () => go(0) : finish}
               data-testid="ward-tour-skip"
             >
               {last ? "Replay" : "Skip tour"}

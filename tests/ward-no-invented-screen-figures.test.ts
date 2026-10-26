@@ -156,6 +156,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^PULL_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "accept-second-tap-guard",
+    why: "How long a second tap after Accept presentation is ignored, so a double tap cannot confirm it (audit CS3-08); a UI pause, not a limit.",
+    file: /^referrals\/use-referral-match-state\.tsx$/,
+    name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
+  },
+  {
     id: "restore-notice-pause",
     why: "How long the routine restored-save notice stays before it hides itself (simplification A3, 19 Oct 2026); a UI pause, not a limit.",
     file: /^shell\/ward-recovery-notice\.tsx$/,
@@ -181,9 +187,15 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
   },
   {
     id: "tour-find-wait",
-    why: "The role tour (22 Oct 2026): how long it waits for a step's control to draw before showing the card in the middle, how often the spotlight re-measures, and how long auto-start waits for the desk's access to settle; never shown, not limits.",
-    file: /^help\/ward-tour(?:-auto-start)?\.tsx$/,
+    why: "The role tour (22 Oct 2026) and Help's Show me (26 Oct 2026), which reuses its spotlight: how long a step waits for its control to draw before showing without it, how often the spotlight re-measures, and how long auto-start waits for the desk's access to settle; never shown, not limits.",
+    file: /^help\/(?:ward-tour(?:-auto-start)?|ward-show-me)\.tsx$/,
     name: /^(?:FIND_TIMEOUT_MS|REMEASURE_MS|TOUR_SETTLE_MS)$/,
+  },
+  {
+    id: "governance-access-read-pace",
+    why: "Governance's break glass rows (D-80 item 14, 24 Oct 2026): how often the open page reads the server's openings again; network pacing, never shown, not a limit.",
+    file: /^use-governance-access-review\.ts$/,
+    name: /^READ_EVERY_MS$/,
   },
   {
     id: "desk-switch-wait",

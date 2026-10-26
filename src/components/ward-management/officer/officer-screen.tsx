@@ -91,6 +91,7 @@ import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -318,9 +319,9 @@ export function OfficerScreen() {
   const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
+  useHoldOpenForm(diversionOpen); // Audit CS3-01: the diversion form is held from opening.
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
-
   const toggleCheck = (movementId: string, index: number) => {
     setVerifiedChecks((prev) => {
       const currentList = prev[movementId] ?? [false, false, false, false];
@@ -332,7 +333,6 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
   const resetDiversion = () => {
     setDiversionOpen(false);
     setDiversionReason(undefined);

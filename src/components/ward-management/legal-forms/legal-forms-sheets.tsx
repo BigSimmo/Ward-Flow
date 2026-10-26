@@ -82,31 +82,6 @@ export function parseWrittenInstant(value: string, now: Instant, date = "", dayZ
   return candidate > now ? null : candidate;
 }
 
-function parseExtensionExpiry(value: string, now: Instant, currentDue?: Instant): Instant | null {
-  const match = /(?:^|T)(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (
-    !Number.isInteger(hours) ||
-    !Number.isInteger(minutes) ||
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-  ) {
-    return null;
-  }
-  const anchor = currentDue !== undefined && currentDue > now ? currentDue : now;
-  const dayOffset = ((anchor % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const startOfDay = anchor - dayOffset;
-  let candidate = startOfDay + hours * 60 + minutes;
-  if (candidate <= anchor) {
-    candidate += MINUTES_PER_DAY;
-  }
-  return candidate;
-}
-
 /**
  * REQUIREMENTS. One place to read what each form is and what this prototype records for it. It
  * states nothing that the register or the engine does not already hold, and no Act period (owner,
@@ -527,25 +502,23 @@ function ExtendSheetContent({
   const currentExpiry = expiryState && expiryState.targetId === target?.id ? expiryState : null;
   const expiryValue = currentExpiry?.value ?? "";
   const expiryDate = currentExpiry?.date ?? "";
-  // A typed date is the day written on the form; blank keeps the next-occurrence reading of the time.
+  // Audit CS3-05 and TC2-01 (Josh, 26 Oct 2026, Part A 4): the date and time are both copied from
+  // the form. Nothing is guessed from the time alone.
   const datedDueAt =
     expiryDate !== "" && dayZero
       ? (instantFromDateAndTimeInputs(expiryDate, expiryValue.trim(), dayZero) ?? null)
       : null;
-  const parsedDueAt = !target
-    ? null
-    : expiryDate !== ""
-      ? datedDueAt !== null && datedDueAt > now
-        ? datedDueAt
-        : null
-      : parseExtensionExpiry(expiryValue, now, target.legalForm?.dueAt);
+  const parsedDueAt = target && datedDueAt !== null && datedDueAt > now ? datedDueAt : null;
+  // Audit TC2-03: an extension earlier than the expiry already recorded is shown, not refused.
+  const currentDueAt = target?.legalForm?.dueAt;
+  const shortens = parsedDueAt !== null && currentDueAt !== undefined && parsedDueAt < currentDueAt;
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
-    (expiryDate !== "" && datedDueAt !== null && datedDueAt <= now
+    (datedDueAt !== null && datedDueAt <= now
       ? "The new expiry written on the form is already past. Check the date and time."
       : undefined) ??
-    (parsedDueAt === null ? "Enter the new expiry time written on the form." : undefined);
+    (parsedDueAt === null ? "Enter the new expiry date and time written on the form." : undefined);
   // Dismissing without saving drops the typed expiry, so it never greets the next patient's form.
   const dismiss = () => {
     if (pending.current) return;
@@ -622,20 +595,19 @@ function ExtendSheetContent({
             <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
           </Field>
           <div className={styles.fieldPair}>
-            {dayZero ? (
-              <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
-                <TextInput
-                  type="date"
-                  data-testid="ward-legal-forms-renew-date"
-                  autoComplete="off"
-                  disabled={saving}
-                  value={expiryDate}
-                  onChange={(event) =>
-                    setExpiryState({ targetId: target.id, value: expiryValue, date: event.target.value })
-                  }
-                />
-              </Field>
-            ) : null}
+            <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
+              <TextInput
+                type="date"
+                data-testid="ward-legal-forms-renew-date"
+                autoComplete="off"
+                aria-required="true"
+                disabled={saving}
+                value={expiryDate}
+                onChange={(event) =>
+                  setExpiryState({ targetId: target.id, value: expiryValue, date: event.target.value })
+                }
+              />
+            </Field>
             <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>
               <TextInput
                 data-testid="ward-legal-forms-renew-expiry"
@@ -653,9 +625,12 @@ function ExtendSheetContent({
             </Field>
           </div>
           {parsedDueAt !== null ? (
-            // The resolved day is shown before Confirm records it, typed or read from the time alone.
+            // The resolved day is shown before Confirm records it.
             <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-resolved">
               Records the new expiry as {formatInstantWithDay(parsedDueAt, now)}.
+              {shortens && currentDueAt !== undefined
+                ? ` This is earlier than the expiry already recorded (${formatInstantWithDay(currentDueAt, now)}). Check the form.`
+                : null}
             </p>
           ) : null}
           <Field label="Justification" id={`${baseId}-legal-forms-renew-justification`}>

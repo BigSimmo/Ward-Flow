@@ -15,6 +15,7 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { noFormWords } from "@/components/ward-management/ward-legal-status";
 import {
   isbarLines,
   isCollected,
@@ -101,7 +102,7 @@ export function HandoverFlowPanel({
         ? row.formDueAt !== undefined
           ? `${formatInstantWithDay(row.formDueAt, now)}, as typed`
           : "None typed"
-        : "No form",
+        : noFormWords(row.legalStatus),
     ],
     ["Observation", obsLong(row)],
     [

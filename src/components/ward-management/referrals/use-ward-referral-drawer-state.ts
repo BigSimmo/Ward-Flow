@@ -261,6 +261,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(
@@ -463,11 +464,9 @@ export function useWardReferralDrawerState({
 
   // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
   // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
-
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
@@ -477,7 +476,6 @@ export function useWardReferralDrawerState({
       requestClose();
     }
   };
-
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const dirty = !sentReferralId && draftJson !== openingDraft;
@@ -621,10 +619,11 @@ export function useWardReferralDrawerState({
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
 
-  function handleSelectPatient(key: string) {
+  function handleSelectPatient(key: string, addedInForm = false) {
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
+    setAddedInFormKey(addedInForm ? key : null);
     setNotOnWard(undefined);
     setAgeBand("");
     setUnidentified(null);
@@ -728,7 +727,7 @@ export function useWardReferralDrawerState({
     allowed: addPatientGate.allowed,
     reason: addPatientGate.reason,
     patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`),
+    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
   });
 
   // Live capacity for the patient's cohort and the chosen bed security.
@@ -1287,6 +1286,7 @@ export function useWardReferralDrawerState({
     isSearchOpen,
     setIsSearchOpen,
     noPatientChosen,
+    patientAddedInForm: addedInFormKey !== null && addedInFormKey === activePatientKey,
     bodyRef,
     sectionId,
     selectedUnitIds: offeredUnitIds,

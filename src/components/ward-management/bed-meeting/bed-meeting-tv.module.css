@@ -46,6 +46,22 @@
   }
 }
 
+/* H-0475: from 2560 px wide the TV's type keeps growing with the screen instead of stopping at its
+ * 1080p caps, so a 4K TV is filled at a size read from the back of the room rather than at desktop
+ * size with the lower third empty. Scoped to the TV screen; a 1080p TV is unchanged. */
+@media (min-width: 160rem) {
+  .tv {
+    --tv-body: 1.25vw;
+    --tv-row: 1.15vw;
+    --tv-small: 1.05vw;
+    --tv-figure: 2.6vw;
+  }
+
+  .tv .title {
+    font-size: 1.8vw;
+  }
+}
+
 /* Layout sweep MEET-03: the Brief's labels and note read at the smallest TV size on every TV, not
  * the forecast card's 12 px, and the note sits clear of the figures above it. The list sits a little
  * tighter to pay for the larger type, so the Brief still ends on a 1080p screen. */
@@ -369,6 +385,41 @@
   font-size: var(--tv-small);
   font-weight: 700;
   line-height: 1.25;
+}
+
+/* H-0458: tiles in a row share their row lines, so every figure, bar and detail starts at the same
+ * height whether a label takes one line or two. Each tile spans five rows of the tile grid (label,
+ * figure, bar, detail, age); a tile with no bar leaves that row empty. Browsers without subgrid keep
+ * the stacked tile above. */
+@supports (grid-template-rows: subgrid) {
+  .tile {
+    display: grid;
+    grid-row: span 5;
+    grid-template-rows: subgrid;
+    /* The tile's own spacing between its parts; the tile grid's gap stays between rows of tiles. */
+    row-gap: var(--wf-s-1);
+  }
+
+  .tileLabel {
+    grid-row: 1;
+  }
+
+  .tileValue {
+    grid-row: 2;
+  }
+
+  .tileMeter {
+    grid-row: 3;
+    align-self: start;
+  }
+
+  .tileDetail {
+    grid-row: 4;
+  }
+
+  .tileDetail + .tileDetail {
+    grid-row: 5;
+  }
 }
 
 /* In a narrow tile the state word drops under the label rather than squeezing it onto two lines. */

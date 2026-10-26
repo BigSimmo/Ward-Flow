@@ -4278,7 +4278,7 @@
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 1000;
+  z-index: var(--z-toast);
   background: var(--ink);
   color: var(--surface);
   padding: 0.75rem 1.25rem;
@@ -4288,6 +4288,12 @@
   font-size: var(--t-2);
   font-weight: 500;
   pointer-events: none;
+}
+
+/* Walk-through WT-10: a refusal carries the warning glyph before its words. */
+.toastGlyph {
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -6076,7 +6082,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 1rem;
 }
 
@@ -6316,7 +6322,8 @@
     border: 1px solid var(--wf-line-2);
     border-radius: var(--wf-r-ctl);
     color: var(--wf-ink-1);
-    font-size: var(--wf-fs-13);
+    /* A-5 (fresh audit, 26 Oct 2026): under 16px, iOS zooms the page when a select is tapped. */
+    font-size: var(--wf-fs-16);
   }
 
   .screen .phoneBeds .phoneFilterSelect {

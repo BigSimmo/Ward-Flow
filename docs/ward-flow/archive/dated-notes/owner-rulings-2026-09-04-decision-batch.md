@@ -215,6 +215,10 @@ record should not pretend it was.**
 
 ## R-B-15 — "Suggested destination" is the right label
 
+> **Superseded.** The standing never-build rule (19 October 2026) and D-71 (20 October 2026) in
+> [`decisions.md`](../../decisions.md) replace this ruling. Ward Flow shows no suggested destination or
+> best-match ward, in any wording. Do not cite this ruling as authority for one.
+
 **Verbatim:** _"Yes suggested destination is the right label"._
 
 **Note the pair:** a label claiming a comparison that never happened was wrong ("Top candidate"); a

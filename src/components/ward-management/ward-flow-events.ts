@@ -198,6 +198,8 @@ export type WardFlowEvent =
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */
       acceptedUnitId?: string;
+      /** WT-08: also pull the accepted ward's bed in the same tap. A refused pull starts nothing. */
+      pullBed?: boolean;
       actingUnitId?: string;
       /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.
@@ -2587,6 +2589,8 @@ export type WardFlowEvent =
       bedNumber: number;
       /** A ward names itself and may only place stays on its own unit. */
       actingUnitId?: string;
+      /** Audit CS3-12: why a stay needing a locked bed may move to an open one. */
+      overrideReason?: OverrideReason;
     }
   | {
       /** Returns the stay to the bed (or no recorded bed) it had before the newest `PLACE_IN_BED`. */

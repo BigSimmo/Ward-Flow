@@ -85,6 +85,8 @@ export type HandoverPhoneProps = {
   since: string;
   sinceItems: SinceItem[];
   onCopySince: () => void;
+  /** Open promises and callbacks to carry over, shown under the Since previous handover card. */
+  carryOver?: ReactNode;
   /** Highlight chips with their counts. */
   chips: { id: string; label: string; count: number; pressed: boolean; onToggle: () => void }[];
   /** The meeting timer, as on desktop. */
@@ -424,6 +426,7 @@ export function HandoverPhone({
   since,
   sinceItems,
   onCopySince,
+  carryOver,
   chips,
   meetingOn,
   onToggleMeeting,
@@ -559,6 +562,8 @@ export function HandoverPhone({
           </span>
           <Icon icon={ChevronRight} size={16} className={styles.chev} />
         </button>
+
+        {carryOver}
 
         <div className={styles.seg}>
           <PillTabs<PhoneTab>

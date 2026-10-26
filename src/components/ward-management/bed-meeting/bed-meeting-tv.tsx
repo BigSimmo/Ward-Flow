@@ -962,10 +962,16 @@ function useOnView(target: RefObject<HTMLElement | null>, mounted: boolean) {
     if (!mounted || !element || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[entries.length - 1];
-      if (entry) setOnView(entry.isIntersecting);
+      if (!entry) return;
+      setOnView(entry.isIntersecting);
+      // H-0167: the clean TV layout for browsers without CSS :has() (ward-flow-layout.module.css).
+      document.documentElement.toggleAttribute("data-wf-tv-clean", entry.isIntersecting);
     });
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      document.documentElement.removeAttribute("data-wf-tv-clean");
+    };
   }, [target, mounted]);
   return onView;
 }

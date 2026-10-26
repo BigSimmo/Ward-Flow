@@ -1428,6 +1428,8 @@ test.describe("@mockup Role switcher — the loop", () => {
     await page.waitForLoadState("networkidle");
     await openAllArrivals(page);
     await page.getByTestId("ward-confirm-arrival-WF-315").click();
+    // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
     await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---

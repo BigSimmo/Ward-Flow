@@ -405,7 +405,7 @@ describe("going to a desk says it worked (B6)", () => {
     );
     fireEvent.click(screen.getAllByTestId("workstation-open-officer")[0]!);
     const toast = screen.getByTestId("toast");
-    expect(toast).toHaveTextContent("Still working as Flow coordinator.");
+    expect(toast).toHaveTextContent("Still working as Bed coordinator.");
     expect(toast).not.toHaveTextContent(/Transport officer/u);
   });
 });
