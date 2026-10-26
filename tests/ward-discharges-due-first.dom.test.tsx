@@ -40,14 +40,14 @@ describe("discharges: due first sort", () => {
       "Default",
       "Due first",
     ]);
-    const groups = groupDischarges(bedReleases, NOW_ANCHOR);
+    const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     expect(renderedIds("expected")).toEqual(groups.expected.map((release) => release.id));
   });
 
   it("orders each open release group by expected time, earliest first", () => {
     renderBoard();
     fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "due-first" } });
-    const groups = groupDischarges(bedReleases, NOW_ANCHOR);
+    const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     const byId = new Map(bedReleases.map((release) => [release.id, release.expectedAt]));
     let compared = 0;
     for (const key of ["blocked", "confirmed", "expected"] as const) {
@@ -61,7 +61,7 @@ describe("discharges: due first sort", () => {
   });
 
   it("keeps stored order inside one time band, which is why the default line names bands only", () => {
-    const open = groupDischarges(bedReleases, NOW_ANCHOR).expected[0]!;
+    const open = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true }).expected[0]!;
     const later = { ...open, id: "band-later", expectedAt: open.expectedAt + 1 };
     const earlier = { ...open, id: "band-earlier", expectedAt: open.expectedAt };
     expect(releaseBand(later, NOW_ANCHOR)).toBe(releaseBand(earlier, NOW_ANCHOR));
