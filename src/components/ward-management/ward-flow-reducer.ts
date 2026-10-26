@@ -1,5 +1,4 @@
-import { reducePatientRegistration } from "./ward-patient-registration-reducer";
-import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
+import { reducerSlices } from "./ward-flow-reducer-slice-registry";
 // Closing-the-loop (package E): return requested vs home service agreed.
 import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
 import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
@@ -43,12 +42,11 @@ import {
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
-import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
-import { type RecordedFactEventHelpers, reduceRecordedFactEvent } from "./ward-flow-record-events";
+import type { RecordedFactEventHelpers } from "./ward-flow-record-events";
 import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
-import { type UndoEventHelpers, reduceUndoEvent } from "./ward-flow-undo-events";
+import type { UndoEventHelpers } from "./ward-flow-undo-events";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
   type BedReleaseBlocker,
@@ -159,25 +157,9 @@ import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo
 import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
-import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
-import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
-import { reduceReferralAskEvent } from "./ward-flow-referral-ask-events";
-import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
-import { reduceReferralCommitmentEvent } from "./ward-flow-referral-commitment-events";
-import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
-import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
-import { reduceDischargeDependencyEvent } from "./discharges/discharge-dependency-events";
-import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
 // Closing the loop, package D (24 Oct 2026).
-import { reduceLoopCheckEvent } from "./ward-flow-loop-check-events";
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
-import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
-import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
-import { reducePlacementEvent } from "./ward-flow-placement-events";
-import { reduceTransportEvent } from "./ward-flow-transport-events";
-import { reduceBedEvent } from "./ward-flow-bed-events";
-import { reduceProtectedRecordEvent } from "./ward-flow-protected-record-events";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -1608,7 +1590,7 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   if (protectedEvent) {
     const recorded = advanceResourceRevisions(
       state,
-      reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
+      reducerSlices().reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
     );
     // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
     return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
@@ -1772,7 +1754,7 @@ export function reduceClinicalEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
-      return reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
+      return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":
     case "CLEAR_STAY_DISCHARGE_BLOCKER":
@@ -1791,13 +1773,13 @@ export function reduceClinicalEvent(
     case "SET_DISCHARGE_CRITERIA":
     case "UPLOAD_PATIENT_FORM":
     case "EVALUATE_LEAVE_BED_WARNINGS":
-      return reduceBedEvent(state, event, decision, BED_EVENT_HELPERS);
+      return reducerSlices().reduceBedEvent(state, event, decision, BED_EVENT_HELPERS);
 
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.
     case "ADD_PATIENT":
-      return reducePatientRegistration(state, event, reject);
+      return reducerSlices().reducePatientRegistration(state, event, reject);
 
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
@@ -1861,7 +1843,7 @@ export function reduceClinicalEvent(
     case "ADD_REFERRAL_CORRECTION":
     case "CHANGE_URGENCY":
     case "CHANGE_LEGAL_STATUS":
-      return reduceReferralSendEvent(state, event, decision, REFERRAL_SEND_EVENT_HELPERS);
+      return reducerSlices().reduceReferralSendEvent(state, event, decision, REFERRAL_SEND_EVENT_HELPERS);
 
     case "RECORD_MEDICAL_CLEARANCE":
     case "RECORD_ARRIVED_IN_DEPARTMENT":
@@ -1896,7 +1878,7 @@ export function reduceClinicalEvent(
     case "RECORD_REPATRIATION":
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
-      return reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
+      return reducerSlices().reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
     case "RECORD_OBSERVATION_LEVEL":
       return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS);
     case "ACCEPT_IN_PRINCIPLE":
@@ -1906,42 +1888,59 @@ export function reduceClinicalEvent(
     case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
-      return reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);
+      return reducerSlices().reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);
     case "MARK_REFERRAL_OPENED":
     case "REQUEST_REFERRAL_INFORMATION":
     case "MARK_REFERRAL_INFORMATION_MET":
-      return reduceReferralFollowUpEvent(state, event, decision, { findReferral, reject, replaceReferral });
+      return reducerSlices().reduceReferralFollowUpEvent(state, event, decision, {
+        findReferral,
+        reject,
+        replaceReferral,
+      });
     case "ASSIGN_REFERRAL":
     case "LOG_REFERRAL_CONTACT":
-      return reduceReferralOwnerEvent(state, event, decision, { findReferral, reject, replaceReferral });
+      return reducerSlices().reduceReferralOwnerEvent(state, event, decision, {
+        findReferral,
+        reject,
+        replaceReferral,
+      });
     // Closing-the-loop package A (24 Oct 2026): response commitments.
     case "RECORD_REFERRAL_COMMITMENT":
-      return reduceReferralCommitmentEvent(state, event, decision, { findReferral, reject, replaceReferral });
+      return reducerSlices().reduceReferralCommitmentEvent(state, event, decision, {
+        findReferral,
+        reject,
+        replaceReferral,
+      });
     case "ASK_MORE_WARDS":
-      return reduceReferralAskEvent(state, event, decision, { findReferral, findUnit, reject, replaceReferral });
+      return reducerSlices().reduceReferralAskEvent(state, event, decision, {
+        findReferral,
+        findUnit,
+        reject,
+        replaceReferral,
+      });
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
-      return reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+      return reducerSlices().reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
-      return reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
+      return reducerSlices().reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
     case "SEND_RELEASE_SUPPORT_NOTICE":
-      return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
+      return reducerSlices().reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
     // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
     case "RECORD_DISCHARGE_DEPENDENCY":
     case "RECORD_DISCHARGE_PLAN_CHANGE":
-      return reduceDischargeDependencyEvent(state, event, decision, BED_EVENT_HELPERS);
+      return reducerSlices().reduceDischargeDependencyEvent(state, event, decision, BED_EVENT_HELPERS);
     case "RECORD_ARRIVAL_CHECK":
-      return reduceArrivalCheckEvent(state, event, decision, { findMovement, reject, replaceMovement });
+      return reducerSlices().reduceArrivalCheckEvent(state, event, decision, { findMovement, reject, replaceMovement });
     // Closing the loop, package D (24 Oct 2026).
     case "MARK_CANCELLED_MOVE_CHECK":
     case "RECORD_ACCEPTANCE_CONDITION":
     case "MARK_ACCEPTANCE_CONDITION_MET":
     case "RECORD_RESTRICTION_REVIEW":
     case "MARK_CLOSURE_TRANSITION_ITEM":
-      return reduceLoopCheckEvent(state, event, decision, {
+      return reducerSlices().reduceLoopCheckEvent(state, event, decision, {
         findMovement,
         findUnit,
         reject,
@@ -1950,7 +1949,7 @@ export function reduceClinicalEvent(
       });
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
-      return reduceBedMeetingEvent(state, event, decision, {
+      return reducerSlices().reduceBedMeetingEvent(state, event, decision, {
         findAdmission,
         findMovement,
         findUnit,
@@ -1965,7 +1964,7 @@ export function reduceClinicalEvent(
     case "RELEASE_DIVERTED_BED":
     case "STEP_BACK_STAGE":
     case "RELEASE_AND_REOPEN_SEARCH":
-      return reducePlacementEvent(state, event, decision, PLACEMENT_EVENT_HELPERS);
+      return reducerSlices().reducePlacementEvent(state, event, decision, PLACEMENT_EVENT_HELPERS);
 
     case "HANDOVER_READY":
     case "TRANSPORT_ACCEPTED":
@@ -1977,7 +1976,7 @@ export function reduceClinicalEvent(
     case "STOP_TRANSPORT":
     case "SET_ARRIVAL_DETAILS":
     case "EVALUATE_ARRIVAL_LATENESS":
-      return reduceTransportEvent(state, event, decision, TRANSPORT_EVENT_HELPERS);
+      return reducerSlices().reduceTransportEvent(state, event, decision, TRANSPORT_EVENT_HELPERS);
 
     /**
      * Away at an emergency department, and back again: neither case touches a unit. The ward holds
@@ -2291,7 +2290,7 @@ export function reduceClinicalEvent(
     case "EXTEND_BROADCAST_ALERT":
     case "RAISE_PULL_NOW":
     case "REPLY_BROADCAST_ALERT": {
-      const next = reduceBroadcastAlertEvent(state, event, decision, reject);
+      const next = reducerSlices().reduceBroadcastAlertEvent(state, event, decision, reject);
       if (next) return next;
       return state;
     }
@@ -2315,7 +2314,7 @@ export function reduceClinicalEvent(
       return reducePlannedAdmission(state, event, decision);
     }
     case "RECORD_WARD_DIAGNOSIS":
-      return reduceWardDiagnosis(state, event, reject);
+      return reducerSlices().reduceWardDiagnosis(state, event, reject);
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
       return reduceHomeServiceReturn(state, event, reject);

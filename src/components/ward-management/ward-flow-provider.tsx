@@ -77,6 +77,7 @@ import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
+import { useSliceGatedDispatch } from "./ward-flow-slice-dispatch";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -806,11 +807,8 @@ function WardFlowWorld({
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
-  const dispatch = useCallback<WardCommandDispatch>(
-    (event: WardFlowEvent) => {
-      if (sharedEnabled) {
-        return dispatchShared(event);
-      }
+  const dispatchLocal = useCallback(
+    (event: WardFlowEvent): WardCommandOutcome | Promise<WardCommandOutcome> => {
       // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
@@ -848,8 +846,9 @@ function WardFlowWorld({
         ),
       };
     },
-    [dispatchContainer, sharedEnabled, dispatchShared, container.sessionAdopted],
+    [dispatchContainer, container.sessionAdopted],
   );
+  const dispatch = useSliceGatedDispatch(dispatchLocal, sharedEnabled ? dispatchShared : null, commandsRef);
   // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`). Synchronised in
   // `useLayoutEffect` (as well as reducer state transitions) so the component render body stays pure.
   useLayoutEffect(() => {
