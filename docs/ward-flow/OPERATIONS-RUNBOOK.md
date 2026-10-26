@@ -70,6 +70,17 @@ Weekly, or before a demonstration. All read-only.
    secret `WARD_SUPABASE_PRUNE_DATABASE_URL`; check its weekly run succeeded. To prune by hand, run
    `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
+6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
+   - GitHub turns off every scheduled workflow after 60 days without repository activity:
+     backend uptime, the daily release, receipt pruning, the dependency audit and the scheduled CI
+     run. In each workflow's Actions page, check it still shows recent scheduled runs. Turn a
+     disabled one back on there; a manual run alone does not re-enable the schedule.
+   - A Supabase project on the Free plan pauses after about a week without activity. The backend
+     `/healthz` should then report `database: unavailable`, and every save fails. Restoring it is done in
+     the Supabase dashboard and is a live change, so it needs Josh's yes. The current plan is not
+     recorded in the repo; on a paid plan this does not happen.
+
+   Before a quiet spell (a holiday, or a paused pilot), note the date, and check both on return.
 
 ## How a deploy happens
 
@@ -103,6 +114,22 @@ Rollback candidates are listed in
 [operations-readiness.md](operations-readiness.md#application-rollback). **No live rollback has
 been run or proven.**
 
+### During a pilot
+
+The daily release changes the app under staff who are using it. Josh agreed on 26 October 2026
+(Part A item 42) that during a pilot:
+
+- the scheduled release is turned off, and releases are run by hand once a week at an agreed
+  time, outside bed meetings and handover, with sites told the day before;
+- an urgent safety fix may still be released at once, with Josh's yes, and sites are told the
+  same day;
+- no release goes out while a merged change to a hazard control is waiting for the clinical
+  safety owner's review; and
+- one rollback is rehearsed on synthetic data before the pilot starts: record the current `live`
+  commit and each service's deployment, roll back to the previous `live-*` tag with Josh's yes,
+  run the health and signed-in save, reload and conflict checks, then roll forward the same way.
+  Record the times and results. The database is never restored as part of an app rollback.
+
 ## Common incidents: first steps
 
 Start every incident by writing down the time, the service and what users see. Read before you
@@ -117,8 +144,11 @@ change anything. Do not paste tokens, passwords or record contents anywhere.
 | **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants. |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry
-tokens, user IDs or payloads ([observability.md](../observability.md)). Optional Sentry reporting
-exists in code but **no DSN is configured**, so no error export is running.
+tokens, user IDs or payloads ([observability.md](../observability.md)). Sentry error reporting
+was switched on on 26 October 2026 (organisation `clinibase-xz`, US region, synthetic data only,
+per project notes). It receives error types and stack frames, never messages, URLs or users
+([operations-readiness.md](operations-readiness.md#server-error-reporting-sentry)). Its settings
+were not re-read for this page and **no event has been seen arriving**.
 
 ## Backup and restore
 
