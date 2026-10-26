@@ -421,6 +421,21 @@ describe("a command from a desk", () => {
         options,
       ),
     ).toMatch(/outside/);
+    // H-0150: its Undo is scoped the same way, so a desk cannot reopen another place's action.
+    expect(
+      commandScopeRefusal(
+        state,
+        ward,
+        {
+          type: "UNDO_BED_MEETING_ACTION",
+          role: "ward",
+          subject: { kind: "movement", id: hiddenMovement.id },
+          now: NOW_ANCHOR,
+          action: "review_step_down",
+        },
+        options,
+      ),
+    ).toMatch(/outside/);
   });
 
   it("is refused when it acts from another ward", () => {

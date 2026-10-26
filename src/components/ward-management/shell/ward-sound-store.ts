@@ -80,7 +80,9 @@ export function playSyntheticUrgentChime(): void {
 
 export function getAudioBuzzPreference(): boolean {
   // H-0306: storage is the source of truth so another tab's toggle (a storage
-  // event) is seen; the memory copy is only used when storage throws.
+  // event) is seen; the memory copy is only used when storage throws. A choice
+  // whose write failed (storage full) is kept until a later write succeeds.
+  if (audioBuzzInMemoryFallback !== undefined) return audioBuzzInMemoryFallback;
   try {
     if (typeof window === "undefined" || !window.localStorage) {
       return audioBuzzInMemoryFallback ?? true;

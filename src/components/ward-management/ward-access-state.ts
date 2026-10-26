@@ -694,7 +694,9 @@ export function commandScopeRefusal(
   }
   const references = commandRecordReferences(command);
   if (
-    (command.type === "RECORD_BED_MEETING_ACTION" || command.type === "COMPLETE_BED_MEETING_ACTION") &&
+    (command.type === "RECORD_BED_MEETING_ACTION" ||
+      command.type === "COMPLETE_BED_MEETING_ACTION" ||
+      command.type === "UNDO_BED_MEETING_ACTION") &&
     command.subject &&
     typeof command.subject === "object"
   ) {

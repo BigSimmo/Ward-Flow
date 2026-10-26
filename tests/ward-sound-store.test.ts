@@ -54,4 +54,18 @@ describe("audio buzz preference store (H-0306)", () => {
     setAudioBuzzPreference(true);
     expect(getAudioBuzzPreference()).toBe(true);
   });
+
+  it("keeps a choice whose write failed even though storage still reads", () => {
+    const storage = mapStorage();
+    storage.values.set(STORAGE_KEY, "true");
+    stubWindow({
+      getItem: storage.getItem,
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+    });
+
+    setAudioBuzzPreference(false);
+    expect(getAudioBuzzPreference()).toBe(false);
+  });
 });
