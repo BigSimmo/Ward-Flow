@@ -155,6 +155,8 @@ const MODEL_SIBLING_FILES = [
   "ward-model-leave.ts",
   "ward-model-referral-parts.ts",
   "ward-model-notices.ts",
+  // F-17 (26 Oct 2026): the bed release model moved out the same way.
+  "ward-model-bed-release.ts",
 ];
 const MODEL_PATHS = [`${WARD_DIR}/ward-model.ts`, ...MODEL_SIBLING_FILES.map((file) => `${WARD_DIR}/${file}`)];
 

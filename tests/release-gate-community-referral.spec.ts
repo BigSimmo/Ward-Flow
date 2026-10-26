@@ -374,6 +374,9 @@ test("Community referral: a community team refers from its own desk, the ward it
   ) {
     await page.getByTestId("ward-arrive-check-reason").selectOption({ index: 1 });
     await arriveCheck.getByRole("button", { name: /record reason/u }).click();
+  } else {
+    // Walk-through WT-11: with nothing open, the ward still checks the name and UMRN first.
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
   }
   await expect(arrive).toHaveCount(0);
   await expectAccessible(page, testInfo, "ward admissions after the community arrival");

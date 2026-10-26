@@ -18,10 +18,10 @@ export type LeaveKind = "off_ward" | "medical_trip";
 
 const LEAVE_DAYS = [0, 1, 2, 3, 7] as const;
 /** A planned discharge can sit weeks out (seeded stays run 8 to 10 days ahead), so offer six weeks. */
-const DISCHARGE_DAYS = Array.from({ length: 43 }, (_, day) => day);
+export const DISCHARGE_DAYS = Array.from({ length: 43 }, (_, day) => day);
 
 /** "Today", "Tomorrow" or "In 9 days", with the calendar date for anything further out. */
-function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
+export function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
   if (day === 0) return "Today";
   if (day === 1) return "Tomorrow";
   const date = calendarDateOf(Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY, dayZero);
@@ -44,7 +44,7 @@ const LEAVE_PRESETS = [
 const KIND_LABELS: Record<LeaveKind, string> = { off_ward: "Off-ward leave", medical_trip: "Medical trip" };
 
 /** A typed "HH:MM" on a chosen day, as an instant. Undefined when the time is not a real clock time. */
-function typedTimeToInstant(time: string, dayOffset: number, now: Instant): Instant | undefined {
+export function typedTimeToInstant(time: string, dayOffset: number, now: Instant): Instant | undefined {
   const match = /^(\d{1,2}):(\d{2})$/u.exec(time.trim());
   if (!match) return undefined;
   const hours = Number(match[1]);
@@ -220,10 +220,10 @@ export function PatientWardChangeCard({
               ))}
             </div>
           </div>
-          <p className={styles.phSummary} aria-live="polite">
-            {parsed !== undefined
-              ? `Back ${formatInstantWithDay(parsed, now)}, in ${splitDuration(parsed - now)}. The bed is held while away.`
-              : null}
+          {/* Only the chosen time is live: the countdown moves each minute and was re-announced (fresh audit A-9). */}
+          <p className={styles.phSummary}>
+            <span aria-live="polite">{parsed !== undefined ? `Back ${formatInstantWithDay(parsed, now)}` : null}</span>
+            {parsed !== undefined ? `, in ${splitDuration(parsed - now)}. The bed is held while away.` : null}
           </p>
           <button type="button" className={styles.phOther} onClick={() => setCustomTime(true)}>
             Other time

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -39,6 +39,51 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  */
 const NOW = NOW_ANCHOR;
 
+/**
+ * A ward-to-ward transfer: the journey leaves an occupied stay on `unitId` (`sourceAdmissionId`),
+ * so that ward is genuinely its sender. BOOK_TRANSPORT refuses a ward on an ED or community start.
+ */
+function startedOnWard(state: WardFlowState, movementId: string, unitId: string): WardFlowState {
+  const stay = state.admissions.find((admission) => admission.unitId === unitId && admission.state === "occupied");
+  expect(stay, `the seed must hold an occupied stay on ${unitId} for the transfer to leave`).toBeDefined();
+  return {
+    ...state,
+    movements: state.movements.map((m) =>
+      m.id === movementId ? { ...m, sourceAdmissionId: stay!.id, patientId: stay!.patientId ?? undefined } : m,
+    ),
+  };
+}
+
+/**
+ * A community-sent journey: the movement's referral names `teamName` as its sending team, so that
+ * team (and only that team) may book its transport.
+ */
+function sentByCommunityTeam(state: WardFlowState, movementId: string, teamName: string): WardFlowState {
+  const referral = {
+    ...state.referrals[0]!,
+    id: "RF-SYNTH-COMMUNITY",
+    source: "community" as const,
+    sendingTeamName: teamName,
+  };
+  return {
+    ...state,
+    referrals: [...state.referrals, referral],
+    movements: state.movements.map((m) => (m.id === movementId ? { ...m, referralId: referral.id } : m)),
+  };
+}
+
+/** The held-bed movement as a transfer from `unitId`, the ward that books for it. */
+function wardSent(unitId: string) {
+  const { state, movementId } = heldBedMovement();
+  return { state: startedOnWard(state, movementId, unitId), movementId };
+}
+
+/** The held-bed movement as sent by community team 0. */
+function communitySent() {
+  const { state, movementId } = heldBedMovement();
+  return { state: sentByCommunityTeam(state, movementId, COMMUNITY_TEAM_PAGES[0]!.name), movementId };
+}
+
 function heldBedMovement() {
   const state = seedWardFlowState();
   const movement = state.movements.find((candidate) => candidate.stage === "pulled");
@@ -46,8 +91,11 @@ function heldBedMovement() {
   return { state, movementId: movement!.id, sendingEd: movement!.originEdId };
 }
 
-function book(overrides: Record<string, unknown> = {}) {
-  const { state, movementId } = heldBedMovement();
+function book(
+  overrides: Record<string, unknown> = {},
+  from: { state: WardFlowState; movementId: string } = heldBedMovement(),
+) {
+  const { state, movementId } = from;
   return wardFlowReducer(state, {
     type: "BOOK_TRANSPORT",
     role: "ed",
@@ -108,7 +156,7 @@ describe("BOOK_TRANSPORT", () => {
   });
 
   it("lets the sending WARD book too, because TR-D5 generalises beyond bed placement", () => {
-    const state = book({ role: "ward", actingUnitId: "rph-adult-secure" });
+    const state = book({ role: "ward", actingUnitId: "rph-adult-secure" }, wardSent("rph-adult-secure"));
     expect(state.rejections).toEqual([]);
   });
 
@@ -132,9 +180,10 @@ describe("BOOK_TRANSPORT", () => {
 
   it("WLQ-11: a ward booking records `bookedBy` with its own claimed unit, ED and community record only their role", () => {
     const { movementId } = heldBedMovement();
-    const byWard = book({ role: "ward", actingUnitId: "rph-adult-secure" }).movements.find(
-      (candidate) => candidate.id === movementId,
-    )!.transport;
+    const byWard = book(
+      { role: "ward", actingUnitId: "rph-adult-secure" },
+      wardSent("rph-adult-secure"),
+    ).movements.find((candidate) => candidate.id === movementId)!.transport;
     expect(byWard!.bookedBy).toEqual({ role: "ward", unitId: "rph-adult-secure" });
 
     const byEd = book().movements.find((candidate) => candidate.id === movementId)!.transport;
@@ -159,11 +208,11 @@ describe("BOOK_TRANSPORT", () => {
    */
   it("lets a COMMUNITY team book, and writes the SAME record apart from who booked it", () => {
     const { movementId } = heldBedMovement();
-    const byCommunity = book({ role: "community", actingPlaceId: COMMUNITY_TEAM_PAGES[0]!.id });
+    const byCommunity = book({ role: "community", actingPlaceId: COMMUNITY_TEAM_PAGES[0]!.id }, communitySent());
     expect(byCommunity.rejections, "the community booking must be accepted, or nothing below is exercised").toEqual([]);
 
     const community = byCommunity.movements.find((candidate) => candidate.id === movementId)!.transport;
-    const byEd = book().movements.find((candidate) => candidate.id === movementId)!.transport;
+    const byEd = book({}, communitySent()).movements.find((candidate) => candidate.id === movementId)!.transport;
     expect(community, "a booking that was accepted must actually have written a job").toBeDefined();
     /*
      * 🔴 CORRECTED 2026-09-15 under WLQ-11 (owner): this used to assert `expect(community).toEqual

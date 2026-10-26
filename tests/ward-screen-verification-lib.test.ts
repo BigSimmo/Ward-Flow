@@ -337,6 +337,7 @@ describe("conservative render input provenance", () => {
     }
   });
 
+  // Skipped on Windows: creating a directory symlink needs administrator rights or Developer Mode there.
   it.skipIf(process.platform === "win32")(
     "refuses symlinked inputs rather than reading another project's source",
     () => {
