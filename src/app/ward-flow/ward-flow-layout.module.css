@@ -308,6 +308,16 @@
      .shellContent column the holder was squeezed when the page ran long, and its banner (the
      offline banner, then the downtime pack line) spilled over the page heading. */
   flex-shrink: 0;
+  /* WT-23 (walk-through, 26 Oct 2026): the pinned notes have margins round them, so a page scrolled
+     under the holder showed through those gaps and looked to run into the header. The holder takes
+     the page ground and a small foot, so the page passes behind it cleanly. */
+  background: var(--ground);
+  padding-bottom: 0.25rem;
+}
+
+/* With no note to show the holder stays empty and keeps no foot. */
+.bannerHolder:empty {
+  padding-bottom: 0;
 }
 
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
