@@ -211,7 +211,7 @@ describe("session lifecycle regression fixes", () => {
     expect(Buffer.byteLength(tail, "utf8")).toBeLessThanOrEqual(262144);
     expect(decide({ transcript_path: path }, cloud, () => tail)).not.toBeNull();
   });
-  it("does not prompt again after an earlier uncertain session write", () => {
+  it("still nudges on a later meaningful turn after an earlier save", () => {
     expect(
       run([
         prompt("Decision: use the mockup."),
@@ -219,7 +219,7 @@ describe("session lifecycle regression fixes", () => {
         prompt("Continue the same task."),
         toolUse("Edit"),
       ]),
-    ).toBeNull();
+    ).not.toBeNull();
   });
   it("does not repeat startup recall for resume or compaction", () => {
     expect(sessionStart(cloud, { source: "resume" })).toBeNull();

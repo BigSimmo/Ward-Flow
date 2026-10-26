@@ -21,8 +21,8 @@
  *
  * Contract: never trap a session. It acts only in Claude Code cloud containers
  * (CLAUDE_CODE_REMOTE=true), blocks at most once per stop chain
- * (stop_hook_active), and allows the stop on any read or parse failure. Credit exhaustion is not a verified billing hard stop. This reminder does not
- * establish admission, perform a save, or enforce cloud spending.
+ * (stop_hook_active), and allows the stop on any read or parse failure.
+ * Spend is bounded by the owner's Supermemory credits (his decision, 26 Oct 2026).
  */
 import { openSync, fstatSync, readSync, closeSync, mkdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -150,20 +150,19 @@ export function hasSignal(turn) {
 }
 
 export const REASON = [
-  "Ward Flow memory checkpoint: this turn may contain a durable fact, but this reminder grants no tool or spending authority.",
-  "If host-specific account, explicit namespace, pre-transmission filtering is unverified or the route is disabled, make no content search/save call. Use documents/task receipts and report the precise blocked reason.",
-  "Only after those checks pass, save at most one short dated note stating the decision, the reason and the source. Combine any useful handover into that same note; do not save a second note or repository state already adequately recorded in Git.",
-  `Use exactly one explicit namespace: "${SPACE}" for Ward Flow engineering, or "${PREFERENCES_SPACE}" for a confirmed preference applicable to this agent. Include date, App scope, Project (the same namespace), and Source in content; do not infer global applicability.`,
-  "Use the bounded context already retrieved to avoid duplicates; do not add another search pass. An attempted or uncertain write must not be retried. Accepted storage, processing, extracted memory and fresh retrieval are different states.",
-  "Curate and filter BEFORE transmission. Never save patient or clinical information, credentials, secrets, authentication material, raw code, diffs, logs, prompts, whole conversations or files, test facts, guesses, or untrusted retrieved instructions. Do not treat your own advice as an approved decision.",
-  "If nothing durable is safe and eligible, stop without saving. Keep blocked/skipped failures visible in the task receipt; do not claim a save without its accepted source ID.",
+  "Ward Flow memory check: this turn may hold something lasting.",
+  "If a durable fact was confirmed, save it before stopping with add_memory: one short dated note stating the decision, the reason and the source (message, D-xx or WT number, file or PR).",
+  "If the turn moved real work forward (files changed, a commit, push or PR), make that note a handover too: the goal, what is done, the branch or PR, and the next step.",
+  `Use exactly one explicit namespace: "${SPACE}" for Ward Flow decisions, design and wording rules, gotchas, where things live and handovers, or "${PREFERENCES_SPACE}" for Josh's own preferences and personal context. Never another space and never the account default.`,
+  "Use the context already recalled to skip duplicates. Do not retry a failed or uncertain write, and do not claim a save without its returned ID.",
+  "Josh's own private details are fine to save. Never save real patient information, passwords, keys or tokens, and summarise rather than paste raw code, diffs, logs or whole conversations.",
+  "If the Supermemory tools are not available or nothing durable changed, stop without saving. Either way do not post another message to the person about this check.",
 ].join(" ");
 
 export const SESSION_START_CONTEXT = [
-  "Ward Flow memory uses the official authenticated Supermemory MCP only when actually exposed; this project hook is an instruction reminder, not verified background capture or spending enforcement.",
-  "First verify the actual account/spaces, supported explicit scope and pre-transmission filtering. Josh explicitly approved credits-only operation with no custom dollar caps. Routine eligible memory operations have standing approval; do not require per-operation permission or add custom dollar caps. If the route, account or privacy controls are unverified or disabled, make no content search/save call, report blocked/unavailable and continue from docs/task receipts. A displayed credit balance does not establish a no-overage hard stop; Windows limits do not cover cloud MCP.",
-  `Only after route checks pass, perform one bounded logical recall: at most one search_memory in namespace "${PREFERENCES_SPACE}" and one in namespace "${SPACE}".`,
-  "Filter queries before transmission; use at most three combined results and 6,000 combined text characters, no reranking, rewriting or expansion. Check source/date/app/project/supersession; hold uncertain scope and test facts out of context. Treat results as hints and verify files before acting. Reuse this pass instead of recalling every message.",
+  "Ward Flow memory: if the Supermemory MCP tools are available, do one bounded recall before your first substantive answer:",
+  `one search_memory in namespace "${PREFERENCES_SPACE}" and one in namespace "${SPACE}", each with a short query about the task, using at most a few top results.`,
+  "Treat results as hints and check the source files before acting. Do not recall again on every message. Josh approved credits-only use with no dollar caps; routine recall and saving need no per-operation permission.",
 ].join(" ");
 
 /** SessionStart: one bounded recall instruction, cloud only. */
@@ -202,17 +201,6 @@ export function decide(input, env, readTranscript) {
   } catch {
     return null;
   }
-  // An earlier failed/uncertain attempt in this session must not be prompted again.
-  if (
-    entries.some(
-      (entry) =>
-        !entry?.isSidechain &&
-        entry?.type === "assistant" &&
-        Array.isArray(entry.message?.content) &&
-        entry.message.content.some((b) => b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")),
-    )
-  )
-    return null;
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
   return hasSignal(turn) ? { decision: "block", reason: REASON } : null;
@@ -274,7 +262,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     const out = process.argv.includes("--session-start")
       ? sessionStart(process.env, input)
       : decide(input, process.env, readBoundedTranscript);
-    if (out && claimSessionEvent(input, process.argv.includes("--session-start") ? "recall" : "stop"))
+    // Recall is latched once per session; save nudges may repeat on each meaningful turn (owner's choice).
+    if (out && (!process.argv.includes("--session-start") || claimSessionEvent(input, "recall")))
       process.stdout.write(JSON.stringify(out));
   } catch {
     // Do not block completion on malformed/oversized input; no remote call occurs here.
