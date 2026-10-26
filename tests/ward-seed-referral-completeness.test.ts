@@ -86,4 +86,36 @@ describe("referral context at the real seed boundary", () => {
     expect(seededReferralDossier(movement.id, movement)).toBeDefined();
     expect(seededReferralDossier(movement.id, { ...movement, patientId: "PT-NEW-SYNTHETIC" })).toBeUndefined();
   });
+
+  it.each(["WF-002", "WF-009"])("preserves %s's legitimate indirect patient link", (id) => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((entry) => entry.id === id)!;
+    const referral = state.referrals.find((entry) => entry.id === movement.referralId)!;
+    expect(movement.patientId).toBeUndefined();
+    expect(referral.patientId).toBeDefined();
+    const dossier = seededReferralDossier(id, movement);
+    expect(dossier).toBeDefined();
+    expect(seededReferralDossier(id, structuredClone(movement))).toEqual(dossier);
+    expect(dossier!.documents.length).toBeGreaterThan(0);
+  });
+
+  it.each(["WF-002", "WF-009"])("rejects %s's dossier after its indirect patient link changes", (id) => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((entry) => entry.id === id)!;
+    const original = state.referrals.find((entry) => entry.id === movement.referralId)!;
+    const differentPatient = state.referrals.find(
+      (entry) => entry.patientId !== undefined && entry.patientId !== original.patientId,
+    )!;
+    expect(movement.patientId).toBeUndefined();
+    expect(original.patientId).toBeDefined();
+    expect(differentPatient.patientId).not.toBe(original.patientId);
+    expect(seededReferralDossier(id, { ...movement, referralId: differentPatient.id })).toBeUndefined();
+  });
+
+  it.each(["WF-002", "WF-009"])("rejects %s's dossier after its indirect patient link is removed", (id) => {
+    const movement = seedWardFlowState().movements.find((entry) => entry.id === id)!;
+    expect(movement.patientId).toBeUndefined();
+    expect(movement.referralId).toBeDefined();
+    expect(seededReferralDossier(id, { ...movement, referralId: undefined })).toBeUndefined();
+  });
 });
