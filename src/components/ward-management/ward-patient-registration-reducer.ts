@@ -2,7 +2,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { GENDERS, sameRecordNumber, type Patient } from "./ward-patients";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
-import { perthCalendarDay } from "./ward-clock";
+import { perthIsoDay } from "./ward-clock";
 
 /**
  * Why a date of birth cannot be stored, or undefined when it can (production audit 24 Oct 2026,
@@ -19,12 +19,6 @@ export function dateOfBirthProblem(dateOfBirth: unknown, today: Date): string | 
   if (year < 1900) return "ADD_PATIENT date of birth is before 1900";
   if ((dateOfBirth as string) > perthIsoDay(today)) return "ADD_PATIENT date of birth is in the future";
   return undefined;
-}
-
-/** The Perth calendar day a moment falls on, written "YYYY-MM-DD" as a date input reads it. */
-export function perthIsoDay(moment: Date): string {
-  const perth = perthCalendarDay(moment);
-  return `${perth.year}-${String(perth.monthIndex + 1).padStart(2, "0")}-${String(perth.day).padStart(2, "0")}`;
 }
 
 /** Registration mutation; the reducer's event permission and audit wrapper remain authoritative. */

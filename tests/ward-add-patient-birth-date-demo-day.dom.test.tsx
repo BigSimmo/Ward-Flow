@@ -20,8 +20,7 @@ vi.mock("next/link", () => ({
 import { ToastProvider } from "@/components/wf/toast-provider";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { calendarDateOf, perthMidnight } from "@/components/ward-management/ward-clock";
-import { perthIsoDay } from "@/components/ward-management/ward-patient-registration-reducer";
+import { calendarDateOf, perthIsoDay, perthMidnight } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // TC2-10 (26 Oct 2026): a demo whose day is well before the computer's date, as a loaded scenario can be.
