@@ -1,6 +1,7 @@
 // @ts-check
 import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
+import { bootstrapCoordinators } from "./auth.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -258,7 +259,10 @@ export function createSharedHandler({
       // The role and place come from the server's own record on every request, never from the
       // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
       // statewide coordinators; everyone else needs an active membership.
-      const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
+      const view = await store.viewer(actorId, {
+        bootstrap: bootstrapCoordinators(config).includes(actorId),
+        workingAs,
+      });
       // Asking for access is for a signed-in account with no role (feature 7), so it is answered
       // before the role checks below. An account that already holds a role is given another by an
       // access admin, never by a request it files itself.
@@ -270,7 +274,7 @@ export function createSharedHandler({
         // Decided from the account's roles, not the desk named in the header: a stale or made-up
         // working-as id reads as no desk, but the account still holds its roles.
         const holder = workingAs
-          ? await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId) })
+          ? await store.viewer(actorId, { bootstrap: bootstrapCoordinators(config).includes(actorId) })
           : view;
         if (holder.status !== "none")
           return reply(403, { error: "This account already has a role. Ask your access admin for another." });
