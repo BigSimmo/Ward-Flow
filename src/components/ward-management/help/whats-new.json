@@ -45,63 +45,28 @@
     "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
   },
   {
-    "id": "2026-10-26-bed-move-open-bed-reason",
+    "id": "2026-10-26-bed-move-and-extension-checks",
     "date": "2026-10-26",
-    "line": "Moving someone from a locked bed to an open bed on the Bed board now asks for a reason, unless they are Voluntary."
+    "line": "Moving someone to an open bed asks for a reason unless they are Voluntary. Extending a form needs the new expiry date."
   },
   {
-    "id": "2026-10-26-extension-date-required",
+    "id": "2026-10-26-departures-and-pulls-named",
     "date": "2026-10-26",
-    "line": "Extending a legal form now needs the new expiry date as well as the time, both copied from the form."
+    "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
   },
   {
-    "id": "2026-10-26-departure-destination-chosen",
+    "id": "2026-10-26-not-recorded-wording",
     "date": "2026-10-26",
-    "line": "Recording that someone has left now asks where they went. Nothing is chosen for you, and the confirm shows it."
+    "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
   },
   {
-    "id": "2026-10-26-pull-names-patient",
+    "id": "2026-10-26-names-and-umrn",
     "date": "2026-10-26",
-    "line": "Pulling a bed now names the person it was pulled for."
+    "line": "Phone ED rows show the UMRN beside the name. The practice hospital feed names each person and a confirm can be undone."
   },
   {
-    "id": "2026-10-26-form-not-recorded",
+    "id": "2026-10-26-handover-forecast-double-tap",
     "date": "2026-10-26",
-    "line": "Handover and phone ED say \"Form not recorded\" unless the person is Voluntary. A blank expected out says \"Not recorded\"."
-  },
-  {
-    "id": "2026-10-26-hospital-feed-names",
-    "date": "2026-10-26",
-    "line": "The practice hospital feed in Tools names each person with their record number and bed, and a confirm can be undone."
-  },
-  {
-    "id": "2026-10-26-handover-over-midnight",
-    "date": "2026-10-26",
-    "line": "A handover page left open past midnight keeps the handover you chose, so it no longer says nothing has changed."
-  },
-  {
-    "id": "2026-10-26-phone-ed-umrn",
-    "date": "2026-10-26",
-    "line": "Each ED board row on a phone now shows the UMRN beside the name, so similar names are easier to tell apart."
-  },
-  {
-    "id": "2026-10-26-forecast-long-weekend",
-    "date": "2026-10-26",
-    "line": "Before a long weekend, the forecast's holiday figure now runs to the first working day after it."
-  },
-  {
-    "id": "2026-10-26-ed-accept-double-tap",
-    "date": "2026-10-26",
-    "line": "A quick double tap on Accept presentation no longer confirms it too. Confirm acceptance needs its own tap."
-  },
-  {
-    "id": "2026-10-26-shift-summary-dates-label",
-    "date": "2026-10-26",
-    "line": "The shift summary now says \"Expected dates last changed this shift\", as a later change counts in the later shift."
-  },
-  {
-    "id": "2026-10-26-referral-summary-recorded",
-    "date": "2026-10-26",
-    "line": "The referral summary gives the recorded legal status and clearance, or says not recorded, and labels the letter's words."
+    "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
   }
 ]
