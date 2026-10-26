@@ -3,6 +3,10 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+// A1K-01 / DR-03 (26 Oct 2026): the server draws My list's rows before their code arrives, so their
+// styles load with Home. Without them the rows paint as plain text, then grow into cards and push
+// Home down (0.16 on a phone). Only the styles load early; the scripts still wait for idle.
+import "@/components/ward-management/alerts/alerts.module.css";
 
 /**
  * Phone budget (22 October 2026, Home v7): My list, the chosen alert and Beds that fit bring the

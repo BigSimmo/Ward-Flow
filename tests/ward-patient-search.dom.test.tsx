@@ -1206,14 +1206,14 @@ describe("Third Edition dropdown filters and yield strip", () => {
 });
 
 describe("census counts agree (device audit 11 Oct 2026)", () => {
-  it("lists as many Bed found people as the hero counts, ten at a time", () => {
+  it("lists as many Accepted people as the hero counts, ten at a time", () => {
     renderSearch();
     const group = document.getElementById("ward-patient-search-group-found");
     expect(group).not.toBeNull();
     const listed = Number(group!.querySelector("[class*=groupCount]")?.textContent);
     const hero = within(screen.getByRole("group", { name: "Where patients are now" }))
       .getAllByRole("button")
-      .find((button) => /Bed found/u.test(button.textContent ?? ""));
+      .find((button) => /Accepted/u.test(button.textContent ?? ""));
     expect(hero?.textContent).toContain(String(listed));
     expect(listed).toBeGreaterThan(10);
     expect(within(group!).getByRole("button", { name: `Show all ${listed}` })).toBeTruthy();

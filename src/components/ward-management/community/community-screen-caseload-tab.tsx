@@ -74,7 +74,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 aria-pressed={caseloadFilter === "high"}
                 onClick={() => setCaseloadFilter("high")}
               >
-                <span>High acuity / assertive outreach</span>
+                <span>Assertive outreach</span>
                 <span className={styles.badgePill} id={`${baseId}-demo-chipHighAcuityBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("high")).length}
                 </span>
@@ -104,7 +104,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                   <path d="M8 5v3l2 2" />
                 </svg>
                 <span id={`${baseId}-demo-caseloadTitle`}>
-                  Community treatment orders (Form 5A) &amp; high acuity caseload
+                  Community treatment orders (Form 5A) &amp; assertive outreach caseload
                 </span>
               </h2>
               <span className={styles.badgePill} id={`${baseId}-demo-caseloadHeadBadge`}>
@@ -196,7 +196,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 Depot
               </span>
               <span id={`${baseId}-chipHighAcuityBadge`} className={styles.displayNone}>
-                High acuity
+                Assertive outreach
               </span>
             </h3>
             <div className={styles.filterChipsGroup}>

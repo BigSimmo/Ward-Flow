@@ -189,7 +189,7 @@ describe("tour auto-start", () => {
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it("starts on its own only once per device, even if the tour was never closed", async () => {
+  it("starts on its own only once for the desk, even if the tour was never closed", async () => {
     const onStart = vi.fn();
     // Mounted together, as the help host does for a signed-in desk.
     const { unmount } = render(
@@ -200,11 +200,11 @@ describe("tour auto-start", () => {
     );
     await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
     unmount();
-    // A reload or a desk switch: the desk's tour is still unseen, but this device already had it.
+    // A reload: the desk's tour is still unseen, but this desk already had it on this device.
     render(<WardTourAutoStart onStart={onStart} />);
     await new Promise((resolve) => setTimeout(resolve, 700));
     expect(onStart).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
     // A first visit gets the tour, so the what's new note is marked read too.
     expect(window.localStorage.getItem("ward_flow_choice_whats_new_seen")).not.toBeNull();
   });

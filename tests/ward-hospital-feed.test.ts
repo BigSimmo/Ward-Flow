@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { previewFeedMessage, readFeedMessage } from "@/components/ward-management/integration/hospital-feed";
+import { sameRecordNumber } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 
 /** An invented ADT message in the HL7 version 2 shape, for the seeded synthetic person UM100001. */
@@ -106,5 +107,43 @@ describe("previewFeedMessage", () => {
       kind: "new_person",
       action: "No person holds UM999999. Would suggest nothing: this registration is not an emergency attendance.",
     });
+  });
+});
+
+describe("previewFeedMessage record number matching (audit F-06)", () => {
+  const stored = [{ ...wardPatients[0]!, id: "PT-FOLD" as const, umrn: "AB123" }];
+  const feed = (umrn: string) => ({
+    event: "admitted" as const,
+    controlId: "MSG-FOLD",
+    umrn,
+    familyName: stored[0]!.familyName,
+    givenName: stored[0]!.givenName,
+    dateOfBirth: stored[0]!.dateOfBirth,
+    patientClass: "I",
+    location: { pointOfCare: "MH4", room: "12", bed: "B" },
+    recordedAt: "202610190825",
+  });
+
+  it("matches a stored AB123 from ab123, ignoring case and surrounding spaces", () => {
+    for (const umrn of ["ab123", "AB123", "  Ab123 "]) {
+      expect(previewFeedMessage(feed(umrn) as Parameters<typeof previewFeedMessage>[0], stored)).toMatchObject({
+        kind: "known_person",
+        patientId: "PT-FOLD",
+      });
+    }
+  });
+
+  it("still treats a different number as a new person", () => {
+    expect(previewFeedMessage(feed("ab124") as Parameters<typeof previewFeedMessage>[0], stored).kind).toBe(
+      "new_person",
+    );
+  });
+});
+
+describe("sameRecordNumber", () => {
+  it("is the one rule ADD_PATIENT and the feed share", () => {
+    expect(sameRecordNumber("ab123", "AB123")).toBe(true);
+    expect(sameRecordNumber(" AB123 ", "ab123")).toBe(true);
+    expect(sameRecordNumber("AB123", "AB124")).toBe(false);
   });
 });

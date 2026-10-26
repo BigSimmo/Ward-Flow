@@ -252,7 +252,7 @@ export function resolvePatientNowRecord(
               {
                 who: acceptedUnit.name,
                 role: "Allocated Receiving Unit",
-                note: "Bed accepted",
+                note: "Accepted",
                 tone: "good" as const,
               },
             ]
@@ -463,7 +463,7 @@ export function resolvePatientNowRecord(
                 {
                   who: acceptedUnit.name,
                   role: "Allocated Receiving Unit",
-                  note: "Bed accepted",
+                  note: "Accepted",
                   tone: "good" as const,
                 },
               ]
