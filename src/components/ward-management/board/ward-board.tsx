@@ -837,6 +837,10 @@ export function WardBoard({
       if (selectedTile && admissionId === selectedTile.key) {
         closeDetail();
       }
+      // DR-08 (25 Oct 2026): the button that opened this dialog and the patient's tile both leave
+      // with the patient, so focus would fall to the page. It goes to the "Before handover" band.
+      focusBackTo.current = null;
+      dialogTriggerRef.current = document.getElementById("ward-board-work-band-heading")?.closest("summary") ?? null;
     } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
       dispatchAndReport(
         () =>
