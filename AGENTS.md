@@ -73,6 +73,7 @@ Read the named file before that action. They extend this file and never override
 
 - Commits, pushes, PRs, CI and reviews: [Commit as you go](docs/agents/git-publication.md#commit-as-you-go), [bare PR publication](docs/agents/git-publication.md#bare-pr-publication-is-not-readiness-work), [normal pushes and PRs](docs/agents/git-publication.md#normal-pushes-and-prs), [reviews](docs/agents/git-publication.md#reviews)
 - Checks, test or export deletion and evidence: [checks-and-evidence.md](docs/agents/checks-and-evidence.md), [verification entry points](docs/agents/task-efficiency.md#ward-verification-entry-points)
+- Phone size limits (`script-budget.json`): a PR may raise one by up to 5 KB per screen without asking, after diagnosing and trying a trim; more needs Josh's yes: [HOW-WE-WORK §6](docs/ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews)
 - UI, browser QA, screenshots, local server: [building-ui.md](docs/agents/building-ui.md), [owner rules, HOW-WE-WORK §6](docs/ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews)
 - Task continuation and handoff: [task receipts](docs/task-receipts.md), [continue one task record](docs/agents/task-efficiency.md#continue-one-task-record)
 - Context, delegation, memory and spending detail: [shared-context-and-memory.md](docs/agents/shared-context-and-memory.md)
