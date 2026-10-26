@@ -69,6 +69,33 @@ export type WardFlowDemoPayload = {
 
 export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
 
+/**
+ * WS-13 (workflow speed audit, 26 Oct 2026): whether the stored save is still the session's latest.
+ * Holds no record content. Set after each successful write and removed when a write fails (a removal
+ * needs no storage room, so it still works when the quota is full). A restore says "Later changes may
+ * not have been saved" only when it is missing, so an ordinary reload no longer warns of a loss that
+ * did not happen. A save from before this marker existed reads as not current: the cautious side.
+ */
+const DEMO_SAVE_CURRENT_KEY = "ward-flow:demo-save-current";
+
+function markDemoSaveCurrent(current: boolean) {
+  try {
+    if (current) window.sessionStorage.setItem(DEMO_SAVE_CURRENT_KEY, "1");
+    else window.sessionStorage.removeItem(DEMO_SAVE_CURRENT_KEY);
+  } catch {
+    // A marker that cannot be written leaves the cautious notice in place.
+  }
+}
+
+/** False when a later write failed, or when this cannot be told: the restore notice then shows. */
+export function demoSaveIsCurrent(): boolean {
+  try {
+    return window.sessionStorage.getItem(DEMO_SAVE_CURRENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 
 /** Loads the restore module once; afterwards a mount reads its save in the same render as before. */
@@ -186,11 +213,13 @@ export function tryWriteDemoState(
     };
     const serialized = JSON.stringify(payload);
     window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, serialized);
+    markDemoSaveCurrent(true);
     if (senderId) {
       broadcastDispatchEvent("SYNC_SAVED_STATE", senderId, serialized);
     }
     return true;
   } catch {
+    markDemoSaveCurrent(false);
     return false;
   }
 }
@@ -199,6 +228,7 @@ export function clearWardFlowDemoState(): boolean {
   if (typeof window === "undefined") return false;
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    markDemoSaveCurrent(false);
     return true;
   } catch {
     return false;
