@@ -168,6 +168,18 @@ export function forgetReferrerContact(): void {
   referralDraftMemory.lastReferrer = null;
 }
 
+/**
+ * H-0364 (code quality audit): the draft as text for the dirty check and the autosave compare,
+ * with each chart's file content reduced to its length and last characters. A chart can be up to
+ * 8 MB of base64, and the whole draft was stringified on every keystroke. Autosave still keeps the
+ * full draft; only the comparison text is smaller. A different file still reads as a change.
+ */
+export function draftFingerprint(draft: unknown): string {
+  return JSON.stringify(draft, (key, value: unknown) =>
+    key === "base64" && typeof value === "string" ? `${value.length}:${value.slice(-32)}` : value,
+  );
+}
+
 /** How long after the last keystroke the draft is kept. */
 export const REFERRAL_DRAFT_AUTOSAVE_MS = 500;
 
