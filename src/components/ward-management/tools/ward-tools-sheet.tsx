@@ -41,6 +41,7 @@ import { NetworkFigures } from "./ward-network-figures";
 import styles from "./ward-tools-sheet.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 const WardCatchmentResolver = dynamic(
   withLoadRetry(
@@ -244,7 +245,7 @@ export function WardToolsSheet({
     const frame = window.requestAnimationFrame(() => {
       setOpen((current) => new Set(current).add(openRequest.tool));
       scroll = window.requestAnimationFrame(() => {
-        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: "smooth" });
+        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
         onRequestHandled?.();
       });
     });
