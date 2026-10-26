@@ -51,7 +51,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     id: "forecast-alerts",
     label: "Forecast alerts",
     tab: "rules",
-    keywords: "forecast tomorrow short bed type ed access risk worse since looked",
+    keywords: "forecast tomorrow short bed type ed access target risk worse since looked",
   },
   { id: "recent-changes", label: "Recent changes", tab: "rules", keywords: "audit history saves" },
   {

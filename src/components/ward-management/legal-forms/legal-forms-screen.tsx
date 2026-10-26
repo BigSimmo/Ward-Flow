@@ -67,6 +67,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { formProgression } from "./legal-form-progression";
+import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
 import { FocusPanel, type FocusTab } from "./legal-forms-panel";
 import {
   ExtendSheet,
@@ -212,6 +213,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
   const openMovements = movements.filter(isOpen);
+  // WT-03 (Josh, 26 Oct 2026): a person admitted on a form stays here, and the ward records the next one.
+  const admitted = admittedOnAForm(movements, admissions);
+  const recordable =
+    routeRole === "ed" ? openMovements : routeRole === "ward" ? admitted : [...openMovements, ...admitted];
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
   // "Time not written" is never folded (audit A3-6, 13 Oct 2026) and keeps the longest wait in ED
   // first (`legalFormGroupRows`). Owner, 20 Oct 2026: nothing here works out an Act period, so no
@@ -311,7 +316,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       ? "Only the place that sent this journey marks its form received."
       : undefined);
   // Record a form: the coordinator always may; another route sees it greyed with the reason.
-  const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
+  const writtenGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
+  // WT-03: a ward records only for a person admitted to its bed, never on an open journey.
+  const recordGate = routeRole === "ward" ? { allowed: false, reason: WARD_RECORDS_ADMITTED } : writtenGate;
+  const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
   const markReceived = (movement: Movement) => {
     if (receivedUnavailable(movement) !== undefined) return;
@@ -366,6 +374,14 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     },
   });
 
+  const admittedList = (
+    <LegalFormsAdmitted
+      {...{ rows: admitted, now, nameOf, umrnOf, wardNameOf, onRecord: openRecord }}
+      recordUnavailable={
+        writtenGate.reason ?? (routeRole === "ed" ? "The admitting ward records the next form." : undefined)
+      }
+    />
+  );
   const historyList =
     isPhone && closedWithForms.length > 0 ? (
       // v10 phone: one row per closed move, the code chip first and the closing time at the end.
@@ -743,7 +759,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     variant="onHero"
                     icon={Plus}
                     className={styles.phoneHeroAction}
-                    disabledReason={recordGate.allowed ? undefined : recordGate.reason}
+                    disabledReason={sheetReason}
                     reasonDisplay="tooltip"
                     onClick={() => openRecord()}
                   >
@@ -831,6 +847,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   onSelect={select}
                 />
               ) : null}
+              {view === "clocks" ? admittedList : null}
               {view === "history" ? historyList : null}
             </Card>
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
@@ -887,7 +904,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <Button
                       variant="light"
                       icon={Plus}
-                      disabledReason={recordGate.allowed ? undefined : recordGate.reason}
+                      disabledReason={sheetReason}
                       reasonDisplay="tooltip"
                       onClick={() => openRecord()}
                     >
@@ -1061,6 +1078,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   />
                 ) : null}
 
+                {view === "clocks" ? admittedList : null}
                 {view === "history" ? historyList : null}
               </Card>
 
@@ -1100,14 +1118,14 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           onClose={() => setRecordOpen(false)}
           draft={recordDraft}
           onDraft={setRecordDraft}
-          openMovements={openMovements}
+          openMovements={recordable}
           labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
           now={now}
-          recordUnavailable={recordGate.reason}
+          recordUnavailable={sheetReason}
           targetMovement={recordOnOpen ? initialMovementId : undefined}
           onSaveForm={({ movementId, formCode, writtenAt }) => {
-            if (!recordGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
-            const movement = openMovements.find((candidate) => candidate.id === movementId);
+            if (!writtenGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
+            const movement = recordable.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
             const completion = raise("RECORD_LEGAL_FORM_WRITTEN", { movementId, formCode, writtenAt });
             const accepted = (outcome: Awaited<typeof completion>) => {

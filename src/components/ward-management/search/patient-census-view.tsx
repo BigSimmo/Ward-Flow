@@ -1192,6 +1192,9 @@ export function PhoneCensus(props: PhoneCensusProps) {
                           aria-expanded={props.expandedKey === row.key}
                           aria-haspopup="dialog"
                           data-testid={rowTestId(row)}
+                          /* Return to your place: Back focuses the row that was opened. The table
+                             row above carries the same `data-id` at wider widths. */
+                          data-id={row.key}
                           onClick={() => props.onExpand(row)}
                         >
                           <span className={styles.phoneTier}>

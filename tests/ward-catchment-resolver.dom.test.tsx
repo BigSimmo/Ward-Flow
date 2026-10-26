@@ -407,19 +407,21 @@ describe("WardCatchmentResolver React Component UI", () => {
     render(React.createElement(WardCatchmentResolver, { initialQuery: "6064" }));
 
     expect(screen.getByText(/4 suburbs in postcode 6064/)).toBeDefined();
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs.length).toBeGreaterThanOrEqual(4);
+    const group = screen.getByRole("group", { name: "Suburbs in postcode 6064" });
+    expect(group.querySelectorAll("button[aria-pressed]").length).toBeGreaterThanOrEqual(4);
 
     // Initial card is Alexander Heights
     expect(screen.getByRole("heading", { name: "Alexander Heights" })).toBeDefined();
 
     // Click Girrawheen tab
-    const girrawheenTab = screen.getByRole("tab", { name: "Girrawheen" });
+    const girrawheenTab = screen.getByRole("button", { name: "Girrawheen" });
     fireEvent.click(girrawheenTab);
+    expect(girrawheenTab).toHaveAttribute("aria-pressed", "true");
 
     // Now active card is Girrawheen
     expect(screen.getByRole("heading", { name: "Girrawheen" })).toBeDefined();
     expect(screen.getByTestId("community-clinic-value").textContent).toBe("Mirrabooka");
+    expect(screen.getByTestId("catchment-result-status").textContent).toMatch(/^Result: Girrawheen, /);
   });
 
   it("displays contested caveats when searching contested suburb", () => {

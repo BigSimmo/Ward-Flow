@@ -104,9 +104,34 @@ import {
 } from "./patient-search-model";
 import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
+
+const PATIENTS_ROUTE = "/ward-flow/search";
+/**
+ * What Back brings back (`use-return-to-place.ts`): the census's tab, filters, order and opened
+ * groups. The typed search text and the date of birth are never kept.
+ */
+type PatientsPlace = {
+  stage: MovementStage | "";
+  edId: string;
+  presenceFilter: PresenceFilter;
+  activeKpiFacet: KpiFacet;
+  serviceFilter: string;
+  settingFilter: string;
+  legalFilter: string;
+  waitFilter: string;
+  tierFilter: string;
+  highlight: CensusHighlight | null;
+  censusSort: CensusSort;
+  tab: "now" | "history";
+  openGroups: Record<CensusGroup, boolean>;
+  showAllWard: boolean;
+};
+/** The census row: a table row on desktop and tablet, the row's own button on a phone. */
+const censusRow = (id: string) => rowWithAttribute("data-id", id);
 
 const stageIsSearchable = (stage: MovementStage) => isOpen({ stage, closure: undefined } as Movement);
 const SELECTABLE_STAGES = MOVEMENT_STAGES.filter(stageIsSearchable);
@@ -181,15 +206,17 @@ export function PatientSearchPage() {
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
   const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
-  const [stage, setStage] = useState<MovementStage | "">("");
-  const [edId, setEdId] = useState("");
-  const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>("all");
-  const [activeKpiFacet, setActiveKpiFacet] = useState<KpiFacet>("all");
-  const [serviceFilter, setServiceFilter] = useState<string>("all");
-  const [settingFilter, setSettingFilter] = useState<string>("all");
-  const [legalFilter, setLegalFilter] = useState<string>("all");
-  const [waitFilter, setWaitFilter] = useState<string>("all");
-  const [tierFilter, setTierFilter] = useState<string>("all");
+  // Return to your place (usability item 3, 24 Oct 2026): null unless Back brought us here.
+  const returned = useReturnedView<PatientsPlace>(PATIENTS_ROUTE);
+  const [stage, setStage] = useState<MovementStage | "">(returned?.stage ?? "");
+  const [edId, setEdId] = useState(returned?.edId ?? "");
+  const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>(returned?.presenceFilter ?? "all");
+  const [activeKpiFacet, setActiveKpiFacet] = useState<KpiFacet>(returned?.activeKpiFacet ?? "all");
+  const [serviceFilter, setServiceFilter] = useState<string>(returned?.serviceFilter ?? "all");
+  const [settingFilter, setSettingFilter] = useState<string>(returned?.settingFilter ?? "all");
+  const [legalFilter, setLegalFilter] = useState<string>(returned?.legalFilter ?? "all");
+  const [waitFilter, setWaitFilter] = useState<string>(returned?.waitFilter ?? "all");
+  const [tierFilter, setTierFilter] = useState<string>(returned?.tierFilter ?? "all");
   // The legacy list's order. The census sorts itself (`censusSort`); this keeps the inert record list stable.
   const sortBy = "wait-desc" as "wait-desc" | "tier-asc" | "form-asc" | "name-asc" | "urm-asc" | "opened-desc";
   const viewMode = "cards" as "cards" | "dense";
@@ -204,19 +231,41 @@ export function PatientSearchPage() {
   const [dobOn, setDobOn] = useState(false);
   const [dob, setDob] = useState("");
   const [soleDismissedFor, setSoleDismissedFor] = useState<string | null>(null);
-  const [highlight, setHighlight] = useState<CensusHighlight | null>(null);
-  const [censusSort, setCensusSort] = useState<CensusSort>("wait");
-  const [tab, setTab] = useState<"now" | "history">("now");
-  const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>({
-    wait: true,
-    found: true,
-    move: true,
-    ward: false,
-    off: false,
-  });
-  const [showAllWard, setShowAllWard] = useState(false);
+  const [highlight, setHighlight] = useState<CensusHighlight | null>(returned?.highlight ?? null);
+  const [censusSort, setCensusSort] = useState<CensusSort>(returned?.censusSort ?? "wait");
+  const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
+  const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>(
+    returned?.openGroups ?? {
+      wait: true,
+      found: true,
+      move: true,
+      ward: false,
+      off: false,
+    },
+  );
+  const [showAllWard, setShowAllWard] = useState(returned?.showAllWard ?? false);
   const [flashKey, setFlashKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  useReturnToPlace<PatientsPlace>(
+    PATIENTS_ROUTE,
+    {
+      stage,
+      edId,
+      presenceFilter,
+      activeKpiFacet,
+      serviceFilter,
+      settingFilter,
+      legalFilter,
+      waitFilter,
+      tierFilter,
+      highlight,
+      censusSort,
+      tab,
+      openGroups,
+      showAllWard,
+    },
+    censusRow,
+  );
 
   const showToast = (msg: string) => setCopyNote(msg);
 
@@ -706,6 +755,7 @@ export function PatientSearchPage() {
         : selectedRow.originalSubject;
 
   const selectRow = (row: CensusRow, trigger?: HTMLElement) => {
+    rememberReturnRow(PATIENTS_ROUTE, row.key);
     setSelectedId(row.key);
     setExpandedKey((current) => (current === row.key ? null : row.key));
     if (trigger && !isPhone && previewCardHidden()) {

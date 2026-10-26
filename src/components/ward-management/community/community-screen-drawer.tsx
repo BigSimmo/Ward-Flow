@@ -386,10 +386,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     </span>
                   </p>
                   <p>
-                    <b>Recommended action:</b>{" "}
+                    <b>Next recorded step:</b>{" "}
                     <span id="refDrawerAction">
-                      No clinical recommendation is recorded by this dossier. Review the referring team&apos;s
-                      information.
+                      None recorded in this dossier. Review the referring team&apos;s information.
                     </span>
                   </p>
                 </div>

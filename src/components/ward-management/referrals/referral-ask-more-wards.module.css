@@ -129,3 +129,11 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* A-5 (fresh audit, 26 Oct 2026): this class rule outranks the global 16px floor for phone form
+   controls (globals.css), so iOS Safari zoomed in on focus. The same floor, at the same widths. */
+@media (max-width: 40rem), (pointer: coarse) and (max-height: 500px) {
+  .search input {
+    font-size: var(--wf-fs-16);
+  }
+}

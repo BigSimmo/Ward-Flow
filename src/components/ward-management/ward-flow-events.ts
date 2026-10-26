@@ -198,6 +198,8 @@ export type WardFlowEvent =
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */
       acceptedUnitId?: string;
+      /** WT-08: also pull the accepted ward's bed in the same tap. A refused pull starts nothing. */
+      pullBed?: boolean;
       actingUnitId?: string;
       /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.

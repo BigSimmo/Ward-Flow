@@ -1327,7 +1327,8 @@ export function WardBoard({
               onClose={closeDetail}
               title={phoneSheetTitle}
               closeLabel="Close bed record"
-              height="tall"
+              // WARD-16: an empty, closed or pulled bed has two lines, so its sheet fits them.
+              height={selectedOccupant ? "tall" : "content"}
               data-testid="ward-board-detail-sheet"
             >
               <div className={styles.detailSheetBody}>{detailPanel}</div>

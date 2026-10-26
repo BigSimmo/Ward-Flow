@@ -544,6 +544,7 @@ export const BREAK_GLASS_REASONS = [
 export type BreakGlassReasonId = (typeof BREAK_GLASS_REASONS)[number]["id"];
 
 /** What the role is called on screen. */
+// #790: the coordinator is named as the rail and Settings name it, so one desk has one name.
 export const ACCESS_ROLE_LABELS: Record<WardAccessRole, string> = {
   coordinator: "Bed coordinator",
   bed_manager: "Site bed manager",

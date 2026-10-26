@@ -1549,7 +1549,7 @@
   font-size: var(--t-1, 13px);
   font-weight: 600;
   box-shadow: 0 10px 30px rgb(var(--ward-shadow-rgb) / 0.22);
-  z-index: 120;
+  z-index: var(--z-toast);
   opacity: 0;
   transition:
     background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -2616,7 +2616,7 @@ button.searchBox:hover {
   border-radius: var(--r2);
   font-size: var(--t-1);
   font-weight: 600;
-  z-index: 100;
+  z-index: var(--z-toast);
   animation: toastFadeIn 0.2s ease;
 }
 
@@ -2637,7 +2637,7 @@ button.searchBox:hover {
   inset: 0;
   background: var(--scrim);
   backdrop-filter: blur(2px);
-  z-index: 100;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

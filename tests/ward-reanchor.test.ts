@@ -31,6 +31,8 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-model-leave.ts",
   "src/components/ward-management/ward-model-referral-parts.ts",
   "src/components/ward-management/ward-model-notices.ts",
+  // F-17 (26 Oct 2026): the bed release model moved out the same way; a release holds instants.
+  "src/components/ward-management/ward-model-bed-release.ts",
   "src/components/ward-management/ward-admissions.ts",
   "src/components/ward-management/ward-care-journey.ts",
   "src/components/ward-management/ward-audit.ts",

@@ -31,6 +31,7 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  Segmented,
   Select,
   Sheet,
   StatusGlyph,
@@ -63,6 +64,9 @@ import {
   type WorkbenchProps,
 } from "./governance-shared";
 import { GAP_KEYS, GAP_LABEL, GapPill, cellTone, siteGaps } from "./governance-site-gaps";
+import { isPattern, openingEvents, viewsOfRecord } from "./governance-access-review";
+import { RecordViewsTable, WhoOpenedList } from "./governance-record-views";
+import { useGovernanceAccessReview } from "./use-governance-access-review";
 
 export { EventFacts } from "./governance-event-facts";
 
@@ -208,7 +212,7 @@ function GovernanceSession({
     const stay = id ? flow?.admissions.find((admission) => admission.id === id) : undefined;
     return resolvePatient(stay ?? subject);
   };
-  const [category, setCategory] = useState<"all" | AuditCategory>("all");
+  const [category, setCategory] = useState<"all" | AuditCategory | "record-views">("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
   const [reviewFilter, setReviewFilter] = useState<"all" | "unreviewed" | AuditReview["decision"]>("all");
   const [selection, setSelection] = useState<AuditEvent | null>(null);
@@ -254,15 +258,22 @@ function GovernanceSession({
   const allowed = eventRead?.status === "allowed" && reviewRead?.status === "allowed";
   const events = eventRead?.status === "allowed" ? eventRead.value : [];
   const reviews = reviewRead?.status === "allowed" ? reviewRead.value : [];
+  // D-80 item 14: each break glass opening joins the list, from the server or the demo, in time order.
+  const accessReview = useGovernanceAccessReview(events, now);
+  const rows = allowed
+    ? [...events, ...openingEvents(accessReview.openings, api?.worldGeneration ?? 0)].sort(
+        (a, b) => (a.at ?? Number.MAX_SAFE_INTEGER) - (b.at ?? Number.MAX_SAFE_INTEGER),
+      )
+    : events;
   const historyFor = (event: AuditEvent) =>
     reviews.filter((review) => review.eventId === event.id && review.generation === event.generation);
   const reviewState = (event: AuditEvent) => historyFor(event).at(-1)?.decision ?? "unreviewed";
-  const reviewable = events.filter((event) => event.category !== "review");
+  const reviewable = rows.filter((event) => event.category !== "review");
   const toReview = reviewable.filter((event) => reviewState(event) !== "reviewed").reverse();
   const reviewedCount = reviewable.filter((event) => reviewState(event) === "reviewed").length;
   const followUp = reviewable.filter((event) => reviewState(event) === "follow-up-required").length;
   const unreviewed = reviewable.filter((event) => reviewState(event) === "unreviewed").length;
-  const visible = [...events]
+  const visible = [...rows]
     .filter(
       (event) =>
         (category === "all" || event.category === category) &&
@@ -271,9 +282,7 @@ function GovernanceSession({
     )
     .reverse();
   const selected =
-    allowed &&
-    selection &&
-    events.some((event) => event.id === selection.id && event.generation === selection.generation)
+    allowed && selection && rows.some((event) => event.id === selection.id && event.generation === selection.generation)
       ? selection
       : null;
   const history = selected ? historyFor(selected) : [];
@@ -367,6 +376,7 @@ function GovernanceSession({
   const overrideCount = toReview.filter((event) => event.category === "override").length;
   const refusedCount = toReview.filter((event) => event.outcome === "denied" || event.outcome === "stale").length;
   const accessCount = toReview.filter((event) => event.category === "record-access").length;
+  const patternCount = toReview.filter(isPattern).length;
 
   const chipMatches = (event: AuditEvent): boolean =>
     chip === null
@@ -377,12 +387,31 @@ function GovernanceSession({
           ? event.outcome === "denied" || event.outcome === "stale"
           : chip === "access"
             ? event.category === "record-access"
-            : reviewState(event) === "follow-up-required";
+            : chip === "pattern"
+              ? isPattern(event)
+              : reviewState(event) === "follow-up-required";
   const chipCount = toReview.filter((event) => chip !== null && chipMatches(event)).length;
   const toggleChip = (next: ReviewChip) => {
     setChip((current) => (current === next ? null : next));
     if (tab !== "review") setTab("review");
   };
+
+  /** The record a row is about, by its person, and its journey when it names one. */
+  function recordOf(event: AuditEvent): string[] | null {
+    if (event.action === "BREAK_GLASS") return event.details.record === null ? null : [event.details.record];
+    const subject = event.subject;
+    const info =
+      subject.kind === "movement"
+        ? patientOf({ movementId: subject.movementId })
+        : subject.kind === "referral"
+          ? patientOf({ referralId: subject.referralId })
+          : subject.kind === "admission"
+            ? patientOf({ id: subject.admissionId })
+            : null;
+    const person = info?.patient?.id;
+    if (!person) return null;
+    return subject.kind === "movement" ? [person, subject.movementId] : [person];
+  }
 
   const choose = (event: AuditEvent | null) => {
     reviewCommandRef.current += 1;
@@ -545,6 +574,14 @@ function GovernanceSession({
         />
         <HeroStat
           inline
+          value={patternCount}
+          label="Pattern"
+          tone="warning"
+          pressed={chip === "pattern"}
+          onToggle={() => toggleChip("pattern")}
+        />
+        <HeroStat
+          inline
           value={followUp}
           label="Follow-up"
           tone="warning"
@@ -577,8 +614,13 @@ function GovernanceSession({
     </div>
   );
 
+  // D-80 item 14: who opened the chosen row's record, when the row has one.
+  const record = selected ? recordOf(selected) : null;
   const detail = (
     <EventDetail
+      recordViews={
+        record ? <WhoOpenedList views={viewsOfRecord(accessReview.views, record, now)} now={now} /> : undefined
+      }
       rest={restSummary}
       selected={selected}
       units={units}
@@ -644,6 +686,9 @@ function GovernanceSession({
       phoneSheet={phoneSheet}
       phoneSubjectLabel={phoneSubjectLabel}
       recordReview={recordReview}
+      recordViews={
+        record ? <WhoOpenedList views={viewsOfRecord(accessReview.views, record, now)} now={now} /> : undefined
+      }
       refusedCount={refusedCount}
       reviewGate={reviewGate}
       reviewState={reviewState}
@@ -743,10 +788,30 @@ function GovernanceSession({
                 <span className={thirdEdition.quietText}>
                   {chip
                     ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
-                    : "Overrides, refused actions and record access. Newest first."}
+                    : "Overrides, refused actions and record access, now with break glass. Newest first."}
                 </span>
               }
             />
+            <div className={cx(thirdEdition.filterRow, thirdEdition.reviewFilter)}>
+              <Segmented<"all" | "override" | "refused" | "access">
+                label="Show in the review list"
+                value={chip === "override" || chip === "refused" || chip === "access" ? chip : "all"}
+                onChange={(next) => setChip(next === "all" ? null : next)}
+                items={[
+                  { id: "all", label: "All" },
+                  { id: "override", label: "Overrides" },
+                  { id: "refused", label: "Refused or stale" },
+                  { id: "access", label: "Record access" },
+                ]}
+              />
+              <span className={thirdEdition.quietText} data-testid="ward-governance-break-glass-source">
+                {accessReview.problem
+                  ? "Break glass could not be read from the server"
+                  : accessReview.from === "server"
+                    ? "Break glass is read from the server"
+                    : "Break glass openings here are synthetic"}
+              </span>
+            </div>
             <EventTable
               label="Waiting for review"
               isDim={(event) => !chipMatches(event)}
@@ -959,6 +1024,7 @@ function GovernanceSession({
                     {label}
                   </option>
                 ))}
+                <option value="record-views">Record views</option>
               </Select>
               <Select
                 id="governance-filter-outcome"
@@ -993,42 +1059,46 @@ function GovernanceSession({
                 <option value="follow-up-required">Follow-up required</option>
               </Select>
             </div>
-            <EventTable
-              label="Captured events"
-              rows={visible}
-              selected={selected}
-              now={now}
-              patientOf={patientOf}
-              reviewState={reviewState}
-              onChoose={choose}
-              onKey={(event) => rowKey(event, visible)}
-              empty={
-                <div className={thirdEdition.emptyBlock}>
-                  <ClipboardList aria-hidden="true" size={16} />
-                  <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
-                  <p>
-                    {events.length
-                      ? "Change the filters to see other captured events."
-                      : "Recorded actions and discharge-record opens will appear here."}
-                  </p>
-                  {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "sec", size: "sm" })}
-                      onClick={() => {
-                        setCategory("all");
-                        setOutcome("all");
-                        setReviewFilter("all");
-                        choose(null);
-                      }}
-                    >
-                      Clear filters
-                    </button>
-                  ) : null}
-                </div>
-              }
-              allowed={allowed}
-            />
+            {category === "record-views" ? (
+              <RecordViewsTable views={accessReview.views} now={now} patientOf={patientOf} from={accessReview.from} />
+            ) : (
+              <EventTable
+                label="Captured events"
+                rows={visible}
+                selected={selected}
+                now={now}
+                patientOf={patientOf}
+                reviewState={reviewState}
+                onChoose={choose}
+                onKey={(event) => rowKey(event, visible)}
+                empty={
+                  <div className={thirdEdition.emptyBlock}>
+                    <ClipboardList aria-hidden="true" size={16} />
+                    <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
+                    <p>
+                      {events.length
+                        ? "Change the filters to see other captured events."
+                        : "Recorded actions and discharge-record opens will appear here."}
+                    </p>
+                    {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "sec", size: "sm" })}
+                        onClick={() => {
+                          setCategory("all");
+                          setOutcome("all");
+                          setReviewFilter("all");
+                          choose(null);
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    ) : null}
+                  </div>
+                }
+                allowed={allowed}
+              />
+            )}
             <CardFoot
               meta={
                 allowed

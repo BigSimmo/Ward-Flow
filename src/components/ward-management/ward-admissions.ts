@@ -801,6 +801,22 @@ export function liveMovementForAdmission(admission: Admission, movements: readon
 }
 
 /**
+ * The stay an arrived journey brought its person into, while they are still in the bed. Joined
+ * only by explicit ids (D-14), and only when exactly one stay answers. Walk-through WT-03 (26 Oct
+ * 2026): the ward records the next legal form for this person against the journey they came on.
+ */
+export function admittedStayForArrival(movement: Movement, admissions: readonly Admission[]): Admission | undefined {
+  if (movement.closure?.outcome !== "arrived") return undefined;
+  const matches = admissions.filter(
+    (admission) =>
+      admission.state === "occupied" &&
+      admission.unitId === movement.acceptedUnitId &&
+      (movement.admissionId === admission.id || admission.movementId === movement.id),
+  );
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+/**
  * HOW MANY MORE STAFF THIS WARD CAN STILL COMMIT TO CONSTANT OBSERVATION.
  *
  * The ward's authored figure (`Unit.speciallingCapacity`) less the staff it is already committing:

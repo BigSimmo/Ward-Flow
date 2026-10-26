@@ -449,7 +449,10 @@ export function ReturnPlan({
                 name={`${idPrefix}-legal`}
                 testId="ward-out-of-area-repat-legal"
                 value={draft.transportLegalStatus}
-                options={TRANSPORT_LEGAL_STATUSES.map((status) => ({ value: status, label: LEGAL_LABELS[status] }))}
+                // Audit S-4: a patient on an order returns as involuntary; the record refuses Voluntary.
+                options={TRANSPORT_LEGAL_STATUSES.filter((status) => !patient.onOrder || status === "involuntary").map(
+                  (status) => ({ value: status, label: LEGAL_LABELS[status] }),
+                )}
                 onChange={(transportLegalStatus) => onDraft({ transportLegalStatus })}
               />
               {patient.onOrder ? (
