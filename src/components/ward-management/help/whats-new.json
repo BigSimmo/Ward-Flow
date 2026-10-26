@@ -83,5 +83,10 @@
     "id": "2026-10-26-ed-accept-double-tap",
     "date": "2026-10-26",
     "line": "A quick double tap on Accept presentation no longer confirms the acceptance as well. Confirm acceptance needs its own tap."
+  },
+  {
+    "id": "2026-10-26-shift-summary-dates-label",
+    "date": "2026-10-26",
+    "line": "The ward's shift summary now says \"Expected dates last changed this shift\", because a date changed again later counts in the later shift."
   }
 ]
