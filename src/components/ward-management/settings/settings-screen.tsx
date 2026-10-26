@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   areCharacterShortcutsEnabled,
   useCharacterShortcutsPreference,
@@ -103,6 +104,11 @@ import {
 } from "@/components/wf";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+// Help usage counts carry the how-to list, so they load only when the Ask help preview is on.
+const WardHelpUsageCard = dynamic(() =>
+  import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+);
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
@@ -220,6 +226,7 @@ export function SettingsScreen() {
   // Access admin desk opens on it, because giving roles is all that desk does.
   const { desk } = useWardAccessSnapshot();
   const accessOn = useWardFeatureFlag("role-access") && showsAccessTab(desk);
+  const helpAskOn = useWardFeatureFlag("help-ask");
   const tabs = accessOn ? SETTINGS_TABS : SETTINGS_TABS.filter((item) => item.id !== "access");
   const tab: SettingsTab =
     chosenTab === null
@@ -301,6 +308,15 @@ export function SettingsScreen() {
     const fromHash = readTabFromHash();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the hash is only readable after mount
     if (fromHash) setTab(fromHash);
+  }, []);
+  // A hash change while Settings is open (Help's Show me naming a tab) opens that tab too.
+  useEffect(() => {
+    const openFromHash = () => {
+      const fromHash = readTabFromHash();
+      if (fromHash) setTab(fromHash);
+    };
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
   }, []);
   const chooseTab = useCallback((next: SettingsTab) => {
     setTab(next);
@@ -842,7 +858,7 @@ export function SettingsScreen() {
               unavailableReason={configurationBlockReason}
               setting="pull-hold"
               title="Pull time limit"
-              sub="Before a pulled bed returns"
+              sub="How long a pulled bed is kept"
               value={rules.hold}
               saved={saved.hold}
               savedDisplay={shortDuration(saved.hold)}
@@ -1090,6 +1106,7 @@ export function SettingsScreen() {
           setIsResetModalOpen(true);
         }}
       />
+      {helpAskOn ? <WardHelpUsageCard /> : null}
     </>
   );
 

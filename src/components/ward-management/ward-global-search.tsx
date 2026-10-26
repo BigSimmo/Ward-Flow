@@ -57,6 +57,8 @@ import {
   type SearchResultItem,
 } from "./ward-global-search-groups";
 import { SearchResultIcon } from "./ward-global-search-icon";
+import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
+import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 
 export {
   needsYouMeta,
@@ -359,6 +361,7 @@ export function WardGlobalSearch({
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const trimmed = deferredQuery.trim();
+  const askHelpOn = useWardFeatureFlag("help-ask");
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const isStart = trimmed.length === 0;
   const showQuickCommands = isStart || /^(switch|clock|reset|handover|shortcuts|\?)/i.test(trimmed);
@@ -895,6 +898,19 @@ export function WardGlobalSearch({
                     ? "Nobody on the Patients page matches this right now."
                     : `No matches for “${trimmed}”. This does not say whether the person or movement exists, only that this search did not find one.`}
                 </p>
+                {askHelpOn && !answer && looksLikeHelpQuestion(trimmed) ? (
+                  <button
+                    type="button"
+                    className={styles.askHelp}
+                    onClick={() => {
+                      close();
+                      askWardHelp(trimmed);
+                    }}
+                    data-testid="ward-global-search-ask-help"
+                  >
+                    Ask Help: {trimmed}
+                  </button>
+                ) : null}
               </div>
             ) : (
               /* Design audit DA-05: a listbox may hold only options, so each group is its own listbox,
