@@ -156,6 +156,12 @@
   font-weight: 700;
 }
 
+/* TV-06: a screen that is not updating warns in red. */
+.stale[data-level="danger"] {
+  border-color: var(--wf-danger-ink);
+  color: var(--wf-danger-ink);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -627,6 +633,15 @@
 .list li[data-long] .wait {
   color: var(--wf-danger-ink);
   font-weight: 700;
+}
+
+/* TV-10: underlined as well as red, so a long wait never rests on colour alone. The time itself says
+ * so too: a wait past the 24 hour mark reads in days ("1d 1h"). */
+.table tr[data-long] td[data-wait],
+.list li[data-long] .wait {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
 }
 
 .list {
