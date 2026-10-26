@@ -128,6 +128,10 @@ describe("tour player", () => {
     render(<WardTour onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId("ward-tour-spot")).toBeTruthy());
     expect(card().dataset.place).toBe("beside");
+    // H-0376 / H-0890: placed by transform only, so settling beside the control is no layout shift.
+    expect(card().style.transform).toMatch(/^translate\(/);
+    expect(card().style.top).toBe("");
+    expect(card().style.left).toBe("");
     persona.remove();
     act(() => fireEvent.click(screen.getByTestId("ward-tour-next")));
     // The shift block is not drawn in this test, so the card waits, then shows in the middle.
