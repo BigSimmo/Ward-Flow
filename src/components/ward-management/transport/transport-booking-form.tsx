@@ -50,7 +50,7 @@ import styles from "./transport-booking-form.module.css";
  * Whether the legal status answer starts from Legal now. One switch for every screen, so Josh's
  * answer to the A34 question changes one line. `false` leaves both answers unticked.
  */
-export const LEGAL_STATUS_FROM_LEGAL_NOW = true;
+const LEGAL_STATUS_FROM_LEGAL_NOW = true;
 
 /** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
 export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
@@ -129,6 +129,29 @@ const ANSWER_PARTS: Record<TransportAnswer, [name: string, part: TransportBookin
   time: ["estimated time", "time"],
 };
 
+/**
+ * ⚠️ **THE ESCORT QUESTION OPENS BLANK, AND NOTHING ANYWHERE SUPPLIES AN ANSWER FOR IT** (owner,
+ * relayed 2026-08-30). Not from `legalStatus`, not from the last booking, not as a "usually".
+ *
+ * **His reason is that a pre-filled clinical judgement is answered by clicking past it**, and the
+ * record then asserts that a clinician decided when nobody did — worse than the honest derivation
+ * it replaces, because it launders an automatic value through a human's name.
+ *
+ * ⚠️ **THE DEFECT THIS NAMED IS NOW FIXED, AND THIS CLAUSE SAID OTHERWISE UNTIL 2026-09-01.** It
+ * read "`HANDOVER_READY` still computes `movement.legalStatus !== "Voluntary"` today". It does not:
+ * that fabrication was deleted when `BOOK_TRANSPORT` landed on 2026-08-31, and the reducer's
+ * `HANDOVER_READY` case now only refuses a movement with no booked transport and sets the stage.
+ * The reason for keeping this control blank is unchanged — re-creating the derivation as a default
+ * here would restore the defect rather than move it — but a comment claiming a live defect that has
+ * been fixed sends a reader hunting for code that is not there.
+ *
+ * **If this control ever feels unhelpful for being blank, the help is the question being legible,
+ * never the answer being supplied.**
+ *
+ * The reducer refuses a missing answer independently (`case "BOOK_TRANSPORT"`), so this is not the
+ * only thing holding the rule — and it must never contradict it either: every state this function
+ * calls blocked is a state the reducer would reject.
+ */
 const ESCORT_ANSWERS = [
   { value: true, label: "Escort required" },
   { value: false, label: "No escort required" },
