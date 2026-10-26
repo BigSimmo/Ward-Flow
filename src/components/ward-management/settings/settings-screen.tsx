@@ -128,7 +128,7 @@ import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
 import { RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
-import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
+import { useSettingsDeskProfile } from "./settings-desk-profile";
 import { publishedThresholds } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
@@ -1178,6 +1178,8 @@ export function SettingsScreen() {
       <strong>Rule change not saved.</strong> {configurationFailure}
     </p>
   ) : null;
+  // #788: the band names the desk in use, not the coordinator demo profile, on every role.
+  const deskProfile = useSettingsDeskProfile();
 
   /* Phone (v10): its own design, never a reflow of the desktop. A compact profile hero, Find a
      setting, the four settings people change on a phone, then the five areas as rows that open
@@ -1188,7 +1190,7 @@ export function SettingsScreen() {
       rules: "Timings, form warnings, decision targets",
       alerts: `Browser ${actNowNotifications ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
       display: `Motion ${reducedMotion ? "reduced" : "on"} · contrast ${highContrast ? "high" : "standard"}`,
-      profile: `${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`,
+      profile: `${deskProfile.role} · ${deskProfile.location}`,
       data: "Export, restore, about this prototype",
       access: desk.role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
     };
@@ -1214,18 +1216,18 @@ export function SettingsScreen() {
             title={
               <span className={styles.phoneWho}>
                 <Avatar
-                  name={SETTINGS_DEMO_PROFILE.name}
-                  initials={SETTINGS_DEMO_PROFILE.initials}
+                  name={deskProfile.name}
+                  initials={deskProfile.initials}
                   online
                   decorative
                   className={styles.avatar}
                 />
-                {SETTINGS_DEMO_PROFILE.name}
+                {deskProfile.name}
               </span>
             }
-            eyebrow={SETTINGS_DEMO_PROFILE.location}
+            eyebrow={deskProfile.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={SETTINGS_DEMO_PROFILE.role}
+            sub={deskProfile.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
@@ -1391,17 +1393,17 @@ export function SettingsScreen() {
         <Hero
           className={styles.band}
           testId="ward-settings-profile"
-          eyebrow={`${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`}
+          eyebrow={`${deskProfile.role} · ${deskProfile.location}`}
           title={
             <span className={styles.who}>
               <Avatar
-                name={SETTINGS_DEMO_PROFILE.name}
-                initials={SETTINGS_DEMO_PROFILE.initials}
+                name={deskProfile.name}
+                initials={deskProfile.initials}
                 online
                 decorative
                 className={styles.avatar}
               />
-              {SETTINGS_DEMO_PROFILE.name}
+              {deskProfile.name}
             </span>
           }
           titleMeta={

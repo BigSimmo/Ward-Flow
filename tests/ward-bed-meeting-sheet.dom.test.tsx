@@ -123,7 +123,7 @@ describe("the sheet on Capacity", () => {
     expect(dialog.textContent).toMatch(/Synthetic prototype/u);
     expect(dialog.textContent).toMatch(/your default, not a legal limit/u);
     expect(within(dialog).getByTestId("ward-print-attribution").textContent).toBe(
-      "Printed by Flow coordinator, Statewide, at 10:42. Synthetic data.",
+      "Printed by Bed coordinator, Statewide, at 10:42. Synthetic data.",
     );
   });
 

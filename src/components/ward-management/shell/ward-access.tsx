@@ -68,6 +68,7 @@ import {
   endDueCovers,
   lockWardDesk,
   markDeskSwitch,
+  markSignInLanding,
   sameDesk,
   useEffectiveWardAccess,
   useWardAccessSnapshot,
@@ -605,7 +606,8 @@ export function WardAccessBanner() {
     <div className={styles.banner} role="status" data-testid="ward-access-banner">
       <span>
         {previewOf ? "Previewing as " : "Desk: "}
-        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {accessPlaceLabel(access, units)}. You see only what this role needs.
+        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {accessPlaceLabel(access, units)}. Lists show only the places this
+        desk covers.
       </span>
       {previewOf ? (
         <Button size="sm" variant="sec" onClick={endAccessPreview} data-testid="ward-access-end-preview">
@@ -628,11 +630,12 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
   const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
-  const { switchFrom } = useWardAccessSnapshot();
+  const { switchFrom, signInLanding } = useWardAccessSnapshot();
   // A desk switch ends when its new page arrives, so going Back later finds the page as it is.
   useEffect(() => {
     if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
-  }, [switchFrom, pathname]);
+    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
+  }, [switchFrom, signInLanding, pathname]);
   const address = screenForPath(pathname);
   const logged = recordViewFor(address, unscoped.movements);
   if (!on || accessIsWholeNetwork(access))
@@ -716,7 +719,7 @@ function OwnHomeRedirect({ href }: { href: string }) {
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
-  const { previewOf, switchFrom } = useWardAccessSnapshot();
+  const { previewOf, switchFrom, signInLanding } = useWardAccessSnapshot();
   // A desk switch still on its way from this page (`markDeskSwitch`): say so, not "closed".
   const opening = switchFrom === usePathname();
   // Focus the heading on arrival, or when a switch's wait ends here, never again on a re-render
@@ -730,8 +733,13 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   // DR-06: Ward Flow's own address (the app icon, the brand) sends a desk whose Home is closed to
   // that desk's own home instead of saying the screen is not part of the role.
   const pathname = usePathname() ?? "";
+  // #804, #797: so does a page a sign-in landed on, often left open by the account before.
   const toOwnHome =
-    !opening && patientId === undefined && screenForPath(pathname)?.screen === "home" && !samePath(home, pathname);
+    !opening &&
+    patientId === undefined &&
+    (screenForPath(pathname)?.screen === "home" ||
+      (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
+    !samePath(home, pathname);
   if (toOwnHome) return <OwnHomeRedirect href={home} />;
   if (opening)
     return (
@@ -1014,7 +1022,10 @@ export function WardIdleLock() {
     <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
       <div className={styles.lockCard}>
         <h1 id="ward-idle-lock-title">
-          {locked === "signed-out" ? `Signed out after ${minutes} minutes` : `Locked after ${minutes} minutes`}
+          {/* #808: say what the minutes were, the same words as the sign-in page that follows. */}
+          {locked === "signed-out"
+            ? `Signed out after ${minutes} minutes without use`
+            : `Locked after ${minutes} minutes without use`}
         </h1>
         <p>
           {locked === "signed-out"

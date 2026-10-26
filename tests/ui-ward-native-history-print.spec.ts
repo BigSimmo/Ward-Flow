@@ -359,7 +359,7 @@ test.describe("native history and handover print @mockup", () => {
       const attribution = paper.getByTestId("ward-print-attribution");
       await expect(attribution).toBeVisible();
       // Nothing has been prepared yet (Print was not pressed), so the sheet says it is a preview.
-      await expect(attribution).toContainText("Preview opened by Flow coordinator, Statewide, at");
+      await expect(attribution).toContainText("Preview opened by Bed coordinator, Statewide, at");
       await expect(attribution).toContainText("Synthetic data.");
       expect(await paper.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     }
