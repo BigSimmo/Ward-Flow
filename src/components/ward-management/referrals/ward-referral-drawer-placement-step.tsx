@@ -19,6 +19,7 @@ import { communityTeamOptions } from "./referral-destination-options";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
+import { chartsCountText } from "./referral-document-links";
 import { ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
@@ -358,10 +359,14 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                             ? null
                             : " · Catchment not confirmed"}
                         <span className={styles.wardMetaMore}>
-                          {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                          <span className={styles.mono}>
-                            {unit.siteCode ? `${unit.siteCode} · ${unit.unitId}` : unit.unitId}
-                          </span>
+                          {unit.healthService ? ` · ${unit.healthService}` : ""}
+                          {/* Walk-through WT-27: the site code only, never the internal ward id. */}
+                          {unit.siteCode ? (
+                            <>
+                              {" · "}
+                              <span className={styles.mono}>{unit.siteCode}</span>
+                            </>
+                          ) : null}
                         </span>
                       </span>
                     </span>
@@ -520,7 +525,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <>
                 <div>
                   <dt>Documents</dt>
-                  <dd>{documentation.charts.length} attached</dd>
+                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
                 </div>
                 <div>
                   <dt>Clearance</dt>

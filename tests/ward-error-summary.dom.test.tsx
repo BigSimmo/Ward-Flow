@@ -211,7 +211,7 @@ describe("Referral later steps: error summary", () => {
     expect(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).toContainElement(
       document.activeElement as HTMLElement,
     );
-    fireEvent.click(screen.getByRole("link", { name: "Attach the medication chart" }));
+    fireEvent.click(screen.getByRole("link", { name: "Attach the medication chart or mark it to follow" }));
     expect(document.activeElement).toHaveTextContent("Upload");
   });
 
