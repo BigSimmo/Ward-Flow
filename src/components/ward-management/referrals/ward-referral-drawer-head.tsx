@@ -135,6 +135,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     onViewChange,
     fromEntryPoint,
     noPatientChosen,
+    patientAddedInForm,
     sectionId,
     previewOpen,
     confirmationOpen,
@@ -294,8 +295,10 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
               );
             })}
           </div>
+          {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
           {!sentReferralId &&
           !noPatientChosen &&
+          !patientAddedInForm &&
           Boolean(patientRecord || liveMovement || fromEntryPoint || (initialUnitIds && initialUnitIds.length > 0)) ? (
             <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
               <span className={styles.fastTrackText}>

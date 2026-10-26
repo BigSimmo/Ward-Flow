@@ -56,6 +56,7 @@ import {
 } from "@/components/ward-management/ward-observation";
 import { WardObservationControl, observationWithReview } from "./ward-observation-control";
 import { WardLeavePaperAuthority, useLeaveNeedsPaperAuthority } from "./ward-leave-paper-authority";
+import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 
 interface WardBedDossierDrawerProps {
@@ -317,6 +318,11 @@ export function WardBedDossierDrawer({
   ) : (
     expectedPlan
   );
+  // WT-16: the ward sets or changes the date here, not only the coordinator.
+  const dateEditor =
+    admission?.state === "occupied" ? (
+      <WardDrawerDischargeDate key={admission.id} admissionId={admission.id} unitId={unit.id} />
+    ) : null;
 
   const dateMoves =
     typeof bedItem?.dischargeDateMoves === "number"
@@ -579,7 +585,12 @@ export function WardBedDossierDrawer({
           tone={tone}
           stayDays={stayDays}
           observation={observation}
-          expectedPlan={expectedValue}
+          expectedPlan={
+            <>
+              {expectedValue}
+              {dateEditor}
+            </>
+          }
           timeline={timeline}
           now={now}
           personHref={personHref}
@@ -826,7 +837,10 @@ export function WardBedDossierDrawer({
                 <>
                   <Section title="Plan to leave">
                     <dl className={styles.kv}>
-                      <Row label="Expected">{expectedValue}</Row>
+                      <Row label="Expected">
+                        {expectedValue}
+                        {dateEditor}
+                      </Row>
                       <Row label="Confirmed">{confirmation}</Row>
                       {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
                       <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
@@ -1024,7 +1038,6 @@ export function WardBedDossierDrawer({
                 <Link
                   className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
                   href={fullReferralHref}
-                  onClick={onClose}
                   data-testid="ward-dossier-full-referral-link"
                 >
                   Open full referral form…
@@ -1034,12 +1047,9 @@ export function WardBedDossierDrawer({
             </>
           )}
           <span className={styles.footSpacer} />
+          {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
           {personHref ? (
-            <Link
-              className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
-              href={personHref}
-              onClick={onClose}
-            >
+            <Link className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })} href={personHref}>
               Patient page
               <Icon icon={ChevronRight} size={14} />
             </Link>
@@ -1408,7 +1418,6 @@ function PhoneBedSheet({
               <Link
                 className={buttonClass({ variant: "ghost", className: styles.pill })}
                 href={fullReferralHref}
-                onClick={onClose}
                 data-testid="ward-dossier-full-referral-link"
               >
                 Open full referral form…
@@ -1416,11 +1425,7 @@ function PhoneBedSheet({
             ) : null}
             {roleLockNote}
             {personHref ? (
-              <Link
-                className={buttonClass({ variant: "ghost", className: styles.pill })}
-                href={personHref}
-                onClick={onClose}
-              >
+              <Link className={buttonClass({ variant: "ghost", className: styles.pill })} href={personHref}>
                 Patient page
                 <Icon icon={ChevronRight} size={14} />
               </Link>
