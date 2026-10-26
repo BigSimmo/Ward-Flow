@@ -46,7 +46,7 @@ const AGENT_SIGNALS = [
   /\b(Josh (?:decided|approved|chose|confirmed|wants))\b/i,
 ];
 
-const SAVE_TOOL = /^(?:mcp__supermemory__|mcp__codex_apps__supermemory_)add_memory$/;
+const SAVE_TOOL = /^(?:mcp__supermemory__|mcp__codex_apps__supermemory_)add_memory$/i;
 
 /** Tool calls that mean the turn did real work worth a handover note. */
 const WORK_TOOL = /^(Edit|Write|NotebookEdit)$|github__(create_pull_request|merge_pull_request|push_files)/;
