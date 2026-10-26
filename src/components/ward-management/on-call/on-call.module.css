@@ -1569,6 +1569,11 @@
   margin: 0 calc(-1 * var(--wf-s-4));
   padding: 8px var(--wf-s-4);
   background: var(--wf-canvas);
+  pointer-events: none;
+}
+
+.phoneSeg > * {
+  pointer-events: auto;
 }
 
 .phoneHits {
