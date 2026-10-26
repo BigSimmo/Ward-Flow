@@ -17,9 +17,12 @@
   white-space: normal;
 }
 
+/* STATS-02: a stage name is a row label, not a column header, so it drops the header's capitals. */
 .table tbody th {
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--wf-ink-1);
 }
 

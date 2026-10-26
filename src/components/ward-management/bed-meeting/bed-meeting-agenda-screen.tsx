@@ -193,7 +193,6 @@ function AgendaRow({
         </div>
         <Button
           size="sm"
-          variant="light"
           aria-expanded={adding}
           aria-controls={formId}
           onClick={() => setAdding((value) => !value)}

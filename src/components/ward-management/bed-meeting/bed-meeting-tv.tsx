@@ -32,7 +32,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
@@ -57,9 +57,12 @@ import {
 import { ForecastBriefPanel } from "@/components/ward-management/forecast/forecast-brief-panel";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
+import { TvLockControl, useTvLock } from "./tv-lock";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
+/** TV-06: how long a not-updating screen waits before its warning turns red. */
+const TV_STALE_RED_MINUTES = 5;
 
 /**
  * THE TV VIEWS (Josh, 15 Oct 2026): a bed meeting screen for the whole state or one health service,
@@ -78,8 +81,10 @@ const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
  * meeting sheet), Capacity's `bedKindGaps`, and `tv-derivations.ts`, which reuses the Shift brief's
  * and the ED board's own selectors. Each re-renders with the shared clock and workspace.
  *
- * A shared screen shows initials, never full names. Desktop only: a phone gets the "needs a larger
- * screen" card (`ward-phone-desktop-only.tsx`). Behind the `bed-meeting-tv` feature flag.
+ * Every TV names patients in full, as every other screen does (Josh, 26 Oct 2026: names are more
+ * useful and clear, and privacy work must not make the app less useful). Desktop only: a phone gets
+ * the "needs a larger screen" card (`ward-phone-desktop-only.tsx`). Behind the `bed-meeting-tv`
+ * feature flag.
  */
 
 type Tone = "danger" | "warning" | "good";
@@ -91,6 +96,15 @@ const TONE_WORD: Record<Tone | "neutral", string> = {
   good: "Good",
   neutral: "Steady",
 };
+
+function upperFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The people in some delay causes, for the count under a list that shows only the first few. */
+function peopleIn(groups: readonly { count: number }[]): number {
+  return groups.reduce((sum, group) => sum + group.count, 0);
+}
 
 /** The panel already says "Emergency departments", so the TV drops the repeated suffix. */
 function edName(department: string): string {
@@ -116,7 +130,7 @@ type TvTileProps = {
   tone?: Tone;
   /** A part of a whole, drawn as a bar under the figure: `value` of `max`. */
   meter?: { value: number; max: number };
-  /** When the figure was last confirmed (`bedCountText`), on its own line under the detail. */
+  /** A second line under the detail: when the figure was last confirmed (`bedCountText`), or a note. */
   age?: string;
   testId: string;
 };
@@ -198,20 +212,28 @@ function More({
   noun,
   one = noun,
   fit,
+  people,
 }: {
   count: number;
   noun: string;
   one?: string;
   /** Which layout this count belongs to, when a 1080p State TV shows fewer rows than the rest. */
   fit?: "full" | "short";
+  /** TV-09: the people behind the hidden rows, so "and 7 more causes" still says how many it holds. */
+  people?: number;
 }) {
   if (count === 0) return null;
+  const heads = people === undefined ? "" : `, ${people} ${people === 1 ? "person" : "people"}`;
   return (
     <p className={styles.more} data-fit={fit}>
       and {count} more {count === 1 ? one : noun}
+      {heads}
     </p>
   );
 }
+
+/** The ED waits that fit beside the tables on a 1080p State TV, now each row carries a full name. */
+const WAITS_SHORT_ROWS = 2;
 
 /** "Day shift": the shift the board clock is in, worded as the rail and ward screens word it. */
 function shiftName(now: number): string {
@@ -239,12 +261,27 @@ function Footer({ scope, scenario, now }: { scope: string; scenario: string; now
 const ED_TV_PEOPLE_ROWS = 5;
 const ED_TV_WARD_ROWS = 6;
 
-function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number; noun: string }) {
+function JourneyList({
+  rows,
+  more,
+  noun,
+  shortRows,
+}: {
+  rows: TvJourneyRow[];
+  more: number;
+  noun: string;
+  /** On a 1080p State TV only this many rows fit beside the tables (DR-02); the rest are counted. */
+  shortRows?: number;
+}) {
   return (
     <>
       <ol className={styles.list}>
-        {rows.map((row) => (
-          <li key={row.id} data-long={row.waitMinutes >= LONG_WAIT_MINUTES || undefined}>
+        {rows.map((row, index) => (
+          <li
+            key={row.id}
+            data-long={row.waitMinutes >= LONG_WAIT_MINUTES || undefined}
+            data-fit={shortRows !== undefined && index >= shortRows ? "full" : undefined}
+          >
             <span className={styles.who}>{row.name}</span>
             <span className={styles.where}>{[row.stage, row.where].filter(Boolean).join(" · ")}</span>
             {/* Overall review (20 Oct 2026): the time says what it measures, the whole wait since
@@ -253,14 +290,34 @@ function JourneyList({ rows, more, noun }: { rows: TvJourneyRow[]; more: number;
           </li>
         ))}
       </ol>
-      <More count={more} noun={noun} />
+      {shortRows === undefined ? (
+        <More count={more} noun={noun} />
+      ) : (
+        <>
+          <More count={more} noun={noun} fit="full" />
+          <More count={more + Math.max(0, rows.length - shortRows)} noun={noun} fit="short" />
+        </>
+      )}
     </>
   );
 }
 
-function personLine(person: DailySheetPerson): string {
+/** A ward TV row: the patient's name when the screen can resolve it, then sex and day of stay. */
+function personLine(person: DailySheetPerson, nameOfStay?: (admissionId: string) => string): string {
   const day = person.dayNumber === null ? "day not recorded" : `day ${person.dayNumber}`;
-  return `${person.sex}, ${day}`;
+  const name = nameOfStay?.(person.key);
+  return name ? `${name}, ${person.sex}, ${day}` : `${person.sex}, ${day}`;
+}
+
+/** TV-11: "of 17 beds, 1 locked" read as one locked bed on the ward; this says it is a ready one. */
+function lockedReadyText(lockedReady: number): string {
+  if (lockedReady === 0) return "none of the ready beds is locked";
+  return lockedReady === 1 ? "1 of the ready beds is locked" : `${lockedReady} of the ready beds are locked`;
+}
+
+/** NA3-02 (Josh, 26 Oct 2026, Part A 15): the bed meeting's held up count is releases, today and tomorrow. */
+function releasesHeldUpText(heldUp: number): string {
+  return `${heldUp} ${heldUp === 1 ? "release" : "releases"} held up`;
 }
 
 /* --------------------------------------------------------------------------------------------- *
@@ -449,6 +506,13 @@ function BedMeetingTvView({
   const longest = ed.longestWaits[0];
   const shortKinds = extras.gaps.filter((row) => row.gap < 0);
   const forecast = useForecastModel(now);
+  // TV-12: the printed sheet's stuck referrals, as one count here. Its rows hold places, never people.
+  const stuck = sheet.stuckReferrals
+    ? {
+        limitMinutes: sheet.stuckReferrals.limitMinutes,
+        places: sheet.stuckReferrals.places.length + sheet.stuckReferrals.morePlaces,
+      }
+    : undefined;
 
   return (
     <>
@@ -473,8 +537,8 @@ function BedMeetingTvView({
             label: "Beds ready now",
             value: capacity.ready,
             detail: shortKinds.length
-              ? `${capacity.lockedReady} locked${preparingSentence(extras.pendingPreparation)}. ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
-              : `${capacity.lockedReady} locked, of ${capacity.beds} beds${preparingSentence(extras.pendingPreparation)}`,
+              ? `${capacity.lockedReady} of them locked${preparingSentence(extras.pendingPreparation)}. ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
+              : `Of ${capacity.beds} beds. ${upperFirst(lockedReadyText(capacity.lockedReady))}${preparingSentence(extras.pendingPreparation)}`,
             tone:
               capacity.ready === 0
                 ? "danger"
@@ -489,7 +553,7 @@ function BedMeetingTvView({
             // Audit 6 (Josh, 20 Oct 2026): these count tomorrow's discharges too, so the label says so.
             label: "Due out today and tomorrow",
             value: dischargingToday,
-            detail: `${discharges.confirmed} confirmed, ${discharges.heldUp} held up`,
+            detail: `${discharges.confirmed} confirmed, ${releasesHeldUpText(discharges.heldUp)}`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,
             meter: { value: discharges.confirmed, max: dischargingToday },
             testId: "bed-meeting-tv-discharges",
@@ -501,6 +565,11 @@ function BedMeetingTvView({
             value: delays.total,
             detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
             tone: delays.total > 0 ? "warning" : undefined,
+            // TV-12: the printed sheet's stuck referrals, counted here where there is room on every TV.
+            age:
+              stuck && stuck.places > 0
+                ? `Referrals with no reply after ${splitDuration(stuck.limitMinutes)} at ${stuck.places} ${stuck.places === 1 ? "place" : "places"}`
+                : undefined,
             testId: "bed-meeting-tv-delays",
           },
         ]}
@@ -545,6 +614,7 @@ function BedMeetingTvView({
               }))}
               more={ed.morePeople + Math.max(0, ed.longestWaits.length - MEETING_TV_ROWS)}
               noun="waiting"
+              shortRows={WAITS_SHORT_ROWS}
             />
           )}
         </Panel>
@@ -565,12 +635,19 @@ function BedMeetingTvView({
                   </li>
                 ))}
               </ol>
-              <More count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)} noun="causes" one="cause" fit="full" />
+              <More
+                count={Math.max(0, delays.groups.length - MEETING_TV_ROWS)}
+                noun="causes"
+                one="cause"
+                fit="full"
+                people={peopleIn(delays.groups.slice(MEETING_TV_ROWS))}
+              />
               <More
                 count={Math.max(0, delays.groups.length - DELAYS_SHORT_ROWS)}
                 noun="causes"
                 one="cause"
                 fit="short"
+                people={peopleIn(delays.groups.slice(DELAYS_SHORT_ROWS))}
               />
             </>
           )}
@@ -586,7 +663,18 @@ function BedMeetingTvView({
  * The ward view: one ward's office screen.
  * --------------------------------------------------------------------------------------------- */
 
-export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: number; scenario: string }) {
+export function WardTvView({
+  sheet,
+  now,
+  scenario,
+  nameOfStay,
+}: {
+  sheet: WardTvSheet;
+  now: number;
+  scenario: string;
+  /** The patient's name for a stay (an admission id); without it the rows give sex and day only. */
+  nameOfStay?: (admissionId: string) => string;
+}) {
   const { capacity, incoming, discharges } = sheet;
   const going = discharges.heldUp + discharges.confirmed + discharges.expected;
   const stuck = [
@@ -603,7 +691,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
           {
             label: "Beds ready now",
             value: capacity.ready,
-            detail: `of ${capacity.beds} beds, ${capacity.lockedReady} locked${preparingSentence(sheet.pendingPreparation)}`,
+            detail: `Of ${capacity.beds} beds. ${upperFirst(lockedReadyText(capacity.lockedReady))}${preparingSentence(sheet.pendingPreparation)}`,
             tone: capacity.ready === 0 ? "danger" : sheet.bedCount.notConfirmed > 0 ? "warning" : undefined,
             meter: { value: capacity.ready, max: capacity.beds },
             age: bedCountText(sheet.bedCount, now),
@@ -626,7 +714,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
           {
             label: "Going out",
             value: going,
-            detail: `Today and tomorrow. ${discharges.confirmed} confirmed, ${discharges.heldUp} held up`,
+            detail: `Today and tomorrow. ${discharges.confirmed} confirmed, ${releasesHeldUpText(discharges.heldUp)}`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,
             meter: { value: discharges.confirmed, max: going },
             testId: "ward-tv-going",
@@ -659,7 +747,9 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
               <ol className={styles.list}>
                 {sheet.going.map((row) => (
                   <li key={row.id} data-status={row.status}>
-                    <span className={styles.who}>{row.person ? personLine(row.person) : "Patient on this ward"}</span>
+                    <span className={styles.who}>
+                      {row.person ? personLine(row.person, nameOfStay) : "Patient on this ward"}
+                    </span>
                     <span className={styles.where}>{row.note ?? ""}</span>
                     <span className={styles.wait}>{row.status}</span>
                   </li>
@@ -678,7 +768,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
               <ol className={styles.list}>
                 {stuck.slice(0, TV_ROW_LIMIT).map(({ person, note }) => (
                   <li key={`${person.key}-${note}`}>
-                    <span className={styles.who}>{personLine(person)}</span>
+                    <span className={styles.who}>{personLine(person, nameOfStay)}</span>
                     <span className={styles.where}>{note}</span>
                   </li>
                 ))}
@@ -696,7 +786,7 @@ export function WardTvView({ sheet, now, scenario }: { sheet: WardTvSheet; now: 
               <ol className={styles.list}>
                 {sheet.away.slice(0, TV_ROW_LIMIT).map((person) => (
                   <li key={person.key}>
-                    <span className={styles.who}>{personLine(person)}</span>
+                    <span className={styles.who}>{personLine(person, nameOfStay)}</span>
                     <span className={styles.wait}>{splitDuration((person.awayAtEdHours ?? 0) * 60)}</span>
                   </li>
                 ))}
@@ -748,7 +838,8 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           {
             label: "Waiting now",
             value: summary.waiting,
-            detail: `${summary.detained} detained`,
+            // TV-04 (Josh, 26 Oct 2026, Part A 17): the ED board's own count and words.
+            detail: `${sheet.underForm} under a form`,
             tone: summary.waiting > 0 ? "warning" : "good",
             testId: "ed-tv-waiting",
           },
@@ -776,10 +867,12 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             testId: "ed-tv-no-bed",
           },
           {
-            label: "Bed found",
+            // TV-03: accepted by a ward, with or without a pulled bed yet, as one figure (NA2-04). It
+            // said "Bed found", which a patient accepted with no bed pulled has not got.
+            label: "Accepted",
             value: sheet.held,
-            detail: `${sheet.leaving} leaving now`,
-            testId: "ed-tv-bed-found",
+            detail: `By a ward. ${sheet.leaving} leaving now`,
+            testId: "ed-tv-accepted",
           },
         ]}
       />
@@ -983,16 +1076,18 @@ export type BedMeetingTvScreenProps = {
 
 export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
-  const { units, movements, bedReleases, admissions, leaveBeds, scenario, configuration, shared } = useWardFlowSelect(
-    "units",
-    "movements",
-    "bedReleases",
-    "admissions",
-    "leaveBeds",
-    "scenario",
-    "configuration",
-    "shared",
-  );
+  const { units, movements, bedReleases, admissions, leaveBeds, referrals, scenario, configuration, shared } =
+    useWardFlowSelect(
+      "units",
+      "movements",
+      "bedReleases",
+      "admissions",
+      "leaveBeds",
+      "referrals",
+      "scenario",
+      "configuration",
+      "shared",
+    );
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
   const patientOf = usePatientOf();
@@ -1010,6 +1105,25 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const refreshLate = useSharedRefreshLate(shared?.enabled === true);
   const sharedDown = shared?.enabled === true && (shared.status === "unavailable" || refreshLate);
   const scenarioLabel = scenarioLabels[scenario];
+  // A11: the address of this TV view, for the lock to come back to.
+  const selfHref =
+    ward !== undefined
+      ? bedMeetingTvHref({ ward })
+      : ed !== undefined
+        ? bedMeetingTvHref({ ed })
+        : serviceParam !== undefined
+          ? bedMeetingTvHref({ service: serviceParam })
+          : WARD_BED_MEETING_TV_HREF;
+  const tvLocked = useTvLock() !== null;
+
+  // Audit 24-7 (CT-02) and TV-06: while not live, the screen stops at the last moment it was live.
+  // Every figure, wait and the "As at" time are worked out at that moment, so nothing moves forward
+  // over data that has stopped updating. Adjusted during render.
+  const live = online && !sharedDown;
+  const [lastLive, setLastLive] = useState(now);
+  if (live && lastLive !== now) setLastLive(now);
+  const shownNow = live ? now : lastLive;
+  const staleMinutes = live ? 0 : Math.max(0, Math.round(now - lastLive));
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
   const department = ed === undefined ? undefined : edById(ed);
@@ -1018,9 +1132,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const service = serviceParam === undefined ? deviceService : tvServiceFromParam(serviceParam, units);
 
   const view = useMemo(() => {
-    // A shared screen in a meeting room, a ward office or a tea room: initials only.
-    const nameOf = (movement: Parameters<typeof patientOf>[0]) => patientOf(movement).initials;
-    const inputs = { units, movements, bedReleases, admissions, leaveBeds, now, nameOf };
+    // Full names, as on every other screen (Josh, 26 Oct 2026).
+    const nameOf = (movement: Parameters<typeof patientOf>[0]) => patientOf(movement).displayName;
+    const inputs = { units, movements, bedReleases, admissions, leaveBeds, now: shownNow, nameOf };
     if (ward !== undefined) {
       if (!unit) return { kind: "missing" as const, what: "ward" };
       return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit, thresholds }) };
@@ -1035,7 +1149,13 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     if (service === undefined) return { kind: "missing" as const, what: "health service" };
     return {
       kind: "network" as const,
-      sheet: bedMeetingSheet({ ...inputs, service, thresholds }),
+      sheet: bedMeetingSheet({
+        ...inputs,
+        service,
+        thresholds,
+        referrals,
+        referralLimitMinutes: configuration.referralDecisionTargetMinutes,
+      }),
       extras: meetingTvExtras({ ...inputs, service, thresholds }),
     };
   }, [
@@ -1044,7 +1164,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     bedReleases,
     admissions,
     leaveBeds,
-    now,
+    referrals,
+    configuration.referralDecisionTargetMinutes,
+    shownNow,
     service,
     patientOf,
     ward,
@@ -1055,12 +1177,11 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     thresholds,
   ]);
 
-  // Audit 24-7 (CT-02): while not live, the time stops at the last moment the screen was live, so
-  // "As at" never moves forward over figures that have stopped updating. Adjusted during render.
-  const live = online && !sharedDown;
-  const [lastLive, setLastLive] = useState(now);
-  if (live && lastLive !== now) setLastLive(now);
-  const stamp = asAtStamp(live ? now : lastLive);
+  const stamp = asAtStamp(shownNow);
+  const nameOfStay = (admissionId: string) => {
+    const stay = admissions.find((admission) => admission.id === admissionId);
+    return stay ? patientOf(stay).displayName : "";
+  };
 
   if (!enabled) {
     return (
@@ -1119,17 +1240,33 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     >
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>{eyebrow} TV</p>
+          {/* TV-08: the prototype mark sits in the header, so a 1080p screen never loses it below. */}
+          <p className={styles.eyebrow}>
+            {eyebrow} TV <span data-testid="bed-meeting-tv-mark">· Synthetic prototype, not for clinical use</span>
+          </p>
           <h1 id="bed-meeting-tv-title" className={styles.title}>
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
             {stamp.time === null ? "Time not recorded" : live ? `As at ${stamp.time}` : `Last updated ${stamp.time}`} ·{" "}
             {live ? (
-              "updates on its own"
+              // TV-07: the local demo shares nothing, so "updates on its own" must not hide that.
+              shared?.enabled === true ? (
+                "updates on its own"
+              ) : (
+                "updates on its own, this browser only"
+              )
             ) : (
-              <strong className={styles.stale} data-testid="bed-meeting-tv-stale">
+              <strong
+                className={styles.stale}
+                data-testid="bed-meeting-tv-stale"
+                // TV-06: after five minutes the warning turns red and says how long, and the time now.
+                data-level={staleMinutes >= TV_STALE_RED_MINUTES ? "danger" : undefined}
+              >
                 {!online ? "offline, not updating" : "connection unavailable, not updating"}
+                {staleMinutes >= TV_STALE_RED_MINUTES
+                  ? `. Figures are ${splitDuration(staleMinutes)} old. Now ${asAtStamp(now).time ?? ""}`
+                  : ""}
               </strong>
             )}
           </p>
@@ -1147,17 +1284,20 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
               {fullscreen.active ? "Leave full screen" : "Full screen"}
             </button>
           ) : null}
-          <Link href={WARD_CAPACITY_HREF} className={styles.action}>
-            Leave TV view
-          </Link>
+          <TvLockControl href={selfHref} className={styles.action} />
+          {tvLocked ? null : (
+            <Link href={WARD_CAPACITY_HREF} className={styles.action}>
+              Leave TV view
+            </Link>
+          )}
         </div>
       </header>
       {view.kind === "network" ? (
-        <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={now} scenario={scenarioLabel} />
+        <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={shownNow} scenario={scenarioLabel} />
       ) : view.kind === "ward" ? (
-        <WardTvView sheet={view.sheet} now={now} scenario={scenarioLabel} />
+        <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} />
       ) : view.kind === "ed" ? (
-        <EdTvView sheet={view.sheet} now={now} scenario={scenarioLabel} />
+        <EdTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} />
       ) : (
         <>
           <p className={styles.empty} data-testid="bed-meeting-tv-missing">

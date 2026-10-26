@@ -44,10 +44,12 @@
   .tv {
     --tv-least: 2.5rem;
   }
+}
 
-  .panel[data-area="brief"] :is(dt, dl + p) {
-    font-size: var(--tv-least);
-  }
+/* MEET-03: the Brief's labels and note were 12 px on a 1080p TV; they take the TV minimum on every
+ * screen, not only 4K. */
+.panel[data-area="brief"] :is(dt, dl + p) {
+  font-size: var(--tv-least);
 }
 
 .tv:fullscreen {
@@ -59,6 +61,20 @@
   .pickerMenu {
     max-block-size: none;
     overflow: visible;
+  }
+
+  /* MEET-05: a panel or tile never splits across two printed pages. */
+  .panel,
+  .tile {
+    break-inside: avoid;
+  }
+
+  /* MEET-04: the ED trend bars and tile meters are drawn in colour, so they print as drawn. */
+  .trendBar,
+  .tileMeter,
+  .tileMeter > span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 
@@ -103,6 +119,12 @@
   border-radius: var(--wf-r-sm);
   color: var(--wf-ink-1);
   font-weight: 700;
+}
+
+/* TV-06: past five minutes not updating, the warning turns red. */
+.stale[data-level="danger"] {
+  border-color: var(--wf-danger-ink);
+  color: var(--wf-danger-ink);
 }
 
 .actions {
@@ -218,6 +240,17 @@
   .pickerMenu {
     grid-template-columns: minmax(0, 1fr);
     inline-size: min(32rem, calc(100vw - 2 * var(--tv-gap)));
+  }
+
+  /* MEET-01: on a tablet the controls may wrap under the title at the left, where a menu anchored to
+   * the picker's right edge opened off the left of the screen. The menu hangs from the header instead,
+   * against its right edge, so it stays on screen whether or not the controls wrap. */
+  .header {
+    position: relative;
+  }
+
+  .picker {
+    position: static;
   }
 }
 
@@ -565,6 +598,15 @@
 .list li[data-long] .wait {
   color: var(--wf-danger-ink);
   font-weight: 700;
+}
+
+/* TV-10: underlined as well as red, so a long wait never rests on colour alone. The time itself says
+ * so too: a wait past the 24 hour mark reads in days ("1d 1h"). */
+.table tr[data-long] td[data-wait],
+.list li[data-long] .wait {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
 }
 
 .list {
