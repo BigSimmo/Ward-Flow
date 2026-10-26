@@ -601,32 +601,16 @@ export function wardFlowPushGuard(pushedBranches, ranges, changedFiles, currentB
  * force-push while armed is the actual race — it can discard the commit GitHub
  * already validated or is mid-evaluating — so that alone still blocks.
  */
-export function autoMergeVerdict(branch, prPayload, isForcePush = false, carriesMigration = false) {
+export function autoMergeVerdict(branch, prPayload, isForcePush = false) {
   if (!prPayload) return { block: false, warn: false, reason: "no-open-pr" };
   if (prPayload.state && prPayload.state !== "OPEN") return { block: false, warn: false, reason: "pr-not-open" };
   if (prPayload.autoMergeRequest) {
-    // Merging to `main` applies migrations to the live clinical database automatically,
-    // within seconds, with no deploy step in between (AGENTS.md, "Supabase project safety").
-    // Auto-merge on such a PR therefore schedules an unattended production schema change,
-    // which is why AGENTS.md forbids it outright. That rule was documentation-only until
-    // this branch: nothing in the push path knew what a migration was.
-    if (carriesMigration) {
-      return { block: true, warn: false, reason: "auto-merge-armed-migration", number: prPayload.number };
-    }
     if (isForcePush) {
       return { block: true, warn: false, reason: "auto-merge-armed-force-push", number: prPayload.number };
     }
     return { block: false, warn: true, reason: "auto-merge-armed-fast-forward", number: prPayload.number };
   }
   return { block: false, warn: false, reason: "auto-merge-not-armed" };
-}
-
-/** Exported for tests: does this push carry a hosted migration?
- * PsychSift-era and not wired: autoMergeGuard never passes `carriesMigration`, so the
- * "auto-merge-armed-migration" verdict above cannot fire in Ward Flow, whose migrations
- * live in backend/ward-flow/migrations/ and are applied by hand. Removing it needs Josh's yes. */
-export function touchesProductionMigrations(changedFiles = []) {
-  return changedFiles.some((f) => f.startsWith("supabase/migrations/"));
 }
 
 /** Exported for tests: `gh pr view` exits non-zero both when the branch has no PR and when

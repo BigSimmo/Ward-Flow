@@ -862,7 +862,8 @@ export function WardHomeTab({
   if (heldAfterStop.length > 0) {
     actNow.push({
       key: "stopped-holds",
-      title: heldAfterStop.length === 1 ? "Stopped transport, bed still pulled" : "Stopped transports, beds pulled",
+      title:
+        heldAfterStop.length === 1 ? "Stopped transport, bed still pulled" : "Stopped transports, beds still pulled",
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).displayName}, transport stopped after collection`)
         .join("; "),
@@ -1262,7 +1263,10 @@ export function WardHomeTab({
                 <Count n={incoming.length} />
               </div>
               {incoming.length === 0 ? (
-                <p className={styles.groupEmpty}>No referral is currently awaiting an answer from {unit.name}.</p>
+                <p className={styles.groupEmpty}>
+                  No referral is currently awaiting an answer from {unit.name}. New referrals appear here as soon as
+                  they are sent.
+                </p>
               ) : (
                 <ul className={styles.awaitingList}>
                   {visibleIncoming.map((movement) => {

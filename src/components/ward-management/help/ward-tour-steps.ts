@@ -75,7 +75,10 @@ const HERO: TourTarget = { sel: HERO_SEL };
 const DOCK: TourTarget = { sel: '[data-testid="ward-phone-dock"]' };
 const PLUS: TourTarget = { sel: '[data-testid="ward-phone-create"]' };
 const PHONE_MENU: TourTarget = { sel: '[data-testid="ward-bar-phone-menu"]' };
-const ED_PRESSURE: TourTarget = { sel: 'section[aria-label="Emergency department pressure"]' };
+const ED_PRESSURE: TourTarget = { sel: '[data-testid="ward-home-ed-pressure"]' };
+/** Placement before anyone is chosen (the prompt card), or once someone is (the side panel). */
+const PLACEMENT: TourTarget = { sel: '[data-testid="home-placement-prompt"], [data-testid="ward-home-placement"]' };
+const MY_LIST: TourTarget = { sel: '[data-testid="home-my-list"]' };
 const UNIT_CARD: TourTarget = { sel: '[data-testid^="ward-unit-card-"]' };
 const CONFIRM: TourTarget = { sel: '[data-testid^="ward-unit-card-"] button', text: "Confirm numbers" };
 const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
@@ -128,6 +131,28 @@ function canDoStep(role: TourRole): TourStep {
     canDo: true,
   };
 }
+
+/**
+ * The access admin's own job, giving and removing roles, is on Settings, not the review screen the
+ * tour walks through, so these steps show as cards in the middle of the screen (HF-05).
+ */
+const ACCESS_STEPS: readonly TourStep[] = [
+  step(
+    "Your daily work",
+    "give-role",
+    { sel: '[data-testid="ward-access-grant"]' },
+    "Give a role",
+    "In Settings, the Access tab has Give a role. Choose the person, the role, the place and how many days. Every role has an end date, and nobody gives themselves a role.",
+    "Open Settings, then Access.",
+  ),
+  step(
+    "Your daily work",
+    "requests",
+    { sel: '[data-testid="ward-access-requests"]' },
+    "Requests and removing a role",
+    "Requests for access lists people asking for a role. Give for 90 days or Decline answers each one. Everyone with a role lists who has one, and Remove ends it straight away.",
+  ),
+];
 
 const HELP_BODY = "Help explains the screen you are on and has a glossary you can search.";
 
@@ -187,9 +212,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "shortlist",
-          { sel: 'aside[aria-label="Placement"]' },
-          "Placing the next patient",
-          "Placement shows the person at the top of the priority queue and the checks for a bed. It is the first in the list, not a recommendation. Offer a bed once the checks you need are met.",
+          PLACEMENT,
+          "Placing a patient",
+          "Choose a patient, alert or referral from My list and Placement opens for that person, with the checks for a bed. Nothing is chosen for you. Offer a bed once the checks you need are met.",
         ),
         step(
           "Your daily work",
@@ -355,7 +380,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "form",
           { sel: '[data-testid^="ward-ed-form-expiry-"]' },
           "The legal form",
-          "The Form column shows the form recorded for each person. Record a form received from the row's menu so the receiving ward and transport can see it.",
+          "The Form column shows the form recorded for each person. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it. The time is as typed from the paper form.",
         ),
         step(
           "Your daily work",
@@ -376,7 +401,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "find-bed",
           { sel: '[data-testid="ward-rail-bed-finder"]' },
           "Find a bed",
-          "Shows the ready beds across the network that fit a patient, so you know where a referral could go.",
+          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still checks every rule.",
         ),
       ];
     }
@@ -606,6 +631,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "What is waiting for review",
           "Overrides, refused or stale actions, record access and follow-ups. The tabs hold gaps by site, the audit trail, registers and reports.",
         ),
+        ...ACCESS_STEPS,
       ];
   }
 }
@@ -672,11 +698,13 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "queue",
-          { sel: 'section[aria-label="Priority queue"]' },
-          "Who is waiting",
-          `Patients lists everyone waiting, longest wait first.${
-            f.referralsWaiting === undefined ? "" : ` Referrals holds the ${f.referralsWaiting} waiting for a decision.`
-          } Form due lists the forms due soon.`,
+          MY_LIST,
+          "What needs you",
+          `My list holds Act now, Referrals to decide and Waiting on others, oldest first.${
+            f.referralsWaiting === undefined
+              ? ""
+              : ` ${count(f.referralsWaiting, "referral is", "referrals are")} waiting for a decision.`
+          } Everyone waiting above it shows the whole queue, longest wait first.`,
         ),
         phoneCreate("New referral, Log a delay, Update a bed and Add patient"),
         phoneDock(
@@ -776,7 +804,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "find-bed",
           { sel: '[data-testid="ward-phone-dock-bed-finder"]' },
           "Find a bed",
-          "Shows the ready beds across the network that fit a patient, so you know where a referral could go.",
+          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still checks every rule.",
         ),
         PHONE_HELP,
       ];
@@ -911,6 +939,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "What is waiting",
           "Overrides, refused actions and record access checks. Review next opens the next item when there is one.",
         ),
+        ...ACCESS_STEPS,
         phoneDock("Tasks and Activity."),
         PHONE_HELP,
       ];

@@ -177,7 +177,7 @@ export function renderEdPersonSheet(
         </div>
         {movement.legalForm ? (
           <div>
-            <dt>Form ends</dt>
+            <dt>Form due (as written)</dt>
             <dd className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}>
               {movement.legalForm.dueAt === undefined
                 ? "Not written"

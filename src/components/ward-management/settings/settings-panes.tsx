@@ -316,7 +316,7 @@ export function DisplayPane({
             <SettingRow
               setting="tour"
               title="First-run tour"
-              sub="Starts by itself once on this device. Replay it here or from Help."
+              sub="Starts by itself once for this desk on this device. Replay it here or from Help."
             >
               <Button variant="ghost" size="sm" onClick={() => openWardHelp("tour")} data-testid="settings-replay-tour">
                 Replay the tour

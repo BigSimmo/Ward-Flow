@@ -866,7 +866,7 @@ describe("examination", () => {
     expect(enRoute.rejections).toContainEqual(
       expect.objectContaining({
         attempted: "TRANSPORT_EN_ROUTE",
-        reason: expect.stringContaining("the examination was revoked and the bed is still held"),
+        reason: expect.stringContaining("the examination was revoked and the bed is still pulled"),
       }),
     );
   });

@@ -370,7 +370,7 @@
     ],
     "screen": {
       "screen": "ed-screen.tsx",
-      "control": "Raise into a movement"
+      "control": "Ask for a bed"
     }
   },
   {

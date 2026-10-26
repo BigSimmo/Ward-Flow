@@ -10,6 +10,7 @@ import { bedSummaryText } from "@/components/ward-management/tools/ward-bed-summ
 import { closerBedOptions } from "@/components/ward-management/out-of-area/out-of-area-model";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
+import { eligibleCandidatesAmong } from "@/components/ward-management/ward-derivations-shortlist";
 
 /*
  * Never-build drift guard (Josh's standing rule, 19 Oct 2026; sweep of 24 Oct 2026). The rule
@@ -19,15 +20,22 @@ import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
  * and the legal-figure sweeps pin the Act times. This file catches the quieter drift: suggesting
  * words in new copy, a share or mail link, a score attribute, a pull that lapses by time alone, and
  * patient details in the text written for the exec on-call email.
+ *
+ * Widened 26 Oct 2026 (never-build audit NB-26-02, which got 12 of 12 rule-breaking phrases past
+ * the first version): more phrasings, a negation counts only when it comes before the phrase in the
+ * same clause, every source folder including the shared kit, `src/lib` and the backend, and checks
+ * for timers or effects that raise a placement event, raw clipboard writes and a capped ward list.
+ * `ward-never-build-behaviour-guard.test.ts` covers what happens at run time.
  */
 
-const ROOTS = ["src/components/ward-management", "src/app"];
+const ROOTS = ["src", "backend/ward-flow"];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
+    if (name === "node_modules") return [];
     if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.(ts|tsx)$/u.test(name) && !/\.test\.tsx?$/u.test(name) ? [path] : [];
+    return /\.(ts|tsx|mjs)$/u.test(name) && !/\.test\.(tsx?|mjs)$|\.test-support\.mjs$/u.test(name) ? [path] : [];
   });
 }
 
@@ -41,16 +49,118 @@ function codeLines(path: string): { line: number; text: string }[] {
 
 const FILES = ROOTS.flatMap(sourceFiles);
 
+const relativePath = (file: string) => relative(process.cwd(), file).replaceAll("\\", "/");
+
 function hits(pattern: RegExp, allow: (text: string, file: string) => boolean = () => false): string[] {
   return FILES.flatMap((file) =>
     codeLines(file)
-      .filter(({ text }) => pattern.test(text) && !allow(text, file))
-      .map(({ line, text }) => `${relative(process.cwd(), file)}:${line}: ${text.trim().slice(0, 120)}`),
+      .filter(({ text }) => pattern.test(text) && !allow(text, relativePath(file)))
+      .map(({ line, text }) => `${relativePath(file)}:${line}: ${text.trim().slice(0, 120)}`),
   );
 }
 
-// Refusal copy ("Search never returns a best match") states the rule, so a negated line passes.
-const NEGATED = /\b(never|not|no|nor|without)\b/iu;
+// Refusal copy ("Search never returns a best match") states the rule. A negation clears a phrase only
+// when it comes BEFORE the phrase in the same clause: "the first in the list, not a recommendation"
+// still names "top of the queue" first, and passes nothing.
+const NEGATION = /\b(never|not|no|nor|without|nothing|none|doesn't|isn't|won't|cannot)\b/iu;
+const CLAUSE_BREAK = /[.;:!?"`>]|\b(but|then)\b/giu;
+
+function negatedBefore(text: string, pattern: RegExp): boolean {
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  const matches = [...text.matchAll(new RegExp(pattern.source, flags))];
+  return matches.every((match) => {
+    const before = text.slice(0, match.index);
+    const clauseStart = Math.max(0, ...[...before.matchAll(CLAUSE_BREAK)].map((m) => m.index + m[0].length));
+    return NEGATION.test(before.slice(clauseStart));
+  });
+}
+
+/** Wording found by the 26 Oct audits whose agreed fix belongs to the wording, help and forecast
+ *  threads. Each entry must still match: once the words are fixed, this test fails and asks for the
+ *  entry to be deleted, so the list only shrinks. */
+const PENDING_WORDING: { id: string; file: string; text: RegExp }[] = [
+  {
+    id: "NB-26-06",
+    file: "src/components/ward-management/community/community-screen-drawer.tsx",
+    text: /Recommended action:/u,
+  },
+  { id: "NB-26-07", file: "src/components/ward-management/forecast/ed-access-risk-card.tsx", text: /Access risk/u },
+  { id: "NB-26-07", file: "src/components/ward-management/forecast/forecast-alerts-group.tsx", text: /access risk/u },
+  { id: "NB-26-07", file: "src/components/ward-management/settings/settings-targets-column.tsx", text: /access risk/u },
+  { id: "NB-26-07", file: "src/components/ward-management/settings/settings-screen-model.ts", text: /access risk/u },
+  {
+    id: "NB-26-08",
+    file: "src/components/ward-management/patients/patient-transit-operations.tsx",
+    text: /expires \$\{/u,
+  },
+];
+
+const pending = (text: string, file: string) =>
+  PENDING_WORDING.some((entry) => entry.file === file && entry.text.test(text));
+
+/** Lines that name a phrase for a reason other than doing it, each with that reason. */
+const PERMANENT: { file: string; text: RegExp; why: string }[] = [
+  {
+    file: "src/components/ward-flow-sign-in/ward-flow-sign-in-data.ts",
+    text: /words: "Read a risk score, an acuity score or a best match"/u,
+    why: "the sign-in list of things no role can do",
+  },
+  {
+    file: "src/components/ward-management/out-of-area/out-of-area-side.tsx",
+    text: /each nearest ward has confirmed/u,
+    why: "names the ward nearest a home region, a fact of the map (D-71 item 6)",
+  },
+  {
+    file: "src/components/ward-management/settings/settings-search-index.ts",
+    text: /^\s*keywords: "/u,
+    why: "search keywords that find the setting, never shown as copy",
+  },
+];
+
+const permanent = (text: string, file: string) =>
+  PERMANENT.some((entry) => entry.file === file && entry.text.test(text));
+
+/** The copy checks: a hit passes only as a negated refusal, a pending audit item or a named exception. */
+function copyHits(pattern: RegExp): string[] {
+  return hits(pattern, (text, file) => negatedBefore(text, pattern) || pending(text, file) || permanent(text, file));
+}
+
+/** A file's source with comment lines blanked, so line numbers still match. */
+function codeSource(file: string): string {
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .map((text) => (/^\s*(\/\/|\*|\/\*|\{\/\*)/u.test(text) ? "" : text))
+    .join("\n");
+}
+
+/** The body of every `onX: () => { … }` or `onX={() => { … }}` handler removed: it runs on a person's
+ *  tap (an Undo toast built in an effect), not when the effect or timer runs. */
+function withoutHandlers(body: string): string {
+  const handler = /\bon[A-Z]\w*\s*[:=]\s*\{?\s*(async\s*)?(\([^)]*\)|\w+)\s*=>\s*\{/gu;
+  let result = body;
+  for (let match = handler.exec(result); match; match = handler.exec(result)) {
+    let depth = 0;
+    let end = match.index + match[0].length - 1;
+    for (; end < result.length; end += 1) {
+      if (result[end] === "{") depth += 1;
+      else if (result[end] === "}" && --depth === 0) break;
+    }
+    result = result.slice(0, match.index) + result.slice(end + 1);
+    handler.lastIndex = match.index;
+  }
+  return result;
+}
+
+/** The text of the call that opens at `opener` (the first "(" after it), brackets balanced. */
+function callBody(source: string, start: number): string {
+  const open = source.indexOf("(", start);
+  let depth = 0;
+  for (let index = open; index < source.length; index += 1) {
+    if (source[index] === "(") depth += 1;
+    else if (source[index] === ")" && --depth === 0) return source.slice(open, index + 1);
+  }
+  return source.slice(open);
+}
 
 describe("never-build drift guard", () => {
   it("finds the source it scans", () => {
@@ -58,14 +168,111 @@ describe("never-build drift guard", () => {
   });
 
   it("no copy suggests, recommends or ranks a ward, bed or patient", () => {
+    const patterns = [
+      /suggested (destination|ward|bed|placement)|\bwe suggest\b|suggests? (a|the|this) (ward|bed)/iu,
+      /best[- ](match|fit|ward|bed|option|placement|choice|site)/iu,
+      /recommended (ward|bed|destination|placement|action|option)|Recommendation:\s*(admit|place|send|transfer)/iu,
+      /next wards? to ask|most suitable|better fit|good fit|closest match|ideal (ward|bed)|fits first/iu,
+      /\btop (\d+|three|five|ten) (wards?|beds?|options|matches|sites|units)\b/iu,
+      /\b(nearest|closest) (available )?(ward|bed)s?\b/iu,
+      /\b(wards?|beds?|patients?|people|options),? ranked\b|\branked (wards?|beds?|patients?|list)\b/iu,
+    ];
+    for (const pattern of patterns) expect(copyHits(pattern), String(pattern)).toEqual([]);
+  });
+
+  it("no copy says a person moves up the queue or shows first", () => {
     const pattern =
-      /suggested (destination|ward|bed|placement)|best[- ](match|fit|ward|bed)|recommended (ward|bed|destination|placement)|Recommendation:\s*(admit|place|send|transfer)|next wards? to ask|most suitable|wards?, ranked/iu;
-    expect(hits(pattern, (text) => NEGATED.test(text))).toEqual([]);
+      /\bshows? first on\b|\bjumps? the queue\b|\bmoves? up the (queue|list)\b|\btop of the (priority |waiting )?(queue|list)\b/iu;
+    expect(copyHits(pattern)).toEqual([]);
   });
 
   it("no copy names a risk, acuity, priority or placement score", () => {
-    expect(hits(/\b(risk|acuity|priority|placement|match) score/iu, (text) => NEGATED.test(text))).toEqual([]);
+    expect(
+      copyHits(/\b(risk|acuity|priority|placement|match|suitability|urgency)[- ](score|rating|points)\b/iu),
+    ).toEqual([]);
+    expect(copyHits(/\baccess risk\b/iu)).toEqual([]);
     expect(hits(/data-score\b/u)).toEqual([]);
+  });
+
+  it("no copy says a bed is released, or a patient placed, by itself", () => {
+    const patterns = [
+      /\breturns? to the ward\b|auto[- ]?releas|releases? (itself|by itself|automatically)|released (automatically|by itself)/iu,
+      /\bpull(ed)?\b.*\bexpires\b/iu,
+      /auto[- ]?(place|placement|placed|accept|admit|assign)|automatically (placed|accepted|admitted|assigned|moved)/iu,
+    ];
+    for (const pattern of patterns) expect(copyHits(pattern), String(pattern)).toEqual([]);
+  });
+
+  it("each pending wording item still exists; once fixed, its entry is deleted", () => {
+    const stale = PENDING_WORDING.filter(
+      (entry) => !codeLines(entry.file).some(({ text }) => entry.text.test(text)),
+    ).map((entry) => `${entry.id} is fixed in ${entry.file}: delete its PENDING_WORDING entry`);
+    expect(stale).toEqual([]);
+  });
+
+  it("the negation rule clears a refusal and nothing else", () => {
+    const best = /best[- ]match/iu;
+    expect(negatedBefore("Search never returns a best match", best)).toBe(true);
+    expect(negatedBefore("Best match for this patient, not checked", best)).toBe(false);
+    expect(negatedBefore("Not urgent. Best match: Ward 4", best)).toBe(false);
+    const top = /top of the (priority )?queue/iu;
+    expect(
+      negatedBefore("at the top of the priority queue. It is the first in the list, not a recommendation", top),
+    ).toBe(false);
+  });
+
+  it("no timer or effect raises an engine event, except a ward's own read receipt", () => {
+    const READ_RECEIPTS = new Set(["MARK_REFERRAL_OPENED"]);
+    const raised = /\b(raise|dispatch)\(\s*(\{\s*type:\s*)?["'`]([A-Z][A-Z_]+)["'`]/gu;
+    const found: string[] = [];
+    for (const file of FILES.filter((path) => path.startsWith("src"))) {
+      const source = codeSource(file);
+      for (const opener of /setTimeout\(|setInterval\(|useEffect\(|useLayoutEffect\(|requestAnimationFrame\(|requestIdleCallback\(/gu[
+        Symbol.matchAll
+      ](source)) {
+        for (const [, , , type] of withoutHandlers(callBody(source, opener.index)).matchAll(raised)) {
+          if (!READ_RECEIPTS.has(type)) {
+            found.push(`${relativePath(file)}:${source.slice(0, opener.index).split("\n").length}: ${type}`);
+          }
+        }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  it("every clipboard write goes through the Ward Flow copy helper", () => {
+    const helpers = ["src/components/ward-management/ward-clipboard.ts", "src/lib/copy-to-clipboard.ts"];
+    expect(
+      hits(/clipboard\.writeText\(|execCommand\(\s*["']copy["']/u, (_text, file) => helpers.includes(file)),
+    ).toEqual([]);
+    // The plain helper skips the synthetic line and the UMRN strip, so it stays with the error pages.
+    expect(
+      hits(/@\/lib\/copy-to-clipboard/u, (_text, file) => !file.startsWith("src/components/ward-management/")),
+    ).toEqual([]);
+  });
+
+  it("the ward list behind the shortlist is never cut short", () => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((row) => state.units.filter((unit) => unit.cohort === row.cohort).length > 3);
+    expect(movement, "the seed must have a cohort with more than three wards").toBeDefined();
+    const sameCohort = state.units.filter((unit) => unit.cohort === movement!.cohort);
+    const listed = eligibleCandidatesAmong(movement!, state.units, NOW_ANCHOR).map(({ unit }) => unit.id);
+    expect(listed).toHaveLength(sameCohort.length);
+    // The order is fixed by the wards, not by where they sit in the input.
+    const reversed = eligibleCandidatesAmong(movement!, [...state.units].reverse(), NOW_ANCHOR).map(
+      ({ unit }) => unit.id,
+    );
+    expect(reversed).toEqual(listed);
+    // No screen passes a cap: every source call hands over the whole list it was given.
+    const calls = FILES.filter((path) => path.startsWith("src")).flatMap((file) => {
+      const source = codeSource(file);
+      return [...source.matchAll(/eligibleCandidatesAmong\(/gu)]
+        .map((call) => callBody(source, call.index))
+        .filter((body) => !/^\(movement: Movement/u.test(body))
+        .filter((body) => !/,\s*(\[\.\.\.)?(\w+)\]?,\s*\w+,\s*\2\.length\s*\)$|^\([^,]+,[^,]+,[^,]+\)$/u.test(body))
+        .map((body) => `${relativePath(file)}: ${body.slice(0, 100)}`);
+    });
+    expect(calls).toEqual([]);
   });
 
   it("nothing shares or mails from the app except the fixed team mailbox link", () => {
@@ -74,7 +281,10 @@ describe("never-build drift guard", () => {
     const allowedMailto = (text: string, file: string) =>
       file.endsWith("community/community-screen-panels.tsx") && /mailto:\$\{contact\.referralEmail\}`/u.test(text);
     const mailtoUse = (text: string, file: string) =>
-      allowedMailto(text, file) || file.endsWith("use-dirty-state-guard.ts");
+      allowedMailto(text, file) ||
+      file.endsWith("use-dirty-state-guard.ts") ||
+      // Web push needs a contact for the server operator (the VAPID subject); it names no patient.
+      (file === "backend/ward-flow/push.mjs" && /\.test\(subject\)/u.test(text));
     expect(hits(/mailto:/u, mailtoUse)).toEqual([]);
   });
 

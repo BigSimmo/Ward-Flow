@@ -41,7 +41,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     summary:
       "You see the whole network or your own health service, decide referrals and keep patients moving to a bed.",
     startsAt:
-      "My list is your home: Act now, Since you last looked and Referrals to decide. Your menu holds Capacity, Movements, Referrals and Handover.",
+      "My list is your home: Act now, Since you last looked and Referrals to decide. Your menu holds Capacity, Movements, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen.",
     jobs: [
       {
         job: "Decide a referral",
@@ -55,12 +55,12 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Pull the bed",
-        how: "Once a ward accepts, press Pull the bed. It is kept for the patient within the pull time limit.",
+        how: "Open the patient from Movements. Once a ward accepts, press Pull the bed. It is kept for the patient within the pull time limit.",
         go: "movements",
       },
       {
         job: "Book transport",
-        how: "Press Book transport, or record that none is needed. Cancel transport before you release a pulled bed.",
+        how: "Open the patient from Movements, then press Book transport, or record that none is needed. Cancel transport before you release a pulled bed.",
         go: "movements",
       },
       {
@@ -80,7 +80,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     homeName: "My ward",
     summary: "You run your own ward's beds and answer the referrals sent to it.",
     startsAt:
-      "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover.",
+      "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover. On a desktop, On TV in the ward's toolbar opens a read only screen for the ward's own TV.",
     jobs: [
       {
         job: "Confirm your beds",
@@ -97,7 +97,11 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
         how: "Press Accept in principle and choose the pull time limit, or press Decline and pick a reason.",
         go: "home",
       },
-      { job: "Arrivals", how: "When the patient reaches the ward, press Confirm Arrival.", go: "movements" },
+      {
+        job: "Arrivals",
+        how: "Open the patient from Coming and going. When they reach the ward, press Confirm Arrival.",
+        go: "movements",
+      },
       {
         job: "Leave, away and discharge",
         how: "On a bed, Mark at an ED or Mark them back. Their bed is held while they are away. Record a discharge with They have left.",
@@ -213,7 +217,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Bed releases",
-        how: "Flag, confirm or block a bed that is due to come free, from the ward page.",
+        how: "Open the ward from Wards, then flag, confirm or block a bed that is due to come free.",
         go: "wards",
       },
       {
@@ -223,7 +227,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Close or reopen a ward",
-        how: "Choose a reason, then close the ward to admissions. Reopen it when it can take patients.",
+        how: "Open the ward from Wards, choose a reason, then close it to admissions. Reopen it when it can take patients.",
         go: "wards",
       },
       {
@@ -278,6 +282,16 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     ],
   },
 };
+
+/**
+ * When Ward Flow is down or not working (PR-20). The prototype has no support desk yet, so the line
+ * names the role on shift who decides on paper, not a phone number that does not exist.
+ */
+export const WHEN_IT_IS_DOWN: readonly string[] = [
+  "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the Ward Flow team.",
+  "The coordinator keeps a printed Downtime pack: beds by ward, the ED queue, pending moves and legal forms, as at the last snapshot.",
+  "Work from paper and the phone until the coordinator says Ward Flow is back, then record what happened in the meantime.",
+];
 
 /** How to tell an action was saved: the same on every desk. */
 export const SAVED_OR_NOT: readonly string[] = [

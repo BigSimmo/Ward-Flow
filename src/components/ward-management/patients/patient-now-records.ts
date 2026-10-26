@@ -297,7 +297,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         source: "Community team referral",
         route: "Patient transport vehicle",
         tier: 1,
-        legal: "Involuntary inpatient, Form 1A to Form 3B. Validated on admission.",
+        legal: "Involuntary inpatient. Referred on Form 1A and then detained on Form 3A.",
         forms: [
           {
             code: "1A",
@@ -323,7 +323,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         source: "Police, after an incident in the community",
         route: "Police vehicle",
         tier: 1,
-        legal: "Involuntary inpatient, Form 3B. Treatment order confirmed by the Mental Health Tribunal.",
+        legal: "Involuntary inpatient. Detention continued on Form 3B. Inpatient treatment order then made on Form 6A.",
         forms: [
           {
             code: "3B",
@@ -374,7 +374,8 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         source: "Community team referral",
         route: "Patient transport vehicle",
         tier: 1,
-        legal: "Involuntary inpatient, Form 1A. Form 3B made on ward on day 2.",
+        legal:
+          "Involuntary inpatient. Referred on Form 1A and detained on Form 3A. Detention continued on Form 3B on day 2.",
         forms: [
           {
             code: "REF",

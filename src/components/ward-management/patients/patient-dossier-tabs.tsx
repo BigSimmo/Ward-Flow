@@ -865,6 +865,7 @@ export function PatientDocumentsTab({
           level={2}
           icon={Scale}
           title="Legal forms"
+          className={styles.legalHead}
           aside={<span className={styles.chip}>Current {current}</span>}
           meta={
             (movementInForce ? movement?.legalStatus : undefined) ?? patient?.legalStatus ?? "Legal status not recorded"
@@ -874,7 +875,9 @@ export function PatientDocumentsTab({
           <table className={tableClasses.table}>
             <thead>
               <tr>
-                <th scope="col">Form</th>
+                <th scope="col" className={styles.formCol}>
+                  Form
+                </th>
                 <th scope="col">Status</th>
                 <th scope="col">Recorded</th>
                 <th scope="col" className={styles.byCol}>
@@ -885,7 +888,7 @@ export function PatientDocumentsTab({
             <tbody>
               {forms.map((f, i) => (
                 <tr key={`${f.code}-${f.status}-${i}`}>
-                  <td>
+                  <td className={styles.formCol}>
                     <span className={styles.form} data-off={f.status !== "Current"}>
                       Form {f.code}
                     </span>
@@ -930,6 +933,7 @@ export function PatientDocumentsTab({
           level={2}
           icon={FileText}
           title="Documents"
+          className={styles.docsHead}
           aside={<span className={styles.chip}>{rows.length}</span>}
           action={
             movement ? (

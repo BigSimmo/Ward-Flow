@@ -17,6 +17,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
 import {
   countCellText,
+  confirmedHeldUpNote,
   freeingCellText,
   networkServiceGroupTotals,
   type NetworkServiceGroup,
@@ -180,6 +181,7 @@ function NetworkRow({
         }
       >
         {freeingCellText(row.confirmed)}
+        <ConfirmedHeldUpNote confirmed={row.confirmed} alsoHeldUp={row.confirmedHeldUp} />
       </td>
       <td
         data-testid="ward-capacity-network-expected"
@@ -439,7 +441,7 @@ function NetworkRow({
 /**
  * `NETWORK_TABLE_COLUMN_COUNT` matches the eighteen `<th scope="col">` cells declared in
  * `CapacityScreen`'s own `<thead>` above — Ward, Bed kinds, Ready, Locked, Freeing, the three
- * release-stage figures, Discharges due today, Transfers today (decision 8A), Pulled, Closed, Occupied, Sex mix, Specialling, Mental Health Act, Confirmed and
+ * release-stage figures, Discharges due today, Transfers today (decision 8A), Pulled, Closed, Occupied, Gender mix, Specialling, Mental Health Act, Confirmed and
  * Ask for an update. Used only to span an empty-service sentence across the whole row; not read
  * from the `<thead>` at runtime because a Server-Component-shaped table primitive has no DOM to
  * count at render time (see `WardTable`'s own comment on why it cannot measure itself).
@@ -547,7 +549,10 @@ export function NetworkServiceGroupRows({
             )}
           </td>
           <td>{freeingCellText(totals.freeing)}</td>
-          <td>{freeingCellText(totals.confirmed)}</td>
+          <td>
+            {freeingCellText(totals.confirmed)}
+            <ConfirmedHeldUpNote confirmed={totals.confirmed} alsoHeldUp={totals.confirmedHeldUp} />
+          </td>
           <td>{freeingCellText(totals.expected)}</td>
           <td>{freeingCellText(totals.blocked)}</td>
           <td>{freeingCellText(totals.dischargesDueToday)}</td>
@@ -594,5 +599,22 @@ export function NetworkServiceGroupRows({
         ))}
       </tbody>
     </>
+  );
+}
+
+/** "(1 also held up)" under a Confirmed count (A16), in the `<small>` the other count notes use. */
+function ConfirmedHeldUpNote({
+  confirmed,
+  alsoHeldUp,
+}: {
+  confirmed: number | undefined;
+  alsoHeldUp: number | undefined;
+}) {
+  const note = confirmedHeldUpNote(confirmed, alsoHeldUp);
+  return note === undefined ? null : (
+    <small className={styles.beingMadeReady} data-testid="ward-capacity-network-confirmed-held-up">
+      {" "}
+      {note}
+    </small>
   );
 }

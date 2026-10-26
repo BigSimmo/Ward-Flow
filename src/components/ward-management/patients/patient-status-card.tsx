@@ -304,7 +304,10 @@ function statusFor(
   summary?: SenderMovementPartialView | null,
 ): PatientStatus {
   const { movement, admission, patient, now } = ctx;
-  if (movement && summary !== undefined && movementPresentation(movement, summary).kind === "unavailable") {
+  // Only the placement modes show destination progress; leave, AWOL and ED statuses come from the
+  // stay and must stay available when the movement is closed or hidden.
+  const placing = mode === "find" || mode === "held" || mode === "transit";
+  if (placing && movement && summary !== undefined && movementPresentation(movement, summary).kind === "unavailable") {
     return {
       tone: "warning",
       verdict: "Progress unavailable",

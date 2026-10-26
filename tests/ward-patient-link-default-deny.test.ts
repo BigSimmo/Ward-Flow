@@ -135,12 +135,12 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   {
     file: "ed/ed-screen-raise-section.tsx",
     reason:
-      "Audit A2-1, moved unchanged from ed-screen.tsx: the Raise into a movement form shows and edits the found person on its own draft (draft.patientId).",
+      "Audit A2-1, moved unchanged from ed-screen.tsx: the Ask for a bed form shows and edits the found person on its own draft (draft.patientId).",
   },
   {
     file: "ed/ed-screen-inbox.tsx",
     reason:
-      "Audit A2-1, moved unchanged from ed-screen.tsx: Raise into a movement from an inbox referral copies that one referral's own person (referral.patientId) into the draft.",
+      "Audit A2-1, moved unchanged from ed-screen.tsx: Ask for a bed from an inbox referral copies that one referral's own person (referral.patientId) into the draft.",
   },
   {
     file: "referrals/accepted-ward-referral.ts",

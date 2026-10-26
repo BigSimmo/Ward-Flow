@@ -34,7 +34,7 @@ import styles from "./ward-referral-detail.module.css";
 const RISK_FLAG_LABELS: Record<string, string> = {
   suicide: "Suicide",
   aggression: "Aggression",
-  absconding: "Absconding",
+  absconding: "Absent without leave",
   vulnerable: "Vulnerable",
   medical: "Medical",
 };

@@ -1,6 +1,6 @@
 "use client";
 
-// "Raise into a movement": the form that raises a movement from a referral in this department's
+// "Ask for a bed": the form that raises a movement from a referral in this department's
 // inbox. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useRef, useState } from "react";
 import { DisabledReason } from "@/components/wf";
@@ -58,12 +58,12 @@ export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
   return (
     <section
       id="ward-ed-referral-intake"
-      aria-label="Raise into a movement"
+      aria-label="Ask for a bed"
       hidden={!referralOpen}
       className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.referralBarSection}`}
     >
       <div className={styles.ph}>
-        <h2>Raise into a movement</h2>
+        <h2>Ask for a bed</h2>
         <button
           type="button"
           className={styles.inboxBtn}
@@ -554,7 +554,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                 : undefined
             }
           >
-            Raise into a movement
+            Ask for a bed
           </button>
           <button
             type="button"

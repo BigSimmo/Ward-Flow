@@ -669,7 +669,7 @@ export function reducePlacementEvent(
           "diversion_bed_released_ward",
           { role: "ward", placeId: receivingUnitId },
           { movementId: movement.id, unitId: receivingUnitId },
-          `The bed held for diverted patient ${movement.id} was released.`,
+          `The bed pulled for diverted patient ${movement.id} was released.`,
         ),
       ]);
     }

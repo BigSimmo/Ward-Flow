@@ -5,6 +5,7 @@
 // declared there, so every effect still runs in the same order.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hasOpenSheet, holdOpenForm } from "@/components/wf/sheet-focus";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import type {
   LegalFormReceiptCorrectionReason,
   LegalStatusChangeReason,
@@ -29,6 +30,8 @@ import type { CommunityReferralPurpose } from "@/components/ward-management/ward
 /** The raise-into-a-movement form: whether it is open, its draft, and the referral it is raised from. */
 export function useEdReferralDraft() {
   const [referralOpen, setReferralOpen] = useState(false);
+  // Audit CS3-01: the open raise form is checked against the board it opened on.
+  useHoldOpenForm(referralOpen);
   const [draft, setDraft] = useState<ReferralDraftState>(DEFAULT_DRAFT);
   // Opus review round 2, 17 September 2026 (P2), item 6: which front-door referral (if any) the
   // open "Raise a referral" form is being raised FROM. `undefined` is the ordinary, unlinked case

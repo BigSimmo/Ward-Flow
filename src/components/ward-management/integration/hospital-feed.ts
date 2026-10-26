@@ -1,4 +1,4 @@
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { sameRecordNumber, type Patient } from "@/components/ward-management/ward-patients";
 
 /**
  * THE HOSPITAL FEED SEAM (smart features idea 11, 19 Oct 2026) — where a read-only feed of
@@ -141,7 +141,8 @@ function action(message: FeedMessage): string {
  * where the message's details differ from the record. Suggestions only; nothing is changed.
  */
 export function previewFeedMessage(message: FeedMessage, patients: readonly Patient[]): FeedPreview {
-  const patient = patients.find((candidate) => candidate.umrn === message.umrn);
+  // Audit F-06: trimmed and case-insensitive, as ADD_PATIENT's uniqueness check matches.
+  const patient = patients.find((candidate) => sameRecordNumber(candidate.umrn, message.umrn));
   if (!patient) {
     return { kind: "new_person", action: `No person holds ${message.umrn}. ${action(message)}` };
   }
