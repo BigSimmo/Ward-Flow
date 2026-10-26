@@ -530,10 +530,8 @@ export function WardBoard({
    * spec D3/D14 requires to be identical at service, hospital and ward level; the words are never
    * retyped here, which is what stops this board drifting from the home page's.
    *
-   * The Ready figure here is NOT `breakdown.availableNow` (NA3-09, audit 26 Oct 2026; this comment
-   * used to promise they were one): it is `states.ready`, the `readyBedsNow` figure the header prints
-   * through `headlineAvailable`, which leaves out a bed pulled for an incoming patient.
-   * `breakdown.availableNow` still counts it, so nothing on this board shows it as Ready.
+   * Ready here is `states.ready` (`readyBedsNow`, as the header prints), NOT `breakdown.availableNow`,
+   * which still counts a bed pulled for an incoming patient (NA3-09, audit 26 Oct 2026).
    */
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
@@ -701,8 +699,7 @@ export function WardBoard({
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
       value: breakdown.confirmedToday,
       led: outgoingBasis === "confirmed",
-      // NA3-06 (decision 16, 26 Oct 2026): the same note Capacity gives, so the bed meeting's lower
-      // "confirmed" (which leaves out held-up releases) is explained rather than contradicted.
+      // NA3-06 (decision 16): Capacity's note, explaining the bed meeting's lower confirmed figure.
       note: confirmedHeldUpNote(breakdown.confirmedToday, breakdown.confirmedHeldUpToday),
     },
     {
