@@ -274,6 +274,10 @@ export function handoverBlockedReason(movement: Movement, who?: string): string 
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return `${who ?? "This patient"} has no transport booked — book it first, then mark the handover ready.`;
   }
+  // Blocker review (26 Oct 2026): already ready is not "not bed pulled", so it is named as it is.
+  if (movement.stage === "handover_ready") {
+    return `${who ?? "This patient"} is already marked handover ready.`;
+  }
   if (movement.stage !== "pulled") {
     return `${who ?? "This patient"} is ${stageCopy[movement.stage].label.toLowerCase()}, not bed pulled — a handover can only be marked ready once a bed is pulled.`;
   }

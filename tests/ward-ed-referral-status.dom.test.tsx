@@ -198,7 +198,8 @@ describe("the ED board shows where each referral stands", () => {
     ]);
     expect(within(sheet).getAllByText("Bed pulled").length).toBeGreaterThan(0);
     expect(sheet.textContent ?? "").not.toMatch(/Bed held/);
-    expect(sheet).toHaveTextContent("Bed pulled — ready to mark the handover to transport.");
+    // Blocker mock-up (Josh approved 26 Oct 2026): no transport is logged, so the line says so.
+    expect(sheet).toHaveTextContent("Bed pulled. Transport not logged yet.");
     expect(within(sheet).queryByText("Destination")).toBeNull();
   });
 });

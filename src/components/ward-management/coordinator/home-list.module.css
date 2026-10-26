@@ -292,7 +292,9 @@
 
 .hrow {
   display: grid;
-  grid-template-columns: 1rem minmax(0, 1fr) 6.5rem auto;
+  /* Layout sweep SHELL-15 (25 Oct 2026): the action track keeps one width (the widest button,
+   * "Chase transport", is about 7.2rem), so the time column lines up from row to row. */
+  grid-template-columns: 1rem minmax(0, 1fr) 6.5rem minmax(7.5rem, max-content);
   align-items: center;
   gap: var(--wf-s-3);
   min-height: 56px;
@@ -459,6 +461,23 @@
 
 .rightCol dl:has(> [data-testid="ward-referral-placement-patient"]) > div:nth-last-child(-n + 2) {
   border-bottom: 0;
+}
+
+/* Layout sweep SHELL-14 (25 Oct 2026): on a 360px phone the switch was 16px too wide for
+ * Registers to sit beside it, so Registers dropped onto a line of its own. The switch's items
+ * tighten instead, and the row stays one line. */
+@media (max-width: 23rem) {
+  .switchRow {
+    flex-wrap: nowrap;
+  }
+
+  .viewSwitch {
+    flex: 0 1 auto;
+  }
+
+  .switchRow .viewSwitch > button {
+    padding-inline: 6px;
+  }
 }
 
 /* Phone: Registers sits beside the list switch, so it keeps the touch size. */

@@ -1,3 +1,5 @@
+// Registers every reducer slice before the engine runs a command (see ward-flow-reducer-slice-registry.ts).
+import "../../src/components/ward-management/ward-flow-reducer-slices";
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";

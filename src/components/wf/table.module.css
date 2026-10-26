@@ -188,6 +188,13 @@
   text-align: right;
 }
 
+/* KIT-02 (layout sweep, 25 Oct 2026): a number is never cut to "122 da…". A short figure may run
+   into the cell's own padding rather than end in an ellipsis. */
+.table td.num {
+  overflow: visible;
+  text-overflow: clip;
+}
+
 @media (forced-colors: active) {
   .actNow,
   .table tr.actNow {

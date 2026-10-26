@@ -260,6 +260,14 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   `(state, event, helpers)`, since that path makes its own audit decision.
   The other slice files take `(state, event, decision, helpers)`. The reducer passes its shared
   helpers in, and each slice imports only types from the reducer, so there is no runtime import cycle.
+- **Lazily loaded slices** (26 Oct 2026, Josh named the split) — the reducer no longer imports its
+  slice files. It calls them through `reducerSlices()` from `ward-flow-reducer-slice-registry.ts`;
+  `ward-flow-reducer-slices.ts` lists every slice and registers them when imported. The server
+  (`backend/ward-flow/engine.ts`) and the vitest setup (`tests/setup/reducer-slices.setup.ts`)
+  import it directly. The browser loads it after the page starts, and `ward-flow-slice-dispatch.ts`
+  holds a local command, in order, until it arrives. This took about 44 KB gzipped off every
+  page's phone first load. Page code must not import a slice file or `ward-flow-reducer-slices.ts`
+  statically; `tests/ward-reducer-lazy-slices.test.ts` checks this. A new slice goes in that list.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
   variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads

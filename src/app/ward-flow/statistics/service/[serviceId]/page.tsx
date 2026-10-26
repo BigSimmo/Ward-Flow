@@ -7,10 +7,16 @@ import { isKnownHealthService } from "@/components/ward-management/ward-known-pl
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
-export const metadata: Metadata = {
-  title: "Health service statistics — Ward Flow",
-  description: "Synthetic single-health-service statistics section for the Ward Flow prototype.",
-};
+// B2 (25 Oct 2026 design re-score): the tab names the place, so several open tabs can be told
+// apart. An unknown id keeps the generic title; the typed address never reaches it (DR-20).
+export async function generateMetadata({ params }: { params: Promise<{ serviceId: string }> }): Promise<Metadata> {
+  const id = safeDecodeURIComponent((await params).serviceId);
+  const name = isKnownHealthService(id) ? id : undefined;
+  return {
+    title: name ? `${name} — Statistics — Ward Flow` : "Health service statistics — Ward Flow",
+    description: "Synthetic single-health-service statistics section for the Ward Flow prototype.",
+  };
+}
 
 /**
  * One route serving every health service, not a page per service.

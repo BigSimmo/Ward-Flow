@@ -6,6 +6,7 @@
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import styles from "./board.module.css";
 import {
   BAND_CLASS,
@@ -238,7 +239,18 @@ export function WardBoardGridColumn({
                 className={tileClassName(tile, selected)}
                 aria-pressed={selected}
                 aria-controls={selected ? "ward-board-detail" : undefined}
-                onClick={() => (selected ? closeDetail() : setSelectedKey(tile.key))}
+                onClick={() => {
+                  if (selected) return closeDetail();
+                  setSelectedKey(tile.key);
+                  // Layout sweep WARD-05: on a tablet the record sits under the whole grid, out of
+                  // sight, so bring it into view once it has rendered.
+                  if (!isPhone)
+                    requestAnimationFrame(() => {
+                      const detail = document.getElementById("ward-board-detail");
+                      if (detail && detail.getBoundingClientRect().top > window.innerHeight)
+                        detail.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+                    });
+                }}
               >
                 {tile.kind === "occupied" && (
                   <>

@@ -95,6 +95,10 @@ export function scanReducerReasonChecks(
       const name = runtimeReducerImport(declaration);
       if (name) pending.push(importPath(file, name));
     }
+    // The reducer reaches its lazily loaded slices through ward-flow-reducer-slices.ts, not an import.
+    if (path.basename(file) === "ward-flow-reducer.ts") {
+      pending.push(path.join(path.dirname(file), "ward-flow-reducer-slices.ts"));
+    }
   }
   return { cases, checks, sources: [...visited] };
 }

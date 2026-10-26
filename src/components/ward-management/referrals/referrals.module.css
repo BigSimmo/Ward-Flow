@@ -5008,3 +5008,10 @@
 .v10AskActions > .matchRowTop > span:has(> [data-placement-action]) {
   width: 100%;
 }
+
+/* Layout sweep (REF-16): "Add a correction" is a full-size touch target on a touch screen. */
+@media (pointer: coarse) {
+  .addCorrectionBtn {
+    min-height: 44px;
+  }
+}
