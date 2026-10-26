@@ -404,7 +404,7 @@ export function WardHomeTab({
       timeLabel: formatInstant(unit.allocatable.confirmedAt),
       title: "Capacity confirmed",
       detail: `${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`,
-      status: "Verified",
+      status: "Confirmed by ward",
     });
   }
   logRows.push(...pendingDepartureLogRows(pendingBedReleases, admissions, now));

@@ -508,8 +508,8 @@ export function OfficerScreen() {
     reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
-      `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
-      "Delivery",
+      `Arrival at ward recorded for ${officerPatientName(movement)}. The receiving ward confirms the arrival.`,
+      "Arrived at ward",
     );
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
@@ -529,7 +529,7 @@ export function OfficerScreen() {
     }
     return {
       leg,
-      verb: "Delivered",
+      verb: "Arrived at ward",
       blocked: arrivedBlockedReason(movement, unitFor(movement), who),
       run: runDelivered,
     };
@@ -1206,7 +1206,7 @@ export function OfficerScreen() {
                     value={historyTab}
                     onChange={setHistoryTab}
                     items={[
-                      { id: "delivered", label: "Delivered today", count: deliveredToday.length },
+                      { id: "delivered", label: "Arrived today", count: deliveredToday.length },
                       { id: "refused", label: "Refused", count: officerRefusals.length },
                       { id: "cancelled", label: "Cancelled", count: cancelledTransports.length },
                     ]}

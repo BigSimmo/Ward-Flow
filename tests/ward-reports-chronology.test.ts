@@ -367,8 +367,8 @@ describe("PIR chronology: one person's records", () => {
     ];
     const rows = patientChronology(inputFor(state, { auditEvents: null, eventLog: log })).rows;
     const actions = rows.map((row) => row.action);
-    expect(actions).toContain(`Transport delivered to ${wardName}`);
-    expect(actions).toContain(`Transport delivered to ${wardName} (refused)`);
+    expect(actions).toContain(`Officer recorded arrival at ${wardName}`);
+    expect(actions).toContain(`Officer recorded arrival at ${wardName} (refused)`);
     expect(actions.some((action) => action.includes("Patient arrived"))).toBe(false);
     // The recorded delivery already says it, so only the refused attempt comes from the session log.
     expect(rows.filter((row) => row.source === "Session log")).toHaveLength(1);
