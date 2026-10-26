@@ -961,6 +961,10 @@ export function useWardReferralDrawerState({
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
+    // A27: a chart attached after it was marked to follow is attached, not to follow.
+    const chartsToFollow = (documentation.toFollow ?? []).filter(
+      (kind) => !documentation.charts.some((chart) => chart.kind === kind),
+    );
     const intake: ReferralIntakeDetails = {
       catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
       reasonForReferral: referralReason,
@@ -978,6 +982,7 @@ export function useWardReferralDrawerState({
       },
       triageAndRampCompleted: !community && documentation.triage === "yes",
       charts: community ? [] : documentation.charts,
+      ...(!community && chartsToFollow.length ? { chartsToFollow } : {}),
       additionalDocuments: !community && documentation.additional === "yes",
       referrer: contact,
       ...(destType === "ward"

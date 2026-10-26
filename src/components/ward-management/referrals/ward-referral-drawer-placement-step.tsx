@@ -19,6 +19,7 @@ import { communityTeamOptions } from "./referral-destination-options";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
+import { chartsCountText } from "./referral-document-links";
 import { ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
@@ -520,7 +521,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <>
                 <div>
                   <dt>Documents</dt>
-                  <dd>{documentation.charts.length} attached</dd>
+                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
                 </div>
                 <div>
                   <dt>Clearance</dt>

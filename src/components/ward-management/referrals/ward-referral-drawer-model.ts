@@ -26,7 +26,7 @@ import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
-import { type DocumentationDraft } from "./referral-flow-panels";
+import { chartAnswered, type DocumentationDraft } from "./referral-flow-panels";
 import {
   GENDER_UNANSWERED,
   REFERRAL_GENDER_NOT_RECORDED,
@@ -483,8 +483,8 @@ export function documentationNeeded(draft: DocumentationDraft): number {
     if (!draft.contactPhone.trim()) needed += 1;
   }
   if (!draft.triage) needed += 1;
-  if (!draft.charts.some((chart) => chart.kind === "medication")) needed += 1;
-  if (!draft.charts.some((chart) => chart.kind === "observation")) needed += 1;
+  if (!chartAnswered(draft, "medication")) needed += 1;
+  if (!chartAnswered(draft, "observation")) needed += 1;
   if (!draft.additional) needed += 1;
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other")) needed += 1;
   return needed;

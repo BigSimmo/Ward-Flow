@@ -703,7 +703,9 @@ export function ReferralPatientTab({
             <dd>{site}</dd>
           </div>
         </dl>
-        {intake?.charts.length ? <ReferralDocumentLinks charts={intake.charts} /> : null}
+        {intake?.charts.length || intake?.chartsToFollow?.length ? (
+          <ReferralDocumentLinks charts={intake.charts} toFollow={intake.chartsToFollow} />
+        ) : null}
       </Section>
 
       {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
