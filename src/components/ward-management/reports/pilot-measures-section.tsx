@@ -11,7 +11,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
 import { PhoneCard, PhoneFacts, PhoneGroup } from "@/components/ward-management/statistics/statistics-phone-parts";
 
-import { per100, pilotMeasures, type DurationSummary } from "./pilot-measures";
+import { per100, pilotMeasures, type DurationSummary, type PilotMeasuresInput } from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
 
@@ -111,6 +111,7 @@ export function PilotMeasuresSection({
   now,
   pullHoldMinutes,
   units,
+  morningRollupConfirmations,
   morningRollupDeadlineMinutes,
   week,
   isPhone,
@@ -120,7 +121,8 @@ export function PilotMeasuresSection({
   patients: readonly Patient[];
   now: Instant;
   pullHoldMinutes: number;
-  units: readonly Pick<Unit, "allocatable">[];
+  units: readonly Pick<Unit, "id">[];
+  morningRollupConfirmations: PilotMeasuresInput["morningRollupConfirmations"];
   morningRollupDeadlineMinutes: number;
   week: ReportWeek;
   isPhone: boolean;
@@ -129,10 +131,29 @@ export function PilotMeasuresSection({
   const measures = useMemo(
     () =>
       pilotMeasures(
-        { movements, referrals, patients, now, pullHoldMinutes, units, morningRollupDeadlineMinutes },
+        {
+          movements,
+          referrals,
+          patients,
+          now,
+          pullHoldMinutes,
+          units,
+          morningRollupConfirmations,
+          morningRollupDeadlineMinutes,
+        },
         week,
       ),
-    [movements, referrals, patients, now, pullHoldMinutes, units, morningRollupDeadlineMinutes, week],
+    [
+      movements,
+      referrals,
+      patients,
+      now,
+      pullHoldMinutes,
+      units,
+      morningRollupConfirmations,
+      morningRollupDeadlineMinutes,
+      week,
+    ],
   );
   const toArrival = durationFigures(measures.requestToArrival, "arrivals");
   const held = durationFigures(measures.requestToBedHeld, "beds pulled");

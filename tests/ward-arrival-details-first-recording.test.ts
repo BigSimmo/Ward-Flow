@@ -175,6 +175,7 @@ describe("arrival plan: first recording is kept", () => {
         now: 8 * DAY,
         pullHoldMinutes: HOLD,
         units: [],
+        morningRollupConfirmations: {},
         morningRollupDeadlineMinutes: 570,
       },
       week,

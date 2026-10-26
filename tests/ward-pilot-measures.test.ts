@@ -37,7 +37,7 @@ function fixture() {
     closure: undefined,
     ...patch,
   });
-  const run = (movements: Movement[], units: { allocatable: { confirmedAt: number } }[] = []) =>
+  const run = (movements: Movement[], rollups: Record<string, { confirmedAt: number }> = {}) =>
     pilotMeasures(
       {
         movements,
@@ -45,7 +45,8 @@ function fixture() {
         patients: state.patients,
         now: NOW,
         pullHoldMinutes: HOLD,
-        units: units as never,
+        units: ["U1", "U2", "U3"].map((id) => ({ id })),
+        morningRollupConfirmations: rollups,
         morningRollupDeadlineMinutes: 570,
       },
       WEEK,
@@ -109,14 +110,13 @@ describe("pilotMeasures", () => {
 
   it("A35: measure 3 counts today's bed figures confirmed by the roll-up time", () => {
     const f = fixture();
-    const measures = f.run(
-      [],
-      [
-        { allocatable: { confirmedAt: NOW + 500 } },
-        { allocatable: { confirmedAt: NOW + 600 } },
-        { allocatable: { confirmedAt: NOW - 100 } },
-      ],
-    );
+    // Read from the morning roll-up confirmation, which a later capacity refresh does not move.
+    const measures = f.run([], {
+      U1: { confirmedAt: NOW + 500 },
+      U2: { confirmedAt: NOW + 600 },
+      U3: { confirmedAt: NOW - 100 },
+      "U-other": { confirmedAt: NOW + 500 },
+    });
     expect(measures.bedFigures).toEqual({ wards: 3, confirmedToday: 2, onTime: 1, deadlineMinutes: 570 });
   });
 

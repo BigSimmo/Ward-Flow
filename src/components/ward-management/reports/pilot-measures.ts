@@ -92,7 +92,12 @@ export type PilotMeasuresInput = {
   /** The configured hold length (`WardConfiguration.pullHoldMinutes`), minutes. */
   pullHoldMinutes: number;
   /** The wards in view, for measure 3. */
-  units: readonly Pick<Unit, "allocatable">[];
+  units: readonly Pick<Unit, "id">[];
+  /**
+   * Each ward's morning roll-up confirmation, for measure 3. A later capacity refresh moves
+   * `allocatable.confirmedAt` but never this, so a routine update cannot make a ward late.
+   */
+  morningRollupConfirmations: Readonly<Record<string, { confirmedAt: Instant }>>;
   /** The configured morning roll-up time (`WardConfiguration.morningRollupDeadlineMinutes`). */
   morningRollupDeadlineMinutes: number;
 };
@@ -206,7 +211,8 @@ function openedBefore(other: Movement, movement: Movement): boolean {
 }
 
 export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): PilotMeasures {
-  const { movements, referrals, patients, now, pullHoldMinutes, units, morningRollupDeadlineMinutes } = input;
+  const { movements, referrals, patients, now, pullHoldMinutes, units, morningRollupConfirmations } = input;
+  const { morningRollupDeadlineMinutes } = input;
   const records = { movements, referrals, patients };
   const windowMinutes = CLINICAL_VALUES.missedRequestWindow.value;
   const graceMinutes = CLINICAL_VALUES.lateArrivalGrace.value;
@@ -222,7 +228,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
 
   // Measure 3: today's bed figures against the roll-up time.
   const confirmedTimes = units
-    .map((unit) => unit.allocatable?.confirmedAt)
+    .map((unit) => morningRollupConfirmations[unit.id]?.confirmedAt)
     .filter((at): at is Instant => typeof at === "number" && Number.isFinite(at) && dayOf(at) === dayOf(now));
   const bedFigures = {
     wards: units.length,
