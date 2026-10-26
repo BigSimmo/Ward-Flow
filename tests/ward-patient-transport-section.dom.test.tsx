@@ -222,7 +222,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
     expect(section).toHaveTextContent("Booking details cannot be edited");
     expect(section).toHaveTextContent("cancel the active job");
-    expect(section).toHaveTextContent("Ask the flow coordinator or booking team");
+    expect(section).toHaveTextContent("Ask the bed coordinator or booking team");
     expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
   });
 

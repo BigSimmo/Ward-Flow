@@ -134,8 +134,8 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
       {isTransportBooked && (
         <p className={styles.transportEmptyText}>
           {liveMovement.transport?.collectedAt !== undefined
-            ? "Booking details cannot be edited after collection. Ask the flow coordinator to review any transport changes."
-            : "Booking details cannot be edited here. Ask the flow coordinator or booking team to cancel the active job before recording a new booking."}
+            ? "Booking details cannot be edited after collection. Ask the bed coordinator to review any transport changes."
+            : "Booking details cannot be edited here. Ask the bed coordinator or booking team to cancel the active job before recording a new booking."}
         </p>
       )}
       {/* A34: the one transport booking form every screen uses. */}
