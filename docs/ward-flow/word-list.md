@@ -18,15 +18,15 @@ word in the in-app Help glossary is on this list.
 | **Pulled**           | A bed kept for one named, accepted incoming patient (D-81).                        | bed held, held bed or hold for an incoming patient; "Inbound" as a bed status              |
 | **Pull time limit**  | How long a pulled bed is kept before it returns to the ward.                       | hold time limit; reserved time                                                             |
 | Pull the bed         | The button that pulls a bed.                                                       | hold the bed                                                                               |
-| Pull expired         | A pulled bed whose pull time limit has passed. A person decides what happens next. | bed hold expired                                                                           |
+| **Pull expired**     | A pulled bed whose pull time limit has passed. A person decides what happens next. | bed hold expired                                                                           |
 | Pulled bed released  | A pulled bed given back to the ward.                                               | bed hold released; held bed released after transport (say "Pulled bed released after ...") |
 | the pull on the bed  | The pull itself, in a sentence.                                                    | hold on the bed                                                                            |
 | Needs the bed pulled | A step that waits for a pull.                                                      | needs the bed held                                                                         |
 | **Held bed**         | A bed kept for its own patient on leave or away (at an ED, absent without leave).  | pulled, for a leave bed                                                                    |
-| Ready                | A bed the ward has confirmed is clean and staffed for an admission.                | ready vacant                                                                               |
+| **Ready**            | A bed the ward has confirmed is clean and staffed for an admission.                | ready vacant                                                                               |
 | **Confirmed beds**   | The bed figures a ward last confirmed, with the time it did so.                    |                                                                                            |
 | Closed               | A bed out of service that cannot be given to anyone.                               |                                                                                            |
-| Held up              | A discharge or move that is delayed. Not a bed state.                              |                                                                                            |
+| **Held up**          | A discharge or move that is delayed. Not a bed state.                              |                                                                                            |
 
 ## A patient's journey
 
@@ -76,6 +76,35 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 **Open question for Josh:** the coordinator's role is called "Bed coordinator" on most screens and
 "Flow coordinator" in the recorded decision field and some demo text. One name should win; until Josh
 chooses, do not add a third ("bed flow coordinator", "bed manager" for this role).
+
+## Screens, figures and urgency
+
+Added 26 October 2026 with the Help glossary, so the two stay in step.
+
+| Say                      | Means                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Being made ready**     | A released bed still being prepared. It may not be offered as Ready yet.                         |
+| **Confirmed out**        | A discharge the ward has confirmed. Due out is expected but not confirmed.                       |
+| **Past date**            | Still on the ward after the expected discharge date.                                             |
+| **Short**                | More people waiting than beds that fit, for one kind of bed. Spare and Enough are the other two. |
+| **Cohort**               | The age group a bed is for: Adult, Older adult or Youth.                                         |
+| **Secure bed**           | A locked bed. Describes the ward, not the patient's legal status.                                |
+| **CLD**                  | Criteria led discharge, with the criteria the treating psychiatrist set.                         |
+| **CLD ready**            | Every criterion for criteria led discharge is met.                                               |
+| **Fit to travel**        | The ED doctor's recorded medical clearance, needed before transport.                             |
+| **Access target**        | An ED performance target, 24 hours by default. Never a legal deadline.                           |
+| **Overdue waits**        | Patients waiting longer than the target for their urgency tier.                                  |
+| **T1**                   | Urgency tier 1, most urgent, as recorded on the referral.                                        |
+| **T2**                   | Urgency tier 2, urgent.                                                                          |
+| **T3**                   | Urgency tier 3, least urgent.                                                                    |
+| **Catchment**            | The area a community mental health team covers.                                                  |
+| **Constant observation** | Staff stay with the patient, shown as 1:1 or 2:1. A person records it.                           |
+| **Shift brief**          | A ward's sheet for the shift: who came in, is going, is stuck or is overdue.                     |
+| **Notices**              | A ward's own messages under the bell: buzzes, urgent tasks and notices.                          |
+| **Activity**             | The header drawer of recent changes and notices.                                                 |
+| **Board time**           | The clock every screen works from, in Perth time (AWST).                                         |
+| **Demo**                 | The Demo panel: scenario, clock and reset for the invented data.                                 |
+| **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                          |
 
 ## Save problems
 
