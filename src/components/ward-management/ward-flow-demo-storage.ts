@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
-import { loadScenarioNetworks } from "./ward-scenario-network-registry";
+import { loadScenarioNetworks } from "./ward-scenario-network-loader";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";

@@ -16,6 +16,7 @@ describe("lazily loaded demonstration networks (H-0952)", () => {
   it("refuses a demonstration scenario before its networks load, and seeds it after", async () => {
     vi.resetModules();
     const registry = await import("@/components/ward-management/ward-scenario-network-registry");
+    const { loadScenarioNetworks } = await import("@/components/ward-management/ward-scenario-network-loader");
     const { scenarioNetwork, scenarioUnits } = await import("@/components/ward-management/ward-scenarios");
     expect(registry.loadedScenarioNetworks()).toBeNull();
     // The standard and scarce days never need them.
@@ -23,7 +24,7 @@ describe("lazily loaded demonstration networks (H-0952)", () => {
     expect(scenarioUnits("scarce").length).toBeGreaterThan(0);
     expect(() => scenarioNetwork("quiet-day")).toThrow("not loaded");
     expect(() => scenarioNetwork("wa-synthetic")).toThrow("not loaded");
-    await registry.loadScenarioNetworks();
+    await loadScenarioNetworks();
     expect(scenarioNetwork("quiet-day")?.sites.length).toBeGreaterThan(0);
     expect(scenarioNetwork("wa-synthetic")?.sites.length).toBeGreaterThan(0);
   });
