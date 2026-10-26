@@ -64,6 +64,7 @@ import {
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
+import { declineTargetLeftNote } from "./decline-target-left";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -307,15 +308,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
   // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
   const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
-  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), so this ward reads the same
-  // percentage here as on its Ward page, the rail and Capacity.
+  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), the same as the Ward page.
   const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
-  // Owner ruling 2026-09-05, carried here: the ready figure above does not subtract a bed being
-  // made ready (it must not lurch as cleaning starts and stops), so this sentence — using the
-  // reducer's own `bedsPendingPreparation`, never re-derived — is what keeps a coordinator from
-  // reading a bare "ready" count and being refused at the moment of pulling a patient.
+  // Owner ruling 2026-09-05: "ready" does not subtract a bed being made ready, so this sentence (the
+  // reducer's own `bedsPendingPreparation`) keeps a coordinator from pulling into a bed not yet made.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
-
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
@@ -341,6 +338,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     if (phoneAcceptLeft) setPhoneSheet(null);
     setToastMessage({ message: "This request was answered or withdrawn.", warning: true });
   }
+  // A4-10 (H-0121): a decline form goes with its row and says nothing; the empty cards say why.
+  const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
+    movements.some((m) => m.id === id && m.withdrawnReferrals.some((entry) => entry.unitId === currentUnit.id)),
+  );
   function openPhoneAccept() {
     selectAnswer(activeAnswerIndex);
     setHoldChoice(undefined);
@@ -752,6 +753,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 <p className={styles.phoneClearText}>
                   No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
                 </p>
+                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : selectionLeft ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
@@ -767,6 +769,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             ) : incoming.length === 0 ? (
               <div className={styles.sbarCard}>
                 <p>No referral is currently awaiting an answer from {unit.name}.</p>
+                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : activeMovement ? (
               (() => {
