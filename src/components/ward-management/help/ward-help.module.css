@@ -250,3 +250,18 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+.shortcuts {
+  margin-top: 1.25rem;
+  color: var(--wf-ink-2);
+}
+
+.shortcuts summary {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shortcuts kbd {
+  font-family: inherit;
+}

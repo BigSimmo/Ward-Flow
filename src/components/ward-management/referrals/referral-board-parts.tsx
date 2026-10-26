@@ -48,6 +48,8 @@ import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { referralPresentation, type SenderReferralPresentation } from "../ward-partial-view-presenters";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
 const REFERRAL_BEDS_HREF = "/ward-flow/hub";
@@ -405,8 +407,24 @@ export type MeetingRow = {
   umrn: string;
 };
 
-export function waitWords(referral: Referral, now: Instant): { waited: string; due: string; overdue: boolean } {
-  const clocks = referralClocks(referral, now);
+function presentationClocks(referral: Referral, now: Instant, summary?: SenderReferralPresentation) {
+  const presentation = referralPresentation(referral, summary);
+  if (presentation.kind === "unavailable") return undefined;
+  const settled = summary !== undefined && (presentation.state !== "queued" || presentation.withdrawn);
+  const clocks = referralClocks(
+    referral,
+    settled ? (presentation.decidedAt ?? referral.triagedAt ?? referral.raisedAt) : now,
+  );
+  return { ...clocks, sinceReferralRunning: clocks.sinceReferralRunning && !settled };
+}
+
+export function waitWords(
+  referral: Referral,
+  now: Instant,
+  summary?: SenderReferralPresentation,
+): { waited: string; due: string; overdue: boolean } {
+  const clocks = presentationClocks(referral, now, summary);
+  if (!clocks) return { waited: "Progress unavailable", due: "", overdue: false };
   const overdue = isOverdue(referral, now);
   const dueAt = referral.raisedAt + decisionWindow(referral);
   if (!clocks.sinceReferralRunning) return { waited: durMinutes(clocks.sinceReferral), due: "clock stopped", overdue };
@@ -418,7 +436,8 @@ export function waitWords(referral: Referral, now: Instant): { waited: string; d
 }
 
 export function WaitCell({ referral, now }: { referral: Referral; now: Instant }) {
-  const { waited, due, overdue } = waitWords(referral, now);
+  const sender = useSenderPresentation();
+  const { waited, due, overdue } = waitWords(referral, now, sender.referralFor(referral));
   return (
     <span className={cx(styles.wait, overdue && styles.waitOver)}>
       <b>{waited}</b>
@@ -451,7 +470,9 @@ export function ReferralAlerts({ referral, readmission }: { referral: Referral; 
 }
 
 export function DecisionClock({ referral, now }: { referral: Referral; now: Instant }) {
-  const clocks = referralClocks(referral, now);
+  const sender = useSenderPresentation();
+  const clocks = presentationClocks(referral, now, sender.referralFor(referral));
+  if (!clocks) return <p role="status">Referral progress unavailable.</p>;
   const window = decisionWindow(referral);
   const dueAt = referral.raisedAt + window;
   const overdue = isOverdue(referral, now);
@@ -738,7 +759,13 @@ export function ReferralPatientTab({
 
 type TimelineEntry = { at: Instant; tone: "success" | "closed" | "info" | "neutral" | "danger"; text: string };
 
-export function referralTimeline(referral: Referral, units: Unit[]): TimelineEntry[] {
+export function referralTimeline(
+  referral: Referral,
+  units: Unit[],
+  summary?: SenderReferralPresentation,
+): TimelineEntry[] {
+  const presentation = referralPresentation(referral, summary);
+  if (presentation.kind === "unavailable") return [];
   const entries: TimelineEntry[] = [
     {
       at: referral.raisedAt,
@@ -747,6 +774,19 @@ export function referralTimeline(referral: Referral, units: Unit[]): TimelineEnt
     },
   ];
   if (referral.triagedAt !== undefined) entries.push({ at: referral.triagedAt, tone: "info", text: "Triaged" });
+  if (summary !== undefined) {
+    if (presentation.decidedAt !== null && (presentation.state !== "queued" || presentation.withdrawn))
+      entries.push({
+        at: presentation.decidedAt,
+        tone: presentation.state === "accepted" ? "success" : "closed",
+        text: presentation.withdrawn
+          ? "Referral withdrawn"
+          : presentation.state === "accepted"
+            ? "Referral accepted"
+            : "Referral declined",
+      });
+    return entries.sort((a, b) => a.at - b.at);
+  }
   for (const arm of referral.destinations) {
     const where = referralDestinationLabel(arm.destination);
     if (arm.waitlistedAt !== undefined)
@@ -814,12 +854,18 @@ export function ReferralTimeline({
   now: Instant;
   children?: ReactNode;
 }) {
-  const clocks = referralClocks(referral, now);
+  const sender = useSenderPresentation();
+  const summary = sender.referralFor(referral);
+  const presentation = referralPresentation(referral, summary);
+  const clocks = presentationClocks(referral, now, summary);
   const dueAt = referral.raisedAt + decisionWindow(referral);
   const overdue = isOverdue(referral, now);
-  const open = openArms(referral).length > 0;
-  const showDue = open && clocks.sinceReferralRunning;
-  const all = referralTimeline(referral, units);
+  const open =
+    summary === undefined
+      ? openArms(referral).length > 0
+      : presentation.kind !== "unavailable" && presentation.state === "queued" && !presentation.withdrawn;
+  const showDue = open && clocks?.sinceReferralRunning;
+  const all = referralTimeline(referral, units, summary);
   // Overdue: recorded events up to the due time, then the due marker, then later events.
   const entries = showDue && overdue ? all.filter((entry) => entry.at <= dueAt) : all;
   const after = showDue && overdue ? all.filter((entry) => entry.at > dueAt) : [];
@@ -844,6 +890,7 @@ export function ReferralTimeline({
   return (
     <div className={styles.pTab} data-testid="ward-referral-timeline-tab">
       <ReferralInformationNeedsPanel referral={referral} now={now} />
+      {presentation.kind === "unavailable" ? <p role="status">Referral progress unavailable.</p> : null}
       <ol className={styles.timeline} aria-label="Referral timeline">
         {entries.map((entry, index) => (
           <li key={`${entry.at}-${index}`}>
@@ -859,7 +906,7 @@ export function ReferralTimeline({
             <span className={styles.timelineAt}>{formatInstantWithDay(now, now)}</span>
             <span className={styles.nowDot} aria-hidden="true" />
             <span>
-              Now, waiting <span className={styles.mono}>{durMinutes(clocks.sinceReferral)}</span>
+              Now, waiting <span className={styles.mono}>{durMinutes(clocks?.sinceReferral ?? 0)}</span>
             </span>
           </li>
         ) : null}

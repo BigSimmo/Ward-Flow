@@ -1,6 +1,8 @@
 /* The queue's two layouts: the table while it has room, the cards on a phone. */
 .tableScroll {
   overflow-x: auto;
+  /* Layout sweep (REF-07): referral-board.module.css drops Needs and Fit when this is narrow. */
+  container: referral-queue / inline-size;
 }
 
 .cards {

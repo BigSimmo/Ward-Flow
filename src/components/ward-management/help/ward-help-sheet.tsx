@@ -10,7 +10,7 @@ import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-rol
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
-import { filterGlossary, glossaryForSites, screenHelpFor } from "./ward-help-content";
+import { filterGlossary, glossaryForSites, KEYBOARD_SHORTCUTS, screenHelpFor } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
 import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
@@ -82,8 +82,9 @@ export function WardHelpSheet({
       screenHelpFor(
         pathname,
         entries.filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
+        role === "admin" ? undefined : role,
       ),
-    [entries, pathname],
+    [entries, pathname, role],
   );
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query, glossaryForSites(sites));
@@ -196,6 +197,32 @@ export function WardHelpSheet({
                 <li key={action}>{action}</li>
               ))}
             </ul>
+            {help.questions?.length ? (
+              <>
+                <h4 className={styles.subTitle}>Questions</h4>
+                <dl className={styles.glossary} data-testid="ward-help-questions">
+                  {help.questions.map((item) => (
+                    <div key={item.question} className={styles.term}>
+                      <dt>{item.question}</dt>
+                      <dd>{item.answer}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            ) : null}
+            <details className={styles.shortcuts} data-testid="ward-help-shortcuts">
+              <summary>Keyboard shortcuts</summary>
+              <dl className={styles.glossary}>
+                {KEYBOARD_SHORTCUTS.map((item) => (
+                  <div key={item.keys} className={styles.term}>
+                    <dt>
+                      <kbd>{item.keys}</kbd>
+                    </dt>
+                    <dd>{item.action}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           </section>
         ) : (
           <div data-testid="ward-help-screen-none">

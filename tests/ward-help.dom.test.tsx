@@ -72,11 +72,11 @@ beforeEach(() => {
 afterEach(() => resetTourSeenForTests());
 
 describe("help content", () => {
-  it("finds the screen by the longest matching rail address", () => {
+  it("finds the screen by its own rail address, so Home never stands in for another page", () => {
     const entries = railEntries();
     expect(screenHelpFor("/ward-flow/movements", entries)?.title).toBe("Movements");
     expect(screenHelpFor("/ward-flow", entries)?.title).toBe("Home");
-    expect(screenHelpFor("/ward-flow/capacity/anything", entries)?.title).toBe("Capacity");
+    expect(screenHelpFor("/ward-flow/capacity/anything", entries)).toBeUndefined();
   });
 
   it("keeps every screen to at most three main actions", () => {
@@ -124,8 +124,15 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
   });
 
+  it("answers the screen's own questions and lists the keyboard shortcuts", () => {
+    route.pathname = "/ward-flow/handover";
+    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-help-questions").textContent).toContain("How do I hand over to the next shift?");
+    expect(screen.getByTestId("ward-help-shortcuts").textContent).toContain("Shift+R");
+  });
+
   it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
-    route.pathname = "/ward-flow/settings";
+    route.pathname = "/ward-flow/constellation";
     const onView = vi.fn();
     render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
     expect(screen.queryByTestId("ward-help-screen")).toBeNull();

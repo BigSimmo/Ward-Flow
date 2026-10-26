@@ -2024,6 +2024,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
         ]}
         notChecked={["roster, no feed"]}
+        // On a phone this line sits on the white "Ward details and checks" card, not the dark hero.
+        surface={isPhone ? "page" : "hero"}
       />
     </span>
   );
