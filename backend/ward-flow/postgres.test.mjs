@@ -2610,8 +2610,8 @@ test(
       assert.deepEqual(
         created.intake.charts.map((row) => [row.kind, row.name, row.sizeBytes, "base64" in row]),
         [
-          ["medication", "medication.pdf", 21, false],
-          ["observation", "observation.pdf", 21, false],
+          ["medication", "PDF", 21, false],
+          ["observation", "PDF", 21, false],
         ],
       );
       // The workspace keeps the contact details the workflow needs; the audit does not.
@@ -2631,7 +2631,9 @@ test(
       assert.equal(rows.length, 1);
       for (const secret of [file, contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
         assert.ok(!rows[0].text.includes(secret), `the audit copy must not hold ${secret}`);
-      assert.ok(rows[0].text.includes("medication.pdf"), "the audit still records which files were named");
+      // H-0049: the audit records each file's type, never its own name.
+      assert.ok(rows[0].text.includes('"PDF"'), "the audit still records which kind of file was attached");
+      assert.ok(!rows[0].text.includes("medication.pdf"), "the audit must not hold a file name");
 
       // Audit E-01: nor do the later steps on the same referral, through their Undo snapshots.
       let revision = result.body.snapshot.revision;
