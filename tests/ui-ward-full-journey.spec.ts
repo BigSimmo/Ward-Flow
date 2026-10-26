@@ -476,6 +476,9 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // never defaulted — the popup's whole reason to exist.
     await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-JOURNEY-0001");
     await page.getByTestId(`ward-ed-transport-legal-status-voluntary-${movementId}`).click();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason = page.getByTestId(`ward-ed-transport-legal-reason-${movementId}`);
+    if (await legalReason.isVisible()) await legalReason.selectOption("treating_team_confirmed");
     await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
     await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
 
