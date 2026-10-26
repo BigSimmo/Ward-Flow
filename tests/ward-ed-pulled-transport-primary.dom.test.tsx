@@ -7,7 +7,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
  * H-0974 (workflow-speed audit WS-09, 26 Oct 2026): once a bed is pulled for a patient and no
- * transport is logged, the row's main button logs the transport booking, even while the
+ * transport is logged, the row's main button, Log transport booking, logs the booking, even while the
  * examination is still unrecorded. Seeded WF-004 (St John of God Midland ED) is pulled with no
  * examination and no transport.
  */
@@ -20,10 +20,10 @@ function renderEd() {
 }
 
 describe("ED board row — pulled bed puts the transport booking first", () => {
-  it("makes Transport booked the main button for a pulled bed with no transport logged", () => {
+  it("makes Log transport booking the main button for a pulled bed with no transport logged", () => {
     renderEd();
     const next = screen.getByTestId("ward-ed-next-WF-004");
-    expect(next).toHaveTextContent("Transport booked");
+    expect(next).toHaveTextContent("Log transport booking");
     expect(next).not.toHaveTextContent("Record exam");
   });
 

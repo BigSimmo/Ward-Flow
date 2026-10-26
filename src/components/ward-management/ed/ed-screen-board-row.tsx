@@ -204,7 +204,9 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
             }
           : primaryAction === "transport"
             ? {
-                label: "Transport booked",
+                // Worded apart from the row menu's Transport booked, like Record exam beside
+                // Record examination, so the sheet never shows two buttons with one name.
+                label: "Log transport booking",
                 blocked: transportBlocked,
                 describedBy: `ward-ed-book-transport-unavailable-${movement.id}`,
                 expanded: transportOpen,
