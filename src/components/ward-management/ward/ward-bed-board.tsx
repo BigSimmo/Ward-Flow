@@ -9,11 +9,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
-import {
-  patientInitials,
-  useDiscreetNamesOnPhone,
-  usePatientNameDisplay,
-} from "@/components/ward-management/settings/discreet-names";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import { boardBedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
@@ -124,25 +120,12 @@ export function lookAlikeKeys(beds: readonly BedItem[]): Set<string> {
   return set;
 }
 
-function CellWord({
-  bed,
-  discreet,
-  collidingPairs,
-}: {
-  bed: BedItem;
-  discreet: boolean;
-  collidingPairs?: ReadonlySet<string>;
-}) {
+function CellWord({ bed, collidingPairs }: { bed: BedItem; collidingPairs?: ReadonlySet<string> }) {
   const occupant =
     bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
       ? null
       : occupantParts(bed.patientAlias, bed.umrn, collidingPairs);
   if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
-  // A2-20: Discreet names on phone. A bed cell is too narrow for a UMRN, so it shows initials; the
-  // bed number beside it and the bed panel still identify the person.
-  if (discreet) {
-    return <span className={styles.cellWord}>{patientInitials(bed.patientAlias ?? "")}</span>;
-  }
   return <CellName surname={occupant.surname} initial={occupant.initial} />;
 }
 
@@ -278,7 +261,6 @@ export function WardBedBoard({
 }: WardBedBoardProps) {
   const isPhone = useIsPhone();
   const nameFor = usePatientNameDisplay();
-  const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
   // Audit 24-4 NA2-09 (Josh, 24 Oct 2026): the ward's own ready figure (beds being made ready
@@ -443,7 +425,7 @@ export function WardBedBoard({
                         ) : (
                           <span className={styles.swatch} aria-hidden="true" />
                         )}
-                        <CellWord bed={bed} discreet={discreet} collidingPairs={collidingPairs} />
+                        <CellWord bed={bed} collidingPairs={collidingPairs} />
                       </span>
                     </button>
                   );

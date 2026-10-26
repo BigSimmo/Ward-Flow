@@ -187,8 +187,6 @@ export function DisplayPane({
   onHighContrastChange,
   rowDensity,
   onRowDensityChange,
-  discreetNames,
-  onDiscreetNamesChange,
   characterShortcuts,
   onCharacterShortcutsChange,
 }: {
@@ -204,8 +202,6 @@ export function DisplayPane({
   onRowDensityChange: (next: RowDensity) => void;
   characterShortcuts: boolean;
   onCharacterShortcutsChange: (next: boolean) => void;
-  discreetNames: boolean;
-  onDiscreetNamesChange: (next: boolean) => void;
 }) {
   return (
     <>
@@ -269,17 +265,6 @@ export function DisplayPane({
             </SettingRow>
             <SettingRow setting="high-contrast" title="High contrast" sub="Stronger edges and ink">
               <RowSwitch name="High contrast" checked={highContrast} onCheckedChange={onHighContrastChange} />
-            </SettingRow>
-            <SettingRow
-              setting="discreet-names"
-              title="Discreet names on phone"
-              sub="Initials and UMRN in lists on a phone"
-            >
-              <RowSwitch
-                name="Discreet names on phone"
-                checked={discreetNames}
-                onCheckedChange={onDiscreetNamesChange}
-              />
             </SettingRow>
           </Card>
         </div>

@@ -72,12 +72,6 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },
   { id: "reduce-motion", label: "Reduce motion", tab: "display", keywords: "animation accessibility" },
   { id: "high-contrast", label: "High contrast", tab: "display", keywords: "accessibility edges ink" },
-  {
-    id: "discreet-names",
-    label: "Discreet names on phone",
-    tab: "display",
-    keywords: "privacy initials umrn mobile hide name",
-  },
   { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
   { id: "help", label: "Help and tour", tab: "display", keywords: "help glossary tour guide words codes" },
   {

@@ -343,11 +343,11 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
     });
   });
 
-  it("shows initials and UMRN in the phone rows when Discreet names is on", () => {
+  it("shows full names in the phone rows even with the removed Discreet names key set (D-83)", () => {
     window.localStorage.setItem("ward-flow-discreet-names", "on");
     withPhone(() => {
       const list = screen.getByRole("region", { name: "Waiting for review" });
-      expect(list.textContent ?? "").toMatch(/\b[A-Z]{2} · UM\d+/);
+      expect(list.textContent ?? "").not.toMatch(/\b[A-Z]{2} · UM\d+/);
     });
   });
 });
