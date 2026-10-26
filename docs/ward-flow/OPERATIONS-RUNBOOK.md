@@ -142,8 +142,12 @@ has been tested.** The owner has not set a data-loss window (RPO) or recovery ti
 
 ## Backup-restore drill
 
-**NOT YET RUN. Running it touches the hosted Supabase project and needs Josh's explicit yes
-first.** Steps that create a new Supabase project are billable and need spending approval too.
+**Run once, 26 October 2026, and failed** (record in
+[RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-copy-restore-drill-26-october-2026)): the
+data came back complete, but the copy had been made by a script that copies tables and rows through
+Supabase's management service, so the audit locks were lost. **Only a `pg_dump -Fc` counts as a
+backup for this drill.** Running it touches the hosted Supabase project and needs Josh's explicit
+yes first. Steps that create a new Supabase project are billable and need spending approval too.
 
 Aim: prove a copy of the live `ward_flow` data can be brought back somewhere safe, and time it.
 It never writes to the live database.
@@ -154,14 +158,23 @@ It never writes to the live database.
    project) and approves any cost with a hard cap.
 2. Check the connector or dashboard shows the right project name and ID (DATABASE.md). Stop if
    anything differs.
-3. Write down the live schema version, the row count of each `ward_flow` table and the time.
-   Metadata only, no record contents.
+3. Write down the live schema version (the versions in `ward_flow.migrations`, not Supabase's
+   own migration history), the row count of each `ward_flow` table, the number of triggers,
+   functions and check constraints in the `ward_flow` schema, and the time. Metadata only, no
+   record contents.
 
 **Option A: local PostgreSQL (preferred, no hosted spend)**
 
 4. With an approved administrator connection, take a read-only `pg_dump -Fc` of the `ward_flow`
-   schema. Keep the dump and its checksum outside the repo.
-5. Start a throwaway local PostgreSQL that matches the live major version. Loopback only.
+   schema. Keep the dump and its checksum outside the repo. Josh copies the connection string
+   from the Supabase dashboard (Connect, Session pooler) into a private file on the machine
+   running the drill; the agent reads it without printing it and deletes it afterwards. Agents
+   never fetch or type the password. The project's safety hook will ask Josh to approve the dump
+   and the clean-up commands one at a time. Copies made through Supabase's management service or
+   table-by-table scripts do not count: they drop triggers, functions, check constraints and
+   grants.
+5. Start a throwaway local PostgreSQL that matches the live major version (17 as of October 2026).
+   Loopback only, or no network at all.
 6. Restore with `pg_restore --exit-on-error` into an empty database.
 7. Run the backend locally with the `postgres` adapter against the restored copy, as described in
    [operations-readiness.md](operations-readiness.md#backup-and-recovery-acceptance) step 5.
@@ -179,6 +192,7 @@ It never writes to the live database.
 - Restore finishes with no errors ignored.
 - Every `ward_flow` table has the same row count as step 3.
 - The migration ledger matches the live schema version.
+- The triggers, functions and check constraints in `ward_flow` match the counts from step 3.
 - `audit`, `record_access` and `break_glass` still refuse UPDATE, DELETE and TRUNCATE.
 - Row-level security is on for every table.
 - Option A: a local backend reads the same workspace revision and board, and a synthetic save,
