@@ -198,6 +198,16 @@ describe("rail bed alerts (live figures)", () => {
     }
   });
 
+  it("counts services at or over the bed alert line, not Alerts items (#793)", () => {
+    setRailOpenPreference(true);
+    renderRail();
+    const count = seededBedAlerts().services.filter((row) => row.occupancyPercent >= 85).length;
+    const trigger = screen.getByTestId("ward-rail-capacity-alerts-trigger");
+    const noun = count === 1 ? "service" : "services";
+    expect(trigger).toHaveAccessibleName(new RegExp(`Bed alerts: ${count === 0 ? "No" : count} ${noun} at 85%\\+`));
+    expect(trigger.getAttribute("aria-label")).not.toMatch(/\d+ alerts?\b|No alerts/u);
+  });
+
   it("labels Metro occupancy from the three metro services only — not a fixed 96.4%", () => {
     setRailOpenPreference(true);
     renderRail();

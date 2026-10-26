@@ -360,7 +360,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
   const alertCount = bedAlerts.services.filter((svc) => isBedAlert(svc.occupancyPercent)).length;
-  const alertCountLabel = alertCount === 0 ? "No alerts" : `${alertCount} ${alertCount === 1 ? "alert" : "alerts"}`;
+  // #793 (multi-account test, 26 Oct 2026): "2 alerts" read as the Alerts page's count. It counts
+  // health services at or over the bed alert line, so it says so.
+  const alertCountLabel = `${alertCount === 0 ? "No" : alertCount} ${alertCount === 1 ? "service" : "services"} at ${BED_ALERT_THRESHOLD_PERCENT}%+`;
   const metroPercent = bedAlerts.metroOccupancyPercent;
   const metroLabel = metroPercent === null ? "Metro —" : `Metro ${formatOccupancyPercent(metroPercent)}`;
   const hottestLabel = hottest ? `${hottest.shortName} ${formatOccupancyPercent(hottest.occupancyPercent)}` : "";
