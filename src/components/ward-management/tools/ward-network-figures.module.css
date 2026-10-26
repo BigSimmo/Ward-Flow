@@ -127,6 +127,11 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  /* Larger text wraps inside its half instead of running into the next filter. */
+  .filters button {
+    white-space: normal;
+  }
 }
 
 .filters button:hover {

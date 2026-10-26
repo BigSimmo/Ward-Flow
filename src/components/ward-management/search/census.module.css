@@ -412,25 +412,21 @@
   }
 }
 
-/* Layout sweep SHELL-03 (25 Oct 2026): beside a 300px This shift panel, a page under 68rem left the
- * table (720px at least) too narrow, so it scrolled sideways and hid the Time column at 1024 and
- * 1280. There the panel sits under the table instead, and moves beside it once both fit. */
-@container patient-search (min-width: 56rem) {
-  .side {
-    display: block;
-    padding: 0;
-    overflow: hidden;
-  }
-}
-
+/* Layout sweep SHELL-03 (25 Oct 2026): beside a 300px side panel, a page under 68rem left the table
+ * (720px at least) too narrow, so it scrolled sideways and hid the Time column at 1024 and 1280.
+ * Under 68rem the panel stays hidden, as on narrower screens, so choosing a row opens the details
+ * drawer (previewCardHidden) rather than updating a card far below the table. */
 @container patient-search (min-width: 68rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
   }
 
   .side {
+    display: block;
     position: sticky;
     top: var(--wf-s-3);
+    padding: 0;
+    overflow: hidden;
   }
 }
 
