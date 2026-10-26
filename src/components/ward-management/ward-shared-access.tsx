@@ -36,6 +36,7 @@ import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
+import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
@@ -588,7 +589,13 @@ function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDem
     (from?: HTMLElement) => {
       returnFocus.current = from ?? button.current;
       setOpen(true);
-      void loadMenu?.().then((menu) => setMenu(() => menu));
+      // H-0309: a menu that fails to load closes again and says so, rather than sitting "expanded".
+      void loadMenu?.()
+        .then((menu) => setMenu(() => menu))
+        .catch(() => {
+          setOpen(false);
+          announceToWardShell("The demo menu could not load.");
+        });
     },
     [loadMenu],
   );

@@ -1,6 +1,6 @@
 // @ts-check
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
-import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
+import { VerifierRateLimitedError, VerifierUnavailableError, bootstrapCoordinators } from "./auth.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -107,7 +107,6 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   const fetch = dependencies.fetch ?? globalThis.fetch;
   const now = dependencies.now ?? Date.now;
   const timeoutMs = dependencies.timeoutMs ?? 5000;
-  const coordinatorIds = new Set(config.coordinatorIds ?? []);
   /** The accounts outside the bootstrap list that hold a role here. A failed read keeps the last list. */
   const loadRoleHolders = dependencies.roleHolders ?? (async () => []);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Invalid verifier deadline");
@@ -235,7 +234,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
    * still running after a whole refresh period is abandoned and a new one started.
    */
   async function holdsRole(subject) {
-    if (coordinatorIds.has(subject)) return true;
+    if (bootstrapCoordinators(config, now()).includes(subject)) return true;
     const stalled = holders.pending !== null && now() - holders.startedAt >= ROLE_HOLDERS_REFRESH_MS;
     if ((holders.pending === null && now() >= holders.nextReadAt) || stalled) startRead();
     if (holders.pending) {
