@@ -30,6 +30,11 @@
     "line": "Ward referrals show permitted progress while keeping other destinations private."
   },
   {
+    "id": "2026-10-26-stopped-transport-wording",
+    "date": "2026-10-26",
+    "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
+  },
+  {
     "id": "2026-10-26-archived-referral-progress",
     "date": "2026-10-26",
     "line": "Older referrals and moves in History now show their progress too, with other wards still private."

@@ -158,6 +158,7 @@ describe("bed dossier inbound bed", () => {
           drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
           setDrawerLeavingDestination={() => {}}
           onRecordLeft={() => {}}
+          onUpdateBlocker={() => undefined}
           bedDrawerRef={createRef<HTMLElement>()}
           onKeyDown={() => {}}
         />

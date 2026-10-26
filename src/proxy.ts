@@ -1,13 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
-import {
-  DEVELOPER_AREA_HEADER,
-  DEVELOPER_AREA_PATH_HEADER,
-  WARD_FLOW_OFFLINE_HEADER,
-  isDeveloperGatedPath,
-  isWardFlowPath,
-} from "@/lib/developer-area/headers";
+import { DEVELOPER_AREA_HEADER, DEVELOPER_AREA_PATH_HEADER, isDeveloperGatedPath } from "@/lib/developer-area/headers";
 import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspaceOrigins } from "@/lib/security-headers";
 
 // Next 16 renamed the `middleware` file convention to `proxy` (see
@@ -115,13 +109,9 @@ export async function proxy(request: NextRequest) {
     // not (2026-09-02 audit, L76). Read the constant.
     headers.delete(DEVELOPER_AREA_HEADER);
     headers.delete(DEVELOPER_AREA_PATH_HEADER);
-    headers.delete(WARD_FLOW_OFFLINE_HEADER);
     if (isDeveloperGatedPath(pathname)) {
       headers.set(DEVELOPER_AREA_HEADER, "1");
       headers.set(DEVELOPER_AREA_PATH_HEADER, `${pathname}${request.nextUrl.search}`);
-    }
-    if (isWardFlowPath(pathname)) {
-      headers.set(WARD_FLOW_OFFLINE_HEADER, "1");
     }
     return headers;
   };

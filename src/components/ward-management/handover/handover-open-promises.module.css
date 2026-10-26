@@ -35,8 +35,18 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--wf-accent-ink);
   font-weight: 600;
+}
+
+/* A finger needs a 44px target; the line grows to hold it. */
+@media (pointer: coarse) {
+  .link {
+    min-height: 44px;
+  }
 }
 
 /* Spelled out in words beside the colour, never colour alone. */

@@ -371,14 +371,16 @@ function rankOf(availability: ShortlistAvailability): number {
 }
 
 /**
- * Same-cohort wards, eligible first, then a fixed neutral order (health service, then ward name),
- * cut to `limit`. Audit 1, Josh 20 Oct (NB-4): the "least restrictive first" reorder is gone; a
- * coordinator is not steered toward one eligible ward over another.
+ * Same-cohort wards, eligible first, then a fixed neutral order (health service, then ward name).
+ * Audit 1, Josh 20 Oct (NB-4): the "least restrictive first" reorder is gone; a coordinator is not
+ * steered toward one eligible ward over another. Every ward is returned unless a caller passes
+ * `limit`: the old default of 3 was a latent top-three list (NB-26-03, 26 Oct 2026), and
+ * `tests/ward-never-build-drift-guard.test.ts` pins that no screen passes a cap.
  */
-export function eligibleCandidatesAmong(movement: Movement, units: Unit[], now: Instant, limit = 3) {
+export function eligibleCandidatesAmong(movement: Movement, units: Unit[], now: Instant, limit?: number) {
   return units
     .filter((unit) => unit.cohort === movement.cohort)
     .map((unit) => ({ unit, verdict: closureAwareVerdict(unit, eligibility(movement, unit, now)) }))
     .sort((a, b) => Number(b.verdict.eligible) - Number(a.verdict.eligible) || byServiceThenName(a.unit, b.unit))
-    .slice(0, limit);
+    .slice(0, limit ?? units.length);
 }

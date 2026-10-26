@@ -55,6 +55,21 @@
   align-items: stretch;
 }
 
+/* Layout sweep STATS-01: cards that each take the whole width of the grid they sit in, one under
+ * another. On a wide screen the card before them spans the cell they would have left empty. */
+.gridRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+@media (min-width: 80.0625rem) {
+  .grid3 > :nth-child(3n + 2):has(+ .gridRow) {
+    grid-column: span 2;
+  }
+}
+
 .grid2 > .stack > :last-child,
 .grid3 > .stack > :last-child {
   flex: 1 1 auto;
@@ -861,4 +876,26 @@
    finder's box. Scoped under .search so it outranks the wf form `.control` rule it repeats. */
 .search .searchInput {
   flex: 1 1 auto;
+}
+
+/* Layout sweep STATS-03: up to 1600px the ward and ED pressure tables take a full row each, so the
+   Awaiting and 24h+ columns stay in view instead of scrolling out of a half column. */
+@media (max-width: 100rem) {
+  .grid2:has(table[id="wardPressureTable"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Layout sweep STATS-12: on a touch tablet a row's name link and each finder row are full-height
+   tap targets. */
+@media (pointer: coarse) and (min-width: 48.0625rem) {
+  .rowLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-touch);
+  }
+
+  .finderLink {
+    min-height: var(--wf-touch);
+  }
 }
