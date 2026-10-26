@@ -1194,13 +1194,13 @@ export function makeNotice(
  * directly, since no public dispatch can construct such a notice.
  */
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
-  const notifiable = notices.filter((notice) => notice.to.role !== "demo");
-  if (notifiable.length === 0) return state;
+  const wanted = notices.filter((notice) => notice.to.role !== "demo");
+  if (wanted.length === 0) return state;
   // ENG-01 (H-0334): `makeNotice` counts from `notices.length`, and an Undo withdraws notices, so a
   // new notice can take the id of a later one still held. Only such a clash is renumbered, past the
   // highest number on that subject and kind; every other id is unchanged.
   const taken = new Set(state.notices.map((notice) => notice.id));
-  const unique = notifiable.map((notice) => {
+  const notifiable = wanted.map((notice) => {
     if (!taken.has(notice.id)) {
       taken.add(notice.id);
       return notice;
@@ -1210,7 +1210,7 @@ export function appendNotices(state: WardFlowState, notices: readonly Notice[]):
     taken.add(id);
     return { ...notice, id };
   });
-  return { ...state, notices: [...state.notices, ...unique] };
+  return { ...state, notices: [...state.notices, ...notifiable] };
 }
 
 /**
