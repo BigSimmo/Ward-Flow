@@ -85,11 +85,10 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
     .click();
   await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
   await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
-  // On the phone project (WebKit) a choice made straight after the one before was once lost: in
-  // #830's run 40357923982 Security came back blank after Cohort, and Ask for a bed stayed greyed.
-  // Not reproduced locally. The form is unchanged (a lost answer stays blank and the button stays
-  // greyed, so nothing is filed), so the journey answers again until the form holds every answer,
-  // and notes each extra round on the report so a repeat is still seen.
+  // Each answer is checked as it is chosen. On the phone project (WebKit) Security once came back
+  // blank straight after Cohort (#830 run 40357923982, H-1019): the form read the select inside a
+  // queued state update, after React had put the select back. Stream R fixed the form; a lost
+  // answer now fails here, on the field that lost it, not as a greyed button two minutes later.
   const raiseAnswers = [
     ["ward-ed-referral-cohort", "Adult"],
     ["ward-ed-referral-security", "Open"],
@@ -99,16 +98,13 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
     ["ward-ed-referral-urgency", "3"],
     ["ward-ed-referral-observation", "general"],
   ] as const;
-  let raiseRounds = 0;
-  await expect(async () => {
-    raiseRounds += 1;
-    for (const [testId, value] of raiseAnswers) await page.getByTestId(testId).selectOption(value);
-    await page.getByTestId("ward-ed-referral-high-acuity-not-required").check();
-    for (const [testId, value] of raiseAnswers) await expect(page.getByTestId(testId)).toHaveValue(value);
-    await expect(page.getByTestId("ward-ed-referral-submit")).toBeEnabled({ timeout: 2_000 });
-  }).toPass({ timeout: 30_000 });
-  if (raiseRounds > 1)
-    testInfo.annotations.push({ type: "answers-lost", description: `ED raise form needed ${raiseRounds} rounds` });
+  for (const [testId, value] of raiseAnswers) {
+    await page.getByTestId(testId).selectOption(value);
+    await expect(page.getByTestId(testId)).toHaveValue(value);
+  }
+  await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
+  for (const [testId, value] of raiseAnswers) await expect(page.getByTestId(testId)).toHaveValue(value);
+  await expect(page.getByTestId("ward-ed-referral-submit")).toBeEnabled();
   await expectAccessible(page, testInfo, "ED raise form, filled");
   await page.getByTestId("ward-ed-referral-submit").click();
 
