@@ -47,9 +47,26 @@ function toControlledMinutes(val: string | Instant): number {
   return Math.floor(parsed / 60_000);
 }
 
-function computeControlledRemainingMinutes(expiresAt: string | Instant, now?: string | Instant): number {
+/**
+ * TC-08 (audit 24 Oct 2026, H-0777): an expiry and the time it is read against must be on one clock.
+ * A numeric expiry is a board `Instant` (demo minutes), so it is read against the board clock: the
+ * `now` prop when it is an Instant, else the provider's clock. An ISO expiry is real time, so it is
+ * read against real time: the `now` prop when it is a string, else the device's date. The old code
+ * read a board Instant against `Date.now()` minutes, and an ISO expiry against a board Instant, so
+ * preview mode could show an alert decades long or already gone.
+ */
+function computeControlledRemainingMinutes(
+  expiresAt: string | Instant,
+  now?: string | Instant,
+  boardNow?: Instant,
+): number {
   const expMin = toControlledMinutes(expiresAt);
-  const nowMin = now !== undefined ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
+  if (typeof expiresAt === "number") {
+    const boardClock = typeof now === "number" ? now : boardNow;
+    if (boardClock === undefined || !Number.isFinite(boardClock)) return 0;
+    return expMin - boardClock;
+  }
+  const nowMin = typeof now === "string" ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
   return expMin - nowMin;
 }
 
@@ -84,6 +101,8 @@ function ControlledBroadcastBanner({
   onClear?: () => void;
 }) {
   const [, setClockTick] = useState(0);
+  // The board clock, when a provider is in reach; NaN outside one (no board time to read).
+  const boardNow = useWardFlowClock(Number.NaN);
   useEffect(() => {
     if (now !== undefined || !activeAlert) return;
     const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
@@ -93,7 +112,7 @@ function ControlledBroadcastBanner({
   if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
     return null;
   }
-  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now);
+  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now, boardNow);
   if (remainingMinutes <= 0) {
     return null;
   }

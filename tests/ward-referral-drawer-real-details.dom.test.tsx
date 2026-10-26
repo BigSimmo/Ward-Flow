@@ -63,10 +63,11 @@ describe("the referral drawer shows only what the record holds", () => {
     );
     expect(rows.length).toBeGreaterThan(0);
     const units = new Map(allUnits().map((unit) => [unit.id, unit.name]));
+    // Walk-through WT-27: each row names a real ward and never shows the internal ward id.
     for (const row of rows) {
-      const matched = [...units.entries()].find(([id]) => row.textContent?.includes(id));
+      const matched = [...units.entries()].find(([, name]) => row.textContent?.includes(name));
       expect(matched, row.textContent ?? "").toBeDefined();
-      expect(row.textContent).toContain(matched![1]);
+      expect(row.textContent).not.toContain(matched![0]);
     }
     expect(container.textContent).not.toMatch(/Ward 4W Adult Secure|Selby Older Adult Secure Unit|Ward 2J Adult Open/);
   });

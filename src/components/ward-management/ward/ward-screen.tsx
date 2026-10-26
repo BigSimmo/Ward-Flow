@@ -54,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
+  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
   isOpen,
   isStoppedTransportAwaitingRelease,
@@ -1118,7 +1119,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) =>
         setToastMessage(
           wardCommandFailure(outcome) ??
-            `${morningRollupTimeLabel} Morning Bed Rollup confirmed: ${releasesCountedToday.length} discharges planned today.`,
+            `Morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
         ),
     );
   }
@@ -1828,7 +1829,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
-  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Discharges held up). A
+  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Releases held up). A
   // release dated beyond today is not a decision for this shift, so it no longer inflates the
   // Decisions badge past the ward's own expected discharges.
   const departureDecisions = pendingBedReleases
@@ -2055,7 +2056,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
           {
             id: "held",
-            label: "Discharges held up",
+            label: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
             value: blockedReleases.length,
             tone: blockedReleases.length > 0 ? "danger" : undefined,
           },
@@ -2073,8 +2074,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   );
   const wardHeroFootAside = (
     <span>
-      {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"} {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-      {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+      {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
+      {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
+      {formatInstant(unit.allocatable.confirmedAt)} · {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
     </span>
   );
 

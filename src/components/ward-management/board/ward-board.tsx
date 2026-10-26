@@ -29,6 +29,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
+import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
@@ -456,8 +457,8 @@ export function WardBoard({
    * 🔴 **THE LAST SENTENCE HERE USED TO SAY "no leave beds are modelled on this board, and no
    * leave figure is rendered from them", AND THE SECOND HALF WAS FALSE.** `leaveBeds` was
    * `[] as const`. Two of the three derivations it feeds genuinely never read it —
-   * `headlineAvailable` and `constraintSentence` both reduce to `capacityBreakdown(...).availableNow`,
-   * which is `min(allocatable, empty)`. **But `capacityBreakdown` also returns `onLeave`, computed as
+   * `headlineAvailable` and `constraintSentence` both reduced to `capacityBreakdown(...).availableNow`
+   * then (the headline now reads `readyBedsNow`, Audit 6). **But `capacityBreakdown` also returns `onLeave`, computed as
    * `leave.filter((bed) => bed.unitId === unit.id).length`, and this board renders it as a labelled
    * figure.** So the board announced **On leave: 0** on every ward, always.
    *
@@ -536,8 +537,8 @@ export function WardBoard({
    * spec D3/D14 requires to be identical at service, hospital and ward level; the words are never
    * retyped here, which is what stops this board drifting from the home page's.
    *
-   * `availableNow` is the same figure the header above already prints through `headlineAvailable` —
-   * that helper IS `capacityBreakdown(...).availableNow` floored, so the two cannot disagree.
+   * Ready here is `states.ready` (`readyBedsNow`, as the header prints), NOT `breakdown.availableNow`,
+   * which still counts a bed pulled for an incoming patient (NA3-09, audit 26 Oct 2026).
    */
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
@@ -690,7 +691,7 @@ export function WardBoard({
    * when there is nothing to say cannot tell a reader that there is nothing to say.
    */
   const pulledIn = incoming.filter((person) => person.state === "pulled");
-  const figures: { key: string; label: string; value: number; led?: boolean }[] = [
+  const figures: { key: string; label: string; value: number; led?: boolean; note?: string }[] = [
     {
       key: "availableNow",
       label: CAPACITY_FIGURE_LABELS.availableNow,
@@ -705,6 +706,8 @@ export function WardBoard({
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
       value: breakdown.confirmedToday,
       led: outgoingBasis === "confirmed",
+      // NA3-06 (decision 16): Capacity's note, explaining the bed meeting's lower confirmed figure.
+      note: confirmedHeldUpNote(breakdown.confirmedToday, breakdown.confirmedHeldUpToday),
     },
     {
       key: "expectedToday",
@@ -1214,7 +1217,7 @@ export function WardBoard({
             Today on this ward
           </h2>
           <dl className={styles.triageFigures}>
-            {figures.map(({ key, label, value, led = false }) => {
+            {figures.map(({ key, label, value, led = false, note }) => {
               return (
                 <div
                   key={key}
@@ -1225,6 +1228,7 @@ export function WardBoard({
                 >
                   <dt className={styles.triageLabel}>{label}</dt>
                   <dd className={styles.triageValue}>{value}</dd>
+                  {note && <dd className={styles.triageLedNote}>{note}</dd>}
                   {led && <dd className={styles.triageLedNote}>shown in Going out</dd>}
                 </div>
               );

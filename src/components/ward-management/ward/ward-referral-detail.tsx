@@ -30,6 +30,7 @@ import {
   CLEARANCE_STATUS_LABELS,
   type ReferralIntakeDetails,
 } from "@/components/ward-management/referrals/referral-submission";
+import { documentLabel } from "@/components/ward-management/referrals/referral-document-links";
 import { referralFit, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-referral-detail.module.css";
 
@@ -377,7 +378,10 @@ export function WardReferralDetail({
       <Section title="Arrival">{dossier?.arrival.length ? <Rows rows={dossier.arrival} /> : <Empty />}</Section>
 
       <Section title="Documents" testId="ward-referral-documents">
-        {(dossier?.documents.length ?? 0) + (intake?.charts.length ?? 0) + (movement.uploadedForms?.length ?? 0) ===
+        {(dossier?.documents.length ?? 0) +
+          (intake?.charts.length ?? 0) +
+          (intake?.chartsToFollow?.length ?? 0) +
+          (movement.uploadedForms?.length ?? 0) ===
         0 ? (
           <Empty />
         ) : (
@@ -413,6 +417,15 @@ export function WardReferralDetail({
                 <span className={styles.docMain}>
                   <strong>{referralChartLabel(chart)}</strong>
                   <span>Attached to the referral. The file stays with the sender.</span>
+                </span>
+              </li>
+            ))}
+            {/* A27: a chart the sender marked to follow is named, so the ward sees it is still owed. */}
+            {intake?.chartsToFollow?.map((kind) => (
+              <li key={`${kind}-to-follow`}>
+                <span className={styles.docMain}>
+                  <strong>{documentLabel(kind)}</strong>
+                  <span>To follow, not attached yet.</span>
                 </span>
               </li>
             ))}

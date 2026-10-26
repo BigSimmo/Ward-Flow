@@ -113,7 +113,7 @@ describe("audit metrics rendered regressions", () => {
         <StatisticsCompareScreen units={[alpha, beta]} admissions={admissions} emergencyDepartments={[]} />
       </WardFlowProvider>,
     );
-    expect(screen.getByText("Mean stay", { selector: "span" }).parentElement).toHaveTextContent("3.0d");
+    expect(screen.getByText("Average stay", { selector: "span" }).parentElement).toHaveTextContent("3.0d");
   });
 
   it.each([

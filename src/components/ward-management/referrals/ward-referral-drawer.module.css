@@ -1511,6 +1511,18 @@
   overflow-wrap: anywhere;
 }
 
+/* A27: "To follow" sits under the chart's name, lined up with it, as a full-height tap target. */
+.toFollow {
+  display: inline-flex;
+  min-height: var(--wf-h-sm);
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: -6px 0 6px calc(16px + var(--wf-s-3));
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  cursor: pointer;
+}
+
 .fileInput {
   position: absolute;
   width: 1px;

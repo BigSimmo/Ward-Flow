@@ -82,7 +82,7 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 
 ## Migrations the app expects
 
-The backend accepts a database at migration 5 through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
+The backend accepts a database at migration 5 through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
 
 | Migration | What the app needs it for                                | If it is missing                                                                 |
 | --------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |

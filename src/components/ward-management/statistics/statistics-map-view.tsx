@@ -392,7 +392,7 @@ export function StatisticsMapView({
               { value: String(network.blocked), label: "Blocked", tone: network.blocked ? "warning" : undefined },
             ]
           : [
-              { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Mean stay" },
+              { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Average stay" },
               { value: String(network.longStays), label: "Over 3 months" },
               { value: String(network.occupied), label: "Beds in use" },
             ];
@@ -677,10 +677,10 @@ function BelowMap({
             <ColumnChart columns={columns} gridlines label="Expected discharges across the network, next 7 days" />
           </CardBody>
         </StatCard>
-        <StatCard icon={Lock} title="Blocked discharges" aside={`${blocked.totalCount} not departed`}>
+        <StatCard icon={Lock} title="Discharges held up" aside={`${blocked.totalCount} not departed`}>
           <CardBody>
             <BarList
-              label="Blocked discharges by blocker"
+              label="Discharges held up, by reason"
               labelWidth="min(15rem, 42%)"
               rows={blocked.tallies.map((tally) => ({ id: tally.reason, label: tally.reason, value: tally.count }))}
             />
@@ -700,13 +700,13 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Mean stay by ward"
+        title="Average stay by ward"
         aside="Top 10, days"
         data-testid="ward-statistics-map-below"
       >
         <CardBody>
           <BarList
-            label="Mean length of stay by ward, top 10"
+            label="Average stay by ward, top 10"
             labelWidth="min(14rem, 42%)"
             axis
             rows={wards.map(({ ward, site }) => ({

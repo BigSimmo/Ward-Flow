@@ -100,13 +100,25 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
   if (!isRecord(contact) || !only(contact, contactKeys) || !strings(contact, contactKeys)) return false;
   if (
     !isRecord(documentation) ||
-    !only(documentation, ["medical", "expectedAt", "contactName", "contactPhone", "triage", "additional", "charts"]) ||
+    !only(documentation, [
+      "medical",
+      "expectedAt",
+      "contactName",
+      "contactPhone",
+      "triage",
+      "additional",
+      "charts",
+      "toFollow",
+    ]) ||
     !strings(documentation, ["expectedAt", "contactName", "contactPhone"]) ||
     ![documentation.medical, documentation.triage, documentation.additional].every((item) =>
       oneOf(item, ["", "yes", "no"]),
     ) ||
     !Array.isArray(documentation.charts) ||
-    documentation.charts.length !== 0
+    documentation.charts.length !== 0 ||
+    (documentation.toFollow !== undefined &&
+      (!Array.isArray(documentation.toFollow) ||
+        !documentation.toFollow.every((kind) => oneOf(kind, ["medication", "observation"]))))
   )
     return false;
   if (

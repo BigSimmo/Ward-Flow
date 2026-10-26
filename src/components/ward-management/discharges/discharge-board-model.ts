@@ -1,6 +1,7 @@
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { calendarDateOf, dayOf, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeRecord } from "@/components/ward-management/ward-discharge-records";
+import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -266,8 +267,10 @@ export function dischargeOrderLine({
 export function kpiCardLabel(status: WorkStatus, population: Population): string {
   // DA-16 (overall review, 20 Oct 2026): "Blocked releases" read as beds being blocked. The owner's
   // own words for this count, approved 6 Sept 2026 for the capacity figure, are "Discharges held up"
-  // (`ward-derivations.ts`), so the board says the same.
-  if (status === "blocked") return population === "releases" ? "Discharges held up" : "Records held up";
+  // (`ward-derivations.ts`), so the board said the same. Decision 15 (26 Oct 2026) keeps "Discharges
+  // held up" for patients with a recorded hold, so a count of releases says "Releases held up". Not
+  // "today and tomorrow": this board counts a held-up release whatever its date (WT-17).
+  if (status === "blocked") return population === "releases" ? BED_RELEASES_HELD_UP_ANY_DATE_LABEL : "Records held up";
   if (status === "departed") return population === "releases" ? "Discharged · 24h" : "Departed";
   return WORK_STATUS_LABELS[status];
 }

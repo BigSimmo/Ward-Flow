@@ -6,7 +6,14 @@ import { Button, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
 import { uploadedFileTypeOf } from "../ward-uploaded-file";
 import { useWardDataMode } from "../ward-shared-access";
-import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
+import {
+  CHART_MAX_BYTES,
+  CHART_MIME_TYPES,
+  type FollowableChartKind,
+  type ReferralChart,
+  type ReferralContact,
+  type ReferralIntakeDetails,
+} from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
 export type DocumentationDraft = {
@@ -17,7 +24,25 @@ export type DocumentationDraft = {
   triage: "" | "yes" | "no";
   additional: "" | "yes" | "no";
   charts: ReferralChart[];
+  /** A27: required charts marked to follow. Optional so a draft saved before it still loads. */
+  toFollow?: FollowableChartKind[];
 };
+
+/** A required chart is answered when it is attached or marked to follow (A27). */
+export function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKind): boolean {
+  return draft.charts.some((chart) => chart.kind === kind) || (draft.toFollow ?? []).includes(kind);
+}
+
+/** The intake's chart fields: what is attached, and what is marked to follow (A27). A chart attached
+ *  after it was marked to follow counts as attached. Community referrals carry no charts. */
+export function intakeCharts(
+  draft: DocumentationDraft,
+  community: boolean,
+): Pick<ReferralIntakeDetails, "charts" | "chartsToFollow"> {
+  if (community) return { charts: [] };
+  const chartsToFollow = (draft.toFollow ?? []).filter((kind) => !draft.charts.some((chart) => chart.kind === kind));
+  return { charts: draft.charts, ...(chartsToFollow.length ? { chartsToFollow } : {}) };
+}
 
 export const EMPTY_DOCUMENTATION: DocumentationDraft = {
   medical: "",
@@ -58,12 +83,8 @@ export function documentationProblems(
   }
   if (clearanceOnly) return problems;
   add(!draft.triage, "triage", "Answer whether triage and RAMP are completed");
-  add(!draft.charts.some((chart) => chart.kind === "medication"), "medication-upload", "Attach the medication chart");
-  add(
-    !draft.charts.some((chart) => chart.kind === "observation"),
-    "observation-upload",
-    "Attach the observation chart",
-  );
+  add(!chartAnswered(draft, "medication"), "medication-upload", "Attach the medication chart or mark it to follow");
+  add(!chartAnswered(draft, "observation"), "observation-upload", "Attach the observation chart or mark it to follow");
   add(!draft.additional, "additional", "Answer whether there is anything else to attach");
   add(
     draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"),
@@ -77,11 +98,8 @@ export function documentationError(draft: DocumentationDraft): string | null {
   const clearance = clearanceError(draft);
   if (clearance) return clearance;
   if (!draft.triage) return "Answer whether triage and RAMP are completed.";
-  if (
-    !draft.charts.some((chart) => chart.kind === "medication") ||
-    !draft.charts.some((chart) => chart.kind === "observation")
-  )
-    return "Attach the medication and observation charts.";
+  if (!chartAnswered(draft, "medication") || !chartAnswered(draft, "observation"))
+    return "Attach the medication and observation charts, or mark them to follow.";
   if (!draft.additional) return "Answer whether there is anything else to attach.";
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"))
     return "Attach the additional document or choose No.";
@@ -135,6 +153,8 @@ function ChartUpload({
   file,
   onChange,
   buttonId,
+  toFollow,
+  onToFollow,
 }: {
   kind: ReferralChart["kind"];
   label: string;
@@ -142,6 +162,9 @@ function ChartUpload({
   onChange: (file?: ReferralChart) => void;
   /** Put on the Upload button (the file input is hidden), for an error summary link. */
   buttonId?: string;
+  /** A27: offered on the two required charts only. Attaching a file clears it. */
+  toFollow?: boolean;
+  onToFollow?: (toFollow: boolean) => void;
 }) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -194,8 +217,8 @@ function ChartUpload({
   return (
     <div className={styles.uploadItem}>
       <div className={styles.uploadRow}>
-        <span className={styles.uploadStatus} data-complete={!!file}>
-          {file ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />}
+        <span className={styles.uploadStatus} data-complete={!!file || !!toFollow}>
+          {file || toFollow ? <Check aria-hidden="true" /> : <Circle aria-hidden="true" />}
         </span>
         <div className={styles.uploadDescription}>
           <label htmlFor={id} className={styles.required}>
@@ -204,7 +227,9 @@ function ChartUpload({
           <span>
             {file
               ? `${uploadedFileTypeOf(undefined, file.mimeType)} · ${(file.sizeBytes / 1024).toFixed(1)} KB`
-              : "PDF, PNG or JPEG, up to 2 MB"}
+              : toFollow
+                ? "To follow. The referral says it is not attached yet."
+                : "PDF, PNG or JPEG, up to 2 MB"}
           </span>
         </div>
         <input
@@ -243,6 +268,17 @@ function ChartUpload({
           <span className={styles.removeSpacer} aria-hidden="true" />
         )}
       </div>
+      {onToFollow && !file ? (
+        <label className={styles.toFollow}>
+          <input
+            type="checkbox"
+            aria-label={`${label} to follow`}
+            checked={!!toFollow}
+            onChange={(event) => onToFollow(event.target.checked)}
+          />
+          To follow
+        </label>
+      ) : null}
       {error && (
         <p className={styles.flowError} role="alert">
           {error}
@@ -294,8 +330,16 @@ export function DocumentationPanel({
     onChange((current) => ({
       ...current,
       charts: [...current.charts.filter((file) => file.kind !== kind), ...(chart ? [chart] : [])],
+      ...(chart ? { toFollow: (current.toFollow ?? []).filter((item) => item !== kind) } : {}),
     }));
   }
+  function changeToFollow(kind: FollowableChartKind, marked: boolean) {
+    onChange((current) => {
+      const rest = (current.toFollow ?? []).filter((item) => item !== kind);
+      return { ...current, toFollow: marked ? [...rest, kind] : rest };
+    });
+  }
+
   const clearance =
     draft.medical === "yes"
       ? ({ tone: "success", label: "Cleared" } as const)
@@ -404,6 +448,8 @@ export function DocumentationPanel({
                 buttonId={`${id}-medication-upload`}
                 file={draft.charts.find((file) => file.kind === "medication")}
                 onChange={(file) => changeChart("medication", file)}
+                toFollow={(draft.toFollow ?? []).includes("medication")}
+                onToFollow={(marked) => changeToFollow("medication", marked)}
               />
               <ChartUpload
                 key={`${id}-observation`}
@@ -412,6 +458,8 @@ export function DocumentationPanel({
                 buttonId={`${id}-observation-upload`}
                 file={draft.charts.find((file) => file.kind === "observation")}
                 onChange={(file) => changeChart("observation", file)}
+                toFollow={(draft.toFollow ?? []).includes("observation")}
+                onToFollow={(marked) => changeToFollow("observation", marked)}
               />
             </div>
             <YesNo

@@ -93,11 +93,11 @@ function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
   return (
     <>
       <GroupHead
-        title="Blocked discharges"
+        title="Discharges held up"
         variant="letter"
         aside={`${small(blocked.total)} of ${small(blocked.admissions)} not departed`}
       />
-      <TallyList label="Blocked discharges by blocker" tallies={blocked.tallies} />
+      <TallyList label="Discharges held up, by reason" tallies={blocked.tallies} />
       {"statement" in declines ? (
         <>
           <GroupHead title="Declines by reason" variant="letter" />
@@ -399,7 +399,7 @@ export function StatisticsSummaryPhone({
             <IconTile icon={Layers} />
             <span className={styles.navText}>
               <b>More figures</b>
-              <span>Blocked discharges, declines, pull to arrival</span>
+              <span>Discharges held up, declines, pull to arrival</span>
             </span>
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </button>
