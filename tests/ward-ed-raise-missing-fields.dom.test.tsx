@@ -24,7 +24,7 @@ vi.mock("next/link", () => ({
 afterEach(cleanup);
 
 /**
- * Overall review (20 Oct 2026): the ED "Raise into a movement" form refused Send with a reason but
+ * Overall review (20 Oct 2026): the ED "Ask for a bed" form refused Send with a reason but
  * did not mark the missing fields or move focus to them. It now does what the registration form
  * does (DA-12): every unanswered question is marked, listed, and the first takes focus.
  */

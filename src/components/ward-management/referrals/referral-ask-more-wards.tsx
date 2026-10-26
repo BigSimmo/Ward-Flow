@@ -18,6 +18,7 @@ import { isAwaitingAnswer, referralWithdrawn } from "@/components/ward-managemen
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
 import ph from "./referral-match-phone.module.css";
 import styles from "./referral-ask-more-wards.module.css";
@@ -55,6 +56,10 @@ export function useAskMoreWards({
   const [attemptedAt, setAttemptedAt] = useState<number | null>(null);
   // Audit 24-3 SV-3: the list and its ticks stay until the ask is accepted, with the reason if not.
   const save = useWardFormSave(referral.id);
+  // Audit CS3-01: the open ward list is checked against the board it opened on, so another desk's
+  // answer meanwhile is reported, not asked over. Not scoped to the card: its Ask button can sit in
+  // a footer outside it.
+  useHoldOpenForm(open);
 
   const wardArms = referral.destinations.filter(
     (addressing): addressing is WardArm => addressing.destination.kind === "psychiatric_ward",

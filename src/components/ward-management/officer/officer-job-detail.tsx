@@ -57,7 +57,7 @@ import type { ReferralIntakeDetails } from "@/components/ward-management/referra
 /** The referral drawer's own risk wording (`RISK_FLAG_LABELS`), kept here so the phone bundle stays small. */
 const RISK_FLAG_WORDS: Record<ReferralIntakeDetails["riskFlags"][number], string> = {
   aggression: "Aggression",
-  absconding: "Absconding",
+  absconding: "Absent without leave",
   medical: "Acute medical",
   vulnerable: "Vulnerable adult",
   suicide: "Suicide or self-harm",

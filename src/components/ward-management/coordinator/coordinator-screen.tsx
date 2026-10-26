@@ -16,6 +16,8 @@ import {
 } from "@/components/ward-management/alerts/alerts-model";
 import type { QueueEntry, QueueHandlers } from "@/components/ward-management/alerts/alerts-queue";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
@@ -527,6 +529,12 @@ export function CoordinatorScreen() {
       .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised }));
   }, [actionInbox, movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements]);
   const actEntries = alertEntries.filter((entry) => entry.group === "act");
+  // WS-02: accepted referrals with no bed pulled sit in Act now beside the alerts, in the same scope.
+  const toPull = useMemo(() => {
+    const all = acceptedReferralsAwaitingPull(referrals, units, movements);
+    return isReferralInServiceScope ? all.filter((entry) => isReferralInServiceScope(entry.referral)) : all;
+  }, [referrals, units, movements, isReferralInServiceScope]);
+  const actNowCount = actEntries.length + toPull.length;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
   const alertHandlers: QueueHandlers = {
@@ -692,6 +700,7 @@ export function CoordinatorScreen() {
         <aside
           className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
           aria-label={selectedReferral ? "Referral placement" : "Placement"}
+          data-testid="ward-home-placement"
           // Journeys prove which movement the panel is for by this attribute.
           data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
         >
@@ -774,9 +783,9 @@ export function CoordinatorScreen() {
               isPhone ? (
                 <>
                   <HeroStat
-                    value={actEntries.length}
+                    value={actNowCount}
                     label="Act now"
-                    tone={actEntries.length > 0 ? "danger" : undefined}
+                    tone={actNowCount > 0 ? "danger" : undefined}
                     pressed={homeView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
@@ -832,9 +841,9 @@ export function CoordinatorScreen() {
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
-                    value={actEntries.length}
+                    value={actNowCount}
                     label="Act now"
-                    tone={actEntries.length > 0 ? "danger" : undefined}
+                    tone={actNowCount > 0 ? "danger" : undefined}
                     pressed={homeView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
@@ -970,8 +979,8 @@ export function CoordinatorScreen() {
                     {
                       id: "needs",
                       label: "My list",
-                      tone: actEntries.length > 0 ? "danger" : undefined,
-                      count: actEntries.length + referralQueue.length + waitEntries.length,
+                      tone: actNowCount > 0 ? "danger" : undefined,
+                      count: actNowCount + referralQueue.length + waitEntries.length,
                     },
                     // The same number the list's Patients tab shows; referrals have their own tab inside.
                     { id: "queue", label: "Everyone waiting", count: queue.length },
@@ -1001,6 +1010,7 @@ export function CoordinatorScreen() {
               {homeView === "needs" ? (
                 <MyListCard
                   act={actEntries}
+                  toPull={toPull}
                   wait={waitEntries}
                   referrals={referralQueue}
                   units={units}
@@ -1008,10 +1018,9 @@ export function CoordinatorScreen() {
                   phone={isPhone}
                   handlers={alertHandlers}
                   selectedReferralId={selectedReferralId}
-                  onDecide={(referralId) => {
-                    setSelectedAlertId(undefined);
-                    selectReferral(referralId);
-                  }}
+                  // WS-04 (workflow speed audit, 26 Oct 2026): Decide opens the decision itself, the
+                  // referral on the Referrals board with Accept and Decline, never a read-only preview.
+                  decideHref={referralBoardHref}
                   focus={needsFocus}
                   onShowAll={() => setNeedsFocus("all")}
                 />

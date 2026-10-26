@@ -5,7 +5,10 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { acceptedWardOf } from "./accepted-ward-referral";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { referralPresentation, referralPresentationLists } from "../ward-partial-view-presenters";
+import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
+import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -19,14 +22,9 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
-  decidedReferrals,
-  recentlyDecidedReferrals,
-  referralQueueOrder,
   acceptedAddressing,
   declinedAddressings,
-  referralDecidedAt,
   referralDestinationLabels,
-  referralState,
   referralSuburbLabel,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
@@ -86,6 +84,9 @@ import { DecidedSection, QueuedSection } from "./referral-board-sections";
 const BedMeetingSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.BedMeetingSheet), { ssr: false });
 const IsbarSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.IsbarSheet), { ssr: false });
 const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
+const PullAcceptedReferral = dynamic(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral), {
+  ssr: false,
+});
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -266,7 +267,10 @@ export function ReferralBoard({
     "leaveBeds",
   );
   const now = useWardFlowClock();
-  const queued = referralQueueOrder(referrals);
+  const sender = useSenderPresentation();
+  const presentationLists = referralPresentationLists(referrals, sender.referralFor);
+  const queued = presentationLists.queued;
+  const decidedAtFor = (referral: Referral) => presentationDecidedAt(referral, sender.referralFor(referral));
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
   // falls back to the page's default, and only where the detail sits beside the queue. Below 64rem
   // the detail is a full-screen slide-over, and opening it unasked covered the whole board (queue,
@@ -287,7 +291,16 @@ export function ReferralBoard({
           : undefined
       : (chosenReferralId ?? undefined);
   const [view, setView] = useState<"queue" | "history">("queue");
-  const [highlight, setHighlight] = useState<HighlightKey | null>(null);
+  const [chosenHighlight, setHighlight] = useState<HighlightKey | null>(null);
+  // A collection count cannot classify rows whose recipient details are withheld. Ignore an
+  // earlier recipient filter as well, so switching desks never filters those rows out.
+  const recipientFiltersAvailable =
+    presentationLists.unavailable.length === 0 &&
+    queued.every((referral) => sender.referralFor(referral) === undefined);
+  const highlight =
+    chosenHighlight !== null && !recipientFiltersAvailable && !["overdue", "tier1"].includes(chosenHighlight)
+      ? null
+      : chosenHighlight;
   const [searchQuery, setSearchQuery] = useState("");
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
@@ -299,6 +312,9 @@ export function ReferralBoard({
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
   const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
+  // Held whole, not looked up: the referral leaves the awaiting list once its journey starts,
+  // before the bed is pulled, and the sheet must stay open for that second step.
+  const [pulling, setPulling] = useState<AcceptedAwaitingPull>();
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -374,10 +390,10 @@ export function ReferralBoard({
   const phoneFiltered = phoneLayout && anyHighlight;
   const listedQueued = phoneFiltered ? shownQueued.filter(isHighlighted) : shownQueued;
 
-  const decided = recentlyDecidedReferrals(referrals);
+  const decided = presentationLists.recentlyDecided;
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
   // length names how many rows are shown and cannot name how many have been decided.
-  const allDecided = decidedReferrals(referrals);
+  const allDecided = presentationLists.decided;
   const decidedTotal = allDecided.length;
   const selectedInQueue = selectedReferralId
     ? queued.find((referral) => referral.id === selectedReferralId)
@@ -386,7 +402,11 @@ export function ReferralBoard({
     // Decided here, the detail stays on them (CS-15); decided elsewhere, nobody is selected. A
     // default selection (nobody chose yet) would otherwise slide to the new first in queue.
     const stillShown = chosenReferralId === undefined || watchedReferral.id === selectedReferralId;
-    if (stillShown && watchedReferral.id !== decidedHereId) {
+    if (
+      stillShown &&
+      watchedReferral.id !== decidedHereId &&
+      !presentationLists.unavailable.some((referral) => referral.id === watchedReferral.id)
+    ) {
       setSelectedReferralId(null);
       setLeftNotice(`${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`);
     }
@@ -402,8 +422,17 @@ export function ReferralBoard({
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
+  // WS-03: an accepted referral with no bed pulled, which the coordinator can pull here in one step.
+  const awaitingPull = useMemo(
+    () => (readOnly ? [] : acceptedReferralsAwaitingPull(referrals, units, movements)),
+    [readOnly, referrals, units, movements],
+  );
+  const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
-  const selectedReadyUnits = selectedReferral ? readyUnitCount(selectedReferral, units, now) : undefined;
+  const selectedReadyUnits =
+    selectedReferral && sender.referralFor(selectedReferral) === undefined
+      ? readyUnitCount(selectedReferral, units, now)
+      : undefined;
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
     [admissions, patients, referrals, movements, units],
@@ -421,12 +450,12 @@ export function ReferralBoard({
       : undefined;
   const oldestClocks = oldestQueued ? referralClocks(oldestQueued, now) : undefined;
   const decidedToday = allDecided.filter((r) => {
-    const at = referralDecidedAt(r);
+    const at = decidedAtFor(r);
     return at !== undefined && dayOf(at) === dayOf(now);
   });
   const decisionMinutes = allDecided
     .map((r) => {
-      const at = referralDecidedAt(r);
+      const at = decidedAtFor(r);
       return at === undefined ? undefined : Math.max(0, at - r.raisedAt);
     })
     .filter((minutes): minutes is number => minutes !== undefined)
@@ -444,7 +473,7 @@ export function ReferralBoard({
   const decisionsByHour = decisionHours.map((hour) => ({
     id: `h${hour}`,
     label: String(hour).padStart(2, "0"),
-    value: decidedToday.filter((r) => Math.floor(minuteOfDay(referralDecidedAt(r)!) / 60) === hour).length,
+    value: decidedToday.filter((r) => Math.floor(minuteOfDay(decidedAtFor(r)!) / 60) === hour).length,
   }));
   const bedsSummary = useMemo(
     () => bedsReadySummary(units, bedReleases, leaveBeds, now),
@@ -478,6 +507,17 @@ export function ReferralBoard({
     setView("queue");
     handleSelect((after ?? overdueQueued[0]!).id);
   }
+
+  // WS-04 (workflow speed audit, 26 Oct 2026): Decide on Home opens this board on its referral. The
+  // decision is brought into view once, so Accept and Decline are not left below the board's header.
+  const linkedOpenScrolled = useRef(false);
+  const openedFromLink = chosenReferralId === undefined && linkedReferralId !== null;
+  useEffect(() => {
+    if (!openedFromLink || selectedReferralId !== linkedReferralId || linkedOpenScrolled.current) return;
+    linkedOpenScrolled.current = true;
+    if (typeof detailRef.current?.scrollIntoView === "function")
+      detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+  }, [openedFromLink, selectedReferralId, linkedReferralId]);
 
   useEffect(() => {
     if (!selectedReferralId) return;
@@ -558,7 +598,10 @@ export function ReferralBoard({
    sheet on a phone (v10), so the decision list gets the height. */
   const renderDetailFacts = (r: Referral) => (
     <>
-      {referralState(r) === "queued" ? <DecisionClock referral={r} now={now} /> : null}
+      {referralPresentation(r, sender.referralFor(r)).kind !== "unavailable" &&
+      outcomeLabel(r, sender.referralFor(r)) === "Queued" ? (
+        <DecisionClock referral={r} now={now} />
+      ) : null}
 
       <dl className={a.strip}>
         <div>
@@ -567,7 +610,7 @@ export function ReferralBoard({
           <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
         </div>
         {/* U3: once every request is answered there is nothing being asked for, so the cell goes. */}
-        {openArms(r).length > 0 ? (
+        {sender.referralFor(r) === undefined && openArms(r).length > 0 ? (
           <div>
             <dt>Asking for</dt>
             <dd>{askingForShort(r)}</dd>
@@ -584,6 +627,9 @@ export function ReferralBoard({
           <dt>Needs</dt>
           <dd>
             {(() => {
+              const summary = sender.referralFor(r);
+              if (summary === null) return "Destination details unavailable";
+              if (summary !== undefined) return "Destination details are restricted";
               const ward = wardArm(r)?.destination;
               const words = [
                 ward?.secureBedNeeded ? "Secure bed" : undefined,
@@ -642,25 +688,27 @@ export function ReferralBoard({
               onNextOverdue={selectNextOverdue}
               onMeeting={() => setSheet("meeting")}
             />
-            <ReferralPhoneChips
-              chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
-                key,
-                label:
-                  key === "refused"
-                    ? "Refused once"
-                    : key === "both"
-                      ? "Both"
-                      : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
-                count: queued.filter((r) => highlightTest(key, r, now, true)).length,
-              }))}
-              highlight={highlight}
-              onHighlight={(key) => {
-                const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
-                if (!chosen) return;
-                setSearchQuery("");
-                setHighlight((current) => (current === chosen ? null : chosen));
-              }}
-            />
+            {recipientFiltersAvailable ? (
+              <ReferralPhoneChips
+                chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
+                  key,
+                  label:
+                    key === "refused"
+                      ? "Refused once"
+                      : key === "both"
+                        ? "Both"
+                        : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                  count: queued.filter((r) => highlightTest(key, r, now, true)).length,
+                }))}
+                highlight={highlight}
+                onHighlight={(key) => {
+                  const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
+                  if (!chosen) return;
+                  setSearchQuery("");
+                  setHighlight((current) => (current === chosen ? null : chosen));
+                }}
+              />
+            ) : null}
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
@@ -716,7 +764,9 @@ export function ReferralBoard({
               aside={<LiveChip state="live" onHero />}
               bar={
                 <div className={a.pills} role="group" aria-label="Highlight referrals">
-                  {HIGHLIGHT_LABELS.map(([key, label]) => (
+                  {HIGHLIGHT_LABELS.filter(
+                    ([key]) => recipientFiltersAvailable || key === "overdue" || key === "tier1",
+                  ).map(([key, label]) => (
                     <button
                       key={key}
                       type="button"
@@ -792,7 +842,7 @@ export function ReferralBoard({
                   />
                 ) : null}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
-                {view === "queue" ? (
+                {view === "queue" && recipientFiltersAvailable ? (
                   <FilterChip
                     pressed={highlight === "refused"}
                     onPressedChange={(pressed) => setHighlight(pressed ? "refused" : null)}
@@ -839,7 +889,23 @@ export function ReferralBoard({
                 </span>
               </div>
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
+                {presentationLists.unavailable.length > 0 ? (
+                  <div role="status">
+                    <p>Referral progress unavailable.</p>
+                    {presentationLists.unavailable.map((referral) => (
+                      <button
+                        type="button"
+                        className={a.rowSelect}
+                        key={referral.id}
+                        onClick={() => handleSelect(referral.id)}
+                      >
+                        {resolveSubjectPatient(referral, resolverState).umrn}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 <QueuedSection
+                  progressUnavailable={presentationLists.unavailable.length > 0}
                   queued={listedQueued}
                   searchMiss={(searching || phoneFiltered) && listedQueued.length === 0 && queued.length > 0}
                   filterMiss={phoneFiltered && !searching}
@@ -972,7 +1038,17 @@ export function ReferralBoard({
                             >
                               Open movement
                             </Link>
-                          ) : readOnly ? null : (
+                          ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
+                            // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setPulling(selectedToPull)}
+                              data-testid="ward-referral-pull-bed"
+                            >
+                              Pull the bed
+                            </Button>
+                          ) : (
                             <Link
                               href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
@@ -1039,7 +1115,10 @@ export function ReferralBoard({
                         {
                           id: "timeline",
                           label: "Timeline",
-                          count: referralTimeline(selectedReferral, units).length,
+                          count:
+                            sender.referralFor(selectedReferral) === undefined
+                              ? referralTimeline(selectedReferral, units).length
+                              : undefined,
                         },
                       ]}
                     />
@@ -1050,7 +1129,7 @@ export function ReferralBoard({
                   <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
                     {renderDetailFacts(selectedReferral)}
                     {(() => {
-                      const stages = referralJourneyStages(selectedReferral, now);
+                      const stages = referralJourneyStages(selectedReferral, now, sender.referralFor(selectedReferral));
                       return stages ? (
                         <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
                           <p className={mph.ch} id="ward-referral-phone-journey">
@@ -1248,6 +1327,17 @@ export function ReferralBoard({
           summary={bedsSummary}
         />
         <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
+        {pulling ? (
+          <Sheet
+            open
+            onClose={() => setPulling(undefined)}
+            title="Pull the bed"
+            description="Anything already recorded is filled in. Check the details, then pull the bed."
+            testId="ward-referral-pull-sheet"
+          >
+            <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
+          </Sheet>
+        ) : null}
 
         <WardPrototypeFooter
           testId="ward-referral-board-governance"

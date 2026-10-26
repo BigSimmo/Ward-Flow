@@ -122,6 +122,12 @@ export type CapacityBreakdown = {
    * two, so this figure and `excludedBeyondToday` never double-count.
    */
   blockedToday: number;
+  /**
+   * How many of `confirmedToday` are also in `blockedToday` (Josh, 26 Oct 2026, decision A16). The
+   * bed meeting splits held up + confirmed + expected = total, so its "confirmed" leaves these out;
+   * Capacity keeps them in its confirmed figure and says "(N also held up)" so the two screens agree.
+   */
+  confirmedHeldUpToday: number;
   held: number;
   /**
    * 🔴 **BEDS ON LEAVE. RENAMED FROM `leaveUsable` 2026-09-06 AND THE MEANING CHANGED WITH IT —
@@ -226,6 +232,7 @@ export function capacityBreakdown(
   let confirmedToday = 0;
   let expectedToday = 0;
   let blockedToday = 0;
+  let confirmedHeldUpToday = 0;
   let excludedBeyondToday = 0;
 
   for (const release of unitReleases) {
@@ -245,6 +252,7 @@ export function capacityBreakdown(
     if (release.state === "confirmed") confirmedToday += 1;
     else expectedToday += 1;
     if (release.blocker !== null) blockedToday += 1;
+    if (release.blocker !== null && release.state === "confirmed") confirmedHeldUpToday += 1;
   }
 
   const onLeave = leave.filter((bed) => bed.unitId === unit.id).length;
@@ -254,6 +262,7 @@ export function capacityBreakdown(
     confirmedToday,
     expectedToday,
     blockedToday,
+    confirmedHeldUpToday,
     held,
     onLeave,
     excludedBeyondToday,

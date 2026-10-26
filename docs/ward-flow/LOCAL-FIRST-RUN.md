@@ -1,8 +1,8 @@
 # Ward Flow — local first run
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
-_Updated 2026-10-24 - unit test example uses the run-vitest wrapper; Documentation owns._
+_Updated 2026-10-26 - signed-in desks and the first-run tour need the role access flag locally; Documentation owns._
 
 **Audience:** anyone opening the Ward Flow UI on their own machine (Windows, macOS or Linux).
 **Product/process entry:** [`README.md`](README.md). This page is only how to boot the UI.
@@ -37,6 +37,14 @@ npm run ensure
 1. Copy `.env.example` to `.env.local` if you need to change anything.
 2. Follow the Ward Flow and mockup comments in `.env.example`.
 3. Ward Flow uses synthetic browser-local state. No Supabase, database or OpenAI credentials are needed.
+
+### Signed-in desks and the tour
+
+A local dev build has role access switched off, so every page opens as the whole-network
+coordinator and the first-run tour never starts by itself. To try a desk the way the live site
+works, open `<printed-origin>/ward-flow?flags=role-access:on` once. The flag stays on in that
+browser until you open `?flags=role-access:off`. Then pick a desk with **Go to a desk**. Help's
+**Take the tour** replays any desk's tour at any time.
 
 ## Useful checks
 

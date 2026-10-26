@@ -62,7 +62,11 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   const rows = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
 
   return (
-    <Card className={styles.edCard} aria-label="Emergency department pressure: physically waiting for an inpatient bed">
+    <Card
+      className={styles.edCard}
+      aria-label="Emergency department pressure: physically waiting for an inpatient bed"
+      data-testid="ward-home-ed-pressure"
+    >
       <h2 className="sr-only">ED pressure</h2>
       <ul className={styles.edGrid}>
         {rows.map((row) => {

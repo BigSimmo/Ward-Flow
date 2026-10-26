@@ -1632,6 +1632,18 @@
   color: var(--muted);
   font-size: var(--wf-fs-12);
 }
+
+/* Layout sweep PT-13: as in the Record a form sheet, on a phone the Save reason takes its own
+   full-width line above Close and Save rather than a narrow column beside them. */
+@media (max-width: 48rem) {
+  .clearanceModalFoot {
+    flex-wrap: wrap;
+  }
+
+  .clearanceModalFoot > p {
+    flex: 1 1 100%;
+  }
+}
 .arrivalDisclosure {
   border-top: 1px solid var(--surface-2);
   background: var(--surface-2);
@@ -2459,7 +2471,9 @@
 }
 
 @media (max-width: 1024px) {
+  /* Layout sweep PT-04: the strip contains its screen reader text, so it never widens the page. */
   .v6Steps {
+    position: relative;
     overflow-x: auto;
   }
 
@@ -2489,6 +2503,25 @@
   .v6StepBtn,
   .v6Tab {
     min-height: 44px;
+  }
+}
+
+/* Layout sweep PT-04 (iPad portrait): the seven stages share the strip and a long label takes two
+   lines, so the later stages, including the current one, are never cut at the edge. */
+@media (min-width: 48.0625rem) and (max-width: 1024px) {
+  .v6Step {
+    flex: 0 1 auto;
+    min-width: min-content;
+  }
+
+  .v6StepBtn {
+    height: auto;
+    min-height: var(--wf-h-sm);
+    padding-block: 2px;
+  }
+
+  .v6StepLabel {
+    white-space: normal;
   }
 }
 
@@ -2725,18 +2758,19 @@
   order: 0;
 }
 
+/* Layout sweep PT-02: the chips wrap onto a second row rather than being cut mid word. */
 .v6HeroFacts {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: var(--wf-s-2);
   min-width: 0;
-  overflow: hidden;
 }
 
 .v6HeroFact,
 .v6HeroFact:first-child {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   height: var(--wf-h-sm, 28px);
   min-width: 0;
+  max-width: 100%;
   padding: 0 var(--wf-s-3);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
@@ -2824,6 +2858,15 @@
     display: none;
   }
 
+  /* Layout sweep PT-06: a worded value ("Day not recorded") wraps inside its figure rather than
+     running into the next column. */
+  .v6HeroFacts .v6HeroWait {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .v6LiveState {
     position: absolute;
     width: 1px;
@@ -2860,6 +2903,13 @@
     justify-content: center;
     min-width: 0;
     height: var(--wf-touch, 44px);
+  }
+
+  /* Equal shares when they fit, but a tab never shrinks below its label and count: while the record
+     loads, all five tabs show with counts and drew over each other at 360 px. The track scrolls.
+     Two classes, so this outranks the screen's 44px button floor. */
+  .v6Tabs .v6Tab {
+    min-width: max-content;
   }
 }
 

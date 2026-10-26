@@ -1,5 +1,22 @@
-import { HEALTH_SERVICES, type HealthService } from "../ward-model";
+import { HEALTH_SERVICES, type HealthService, type ReferralGender } from "../ward-model";
 import { isSyntheticReferralTimelineBase } from "../ward-referral-seed-time";
+
+/**
+ * WS-01 (workflow speed audit, 26 Oct 2026): the gender picker's explicit "Not yet recorded"
+ * answer, kept apart from "" (nobody has answered). The same split as the ED board's own picker
+ * (`GENDER_NOT_RECORDED_VALUE`, `ed/ed-screen-model.ts`), restated here so the drawer does not load
+ * the ED screen model. It is sent as no gender, as "" used to be.
+ */
+export const REFERRAL_GENDER_NOT_RECORDED = "not_recorded";
+/** WS-01: the Send refusal while a ward referral's gender identity is unanswered. */
+export const GENDER_UNANSWERED = 'Choose the gender identity, or "Not yet recorded".';
+/** The drawer's gender answer: unanswered (""), not yet recorded, or a recorded gender. */
+export type ReferralGenderAnswer = ReferralGender | "" | typeof REFERRAL_GENDER_NOT_RECORDED;
+
+/** The recorded gender an answer sends: none for unanswered or not yet recorded. */
+export function referralGenderOf(answer: ReferralGenderAnswer): ReferralGender | undefined {
+  return answer === "" || answer === REFERRAL_GENDER_NOT_RECORDED ? undefined : answer;
+}
 
 export const CHART_MAX_BYTES = 2 * 1024 * 1024;
 export const CHART_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const;

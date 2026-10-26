@@ -25,6 +25,7 @@ import {
 } from "@/components/ward-management/ed/ed-home-derivations";
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
+import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -54,7 +55,7 @@ import { communityOriginLabel } from "@/components/ward-management/ward-movement
 /** How many named rows a TV panel shows before it says "and N more". */
 export const TV_ROW_LIMIT = 8;
 
-/** A person on someone else's ward or in an ED, shown on a shared screen by initials only. */
+/** A person on someone else's ward or in an ED, named in full as on every screen (Josh, 26 Oct 2026). */
 export type TvJourneyRow = {
   id: string;
   name: string;
@@ -73,7 +74,7 @@ type TvInputs = {
   now: Instant;
   /** The due-time warnings Settings sets (`useDueSoonThresholds`). */
   thresholds: DueSoonThresholds;
-  /** The screen's own resolver, narrowed to initials by the caller. */
+  /** The screen's own name resolver. */
   nameOf: (movement: Movement) => string;
 };
 
@@ -214,6 +215,8 @@ export type EdTvSheet = {
   service: HealthService | undefined;
   accessTargetMinutes: number;
   noBed: number;
+  /** TV-04: under a form, by the ED board's own test (a form recorded, not an ED withdrawal). */
+  underForm: number;
   held: number;
   leaving: number;
   people: TvJourneyRow[];
@@ -267,6 +270,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
     service,
     accessTargetMinutes,
     noBed: summary.open.filter(edHasNoBedYet).length,
+    underForm: summary.open.filter((movement) => !!movement.legalForm && !isEdInitiatedWithdrawal(movement)).length,
     held: inStages(ED_HELD_STAGES),
     leaving: inStages(ED_LEAVING_STAGES),
     people: people.slice(0, TV_ROW_LIMIT),

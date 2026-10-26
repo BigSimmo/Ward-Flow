@@ -216,13 +216,15 @@ describe("role screens dispatch only what their route's role may take", () => {
 
 describe("the movement cockpit embedded on a ward page", () => {
   it("gates every action a ward may not take", () => {
-    // The patient page embeds the cockpit with role `ward`, and the cockpit raises as `useWardRaise(role)`,
-    // so the literal check above cannot see it. Each raised type is a ward action or sits behind `lock`.
+    // The patient page embeds the cockpit as ward. Other routes use the current route role.
+    // Each raised type is a ward action or sits behind the live permission gate.
     const source = readFileSync(
       join(__dirname, "../src/components/ward-management/movements/movement-workspace-cockpit.tsx"),
       "utf8",
     );
-    expect(source).toMatch(/useWardRaise\(role\)/);
+    expect(source).toMatch(/const routeRole = useRouteRole\(\)/);
+    expect(source).toMatch(/useWardRaise\(role === "ward" \? "ward" : routeRole\)/);
+    expect(source).toMatch(/const lock = \(type: WardFlowEventType\): RoleGate => gate\(type\)/);
     const raised = new Set([...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g)].map((match) => match[1] as EventType));
     const locked = new Set([...source.matchAll(/\block\(\s*"([A-Z_]+)"/g)].map((match) => match[1]));
     expect(raised.size).toBeGreaterThan(0);

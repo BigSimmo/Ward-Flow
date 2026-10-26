@@ -107,10 +107,15 @@ function LeverRow({ lever }: { lever: ForecastLever }) {
           <span className={styles.leverTitle}>
             Ask {lever.wards.length} {lever.wards.length === 1 ? "ward" : "wards"} to confirm tomorrow&apos;s discharges
           </span>
-          <span className={`${styles.tag} ${styles.tagGood}`}>up to +{lever.beds}</span>
+          <span className={`${styles.tag} ${lever.likelyUplift > 0 ? styles.tagGood : ""}`}>
+            {lever.likelyUplift > 0 ? `up to +${lever.likelyUplift}` : "range only"}
+          </span>
           <p className={styles.leverBody}>
             {listWords(lever.wards)} {lever.wards.length === 1 ? "has" : "have"} a planned date but no bed release
             flagged ({beds}).
+            {lever.likelyUplift < lever.beds
+              ? " Reserved stays must arrive before a release can be flagged. Past dates need a new estimate, and recorded blockers must clear before those beds lift the likely figure."
+              : null}
           </p>
           <Link
             href="/ward-flow/discharges"
@@ -126,9 +131,14 @@ function LeverRow({ lever }: { lever: ForecastLever }) {
           <span className={styles.leverTitle}>
             Chase {lever.beds} held-up {lever.beds === 1 ? "release" : "releases"}
           </span>
-          <span className={`${styles.tag} ${styles.tagGood}`}>up to +{lever.beds}</span>
+          <span className={`${styles.tag} ${lever.likelyUplift > 0 ? styles.tagGood : ""}`}>
+            {lever.likelyUplift > 0 ? `up to +${lever.likelyUplift}` : "range only"}
+          </span>
           <p className={styles.leverBody}>
             {lever.reasons.map((entry) => `${shortBlocker(entry.reason)} ${entry.count}`).join(", ")}.
+            {lever.likelyUplift < lever.beds
+              ? " Past dates also need a new estimate before those beds lift the likely figure."
+              : null}
           </p>
           <Link
             href="/ward-flow/waiting"

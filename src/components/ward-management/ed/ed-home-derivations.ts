@@ -95,7 +95,7 @@ export function isDetainedUnderTheAct(legalStatus: LegalStatus): boolean {
 export const ED_STAGE_LABELS: Record<MovementStage, string> = {
   placement_requested: "No bed yet",
   destination_review: "Finding a ward",
-  accepted_awaiting_bed: "Bed accepted",
+  accepted_awaiting_bed: "Accepted, no bed yet",
   pulled: "Bed pulled",
   handover_ready: "Handover ready",
   moving: "In transit",

@@ -522,3 +522,11 @@
 .guideMid {
   left: 50%;
 }
+
+/* Layout sweep STATS-14: on a tablet the bed and hospital cards take a row each, so the card title
+   keeps its width beside Bed board and the per-hospital bars have room for their axis labels. */
+@media (max-width: 64rem) {
+  .bedsRow.bedsRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
