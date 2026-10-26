@@ -101,13 +101,18 @@ export function storageFailure(error) {
   );
 }
 
+/** The message of a thrown value, when it has one (H-0294: catch values are unknown). */
+function messageOf(error) {
+  return typeof error === "object" && error !== null && "message" in error ? error.message : undefined;
+}
+
 export function createSharedHandler({
   config,
   store,
   authenticate,
   readBody,
   verifierUnavailable,
-  verifierRateLimited = null,
+  verifierRateLimited = /** @type {(new (...args: any[]) => Error) | null} */ (null),
   // Part B item 49 groundwork: off until the health service's sign-in or Supabase factors are set up.
   requireSecondStep = false,
   log = (event) => console.info(JSON.stringify(event)),
@@ -192,7 +197,7 @@ export function createSharedHandler({
     const started = session.startedAt;
     if (
       Number.isFinite(limitMinutes) &&
-      !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
+      !(typeof started === "number" && Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
       path !== "/v1/workspace/push-unsubscribe"
     )
       return reply(
@@ -252,7 +257,7 @@ export function createSharedHandler({
       try {
         return { body: await readBody(request) };
       } catch (error) {
-        return { refusal: reply(error.message === "too_large" ? 413 : 400, { error: "Invalid request" }) };
+        return { refusal: reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid request" }) };
       }
     };
     try {
@@ -318,7 +323,8 @@ export function createSharedHandler({
       // through the store; a store that names none asks every time.
       if (STEP_UP_PATHS.has(path) && request.method === "POST") {
         const windowMs = (Number.isFinite(store.stepUpMinutes) ? store.stepUpMinutes : 0) * 60_000;
-        if (!(Number.isFinite(session.signedInAt) && session.signedInAt >= Date.now() - windowMs))
+        const signedInAt = session.signedInAt;
+        if (!(typeof signedInAt === "number" && Number.isFinite(signedInAt) && signedInAt >= Date.now() - windowMs))
           return reply(
             401,
             {
@@ -347,7 +353,9 @@ export function createSharedHandler({
           // No session limit configured means no sign-in deadline (a set limit with no start time was
           // already refused above), so only a role or grant expiry can bound access here.
           accessUntil: Math.min(
-            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Infinity,
+            typeof started === "number" && Number.isFinite(started) && Number.isFinite(limitMinutes)
+              ? started + limitMinutes * 60_000
+              : Infinity,
             view.accessUntil ?? Infinity,
             ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
           ),
@@ -398,7 +406,7 @@ export function createSharedHandler({
         const commandId = new URL(request.url).searchParams.get("commandId");
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
         if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
-        return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
+        return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase()) });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
         // History's closed records older than 30 days (migration 14), each desk's own part only,
@@ -543,7 +551,7 @@ export function createSharedHandler({
         try {
           body = await readBody(request);
         } catch (error) {
-          return reply(error.message === "too_large" ? 413 : 400, { error: "Invalid subscription" });
+          return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid subscription" });
         }
         if (path === "/v1/workspace/push-subscribe") {
           const subscription = parseSubscription(body?.subscription);
@@ -584,7 +592,7 @@ export function createSharedHandler({
       try {
         body = await readBody(request);
       } catch (error) {
-        return reply(error.message === "too_large" ? 413 : 400, { error: "Invalid command" });
+        return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid command" });
       }
       if (
         !body ||
@@ -611,13 +619,13 @@ export function createSharedHandler({
       });
       return reply(result.status, result.body);
     } catch (error) {
-      if (error?.message === "role-ended")
+      if (messageOf(error) === "role-ended")
         return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
-      if (error?.message === "invalid-command")
+      if (messageOf(error) === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       // H-0291: the save would take the workspace past its size limit. It rolled back, so this
       // change is definitely not saved, and retrying the same change cannot succeed.
-      if (error?.message === "Workspace too large")
+      if (messageOf(error) === "Workspace too large")
         return reply(
           413,
           { code: "workspace-full", error: "The shared workspace is full, so this change was not saved." },
