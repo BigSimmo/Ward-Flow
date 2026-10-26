@@ -53,6 +53,7 @@ import {
 } from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
+import { sharedBoardNow } from "@/components/ward-management/ward-shared-clock";
 import {
   absoluteWallClockMinutes,
   demoDayZero,
@@ -737,7 +738,7 @@ function WardFlowWorld({
 
   const now =
     shared.enabled && shared.snapshot
-      ? shared.snapshot.now
+      ? sharedBoardNow(shared.snapshot.now, shared.receivedAt)
       : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
   const nowRef = useRef(now);

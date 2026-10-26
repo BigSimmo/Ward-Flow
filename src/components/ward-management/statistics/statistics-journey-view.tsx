@@ -185,7 +185,7 @@ export function journeyStages({
         { label: "Today", value: plannedOn(0) },
         { label: "Tomorrow", value: plannedOn(1) },
         {
-          label: "Blocked",
+          label: "Held up",
           value: planned.filter((admission) => admission.blockReason !== null).length,
           tone: warnIf(planned.filter((admission) => admission.blockReason !== null).length),
         },
