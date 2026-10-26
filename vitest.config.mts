@@ -72,6 +72,7 @@ const config = {
           // Node environment, unchanged glob — existing tests behave exactly as before.
           name: "node",
           environment: "node",
+          setupFiles: ["tests/setup/reducer-slices.setup.ts"],
           include: liveProviderTests ? LIVE_UNIT_TEST_GLOBS : NODE_UNIT_TEST_GLOBS,
           exclude: liveProviderTests ? [] : [...LIVE_UNIT_TEST_GLOBS, ...gateExcludedFiles],
         },
@@ -88,7 +89,7 @@ const config = {
                 environment: "jsdom",
                 include: DOM_UNIT_TEST_GLOBS,
                 ...(gateExcludedFiles.length > 0 ? { exclude: gateExcludedFiles } : {}),
-                setupFiles: ["tests/setup/jsdom.setup.ts"],
+                setupFiles: ["tests/setup/reducer-slices.setup.ts", "tests/setup/jsdom.setup.ts"],
               },
             },
           ]
