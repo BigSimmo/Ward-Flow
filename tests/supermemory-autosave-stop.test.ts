@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { decide, humanText, REASON, SPACE } from "../scripts/supermemory-autosave-stop.mjs";
+import {
+  decide,
+  humanText,
+  PREFERENCES_SPACE,
+  REASON,
+  SESSION_SAVE_CAP,
+  sessionStart,
+  SPACE,
+} from "../scripts/supermemory-autosave-stop.mjs";
 
 /**
  * The cloud Supermemory save hook must nudge only on turns that look like they hold a lasting
@@ -10,14 +18,14 @@ import { decide, humanText, REASON, SPACE } from "../scripts/supermemory-autosav
 type Entry = Record<string, unknown>;
 
 const prompt = (content: string): Entry => ({ type: "user", message: { role: "user", content } });
-const toolResult = (isError = false): Entry => ({
+const toolResult = (isError = false, id = "t1"): Entry => ({
   type: "user",
-  message: { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "ok", is_error: isError }] },
+  message: { role: "user", content: [{ type: "tool_result", tool_use_id: id, content: "ok", is_error: isError }] },
 });
 const assistantText = (text: string): Entry => ({ type: "assistant", message: { content: [{ type: "text", text }] } });
-const toolUse = (name: string): Entry => ({
+const toolUse = (name: string, id = "t1"): Entry => ({
   type: "assistant",
-  message: { content: [{ type: "tool_use", id: "t1", name, input: {} }] },
+  message: { content: [{ type: "tool_use", id, name, input: {} }] },
 });
 const wake = (text: string) =>
   `<wake reason="mention"><project id="p"><thread ts="t"><message trigger="true" from="human" trust="principal" author="Josh" id="m">${text}</message></thread></project><system-note>Thread state: rule never always</system-note></wake>`;
@@ -33,7 +41,9 @@ describe("supermemory autosave stop hook", () => {
   it("nudges when the person makes a decision", () => {
     const out = run([prompt(wake("Decision: held is only for a patient's own bed")), assistantText("Done.")]);
     expect(out).toEqual({ decision: "block", reason: REASON });
-    expect(REASON).toContain(`namespace "${SPACE}"`);
+    expect(REASON).toContain(`"${SPACE}"`);
+    expect(REASON).toContain(`"${PREFERENCES_SPACE}"`);
+    expect(REASON).toMatch(/dated note stating the decision, the reason and the source/);
   });
 
   it("nudges on an agent-found root cause", () => {
@@ -60,6 +70,22 @@ describe("supermemory autosave stop hook", () => {
     const decision = wake("we decided to keep Railway");
     expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory"), toolResult(true)])).not.toBeNull();
     expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory")])).not.toBeNull();
+  });
+
+  it("stops asking once the session reached its save cap", () => {
+    const earlier = Array.from({ length: SESSION_SAVE_CAP }, (_, i) => [
+      toolUse("mcp__supermemory__add_memory", `s${i}`),
+      toolResult(false, `s${i}`),
+    ]).flat();
+    expect(run([prompt(wake("ok")), ...earlier, prompt(wake("we decided to keep Railway"))])).toBeNull();
+  });
+
+  it("asks for one bounded recall at session start, cloud only", () => {
+    const out = sessionStart(cloud);
+    expect(out?.hookSpecificOutput.hookEventName).toBe("SessionStart");
+    expect(out?.hookSpecificOutput.additionalContext).toContain(`"${PREFERENCES_SPACE}"`);
+    expect(out?.hookSpecificOutput.additionalContext).toContain(`"${SPACE}"`);
+    expect(sessionStart({})).toBeNull();
   });
 
   it("only looks at the current turn", () => {

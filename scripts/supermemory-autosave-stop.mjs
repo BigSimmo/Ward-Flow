@@ -17,14 +17,22 @@
  * wrappers such as project instructions and system notes are stripped first, so
  * their rule wording never triggers a save.
  *
+ * With `--session-start` it instead adds one bounded recall instruction
+ * (josh_preferences and wardflow_design, once per session).
+ *
  * Contract: never trap a session. It acts only in Claude Code cloud containers
  * (CLAUDE_CODE_REMOTE=true), blocks at most once per stop chain
- * (stop_hook_active), and allows the stop on any read or parse failure.
+ * (stop_hook_active), stops asking after SESSION_SAVE_CAP successful saves in a
+ * session because cloud MCP use has no budget meter of its own, and allows the
+ * stop on any read or parse failure.
  */
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const SPACE = "wardflow_design";
+export const PREFERENCES_SPACE = "josh_preferences";
+/** Saves per session after which the hook stops asking; cloud MCP use has no budget meter yet. */
+export const SESSION_SAVE_CAP = 3;
 
 const HUMAN_SIGNALS = [
   /\b(decid\w*|decision|approv\w*|agreed?|confirm\w*)\b/i,
@@ -107,17 +115,45 @@ export function readTurn(entries) {
   return { human: human.join("\n"), agent: agent.join("\n"), saved };
 }
 
+/** Successful Supermemory saves anywhere in the session, so the hook can stop asking at the cap. */
+export function countSessionSaves(entries) {
+  const calls = new Set();
+  let count = 0;
+  for (const entry of entries) {
+    if (entry?.isSidechain || !Array.isArray(entry?.message?.content)) continue;
+    for (const b of entry.message.content) {
+      if (entry.type === "assistant" && b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) calls.add(b.id);
+      if (entry.type === "user" && b?.type === "tool_result" && calls.has(b.tool_use_id) && !b.is_error) count += 1;
+    }
+  }
+  return count;
+}
+
 export function hasSignal(turn) {
   if (!turn || turn.saved) return false;
   return HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
 }
 
 export const REASON = [
-  `Ward Flow memory check: this turn may hold something lasting. Before stopping, save each lasting fact from it to Supermemory with add_memory and namespace "${SPACE}" (never another space), one short memory per fact, tagged with its D-xx or WT number where there is one. Search "${SPACE}" first and skip anything already saved.`,
-  "Save only: decisions Josh made, design and wording rules, gotchas from fixing bugs, and where key things live.",
-  "Do not save: progress updates, PR status, code already in the repo, secrets, or any patient or real data.",
-  "If nothing in this turn qualifies, stop without saving. Either way do not post another message to the person about this check.",
+  "Ward Flow memory check: this turn may hold something lasting.",
+  `If a durable fact was confirmed, save it before stopping with add_memory: one short dated note stating the decision, the reason and the source (message, D-xx or WT number, file or PR).`,
+  `Pass one explicit namespace: "${SPACE}" for Ward Flow decisions, design and wording rules, bug gotchas and where things live, or "${PREFERENCES_SPACE}" for Josh's own working preferences. Never another space and never the account default.`,
+  "Search that space first and skip anything already saved.",
+  "Never save patient or clinical information, secrets or sign-in material, raw code, diffs, logs, prompts, progress, PR status or whole conversations.",
+  "If nothing durable changed, stop without saving. Either way do not post another message to the person about this check.",
 ].join(" ");
+
+export const SESSION_START_CONTEXT = [
+  "Ward Flow memory: before your first substantive answer in this session, do one bounded recall with the Supermemory MCP:",
+  `one search_memory in namespace "${PREFERENCES_SPACE}" and one in namespace "${SPACE}", each with a short query about the task.`,
+  "Treat results as hints and check the source files before acting. Do not recall again on every message.",
+].join(" ");
+
+/** SessionStart: one bounded recall instruction, cloud only. */
+export function sessionStart(env) {
+  if (env.CLAUDE_CODE_REMOTE !== "true") return null;
+  return { hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: SESSION_START_CONTEXT } };
+}
 
 /** Returns the hook's stdout object, or null to allow the stop. */
 export function decide(input, env, readTranscript) {
@@ -140,6 +176,7 @@ export function decide(input, env, readTranscript) {
   } catch {
     return null;
   }
+  if (countSessionSaves(entries) >= SESSION_SAVE_CAP) return null;
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
   return hasSignal(turn) ? { decision: "block", reason: REASON } : null;
@@ -148,7 +185,9 @@ export function decide(input, env, readTranscript) {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try {
     const input = JSON.parse(readFileSync(0, "utf8") || "{}");
-    const out = decide(input, process.env, (p) => readFileSync(p, "utf8"));
+    const out = process.argv.includes("--session-start")
+      ? sessionStart(process.env)
+      : decide(input, process.env, (p) => readFileSync(p, "utf8"));
     if (out) process.stdout.write(JSON.stringify(out));
   } catch {
     // Never trap a session.

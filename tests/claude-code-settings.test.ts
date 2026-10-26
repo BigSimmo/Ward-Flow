@@ -42,23 +42,21 @@ function describeConfiguredClaude(name: string, body: () => void) {
 
 if (!hasClaudeSettings) {
   describe("public Claude configuration boundary", () => {
-    it("ships at most the cloud Supermemory save hook, with no permissions", () => {
+    it("ships at most the cloud Supermemory hooks, with no permissions", () => {
       if (shippedSettings === null) return;
+      const hook = (args: string) => [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "$CLAUDE_PROJECT_DIR/scripts/supermemory-autosave-stop.mjs"${args}`,
+              timeout: 10,
+            },
+          ],
+        },
+      ];
       expect(Object.keys(shippedSettings).sort()).toEqual(["$schema", "hooks"]);
-      expect(Object.keys(shippedSettings.hooks)).toEqual(["Stop"]);
-      expect(JSON.stringify(shippedSettings.hooks.Stop)).toBe(
-        JSON.stringify([
-          {
-            hooks: [
-              {
-                type: "command",
-                command: 'node "$CLAUDE_PROJECT_DIR/scripts/supermemory-autosave-stop.mjs"',
-                timeout: 10,
-              },
-            ],
-          },
-        ]),
-      );
+      expect(shippedSettings.hooks).toEqual({ SessionStart: hook(" --session-start"), Stop: hook("") });
     });
 
     it("does not ship a partial permission or hook configuration", () => {
