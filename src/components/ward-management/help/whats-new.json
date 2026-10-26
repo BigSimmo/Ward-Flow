@@ -25,6 +25,11 @@
     "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
   },
   {
+    "id": "2026-10-26-archived-referral-progress",
+    "date": "2026-10-26",
+    "line": "Older referrals and moves in History now show their progress too, with other wards still private."
+  },
+  {
     "id": "2026-10-26-ward-referral-privacy",
     "date": "2026-10-26",
     "line": "Ward referrals show permitted progress while keeping other destinations private."
@@ -50,7 +55,17 @@
     "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
   },
   {
-    "id": "2026-10-26-bed-move-and-extension-checks",
+    "id": "2026-10-26-pull-the-bed-home",
+    "date": "2026-10-26",
+    "line": "Home lists accepted referrals with no bed pulled, and Pull the bed now takes two taps in one sheet."
+  },
+  {
+    "id": "2026-10-26-pilot-measures-pulled",
+    "date": "2026-10-26",
+    "line": "Weekly report shows the four agreed pilot measures. Forms 3B and 3C read differently. Incoming beds say pulled."
+  },
+  {
+"id": "2026-10-26-bed-move-and-extension-checks",
     "date": "2026-10-26",
     "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
   },

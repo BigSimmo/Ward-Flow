@@ -183,6 +183,29 @@ function freezeWardPartialView(view: WardPartialView): WardPartialView {
   return Object.freeze({ version: 1, referrals: Object.freeze(referrals), movements: Object.freeze(movements) });
 }
 
+/** The live display with the archived records' display beside it (History reads both). Both are
+ * already bound to the same snapshot by their callers. A live row always wins over an archived row
+ * with the same id, and a merge that would not pass validation leaves the live display alone, so
+ * archived progress can only be missing, never wrong. */
+export function mergeArchivedWardPartialView(
+  live: BoundWardPartialView,
+  archived: WardPartialView,
+): BoundWardPartialView {
+  const liveReferrals = new Set(live.view.referrals.map((row) => row.id));
+  const liveMovements = new Set(live.view.movements.map((row) => row.id));
+  const merged = {
+    version: 1,
+    referrals: [...live.view.referrals, ...archived.referrals.filter((row) => !liveReferrals.has(row.id))],
+    movements: [...live.view.movements, ...archived.movements.filter((row) => !liveMovements.has(row.id))],
+  };
+  if (!isWardPartialView(merged)) return live;
+  return Object.freeze({
+    revision: live.revision,
+    accessContext: live.accessContext,
+    view: freezeWardPartialView(merged),
+  });
+}
+
 /** Separate local display validation; never manufactures a server revision or access hash. */
 export function copyWardPartialView(value: unknown): WardPartialView | null {
   return isWardPartialView(value) ? freezeWardPartialView(value) : null;

@@ -79,17 +79,6 @@ function negatedBefore(text: string, pattern: RegExp): boolean {
  *  threads. Each entry must still match: once the words are fixed, this test fails and asks for the
  *  entry to be deleted, so the list only shrinks. */
 const PENDING_WORDING: { id: string; file: string; text: RegExp }[] = [
-  { id: "NB-26-01", file: "src/components/ward-management/help/ward-help-content.ts", text: /returns to the ward/u },
-  {
-    id: "NB-26-04",
-    file: "src/components/ward-management/help/ward-help-content.ts",
-    text: /shows first on every list/u,
-  },
-  {
-    id: "NB-26-05",
-    file: "src/components/ward-management/help/ward-tour-steps.ts",
-    text: /top of the priority queue/u,
-  },
   {
     id: "NB-26-06",
     file: "src/components/ward-management/community/community-screen-drawer.tsx",

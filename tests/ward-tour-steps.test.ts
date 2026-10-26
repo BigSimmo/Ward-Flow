@@ -121,3 +121,38 @@ describe("what the desk can do", () => {
     expect(bedManager.some((line) => line.startsWith("Governance"))).toBe(false);
   });
 });
+
+// Help and tour audit, 26 Oct 2026 (stream D).
+describe("help and tour audit fixes", () => {
+  it("lights the coordinator's Home by test ids, so a label change cannot lose the spotlight (HF-03)", () => {
+    const target = (device: TourDevice, id: string) =>
+      tourSteps("coordinator", device, FULL).find((step) => step.id === id)?.target?.sel ?? "";
+    for (const [device, id] of [
+      ["desk", "eds"],
+      ["desk", "shortlist"],
+      ["phone", "eds"],
+      ["phone", "queue"],
+    ] as const) {
+      expect(target(device, id), `${device} ${id}`).toMatch(/^\[data-testid=/);
+      expect(target(device, id), `${device} ${id}`).not.toContain("aria-label");
+    }
+  });
+
+  it("never describes the queue or Find a bed as a ranking or a suggestion (HF-15, HF-16)", () => {
+    for (const role of ROLES) {
+      for (const device of DEVICES) {
+        const words = tourSteps(role, device, FULL)
+          .map((step) => `${step.title} ${step.body}`)
+          .join(" ");
+        expect(words, `${role} ${device}`).not.toMatch(/top of the priority queue|could go|best match/i);
+      }
+    }
+  });
+
+  it("shows the access admin how to give and remove roles (HF-05)", () => {
+    for (const device of DEVICES) {
+      const ids = tourSteps("admin", device, FULL).map((step) => step.id);
+      expect(ids, device).toEqual(expect.arrayContaining(["give-role", "requests"]));
+    }
+  });
+});

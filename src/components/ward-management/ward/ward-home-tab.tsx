@@ -1272,7 +1272,10 @@ export function WardHomeTab({
                 </p>
               ) : null}
               {incoming.length === 0 ? (
-                <p className={styles.groupEmpty}>No referral is currently awaiting an answer from {unit.name}.</p>
+                <p className={styles.groupEmpty}>
+                  No referral is currently awaiting an answer from {unit.name}. New referrals appear here as soon as
+                  they are sent.
+                </p>
               ) : (
                 <ul className={styles.awaitingList}>
                   {visibleIncoming.map((movement) => {

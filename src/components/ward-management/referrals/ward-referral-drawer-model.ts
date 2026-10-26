@@ -451,7 +451,7 @@ export function countOf(count: number, destination: DrawerCategory): string {
 
 export const RISK_FLAG_LABELS: Record<keyof MockPatientProfile["riskFlags"], string> = {
   aggression: "Aggression",
-  absconding: "Absconding",
+  absconding: "Absent without leave",
   medical: "Acute medical",
   vulnerable: "Vulnerable adult",
   suicide: "Suicide or self-harm",

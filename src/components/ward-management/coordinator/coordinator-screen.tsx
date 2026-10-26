@@ -700,6 +700,7 @@ export function CoordinatorScreen() {
         <aside
           className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
           aria-label={selectedReferral ? "Referral placement" : "Placement"}
+          data-testid="ward-home-placement"
           // Journeys prove which movement the panel is for by this attribute.
           data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
         >
