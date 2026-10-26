@@ -190,6 +190,20 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* Layout sweep MEET-16: a touch iPad gets touch-sized track tabs, search hits and team menu, not
+   the mouse sizes. The phone band below keeps its larger size. */
+@media (pointer: coarse) {
+  .heroMenuButton {
+    width: var(--wf-touch);
+    height: var(--wf-touch);
+  }
+
+  .trackItem,
+  .searchHit {
+    min-height: var(--wf-touch);
+  }
+}
+
 @media (max-width: 40rem) {
   .heroStats {
     display: grid;
