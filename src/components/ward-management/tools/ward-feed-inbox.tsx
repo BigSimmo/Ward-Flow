@@ -8,7 +8,9 @@ import { Select } from "@/components/wf";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "../ward-admissions";
 import { wardRouteUnitId, type WardChromeRole } from "../ward-chrome-role";
 import { EVENT_ROLE } from "../ward-flow-event-roles";
-import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { createPatientResolver, patientIdentityLine } from "../ward-patient-resolver";
+import { useUndoableStep } from "../use-undoable-step";
 import { useWardRaise } from "../ward-flow-raise";
 import { useRouteRole } from "../ward-role-gate";
 import type { WardCommandOutcome } from "../ward-shared-client";
@@ -46,16 +48,21 @@ const STATUS_LABELS: Record<FeedItem["status"], string> = {
  * the engine's usual role and ward checks apply. Nothing is confirmed without a person.
  */
 export function WardFeedInbox() {
-  const { movements, admissions, patients, units, worldGeneration } = useWardFlowSelect(
+  const { movements, admissions, patients, units, worldGeneration, dispatch, rejections } = useWardFlowSelect(
     "movements",
     "admissions",
     "patients",
     "units",
     "worldGeneration",
+    "dispatch",
+    "rejections",
   );
+  const now = useWardFlowClock();
   const inbox = useFeedInbox();
   const role = useRouteRole();
   const raise = useWardRaise(role);
+  // Audit CS3-06: a confirmed message offers Undo, like the ward's own Confirm arrival and Has left.
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
   const routeUnitId = wardRouteUnitId(usePathname() ?? "");
   const [status, setStatus] = useState("");
   // Messages whose confirmation is still saving. A shared save is async, so Confirm and Reject wait
@@ -92,6 +99,22 @@ export function WardFeedInbox() {
   }
 
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? "this ward";
+  // Audit CS3-06: who a message would change, by name, record number and bed, never the number alone.
+  const resolvePerson = createPatientResolver({ patients, movements });
+  const personOf = (suggestion: Confirmable): FeedPerson | undefined => {
+    const subject =
+      suggestion.kind === "arrival"
+        ? movements.find((movement) => movement.id === suggestion.movementId)
+        : admissions.find((admission) => admission.id === suggestion.admissionId);
+    if (!subject) return undefined;
+    const resolved = resolvePerson(subject);
+    if (!resolved.patient) return undefined;
+    const bed = "bedNumber" in subject ? subject.bedNumber : undefined;
+    return {
+      who: resolved.displayName,
+      line: `${patientIdentityLine(resolved)}${bed === undefined ? "" : ` · Bed ${bed}`}`,
+    };
+  };
   const items = inbox.generation === worldGeneration ? [...inbox.items].reverse() : [];
 
   return (
@@ -121,6 +144,7 @@ export function WardFeedInbox() {
               key={item.seq}
               item={item}
               suggestion={item.message ? feedSuggestion(item.message, { movements, admissions, patients }) : undefined}
+              personOf={personOf}
               differences={item.message ? differencesFrom(item.message, patients) : []}
               unitName={unitName}
               blockedReason={(suggestion) => confirmBlockedReason(suggestion, role, routeUnitId, unitName)}
@@ -139,10 +163,35 @@ export function WardFeedInbox() {
                         actingUnitId: suggestion.unitId,
                         leavingDestination: leaving!,
                       });
+                const who = personOf(suggestion)?.who ?? "this person";
                 const done =
                   suggestion.kind === "arrival"
-                    ? `Arrival confirmed on ${unitName(suggestion.unitId)}.`
-                    : `Departure recorded from ${unitName(suggestion.unitId)}.`;
+                    ? `Arrival confirmed: ${who} on ${unitName(suggestion.unitId)}.`
+                    : `Departure recorded: ${who} from ${unitName(suggestion.unitId)}.`;
+                offerUndo(
+                  {
+                    success: done,
+                    undo: (at) =>
+                      suggestion.kind === "arrival"
+                        ? {
+                            type: "UNDO_TRANSPORT_STEP",
+                            role,
+                            now: at,
+                            movementId: suggestion.movementId,
+                            actingUnitId: suggestion.unitId,
+                          }
+                        : {
+                            type: "UNDO_DEPARTURE",
+                            role,
+                            now: at,
+                            admissionId: suggestion.admissionId,
+                            actingUnitId: suggestion.unitId,
+                          },
+                    undone: `Undone: ${who} is back as before.`,
+                    refusalShownInline: true,
+                  },
+                  { completion: outcome },
+                );
                 void Promise.resolve(outcome).then(
                   (result: WardCommandOutcome | void) => {
                     setItemPending(item.seq, false);
@@ -175,6 +224,7 @@ export function WardFeedInbox() {
 }
 
 type Confirmable = Exclude<FeedSuggestion, { kind: "none" }>;
+type FeedPerson = { who: string; line: string };
 
 /**
  * Why this desk cannot confirm a message, or null. The same role and ward checks the engine makes,
@@ -205,6 +255,7 @@ function differencesFrom(message: FeedMessage, patients: Parameters<typeof previ
 function FeedRow({
   item,
   suggestion,
+  personOf,
   differences,
   unitName,
   blockedReason,
@@ -214,6 +265,7 @@ function FeedRow({
 }: {
   item: FeedItem;
   suggestion: FeedSuggestion | undefined;
+  personOf: (suggestion: Confirmable) => FeedPerson | undefined;
   differences: readonly string[];
   unitName: (id: string) => string;
   blockedReason: (suggestion: Confirmable) => string | null;
@@ -254,9 +306,13 @@ function FeedRow({
         ) : (
           <>
             <p className={styles.note} id={noteId}>
-              {suggestion.kind === "arrival"
-                ? `Confirms the arrival on ${unitName(suggestion.unitId)}.`
-                : `Records the departure from ${unitName(suggestion.unitId)}. Choose where the person went.`}
+              {(() => {
+                const person = personOf(suggestion)?.line;
+                const of = person ? ` of ${person}` : "";
+                return suggestion.kind === "arrival"
+                  ? `Confirms the arrival${of} on ${unitName(suggestion.unitId)}.`
+                  : `Records the departure${of} from ${unitName(suggestion.unitId)}. Choose where the person went.`;
+              })()}
             </p>
             {blocked ? (
               <p className={styles.note} id={blockedId} data-testid={blockedId}>

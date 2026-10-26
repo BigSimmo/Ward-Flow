@@ -68,5 +68,35 @@
     "id": "2026-10-26-tour-skip-closes",
     "date": "2026-10-26",
     "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
+  },
+  {
+    "id": "2026-10-26-bed-move-and-extension-checks",
+    "date": "2026-10-26",
+    "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
+  },
+  {
+    "id": "2026-10-26-departures-and-pulls-named",
+    "date": "2026-10-26",
+    "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
+  },
+  {
+    "id": "2026-10-26-not-recorded-wording",
+    "date": "2026-10-26",
+    "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
+  },
+  {
+    "id": "2026-10-26-names-and-umrn",
+    "date": "2026-10-26",
+    "line": "Phone ED rows show the UMRN beside the name. The practice hospital feed names each person and a confirm can be undone."
+  },
+  {
+    "id": "2026-10-26-handover-forecast-double-tap",
+    "date": "2026-10-26",
+    "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
+  },
+  {
+    "id": "2026-10-26-arrival-check-and-refusal-warnings",
+    "date": "2026-10-26",
+    "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
   }
 ]

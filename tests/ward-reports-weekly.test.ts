@@ -8,7 +8,7 @@ import {
   type WeeklyReportInput,
 } from "@/components/ward-management/reports/weekly-report";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, perthMidnight } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, travelBand } from "@/components/ward-management/ward-distance";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HOME_REGIONS, type Movement } from "@/components/ward-management/ward-model";
@@ -16,7 +16,8 @@ import { occupiedBeds } from "@/components/ward-management/statistics/statistics
 
 const DAY = MINUTES_PER_DAY;
 // Wednesday 7 October 2026: day 0. The last full week is Mon 28 Sep (day -9) to Sun 4 Oct (day -3).
-const WEDNESDAY = new Date(2026, 9, 7);
+// Perth midnight, not the test machine's local midnight (audit TC2-08: a Sydney zone failed).
+const WEDNESDAY = perthMidnight(2026, 9, 7);
 const NOW = 10 * 60;
 
 describe("reportWeek", () => {
@@ -30,7 +31,7 @@ describe("reportWeek", () => {
   });
 
   it("treats a Monday as the first day of this week", () => {
-    const monday = new Date(2026, 9, 5);
+    const monday = perthMidnight(2026, 9, 5);
     expect(reportWeek(-1, NOW, monday).start).toBe(0);
     expect(reportWeek(0, NOW, monday).start).toBe(-7 * DAY);
   });
