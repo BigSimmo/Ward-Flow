@@ -1622,6 +1622,28 @@
   padding: 0.25rem 0.5rem;
 }
 
+/* WT-39: the menu's person is the Go to a desk button on iPad, styled as the row it replaced. */
+.moreFootPersonBtn {
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.moreFootPersonBtn:hover {
+  background: var(--wf-hover);
+}
+
+.moreFootPersonBtn:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
 .moreFootActions {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
