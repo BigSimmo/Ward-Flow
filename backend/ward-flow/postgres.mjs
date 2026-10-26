@@ -1851,6 +1851,21 @@ export function createWorkspaceStore(
       if (surface === "referral" && !(view.version >= REFERRAL_VIEW_MIGRATION))
         return { status: 200, body: { logged: false } };
       const at = clock();
+      // Fresh audit P-2: most openings repeat one already logged this minute, or come past the rate
+      // limit, and log nothing. Check that first on the record_access_actor index, so only an
+      // opening that may be logged pays for reading and scoping the whole board. The insert below
+      // checks both again under its lock.
+      const since = new Date(at.getTime() - VIEW_REPEAT_MS);
+      const { rows: recent } = await pool
+        .query(
+          "SELECT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5) AS repeated, (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $5) >= $6 AS limited",
+          [workspaceId, view.actorId, patientId, surface, since, VIEW_RATE_LIMIT],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      if (recent[0]?.repeated || recent[0]?.limited) return { status: 200, body: { logged: false } };
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
       const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
