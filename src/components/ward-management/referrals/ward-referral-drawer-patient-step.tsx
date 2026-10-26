@@ -353,7 +353,7 @@ export function ReferralPatientStep({
               <p className="sr-only" role="status" aria-live="polite">
                 {showResults || searching
                   ? filteredPatients.length > 0
-                    ? `${filteredPatients.length} ${filteredPatients.length === 1 ? "patient matches" : "patients match"}.`
+                    ? `${filteredPatients.length} ${filteredPatients.length === 1 ? "synthetic patient matches" : "synthetic patients match"}.`
                     : "No patient matches."
                   : ""}
               </p>

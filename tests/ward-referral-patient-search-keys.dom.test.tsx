@@ -33,7 +33,7 @@ describe("referral patient search keys (A-4)", () => {
     // Nothing is highlighted until a key moves there, and the results are not Tab stops.
     expect(search).not.toHaveAttribute("aria-activedescendant");
     for (const option of options) expect(option).toHaveAttribute("tabindex", "-1");
-    expect(document.body).toHaveTextContent(`${options.length} patients match.`);
+    expect(document.body).toHaveTextContent(`${options.length} synthetic patients match.`);
 
     fireEvent.keyDown(search, { key: "ArrowDown" });
     expect(search).toHaveAttribute("aria-activedescendant", options[0]!.id);
