@@ -6,6 +6,7 @@ import {
   PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
 } from "../../src/components/ward-management/ward-discharge-criteria";
 import { PARALLEL_REFERRAL_CAP } from "../../src/components/ward-management/ward-model";
+import { REFERRAL_INFORMATION_NEED_IDS } from "../../src/components/ward-management/referrals/referral-information-needs";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -64,6 +65,14 @@ const ids = z.array(id).max(MAX_ITEMS);
 const record = z.record(z.string(), z.unknown());
 
 const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
+  MARK_REFERRAL_INFORMATION_MET: z
+    .looseObject({
+      referralId: id,
+      need: z.enum(REFERRAL_INFORMATION_NEED_IDS),
+      wardUnitId: id.optional(),
+      allRequestingWards: z.literal(true).optional(),
+    })
+    .refine((value) => (value.wardUnitId !== undefined) !== (value.allRequestingWards === true)),
   OPEN_DISCHARGE_RECORD: z.looseObject({
     requestId: count,
     requestNamespace: z

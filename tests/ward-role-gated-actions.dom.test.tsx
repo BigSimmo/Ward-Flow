@@ -1,8 +1,17 @@
+import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The role is the route: each test sets the path the gate reads.
 const navigation = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const senderMode = vi.hoisted(() => ({ required: false, summary: undefined as unknown }));
+vi.mock("@/components/ward-management/ward-sender-presentation", () => ({
+  useSenderPresentation: () => ({
+    required: senderMode.required,
+    movementFor: () => senderMode.summary,
+    referralFor: () => undefined,
+  }),
+}));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => navigation.pathname,
@@ -15,7 +24,12 @@ import {
   type PatientTransportSectionContext,
 } from "@/components/ward-management/patients/patient-now-transport-section";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, setDeskRole } from "@/components/ward-management/ward-role-gate";
+import { StageRow } from "@/components/ward-management/movements/movements-stage-row";
+import { MovementWorkflowActions } from "@/components/ward-management/movements/movement-workflow-actions";
+import { causeOf } from "@/components/ward-management/movements/movements-screen-helpers";
+import { attentionItems } from "@/components/ward-management/movements/movement-workspace-derivations";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -24,7 +38,158 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 afterEach(() => {
   cleanup();
   navigation.pathname = "/ward-flow";
+  senderMode.required = false;
+  senderMode.summary = undefined;
 });
+
+describe("movement sender presentation and existing action roles", () => {
+  it("uses sender progress in grouping and attention without inferring a no-bed cause from masked arrays", () => {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0],
+      stage: "destination_review" as const,
+      referredUnitIds: [],
+      declines: [],
+      acceptedUnitId: undefined,
+      escalation: undefined,
+      closure: undefined,
+      transport: undefined,
+    };
+    const presentation = { kind: "sender", progress: "escalated", nextStep: "wait" } as const;
+    expect(causeOf(movement, NOW_ANCHOR, new Map([[movement.id, "no_eligible_bed"]]), presentation)).toBe(
+      "progress_escalated",
+    );
+    const attention = attentionItems({
+      movement,
+      units: state.units,
+      now: NOW_ANCHOR,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      destination: undefined,
+      open: true,
+      blockerIsActive: false,
+      presentation,
+    });
+    expect(attention.find((item) => item.key === "sender-progress")?.chip).toBe("Escalated");
+    expect(attention.some((item) => item.key === "stalled" || item.key === "escalation")).toBe(false);
+    expect(causeOf(movement, NOW_ANCHOR, new Map(), { kind: "unavailable" })).toBe("progress_unavailable");
+  });
+
+  function renderRow(progress: "escalated" | "none_found" | null) {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0],
+      stage: "destination_review" as const,
+      referredUnitIds: [],
+      declines: [],
+      withdrawnReferrals: [],
+      acceptedUnitId: undefined,
+      escalation: undefined,
+      closure: undefined,
+    };
+    senderMode.required = true;
+    senderMode.summary =
+      progress === null
+        ? null
+        : {
+            id: movement.id,
+            kind: "sender",
+            visibleUntil: null,
+            destinationStatus: "none_found",
+            progress,
+            nextStep: progress === "escalated" ? "wait" : "escalate",
+          };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ul>
+          <StageRow
+            movement={movement}
+            now={NOW_ANCHOR}
+            units={state.units}
+            accessTargetMinutes={1440}
+            reveal={null}
+            consumeReveal={() => false}
+            onOpenDetail={() => {}}
+            onFocusMovement={() => {}}
+            marked={false}
+            selected={false}
+          />
+        </ul>
+      </WardFlowProvider>,
+    );
+  }
+
+  it("shows actual sender escalation instead of inventing a not-requested referral from masked arrays", () => {
+    renderRow("escalated");
+    expect(screen.getAllByText("Escalated").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Ask wards" })).not.toBeInTheDocument();
+    expect(screen.queryByText("No ward asked yet")).not.toBeInTheDocument();
+  });
+
+  it("keeps the existing escalation navigation for a genuine no-acceptance sender outcome", () => {
+    renderRow("none_found");
+    expect(screen.getByRole("link", { name: "Escalate" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ask wards" })).not.toBeInTheDocument();
+  });
+
+  it("shows required missing progress explicitly rather than offering inferred refer advice", () => {
+    renderRow(null);
+    expect(screen.getAllByText("Progress unavailable").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Ask wards" })).not.toBeInTheDocument();
+  });
+
+  it("does not let a bed manager borrow coordinator identity for a movement write", () => {
+    setDeskRole("bed_manager", navigation.pathname);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementWorkflowActions movement={seedWardFlowState().movements[0]} />
+        <RejectionCount />
+      </WardFlowProvider>,
+    );
+    const flag = screen.getByRole("button", { name: "Raise expectation review flag" });
+    expect(flag).toBeDisabled();
+    const before = screen.getByTestId("probe").textContent;
+    fireEvent.click(flag);
+    expect(screen.getByTestId("probe").textContent).toBe(before);
+  });
+
+  it.each(["ward", "coordinator"] as const)("preserves an allowed expectation review for the %s desk", (role) => {
+    setDeskRole(role, navigation.pathname);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementWorkflowActions movement={seedWardFlowState().movements[0]} />
+        <WorkflowFlagProbe />
+      </WardFlowProvider>,
+    );
+    const flag = screen.getByRole("button", { name: "Raise expectation review flag" });
+    expect(flag).toBeEnabled();
+    fireEvent.click(flag);
+    expect(screen.getByTestId("movement-flag")).toHaveTextContent("0:set");
+  });
+
+  it("preserves the bed manager's explicitly permitted ward capacity request", () => {
+    setDeskRole("bed_manager", navigation.pathname);
+    const state = seedWardFlowState();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementWorkflowActions movement={{ ...state.movements[0], acceptedUnitId: state.units[0].id }} />
+        <RejectionCount />
+      </WardFlowProvider>,
+    );
+    const request = screen.getByRole("button", { name: "Request ward capacity review" });
+    expect(request).toBeEnabled();
+    fireEvent.click(request);
+    expect(screen.getByTestId("probe")).toHaveTextContent("0:unset");
+  });
+});
+
+function WorkflowFlagProbe() {
+  const { rejections, movements } = useWardFlow();
+  return (
+    <output data-testid="movement-flag">
+      {rejections.length}:{movements[0].expectFlag ? "set" : "unset"}
+    </output>
+  );
+}
 
 function RejectionCount() {
   const { rejections, movements } = useWardFlow();
