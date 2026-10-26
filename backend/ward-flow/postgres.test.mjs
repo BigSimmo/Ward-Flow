@@ -1443,6 +1443,7 @@ test(
         reason: "bed-search",
         minutes: { opened: 0, until: engine.BREAK_GLASS_MINUTES },
       });
+      const checkedReviews = { outside: false, inside: false };
       for (const service of ["North Metro", "South Metro", "East Metro"]) {
         const serviceView = { ...leadView, access: { role: "coordinator", scope: { kind: "service", service } } };
         const part = engine.scopeWorld(world, serviceView.access, at).state;
@@ -1455,7 +1456,30 @@ test(
         assert.ok(read.every((row) => own.has(row.patient_id)));
         assert.equal(read.length, openings.filter((row) => own.has(row.patient_id)).length);
         assert.ok((await store.recordViews(serviceView)).every((row) => own.has(row.patient_id)));
+        // A review mark on an opening is checked on the server too: a service coordinator may
+        // mark only openings of records in its own service, and never an opening that is not held.
+        const review = (row) => ({
+          type: "REVIEW_AUDIT_EVENT",
+          role: "coordinator",
+          eventId: `audit-break-glass-${row ? row.id : "999999"}`,
+          expectedGeneration: 0,
+          expectedReviewCount: 0,
+          decision: "reviewed",
+        });
+        const sent = (row) => store.command(lead, randomUUID(), 999, review(row), { view: serviceView });
+        const outside = openings.find((row) => !own.has(row.patient_id));
+        if (outside) {
+          const refusedReview = await sent(outside);
+          assert.equal(refusedReview.status, 422, service);
+          assert.equal(refusedReview.body.code, "scope");
+        }
+        const inside = openings.find((row) => own.has(row.patient_id));
+        if (inside) assert.notEqual((await sent(inside)).body.code, "scope", service);
+        assert.equal((await sent(null)).body.code, "scope");
+        checkedReviews.outside ||= !!outside;
+        checkedReviews.inside ||= !!inside;
       }
+      assert.deepEqual(checkedReviews, { outside: true, inside: true });
       at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
       const closed = await store.viewer(nurse);
       assert.deepEqual(closed.grants, []);

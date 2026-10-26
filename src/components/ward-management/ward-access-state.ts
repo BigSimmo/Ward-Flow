@@ -715,7 +715,9 @@ export function commandScopeRefusal(
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
     if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
-      // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not hold.
+      // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
+      // hold. The shared server also checks the opening exists and is of a record in the
+      // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).
       if (
         collection !== "auditEvents" ||
         !(seeded.has(id) || (access.role === "coordinator" && isBreakGlassReviewId(id)))

@@ -63,6 +63,9 @@ const VIEW_REPEAT_MS = 60_000;
 const VIEW_LIST_LIMIT = 200;
 /** How far back the coordinator's record views reach (D-80 item 14). */
 const REVIEW_DAYS = 7;
+/** A break glass opening's review id (`ward-break-glass-review-id.ts`) and the scope refusal. */
+const BREAK_GLASS_REVIEW_PREFIX = "audit-break-glass-";
+const OUTSIDE_PLACE = "This change names a record outside your role's place.";
 /** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
 const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
@@ -404,6 +407,25 @@ export function createWorkspaceStore(
       ...state.referrals.map((referral) => referral.patientId),
     ];
     return [...new Set(ids.filter((id) => typeof id === "string"))];
+  }
+  /**
+   * D-80 item 14: a review mark on a break glass opening names an opening the workspace does not
+   * hold, so the engine's scope check cannot look it up. Here the opening must exist in this
+   * workspace and, below statewide, be of a record in the coordinator's own part of the workspace
+   * (the same rule as reading the openings). Anything else is refused as outside the role's place.
+   */
+  async function breakGlassReviewRefusal(client, world, view, event, at) {
+    if (event?.type !== "REVIEW_AUDIT_EVENT" || typeof event.eventId !== "string") return null;
+    if (!event.eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
+    const id = event.eventId.slice(BREAK_GLASS_REVIEW_PREFIX.length);
+    if (!/^[1-9][0-9]{0,17}$/.test(id) || !(view.version >= ROLE_ACCESS_MIGRATION)) return OUTSIDE_PLACE;
+    const { rows } = await client.query(
+      "SELECT patient_id FROM ward_flow.break_glass WHERE id=$1 AND workspace_id=$2 AND data_mode='prototype'",
+      [id, workspaceId],
+    );
+    if (!rows[0]) return OUTSIDE_PLACE;
+    if (engine.wholeNetwork(view.access)) return null;
+    return placeRecords(world, view.access, at).includes(rows[0].patient_id) ? null : OUTSIDE_PLACE;
   }
   /**
    * The workspace row under `lock` ("UPDATE" or "SHARE"), with its whole world in `payload`, the
@@ -2011,7 +2033,10 @@ export function createWorkspaceStore(
         // The sender's own role and place, checked before the revision, so a desk never learns
         // whether a record outside its place changed. A refusal can still show that an id
         // exists, because ids it cannot find fall through to the engine's own not-found reply.
-        const scopeRefusal = view ? engine.commandRefusal(row.payload, view.access, event, at, view.grants) : null;
+        const scopeRefusal = view
+          ? (engine.commandRefusal(row.payload, view.access, event, at, view.grants) ??
+            (await breakGlassReviewRefusal(client, row.payload, view, event, at)))
+          : null;
         if (privacyRefusal) {
           outcome = "denied";
           status = 422;
