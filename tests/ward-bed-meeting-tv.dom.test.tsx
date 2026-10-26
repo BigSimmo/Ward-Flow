@@ -286,22 +286,24 @@ describe("the bed meeting TV view", () => {
     expect(screen.getByTestId("bed-meeting-tv-missing")).toHaveTextContent("This health service is not in the network");
   });
 
-  it("is read only and shows initials, never full names, on the shared screen", () => {
+  it("is read only and names each person in full on the shared screen (Josh, 26 Oct 2026)", () => {
     renderTv();
     const tv = screen.getByTestId("bed-meeting-tv");
-    // Only leaving the view or going full screen; nothing that changes a record.
+    // Only going full screen or locking the screen as a TV; nothing that changes a record.
     const buttons = within(tv).queryAllByRole("button");
-    expect(buttons.every((button) => button.dataset.testid === "bed-meeting-tv-fullscreen")).toBe(true);
+    expect(
+      buttons.every((button) => ["bed-meeting-tv-fullscreen", "tv-lock"].includes(button.dataset.testid ?? "")),
+    ).toBe(true);
     expect(tv.querySelector("input, select, textarea, form")).toBeNull();
 
     const state = seedWardFlowStateAt(0);
     const resolve = createPatientResolver(state);
     const waits = within(screen.getByTestId("bed-meeting-tv-waits-panel")).getAllByRole("listitem");
     expect(waits.length).toBeGreaterThan(0);
-    for (const movement of state.movements) {
-      const { displayName } = resolve({ movementId: movement.id });
-      if (displayName.length > 3) expect(tv.textContent).not.toContain(displayName);
-    }
+    const names = state.movements
+      .map((movement) => resolve({ movementId: movement.id }).displayName)
+      .filter((name) => name.length > 3);
+    expect(names.some((name) => tv.textContent?.includes(name))).toBe(true);
   });
 
   it("says it is switched off, and leaves the menu, when its flag is off", () => {
@@ -509,7 +511,13 @@ describe("the ward and ED TV views", () => {
     expect(figure("ed-tv-waiting")).toBe(shown(sheet.summary.waiting));
     expect(figure("ed-tv-past-target")).toBe(shown(sheet.summary.pastAccessTarget));
     expect(figure("ed-tv-no-bed")).toBe(shown(sheet.noBed));
-    expect(figure("ed-tv-bed-found")).toBe(shown(sheet.held));
+    // TV-03: accepted, with or without a pulled bed, as one figure; never "Bed found".
+    expect(figure("ed-tv-accepted")).toBe(shown(sheet.held));
+    expect(screen.getByTestId("ed-tv-accepted")).toHaveTextContent("Accepted");
+    expect(screen.getByTestId("bed-meeting-tv")).not.toHaveTextContent("Bed found");
+    // TV-04: the ED board's own "under a form" count and words, never "detained".
+    expect(screen.getByTestId("ed-tv-waiting")).toHaveTextContent(`${sheet.underForm} under a form`);
+    expect(screen.getByTestId("ed-tv-waiting")).not.toHaveTextContent("detained");
     expect(sheet.summary.waiting).toBeGreaterThan(0);
     // DA-22 (Josh 20 Oct 2026): at 24 px the ED view names five people so the busiest ED still fits a
     // 1080p screen; the rest are counted.
@@ -523,18 +531,27 @@ describe("the ward and ED TV views", () => {
     expect(screen.getByTestId("ed-tv-beds-ready")).toHaveTextContent(String(sheet.readyInService));
   });
 
-  it("is read only and shows initials, never full names, on a ward or ED screen too", () => {
-    const { state } = seedInputs();
+  it("is read only and names people in full on a ward or ED screen too", () => {
+    const { state, inputs } = seedInputs();
     const resolve = createPatientResolver(state);
-    const ed = allEmergencyDepartments()[0];
-    for (const props of [{ ward: state.units[0].id }, { ed: ed.id }]) {
+    const accessTargetMinutes = state.configuration.edAccessTargetMinutes;
+    const ed = allEmergencyDepartments().find(
+      (each) =>
+        (edTvSheet({ ...inputs, edId: each.id, accessTargetMinutes, thresholds: DEFAULT_DUE_SOON_THRESHOLDS })?.summary
+          .waiting ?? 0) > 0,
+    );
+    if (!ed) throw new Error("expected an ED with someone waiting");
+    const ward = state.units.find((unit) => state.admissions.some((admission) => admission.unitId === unit.id));
+    if (!ward) throw new Error("expected an occupied ward");
+    for (const props of [{ ward: ward.id }, { ed: ed.id }]) {
       const { unmount } = renderTv(props);
       const tv = screen.getByTestId("bed-meeting-tv");
       expect(tv.querySelector("input, select, textarea, form")).toBeNull();
-      for (const movement of state.movements) {
-        const { displayName } = resolve({ movementId: movement.id });
-        if (displayName.length > 3) expect(tv.textContent).not.toContain(displayName);
-      }
+      const names = [
+        ...state.movements.map((movement) => resolve({ movementId: movement.id }).displayName),
+        ...state.admissions.map((admission) => resolve(admission).displayName),
+      ].filter((name) => name.length > 3 && name !== "Name not recorded");
+      expect(names.some((name) => tv.textContent?.includes(name))).toBe(true);
       unmount();
     }
   });
@@ -590,6 +607,67 @@ describe("the ward and ED TV views", () => {
     const asAt = screen.getByTestId("bed-meeting-tv-as-at");
     expect(asAt).toHaveTextContent(/^Last updated \d\d:\d\d · connection unavailable, not updating$/);
     expect(asAt).not.toHaveTextContent("updates on its own");
+  });
+
+  it("freezes its figures while not updating and warns in red with the figures' age (TV-06)", () => {
+    const online = vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
+    function Clock() {
+      const { dispatch, now } = useWardFlow();
+      return [2, 5].map((minutes) => (
+        <button
+          key={minutes}
+          type="button"
+          data-testid={`advance-${minutes}`}
+          onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes })}
+        />
+      ));
+    }
+    const advance = (minutes: number) => fireEvent.click(screen.getByTestId(`advance-${minutes}`));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Clock />
+        <BedMeetingTvScreen />
+      </WardFlowProvider>,
+    );
+    const longest = () => screen.getByTestId("bed-meeting-tv-longest").textContent;
+    const before = longest();
+    online.mockReturnValue(false);
+    act(() => {
+      window.dispatchEvent(new Event("offline"));
+    });
+    expect(screen.getByTestId("bed-meeting-tv-stale")).toHaveAttribute("data-level", "danger");
+    expect(screen.getByTestId("bed-meeting-tv-stale")).not.toHaveTextContent(/Figures are/u);
+    act(() => advance(2));
+    act(() => advance(5));
+    // The figures stay where they were when the screen last updated; the warning says how old.
+    expect(longest()).toBe(before);
+    const stale = screen.getByTestId("bed-meeting-tv-stale");
+    expect(stale).toHaveAttribute("data-level", "danger");
+    expect(stale).toHaveTextContent(/Figures are 7m old/u);
+    online.mockRestore();
+  });
+
+  it("says a local screen updates in this browser only (TV-07) and keeps its prototype mark in the header (TV-08)", () => {
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-as-at")).toHaveTextContent("updates on its own, this browser only");
+    const header = screen.getByTestId("bed-meeting-tv").querySelector("header");
+    expect(header).toHaveTextContent("Synthetic prototype, not for clinical use");
+  });
+
+  it("names a long wait in words, not by colour alone (TV-10)", () => {
+    renderTv();
+    const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
+    expect(css).toMatch(/\.list li\[data-long\] \.wait \{\s*text-decoration: underline/u);
+    // Past the 24 hour mark the time reads in days, so the words say it as well as the colour.
+    for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long] [class*=wait]")) {
+      expect(row).toHaveTextContent(/\d+d/u);
+    }
+  });
+
+  it("says the ready beds' locked share plainly and counts releases held up (TV-11, NA3-02)", () => {
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-discharges")).toHaveTextContent(/\d+ releases? held up/u);
+    expect(screen.getByTestId("bed-meeting-tv-ready")).not.toHaveTextContent(/locked, of/u);
   });
 
   it("says so when a link names a ward or ED that is not in the network", () => {

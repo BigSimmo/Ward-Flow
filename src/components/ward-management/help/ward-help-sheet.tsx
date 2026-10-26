@@ -4,16 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
-import { filterGlossary, glossaryForSites, KEYBOARD_SHORTCUTS, screenHelpFor } from "./ward-help-content";
+import {
+  ADMIN_SETTINGS_HELP,
+  filterGlossary,
+  glossaryForSites,
+  KEYBOARD_SHORTCUTS,
+  screenHelpFor,
+} from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
-import { DESK_GUIDES, SAVED_OR_NOT } from "./ward-help-guide";
+import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { WHATS_NEW } from "./ward-whats-new";
@@ -77,15 +84,15 @@ export function WardHelpSheet({
   const { home, deskHome } = useTourFacts(role);
   // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
   const entries = useMemo(() => railEntries(), []);
-  const help = useMemo(
-    () =>
-      screenHelpFor(
-        pathname,
-        entries.filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
-        role === "admin" ? undefined : role,
-      ),
-    [entries, pathname, role],
-  );
+  const help = useMemo(() => {
+    const shown = screenHelpFor(
+      pathname,
+      entries.filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
+      role === "admin" ? undefined : role,
+    );
+    return role === "admin" && shown?.id === "settings" ? ADMIN_SETTINGS_HELP : shown;
+  }, [entries, pathname, role]);
+  const phone = useIsPhone();
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query, glossaryForSites(sites));
 
@@ -118,7 +125,7 @@ export function WardHelpSheet({
           </button>
         </div>
         <p className={styles.note}>
-          The tour starts by itself only once on this device. Open it again here or in Settings.
+          The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
         </p>
       </section>
 
@@ -181,6 +188,12 @@ export function WardHelpSheet({
               <li key={line}>{line}</li>
             ))}
           </ul>
+          <h4 className={styles.subTitle}>If Ward Flow is down</h4>
+          <ul className={styles.list} data-testid="ward-help-downtime">
+            {WHEN_IT_IS_DOWN.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
         </section>
       ) : null}
 
@@ -193,7 +206,7 @@ export function WardHelpSheet({
             <p className={styles.text}>{help.purpose}</p>
             <h4 className={styles.subTitle}>Main actions</h4>
             <ul className={styles.list}>
-              {help.actions.map((action) => (
+              {(phone ? (help.phoneActions ?? help.actions) : help.actions).map((action) => (
                 <li key={action}>{action}</li>
               ))}
             </ul>
@@ -210,19 +223,22 @@ export function WardHelpSheet({
                 </dl>
               </>
             ) : null}
-            <details className={styles.shortcuts} data-testid="ward-help-shortcuts">
-              <summary>Keyboard shortcuts</summary>
-              <dl className={styles.glossary}>
-                {KEYBOARD_SHORTCUTS.map((item) => (
-                  <div key={item.keys} className={styles.term}>
-                    <dt>
-                      <kbd>{item.keys}</kbd>
-                    </dt>
-                    <dd>{item.action}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
+            {/* A phone has no keyboard, so its screen reader is not read a list of keys (HF-14). */}
+            {phone ? null : (
+              <details className={styles.shortcuts} data-testid="ward-help-shortcuts">
+                <summary>Keyboard shortcuts</summary>
+                <dl className={styles.glossary}>
+                  {KEYBOARD_SHORTCUTS.map((item) => (
+                    <div key={item.keys} className={styles.term}>
+                      <dt>
+                        <kbd>{item.keys}</kbd>
+                      </dt>
+                      <dd>{item.action}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </details>
+            )}
           </section>
         ) : (
           <div data-testid="ward-help-screen-none">

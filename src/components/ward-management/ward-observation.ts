@@ -1,4 +1,3 @@
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES, OBSERVATION_LEVEL_NAMES } from "@/components/ward-management/ward-clinical-values";
 
@@ -56,13 +55,6 @@ export function observationAt(level: ObservationLevel, reviewAt: Instant | null 
 /** How many staff this level counts against the ward's observation capacity. */
 export function observationStaff(level: ObservationLevel): number {
   return level === "two_staff" ? 2 : level === "within_sight" || level === "arms_length" ? 1 : 0;
-}
-
-/** Staff this ward is committing to constant observation for the people in its beds now. */
-export function observationStaffOnWard(unitId: string, admissions: readonly Admission[]): number {
-  return admissions
-    .filter((admission) => admission.unitId === unitId && admission.state === "occupied")
-    .reduce((total, admission) => total + observationStaff(admission.observation.level), 0);
 }
 
 /** True for the constant levels, the ones that take staff from the ward's observation capacity. */

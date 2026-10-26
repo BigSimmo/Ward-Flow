@@ -131,6 +131,23 @@ describe("capacity breakdown", () => {
     expect(result.availableNow).toBe(bare.availableNow);
   });
 
+  it("A16 (26 Oct 2026): counts a confirmed discharge that is also held up in confirmedHeldUpToday", () => {
+    const result = capacityBreakdown(
+      unit,
+      [
+        blockedRelease({ id: "WR-A", state: "confirmed", waitingOn: null }),
+        release({ id: "WR-B", state: "confirmed", waitingOn: null }),
+        blockedRelease({ id: "WR-C" }),
+      ],
+      [],
+      NOW_ANCHOR,
+    );
+    expect(result.confirmedToday).toBe(2);
+    expect(result.blockedToday).toBe(2);
+    // Only the confirmed one of the two held up: an expected discharge held up is not in Confirmed.
+    expect(result.confirmedHeldUpToday).toBe(1);
+  });
+
   it("reports what it excluded rather than dropping it silently", () => {
     const result = capacityBreakdown(unit, [release({ expectedAt: NOW_ANCHOR + 2 * MINUTES_PER_DAY })], [], NOW_ANCHOR);
     expect(result.expectedToday).toBe(0);

@@ -5,7 +5,7 @@ import { FIXTURE_HISTORY } from "./ward-referral-history";
 
 /**
  * Option B (Josh, 13 Oct 2026): the ED's "Raise referral" now opens the one referral slide-out, so
- * the inline ED form is reached only through an inbox referral's "Raise into a movement". These
+ * the inline ED form is reached only through an inbox referral's "Ask for a bed". These
  * suites test that form's own fields, so they reach it the way a clinician now does: a referral
  * addressed to this department arrives, and its inbox row's raise button opens the form.
  *
@@ -51,12 +51,12 @@ export function EdInboxReferralFixture({ edId }: { edId: string }) {
   );
 }
 
-/** Receives a referral into this department and opens "Raise into a movement" for it. */
+/** Receives a referral into this department and opens "Ask for a bed" for it. */
 export function openRaiseIntoMovementForm() {
   fireEvent.click(screen.getByTestId("fixture-ed-inbox-referral"));
   fireEvent.click(screen.getByTestId("fixture-ed-inbox-arrived"));
   const raise = screen.getAllByTestId(/^ward-ed-inbox-raise-/u).at(-1);
-  if (!raise) throw new Error("the received referral offers no Raise into a movement");
+  if (!raise) throw new Error("the received referral offers no Ask for a bed");
   fireEvent.click(raise);
 }
 

@@ -1,5 +1,5 @@
 import { forgetDowntimePack } from "./reports/downtime-pack";
-import { openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
+import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -465,7 +465,7 @@ export class SharedWorkspaceClient {
   /** The popups open now, each noted, for a command asked for now; `undefined` when none is. */
   private openSheetsNoted() {
     this.noteOpenSheets();
-    const sheets = openSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
+    const sheets = commandSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
     return sheets.length ? sheets : undefined;
   }
   /**

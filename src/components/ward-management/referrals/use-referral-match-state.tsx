@@ -19,6 +19,7 @@ import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { referralSentByDesk, routeSentKind } from "../ward-referral-sender";
 import { wardPlaceLookup } from "../ward-access-places";
+import { useHoldOpenForm } from "../use-hold-open-form";
 
 /**
  * The match view's state, its rejection check, the ward arm under review and the controls built
@@ -115,6 +116,9 @@ export function useReferralMatchState({
    */
   const [withdrawRecorder, setWithdrawRecorder] = useState<"coordinator" | "sender">("coordinator");
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
+  // Audit CS3-01: each inline confirm step is checked against the board as it was when it opened.
+  useHoldOpenForm(edAcceptConfirmOpen);
+  useHoldOpenForm(withdrawConfirmOpen);
   const [lastRejection, setLastRejection] = useState<Rejection | undefined>(undefined);
   // Same async-detection pattern the referral slide-out uses for its own send (`submissionRef`) —
   // `dispatch` never returns whether

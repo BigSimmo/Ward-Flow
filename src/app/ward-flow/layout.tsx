@@ -26,6 +26,7 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
+import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { demoDayZero } from "@/components/ward-management/ward-clock";
 import {
@@ -202,6 +203,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 </WardAccessGate>
                 <WardPrintFooter />
                 <WardIdleLock />
+                {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
+                <TvLockGuard />
               </div>
             </div>
           </ToastProvider>

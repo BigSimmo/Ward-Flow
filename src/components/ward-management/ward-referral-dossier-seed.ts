@@ -66,7 +66,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "High. Stockpiled medication, stated intent, lives alone." },
       { label: "Aggression", detail: "Low. No history." },
-      { label: "Absconding", detail: "Low. Agrees to admission." },
+      { label: "Absent without leave", detail: "Low. Agrees to admission." },
       { label: "Vulnerability", detail: "Two falls this month. Poor intake." },
       { label: "In ED", detail: "No seclusion, restraint or sedation." },
     ],
@@ -137,7 +137,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "Low. Denies thoughts of self harm." },
       { label: "Aggression", detail: "Moderate. Irritable when limits are set, no violence." },
-      { label: "Absconding", detail: "High. Two night time wanderings this week." },
+      { label: "Absent without leave", detail: "High. Two night time wanderings this week." },
       { label: "Vulnerability", detail: "Financial exploitation risk. Falls risk at night." },
       { label: "In ED", detail: "No seclusion or restraint. Olanzapine 5 mg oral at 23:30 with good effect." },
     ],
@@ -202,7 +202,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "Low to moderate. No stated intent, poor self care." },
       { label: "Aggression", detail: "Moderate. Threatened neighbours verbally." },
-      { label: "Absconding", detail: "Moderate. Wants to leave to check her flat." },
+      { label: "Absent without leave", detail: "Moderate. Wants to leave to check her flat." },
       { label: "Vulnerability", detail: "Dehydrated, isolated, no supports nearby." },
       { label: "In ED", detail: "No restraint. Declined oral medication." },
     ],
@@ -265,7 +265,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "Low. Denies thoughts of self harm." },
       { label: "Aggression", detail: "High. Assault in ED, specific threats to his brother." },
-      { label: "Absconding", detail: "High. Attempted to leave twice." },
+      { label: "Absent without leave", detail: "High. Attempted to leave twice." },
       { label: "Vulnerability", detail: "Low" },
       {
         label: "In ED",
@@ -331,7 +331,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "High. Recent serious overdose, ongoing intent." },
       { label: "Aggression", detail: "Low" },
-      { label: "Absconding", detail: "Moderate. Has asked to leave." },
+      { label: "Absent without leave", detail: "Moderate. Has asked to leave." },
       { label: "Vulnerability", detail: "No stable accommodation in Perth." },
       { label: "In ED", detail: "No restraint or sedation." },
     ],
@@ -395,7 +395,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "Moderate. Passive ideation, no plan, protective factors." },
       { label: "Aggression", detail: "Low" },
-      { label: "Absconding", detail: "Low" },
+      { label: "Absent without leave", detail: "Low" },
       { label: "Vulnerability", detail: "Poor self care" },
       { label: "In ED", detail: "No restraint or sedation." },
     ],
@@ -458,7 +458,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     risk: [
       { label: "Suicide", detail: "Low" },
       { label: "Aggression", detail: "Moderate when intoxicated, calm now" },
-      { label: "Absconding", detail: "Low. Wants admission." },
+      { label: "Absent without leave", detail: "Low. Wants admission." },
       { label: "Vulnerability", detail: "Owes money to dealers" },
       { label: "In ED", detail: "Diazepam 10 mg oral at 21:00 for agitation." },
     ],
