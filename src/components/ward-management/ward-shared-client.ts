@@ -837,6 +837,7 @@ export class SharedWorkspaceClient {
           authorization: `Bearer ${token}`,
           ...(body ? { "content-type": "application/json" } : {}),
           ...(as ? { "x-ward-working-as": as } : {}),
+          // The server logs a whole read from the bed meeting TV board as "tv" (H-0731).
           ...(workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting")
             ? { "x-ward-screen": "tv" }
             : {}),
@@ -1416,9 +1417,6 @@ export class SharedWorkspaceClient {
       scope: input.scope,
       expiresAt: new Date(Date.now() + input.expiresInMinutes * 60_000).toISOString(),
     });
-  }
-  approveAccess(membershipId: string) {
-    return this.change("/v1/workspace/access/approve", { membershipId });
   }
   /** Removes a role, or ends cover early (its giver may too). */
   revokeAccess(membershipId: string) {

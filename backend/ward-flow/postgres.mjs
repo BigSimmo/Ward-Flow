@@ -68,19 +68,6 @@ const VIEW_LIST_LIMIT = 200;
 const VIEW_RATE_LIMIT = 60;
 /** A desk's whole-list or TV reads are logged at most once in this window for each account (H-0731). */
 const LIST_VIEW_REPEAT_MS = 15 * 60_000;
-/**
- * D-80 item 17: with the second approver switched on, an admin or statewide coordinator role works
- * only once a second access admin has approved it. Every other role, and cover, works at once.
- */
-const SECOND_APPROVED =
-  " AND (approved_by IS NOT NULL OR NOT (role = 'admin' OR (role = 'coordinator' AND scope->>'kind' = 'statewide')))";
-/** Whether a membership row is one the second approver must approve (matches SECOND_APPROVED). */
-function needsSecondApproval(row) {
-  return (
-    (row.kind ?? "role") === "role" &&
-    (row.role === "admin" || (row.role === "coordinator" && row.scope?.kind === "statewide"))
-  );
-}
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -117,7 +104,6 @@ export function createWorkspaceStore(
     deliveryWaitMs = 1500,
     retryAfterMs = 60_000,
     demoEvents = false,
-    secondApprover = false,
   },
 ) {
   /**
@@ -986,8 +972,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4)${secondApprover ? SECOND_APPROVED : ""} ORDER BY granted_at, id LIMIT 20`
-            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM}${secondApprover ? SECOND_APPROVED : ""} ORDER BY granted_at, id LIMIT 20`,
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -1126,9 +1112,8 @@ export function createWorkspaceStore(
     grantedAt: new Date(row.granted_at).toISOString(),
     expiresAt: new Date(row.expires_at).toISOString(),
     lastUsedAt: row.last_used_at ? new Date(row.last_used_at).toISOString() : null,
-    // D-66: a role works without a separate approval, unless the pilot switch asks for a second
-    // access admin to approve an admin or statewide coordinator grant (D-80 item 17).
-    approved: !(secondApprover && needsSecondApproval(row) && !row.approved_by),
+    // Kept for older clients: every role is usable without a separate approval (D-66).
+    approved: true,
     approvedBy: row.approved_by,
     minutes: {
       granted: minutesFrom(row.granted_at, at),
@@ -1778,19 +1763,9 @@ export function createWorkspaceStore(
         };
       });
     },
-    /**
-     * D-80 item 17, behind the pilot switch (WARD_SECOND_APPROVER): a second access admin approves
-     * an admin or statewide coordinator grant before it works. Never the person who gave it or the
-     * person it is for. With the switch off grants work at once (D-66), so nothing waits.
-     */
+    /** Older clients may still ask to approve a role; grants now work immediately. */
     approveAccess(view, membershipId) {
-      return changeMembership(view, membershipId, "ACCESS_APPROVE", (membership) => {
-        if (!secondApprover || !needsSecondApproval(membership) || membership.approved_by)
-          return "That role is not waiting for approval.";
-        if (membership.granted_by === view.actorId) return "A second access admin must approve a role you gave.";
-        if (membership.actor_id === view.actorId) return "You cannot approve your own role.";
-        return ["approved_at", "approved_by"];
-      });
+      return changeMembership(view, membershipId, "ACCESS_APPROVE", () => "That role is not waiting for approval.");
     },
     /** Ends a role now. Cover is ended by its giver too, with no access admin. */
     revokeAccess(view, membershipId) {

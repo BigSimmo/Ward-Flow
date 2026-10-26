@@ -79,8 +79,6 @@ type AccessAdminSource = {
   readonly label: (actorId: string) => string;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
-  /** A second access admin's approval (D-80 item 17). The local demo has none to give. */
-  readonly approve?: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
   /** Why the lists may be out of date (the server was not reached). */
   readonly problem?: string | null;
@@ -111,7 +109,6 @@ function whenText(at: Instant, now: Instant): string {
 
 const STATUS: Record<MembershipStatus, { label: string; tone: WfTone }> = {
   active: { label: "Active", tone: "success" },
-  awaiting: { label: "Waiting for a second access admin to approve", tone: "warning" },
   inactive: { label: "Not active yet: the server is not updated", tone: "warning" },
   unused: { label: "Switched off, not used", tone: "closed" },
   ended: { label: "Ended", tone: "neutral" },
@@ -270,15 +267,6 @@ function AccessAdminPanel() {
                     ) : null}
                     {m.kind === "cover" ? <Badge size="sm">Cover</Badge> : null}
                   </span>
-                  {status === "awaiting" && source.approve ? (
-                    <Button
-                      size="sm"
-                      variant="sec"
-                      onClick={() => run(() => source.approve!(m.id), `Approved: ${describe(m.access)}.`)}
-                    >
-                      Approve
-                    </Button>
-                  ) : null}
                   <Button
                     size="sm"
                     variant="ghost"

@@ -56,10 +56,8 @@ export function sharedMembership(row: SharedMembership, now: Instant): AccessMem
     grantedAt: now + minutes.granted,
     expiresAt: now + minutes.expires,
     approvedBy: row.approvedBy,
-    // A role that names no health service is refused by the server until it is given again.
-    ...(needsService ? { blockedByOlderServer: true } : {}),
-    // `approved: false`: the role waits for a second access admin (D-80 item 17, pilot switch on).
-    ...(row.kind !== "cover" && row.approved === false && !needsService ? { awaitingApproval: true } : {}),
+    // Only an older backend sends `approved: false`; it still refuses this role until it is updated.
+    ...((row.kind !== "cover" && row.approved === false) || needsService ? { blockedByOlderServer: true } : {}),
     lastUsedAt: typeof minutes.lastUsed === "number" ? now + minutes.lastUsed : null,
     revokedAt: null,
   };
@@ -136,7 +134,6 @@ export type SharedAdminSource = {
   readonly label: (actorId: string) => string;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
-  readonly approve: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
 };
 
@@ -161,7 +158,6 @@ export function useSharedAdminSource(
       grant: ({ actorId, access, expiresAt }) =>
         settle(api.grantAccess({ actorId, role: access.role, scope: access.scope, expiresInMinutes: expiresAt - now })),
       revoke: (id) => settle(api.revokeAccess(id)),
-      approve: (id) => settle(api.approveAccess(id)),
       decide: (id, decision, expiresAt) => settle(api.decideRequest(id, decision, expiresAt - now)),
     };
   }, [api, value, at, problem, loading, now, self, after]);
