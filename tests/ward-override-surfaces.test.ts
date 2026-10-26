@@ -525,6 +525,9 @@ describe("ward override-surface guard", () => {
     "ACCEPT_REFERRAL",
     "BOOK_PLANNED_ADMISSION",
     "CHANGE_PLANNED_ADMISSION",
+    // Audit CS3-12 (Josh, 26 Oct 2026, Part A 3): a bed move to an open bed for a stay that needs a
+    // locked bed needs a recorded reason, as at admission.
+    "PLACE_IN_BED",
   ];
 
   it("the derived overridable set equals its snapshot, so any change is a decision somebody takes", () => {
@@ -777,6 +780,8 @@ describe("ward override-surface guard", () => {
       "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 3,
       // v10 pass 3: the Bed board's place in a bed (ordinary acceptance with a bed number).
       "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_REFERRAL": 1,
+      // Audit CS3-12: the Bed board's move, one site; the reason form re-sends it with a reason.
+      "src/components/ward-management/ward/ward-screen.tsx::PLACE_IN_BED": 1,
       "src/components/ward-management/ward/ward-screen.tsx::PULL_PATIENT": 2,
     });
   });

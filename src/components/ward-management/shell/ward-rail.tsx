@@ -314,6 +314,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
+  /** Where focus goes when Go to a desk closes: the rail's person or, on iPad, the Menu button. */
+  const deskReturnRef = useRef<HTMLElement | null>(null);
   // The person using the shell: the desk a switch announced (persona sync), or with role access on,
   // the desk's own role. Shared with the desk picker so both name the same person.
   const personaRole = useShellPersonaRole();
@@ -1100,6 +1102,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 return;
               }
               setOpenOverlay(null);
+              deskReturnRef.current = personaTriggerRef.current;
               setDeskModalOpen(true);
             }}
             aria-expanded={deskModalOpen}
@@ -1121,7 +1124,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               isOpen
               onClose={() => {
                 setDeskModalOpen(false);
-                personaTriggerRef.current?.focus();
+                deskReturnRef.current?.focus();
               }}
             />
           ) : null}
@@ -1150,7 +1153,25 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           // Device audit (11 Oct 2026): the list scrolls above a pinned foot that keeps the person,
           // Settings and Appearance in reach on iPad, where the sheet used to cut off at Governance.
           <>
-            <div className={styles.moreFootPerson} title={`${currentPersona.name} · ${currentPersona.role}`}>
+            {/* WT-39 (walk-through, 26 Oct 2026): on iPad portrait there is no rail, so the menu's
+                person opens Go to a desk, as the rail's person does. */}
+            <button
+              type="button"
+              className={`${styles.moreFootPerson} ${styles.moreFootPersonBtn}`}
+              data-testid="ward-rail-sheet-persona-trigger"
+              onClick={() => {
+                setMoreOpen(false);
+                if (onOpenOperatorModal) {
+                  onOpenOperatorModal();
+                  return;
+                }
+                deskReturnRef.current = moreTriggerRef.current;
+                setDeskModalOpen(true);
+              }}
+              aria-haspopup="dialog"
+              aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
+              title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+            >
               <span className={styles.userAvatar} aria-hidden="true">
                 {currentPersona.initials}
               </span>
@@ -1158,7 +1179,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 <span className={styles.userName}>{currentPersona.name}</span>
                 <span className={styles.userRole}>{currentPersona.role}</span>
               </span>
-            </div>
+              <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
+            </button>
             <div className={styles.moreFootActions}>
               <Link
                 href={settingsHref()}

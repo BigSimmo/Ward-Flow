@@ -120,6 +120,12 @@ export function perthCalendarDay(date: Date): { year: number; monthIndex: number
   };
 }
 
+/** The Perth calendar day a moment falls on, written "YYYY-MM-DD" as a date input reads it. */
+export function perthIsoDay(moment: Date): string {
+  const perth = perthCalendarDay(moment);
+  return `${perth.year}-${String(perth.monthIndex + 1).padStart(2, "0")}-${String(perth.day).padStart(2, "0")}`;
+}
+
 /**
  * A `datetime-local` value ("2026-10-12T14:30") read as Perth wall time, or undefined when it is not
  * a well-formed, real date and time. `new Date(value)` reads it in the browser's zone instead (L7).

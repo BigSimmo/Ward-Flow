@@ -261,13 +261,20 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await expect(page.getByTestId("ward-board")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-board")).toBeVisible({ timeout: 15_000 });
     const tile = page.locator(`#ward-board-tile-${release.admissionId}`);
+    const leavingSubmit = page.getByTestId("ward-board-record-leaving-submit");
+    // Retry until the record's own button is on screen, not merely until the tile reads chosen:
+    // the tile can read chosen on a copy of the board that is then replaced, which loses the choice
+    // and leaves no button to press (this step timed out at 60s on CI, on branches that never touch
+    // the board). A tile that is already chosen is not pressed again, because pressing it closes it.
     await expect(async () => {
-      await tile.click();
-      await expect(tile).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
-    }).toPass({ timeout: 15_000 });
-    await page.getByTestId("ward-board-record-leaving-submit").click();
+      if ((await tile.getAttribute("aria-pressed")) !== "true") await tile.click({ timeout: 2_000 });
+      await expect(leavingSubmit).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await leavingSubmit.click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
     await expect(departureDialog).toBeVisible();
+    // Audit CS3-07: where they went starts blank and must be chosen.
+    await departureDialog.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
     await departureDialog.getByRole("button", { name: "Record departure", exact: true }).click();
     await expect(departureDialog).toHaveCount(0);
 

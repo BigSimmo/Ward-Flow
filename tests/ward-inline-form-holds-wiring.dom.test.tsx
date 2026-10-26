@@ -52,6 +52,18 @@ describe("inline forms on the real screens carry their hold (audit CS3-01)", () 
     expect(sent.find((entry) => entry.type === "DECLINE")?.holds).toBeGreaterThan(0);
   });
 
+  it("ward answer view: opening the decline form holds it before any field is touched", () => {
+    harness(() => <WardAnswerView unitId="sjgm-adult-open" />);
+    const id = screen.getByTestId(/^ward-incoming-/).dataset.testid!.replace("ward-incoming-", "");
+    expect(openSheetHandles()).toHaveLength(0);
+    fireEvent.click(screen.getByTestId(`ward-decline-toggle-${id}`));
+    // Two holds: the explicit one from opening, and the page form's own once focus moves into its
+    // first field. Before the fix only the second existed, and only where focus moved.
+    expect(openSheetHandles()).toHaveLength(2);
+    fireEvent.click(screen.getByTestId(`ward-decline-toggle-${id}`));
+    expect(openSheetHandles()).toHaveLength(0);
+  });
+
   it("sent journey: a legal status change is sent with the form's hold, and closing it lets go", () => {
     const sent = harness((state) => (
       <SentJourneyChanges movement={state.movements[0]!} patientWho="the synthetic patient" />

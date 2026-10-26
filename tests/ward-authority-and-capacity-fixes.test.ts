@@ -445,7 +445,7 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
       const addedNotices = revoked.notices.slice(beforeCount);
       const revokedNotice = addedNotices.find((n) => n.kind === "examination_revoked_ward");
       expect(revokedNotice).toBeDefined();
-      expect(revokedNotice!.sentence).toContain("The bed stays held until a person decides whether to release it.");
+      expect(revokedNotice!.sentence).toContain("The bed stays pulled until a person decides whether to release it.");
       expect(revokedNotice!.sentence).not.toContain("has been released");
     });
   });

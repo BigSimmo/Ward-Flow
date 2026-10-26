@@ -683,13 +683,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {linked ? (
                                       <>
                                         <span aria-hidden="true">{isPhone ? "\u00a0· " : " · "}</span>
-                                        {/* Phone rows carry the UMRN only (device audit, 11 Oct
-                                            2026); the sheet adds the name. */}
-                                        <span className={isPhone ? pageStyles.mono : pageStyles.patientHint}>
-                                          {isPhone && linked.identity.kind === "linked"
-                                            ? linked.identity.patient.umrn
-                                            : recordName(linked)}
-                                        </span>
+                                        {/* WT-22 (walk-through, 26 Oct 2026): phone rows name the
+                                            person as desktop does (names shown in full, D-83). */}
+                                        <span className={pageStyles.patientHint}>{recordName(linked)}</span>
                                       </>
                                     ) : null}
                                   </span>

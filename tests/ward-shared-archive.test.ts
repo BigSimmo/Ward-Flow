@@ -257,3 +257,222 @@ describe("the shared client shows archived records in History", () => {
     shared.dispose();
   });
 });
+
+describe("archived sender progress in the shared client", () => {
+  const context = "a".repeat(64);
+  const other = "b".repeat(64);
+  const liveReferral = {
+    id: "RF-live",
+    kind: "sender" as const,
+    state: "queued" as const,
+    withdrawn: false,
+    decidedAt: null,
+    visibleUntil: null,
+    canWithdraw: false,
+    informationNeeds: [],
+  };
+  const archivedReferral = {
+    id: "RF-archived",
+    kind: "sender" as const,
+    state: "declined" as const,
+    withdrawn: false,
+    decidedAt: 90,
+    visibleUntil: null,
+    canWithdraw: false,
+    informationNeeds: [],
+  };
+  const archivedMovement = {
+    id: "MV-archived",
+    kind: "sender" as const,
+    visibleUntil: null,
+    destinationStatus: "none_found" as const,
+    nextStep: "escalate" as const,
+    progress: "none_found" as const,
+  };
+  const liveSibling = (accessContext = context) => ({
+    revision: 7,
+    accessContext,
+    view: { version: 1 as const, referrals: [liveReferral], movements: [] },
+  });
+  const archiveSibling = (overrides: Record<string, unknown> = {}) => ({
+    revision: 7,
+    accessContext: context,
+    view: { version: 1 as const, referrals: [archivedReferral], movements: [archivedMovement] },
+    ...overrides,
+  });
+
+  function run(reply: () => Record<string, unknown>, options: { live?: unknown; accessContext?: string } = {}) {
+    let view: SharedView | undefined;
+    const shared = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) => {
+        if (new URL(String(url)).pathname === "/v1/workspace/archive") return Response.json(reply());
+        return Response.json({
+          snapshot: {
+            dataMode: "prototype",
+            revision: 7,
+            now: later,
+            archived: split.archived.length,
+            accessContext: options.accessContext ?? context,
+            partialView: "live" in options ? options.live : liveSibling(),
+            payload: { version: 1, state: live, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
+          },
+        });
+      },
+    });
+    const records = () => split.archived.map(({ collection, body }) => ({ collection, body }));
+    return { shared, view: () => view, records };
+  }
+  const archivedHere = (view: SharedView | undefined) =>
+    split.archived.some(({ collection, id }) => view?.snapshot?.payload.state[collection].some((row) => row.id === id));
+  const ids = (view: SharedView | undefined, list: "referrals" | "movements") =>
+    view?.snapshot?.partialView?.view[list].map((row) => row.id);
+
+  it("adds the archived records' progress beside the live sibling, bound to the same revision and access view", async () => {
+    const { shared, view, records } = run(() => ({
+      archived: split.archived.length,
+      revision: 7,
+      records: records(),
+      partialView: archiveSibling(),
+    }));
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(ids(view(), "referrals")).toContain("RF-archived"));
+      expect(ids(view(), "referrals")).toEqual(["RF-live", "RF-archived"]);
+      expect(ids(view(), "movements")).toEqual(["MV-archived"]);
+      expect(view()?.snapshot?.partialView?.revision).toBe(7);
+      expect(view()?.snapshot?.partialView?.accessContext).toBe(context);
+      expect(Object.isFrozen(view()?.snapshot?.partialView)).toBe(true);
+      expect(Object.isFrozen(view()?.snapshot?.partialView?.view.referrals)).toBe(true);
+      expect(archivedHere(view())).toBe(true);
+    } finally {
+      shared.dispose();
+    }
+  });
+
+  it.each([
+    ["a different access view", archiveSibling({ accessContext: other })],
+    ["a different revision from the reply's", archiveSibling({ revision: 6 })],
+    [
+      "a destination smuggled in",
+      archiveSibling({ view: { version: 1, referrals: [], movements: [], destinations: ["x"] } }),
+    ],
+    [
+      "a row naming a unit",
+      archiveSibling({ view: { version: 1, referrals: [{ ...archivedReferral, unitId: "x" }], movements: [] } }),
+    ],
+    ["no sibling at all", undefined],
+  ])("shows the archived records but no archived progress for %s", async (_name, sibling) => {
+    const { shared, view, records } = run(() => ({
+      archived: split.archived.length,
+      revision: 7,
+      records: records(),
+      ...(sibling === undefined ? {} : { partialView: sibling }),
+    }));
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(archivedHere(view())).toBe(true));
+      expect(ids(view(), "referrals")).toEqual(["RF-live"]);
+      expect(ids(view(), "movements")).toEqual([]);
+    } finally {
+      shared.dispose();
+    }
+  });
+
+  it("does not use an archive summary worked out before the snapshot the desk already holds", async () => {
+    const { shared, view, records } = run(() => ({
+      archived: split.archived.length,
+      revision: 6,
+      records: records(),
+      partialView: archiveSibling({ revision: 6 }),
+    }));
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(archivedHere(view())).toBe(true));
+      expect(ids(view(), "referrals")).toEqual(["RF-live"]);
+    } finally {
+      shared.dispose();
+    }
+  });
+
+  it("shows no archived progress when the live sibling is unavailable, and never overrides a live row", async () => {
+    const without = run(
+      () => ({
+        archived: split.archived.length,
+        revision: 7,
+        records: without.records(),
+        partialView: archiveSibling(),
+      }),
+      { live: undefined },
+    );
+    try {
+      await without.shared.refresh();
+      await vi.waitFor(() => expect(archivedHere(without.view())).toBe(true));
+      expect(without.view()?.snapshot?.partialView).toBeUndefined();
+    } finally {
+      without.shared.dispose();
+    }
+    const clash = run(() => ({
+      archived: split.archived.length,
+      revision: 7,
+      records: clash.records(),
+      partialView: archiveSibling({
+        view: { version: 1, referrals: [{ ...archivedReferral, id: "RF-live", state: "accepted" }], movements: [] },
+      }),
+    }));
+    try {
+      await clash.shared.refresh();
+      await vi.waitFor(() => expect(archivedHere(clash.view())).toBe(true));
+      expect(clash.view()?.snapshot?.partialView?.view.referrals).toEqual([liveReferral]);
+    } finally {
+      clash.shared.dispose();
+    }
+  });
+
+  it("drops the archived progress with the archived records when the access view changes", async () => {
+    let accessContext = context;
+    let current: SharedView | undefined;
+    const shared = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        current = next;
+      },
+      fetch: async (url) => {
+        if (new URL(String(url)).pathname === "/v1/workspace/archive")
+          return Response.json({
+            archived: split.archived.length,
+            revision: 7,
+            records:
+              accessContext === context ? split.archived.map(({ collection, body }) => ({ collection, body })) : [],
+            ...(accessContext === context ? { partialView: archiveSibling() } : {}),
+          });
+        return Response.json({
+          snapshot: {
+            dataMode: "prototype",
+            revision: 7,
+            now: later,
+            archived: split.archived.length,
+            accessContext,
+            partialView: liveSibling(accessContext),
+            payload: { version: 1, state: live, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
+          },
+        });
+      },
+    });
+    try {
+      await shared.refresh();
+      await vi.waitFor(() => expect(ids(current, "referrals")).toContain("RF-archived"));
+      accessContext = other;
+      await shared.refresh();
+      expect(ids(current, "referrals")).toEqual(["RF-live"]);
+      expect(ids(current, "movements")).toEqual([]);
+    } finally {
+      shared.dispose();
+    }
+  });
+});

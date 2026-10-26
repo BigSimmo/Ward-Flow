@@ -15,6 +15,7 @@ import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-managemen
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { dateInputFor } from "./helpers/ward-date-input";
 
 const NOW = NOW_ANCHOR;
 const seed = seedWardFlowState();
@@ -315,6 +316,9 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
+      target: { value: dateInputFor(NOW_ANCHOR + 240, screenDayZero) },
+    });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
 
@@ -401,8 +405,12 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
   });
 });
 
+let screenDayZero: Date;
 function AdvanceClock({ minutes }: { minutes: number }) {
-  const { dispatch } = useWardFlowSelect("dispatch");
+  const { dispatch, dayZero } = useWardFlowSelect("dispatch", "dayZero");
+  useEffect(() => {
+    screenDayZero = dayZero;
+  }, [dayZero]);
   useEffect(() => {
     dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes });
   }, [dispatch, minutes]);

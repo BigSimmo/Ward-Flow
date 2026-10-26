@@ -2589,6 +2589,8 @@ export type WardFlowEvent =
       bedNumber: number;
       /** A ward names itself and may only place stays on its own unit. */
       actingUnitId?: string;
+      /** Audit CS3-12: why a stay needing a locked bed may move to an open one. */
+      overrideReason?: OverrideReason;
     }
   | {
       /** Returns the stay to the bed (or no recorded bed) it had before the newest `PLACE_IN_BED`. */

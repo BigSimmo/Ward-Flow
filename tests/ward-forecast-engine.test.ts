@@ -107,10 +107,23 @@ describe("forecastLevers", () => {
 
 describe("forecast horizon", () => {
   it("adds a third day on a Friday and before a WA public holiday", () => {
-    // 23 Oct 2026 is a Friday, 21 Oct a Wednesday, 24 Dec a Thursday before Christmas Day.
+    // 23 Oct 2026 is a Friday, 21 Oct a Wednesday, 25 Jan 2027 the Monday before Australia Day.
     expect(forecastHorizonDays(now, perthMidnight(2026, 9, 23))).toEqual([1, 2, 3]);
     expect(forecastHorizonDays(now, perthMidnight(2026, 9, 21))).toEqual([1, 2]);
-    expect(forecastHorizonDays(now, perthMidnight(2026, 11, 24))).toEqual([1, 2, 3]);
+    expect(forecastHorizonDays(now, perthMidnight(2027, 0, 25))).toEqual([1, 2, 3]);
+  });
+
+  it("runs the last day to the first working day after a long weekend (audit TC2-06)", () => {
+    // Friday 25 Sep 2026, before King's Birthday: Tuesday is the first working day.
+    expect(forecastHorizonDays(now, perthMidnight(2026, 8, 25))).toEqual([1, 2, 4]);
+    // Thursday 2 Apr 2026, before Easter: Good Friday to Easter Monday are closed.
+    expect(forecastHorizonDays(now, perthMidnight(2026, 3, 2))).toEqual([1, 2, 5]);
+    // Thursday 24 Dec 2026: Christmas Day to the Boxing Day additional day.
+    expect(forecastHorizonDays(now, perthMidnight(2026, 11, 24))).toEqual([1, 2, 5]);
+    // Saturday 26 Sep 2026: Sunday and the Monday holiday.
+    expect(forecastHorizonDays(now, perthMidnight(2026, 8, 26))).toEqual([1, 2, 3]);
+    // An ordinary Saturday: the two days already reach Monday.
+    expect(forecastHorizonDays(now, perthMidnight(2026, 9, 24))).toEqual([1, 2]);
   });
 
   it("labels seven days with weekend and holiday marks", () => {

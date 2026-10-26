@@ -83,7 +83,7 @@ describe("audit 24-1 decision 3: a revoked examination before transport keeps th
     // The accepting ward is told, without any claim that the bed was released.
     const notice = f.state.notices.slice(noticesBefore).find((n) => n.kind === "examination_revoked_ward");
     expect(notice).toBeDefined();
-    expect(notice!.sentence).toContain("The bed stays held until a person decides whether to release it.");
+    expect(notice!.sentence).toContain("The bed stays pulled until a person decides whether to release it.");
     expect(notice!.sentence).not.toContain("released.");
   });
 
