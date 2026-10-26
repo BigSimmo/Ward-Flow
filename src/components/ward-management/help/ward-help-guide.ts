@@ -99,7 +99,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Arrivals",
-        how: "Open the patient from Movements. When they reach the ward, press Confirm Arrival.",
+        how: "Open the patient from Coming and going. When they reach the ward, press Confirm Arrival.",
         go: "movements",
       },
       {
