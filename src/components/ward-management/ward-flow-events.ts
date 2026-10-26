@@ -2706,6 +2706,17 @@ export type WardFlowEvent =
       admissionId: string;
       /** A ward undoing its own record names itself. */
       actingUnitId?: string;
+    }
+  | {
+      /** Takes back the newest `COMPLETE_BED_MEETING_ACTION` of this kind on this record (H-0150). */
+      type: "UNDO_BED_MEETING_ACTION";
+      role: WardFlowRole;
+      now: Instant;
+      /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
+      recordSeq?: number;
+      subject: BedMeetingSubject;
+      action: BedMeetingActionKind;
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */

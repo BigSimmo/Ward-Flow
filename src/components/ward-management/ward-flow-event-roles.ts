@@ -594,4 +594,6 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],
   UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
+  // H-0150: whoever may mark a bed meeting action done may take that back.
+  UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
 };

@@ -1560,6 +1560,7 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
+  UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
 };
 
 /**
@@ -1771,6 +1772,7 @@ export function reduceClinicalEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":

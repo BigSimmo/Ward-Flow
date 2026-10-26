@@ -90,6 +90,8 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_DEPARTURE: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
   // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
   UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
+  // H-0150 (26 Oct 2026): a bed meeting action marked done by mistake comes back from its toast.
+  UNDO_BED_MEETING_ACTION: ["COMPLETE_BED_MEETING_ACTION"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];
@@ -102,7 +104,17 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
 
 /** One subject id from an event's own fields: movement, then referral, then stay; else the network. */
 export function undoStepSubjectId(event: object): string {
-  const fields = event as { movementId?: unknown; referralId?: unknown; admissionId?: unknown };
+  const fields = event as {
+    movementId?: unknown;
+    referralId?: unknown;
+    admissionId?: unknown;
+    subject?: { id?: unknown };
+    action?: unknown;
+  };
+  // A bed meeting action is filed per record and kind, so marking two actions done on one person
+  // keeps an Undo for each (H-0150).
+  if (typeof fields.subject?.id === "string" && typeof fields.action === "string")
+    return `${fields.subject.id}:${fields.action}`;
   for (const value of [fields.movementId, fields.referralId, fields.admissionId])
     if (typeof value === "string" && value.length > 0) return value;
   return "network";

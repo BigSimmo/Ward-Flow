@@ -2042,6 +2042,7 @@ export function undoOf(
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
   } as WardFlowEvent;
   const state = wardFlowReducer(applied, undo);
   return state.rejections.length === applied.rejections.length ? { type: undoType, state } : undefined;

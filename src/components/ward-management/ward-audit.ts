@@ -337,6 +337,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION":
       return "undo";
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
@@ -577,7 +578,8 @@ export function captureAuditEvent(
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
-    case "UNDO_ABSENT_WITHOUT_LEAVE": {
+    case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION": {
       const record = UNDO_STEP_TYPES.includes(event.type)
         ? stepUndoFor(before.undoRecords, event.type, undoStepSubjectId(event))
         : undefined;
