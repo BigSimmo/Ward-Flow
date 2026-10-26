@@ -168,7 +168,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     // CHANGED 25 September 2026: the release population now includes releases beyond today and
     // discharges older than a day, which the worklist leaves out (and says so in its footer), so
     // "All" counts the worklist's own four groups rather than the whole population.
-    const groups = groupDischarges(bedReleases, NOW_ANCHOR);
+    const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     const worklistCount =
       groups.blocked.length + groups.confirmed.length + groups.expected.length + groups["discharged-today"].length;
     expect(worklistCount + groups.excludedBeyondToday + groups.completedBeforeToday).toBe(releaseCount);

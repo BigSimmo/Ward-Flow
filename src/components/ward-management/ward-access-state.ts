@@ -28,6 +28,7 @@ import { movementSourceAdmission, type WardFlowState } from "@/components/ward-m
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
+import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -330,7 +331,9 @@ export function scopeWardFlowState(
         ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
         : event.category === "record-access" &&
           event.subject.kind === "admission" &&
-          admissionIds.has(event.subject.admissionId)),
+          admissionIds.has(event.subject.admissionId) &&
+          // A dates-only stay opens no record, so it has no receipt to read (audit 26 Oct).
+          !scoped.datesOnlyAdmissionIds.has(event.subject.admissionId)),
   );
   const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;
@@ -611,7 +614,8 @@ export function commandScopeRefusal(
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
     if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
-  if (command.type === "RECORD_TRANSPORT_NEED") {
+  // Booking follows the same sender rule as recording the need (audit 26 Oct).
+  if (command.type === "RECORD_TRANSPORT_NEED" || command.type === "BOOK_TRANSPORT") {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && access.role === "ward") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
@@ -652,6 +656,12 @@ export function commandScopeRefusal(
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
+  }
+  // A ward records a written form only for a person admitted to one of its own beds (WT-03).
+  if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_WRITTEN") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
+    if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
   }
   // Every desk names its own place when it adds a patient, so the record it adds stays in its own
   // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.
@@ -718,6 +728,13 @@ export function commandScopeRefusal(
   const actsFrom = (id: string) =>
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
+  // RECORD_OBSERVATION_LEVEL names its acting unit on the target (audit 26 Oct).
+  const observationTarget = command.target as { actingUnitId?: unknown } | undefined;
+  if (
+    typeof observationTarget?.actingUnitId === "string" &&
+    !unitInScope(scope, observationTarget.actingUnitId, places)
+  )
+    return outside;
   if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
   const targets = [command.unitId, command.acceptedUnitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)

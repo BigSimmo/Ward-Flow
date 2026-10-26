@@ -3,11 +3,13 @@ import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions"
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
+import { bedMoveNeedsOpenBedReason, openBedMoveRefusal } from "./ward-bed-move-reason";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
   DISCHARGE_DELAY_CLEAR_REASONS,
+  OVERRIDE_REASONS,
   type DischargeDelayClearReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
@@ -70,6 +72,7 @@ export function reduceBedEvent(
 ): WardFlowState {
   const {
     admissionCriteriaEligibility,
+    admissionLegalStatus,
     appendNotices,
     bedNumberRefusal,
     findAdmission,
@@ -136,6 +139,23 @@ export function reduceBedEvent(
       // schema accepts (CONFIRM_CAPACITY may set the total below the separately recorded count).
       if (lockedAfter < 0 || (lockedDelta > 0 && lockedAfter > Math.min(unit.lockedBeds, unit.allocatable.value)))
         return reject(state, event, "The ward's free bed-kind counts do not support this bed move.");
+      // Audit CS3-12: as at admission, a stay needing a locked bed takes an open one only with a reason.
+      const secureRequest =
+        (linkedMovement ?? state.movements.find((movement) => movement.id === admission.movementId))?.security ===
+        "Secure";
+      const openBedReason =
+        event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason)
+          ? event.overrideReason
+          : undefined;
+      const reasonNeeded = bedMoveNeedsOpenBedReason({
+        fromKind: priorKind,
+        toKind: targetKind,
+        secureRequest,
+        legalStatus: admissionLegalStatus(state, admission),
+      });
+      if (reasonNeeded && openBedReason === undefined)
+        return reject(state, event, openBedMoveRefusal(String(event.bedNumber).padStart(2, "0"), secureRequest));
+      if (reasonNeeded) decision.overrideFactRecorded = true;
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const placed = replaceAdmission(state, admission.id, {

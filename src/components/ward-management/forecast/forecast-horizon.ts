@@ -40,14 +40,28 @@ export function horizonDays(now: Instant, dayZero: Date, count = 7): HorizonDay[
   });
 }
 
+/** No discharges expected: a weekend or a WA public holiday. */
+function closedDay(day: ReturnType<typeof perthCalendarDay>): boolean {
+  return day.weekday === 0 || day.weekday === 6 || HOLIDAY_DATES.has(isoOf(day));
+}
+
 /**
- * The forecast windows in days. Tomorrow and the day after always; a third day on a Friday or
- * the day before a WA public holiday, when few discharges happen and the gap shows on Monday.
+ * The forecast windows in days. Tomorrow and the day after always. When tomorrow starts a weekend or
+ * a WA public holiday, few discharges happen until it ends, so a last window runs to the first
+ * working day after the closed run (the third day at least, after a weekday holiday). Audit TC2-06: a long weekend, such as
+ * a Friday before a Monday holiday or Christmas into Boxing Day, ran only to the third day before.
  */
 export function forecastHorizonDays(now: Instant, dayZero: Date): readonly number[] {
-  const [today, tomorrow] = horizonDays(now, dayZero, 2);
-  const friday = today!.label.startsWith("Fri");
-  return friday || tomorrow!.holiday ? [1, 2, 3] : [1, 2];
+  const dayAt = (offset: number) => perthCalendarDay(calendarDateOf(now + offset * MINUTES_PER_DAY, dayZero));
+  const tomorrow = dayAt(1);
+  if (!closedDay(tomorrow)) return [1, 2];
+  let open = 2;
+  // A closed run is a few days at most; the bound only guards a malformed holiday list.
+  while (open < 14 && closedDay(dayAt(open))) open += 1;
+  if (open > 2) return [1, 2, open];
+  // One closed day. A weekday holiday keeps its third day, as before; on a Saturday the two days
+  // already reach Monday.
+  return tomorrow.weekday === 0 ? [1, 2] : [1, 2, 3];
 }
 
 export type HorizonRow = { unitId: string; name: string; out: number[]; arriving: number[] };

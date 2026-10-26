@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", import.meta.url), "utf8").replace(
@@ -58,7 +59,9 @@ function requireWorkflow(source) {
   assert.match(source, /^permissions:\n {2}contents: read$/mu);
   assert.match(
     source,
-    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
+    // A PR's newer push cancels its older run; main pushes share one queue whose running check is never
+    // cancelled (a newer merge only replaces a waiting one); scheduled and manual runs stay separate.
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
   );
   assert.doesNotMatch(source, /^\s*(?:shell|defaults):/mu);
   for (const pattern of [
@@ -256,6 +259,22 @@ function requireWorkflow(source) {
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
+  // Desktop and phone run as parallel legs: together exactly both device projects, neither dropped
+  // by fail-fast, and each leg's runner narrowed only through WARD_RELEASE_GATE_PROJECT.
+  assert.match(
+    jobs.get("release-gate"),
+    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}project: \[release-gate-desktop, release-gate-phone\]\n/mu,
+  );
+  assert.ok(
+    step("release-gate", "Run the release-gate journeys").text.includes(
+      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.project")}\n`,
+    ),
+  );
+  assert.ok(
+    jobs
+      .get("release-gate")
+      .includes(`ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}`),
+  );
   exact(
     "build",
     "Build for production (Railway build command)",
@@ -428,8 +447,39 @@ requireWorkflow(workflow);
 // failure/cancellation/missing-result branch, including the trusted reuse route.
 const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
 assert.ok(verdictShell);
+// On Windows a bare "bash" can resolve to WSL's System32\bash.exe, which does not run this shell
+// against the given environment. Prefer Git Bash there; Linux and macOS keep the bash on PATH.
+function resolveBash() {
+  if (process.platform !== "win32") return "bash";
+  const env = process.env;
+  const candidates = [
+    env.ProgramFiles && path.win32.join(env.ProgramFiles, "Git", "bin", "bash.exe"),
+    env["ProgramFiles(x86)"] && path.win32.join(env["ProgramFiles(x86)"], "Git", "bin", "bash.exe"),
+    env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, "Programs", "Git", "bin", "bash.exe"),
+  ];
+  const gitExecPath = spawnSync("git", ["--exec-path"], { encoding: "utf8" });
+  // <git>/mingw64/libexec/git-core -> <git>/bin/bash.exe
+  if (gitExecPath.status === 0 && gitExecPath.stdout.trim())
+    candidates.push(path.win32.resolve(gitExecPath.stdout.trim(), "..", "..", "..", "bin", "bash.exe"));
+  const system32 = path.win32.join(env.SystemRoot || "C:\\Windows", "System32").toLowerCase();
+  const found = candidates.find(
+    (candidate) =>
+      candidate && existsSync(candidate) && !path.win32.resolve(candidate).toLowerCase().startsWith(system32),
+  );
+  if (found) return found;
+  throw new Error(
+    "check-contracts needs Git Bash on Windows (%ProgramFiles%\\Git\\bin\\bash.exe); it refuses the WSL System32\\bash.exe.",
+  );
+}
+const bash = resolveBash();
+const baseEnv = {
+  PATH: process.env.PATH ?? "",
+  ...(process.platform === "win32" && process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
+};
 const runVerdict = (env) =>
-  spawnSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], { env }).status;
+  spawnSync(bash, ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], {
+    env: { ...baseEnv, ...env },
+  }).status;
 let verdictCases = 0;
 for (let bits = 0; bits < 16; bits++)
   for (const reuse of [false, true]) {

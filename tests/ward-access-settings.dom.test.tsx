@@ -379,7 +379,7 @@ describe("the Access tab", () => {
     expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED mental health clinician");
     expect(rows[0]).toHaveTextContent("2 hours ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
-    expect(rows[1]).toHaveTextContent("You, Flow coordinator, Statewide. 3 minutes ago.");
+    expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 minutes ago.");
     // H-0731: a read the server logged itself names no record.
     expect(rows[2]).toHaveTextContent("TV board sent to this desk");
     expect(rows[2]).not.toHaveTextContent("*");

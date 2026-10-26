@@ -70,4 +70,11 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
     added: "2026-10-19",
     removeWhen: "Josh agrees the closure reasons with the coordinators.",
   },
+  "help-ask": {
+    description:
+      "An Ask box at the top of Help that answers a typed question from the app's own help, with Show me walkthroughs that light the real buttons. No AI; the question is never saved.",
+    owner: "Josh",
+    added: "2026-10-26",
+    removeWhen: "Josh approves the Ask help screenshots and it has run on the demo site.",
+  },
 };
