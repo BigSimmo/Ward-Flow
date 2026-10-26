@@ -51,6 +51,16 @@ describe("supermemory autosave stop hook", () => {
     ).not.toBeNull();
   });
 
+  it("nudges for a handover when the turn changed files, committed or pushed", () => {
+    expect(run([prompt(wake("tidy the header")), toolUse("Edit")])).not.toBeNull();
+    const push: Entry = {
+      type: "assistant",
+      message: { content: [{ type: "tool_use", id: "b1", name: "Bash", input: { command: "git push -u origin x" } }] },
+    };
+    expect(run([prompt(wake("ship it later")), push])).not.toBeNull();
+    expect(REASON).toMatch(/handover/);
+  });
+
   it("passes an ordinary turn", () => {
     expect(run([prompt(wake("what time is the release?")), assistantText("6 am Perth.")])).toBeNull();
   });

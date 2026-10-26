@@ -46,6 +46,10 @@ const AGENT_SIGNALS = [
 
 const SAVE_TOOL = /supermemory.*(add_memory|guided-save|upload-file)/i;
 
+/** Tool calls that mean the turn did real work worth a handover note. */
+const WORK_TOOL = /^(Edit|Write|NotebookEdit)$|github__(create_pull_request|merge_pull_request|push_files)/;
+const WORK_COMMAND = /\bgit (commit|push)\b/;
+
 /** The person's words only: wake and relay wrappers reduced to their human or cited-user parts. */
 export function humanText(raw) {
   if (typeof raw !== "string") return "";
@@ -89,6 +93,7 @@ export function readTurn(entries) {
   const agent = [];
   const saveCalls = new Set();
   let saved = false;
+  let worked = false;
   for (const entry of entries.slice(start + 1)) {
     if (entry?.isSidechain) continue;
     if (entry?.type === "user" && Array.isArray(entry.message?.content)) {
@@ -104,25 +109,33 @@ export function readTurn(entries) {
       for (const b of entry.message.content) {
         if (b?.type === "text") agent.push(b.text);
         if (b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) saveCalls.add(b.id);
+        if (b?.type === "tool_use" && WORK_TOOL.test(b.name ?? "")) worked = true;
+        if (b?.type === "tool_use" && b.name === "Bash" && WORK_COMMAND.test(String(b.input?.command ?? "")))
+          worked = true;
         if (b?.type === "tool_use" && /hearthbot__post_message/.test(b.name ?? ""))
           agent.push(String(b.input?.text ?? ""));
       }
     }
   }
-  return { human: human.join("\n"), agent: agent.join("\n"), saved };
+  return { human: human.join("\n"), agent: agent.join("\n"), saved, worked };
 }
 
 export function hasSignal(turn) {
   if (!turn || turn.saved) return false;
-  return HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
+  return (
+    turn.worked ||
+    HUMAN_SIGNALS.some((r) => r.test(turn.human)) ||
+    AGENT_SIGNALS.some((r) => r.test(turn.agent))
+  );
 }
 
 export const REASON = [
   "Ward Flow memory check: this turn may hold something lasting.",
   `If a durable fact was confirmed, save it before stopping with add_memory: one short dated note stating the decision, the reason and the source (message, D-xx or WT number, file or PR).`,
-  `Pass one explicit namespace: "${SPACE}" for Ward Flow decisions, design and wording rules, bug gotchas and where things live, or "${PREFERENCES_SPACE}" for Josh's own working preferences. Never another space and never the account default.`,
-  "Search that space first and skip anything already saved.",
-  "Never save patient or clinical information, secrets or sign-in material, raw code, diffs, logs, prompts, progress, PR status or whole conversations.",
+  "If the turn moved real work forward (files changed, a commit, push or PR), also save one short dated handover: the goal, what is done, the branch or PR, and the next step, so a later thread can pick it up.",
+  `Pass one explicit namespace: "${SPACE}" for Ward Flow decisions, design and wording rules, bug gotchas, where things live and handovers, or "${PREFERENCES_SPACE}" for Josh's own preferences and personal context. Never another space and never the account default.`,
+  "Search that space first; update or skip anything already saved rather than duplicating it.",
+  "Josh's own private details are fine to save. Never save real patient information, passwords, keys or tokens, and do not paste raw code, diffs, logs or whole conversations: summarise instead.",
   "If nothing durable changed, stop without saving. Either way do not post another message to the person about this check.",
 ].join(" ");
 
