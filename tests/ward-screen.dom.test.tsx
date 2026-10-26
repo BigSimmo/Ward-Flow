@@ -553,7 +553,9 @@ describe("ward screen incoming patient arrival confirmation", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
-    fireEvent.click(within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Confirm arrival" }),
+    );
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
     const toast = screen.getByTestId("toast");
     expect(toast).toHaveTextContent(/^Arrival recorded for /);

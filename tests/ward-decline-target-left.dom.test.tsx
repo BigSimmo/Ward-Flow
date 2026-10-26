@@ -41,7 +41,12 @@ const props: ComponentProps<typeof WardHomeTab> = {
   breakdown: { confirmedToday: 0, expectedToday: 0, onLeave: 0 },
   pendingBedReleasesCount: 0,
   unitLeaveBedsCount: 0,
-  resolvePatientIdentity: () => ({ displayName: "Synthetic Person", formalName: "Person, Synthetic", umrn: "UM100001", initials: "SP" }),
+  resolvePatientIdentity: () => ({
+    displayName: "Synthetic Person",
+    formalName: "Person, Synthetic",
+    umrn: "UM100001",
+    initials: "SP",
+  }),
   lastActionRejection: null,
   overrideReasonForm: vi.fn(),
   liveFormAlerts: [],

@@ -263,9 +263,7 @@ export function WardScreenBedDrawer({
       void outcome?.confirmation?.then(
         (later) => {
           if (unconfirmed && later.status === "accepted" && later.isCurrent?.() !== false)
-            setToastMessage((shown) =>
-              typeof shown !== "string" && shown?.warning === unconfirmed ? success : shown,
-            );
+            setToastMessage((shown) => (typeof shown !== "string" && shown?.warning === unconfirmed ? success : shown));
         },
         () => {},
       );
