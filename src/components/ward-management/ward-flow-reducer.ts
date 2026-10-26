@@ -1423,7 +1423,11 @@ export function bedNumberRefusal(
       candidate.bedNumber === bedNumber &&
       bedIsOccupied(candidate),
   );
-  return holder ? `Bed ${bedNumber} on ${unit.name} is already taken` : null;
+  if (holder) return `Bed ${bedNumber} on ${unit.name} is already taken`;
+  // H-0978: a bed the ward closed (`SET_BED_CLOSED`) takes nobody until it is reopened.
+  return unit.closedBeds?.some((mark) => mark.bedNumber === bedNumber)
+    ? `Bed ${bedNumber} on ${unit.name} is closed. Reopen it first`
+    : null;
 }
 
 /**
@@ -1921,6 +1925,14 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reducerSlices().reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    // H-0978 / WS-15: one exact bed closed or reopened (`Unit.closedBeds`).
+    case "SET_BED_CLOSED":
+      return reducerSlices().reduceBedClosureEvent(state, event, decision, {
+        findUnit,
+        heldBedRefusal,
+        reject,
+        replaceUnit,
+      });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":

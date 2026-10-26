@@ -267,10 +267,21 @@ export function WardScreenBedDrawer({
       );
     });
   }
+  // H-0978 / WS-15: `SET_BED_CLOSED` allows the ward, bed manager and coordinator desks, the same
+  // three the blocker handler names. A ward route (or no route) sends as the ward screen does.
+  const bedClosureAllowed =
+    !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator";
+  const raiseBedClosure = !pathname || routeRole === "ward" ? raise : raiseAsRouteRole;
+  const setBedClosed = (bedNumber: number, closed: boolean) =>
+    recordFeedback(
+      () => raiseBedClosure("SET_BED_CLOSED", { unitId: unit.id, actingUnitId: unitId, bedNumber, closed }),
+      closed ? `Bed ${bedNumber} closed. It is not offered until it is reopened.` : `Bed ${bedNumber} reopened.`,
+    );
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
         const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
+        const closedByNumber = (unit.closedBeds ?? []).some((mark) => mark.bedNumber === selectedBed);
         return (
           <WardBedDossierDrawer
             selectedBed={selectedBed}
@@ -400,6 +411,16 @@ export function WardScreenBedDrawer({
                 "Bed marked Ready. It is offered again.",
               );
             }}
+            onCloseBed={
+              bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
+                ? () => setBedClosed(selectedBed, true)
+                : undefined
+            }
+            onReopenBed={
+              bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber
+                ? () => setBedClosed(selectedBed, false)
+                : undefined
+            }
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
             onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}

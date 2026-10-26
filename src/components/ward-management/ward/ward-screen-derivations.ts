@@ -354,6 +354,17 @@ export function wardBedRoster({
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
   );
+  // H-0978 / WS-15 (Josh 26 Oct 2026, "close the exact bed"): a bed closed by number
+  // (`SET_BED_CLOSED`) is counted in Closed by `bedStates`, and its own number sits on a Closed tile.
+  // A Ready tile carrying that number swaps with a Closed tile whose number is not itself closed.
+  const closedByNumber = new Set((unit.closedBeds ?? []).map((mark) => mark.bedNumber));
+  for (const bedNumber of closedByNumber) {
+    const at = bedNumbers.indexOf(bedNumber);
+    if (at === -1 || rawBeds[at].status !== "ready") continue;
+    const swap = rawBeds.findIndex((bed, index) => bed.status === "closed" && !closedByNumber.has(bedNumbers[index]));
+    if (swap === -1) continue;
+    [bedNumbers[at], bedNumbers[swap]] = [bedNumbers[swap], bedNumbers[at]];
+  }
   // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
   // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.
   // The tile then carries its own release, so Ready clears the bed the user opened.

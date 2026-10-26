@@ -374,6 +374,20 @@ const unit = z
       ),
     ),
     isClosed: z.optional(bool),
+    // H-0978: one exact bed closed (`SET_BED_CLOSED`). A chosen reason, never typed text. Optional,
+    // so a state saved before closed marks existed still loads.
+    closedBeds: z.optional(
+      z.array(
+        z.looseObject({
+          bedNumber: counter.check(z.gte(1)),
+          at: finite,
+          by: text,
+          reason: z.optional(
+            z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
+          ),
+        }),
+      ),
+    ),
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
       z.looseObject({
@@ -439,6 +453,8 @@ const unit = z
     z.refine(
       (unit) =>
         unit.empty.value <= unit.beds &&
+        (unit.closedBeds ?? []).every((mark) => mark.bedNumber <= unit.beds) &&
+        new Set((unit.closedBeds ?? []).map((mark) => mark.bedNumber)).size === (unit.closedBeds ?? []).length &&
         unit.allocatable.value <= unit.beds &&
         unit.lockedBeds <= unit.beds &&
         unit.allocatableLocked <= unit.lockedBeds &&

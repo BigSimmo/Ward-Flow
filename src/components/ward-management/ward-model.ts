@@ -322,6 +322,8 @@ export type Unit = {
    * reopening, a prompt only: reopening always needs a person. Absent on a ward closed any other way.
    */
   admissionsClosure?: WardAdmissionsClosure;
+  /** H-0978: beds closed one by one (`SET_BED_CLOSED`), never offered; see `boundedBedAvailability`. */
+  closedBeds?: { bedNumber: number; at: Instant; by: string; reason?: WardClosureReason }[];
   /**
    * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
    * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.

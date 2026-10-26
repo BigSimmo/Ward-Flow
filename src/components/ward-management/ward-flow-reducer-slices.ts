@@ -3,6 +3,7 @@
 // a phone's first load. Only `backend/ward-flow/engine.ts` and the test setup import it directly.
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceDischargeDependencyEvent } from "./discharges/discharge-dependency-events";
+import { reduceBedClosureEvent } from "./ward-flow-bed-closure-events";
 import { reduceBedEvent } from "./ward-flow-bed-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
 import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
@@ -26,6 +27,7 @@ import { reducePatientRegistration } from "./ward-patient-registration-reducer";
 
 const slices = {
   reduceArrivalCheckEvent,
+  reduceBedClosureEvent,
   reduceBedEvent,
   reduceBedMeetingEvent,
   reduceBroadcastAlertEvent,
