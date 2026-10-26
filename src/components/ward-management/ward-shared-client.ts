@@ -902,8 +902,9 @@ export class SharedWorkspaceClient {
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
     if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
-    // A role refusal on an access step comes back as its reason, not as a sign-out.
-    if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
+    // A role refusal on an access step or the record access log comes back as its reason, not as a sign-out.
+    if (response.status === 403 && (path.startsWith("/v1/workspace/access") || path === "/v1/workspace/record-access"))
+      return { response, value };
     // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))

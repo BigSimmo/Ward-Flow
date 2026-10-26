@@ -122,12 +122,18 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
     const mine = <T extends { record: string }>(rows: readonly T[]) =>
       accessIsWholeNetwork(access) ? [...rows] : rows.filter((row) => own.has(row.record));
     const units = world?.units ?? [];
+    // A movement page logged before its patient was known carries the WF- number: match it by patient.
+    const patientRecord = (record: string) =>
+      record.startsWith("WF-") ? (world?.movements.find((movement) => movement.id === record)?.patientId ?? record) : record;
     if (read) {
       const at = loaded?.at ?? now;
       const openings = serverOpenings(loaded?.openings ?? [], at, units);
       return {
         openings,
-        views: markBreakGlass(serverViews(loaded?.views ?? [], at, units), openings),
+        views: markBreakGlass(
+          serverViews(loaded?.views ?? [], at, units).map((view) => ({ ...view, record: patientRecord(view.record) })),
+          openings,
+        ),
         from: "server",
         problem: loaded?.problem ?? false,
       };

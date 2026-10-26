@@ -75,7 +75,9 @@ export function RecordViewsTable({
           </thead>
           <tbody>
             {rows.map((view) => {
-              const person = patientOf({ patientId: view.record });
+              const person = patientOf(
+                view.record.startsWith("WF-") ? { movementId: view.record } : { patientId: view.record },
+              );
               return (
                 <tr key={view.key}>
                   <td className={thirdEdition.eventTime}>{when(view.at, now)}</td>

@@ -1942,10 +1942,10 @@ export function createWorkspaceStore(
       const at = clock();
       const inPlace = await recordsInPlace(view, at);
       if (inPlace?.length === 0) return [];
-      const params = [workspaceId];
+      const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
       const place = inPlace ? ` AND b.patient_id = ANY($${params.push(inPlace)})` : "";
       const { rows } = await pool.query(
-        `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype'${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype' AND b.opened_at > $2${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
         params,
       );
       return rows.map(({ opened_at: opened, until, ...row }) => ({
