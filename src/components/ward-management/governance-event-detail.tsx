@@ -12,7 +12,8 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { AuditEvent, AuditReview } from "./ward-audit";
 import { deskRoleLabel } from "./settings/workstation-desks";
 import { movementHref, unitHref } from "./shell/ward-facade";
-import { Button, Card, EmptyState, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { Badge, Button, Card, EmptyState, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
 import thirdEdition from "./governance-third-edition.module.css";
 import { EventFacts, FactList } from "./governance-event-facts";
 import {
@@ -77,6 +78,9 @@ export function EventTable({
         ) : (
           rows.map((event) => {
             const state = event.category === "review" ? "Review attempt" : reviewState(event);
+            // D-80 item 14: a break glass opening reads as its reason, its desk and place, and how
+            // long it was open, or the pattern when its desk made more than 3 in 12 hours.
+            const glass = event.action === "BREAK_GLASS" ? event.details : null;
             return (
               <button
                 type="button"
@@ -92,7 +96,7 @@ export function EventTable({
                 <span className={thirdEdition.stack}>
                   <strong className={thirdEdition.clip}>{actionLabels[event.action]}</strong>
                   <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
-                    {categoryLabels[event.category]}
+                    {glass ? reasonLabel(glass.reason) : categoryLabels[event.category]}
                   </span>
                 </span>
                 <span className={thirdEdition.stack}>
@@ -103,13 +107,30 @@ export function EventTable({
                     </span>
                   ) : null}
                 </span>
-                <span className={thirdEdition.clip}>
-                  {event.actor.role ? shortRoleLabel(deskRoleLabel(event.actor.role)) : "Role unavailable"}
-                </span>
-                <span className={thirdEdition.statusText}>
-                  <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
-                  {outcomeLabels[event.outcome]}
-                </span>
+                {glass?.desk ? (
+                  <span className={thirdEdition.stack}>
+                    <span className={thirdEdition.clip}>{shortDeskLabel(glass.desk)}</span>
+                    <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>{glass.place}</span>
+                  </span>
+                ) : (
+                  <span className={thirdEdition.clip}>
+                    {event.actor.role ? shortRoleLabel(deskRoleLabel(event.actor.role)) : "Role unavailable"}
+                  </span>
+                )}
+                {glass && isPattern(event) ? (
+                  <span>
+                    <Badge tone="warning" size="sm">
+                      More than {PATTERN_LIMIT} in {PATTERN_HOURS} hours
+                    </Badge>
+                  </span>
+                ) : (
+                  <span className={thirdEdition.statusText}>
+                    <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
+                    {glass && event.at !== null && glass.until !== null
+                      ? `Opened ${Math.max(0, glass.until - event.at)} min`
+                      : outcomeLabels[event.outcome]}
+                  </span>
+                )}
                 <span className={thirdEdition.statusText}>
                   <StatusGlyph
                     tone={state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : "neutral"}
@@ -166,7 +187,10 @@ export function EventDetail({
   feedback,
   roleReason,
   rest,
+  recordViews,
 }: {
+  /** D-80 item 14: who opened the chosen row's record in the last 7 days, when it has one. */
+  recordViews?: ReactNode;
   roleReason?: string;
   /** What the rail shows with nothing selected: the session summary. */
   rest?: ReactNode;
@@ -206,6 +230,8 @@ export function EventDetail({
     subject?.kind === "movement" && movements.filter((entry) => entry.id === subject.movementId).length === 1;
   const referenced = subject?.kind === "audit-event" ? events.find((entry) => entry.id === subject.eventId) : undefined;
   const state = selected ? (selected.category === "review" ? "review" : reviewState(selected)) : null;
+  const glass = selected?.action === "BREAK_GLASS" ? selected : null;
+  const glassPerson = glass ? subjectPerson(glass, patientOf) : null;
 
   return (
     <Card
@@ -220,11 +246,26 @@ export function EventDetail({
       <div className={thirdEdition.detailHead}>
         <div className={thirdEdition.stack}>
           <span className={thirdEdition.eyebrow}>
-            {selected ? categoryLabels[selected.category] : rest ? "At rest" : "Event detail"}
+            {glass
+              ? `Break glass · ${when(glass.at, now)}`
+              : selected
+                ? categoryLabels[selected.category]
+                : rest
+                  ? "At rest"
+                  : "Event detail"}
           </span>
           <h3 className={thirdEdition.detailTitle} id="inspectorHeading">
-            {selected ? actionLabels[selected.action] : rest ? "This session" : "Nothing selected"}
+            {glass
+              ? subjectLabel(glass, patientOf)
+              : selected
+                ? actionLabels[selected.action]
+                : rest
+                  ? "This session"
+                  : "Nothing selected"}
           </h3>
+          {glassPerson ? (
+            <span className={cx(thirdEdition.quietText, thirdEdition.umrn)}>{glassPerson.umrn}</span>
+          ) : null}
         </div>
         {state ? (
           <span className={thirdEdition.statusText}>
@@ -238,7 +279,12 @@ export function EventDetail({
       </div>
 
       <div className={thirdEdition.detailBody} role="region" aria-label="Event facts" tabIndex={0}>
-        {selected ? (
+        {glass ? (
+          <>
+            <EventFacts event={glass} units={units} now={now} />
+            {recordViews}
+          </>
+        ) : selected ? (
           <>
             {notAppliedLine(selected) ? (
               <p className={thirdEdition.notice} data-testid="ward-governance-not-applied">
@@ -286,6 +332,7 @@ export function EventDetail({
               <h3 className={thirdEdition.subheading}>Recorded facts</h3>
               <EventFacts event={selected} units={units} now={now} />
             </div>
+            {recordViews}
           </>
         ) : (
           (rest ?? <EmptyState icon={ClipboardList} title="Select an event from the register" />)

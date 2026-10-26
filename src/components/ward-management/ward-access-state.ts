@@ -52,6 +52,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "./ward-sites";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
+import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 
 type Context = {
   readonly state: WardFlowState;
@@ -244,7 +245,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     if (!context.coordinator) return [];
     const kept = seededAuditIds(context.scoped, context.state);
     for (const event of context.auditEvents) kept.add(event.id);
-    return context.state.auditReviews.filter((review: AuditReview) => kept.has(review.eventId));
+    // D-80 item 14: a break glass opening's review names no record here; the server scopes the openings.
+    return context.state.auditReviews.filter(
+      (review: AuditReview) => kept.has(review.eventId) || isBreakGlassReviewId(review.eventId),
+    );
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
@@ -721,7 +725,14 @@ export function commandScopeRefusal(
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
     if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
-      if (collection !== "auditEvents" || !seeded.has(id)) return outside;
+      // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
+      // hold. The shared server also checks the opening exists and is of a record in the
+      // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).
+      if (
+        collection !== "auditEvents" ||
+        !(seeded.has(id) || (access.role === "coordinator" && isBreakGlassReviewId(id)))
+      )
+        return outside;
     }
   }
   // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
