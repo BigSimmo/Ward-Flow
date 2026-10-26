@@ -337,7 +337,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             onClose={() => setPhoneFiltersOpen(false)}
             title="Filters"
             description="Filters narrow the list. Highlights never hide anyone."
-            height="tall"
           >
             {filterCard}
           </PhoneSheet>
