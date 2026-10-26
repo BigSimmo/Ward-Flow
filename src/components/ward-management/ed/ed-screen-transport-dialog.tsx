@@ -14,12 +14,26 @@ import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { ESCORT_ANSWERS, NO_TRANSPORT_PROVIDER_VALUE, TRANSPORT_LEGAL_STATUS_LABELS } from "./ed-screen-model";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
-import { cadNumberSentence } from "@/components/ward-management/ward-transport-checks";
+import {
+  cadNumberSentence,
+  transportAnswersMissing,
+  type TransportAnswer,
+} from "@/components/ward-management/ward-transport-checks";
 import styles from "./ed.module.css";
+
+/** Each unanswered question's short name, and the test id part of its field. */
+const ANSWER_FIELDS: Record<TransportAnswer, [name: string, field: string]> = {
+  provider: ["provider", "provider"],
+  escort: ["escort answer", "escort"],
+  cad: ["CAD number", "cad-number"],
+  legalStatus: ["legal status", "legal-status"],
+  time: ["estimated time", "estimated-time"],
+};
 
 export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
   const { movement, patientInfo, transportOpen, transportBlocked, transportAnswersBlocked } = row;
   const {
+    now,
     transportBackdropRef,
     setTransportDialogNode,
     closeTransportDialog,
@@ -29,6 +43,18 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
   } = ctx;
   // A typed CAD number the rule refuses is named beside the field, not only at the confirm control.
   const cadFieldProblem = transportDraft.cadNumber.trim() ? cadNumberProblem(transportDraft.cadNumber) : undefined;
+  // Blocker mock-up, Josh approved 26 Oct 2026: the answers still missing are named, the empty CAD
+  // field is marked, and one button moves to the first missing answer. Nothing is filled in.
+  const missing = transportAnswersMissing(transportDraft, now);
+  const missingNames = missing.map((answer) => ANSWER_FIELDS[answer][0]);
+  const cadMissing = missing.includes("cad");
+  const cadHelpIds = `ward-ed-transport-cad-missing-${movement.id} ward-ed-transport-cad-help-${movement.id}`;
+  const goToAnswer = (answer: TransportAnswer) => {
+    const field = document.querySelector<HTMLElement>(
+      `[data-testid="ward-ed-transport-${ANSWER_FIELDS[answer][1]}-${movement.id}"]`,
+    );
+    (field?.matches("fieldset") ? field.querySelector<HTMLElement>("input") : field)?.focus();
+  };
   /*
    * ⚠️ **A POPUP (DIALOG), NOT AN INLINE PANEL — owner's third ruling, 2026-09-17.**
    * `role="dialog"`/`aria-modal="true"`/`aria-labelledby` name and announce it,
@@ -134,7 +160,10 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
                 data-testid={`ward-ed-transport-cad-number-${movement.id}`}
                 value={transportDraft.cadNumber}
                 aria-invalid={cadFieldProblem ? "true" : undefined}
-                aria-describedby={cadFieldProblem ? `ward-ed-transport-cad-problem-${movement.id}` : undefined}
+                data-missing={cadMissing ? "" : undefined}
+                aria-describedby={
+                  cadFieldProblem ? `ward-ed-transport-cad-problem-${movement.id}` : cadMissing ? cadHelpIds : undefined
+                }
                 onChange={(event) =>
                   setTransportDraft((current) => ({
                     ...current,
@@ -151,6 +180,16 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
               >
                 {cadNumberSentence(cadFieldProblem)}
               </span>
+            ) : null}
+            {cadMissing ? (
+              <>
+                <span id={`ward-ed-transport-cad-missing-${movement.id}`} className={styles.fieldMissing}>
+                  CAD number missing
+                </span>
+                <span id={`ward-ed-transport-cad-help-${movement.id}`} className={styles.cardMeta}>
+                  Read it off the call with the provider.
+                </span>
+              </>
             ) : null}
             <fieldset className={styles.declineFieldset} data-testid={`ward-ed-transport-legal-status-${movement.id}`}>
               <legend className={styles.declineLegend}>Is the transport voluntary or involuntary?</legend>
@@ -206,6 +245,19 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
                 </label>
               ))}
             </fieldset>
+            {missing.length > 0 ? (
+              <p
+                className={`${styles.unavailableNote} ${styles.answersLeft}`}
+                data-testid={`ward-ed-book-transport-left-${movement.id}`}
+              >
+                <span>
+                  {missing.length} {missing.length === 1 ? "answer" : "answers"} left: {missingNames.join(", ")}
+                </span>
+                <button type="button" className={styles.unavailableFix} onClick={() => goToAnswer(missing[0])}>
+                  Add {missingNames[0]}
+                </button>
+              </p>
+            ) : null}
             <div className={styles.actionRow}>
               <button
                 type="button"
@@ -227,6 +279,16 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
                 Cancel
               </button>
             </div>
+            {missing.length > 0 ? (
+              // The confirm already names the full sentence to screen readers; this is the short visible copy.
+              <span
+                aria-hidden="true"
+                className={styles.cardMeta}
+                data-testid={`ward-ed-book-transport-needs-${movement.id}`}
+              >
+                {missing.length === 1 ? `Needs the ${missingNames[0]}` : `Needs ${missing.length} answers`}
+              </span>
+            ) : null}
             {transportAnswersBlocked ? (
               <span id={`ward-ed-book-transport-blocked-${movement.id}`} className="sr-only">
                 {transportAnswersBlocked}
