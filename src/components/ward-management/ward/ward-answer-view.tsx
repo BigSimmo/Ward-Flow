@@ -414,7 +414,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       }
     } catch {
       setAnsweredHereId(undefined);
-      sayDeclineFailed(movementId, "Decline was not confirmed. Your reason is kept; review the board before trying again.");
+      sayDeclineFailed(
+        movementId,
+        "Decline was not confirmed. Your reason is kept; review the board before trying again.",
+      );
     } finally {
       declinePendingRef.current = false;
       setDeclinePending(false);
@@ -1112,10 +1115,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       ) : null}
 
                       {declineFailure?.movementId === activeMovement.id ? (
-                        <p
-                          className={styles.noticeProminent}
-                          data-testid={`ward-decline-failure-${activeMovement.id}`}
-                        >
+                        <p className={styles.noticeProminent} data-testid={`ward-decline-failure-${activeMovement.id}`}>
                           <StatusGlyph tone="warning" size={10} /> {declineFailure.message}
                         </p>
                       ) : null}
