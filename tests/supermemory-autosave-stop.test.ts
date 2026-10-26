@@ -10,9 +10,9 @@ import { decide, humanText, REASON, SPACE } from "../scripts/supermemory-autosav
 type Entry = Record<string, unknown>;
 
 const prompt = (content: string): Entry => ({ type: "user", message: { role: "user", content } });
-const toolResult = (): Entry => ({
+const toolResult = (isError = false): Entry => ({
   type: "user",
-  message: { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "ok" }] },
+  message: { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "ok", is_error: isError }] },
 });
 const assistantText = (text: string): Entry => ({ type: "assistant", message: { content: [{ type: "text", text }] } });
 const toolUse = (name: string): Entry => ({
@@ -54,6 +54,12 @@ describe("supermemory autosave stop hook", () => {
   it("passes once a Supermemory save already happened this turn", () => {
     const entries = [prompt(wake("we decided to keep Railway")), toolUse("mcp__supermemory__add_memory"), toolResult()];
     expect(run(entries)).toBeNull();
+  });
+
+  it("still nudges when the save call failed or has no result yet", () => {
+    const decision = wake("we decided to keep Railway");
+    expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory"), toolResult(true)])).not.toBeNull();
+    expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory")])).not.toBeNull();
   });
 
   it("only looks at the current turn", () => {

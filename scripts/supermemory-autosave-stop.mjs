@@ -82,9 +82,15 @@ export function readTurn(entries) {
   if (start < 0) return null;
   const human = [humanText(blockText(entries[start].message.content))];
   const agent = [];
+  const saveCalls = new Set();
   let saved = false;
   for (const entry of entries.slice(start + 1)) {
     if (entry?.isSidechain) continue;
+    if (entry?.type === "user" && Array.isArray(entry.message?.content)) {
+      for (const b of entry.message.content) {
+        if (b?.type === "tool_result" && saveCalls.has(b.tool_use_id) && !b.is_error) saved = true;
+      }
+    }
     if (entry?.type === "attachment" && entry.attachment?.type === "queued_command") {
       human.push(humanText(entry.attachment.prompt));
     } else if (entry?.type === "user" && isPrompt(entry)) {
@@ -92,7 +98,7 @@ export function readTurn(entries) {
     } else if (entry?.type === "assistant" && Array.isArray(entry.message?.content)) {
       for (const b of entry.message.content) {
         if (b?.type === "text") agent.push(b.text);
-        if (b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) saved = true;
+        if (b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) saveCalls.add(b.id);
         if (b?.type === "tool_use" && /hearthbot__post_message/.test(b.name ?? ""))
           agent.push(String(b.input?.text ?? ""));
       }
