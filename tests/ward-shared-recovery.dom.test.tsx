@@ -166,6 +166,26 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
   });
 
+  it("says it is still connecting, not failing, while a signed-in desk loads", () => {
+    const shared = { ...connection("loading", false), signedIn: true, snapshot: null, error: null };
+    const view = render(
+      <WardSharedAccess connection={shared}>
+        <p>Synthetic screen</p>
+      </WardSharedAccess>,
+    );
+    expect(screen.getByRole("status").textContent).toBe(
+      "Signed in. Connecting to the shared workspace. This can take up to 15 seconds.",
+    );
+    expect(screen.getByRole("main", { name: "Coordinator sign-in" }).getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("button", { name: "Reconnect" })).toBeVisible();
+    view.rerender(
+      <WardSharedAccess connection={{ ...shared, status: "unavailable", error: "Shared access is unavailable." }}>
+        <p>Synthetic screen</p>
+      </WardSharedAccess>,
+    );
+    expect(screen.queryByTestId("ward-shared-connecting")).toBeNull();
+  });
+
   it("does not hide the global fallback when an inline overlay inherits workspace inert", async () => {
     const root = document.createElement("div");
     root.setAttribute("inert", "");
