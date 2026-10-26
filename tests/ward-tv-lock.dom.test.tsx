@@ -18,7 +18,12 @@ vi.mock("next/link", () => ({
 }));
 
 import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
-import { TV_LOCK_STORAGE_KEY, TvLockGuard, lockTv } from "@/components/ward-management/bed-meeting/tv-lock";
+import {
+  TV_LOCK_STORAGE_KEY,
+  TvLockControl,
+  TvLockGuard,
+  lockTv,
+} from "@/components/ward-management/bed-meeting/tv-lock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -78,5 +83,26 @@ describe("TV lock (A11)", () => {
     navigation.pathname = "/ward-flow/capacity";
     render(<TvLockGuard />);
     expect(screen.queryByTestId("tv-lock-cover")).toBeNull();
+  });
+
+  it("keeps a shared-workspace TV locked while the password cannot be checked", async () => {
+    act(() => lockTv("/ward-flow/bed-meeting"));
+    render(<TvLockControl href="/ward-flow/bed-meeting" className="" shared />);
+    fireEvent.click(screen.getByTestId("tv-unlock"));
+    const dialog = screen.getByTestId("tv-unlock-dialog");
+    expect(dialog).toHaveTextContent("without a connection");
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and unlock" }));
+    });
+    expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/ward-flow/bed-meeting");
+  });
+
+  it("only rewrites the stored address when this tab's own view changes", () => {
+    act(() => lockTv("/ward-flow/bed-meeting?ed=rph-ed"));
+    const { rerender } = render(<TvLockControl href="/ward-flow/bed-meeting" className="" shared={false} />);
+    // Another tab's address stays put: this tab did not move.
+    expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/ward-flow/bed-meeting?ed=rph-ed");
+    rerender(<TvLockControl href="/ward-flow/bed-meeting?ward=x" className="" shared={false} />);
+    expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/ward-flow/bed-meeting?ward=x");
   });
 });

@@ -1284,7 +1284,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
               {fullscreen.active ? "Leave full screen" : "Full screen"}
             </button>
           ) : null}
-          <TvLockControl href={selfHref} className={styles.action} />
+          <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
           {tvLocked ? null : (
             <Link href={WARD_CAPACITY_HREF} className={styles.action}>
               Leave TV view

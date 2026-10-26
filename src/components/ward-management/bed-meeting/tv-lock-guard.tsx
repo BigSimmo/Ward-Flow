@@ -16,7 +16,7 @@ import styles from "./tv-lock.module.css";
 export const TV_LOCK_STORAGE_KEY = "ward-flow:tv-lock:v1";
 const CHANGED = "ward-flow:tv-lock-changed";
 
-function readLock(): string | null {
+export function readLock(): string | null {
   try {
     const href = window.localStorage.getItem(TV_LOCK_STORAGE_KEY);
     // Only ever a TV address, so a tampered value cannot send the browser anywhere else.
