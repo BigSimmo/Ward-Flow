@@ -1097,7 +1097,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     <span className={styles.footNote}>
                       <StatusGlyph tone="closed" size={9} />
                       <span>
-                        <b>{bedDays}</b> bed days across {entries.length} people
+                        <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
+                        {entries.length === 1 ? "person" : "people"}
                       </span>
                     </span>
                   }

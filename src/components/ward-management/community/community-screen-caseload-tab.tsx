@@ -183,7 +183,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
             <h3 className={styles.caseloadTitle}>
               <span id={`${baseId}-caseloadTitle`}>Active caseload (synthetic)</span>
               <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
-                {caseloadRows.length} patients
+                {caseloadRows.length} {caseloadRows.length === 1 ? "patient" : "patients"}
               </span>
               <span id={`${baseId}-caseloadSectorNote`} className={styles.displayNone}>
                 {team.name}

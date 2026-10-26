@@ -468,8 +468,8 @@ export function HandoverPhone({
         title={`${actCount + urgentCount + dueCount} to hand over`}
         sub={
           signedAt !== null
-            ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} beds ready across ${scopeLabel.toLowerCase()}`
-            : `${readyCount} beds ready across ${scopeLabel.toLowerCase()}`
+            ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
+            : `${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
         }
         figures={[
           {

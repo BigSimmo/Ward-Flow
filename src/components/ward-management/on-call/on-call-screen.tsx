@@ -720,7 +720,8 @@ export function OnCallScreen() {
                 <StatusGlyph tone="warning" size={9} />
                 <span className={styles.disclosureText}>
                   Synthetic records. Every number is a mock from an unassigned range and every email uses a reserved
-                  domain. {checkDue.length} records are over {CHECK_DUE_DAYS} days since their last check.
+                  domain. {checkDue.length} {checkDue.length === 1 ? "record is" : "records are"} over {CHECK_DUE_DAYS}{" "}
+                  days since their last check.
                 </span>
               </span>
             </CardFoot>

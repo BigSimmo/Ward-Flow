@@ -96,7 +96,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     events.push({
       at: movement.escalation.at,
       tone: "info",
-      text: `Escalated after ${movement.escalation.triedUnitIds.length} wards tried`,
+      text: `Escalated after ${movement.escalation.triedUnitIds.length} ${movement.escalation.triedUnitIds.length === 1 ? "ward" : "wards"} tried`,
     });
   if (movement.acceptedAt !== undefined && movement.acceptedUnitId)
     events.push({

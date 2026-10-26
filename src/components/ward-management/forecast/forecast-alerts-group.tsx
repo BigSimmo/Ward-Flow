@@ -78,7 +78,7 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
     case "forecast_worse":
       return row(
         "Forecast got worse",
-        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Your line is ${alert.threshold} beds.`,
+        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Your line is ${alert.threshold} ${alert.threshold === 1 ? "bed" : "beds"}.`,
         "/ward-flow/capacity",
         "See forecast",
       );

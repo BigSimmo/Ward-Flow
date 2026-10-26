@@ -298,7 +298,7 @@ function Queue({
       group: "done",
       tone: "success",
       title: `Morning bed numbers confirmed (due ${rollupTimeLabel})`,
-      sub: `${plannedDischarges} discharges planned today`,
+      sub: `${plannedDischarges} ${plannedDischarges === 1 ? "discharge" : "discharges"} planned today`,
       testId: "ward-morning-rollup-confirmed-banner",
     });
   }

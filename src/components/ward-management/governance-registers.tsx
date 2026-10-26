@@ -510,7 +510,7 @@ function GovernanceSession({
       : tab === "gaps"
         ? totalGaps === 0
           ? "No gaps recorded"
-          : `${totalGaps} ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} sites`
+          : `${totalGaps} ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
         : tab === "audit"
           ? "Audit trail"
           : tab === "registers"
