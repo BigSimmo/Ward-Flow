@@ -141,8 +141,8 @@ export function AlertsScreen() {
 function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
-  const onCoordinatorDesk = access.role === "coordinator";
-  const actionDisabledReason = onCoordinatorDesk ? undefined : "Only the coordinator can change alerts.";
+  const coordDesk = access.role === "coordinator";
+  const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
   const broadcastDisabledReason =
     access.role === "coordinator" || access.role === "bed_manager"
@@ -425,9 +425,8 @@ function AlertsWorkspace() {
         item.personId,
       );
       const recorded = effectiveOwner(item, inboxOwnership[item.id]);
-      // #801: only the coordinator takes alerts, so "Yours" and "You" belong to that desk alone.
-      // Any other desk sees the coordinator's rows under the coordinator's desk name.
-      const owner = recorded === COORDINATOR && !onCoordinatorDesk ? CHROME_ROLE_LABELS.coordinator : recorded;
+      // #801: only the coordinator takes alerts, so other desks see its rows by its desk name, never "You".
+      const owner = recorded === COORDINATOR && !coordDesk ? CHROME_ROLE_LABELS.coordinator : recorded;
       return {
         item,
         movement,
@@ -442,17 +441,7 @@ function AlertsWorkspace() {
         action: alertActionFor(item, subject),
       };
     },
-    [
-      movements,
-      admissions,
-      umrnLookup,
-      units,
-      inboxOwnership,
-      inboxAcknowledgements,
-      inboxSnoozes,
-      now,
-      onCoordinatorDesk,
-    ],
+    [movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now, coordDesk],
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
