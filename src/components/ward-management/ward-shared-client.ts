@@ -17,6 +17,8 @@ import {
   type HeldArchive,
 } from "./ward-shared-archive-delta";
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
+import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -110,16 +112,6 @@ export type SharedAccessRequest = {
   scope: unknown;
   decision: "approved" | "declined" | null;
   minutes: { requested: number | null };
-};
-/** One record opening from the server's access log. `minutes` is when, from the server's now. */
-export type SharedRecordView = {
-  id: number | string;
-  actor_id: string;
-  actor_role: string;
-  actor_scope: unknown;
-  patient_id: string;
-  surface: string;
-  minutes?: number | null;
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -896,8 +888,9 @@ export class SharedWorkspaceClient {
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
     if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
-    // A role refusal on an access step comes back as its reason, not as a sign-out.
-    if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
+    // A role refusal on an access step or the record access log comes back as its reason, not as a sign-out.
+    if (response.status === 403 && (path.startsWith("/v1/workspace/access") || path === "/v1/workspace/record-access"))
+      return { response, value };
     // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
@@ -1313,6 +1306,15 @@ export class SharedWorkspaceClient {
     } catch {
       // Logged on the next opening; the page itself is unaffected.
     }
+  }
+  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
+  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok) throw new Error("Record access could not be read");
+    return {
+      views: Array.isArray(value?.views) ? value.views : [],
+      openings: Array.isArray(value?.openings) ? value.openings : [],
+    };
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

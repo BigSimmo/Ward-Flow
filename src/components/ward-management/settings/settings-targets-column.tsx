@@ -129,13 +129,13 @@ export function SettingsTargetsColumn({
           unavailableReason={unavailableReason}
           setting="forecast-ed-lead"
           testId="setting-forecast-ed-lead"
-          title="ED access risk"
+          title="Access target forecast"
           sub="Passes the ED target within"
           value={rules.forecastEdLead}
           saved={saved.forecastEdLead}
           savedDisplay={shortDuration(saved.forecastEdLead)}
           display={shortDuration(rules.forecastEdLead)}
-          noun="ED access risk alert"
+          noun="Access target forecast alert"
           range={{
             id: "setting-forecast-ed-lead-range",
             ...FORECAST_ED_RISK_LEAD_RANGE_MINUTES,

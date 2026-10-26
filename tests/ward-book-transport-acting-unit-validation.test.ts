@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { TRANSPORT_PROVIDERS } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -18,6 +18,39 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
  */
 const NOW = NOW_ANCHOR;
 
+/**
+ * A ward-to-ward transfer: the journey leaves an occupied stay on `unitId` (`sourceAdmissionId`),
+ * so that ward is genuinely its sender. BOOK_TRANSPORT refuses a ward on an ED or community start.
+ */
+function startedOnWard(state: WardFlowState, movementId: string, unitId: string): WardFlowState {
+  const stay = state.admissions.find((admission) => admission.unitId === unitId && admission.state === "occupied");
+  expect(stay, `the seed must hold an occupied stay on ${unitId} for the transfer to leave`).toBeDefined();
+  return {
+    ...state,
+    movements: state.movements.map((m) =>
+      m.id === movementId ? { ...m, sourceAdmissionId: stay!.id, patientId: stay!.patientId ?? undefined } : m,
+    ),
+  };
+}
+
+/**
+ * A community-sent journey: the movement's referral names `teamName` as its sending team, so that
+ * team (and only that team) may book its transport.
+ */
+function sentByCommunityTeam(state: WardFlowState, movementId: string, teamName: string): WardFlowState {
+  const referral = {
+    ...state.referrals[0]!,
+    id: "RF-SYNTH-COMMUNITY",
+    source: "community" as const,
+    sendingTeamName: teamName,
+  };
+  return {
+    ...state,
+    referrals: [...state.referrals, referral],
+    movements: state.movements.map((m) => (m.id === movementId ? { ...m, referralId: referral.id } : m)),
+  };
+}
+
 function heldBedMovement() {
   const state = seedWardFlowState();
   const movement = state.movements.find((candidate) => candidate.stage === "pulled");
@@ -25,8 +58,11 @@ function heldBedMovement() {
   return { state, movementId: movement!.id };
 }
 
-function book(overrides: Record<string, unknown> = {}) {
-  const { state, movementId } = heldBedMovement();
+function book(
+  overrides: Record<string, unknown> = {},
+  from: { state: WardFlowState; movementId: string } = heldBedMovement(),
+) {
+  const { state, movementId } = from;
   return wardFlowReducer(state, {
     type: "BOOK_TRANSPORT",
     role: "ed",
@@ -49,7 +85,11 @@ describe("BOOK_TRANSPORT actingUnitId validation", () => {
   });
 
   it("still accepts a ward booking whose actingUnitId names a real unit", () => {
-    const state = book({ role: "ward", actingUnitId: "rph-adult-secure" });
+    const { state: seeded, movementId } = heldBedMovement();
+    const state = book(
+      { role: "ward", actingUnitId: "rph-adult-secure" },
+      { state: startedOnWard(seeded, movementId, "rph-adult-secure"), movementId },
+    );
     expect(state.rejections).toEqual([]);
   });
 
@@ -69,7 +109,11 @@ describe("BOOK_TRANSPORT actingUnitId validation", () => {
     expect(state.rejections).toEqual([]);
     // A `community` booker has its OWN identity check now (`actingPlaceId`, owner's third ruling,
     // 2026-09-17) — this asserts only that the `actingUnitId` check above does not fire for it.
-    const community = book({ role: "community", actingPlaceId: COMMUNITY_TEAM_PAGES[0]!.id });
+    const { state: seeded, movementId } = heldBedMovement();
+    const community = book(
+      { role: "community", actingPlaceId: COMMUNITY_TEAM_PAGES[0]!.id },
+      { state: sentByCommunityTeam(seeded, movementId, COMMUNITY_TEAM_PAGES[0]!.name), movementId },
+    );
     expect(community.rejections).toEqual([]);
   });
 });

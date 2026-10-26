@@ -29,7 +29,12 @@ import {
   prepareBrowserArtifact,
   consumeBrowserArtifact,
 } from "./ward-flow/browser-build-artifact.mjs";
-import { includeGroupCsrf, releaseGateCases } from "./ward-flow/browser-run-contract.mjs";
+import {
+  includeGroupCsrf,
+  RELEASE_GATE_PROJECTS,
+  releaseGateCases,
+  releaseGateProjectFor,
+} from "./ward-flow/browser-run-contract.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
 import { KEPT_EVIDENCE_RUNS, pruneEvidenceRuns } from "./ward-flow/prune-evidence-runs.mjs";
 import { wardFlowLogsRoot } from "./ward-flow/logs-root.mjs";
@@ -72,6 +77,25 @@ routeSmokePaths = fullRouteSmokePaths;
  */
 const requiredReleaseGate = process.argv.includes("--require-release-gate");
 const playwrightArgs = process.argv.slice(2).filter((argument) => argument !== "--require-release-gate");
+// WARD_RELEASE_GATE_PROJECT (public CI): run one device project of the release gate, so desktop and
+// phone run as two parallel jobs. It narrows only the full release-gate preset, and that leg must
+// still pass every required journey on its project (releaseGateCases below).
+const releaseGateProject = releaseGateProjectFor(process.env.WARD_RELEASE_GATE_PROJECT);
+if (releaseGateProject) {
+  if (!requiredReleaseGate) throw new Error("WARD_RELEASE_GATE_PROJECT needs --require-release-gate");
+  for (const project of RELEASE_GATE_PROJECTS) {
+    if (!playwrightArgs.includes(`--project=${project}`))
+      throw new Error(`WARD_RELEASE_GATE_PROJECT needs the full release-gate preset (--project=${project})`);
+  }
+  playwrightArgs.splice(
+    0,
+    playwrightArgs.length,
+    ...playwrightArgs.filter(
+      (argument) =>
+        !RELEASE_GATE_PROJECTS.some((project) => project !== releaseGateProject && argument === `--project=${project}`),
+    ),
+  );
+}
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it
 // whenever the mockups project is requested and the list has entries. playwright.config.ts only
 // defines that project when the list names at least one test, so an emptied list must not ask for
@@ -780,7 +804,7 @@ try {
     grep === "@quarantine|@mockup" &&
     playwrightArgs.includes("--pass-with-no-tests");
   const requiredProjects = advisoryRun ? [] : projects;
-  const requiredCases = releaseGateCases(requiredReleaseGate);
+  const requiredCases = releaseGateCases(requiredReleaseGate, releaseGateProject);
 
   // WARD_JOURNEY_SHARDS=N (off unless set; Ward Flow fold gate only, once proven): split the specs
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its

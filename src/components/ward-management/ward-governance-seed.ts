@@ -132,7 +132,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   if (legalSubject)
     entries.push({
-      ...base("legal-status-stale", legalSubject.movementId, 40, "coordinator"),
+      ...base("legal-status-stale", legalSubject.movementId, NEWEST_SEED_MINUTES_BEFORE, "coordinator"),
       subject: legalSubject,
       outcome: "stale",
       reasonCode: "revision",
@@ -142,6 +142,12 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   return entries.filter((entry): entry is AuditEvent => entry !== undefined);
 }
+
+/**
+ * The newest seeded entry is this many minutes before capture started. The Governance screen times
+ * the demo's synthetic break glass openings from it (`governance-access-review.ts`, D-80 item 14).
+ */
+export const NEWEST_SEED_MINUTES_BEFORE = 40;
 
 /** How many records of each kind the seeded entries take their subjects from (see above). */
 const SEEDED_SUBJECT_POSITIONS = 3;

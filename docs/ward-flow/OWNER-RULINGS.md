@@ -444,7 +444,7 @@ safe global key across 30 files.
 | `R-B-13` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:189 | R-B-13 — Sex now; a human handles divergence |
 | `R-B-14` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:204 | R-B-14 — The two withdrawal labels stay separate |
 | `R-B-15` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:216 | R-B-15 — "Suggested destination" is the right label |
-| `R-B-18` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:226 | R-B-18 — The whole state |
+| `R-B-18` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:230 | R-B-18 — The whole state |
 | `R1` | `archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:8 | R1 — The engine stays advisory |
 | `R2` ⚠️ **25 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-answers-2026-09-17.md`:261 | R2-1 — Recommendation accepted. For a patient on a legal form, "For discharge" from the ED needs the examination outcome recorded first, the same as a community referral. |
@@ -1190,7 +1190,7 @@ safe global key across 30 files.
 - `R-B-13` — line 189, heading: "R-B-13 — Sex now; a human handles divergence"
 - `R-B-14` — line 204, heading: "R-B-14 — The two withdrawal labels stay separate"
 - `R-B-15` — line 216, heading: "R-B-15 — "Suggested destination" is the right label"
-- `R-B-18` — line 226, heading: "R-B-18 — The whole state"
+- `R-B-18` — line 230, heading: "R-B-18 — The whole state"
 
 ### `archive/dated-notes/owner-decisions-to-settle-2026-09-04.md` (2026-09-04)
 

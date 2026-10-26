@@ -82,6 +82,12 @@ export const WARD_FEATURE_FLAGS = {
     // Josh, 20 Oct 2026: "turn on all features", so on in every environment.
     defaults: { development: true, demo: true, production: true },
   },
+  "help-ask": {
+    label: "Ask help and Show me",
+    // Josh, 26 Oct 2026: interactive help. New screen, so it stays off on deployed builds until Josh
+    // approves the screenshots (D-74); on for local builds so it can be reviewed.
+    defaults: { development: true, demo: false, production: false },
+  },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;
 
 export type WardFeatureFlag = keyof typeof WARD_FEATURE_FLAGS;

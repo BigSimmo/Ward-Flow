@@ -1434,6 +1434,56 @@ test(
       for (const id of others.slice(0, engine.BREAK_GLASS_PER_SHIFT))
         pattern = (await store.breakGlass(nurseView, id, "other")).body.pattern;
       assert.equal(pattern, true);
+      // D-80 item 14: the coordinator's review list reads each opening with the desk that made it
+      // and why, newest first. A service coordinator reads only openings of records in its service.
+      const openings = await store.breakGlassOpenings(leadView);
+      assert.equal(openings.length, engine.BREAK_GLASS_PER_SHIFT + 1);
+      const { id: firstId, ...first } = openings.at(-1);
+      assert.match(String(firstId), /^\d+$/);
+      assert.deepEqual(first, {
+        actor_role: "ward",
+        actor_scope: ward,
+        patient_id: elsewhere.patientId,
+        reason: "bed-search",
+        minutes: { opened: 0, until: engine.BREAK_GLASS_MINUTES },
+      });
+      const checkedReviews = { outside: false, inside: false };
+      for (const service of ["North Metro", "South Metro", "East Metro"]) {
+        const serviceView = { ...leadView, access: { role: "coordinator", scope: { kind: "service", service } } };
+        const part = engine.scopeWorld(world, serviceView.access, at).state;
+        const own = new Set([
+          ...part.patients.map((row) => row.id),
+          ...part.movements.flatMap((row) => [row.id, row.patientId]),
+          ...part.referrals.map((row) => row.patientId),
+        ]);
+        const read = await store.breakGlassOpenings(serviceView);
+        assert.ok(read.every((row) => own.has(row.patient_id)));
+        assert.equal(read.length, openings.filter((row) => own.has(row.patient_id)).length);
+        assert.ok((await store.recordViews(serviceView)).every((row) => own.has(row.patient_id)));
+        // A review mark on an opening is checked on the server too: a service coordinator may
+        // mark only openings of records in its own service, and never an opening that is not held.
+        const review = (row) => ({
+          type: "REVIEW_AUDIT_EVENT",
+          role: "coordinator",
+          eventId: `audit-break-glass-${row ? row.id : "999999"}`,
+          expectedGeneration: 0,
+          expectedReviewCount: 0,
+          decision: "reviewed",
+        });
+        const sent = (row) => store.command(lead, randomUUID(), 999, review(row), { view: serviceView });
+        const outside = openings.find((row) => !own.has(row.patient_id));
+        if (outside) {
+          const refusedReview = await sent(outside);
+          assert.equal(refusedReview.status, 422, service);
+          assert.equal(refusedReview.body.code, "scope");
+        }
+        const inside = openings.find((row) => own.has(row.patient_id));
+        if (inside) assert.notEqual((await sent(inside)).body.code, "scope", service);
+        assert.equal((await sent(null)).body.code, "scope");
+        checkedReviews.outside ||= !!outside;
+        checkedReviews.inside ||= !!inside;
+      }
+      assert.deepEqual(checkedReviews, { outside: true, inside: true });
       at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
       const closed = await store.viewer(nurse);
       assert.deepEqual(closed.grants, []);

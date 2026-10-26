@@ -37,6 +37,8 @@ import { PAPER_EXPIRY_CORRECTION_REASONS, type LegalFormExpiryCorrectionReason }
 
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
+import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
+import type { BreakGlassReasonId, WardAccessRole } from "./ward-role-access";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
 import { seededGovernanceAuditEntry, syntheticGovernanceAuditEvents } from "./ward-governance-seed";
@@ -109,7 +111,23 @@ type AuditBase = {
    * `synthetic-seed` (v10 pass 2, Josh 10 Oct 2026) marks the clearly synthetic governance entries a
    * fresh demonstration opens with (`ward-governance-seed.ts`). They are never in `auditEvents`.
    */
-  origin: "captured-this-session" | "synthetic-seed";
+  origin: "captured-this-session" | "synthetic-seed" | "break-glass-opening";
+};
+/**
+ * D-80 item 14: a break glass opening on the coordinator's review list. Never in `auditEvents`: the
+ * shared server keeps openings in its own table and the local demo derives synthetic ones
+ * (`governance-access-review.ts`). The desk is its role and place in words; `deskCount` is how many
+ * openings that desk made in the 12 hours up to this one, so more than 3 reads as a pattern.
+ */
+type BreakGlassAuditDetails = {
+  record: string | null;
+  reason: BreakGlassReasonId | null;
+  until: Instant | null;
+  desk: WardAccessRole | null;
+  place: string;
+  deskCount: number;
+  /** Only for "Other" in the local demo, held in memory. */
+  otherText?: string;
 };
 export type AuditReview = {
   id: string;
@@ -229,6 +247,7 @@ export type AuditEvent = AuditBase &
         action: "OPEN_DISCHARGE_RECORD";
         details: { requestId: number | null; requestNamespace?: string };
       }
+    | { category: "record-access"; action: "BREAK_GLASS"; details: BreakGlassAuditDetails }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
         // v10 pass 2: a review taken back. `decision` is always null so no screen reads it as a review.
@@ -902,7 +921,32 @@ export function governanceAuditEvents(state: WardFlowState): readonly AuditEvent
  * own part of the workspace is found about whichever record its id names.
  */
 export function governanceAuditEntry(state: WardFlowState, id: unknown): AuditEvent | undefined {
-  return uniqueRecord(governanceAuditEvents(state), id) ?? seededGovernanceAuditEntry(state, id);
+  return (
+    uniqueRecord(governanceAuditEvents(state), id) ?? seededGovernanceAuditEntry(state, id) ?? openingEntry(state, id)
+  );
+}
+
+/**
+ * D-80 item 14: a break glass opening is not in the workspace, so its review names it by id alone
+ * (`ward-break-glass-review-id.ts`). The entry stands in for it in the current world; its facts are
+ * read from the server or the demo on the Governance screen, never here.
+ */
+function openingEntry(state: WardFlowState, id: unknown): AuditEvent | undefined {
+  if (!isBreakGlassReviewId(id)) return undefined;
+  return {
+    id,
+    sequence: 0,
+    generation: state.worldGeneration,
+    at: null,
+    actor: { role: null, actingUnitId: null, attribution: "declared-prototype-role" },
+    subject: { kind: "unresolved" },
+    outcome: "accepted",
+    reasonCode: "none",
+    origin: "break-glass-opening",
+    category: "record-access",
+    action: "BREAK_GLASS",
+    details: { record: null, reason: null, until: null, desk: null, place: "", deskCount: 0 },
+  };
 }
 
 /** `readAuditEvents` plus the synthetic seeded entries: for the Governance page only. */

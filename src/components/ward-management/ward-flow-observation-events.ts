@@ -4,7 +4,7 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import type { RecordedFactEventHelpers } from "@/components/ward-management/ward-flow-record-events";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, liveMovementForAdmission } from "@/components/ward-management/ward-admissions";
 import { isObservation, sameObservation, type Observation } from "@/components/ward-management/ward-observation";
 
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
@@ -32,7 +32,10 @@ export type ObservationLevelEvent = {
   type: "RECORD_OBSERVATION_LEVEL";
   role: WardFlowRole;
   now: Instant;
-  target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
+  /** A `ward` caller on a movement target must name itself as the movement's accepted ward. */
+  target:
+    | { kind: "movement"; movementId: string; actingUnitId?: string }
+    | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
   /** When supplied, a stale editor cannot replace a newer record. Omitting it is allowed only while the
    *  target has no recorded observation changes (Audit F2, Option A, owner decision 26 Oct 2026). */
@@ -68,11 +71,42 @@ export function reduceObservationLevelEvent(
     movement = findMovement(state, event.target.movementId);
     if (!movement) return reject(state, event, `no movement found for id ${event.target.movementId}`);
     if (movement.closure) return reject(state, event, `movement ${movement.id} is closed`);
+    // Fix plan item 10 role rule: the ward changes the level only for its own beds. On a movement
+    // that is the accepted ward, named as the acting unit; any other ward records it on the admission.
+    if (
+      event.role === "ward" &&
+      (movement.acceptedUnitId === undefined || event.target.actingUnitId !== movement.acceptedUnitId)
+    ) {
+      return reject(
+        state,
+        event,
+        `RECORD_OBSERVATION_LEVEL was raised as ward ${event.target.actingUnitId ?? "(unnamed)"} but movement ${movement.id} is not accepted by that ward; record the level on the admission instead`,
+      );
+    }
     const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
-    admission = held && held.movementId === movement.id && bedIsOccupied(held) ? held : undefined;
+    // Audit S-2: a seeded stay may be joined only by `movement.admissionId` (its own `movementId`
+    // is null), so the shared live-movement join decides the link, not `held.movementId` alone.
+    // A pair that joined that way already disagreeing (an older record) stays unlinked here, so the
+    // refusal below for disagreeing linked records cannot lock it; arrival reconciles it.
+    admission =
+      held &&
+      bedIsOccupied(held) &&
+      (held.movementId === movement.id ||
+        (liveMovementForAdmission(held, state.movements)?.id === movement.id &&
+          sameObservation(held.observation, movement.observation)))
+        ? held
+        : undefined;
   } else {
     admission = findAdmission(state, event.target.admissionId);
     if (!admission) return reject(state, event, `no admission found for id ${event.target.admissionId}`);
+    // Fix plan item 10 role rule: an admission's level is the ward's or the coordinator's, never the ED's.
+    if (event.role === "ed") {
+      return reject(
+        state,
+        event,
+        `RECORD_OBSERVATION_LEVEL on admission ${admission.id} cannot be raised by role ed; only the ward or coordinator may change it`,
+      );
+    }
     if (event.target.actingUnitId !== admission.unitId) {
       return reject(
         state,
@@ -81,7 +115,12 @@ export function reduceObservationLevelEvent(
       );
     }
     if (!bedIsOccupied(admission)) return reject(state, event, `admission ${admission.id} is ${admission.state}`);
-    const source = admission.movementId ? findMovement(state, admission.movementId) : undefined;
+    const joined = admission.movementId ? undefined : liveMovementForAdmission(admission, state.movements);
+    const source = admission.movementId
+      ? findMovement(state, admission.movementId)
+      : joined && sameObservation(joined.observation, admission.observation)
+        ? joined
+        : undefined;
     movement = source && !source.closure ? source : undefined;
   }
 
