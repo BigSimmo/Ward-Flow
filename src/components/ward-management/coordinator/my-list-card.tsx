@@ -21,6 +21,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
+import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { Button, buttonClass, Card, Sheet, StatusGlyph } from "@/components/wf";
 // Closing-the-loop package A (24 Oct 2026): chase count and overdue promise on a referral row, and
 // the coordinated call sheet. The sheet's code loads only when it is opened.
@@ -35,6 +36,11 @@ import styles from "./home-list.module.css";
 const WAIT_ROWS_SHOWN = 3;
 
 const CallSheet = dynamic(() => import("./call-sheet").then((m) => m.CallSheet), { loading: () => null });
+// WS-03: the one-step pull loads only when a coordinator opens it.
+const PullAcceptedReferral = dynamic(
+  () => import("../referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral),
+  { loading: () => null },
+);
 
 /** "Asked 3 times · Promise overdue", from the records alone, or undefined when nothing is recorded. */
 function followUpMarker(referral: Referral, now: Instant): string | undefined {
@@ -45,6 +51,16 @@ function followUpMarker(referral: Referral, now: Instant): string | undefined {
     items.some((item) => promiseOverdue(item.status, now)) ? "Promise overdue" : undefined,
   ].filter((part): part is string => part !== undefined);
   return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
+/** When the ward accepted: the accepted arm's recorded decision time, when there is one. */
+function acceptedDecisionAt({ referral, unitId }: AcceptedAwaitingPull): Instant | undefined {
+  return referral.destinations.find(
+    (arm) =>
+      arm.state === "accepted" &&
+      arm.destination.kind === "psychiatric_ward" &&
+      (arm.acceptedUnitId ?? arm.destination.unitId) === unitId,
+  )?.decidedAt;
 }
 
 /** Row text only: "Emergency Department" reads as "ED", as Placement's own header already does. */
@@ -297,6 +313,7 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
 
 export function MyListCard({
   act,
+  toPull = [],
   wait,
   referrals,
   units,
@@ -309,6 +326,8 @@ export function MyListCard({
   onShowAll,
 }: {
   act: QueueEntry[];
+  /** WS-02: referrals a ward has accepted with no bed pulled yet. They sit in Act now. */
+  toPull?: readonly AcceptedAwaitingPull[];
   wait: QueueEntry[];
   referrals: Referral[];
   units: readonly Unit[];
@@ -323,10 +342,12 @@ export function MyListCard({
 }) {
   const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
+  const [pulling, setPulling] = useState<AcceptedAwaitingPull | undefined>();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
-  const total = act.length + referrals.length + wait.length;
+  const actCount = act.length + toPull.length;
+  const total = actCount + referrals.length + wait.length;
 
   const alertRows = (list: QueueEntry[]) =>
     phone ? (
@@ -392,12 +413,61 @@ export function MyListCard({
     </ul>
   );
 
+  // WS-02 (workflow speed audit, 26 Oct 2026): after a ward accepts, the pull was found only through
+  // Referrals, History and the row. It now sits in Act now with its own Pull the bed.
+  const pullRows = (
+    <ul className={phone ? alertStyles.phoneRows : styles.hrows} data-testid="home-accepted-to-pull">
+      {toPull.map((entry) => {
+        const { referral } = entry;
+        const who = patientOf(referral);
+        const name = nameFor(who.formalName, who.umrn);
+        const decidedAt = acceptedDecisionAt(entry);
+        const age = decidedAt === undefined ? undefined : minutesText(Math.max(0, now - decidedAt));
+        const shared = {
+          data: { "data-referral-id": referral.id, "data-pull-unit-id": entry.unitId },
+          tone: "danger" as const,
+          act: true,
+          selected: pulling?.referral.id === referral.id,
+          title: "Accepted, bed not pulled",
+          openLabel: `Pull the bed for ${name} at ${entry.unitName}`,
+          onOpen: () => setPulling(entry),
+          name,
+          umrn: who.umrn,
+        };
+        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        return phone ? (
+          <PhoneRow
+            key={referral.id}
+            {...shared}
+            line={`${entry.unitName} accepted · ${from}`}
+            age={age}
+            owner={undefined}
+          />
+        ) : (
+          <HomeRow
+            key={referral.id}
+            {...shared}
+            where={`${entry.unitName} accepted, ${from}`}
+            age={age}
+            ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
+            action={
+              <Button size="sm" aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+                Pull the bed
+              </Button>
+            }
+          />
+        );
+      })}
+    </ul>
+  );
+
   const actGroup = (
     <section className={alertStyles.group} aria-label="Act now">
-      <GroupHead tone="danger" label="Act now" count={act.length} aside="needs a person now" />
+      <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
+      {toPull.length > 0 ? pullRows : null}
       {act.length > 0 ? (
         alertRows(act)
-      ) : (
+      ) : toPull.length > 0 ? null : (
         <p className={alertStyles.groupEmpty}>None firing now. The checks run are named in the header.</p>
       )}
     </section>
@@ -440,7 +510,7 @@ export function MyListCard({
         <p className={styles.focusLine} data-testid="home-list-focus-line">
           <span>
             Showing {focus === "act" ? "Act now" : "Referrals to decide"} only.{" "}
-            {total - (focus === "act" ? act.length : referrals.length)} more in the list.
+            {total - (focus === "act" ? actCount : referrals.length)} more in the list.
           </span>
           <button type="button" className={styles.focusClear} onClick={onShowAll} data-testid="home-list-show-all">
             Show all {total}
@@ -469,6 +539,17 @@ export function MyListCard({
           Call sheet
         </button>
       </div>
+      {pulling ? (
+        <Sheet
+          open
+          onClose={() => setPulling(undefined)}
+          title="Pull the bed"
+          description="The details already recorded are filled in. Check them, then pull the bed."
+          testId="home-pull-accepted-sheet"
+        >
+          <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
+        </Sheet>
+      ) : null}
       {callSheetOpen ? (
         <Sheet
           open

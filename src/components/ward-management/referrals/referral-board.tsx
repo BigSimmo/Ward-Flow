@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, referralPresentationLists } from "../ward-partial-view-presenters";
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
-import { acceptedWardOf } from "./accepted-ward-referral";
+import { acceptedReferralsAwaitingPull, acceptedWardOf } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -84,6 +84,9 @@ import { DecidedSection, QueuedSection } from "./referral-board-sections";
 const BedMeetingSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.BedMeetingSheet), { ssr: false });
 const IsbarSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.IsbarSheet), { ssr: false });
 const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
+const PullAcceptedReferral = dynamic(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral), {
+  ssr: false,
+});
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -309,6 +312,7 @@ export function ReferralBoard({
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
   const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
+  const [pullingId, setPullingId] = useState<string>();
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -416,6 +420,13 @@ export function ReferralBoard({
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
+  // WS-03: an accepted referral with no bed pulled, which the coordinator can pull here in one step.
+  const awaitingPull = useMemo(
+    () => (readOnly ? [] : acceptedReferralsAwaitingPull(referrals, units, movements)),
+    [readOnly, referrals, units, movements],
+  );
+  const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
+  const pulling = awaitingPull.find((entry) => entry.referral.id === pullingId);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
@@ -1015,7 +1026,17 @@ export function ReferralBoard({
                             >
                               Open movement
                             </Link>
-                          ) : readOnly ? null : (
+                          ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
+                            // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setPullingId(selectedReferral.id)}
+                              data-testid="ward-referral-pull-bed"
+                            >
+                              Pull the bed
+                            </Button>
+                          ) : (
                             <Link
                               href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
@@ -1294,6 +1315,17 @@ export function ReferralBoard({
           summary={bedsSummary}
         />
         <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
+        {pulling ? (
+          <Sheet
+            open
+            onClose={() => setPullingId(undefined)}
+            title="Pull the bed"
+            description="The details already recorded are filled in. Check them, then pull the bed."
+            testId="ward-referral-pull-sheet"
+          >
+            <PullAcceptedReferral item={pulling} onDone={() => setPullingId(undefined)} />
+          </Sheet>
+        ) : null}
 
         <WardPrototypeFooter
           testId="ward-referral-board-governance"
