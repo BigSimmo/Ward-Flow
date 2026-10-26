@@ -8,6 +8,6 @@ import type { Unit } from "@/components/ward-management/ward-model";
 export function capacityConfirmer(unit: Pick<Unit, "name" | "allocatable">): string | undefined {
   if (unit.allocatable.source !== "ward") return undefined;
   if (unit.allocatable.confirmedBy === "bed_manager") return "Bed manager";
-  if (unit.allocatable.confirmedBy === "coordinator") return "Flow coordinator";
+  if (unit.allocatable.confirmedBy === "coordinator") return "Bed coordinator";
   return `NUM ${unit.name}`;
 }

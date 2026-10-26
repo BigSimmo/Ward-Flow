@@ -1349,7 +1349,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {
           prior: rejections.length,
           bed: bedNumber,
-          success: `Held bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+          success: `Pulled bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
         },
       );
     } else {

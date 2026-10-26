@@ -520,7 +520,7 @@ describe("the referral row states how many destinations have declined", () => {
         state: "declined",
         declineReason: "belongs_to_another_service",
         decidedAt: NOW_ANCHOR - 10,
-        decidedBy: "Flow coordinator",
+        decidedBy: "Bed coordinator",
       },
       baseReferral.destinations[1],
     ],
@@ -590,7 +590,7 @@ describe("the referral row states how many destinations have declined", () => {
           state: "declined",
           declineReason: "belongs_to_another_service",
           decidedAt: NOW_ANCHOR - 10,
-          decidedBy: "Flow coordinator",
+          decidedBy: "Bed coordinator",
         },
       ],
     };
@@ -648,13 +648,13 @@ describe('"What to show" — the movement-only facet row', () => {
   const mAcceptedUnder6 = movementFixture({
     id: "WF-FACET-1",
     acceptedUnitId: "unit-fixture-a",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     openedAt: NOW_ANCHOR - 1 * HOUR,
   });
   const mWaiting6to24 = movementFixture({
     id: "WF-FACET-2",
     acceptedUnitId: undefined,
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     openedAt: NOW_ANCHOR - 10 * HOUR,
   });
   const mUnownedOver24 = movementFixture({
@@ -737,13 +737,13 @@ describe('"What to show" — the movement-only facet row', () => {
       movementFixture({
         id: "WF-FACET-ACC-EMPTY-1",
         acceptedUnitId: undefined,
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 1 * HOUR,
       }),
       movementFixture({
         id: "WF-FACET-ACC-EMPTY-2",
         acceptedUnitId: undefined,
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 2 * HOUR,
       }),
     ];
@@ -760,13 +760,13 @@ describe('"What to show" — the movement-only facet row', () => {
       movementFixture({
         id: "WF-FACET-WAIT-EMPTY-1",
         acceptedUnitId: "unit-fixture-c",
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 1 * HOUR,
       }),
       movementFixture({
         id: "WF-FACET-WAIT-EMPTY-2",
         acceptedUnitId: "unit-fixture-d",
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 2 * HOUR,
       }),
     ];
@@ -782,7 +782,7 @@ describe('"What to show" — the movement-only facet row', () => {
       movementFixture({
         id: "WF-FACET-OWN-EMPTY-1",
         acceptedUnitId: undefined,
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 1 * HOUR,
       }),
       movementFixture({
@@ -807,7 +807,7 @@ describe('"What to show" — the movement-only facet row', () => {
       movementFixture({
         id: "WF-FACET-24-EMPTY-1",
         acceptedUnitId: undefined,
-        owner: "Flow coordinator",
+        owner: "Bed coordinator",
         openedAt: NOW_ANCHOR - 1 * HOUR,
       }),
     ];

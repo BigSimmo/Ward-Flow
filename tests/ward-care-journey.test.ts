@@ -173,7 +173,7 @@ describe("complete guarded local care journey", () => {
     expect(next.units).toBe(state.units);
     expect(next.admissions.find((a) => a.id === admission.id)?.careJourney?.plan[item]).toMatchObject({
       status: "completed",
-      recordedBy: "Flow coordinator",
+      recordedBy: "Bed coordinator",
     });
   });
   it.each(CARE_DOCUMENTS)("tracks adult %s documentation", (document) => {

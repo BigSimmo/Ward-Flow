@@ -68,7 +68,7 @@ describe("alerts: ownership and snooze", () => {
 
     expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
     expect(within(panel).getByRole("button", { name: /^Yours: / })).toHaveAttribute("aria-disabled", "true");
-    expect(within(panel).getByText(/Owned by Flow coordinator since/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Owned by Bed coordinator since/)).toBeInTheDocument();
   });
 
   it("keeps the patient, the severity and an Open action on a snoozed row", () => {
@@ -76,7 +76,7 @@ describe("alerts: ownership and snooze", () => {
     fireEvent.click(screen.getByRole("button", { name: "Snooze first row" }));
     const snoozed = screen.getByTestId("ward-alerts-snoozed");
     const row = within(snoozed).getAllByRole("listitem")[0]!;
-    expect(row).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/);
+    expect(row).toHaveTextContent(/Back .* · Awaiting call back · Bed coordinator/);
     expect(row.textContent).not.toMatch(/WF-\d/);
     // The same patient the live row named: family name first (F-06) and UMRN, never the journey id.
     const seed = seedWardFlowState();

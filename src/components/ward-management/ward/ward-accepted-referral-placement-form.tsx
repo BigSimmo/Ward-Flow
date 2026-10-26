@@ -218,7 +218,7 @@ export function WardAcceptedReferralPlacementForm({
             </form>
           ) : ed && deskInScope && !deskInScope(ed.id) ? (
             <p className={styles.cardMeta} data-testid="ward-accepted-placement-coordinator">
-              This desk cannot start a placement from {ed.name}. Ask the flow coordinator to start it.
+              This desk cannot start a placement from {ed.name}. Ask the bed coordinator to start it.
             </p>
           ) : (
             <button

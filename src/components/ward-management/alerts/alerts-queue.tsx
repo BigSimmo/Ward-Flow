@@ -40,7 +40,7 @@ export type QueueHandlers = {
 };
 
 const OWNER_SHORT: Record<string, string> = {
-  "Flow coordinator": "You",
+  "Bed coordinator": "You",
   "ED mental health team": "ED team",
   "Ward nurse in charge": "Ward NIC",
 };

@@ -409,9 +409,7 @@ describe("shared provider boundary", () => {
     );
     const { rerender } = render(tree());
     expect(
-      screen.getByText(
-        `ED mental health clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`,
-      ),
+      screen.getByText(`ED clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`),
     ).toBeInTheDocument();
     expect(readWardAccessSnapshot().desk).toEqual(access);
     expect(screen.queryByRole("button", { name: "Switch role" })).toBeNull();

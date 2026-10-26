@@ -264,7 +264,7 @@ export function WardBedDossierDrawer({
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
   const subline = isReady
-    ? "No patient is allocated by this drawer. Review current referrals with the flow coordinator."
+    ? "No patient is allocated by this drawer. Review current referrals with the bed coordinator."
     : [...ageSex, bedItem?.stayBand ?? (bedItem?.status === "incoming" ? "Arriving" : null)]
         .filter(Boolean)
         .join(" · ") || "On this ward";

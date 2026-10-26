@@ -175,12 +175,12 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     expect(sheet.textContent).not.toContain("ready to mark the handover");
   });
 
-  it("state 3: names the missing examination outcome, the form held, and the ED mental health clinician", () => {
+  it("state 3: names the missing examination outcome, the form held, and the ED clinician", () => {
     openSheet();
     fireEvent.focus(screen.getByTestId("ed-refer-cmht-WF-011"));
     const detail = screen.getByTestId("ward-ed-unavailable-cmht-WF-011-detail");
     expect(detail.textContent).toMatch(
-      /^On Form \w+, so a community referral needs the outcome first\.Next: ED mental health clinician, Armadale ED$/,
+      /^On Form \w+, so a community referral needs the outcome first\.Next: ED clinician, Armadale ED$/,
     );
   });
 
@@ -197,7 +197,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     expect(cmht.textContent).toContain("Examination outcome not recorded");
     fireEvent.focus(within(menu).getByTestId("ed-refer-cmht-WF-011"));
     expect(within(cmht).getByTestId("ward-ed-unavailable-cmht-WF-011-detail").textContent).toContain(
-      "Next: ED mental health clinician, Armadale ED",
+      "Next: ED clinician, Armadale ED",
     );
     fireEvent.click(within(cmht).getByRole("menuitem", { name: "Record examination", hidden: true }));
     expect(screen.getByTestId("ward-ed-examine-form-WF-011")).toBeTruthy();

@@ -442,9 +442,7 @@ test.describe("@mockup WA disposition pathways", () => {
       } else {
         await detail.getByRole("combobox", { name: "Arrangement status" }).selectOption("arranged");
         await detail.getByRole("button", { name: "Record follow-up status" }).click();
-        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText(
-          "Arranged · Flow coordinator",
-        );
+        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText("Arranged · Bed coordinator");
       }
     });
   }

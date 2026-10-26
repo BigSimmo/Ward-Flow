@@ -217,14 +217,14 @@ describe("Handover page", () => {
     renderHandover();
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
-      "Signed off at 10:42 as flow coordinator",
+      "Signed off at 10:42 as bed coordinator",
     );
     expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
     // A4-27 (audit round 2): once signed there is no second sign-off primary, only Undo.
     expect(screen.queryByTestId("ward-handover-sign-off-button")).toBeNull();
     expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
     await user.click(screen.getByRole("tab", { name: /History/ }));
-    expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("Handover signed off as flow coordinator");
+    expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("Handover signed off as bed coordinator");
   });
 
   it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {

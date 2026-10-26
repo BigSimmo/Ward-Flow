@@ -5,7 +5,7 @@ import { type HealthService } from "@/components/ward-management/ward-model";
  *
  * ⚠️ **THE MODEL HAS NO STAFF CONCEPT AT ALL.** Measured across `ward-model.ts` and `ward-sites.ts`:
  * no name field, no phone, pager, extension or address field, no shift-roster type, no person-on-call
- * type. The two things that come closest are `Movement.owner` (`"Flow coordinator"`,
+ * type. The two things that come closest are `Movement.owner` (`"Bed coordinator"`,
  * `"Ward nurse in charge"` — a FUNCTION label) and `Movement.escalation.contact` (`"State bed
  * coordination desk"` — a DESK). ⚠️ **Neither has ever held a name or a number, and
  * `escalation.contact` is a known false-presence trap: a grep for "contact" in the model returns a

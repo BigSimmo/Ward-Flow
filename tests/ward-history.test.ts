@@ -144,7 +144,7 @@ describe("Ward Flow Read-Only Plain History", () => {
 
     it("follows role-not-person rule for who field", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
-      expect(history[1].who).toBe("ED mental health");
+      expect(history[1].who).toBe("ED clinician");
       expect(history[1].role).toBe("ed");
       expect(history[2].who).toBe("Ward manager");
       expect(history[2].role).toBe("ward");

@@ -192,7 +192,7 @@ export function validCareJourney(value: unknown): value is CareJourney {
       return false;
     return (
       finite(recordedAt) &&
-      member(["Ward manager", "Flow coordinator", "Community service"], recordedBy) &&
+      member(["Ward manager", "Bed coordinator", "Community service"], recordedBy) &&
       change.kind === kind &&
       validCareChange(change)
     );

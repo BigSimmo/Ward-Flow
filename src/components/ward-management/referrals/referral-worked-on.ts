@@ -58,7 +58,7 @@ export function referralWorkedOnBy(
   return desks;
 }
 
-/** A recorded role label ("Flow coordinator") as the desk is named on screen ("Bed coordinator"). */
+/** A recorded role label ("Bed coordinator") as the desk is named on screen ("Bed coordinator"). */
 function deskNameOf(recordedRole: string): string {
   const role = (Object.keys(WARD_FLOW_ROLE_LABELS) as (keyof typeof WARD_FLOW_ROLE_LABELS)[]).find(
     (candidate) => WARD_FLOW_ROLE_LABELS[candidate] === recordedRole,

@@ -111,7 +111,7 @@ describe("discharge dependencies (closing-the-loop package B)", () => {
         previousExpectedAt: release.expectedAt,
         expectedAt: release.expectedAt + 120,
         at: NOW + 10,
-        by: "Flow coordinator",
+        by: "Bed coordinator",
       },
     ]);
     // Nothing is cancelled: the item is still recorded as done.

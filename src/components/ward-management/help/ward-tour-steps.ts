@@ -99,7 +99,7 @@ export function tourMinutes(steps: number, device: TourDevice): string {
 }
 
 function signedInAs(role: TourRole, facts: TourFacts, scope: string): string {
-  const label = role === "ed" ? "ED mental health clinician" : TOUR_ROLE_LABELS[role];
+  const label = role === "ed" ? "ED clinician" : TOUR_ROLE_LABELS[role];
   const join = role === "ed" ? "at" : role === "ward" ? "of" : "for";
   if (facts.place) return `You are signed in as ${label} ${join} ${facts.place}.`;
   return scope ? `You are signed in as ${label} ${scope}.` : `You are signed in as ${label}.`;
