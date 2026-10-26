@@ -1,6 +1,6 @@
 # Desk guide: Ward (nurse in charge)
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You run your own ward's beds and answer the referrals sent to it.
 
@@ -8,6 +8,9 @@ You run your own ward's beds and answer the referrals sent to it.
 
 **My ward**: your bed board, what needs doing this shift, and **Awaiting your answer** for
 referrals. Your main menu: **My ward, Coming and going, Referrals to answer, Handover**.
+
+On a phone, the bar at the bottom has **My ward, Referrals, Create, Alerts, Handover**. **Coming
+and going** is under **Menu**.
 
 ## Jobs you do most
 

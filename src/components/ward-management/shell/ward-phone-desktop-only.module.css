@@ -5,6 +5,11 @@
 }
 
 @media (max-width: 48rem) {
+  /* H-0882: one main landmark on a phone. The route's own main stays in the page for Show anyway. */
+  :global(body):has(.ground) :global(main:not([data-phone-desktop-only])) {
+    display: none;
+  }
+
   .ground {
     display: block;
     flex: 1 0 auto;

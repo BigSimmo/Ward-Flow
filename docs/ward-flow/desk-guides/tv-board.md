@@ -1,6 +1,6 @@
 # Desk guide: Bed meeting TV board
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 The TV view puts the bed meeting on a wall screen. It is for looking at together, not for
 recording. It may be switched off in some builds.
@@ -16,15 +16,19 @@ ED desks do not open the TV view.
 - **Waiting in ED** and the **Longest ED wait**, in wait order.
 - **Due out today and tomorrow**, and people past their expected date.
 - **Delays by cause**.
-- **Agreed at the bed meeting**: the actions, their owner and when they are due.
+- **Agreed at the bed meeting**, when there are any: the actions, their owner and when they are due.
 
 ## Running the meeting
 
-1. Open the TV view on the shared screen before the meeting starts.
-2. Work down the screen from top to bottom.
-3. Record any decision on your own desk, not on the TV.
-4. When an agreed action is finished, the owner marks it **Done** on their own desk.
-5. Press **Leave TV view** when the meeting ends.
+1. Open the TV view on the shared screen before the meeting starts. Use **Change screen** to pick
+   another TV view and **Full screen** to fill the wall screen.
+2. On a TV that stays on the wall, press **Lock as TV**. The browser then shows only TV views, even
+   after a reload, and **Leave TV view** becomes **Unlock**. Unlocking asks for the account's
+   password in the shared workspace.
+3. Work down the screen from top to bottom.
+4. Record any decision on your own desk, not on the TV.
+5. When an agreed action is finished, the owner marks it **Done** on their own desk.
+6. Press **Leave TV view** (or **Unlock**, then **Leave TV view**) when the meeting ends.
 
 ## What it cannot do
 

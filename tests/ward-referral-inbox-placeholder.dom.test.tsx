@@ -43,6 +43,8 @@ describe("ward referral inbox placeholder", () => {
     expect(document.querySelector('[aria-label="Ward referral inbox"]')).toBeNull();
     const holder = screen.getByTestId("ward-referral-inbox-placeholder");
     expect(holder).toHaveAttribute("aria-hidden", "true");
-    expect(holder.style.minBlockSize).toBe("24rem");
+    // H-0890: the height comes from ward.module.css by screen width; the holder carries the count.
+    expect(holder.style.getPropertyValue("--inbox-entries")).toBe("2");
+    expect(holder.className).toMatch(/inboxPlaceholder/);
   });
 });

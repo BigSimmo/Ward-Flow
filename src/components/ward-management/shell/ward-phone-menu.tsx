@@ -44,6 +44,7 @@ import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
 import { CountChip, countIn } from "./ward-phone-menu-parts";
+import { usePhoneCreateOptions } from "./ward-phone-create-options";
 import styles from "./ward-phone-menu.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
 
@@ -301,6 +302,7 @@ function PhoneDock({
   oneAlertsQueue,
   onGo,
   onCreate,
+  canCreate,
   onDrawer,
 }: {
   places: ResolvedDockSlot[];
@@ -314,6 +316,8 @@ function PhoneDock({
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
   onCreate: (opener: HTMLElement) => void;
+  /** False on a desk with nothing to start (executive, access admin): no + is drawn. */
+  canCreate: boolean;
   onDrawer: (id: DrawerId, opener?: HTMLElement) => void;
 }) {
   const alertsLink = (count: number | undefined) => (
@@ -426,18 +430,23 @@ function PhoneDock({
     <nav className={styles.dock} aria-label="Quick open" data-testid="ward-phone-dock">
       {gap(places.length, "left")}
       {places.map(slot)}
-      <span className={styles.riseSlot}>
-        <button
-          type="button"
-          className={styles.rise}
-          aria-label="Create: new referral, delay, bed or patient"
-          aria-haspopup="dialog"
-          data-testid="ward-phone-create"
-          onClick={(event) => onCreate(event.currentTarget)}
-        >
-          <Plus aria-hidden="true" strokeWidth={2} />
-        </button>
-      </span>
+      {canCreate ? (
+        <span className={styles.riseSlot}>
+          <button
+            type="button"
+            className={styles.rise}
+            aria-label="Create: new referral, delay, bed or patient"
+            aria-haspopup="dialog"
+            data-testid="ward-phone-create"
+            onClick={(event) => onCreate(event.currentTarget)}
+          >
+            <Plus aria-hidden="true" strokeWidth={2} />
+          </button>
+        </span>
+      ) : (
+        // The middle cell stays, so the places either side keep their columns.
+        <span className={styles.riseSlot} aria-hidden="true" />
+      )}
       {right.map(slot)}
       {gap(right.length, "right")}
     </nav>
@@ -664,6 +673,7 @@ export function WardPhoneMenu({
     }),
     [returnFocusRef],
   );
+  const createOptions = usePhoneCreateOptions(byId);
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);
   const go = (entry: RailEntry) => {
@@ -716,7 +726,11 @@ export function WardPhoneMenu({
       ) : null}
 
       {/* The dock on every phone page (device audit option A). Hidden above 48rem by its CSS. */}
-      <div className={`${pageDock.pageDock} ${pageDock.rise}`} data-wf-page-dock="rise">
+      <div
+        className={`${pageDock.pageDock} ${pageDock.rise}`}
+        data-wf-page-dock="rise"
+        data-wf-create={createOptions.any ? undefined : "none"}
+      >
         <PhoneDock
           places={dock}
           right={dockRight}
@@ -727,6 +741,7 @@ export function WardPhoneMenu({
           oneAlertsQueue={oneAlertsQueue}
           onGo={(entry) => announceGo(pathname, entry)}
           onCreate={create}
+          canCreate={createOptions.any}
           onDrawer={drawer}
         />
       </div>

@@ -2,6 +2,7 @@ import { describe, it } from "vitest";
 import { dueAtSweepCodes, runDueAtSweep } from "./helpers/ward-legal-figure-sweep";
 
 // Shard 4 of the dueAt provenance sweep; see helpers/ward-legal-figure-sweep.ts.
+// Each case allows 600 s: under CI coverage the sweeps ran past 300 s on 26 Oct 2026 (#874, #872).
 const codes = dueAtSweepCodes(3);
 
 describe("Mental Health Act figures cannot return to the ward model", () => {
