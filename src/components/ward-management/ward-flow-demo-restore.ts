@@ -6,7 +6,8 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_STORED_STATE_VERSION as WARD_FLOW_DEMO_STORAGE_VERSION,
 } from "./ward-flow-demo-storage-constants";
-import { demoSaveIsCurrent, type DemoRead, type WardFlowDemoPayload } from "./ward-flow-demo-storage";
+import { demoSaveIsCurrent } from "./ward-flow-demo-save-marker";
+import type { DemoRead, WardFlowDemoPayload } from "./ward-flow-demo-storage";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
