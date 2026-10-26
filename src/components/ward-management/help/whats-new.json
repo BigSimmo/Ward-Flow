@@ -43,5 +43,10 @@
     "id": "2026-10-26-extension-date-required",
     "date": "2026-10-26",
     "line": "Extending a legal form now needs the new expiry date as well as the time, both copied from the form."
+  },
+  {
+    "id": "2026-10-26-departure-destination-chosen",
+    "date": "2026-10-26",
+    "line": "Recording that someone has left on the Bed board now asks where they went. Nothing is chosen for you, and the confirmation shows your answer."
   }
 ]

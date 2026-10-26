@@ -346,6 +346,8 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   const departure = page.getByRole("dialog", { name: "Confirm patient departure" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
+  // Audit CS3-07: where they went starts blank and must be chosen.
+  await departure.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
   await departure.getByRole("button", { name: "Record departure", exact: true }).click();
   await expect(departure).toHaveCount(0);
   // The person has left, so the board no longer lists their discharge.

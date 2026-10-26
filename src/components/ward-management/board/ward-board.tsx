@@ -63,7 +63,7 @@ import {
 import { WardBoardHeader } from "./ward-board-header";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
-import { WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
@@ -240,13 +240,16 @@ export function WardBoard({
     day: "recorded" | "today" | "tomorrow";
   } | null>(null);
   /*
-   * The destination this ward would record, defaulted to the FIRST of the five rather than to
-   * nothing. A "choose one" placeholder would be the safer-looking option and is the wrong one
-   * here: it makes the commonest discharge in the service take two interactions, and an unset
-   * value has to be guarded at the dispatch, which is a second way to fail. The five are all real
-   * destinations, none is a null choice, and the control states which is selected.
+   * Audit CS3-07 (26 Oct 2026, replacing the earlier first-option default): where a person went
+   * starts blank and must be chosen. The first option also counts as a statewide release, so a
+   * default recorded it unseen, and the shift row's "They have left" had no picker at all. A choice
+   * belongs to the person it was made for, so it never carries to the next one.
    */
-  const [leavingDestination, setLeavingDestination] = useState<LeavingDestination>(LEAVING_DESTINATIONS[0].id);
+  const [leavingChoice, setLeavingChoice] = useState<{ admissionId: string; destination: LeavingDestination } | null>(
+    null,
+  );
+  const destinationFor = (admissionId: string | undefined): LeavingDestination | "" =>
+    leavingChoice !== null && leavingChoice.admissionId === admissionId ? leavingChoice.destination : "";
   /*
    * Which of the two outgoing figures the "Going out today" list is built from. The toggle changes
    * what the board EMPHASISES; it hides no figure — all ten stay on the ward band in every state,
@@ -328,12 +331,14 @@ export function WardBoard({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
-  ) =>
-    runDeparture(record, {
+  ) => {
+    setLeavingChoice(null);
+    return runDeparture(record, {
       success,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
       undone: "Departure undone. This patient is back on the ward.",
     });
+  };
   const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     dispatchAndReport(
@@ -816,12 +821,17 @@ export function WardBoard({
   const confirmIdentity = pendingConfirm
     ? (pendingConfirm.identity ?? identityFor(pendingConfirm.admissionId))
     : undefined;
+  const confirmAdmissionId = pendingConfirm?.admissionId || pendingConfirm?.item?.selectableKey;
+  const confirmDestination = LEAVING_DESTINATIONS.find(
+    (destination) => destination.id === destinationFor(confirmAdmissionId),
+  )?.label;
 
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
     if (pendingConfirm.kind === "leaving") {
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
-      if (!admissionId) return;
+      const leavingDestination = destinationFor(admissionId);
+      if (!admissionId || leavingDestination === "") return;
       recordDepartureAndReport(
         () =>
           recordWardDeparture
@@ -857,7 +867,8 @@ export function WardBoard({
 
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
     if (word === "They have left") {
-      const executeLeaving = () => {
+      const leavingDestination = destinationFor(item.selectableKey);
+      const executeLeaving = (leavingDestination: LeavingDestination) => {
         recordDepartureAndReport(
           () =>
             recordWardDeparture
@@ -872,8 +883,9 @@ export function WardBoard({
         );
       };
 
-      if (!requireConfirmation) {
-        executeLeaving();
+      // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
+      if (!requireConfirmation && leavingDestination !== "") {
+        executeLeaving(leavingDestination);
         return;
       }
 
@@ -1037,7 +1049,7 @@ export function WardBoard({
       dialogTriggerRef={dialogTriggerRef}
       dispatchAndReport={dispatchAndReport}
       emptyTileCount={emptyTileCount}
-      leavingDestination={leavingDestination}
+      leavingDestination={destinationFor(selectedTile?.key)}
       movements={movements}
       nameFor={nameFor}
       now={now}
@@ -1051,7 +1063,9 @@ export function WardBoard({
       selectedTile={selectedTile}
       setBlockerDialogItem={setBlockerDialogItem}
       setDateEdit={setDateEdit}
-      setLeavingDestination={setLeavingDestination}
+      setLeavingDestination={(destination) =>
+        selectedTile && setLeavingChoice({ admissionId: selectedTile.key, destination })
+      }
       setPendingConfirm={setPendingConfirm}
       setSelectedBlocker={setSelectedBlocker}
       unit={unit}
@@ -1398,6 +1412,12 @@ export function WardBoard({
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
+                    {confirmDestination ? (
+                      <span data-testid="ward-board-confirm-destination-text">
+                        {" "}
+                        Where they went: {confirmDestination}.
+                      </span>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -1413,6 +1433,16 @@ export function WardBoard({
                 ) : null}
               </p>
 
+              {pendingConfirm.kind === "leaving" ? (
+                <LeavingDestinationField
+                  id="ward-board-confirm-destination"
+                  value={destinationFor(confirmAdmissionId)}
+                  onChange={(destination) =>
+                    confirmAdmissionId && setLeavingChoice({ admissionId: confirmAdmissionId, destination })
+                  }
+                />
+              ) : null}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -1427,6 +1457,8 @@ export function WardBoard({
                   onClick={handleConfirmAction}
                   data-testid="ward-board-confirm-proceed"
                   className={styles.detailPrimaryBtn}
+                  // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
+                  disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
                   {pendingConfirm.kind === "leaving" ? "Record departure" : "Record ED transfer"}

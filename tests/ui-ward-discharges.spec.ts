@@ -268,6 +268,8 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await page.getByTestId("ward-board-record-leaving-submit").click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
     await expect(departureDialog).toBeVisible();
+    // Audit CS3-07: where they went starts blank and must be chosen.
+    await departureDialog.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
     await departureDialog.getByRole("button", { name: "Record departure", exact: true }).click();
     await expect(departureDialog).toHaveCount(0);
 
