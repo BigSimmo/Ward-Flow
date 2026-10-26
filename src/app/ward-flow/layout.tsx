@@ -26,6 +26,7 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
+import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { demoDayZero } from "@/components/ward-management/ward-clock";
@@ -169,6 +170,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
             <WardOfflineLinks />
             {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
             <WardFeatureFlagLink />
+            {/* WS-18: Home's second skip link, straight after the page's "Skip to main content". */}
+            <WardSkipToActNow />
             <div className={styles.shellRow}>
               <WardRail />
               {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
