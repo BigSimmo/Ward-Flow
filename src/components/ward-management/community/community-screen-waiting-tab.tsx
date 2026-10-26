@@ -93,7 +93,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     aria-pressed={triageFilter === "all"}
                     onClick={() => setTriageFilter("all")}
                   >
-                    <span>All Referrals</span>
+                    <span>All referrals</span>
                     <span className={styles.badgePill} id="chipAllRefBadge">
                       {demoTeamReferrals.length}
                     </span>
@@ -104,7 +104,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     aria-pressed={triageFilter === "p1"}
                     onClick={() => setTriageFilter("p1")}
                   >
-                    <span>Priority 1 Immediate</span>
+                    <span>Priority 1 immediate</span>
                     <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                       {demoTeamReferrals.filter((r) => r.urgency === 1).length}
                     </span>
@@ -115,7 +115,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     aria-pressed={triageFilter === "p2"}
                     onClick={() => setTriageFilter("p2")}
                   >
-                    <span>Priority 2 Urgent</span>
+                    <span>Priority 2 urgent</span>
                     <span className={styles.badgePill} id="chipP2Badge">
                       {demoTeamReferrals.filter((r) => r.urgency === 2).length}
                     </span>
@@ -126,7 +126,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     aria-pressed={triageFilter === "p3"}
                     onClick={() => setTriageFilter("p3")}
                   >
-                    <span>Priority 3 Routine</span>
+                    <span>Priority 3 routine</span>
                     <span className={styles.badgePill} id="chipP3Badge">
                       {demoTeamReferrals.filter((r) => r.urgency === 3).length}
                     </span>
@@ -249,7 +249,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   aria-pressed={triageFilter === "all"}
                   onClick={() => setTriageFilter("all")}
                 >
-                  <span>All Referrals</span>
+                  <span>All referrals</span>
                   <span className={styles.badgePill} id="chipAllRefBadge">
                     {waitingReferrals.length}
                   </span>
@@ -260,7 +260,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   aria-pressed={triageFilter === "p1"}
                   onClick={() => setTriageFilter("p1")}
                 >
-                  <span>Priority 1 Immediate</span>
+                  <span>Priority 1 immediate</span>
                   <span className={`${styles.badgePill} ${styles.inkDanger}`} id="chipP1Badge">
                     {p1ReferralsCount}
                   </span>
@@ -271,7 +271,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   aria-pressed={triageFilter === "p2"}
                   onClick={() => setTriageFilter("p2")}
                 >
-                  <span>Priority 2 Urgent</span>
+                  <span>Priority 2 urgent</span>
                   <span className={styles.badgePill} id="chipP2Badge">
                     {p2ReferralsCount}
                   </span>
@@ -282,7 +282,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   aria-pressed={triageFilter === "p3"}
                   onClick={() => setTriageFilter("p3")}
                 >
-                  <span>Priority 3 Routine</span>
+                  <span>Priority 3 routine</span>
                   <span className={styles.badgePill} id="chipP3Badge">
                     {p3ReferralsCount}
                   </span>

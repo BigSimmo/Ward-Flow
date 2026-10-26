@@ -84,7 +84,15 @@
   white-space: nowrap;
 }
 
+/* Layout sweep PT-22: a long service or clinician name takes a second line rather than an
+   ellipsis, so the reader knows who they are calling. */
 .callName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 

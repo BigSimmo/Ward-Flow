@@ -8,7 +8,7 @@
 > [!NOTE]
 > **Prototype Operating Mode (`AGENTS.md`, 3 October 2026):** Ward Flow executes exclusively on **100% synthetic data** with zero live EHR connections and zero real patient information. This Clinical Safety Case serves as presentation reference material for WA Health stakeholders alongside automated legal-language (`scripts/ward-flow/check-ward-legal-language.mjs`) and synthetic-data (`scripts/ward-flow/check-clinical-governance-gate.mjs`) verification gates, rather than a live clinical deployment sign-off.
 
-_Updated 2026-10-24 - merged the 24 Oct shared-folder safety case and hazard log drafts; this repository copy is canonical (Josh, 24 Oct 2026); Documentation owns._
+_Updated 2026-10-26 - A-01 Find a bed marked fixed by `b9a6f598` (never-build audit NB-26-10); 2026-10-24 - merged the 24 Oct shared-folder safety case and hazard log drafts; this repository copy is canonical (Josh, 24 Oct 2026); Documentation owns._
 
 _Updated 2026-10-24 - HAZ-05 control (c) now describes the D-72 scrubbed device copy; Documentation owns. No clinical review, residual-risk acceptance or sign-off refreshed._
 
@@ -144,32 +144,32 @@ These are the repository's original five hazards, kept as written. Each maps to 
 
 ### 7.1 Summary
 
-| ID   | Hazard                                                                         | Initial risk | Residual risk now | State                                                                     |
-| ---- | ------------------------------------------------------------------------------ | ------------ | ----------------- | ------------------------------------------------------------------------- |
-| H-01 | Action taken on, or shown for, the wrong patient                               | 5            | **4**             | Open: B-01, B-02 (P1), B-03, B-04, B-05, D-01, D-04, B-10                 |
-| H-02 | Involuntary patient placed in a ward not authorised for them (HAZ-01)          | 4            | 2                 | Controlled, apart from A-01                                               |
-| H-03 | Placement against bed sex designation, or beyond high-acuity staffing (HAZ-02) | 3 to 4       | 2                 | Controlled                                                                |
-| H-04 | Unrecorded or invented clinical fact shown as recorded                         | 4            | **3**             | Open: A-03 (P2), A-04; A-05 latent                                        |
-| H-05 | Stale bed or status figure shown as current                                    | 3 to 4       | **3**             | Open: A-01 (Find a bed shows no age)                                      |
-| H-06 | Pull time limit shown as cleared while it is still running                     | 3            | **3**             | Open: A-02 (P2)                                                           |
-| H-07 | Consequential step taken by one tap, without confirmation or undo              | 3 to 4       | **3**             | Open: D-02 (P2), B-06, B-07, B-08, B-09                                   |
-| H-08 | Concurrent change silently overwrites another desk's newer change              | 4            | **4**             | Open: D-03 (P2; P1 before shared clinical use)                            |
-| H-09 | Mental Health Act form time misread, mis-entered or calculated (HAZ-04)        | 4 to 5       | 2                 | Controlled (TC-01 fixed; TC-03 open, low)                                 |
-| H-10 | Decision-support drift: ranking, suggestion or score anchors a placement       | 3 to 4       | **3**             | Open: A-01 (Find a bed ranks and caps)                                    |
-| H-11 | Waiting patient overlooked through queue re-ordering                           | 4            | 2                 | Controlled                                                                |
-| H-12 | Patient stranded by unconfirmed or implausible transport booking (HAZ-03)      | 4            | 3                 | Partly controlled (CAD plausibility only)                                 |
-| H-13 | Over-reliance: Ward Flow treated as the record or as a live EHR (HAZ-05)       | 4            | 3                 | Partly controlled                                                         |
-| H-14 | Alarm fatigue: too many red markers                                            | 3            | 3                 | Open: CS-17 thresholds not reviewed                                       |
-| H-15 | Wrong date or time from time zones, midnight or shift changes                  | 4            | 2                 | Controlled (TC-03 low)                                                    |
-| H-16 | Typed change lost or wiped before the server confirms                          | 3            | 2                 | Controlled for main forms (SM2 fixes, some in branch only); siblings open |
-| H-17 | Figures disagree between screens                                               | 3            | **3**             | Open: six P2 mismatches (numbers audit 24 Oct)                            |
-| H-18 | Service unavailable at a critical moment                                       | 4            | 3                 | Partly controlled (downtime pack draft; no point-in-time backup)          |
-| H-19 | Unauthorised access to patient records                                         | 4            | 3                 | Partly controlled; see the privacy impact assessment draft                |
-| H-20 | Patient details leave the system in copies or prints                           | 3            | 3                 | Owner decision pending (D-71 item 7)                                      |
-| H-21 | Ward's pulled bed released by another desk's recorded action                   | 3            | 2                 | Owner decision pending (rerun finding D-07: confirmed and undoable)       |
-| H-22 | Undo restores the wrong state                                                  | 3            | 2                 | Controlled; fuzz coverage gap (rerun finding D-06)                        |
-| H-23 | Wrong-patient risk from look-alike names                                       | 4            | 3                 | Shares H-01 controls; B-10 open                                           |
-| H-24 | Cultural safety: Aboriginal status shown or used inappropriately               | 3            | 2                 | Field not displayed pending review                                        |
+| ID   | Hazard                                                                         | Initial risk | Residual risk now | State                                                                      |
+| ---- | ------------------------------------------------------------------------------ | ------------ | ----------------- | -------------------------------------------------------------------------- |
+| H-01 | Action taken on, or shown for, the wrong patient                               | 5            | **4**             | Open: B-01, B-02 (P1), B-03, B-04, B-05, D-01, D-04, B-10                  |
+| H-02 | Involuntary patient placed in a ward not authorised for them (HAZ-01)          | 4            | 2                 | Controlled (A-01 fixed, `b9a6f598`)                                        |
+| H-03 | Placement against bed sex designation, or beyond high-acuity staffing (HAZ-02) | 3 to 4       | 2                 | Controlled                                                                 |
+| H-04 | Unrecorded or invented clinical fact shown as recorded                         | 4            | **3**             | Open: A-03 (P2), A-04; A-05 latent                                         |
+| H-05 | Stale bed or status figure shown as current                                    | 3 to 4       | **3**             | Controlled: A-01 fixed (`b9a6f598`, each count shows when it was recorded) |
+| H-06 | Pull time limit shown as cleared while it is still running                     | 3            | **3**             | Open: A-02 (P2)                                                            |
+| H-07 | Consequential step taken by one tap, without confirmation or undo              | 3 to 4       | **3**             | Open: D-02 (P2), B-06, B-07, B-08, B-09                                    |
+| H-08 | Concurrent change silently overwrites another desk's newer change              | 4            | **4**             | Open: D-03 (P2; P1 before shared clinical use)                             |
+| H-09 | Mental Health Act form time misread, mis-entered or calculated (HAZ-04)        | 4 to 5       | 2                 | Controlled (TC-01 fixed; TC-03 open, low)                                  |
+| H-10 | Decision-support drift: ranking, suggestion or score anchors a placement       | 3 to 4       | **3**             | Controlled: A-01 fixed (`b9a6f598`, A to Z, no cap)                        |
+| H-11 | Waiting patient overlooked through queue re-ordering                           | 4            | 2                 | Controlled                                                                 |
+| H-12 | Patient stranded by unconfirmed or implausible transport booking (HAZ-03)      | 4            | 3                 | Partly controlled (CAD plausibility only)                                  |
+| H-13 | Over-reliance: Ward Flow treated as the record or as a live EHR (HAZ-05)       | 4            | 3                 | Partly controlled                                                          |
+| H-14 | Alarm fatigue: too many red markers                                            | 3            | 3                 | Open: CS-17 thresholds not reviewed                                        |
+| H-15 | Wrong date or time from time zones, midnight or shift changes                  | 4            | 2                 | Controlled (TC-03 low)                                                     |
+| H-16 | Typed change lost or wiped before the server confirms                          | 3            | 2                 | Controlled for main forms (SM2 fixes, some in branch only); siblings open  |
+| H-17 | Figures disagree between screens                                               | 3            | **3**             | Open: six P2 mismatches (numbers audit 24 Oct)                             |
+| H-18 | Service unavailable at a critical moment                                       | 4            | 3                 | Partly controlled (downtime pack draft; no point-in-time backup)           |
+| H-19 | Unauthorised access to patient records                                         | 4            | 3                 | Partly controlled; see the privacy impact assessment draft                 |
+| H-20 | Patient details leave the system in copies or prints                           | 3            | 3                 | Owner decision pending (D-71 item 7)                                       |
+| H-21 | Ward's pulled bed released by another desk's recorded action                   | 3            | 2                 | Owner decision pending (rerun finding D-07: confirmed and undoable)        |
+| H-22 | Undo restores the wrong state                                                  | 3            | 2                 | Controlled; fuzz coverage gap (rerun finding D-06)                         |
+| H-23 | Wrong-patient risk from look-alike names                                       | 4            | 3                 | Shares H-01 controls; B-10 open                                            |
+| H-24 | Cultural safety: Aboriginal status shown or used inappropriately               | 3            | 2                 | Field not displayed pending review                                         |
 
 Severity (Sev): Mi, Si, Co, Ma, Ca = Minor, Significant, Considerable, Major, Catastrophic. Likelihood (Lik): VL, L, M, H, VH = Very low, Low, Medium, High, Very high.
 
@@ -199,9 +199,9 @@ Severity (Sev): Mi, Si, Co, Ma, Ca = Minor, Significant, Considerable, Major, Ca
 | Harm         | Detention without authority; unlawful placement.                                                                                                                                                                                                                           |
 | Initial      | Sev Ma, Lik M, risk 3, treated as 4 because of the legal consequence                                                                                                                                                                                                       |
 | Controls     | `requiresAuthorisedDestination` engine refusal (`ward-eligibility.ts`); `destinationNoLongerLawful` banner after a status change; single legal-status classifier `involuntaryBedNeededForLegalStatus` (decision D-69); referral form runs the same check per ward (CS-06). |
-| Open         | Tools "Find a bed" starts on Voluntary and skips the eligibility engine (A-01; see H-10).                                                                                                                                                                                  |
+| Fixed        | A-01: Tools "Find a bed" now has no legal status default and lists nothing until one is chosen (`b9a6f598`). It is a filter for a phone call, not the eligibility engine; the referral's own checks still decide.                                                          |
 | Residual     | Sev Ma, Lik VL, **risk 2**                                                                                                                                                                                                                                                 |
-| Status       | Controlled, apart from A-01.                                                                                                                                                                                                                                               |
+| Status       | Controlled.                                                                                                                                                                                                                                                                |
 | Verification | `tests/ward-referral-ed-destination.test.ts`, `tests/ward-legal-status.test.ts`, the `tests/ward-referral-drawer-ward-gates*` tests.                                                                                                                                       |
 
 #### H-03 Placement against bed sex designation, or beyond high-acuity staffing (HAZ-02)
@@ -278,14 +278,14 @@ Severity (Sev): Mi, Si, Co, Ma, Ca = Minor, Significant, Considerable, Major, Ca
 
 #### H-10 Decision-support drift: ranking, suggestion or score anchors a placement
 
-| Field              | Entry                                                                                                                                                                                                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Controls           | Never-build rule; NB-1 to NB-11 removed or rewritten (fixed order, no caps, plain reasons); never-build guard test (PR #689); two sweeps (20 and 24 Oct).                                                                                                                                                           |
-| Owner exception    | NB-8 road-time list of nearest ready beds, captioned "Distance only, not suitability" (decision D-71 item 6). It is a distance fact, not a suitability suggestion.                                                                                                                                                  |
-| Open               | **A-01 (P2)** Tools "Find a bed" ranks wards (home service, then most free beds), caps the list at 6, defaults to Voluntary and says "fit this patient" (`tools/ward-bed-finder.tsx`). This breaches the never-build rule and needs a fix. The transport officer list defaults to "next action" (owner to confirm). |
-| Harm               | A clinician is anchored to a ward the engine would refuse, or away from the right one.                                                                                                                                                                                                                              |
-| Initial / residual | Sev Co, Lik H, risk 3 to 4; **risk 3** now; 2 after A-01 is fixed.                                                                                                                                                                                                                                                  |
-| Status             | Open.                                                                                                                                                                                                                                                                                                               |
+| Field              | Entry                                                                                                                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Controls           | Never-build rule; NB-1 to NB-11 removed or rewritten (fixed order, no caps, plain reasons); never-build guard test (PR #689); two sweeps (20 and 24 Oct).                                                                                                                                             |
+| Owner exception    | NB-8 road-time list of nearest ready beds, captioned "Distance only, not suitability" (decision D-71 item 6). It is a distance fact, not a suitability suggestion.                                                                                                                                    |
+| Fixed              | **A-01** Tools "Find a bed" lists every ward A to Z with its recorded Ready count and when it was recorded, with no cap and no legal status default (`b9a6f598`, 24 Oct 2026; own test `tests/ward-audit24-1-find-a-bed.dom.test.tsx`). Josh kept the transport officer "next action" order (25 Oct). |
+| Harm               | A clinician is anchored to a ward the engine would refuse, or away from the right one.                                                                                                                                                                                                                |
+| Initial / residual | Sev Co, Lik H, risk 3 to 4; **risk 2** now that A-01 is fixed.                                                                                                                                                                                                                                        |
+| Status             | Open.                                                                                                                                                                                                                                                                                                 |
 
 #### H-11 Waiting patient overlooked through queue re-ordering
 

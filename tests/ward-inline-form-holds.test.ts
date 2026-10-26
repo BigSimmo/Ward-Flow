@@ -60,6 +60,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "referrals/arrival-time-modal.tsx": { cover: "popup" },
   "referrals/referral-ask-more-wards.tsx": { cover: "held" },
   "referrals/referral-board.tsx": { cover: "popup", why: "Phone patient and timeline open in sheets." },
+  "referrals/pull-accepted-referral.tsx": {
+    cover: "page form",
+    why: "Stream B's pull form: fields and Pull the bed sit in one form.",
+  },
   "referrals/upload-forms-modal.tsx": { cover: "popup" },
   "referrals/use-referral-match-state.tsx": { cover: "held" },
   "referrals/use-ward-referral-drawer-state.ts": { cover: "popup" },

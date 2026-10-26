@@ -145,14 +145,9 @@ describe("developer-area header (x-developer-area)", () => {
     expect(response.headers.get("content-security-policy")).toBeTruthy();
   });
 
-  it("sets the trusted offline marker only for Ward Flow and strips a spoofed copy elsewhere", async () => {
+  it("forwards no Ward Flow offline marker, which nothing reads (CQ-14)", async () => {
     const wardResponse = await proxy(requestFor("/ward-flow/capacity"));
-    expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBe("1");
-
-    const clinicalRequest = requestFor("/documents/some-id");
-    clinicalRequest.headers.set("x-ward-flow-offline", "1");
-    const clinicalResponse = await proxy(clinicalRequest);
-    expect(clinicalResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBeNull();
+    expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBeNull();
   });
 
   // #L69: the case above only exercises one gated prefix directly, so a

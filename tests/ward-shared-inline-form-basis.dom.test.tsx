@@ -14,6 +14,8 @@ const snapshot = (revision: number): SharedSnapshot => ({
   payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
 });
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
+/** A pointer press on `control`, as a mouse or a tap gives; Safari moves no focus with it. */
+const press = (control: Element) => control.dispatchEvent(new Event("pointerdown", { bubbles: true }));
 
 function setup() {
   const board = { revision: 1 };
@@ -89,7 +91,7 @@ describe("which held forms a save is checked against (audit CS3-01)", () => {
     opened();
     board.revision = 2; // another desk saves while the form is open
     await client.refresh();
-    control?.focus();
+    if (control) press(control);
     await client.dispatch(event);
     client.dispose();
     return sent[0];
@@ -128,6 +130,41 @@ describe("which held forms a save is checked against (audit CS3-01)", () => {
     expect(await saveFrom(page.querySelector("#inner"), () => hold("movement:WF-A"))).toBe(1);
   });
 
+  it("follows the control pressed, not a field in another row that kept focus (Safari)", async () => {
+    const page = place(
+      `<li data-held-form="movement:WF-A"><input id="a-field" /></li>` +
+        `<li data-held-form="movement:WF-B"><button id="b">Save B</button></li>`,
+    );
+    expect(
+      await saveFrom(page.querySelector("#b"), () => {
+        hold("movement:WF-B");
+        page.querySelector<HTMLElement>("#a-field")!.focus();
+      }),
+    ).toBe(1);
+  });
+
+  it("follows the button a form was sent with", async () => {
+    const page = place(
+      `<li data-held-form="movement:WF-A"><input id="a-field" /></li>` +
+        `<li data-held-form="movement:WF-B"><form id="b-form"><button id="b">Save B</button></form></li>`,
+    );
+    const { client, board, sent } = setup();
+    await client.refresh();
+    hold("movement:WF-B");
+    board.revision = 2;
+    await client.refresh();
+    page.querySelector<HTMLElement>("#a-field")!.focus();
+    const form = page.querySelector<HTMLFormElement>("#b-form")!;
+    form.addEventListener("submit", (submitted) => {
+      submitted.preventDefault();
+      void client.dispatch(event);
+    });
+    form.requestSubmit(page.querySelector<HTMLButtonElement>("#b"));
+    await new Promise((settle) => setTimeout(settle, 0));
+    expect(sent).toEqual([1]);
+    client.dispose();
+  });
+
   it("keeps an unscoped hold in for every save while it is open", async () => {
     const page = place(`<li data-held-form="movement:WF-B"><button id="b">Accept B</button></li>`);
     expect(await saveFrom(page.querySelector("#b"), () => hold())).toBe(1);
@@ -157,7 +194,7 @@ describe("a page form the person has used is held until it is sent (audit CS3-01
     view.querySelector<HTMLElement>("#choice")!.dispatchEvent(new Event("pointerdown", { bubbles: true }));
     board.revision = 2;
     await client.refresh();
-    view.querySelector<HTMLElement>("#send")!.focus();
+    press(view.querySelector("#send")!);
     await client.dispatch(event);
     expect(sent).toEqual([1]);
     client.dispose();
@@ -170,7 +207,7 @@ describe("a page form the person has used is held until it is sent (audit CS3-01
     view.querySelector<HTMLElement>("#choice")!.focus();
     board.revision = 2;
     await client.refresh();
-    view.querySelector<HTMLElement>("#elsewhere")!.focus();
+    press(view.querySelector("#elsewhere")!);
     await client.dispatch(event);
     expect(sent).toEqual([2]);
     client.dispose();
@@ -185,7 +222,7 @@ describe("a page form the person has used is held until it is sent (audit CS3-01
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     board.revision = 2;
     await client.refresh();
-    view.querySelector<HTMLElement>("#send")!.focus();
+    press(view.querySelector("#send")!);
     await client.dispatch(event);
     // Used again after the earlier send: held from now on, at the board it now shows.
     expect(sent).toEqual([2]);

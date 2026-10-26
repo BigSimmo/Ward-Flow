@@ -104,6 +104,12 @@
   white-space: nowrap;
 }
 
+/* Layout sweep STATS-11: min-height does nothing on a table cell, so wrapped report rows get their
+   breathing room through the shared table's padding hook. The downtime pack keeps its dense rows. */
+.page .table:not(.packTable) tbody {
+  --wf-cell-pad-y: var(--wf-s-2);
+}
+
 .table tbody th {
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   text-transform: none;
@@ -354,6 +360,17 @@
   }
 }
 
+/* Layout sweep MEET-10: on an iPad the pack's times, ED names and patient names wrap, as on paper,
+   so every column stays inside its card instead of being cut at the edge. */
+@media (max-width: 64rem) {
+  .page .packTable thead th,
+  .page .packTable .time,
+  .page .packTable .edCell,
+  .page .packTable tbody th[scope="row"] {
+    white-space: normal;
+  }
+}
+
 /* Tablet portrait: Accepted by is the first column to go at 820px. */
 @media (min-width: 48.0625rem) and (max-width: 62.5rem) {
   .packAccepted {
@@ -474,7 +491,8 @@
 }
 
 .patientPick {
-  width: min(100%, 300px);
+  /* Layout sweep MEET-09: wide enough for a long name and its UMRN. */
+  width: min(100%, 23rem);
   min-width: 11rem;
 }
 
@@ -491,7 +509,9 @@
   min-width: 9.5rem;
 }
 
-@media (max-width: 87.5rem) {
+/* Layout sweep MEET-09: the bar wraps up to 1600px, so the patient picker keeps room for a long
+   name and its UMRN beside the rail. */
+@media (max-width: 100rem) {
   .filterBar {
     flex-wrap: wrap;
   }
@@ -552,6 +572,10 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  /* Layout sweep MEET-08: a fixed header height, so the sticky day row below (top: 32px) meets it
+     exactly instead of covering the first event of each day. */
+  box-sizing: border-box;
+  height: 32px;
   background: var(--wf-surface);
 }
 
@@ -695,7 +719,7 @@
 
 .sideList > div {
   display: grid;
-  grid-template-columns: 8.5rem minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: var(--wf-s-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
@@ -708,9 +732,15 @@
 .sideList dd {
   margin: 0;
   color: var(--wf-ink-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+/* Layout sweep MEET-09/11: the event and summary facts are times, the point of a chronology, so they
+   wrap rather than being cut with an ellipsis. Scoped here; FactGrid elsewhere is unchanged. */
+.sideBody dl > div > dd,
+.sheetBody dl > div > dd {
+  overflow: visible;
+  white-space: normal;
 }
 
 .sideActions {

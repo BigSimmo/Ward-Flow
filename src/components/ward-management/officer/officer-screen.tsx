@@ -361,10 +361,8 @@ export function OfficerScreen() {
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
     sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
-  // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
-  // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
-  // isPhone is declared above officerPatientName, which reads it.
-
+  // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
+  // back); wider screens keep it non-modal. isPhone is declared above officerPatientName, which reads it.
   // The form check opens over the phone job sheet, so it joins the shared modal contract: the
   // sheet and page behind are inert, focus starts on the first control, Tab wraps inside, Escape
   // closes only this dialog (handled first, before this screen's own Escape shortcut), and focus
@@ -1006,18 +1004,20 @@ export function OfficerScreen() {
                     </span>
                   ) : null}
                   <span className={styles.toolbarSpacer} />
-                  <span className={styles.sortLabel}>Sort</span>
-                  <Segmented
-                    className={styles.sortControl}
-                    label="Sort jobs"
-                    value={sortKey}
-                    onChange={setSortKey}
-                    items={[
-                      { id: "next", label: "Next action" },
-                      { id: "wait", label: "Longest wait" },
-                      ...(anyJobEta ? [{ id: "eta" as const, label: "ETA" }] : []),
-                    ]}
-                  />
+                  <span className={styles.sortGroup}>
+                    <span className={styles.sortLabel}>Sort</span>
+                    <Segmented
+                      className={styles.sortControl}
+                      label="Sort jobs"
+                      value={sortKey}
+                      onChange={setSortKey}
+                      items={[
+                        { id: "next", label: "Next action" },
+                        { id: "wait", label: "Longest wait" },
+                        ...(anyJobEta ? [{ id: "eta" as const, label: "ETA" }] : []),
+                      ]}
+                    />
+                  </span>
                 </div>
 
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next"} />

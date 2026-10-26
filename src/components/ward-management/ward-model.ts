@@ -972,9 +972,9 @@ export type Movement = MovementBase & {
   medicalDeterioration?: { at: Instant; by: "ed"; resumedAt?: Instant };
   uploadedForms?: MovementUploadedForm[];
   /**
-   * Active legal-form clock: the expiry time typed from the paper form, never computed (audit
-   * TC2-11; `ward-legal-clock.ts` only stores what was typed). A newer form clears the previous clock. `legalForm.dueAt` is kept in step with `legalClock.expiresAt` when
-   * a clock is written so existing screens that read `dueAt` stay honest.
+   * Legacy legal-form clock from saved records only. Nothing computes or writes one now (never-build
+   * rule, 19 Oct 2026): recording a form clears it, and a form's time is the one typed from the
+   * paper (`legalForm.dueAt`). Kept so older saved records still load.
    */
   legalClock?: LegalClock;
   /**

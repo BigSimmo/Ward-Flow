@@ -170,7 +170,7 @@ export function WardArrivalsCorridor({
           <h2 className={styles.title}>Coming in</h2>
         </div>
         <span className={`${styles.statusTag} ${styles.modeTagCompact}`} data-type="mode">
-          {accepted.length} Inbound En Route
+          {accepted.length} coming in
         </span>
       </div>
 

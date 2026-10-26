@@ -7,6 +7,7 @@ import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "
 import Link from "next/link";
 import { flushSync } from "react-dom";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { holdOpenForm } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -333,12 +334,8 @@ function legalFormLine(movement: Movement, now: Instant) {
  * and no legal clock of its own. This renders none of those: no "referred to", no ward column, no
  * back-link to a unit — only the facts the referral itself actually carries.
  *
- * Deliberately minimal: this closes the specific gap the task brief named (the panel retitles and
- * explains a referral instead of a movement) and builds nothing beyond it. A full candidate/match
- * view for a referral already exists on a different screen (`ward-management-network.tsx`'s
- * `ReferralPlacementSummary`) — building a second one here, or wiring this screen into that
- * screen's own eligibility-scan machinery, is a larger, unauthorised change and is not what this
- * task asked for.
+ * Deliberately minimal: the decision itself lives on the Referrals board, so this preview builds
+ * no second copy of it. Its Decide link opens that board on this referral (WS-04, 26 Oct 2026).
  */
 export function ReferralPlacementPanel({ referral, now }: { referral: Referral; now: Instant }) {
   // Elapsed since the referral was raised — the same `formatElapsed` helper every elapsed-time
@@ -378,6 +375,18 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
           <Fact label="Waiting" value={waitingLabel} />
         </dl>
+        {/* WS-04 (workflow speed audit, 26 Oct 2026): this preview was a dead end with no decision.
+            Decide opens the referral on the Referrals board, where Accept and Decline live. */}
+        <div className={styles.shortlistActionRow}>
+          <Link
+            href={referralBoardHref(referral.id)}
+            className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+            aria-label={`Decide referral for ${patientLabel}`}
+            data-testid="ward-referral-placement-decide"
+          >
+            Decide
+          </Link>
+        </div>
       </header>
       <details className={shortlistStyles.infoDisclosure}>
         <summary>About this referral</summary>

@@ -298,6 +298,10 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // for a cap reason (overCapReason, not an eligibility override). An eligibility override is chosen
   // in Placement, where shortlist-panel.tsx's Override records one. So there is none to record here.
   "src/components/ward-management/capacity/step-down-board.tsx": "REFER_TO_UNITS",
+  // WS-03 (workflow speed audit, 26 Oct 2026): the one-step Pull the bed pulls at the ward that has
+  // already accepted, through normal engine eligibility. A refusal is shown with a link to the
+  // journey, where patient-transit-operations.tsx's Pull records an override reason.
+  "src/components/ward-management/referrals/pull-accepted-referral.tsx": "PULL_PATIENT",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -637,8 +641,9 @@ describe("ward override-surface guard", () => {
     // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
     // Top 25 item 8: the step down board's plain Refer (6).
     // 23 Oct 2026: Home's Offer went with the unreachable phone ward sheet (5).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
-    expect(stillInViolation.size).toBe(5);
+    // WS-03 (26 Oct 2026): the one-step Pull the bed, overrides on the journey (6).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(6);
+    expect(stillInViolation.size).toBe(6);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -757,6 +762,8 @@ describe("ward override-surface guard", () => {
       "src/components/ward-management/patients/patient-transit-operations.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::PULL_PATIENT": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::REFER_TO_UNITS": 2,
+      // WS-03 (26 Oct 2026): the one-step Pull the bed (allowlisted above).
+      "src/components/ward-management/referrals/pull-accepted-referral.tsx::PULL_PATIENT": 1,
       // RB5 (item 16): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
       // overrideReason) is joined by handleCommunityAccept (community_team, needs none, the
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).

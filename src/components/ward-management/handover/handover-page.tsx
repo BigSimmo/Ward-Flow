@@ -468,7 +468,10 @@ export function HandoverPage() {
   // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
   // audit 11 Oct 2026). Full and custom columns keep their own set.
   const railBeside = useMediaQuery("(min-width: 75.0625rem)");
-  const fitted = railBeside && !present && !sheetOpen && customColumns === null && density === "std";
+  // iPad landscape (1001px and up) fits the Standard columns to the card too, so Next step is not cut
+  // at the card edge behind a sideways scroll (layout sweep 25 Oct 2026).
+  const fitsCard = useMediaQuery("(min-width: 62.5625rem)");
+  const fitted = fitsCard && !present && !sheetOpen && customColumns === null && density === "std";
   const columnIds =
     customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
   const columns = columnsFor(columnIds);

@@ -1473,7 +1473,7 @@ export function PatientNowScreen({
             onClose={() => setNowSheet(null)}
             title="Transport"
             description={isTransportBooked ? `${displayProvider} booked` : "Not booked yet"}
-            height="tall"
+            height="content"
             placement={isPhone ? "bottom" : "right"}
           >
             {transportSection}

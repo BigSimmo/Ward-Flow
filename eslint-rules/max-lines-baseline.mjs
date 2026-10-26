@@ -4,6 +4,8 @@
 // and stops new oversized files appearing.
 //
 // When a file shrinks, lower its cap or delete its entry. Raise a cap only with a reason in the PR.
+// Never make room by changing on-screen words: move code out or split the file instead (Josh,
+// 26 October 2026; docs/ward-flow/HOW-WE-WORK.md section 6).
 // tests/max-lines-baseline.test.ts fails once a cap is more than MAX_LINES_HEADROOM above its file,
 // or once a file is back under MAX_LINES_DEFAULT, so the caps follow the files down.
 // 18 October 2026 (review item 24): 20 files split under the default cap came off this list, and the
