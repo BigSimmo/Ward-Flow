@@ -13,7 +13,8 @@ function describeAvailableHook(name: string, body: () => void) {
 if (!existsSync(hook)) {
   describe("public pre-push guard boundary", () => {
     it("uses the shipped Git hook without a partial Claude hook", () => {
-      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
+      // `.claude/settings.json` may carry the cloud Supermemory save hook alone; no Claude push hook ships.
+      expect(existsSync(join(process.cwd(), ".claude/hooks"))).toBe(false);
       expect(readFileSync(join(process.cwd(), ".githooks/pre-push"), "utf8")).toContain("scripts/guard-push.mjs");
     });
   });
