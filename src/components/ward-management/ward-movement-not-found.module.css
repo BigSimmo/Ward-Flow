@@ -1,0 +1,45 @@
+/* Layout sweep CRIT-09: the patient and movement not-found page reads like the app's own 404, a
+   centred card with an icon and one primary way on. The shell top bar already gives Back and the
+   page title, so the page has no header of its own. Tokens only. */
+.card {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  max-width: 28rem;
+  box-sizing: border-box;
+  margin: var(--wf-s-6) auto var(--wf-s-4);
+  padding: var(--wf-s-6) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.card > div,
+.card > div > p {
+  justify-items: center;
+  justify-content: center;
+}
+
+/* The first way on (the list, or the more specific link when there is one) is the primary button. */
+.card > div > p:last-child > a:first-child {
+  justify-content: center;
+  min-width: 10rem;
+  padding: 0 var(--wf-s-4);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}

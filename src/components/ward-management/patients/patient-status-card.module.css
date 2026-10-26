@@ -411,11 +411,13 @@
 
 /* The pinned action bar sits flush on the phone dock (Josh, 12 Oct 2026, iPhone). A sticky bar
    already stops above the scroller's dock padding, so its offset only steps back down to the dock's
-   flat edge, and its own padding keeps the button clear of the + hump. */
+   flat edge, and its own padding keeps the button clear of the + hump. Layout sweep PT-05: the step
+   also covers the scroller's own 12px gap above the dock padding, which let the card show through
+   between the bar and the dock; the padding grows by the same amount, so the button stays put. */
 @media (max-width: 48rem) {
   .phBar {
-    bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
-    padding-bottom: calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
+    bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px) - var(--wf-s-3));
+    padding-bottom: calc(var(--wf-s-2) + var(--wf-s-3) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
   }
 }
 
