@@ -11,7 +11,8 @@ import {
   type DischargeOpenHandle,
   type WardRecordActor,
 } from "../ward-discharge-records";
-import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import { useWardFormSave } from "../use-ward-form-save";
 import { useRouteRole } from "../ward-role-gate";
 import styles from "./ward-leave-paper-authority.module.css";
@@ -60,13 +61,12 @@ export function WardLeavePaperAuthority({
   // a care step, so it is told who does.
   const actor: WardRecordActor | null =
     useRouteRole() === "bed_manager" ? null : { role: "ward", actingUnitId: unitId };
-  const { dispatch, dayZero, openDischargeRecord, readDischargeRecord } = useWardFlowSelect(
-    "dispatch",
+  const { dayZero, openDischargeRecord, readDischargeRecord } = useWardFlowSelect(
     "dayZero",
     "openDischargeRecord",
     "readDischargeRecord",
   );
-  const now = useWardFlowClock();
+  const raise = useWardRaise("ward");
   const save = useWardFormSave(`leave-paper-${admissionId}`);
   const [handle, setHandle] = useState<DischargeOpenHandle | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -120,11 +120,8 @@ export function WardLeavePaperAuthority({
     const patient = read.value.identity.patient;
     save.submit(
       () =>
-        dispatch({
-          type: "RECORD_ADMISSION_CARE",
-          role: actor.role,
-          now,
-          ...(actor.role === "ward" ? { actingUnitId: actor.actingUnitId } : {}),
+        raise("RECORD_ADMISSION_CARE", {
+          actingUnitId: unitId,
           admissionId,
           patientId: patient.id,
           expectedGeneration: record.generation,
