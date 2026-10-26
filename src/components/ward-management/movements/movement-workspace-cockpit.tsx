@@ -12,6 +12,7 @@ import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 
 import { useId, useState } from "react";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -166,6 +167,24 @@ export function MovementWorkspaceCockpit({
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
   // Audit 24-7 (CT-07): releasing a pulled bed asks first, naming the person and the ward.
   const [releaseConfirm, setReleaseConfirm] = useState<"held" | "diverted" | null>(null);
+  // Audit CS3-01: once a choice or note is under way in any of this page's forms, a save from it is
+  // checked against the board as it was then, so another desk's change meanwhile is reported, not
+  // overwritten. The whole page is this one movement, so the hold covers the page.
+  useHoldOpenForm(
+    blockerDraft.trim().length > 0 ||
+      [
+        withdrawReason,
+        stepBackTo,
+        stepBackReason,
+        cancelTransportReason,
+        stopTransportReason,
+        stopTransportWhereabouts,
+        diversionReason,
+        diversionPlace,
+        urgentFlagReason,
+      ].some((draft) => draft !== undefined) ||
+      releaseConfirm !== null,
+  );
 
   if (!patient) {
     return null;

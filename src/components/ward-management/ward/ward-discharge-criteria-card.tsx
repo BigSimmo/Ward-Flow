@@ -18,6 +18,7 @@ import {
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import drawerStyles from "./ward-bed-dossier-drawer.module.css";
 import styles from "./ward-discharge-criteria-card.module.css";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 export type DischargeCriteriaUpdate = {
   criteria: string[] | null;
@@ -55,6 +56,8 @@ export function WardDischargeCriteriaCard({
   onChange?: (update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
 }) {
   const [editing, setEditing] = useState(false);
+  // Audit CS3-01: an open criteria editor is checked against the board it opened on.
+  useHoldOpenForm(editing);
   const draftRevision = useRef(0);
   // Counts editor openings and cancels only, so a failure from an earlier session never reaches a reopened editor.
   const editorSession = useRef(0);

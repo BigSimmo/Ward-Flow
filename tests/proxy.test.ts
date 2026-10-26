@@ -174,6 +174,24 @@ describe("static compatibility redirects", () => {
       expect(location.pathname, path).toBe("/ward-flow");
     }
   });
+
+  it("forwards the other alias addresses before the app loads (A33), keeping the query", async () => {
+    const aliases: [string, string][] = [
+      ["/ward-flow/command", "/ward-flow"],
+      ["/ward-flow/queue", "/ward-flow/waiting"],
+      ["/ward-flow/escalation", "/ward-flow/waiting"],
+      ["/ward-flow/exceptions", "/ward-flow/waiting"],
+      ["/ward-flow/delays", "/ward-flow/waiting"],
+      ["/ward-flow/statistics/overview", "/ward-flow/statistics"],
+    ];
+    for (const [path, target] of aliases) {
+      const response = await proxy(requestFor(`${path}?site=rph`));
+      expect(response.status, path).toBe(307);
+      const location = new URL(response.headers.get("location")!);
+      expect(location.pathname, path).toBe(target);
+      expect(location.search, path).toBe("?site=rph");
+    }
+  });
 });
 
 describe("cross-site mutation blocking", () => {

@@ -206,13 +206,6 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   </div>
                 </div>
 
-                <div className={styles.displayNone}>
-                  <span id="pxDiagnosis">
-                    {selectedPatientId === "PT-3712"
-                      ? "Severe depressive episode with psychotic features"
-                      : "Acute relapse of paranoid schizophrenia with persecutory beliefs"}
-                  </span>
-                </div>
                 <p className={styles.footnote}>
                   Catchment dossier view for clinical coordination. Full electronic health record integration is
                   simulated.
@@ -264,43 +257,6 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                         </span>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className={styles.cardPanel}>
-                  <div className={styles.panelHead}>
-                    <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>
-                      Current active care plan &amp; diagnosis
-                    </h4>
-                    <span id="pxCareTier" className={styles.badgePill}>
-                      {selectedPatientId === "PT-3712" ? "Tier 2 step-down" : "Tier 1 high acuity"}
-                    </span>
-                  </div>
-                  <div className={`${styles.panelBody} ${styles.bodyProse}`}>
-                    <p>
-                      <b>Diagnosis:</b>{" "}
-                      <span id="pxDiagnosis">
-                        {selectedPatientId === "PT-3712"
-                          ? "Severe depressive episode with psychotic features and treatment non-adherence."
-                          : "Acute relapse of paranoid schizophrenia with persecutory beliefs and treatment non-adherence."}
-                      </span>
-                    </p>
-                    <p>
-                      <b>Management goal:</b>{" "}
-                      <span id="pxManagement">
-                        {selectedPatientId === "PT-3712"
-                          ? "Community step-down coordination, medication compliance monitoring, and outpatient psychological therapy."
-                          : "Inpatient stabilisation on long-acting injectable antipsychotic (paliperidone palmitate 150mg monthly, oral risperidone 1mg daily). Transition to community assertive outreach team upon discharge."}
-                      </span>
-                    </p>
-                    <p>
-                      <b>Risk profile:</b>{" "}
-                      <span id="pxRisk">
-                        {selectedPatientId === "PT-3712"
-                          ? "Low acute risk. Ongoing monitoring for psychomotor slowing and self-neglect."
-                          : "Medium risk of medication discontinuation without supervision. Zero forensic history."}
-                      </span>
-                    </p>
                   </div>
                 </div>
 

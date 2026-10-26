@@ -11,6 +11,7 @@ import {
 } from "@/components/ward-management/ed/ed-screen-model";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -134,6 +135,10 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
   const [legalStatus, setLegalStatus] = useState<LegalStatus | undefined>(undefined);
   const [legalReason, setLegalReason] = useState<LegalStatusChangeReason | undefined>(undefined);
   const [message, setMessage] = useState<string | undefined>(undefined);
+  // Audit CS3-01: an open form is checked against the board it opened on, so a legal status another
+  // desk recorded meanwhile is reported, not overwritten.
+  const heldScope = `movement:${movement.id}`;
+  useHoldOpenForm(open !== null, heldScope);
 
   const raise = wardRaise(dispatch, routeRole, now);
   const report = (result: ReturnType<typeof raise>) => {
@@ -177,6 +182,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
       className={styles.box}
       aria-label={`Change urgency or legal status for ${patientWho}`}
       data-testid="sent-journey-changes"
+      data-held-form={heldScope}
     >
       <p className={styles.now} data-testid="sent-journey-now">
         {urgencyTierLabel(movement.urgency)} · {movement.legalStatus ?? "Legal status not recorded"}

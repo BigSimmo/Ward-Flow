@@ -34,7 +34,8 @@ export type ObservationLevelEvent = {
   now: Instant;
   target: { kind: "movement"; movementId: string } | { kind: "admission"; admissionId: string; actingUnitId: string };
   observation: Observation;
-  /** Optional for older callers. When supplied, a stale editor cannot replace a newer record. */
+  /** When supplied, a stale editor cannot replace a newer record. Omitting it is allowed only while the
+   *  target has no recorded observation changes (Audit F2, Option A, owner decision 26 Oct 2026). */
   expected?: string;
 };
 
@@ -89,6 +90,11 @@ export function reduceObservationLevelEvent(
   // was created. Comparing the count also catches a level changed away and then back while an
   // older draft remained open. Linked records still have to agree with the captured fact.
   const target = event.target.kind === "movement" ? movement : admission;
+  // Audit F2, Option A: once a level has been changed, a save without the editing token cannot
+  // show it saw the latest level, so it is refused the same way as a stale one.
+  if (event.expected === undefined && (target?.observationChanges?.length ?? 0) > 0) {
+    return reject(state, event, "Observation changed. Reopen it.");
+  }
   if (
     event.expected !== undefined &&
     (!target ||
