@@ -77,11 +77,11 @@ import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
+import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
-import { useDeskRoleLabel } from "./ward-access-store";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,

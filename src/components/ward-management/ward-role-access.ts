@@ -546,7 +546,7 @@ export type BreakGlassReasonId = (typeof BREAK_GLASS_REASONS)[number]["id"];
 /** What the role is called on screen. */
 export const ACCESS_ROLE_LABELS: Record<WardAccessRole, string> = {
   coordinator: "Bed coordinator",
-  bed_manager: "Bed manager",
+  bed_manager: "Site bed manager",
   ward: "Nurse in charge",
   ed: "ED clinician",
   community: "Community clinician",
