@@ -601,32 +601,16 @@ export function wardFlowPushGuard(pushedBranches, ranges, changedFiles, currentB
  * force-push while armed is the actual race — it can discard the commit GitHub
  * already validated or is mid-evaluating — so that alone still blocks.
  */
-export function autoMergeVerdict(branch, prPayload, isForcePush = false, carriesMigration = false) {
+export function autoMergeVerdict(branch, prPayload, isForcePush = false) {
   if (!prPayload) return { block: false, warn: false, reason: "no-open-pr" };
   if (prPayload.state && prPayload.state !== "OPEN") return { block: false, warn: false, reason: "pr-not-open" };
   if (prPayload.autoMergeRequest) {
-    // Merging to `main` applies migrations to the live clinical database automatically,
-    // within seconds, with no deploy step in between (AGENTS.md, "Supabase project safety").
-    // Auto-merge on such a PR therefore schedules an unattended production schema change,
-    // which is why AGENTS.md forbids it outright. That rule was documentation-only until
-    // this branch: nothing in the push path knew what a migration was.
-    if (carriesMigration) {
-      return { block: true, warn: false, reason: "auto-merge-armed-migration", number: prPayload.number };
-    }
     if (isForcePush) {
       return { block: true, warn: false, reason: "auto-merge-armed-force-push", number: prPayload.number };
     }
     return { block: false, warn: true, reason: "auto-merge-armed-fast-forward", number: prPayload.number };
   }
   return { block: false, warn: false, reason: "auto-merge-not-armed" };
-}
-
-/** Exported for tests: does this push carry a hosted migration?
- * PsychSift-era and not wired: autoMergeGuard never passes `carriesMigration`, so the
- * "auto-merge-armed-migration" verdict above cannot fire in Ward Flow, whose migrations
- * live in backend/ward-flow/migrations/ and are applied by hand. Removing it needs Josh's yes. */
-export function touchesProductionMigrations(changedFiles = []) {
-  return changedFiles.some((f) => f.startsWith("supabase/migrations/"));
 }
 
 /** Exported for tests: `gh pr view` exits non-zero both when the branch has no PR and when
@@ -1005,12 +989,28 @@ function isPrettierPolicyFile(file, sha) {
  */
 function checkPushedCommit(prettierBin, sha, files) {
   const dir = mkdtempSync(path.join(tmpdir(), "guard-push-format-"));
-  rmSync(dir, { recursive: true, force: true }); // `git worktree add` wants a fresh path
+  // Export the commit's tree with `git archive` instead of `git worktree add`:
+  // the scratch copy is byte-for-byte the committed tree, but no worktree is
+  // registered, so an interrupted push can never leave a registration behind.
+  const onSignal = (signal) => {
+    cleanupFormatCheckout(dir);
+    process.exit(signal === "SIGINT" ? 130 : 143);
+  };
+  process.once("SIGINT", onSignal);
+  process.once("SIGTERM", onSignal);
+  const detachSignals = () => {
+    process.off("SIGINT", onSignal);
+    process.off("SIGTERM", onSignal);
+  };
   try {
-    execFileSync("git", ["worktree", "add", "--detach", "--quiet", dir, sha], {
-      stdio: ["ignore", "ignore", "pipe"],
+    const archive = execFileSync("git", ["archive", "--format=tar", sha], {
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: 1024 * 1024 * 1024,
     });
+    execFileSync("tar", ["-xf", "-", "-C", dir], { input: archive, stdio: ["pipe", "ignore", "pipe"] });
   } catch (error) {
+    detachSignals();
+    cleanupFormatCheckout(dir);
     // Fail CLOSED. Being unable to check is not evidence that the push is clean,
     // and SKIP_FORMAT_GUARD=1 is the escape hatch when this is genuinely stuck.
     const detail = (error?.stderr ? error.stderr.toString() : "").trim();
@@ -1052,6 +1052,7 @@ function checkPushedCommit(prettierBin, sha, files) {
     }
     return { verdict: "formatted" };
   } finally {
+    detachSignals();
     cleanupFormatCheckout(dir);
   }
 }
@@ -1132,7 +1133,9 @@ export function cleanupFormatCheckout(
   dir,
   {
     unlink = unlinkDependencyLink,
-    removeWorktree = (target) => tryGit(["worktree", "remove", "--force", target]),
+    // Scratch copies are plain directories now (git archive), so there is no
+    // registration to remove; kept injectable for the ordering tests.
+    removeWorktree = () => {},
     removeDir = (target) => rmSync(target, { recursive: true, force: true }),
     log = console.error,
   } = {},

@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { FileQuestion } from "lucide-react";
 import Link from "next/link";
-import { ContextualBackLink } from "@/components/contextual-back-link";
 import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import styles from "./ward-management.module.css";
+import notFoundStyles from "./ward-movement-not-found.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -54,40 +54,36 @@ export function WardMovementNotFound({
   );
   return (
     <div className={styles.patientWorkspace} data-testid="ward-patient-workspace">
-      <header className={styles.workspaceHeader}>
-        <ContextualBackLink fallbackHref="/ward-flow" aria-label="Back to Ward Flow">
-          <ArrowLeft aria-hidden="true" />
-        </ContextualBackLink>
-        <div>
-          <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>{aboutPerson ? "Patient not found" : "Movement not found"}</span>
-        </div>
-      </header>
       <main id="main-content" className={styles.workspaceMain}>
         {/* shell-11/12: the one not-found pattern; no internal id (WF-, PT-) is ever echoed. */}
-        {aboutPerson ? (
-          <WardNotFoundBody
-            title="Patient not found"
-            list={{ href: "/ward-flow/search", label: "All patients" }}
-            search={reason === "no-such-umrn" ? searchLink : null}
-          >
-            {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No patient matches this link."}
-          </WardNotFoundBody>
-        ) : (
-          <WardNotFoundBody
-            title="Movement not found"
-            list={{ href: "/ward-flow/movements", label: "All movements" }}
-            extra={
-              reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
-                <Link href={patientHref(requestedId)}>Open their patient record</Link>
-              ) : null
-            }
-          >
-            {reason === "not-a-movement-id" && requestedId.startsWith("PT-")
-              ? "This link is to a patient record, not a movement."
-              : "No movement matches this link. It may have closed, or the link is wrong."}
-          </WardNotFoundBody>
-        )}
+        <div className={notFoundStyles.card}>
+          <span className={notFoundStyles.icon} aria-hidden="true">
+            <FileQuestion size={24} aria-hidden="true" />
+          </span>
+          {aboutPerson ? (
+            <WardNotFoundBody
+              title="Patient not found"
+              list={{ href: "/ward-flow/search", label: "All patients" }}
+              search={reason === "no-such-umrn" ? searchLink : null}
+            >
+              {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No patient matches this link."}
+            </WardNotFoundBody>
+          ) : (
+            <WardNotFoundBody
+              title="Movement not found"
+              list={{ href: "/ward-flow/movements", label: "All movements" }}
+              extra={
+                reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
+                  <Link href={patientHref(requestedId)}>Open their patient record</Link>
+                ) : null
+              }
+            >
+              {reason === "not-a-movement-id" && requestedId.startsWith("PT-")
+                ? "This link is to a patient record, not a movement."
+                : "No movement matches this link. It may have closed, or the link is wrong."}
+            </WardNotFoundBody>
+          )}
+        </div>
         <WardPrototypeFooter testId="ward-console-governance" />
       </main>
     </div>
