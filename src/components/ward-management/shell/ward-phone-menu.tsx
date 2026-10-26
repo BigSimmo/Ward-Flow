@@ -43,6 +43,7 @@ import { requestToolsTool } from "../tools/ward-tools-open";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
+import { useDeskRoleLabel } from "./ward-access-store";
 import { CountChip, countIn } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import pageDock from "./ward-phone-page-dock.module.css";
@@ -143,6 +144,7 @@ function phoneMenuModel(
   dockRole: WardChromeRole = role,
   flagOn?: Parameters<typeof railEntries>[0],
   accessNav: (entries: readonly RailEntry[]) => RailEntry[] = (entries) => [...entries],
+  roleLabel: string = CHROME_ROLE_LABELS[role],
 ) {
   // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
   // Role access plan: only the screens the desk's role may open.
@@ -171,7 +173,7 @@ function phoneMenuModel(
   const menu = roleMenu(entries, role, rank);
   const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
-    { label: CHROME_ROLE_LABELS[role], entries: main },
+    { label: roleLabel, entries: main },
     ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
   ].filter((group) => group.entries.length > 0);
   return { entries, byId, dock, dockRight, needs, groups };
@@ -538,6 +540,7 @@ export function WardPhoneMenu({
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
   const { counts, shellRole, role: routeRole } = useWardNavCounts();
+  const deskRoleLabel = useDeskRoleLabel(shellRole);
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -578,7 +581,7 @@ export function WardPhoneMenu({
     dockRight,
     needs: overdueNeeds,
     groups,
-  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav);
+  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const {
     movements,
