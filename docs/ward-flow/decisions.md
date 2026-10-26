@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-26 - added D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -945,3 +945,12 @@ is inferred.
 - **Decision:** a bed kept for an incoming patient is called "Pulled", and how long it is kept is the "Pull time limit". "Held" and "hold" are used only for a bed kept for its own patient while they are on leave or away, as Josh ruled on 1 September 2026 ([pull and hold ruling](archive/dated-notes/owner-rulings-2026-09-01-pull-and-hold.md)). This replaces the "Bed held" words in D-77 item 2 on the ED board, and the "bed hold" words in D-72 and D-75 where they mean a bed kept for an incoming patient. The rules in those entries are unchanged.
 - **Boundary:** visible words only. Code names, event names, flags and stored values keep their names, and recorded notice and audit text is not rewritten. Nothing is re-sorted or ranked.
 - **Why:** one screen said "Bed held" and another "Pulled" about the same incoming bed, and "held" already meant a bed kept for a patient on leave. One word for each meaning stops the two being confused.
+
+## D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026)
+
+- **Date:** 26 October 2026 (`2026-10-26`). **Decided by:** Josh, in the Ward Flow review thread. His words: "add a rule for automatic increase in size without asking"; he then approved the design with "Yes go ahead".
+- **Decision:** a pull request may raise a phone size limit in `script-budget.json` by up to 5 KB per screen in total, added up across the PR, without asking Josh. Above 5 KB on any screen Josh's explicit yes is needed first, as before. There is no once-per-PR restriction. Before raising, the PR tries an easy safe trim, raises only by what it needs plus a small margin, and states each route's old limit, new limit, measured size and why it grew in the PR body. A limit is never raised to hide a jump that has not been diagnosed.
+- **Replaces:** the working practice of asking Josh for each raise, and the 21 October 2026 "no raises" instruction, which asked for trims instead. Trimming first is still required.
+- **Where it lives:** the rule text is in [HOW-WE-WORK section 6](HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews); this entry is the record.
+- **Why:** each owner approval for a 1 to 4 KB raise held up otherwise finished PRs, and the cap keeps the total growth small and visible.
+

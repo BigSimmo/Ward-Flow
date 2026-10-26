@@ -5,18 +5,18 @@
 The values below are read from source on every run, so this page is current whenever CI is
 green. Quote a fact instead of restating it, and it updates itself when the source changes.
 
-| Fact                | Value                                       | Meaning                                                                               | Read from                                                          |
-| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set                                | `backend/ward-flow/config.mjs`                                     |
-| `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set                             | `backend/ward-flow/config.mjs`                                     |
-| `latest-migration`  | 014-archived-records                        | Newest shared-workspace database migration                                            | `backend/ward-flow/migrations/`                                    |
-| `migration-count`   | 14                                          | Numbered database migrations                                                          | `backend/ward-flow/migrations/`                                    |
-| `ward-route-count`  | 53                                          | `page.tsx` routes under `/ward-flow`                                                  | `src/app/ward-flow/`                                               |
-| `app-route-count`   | 55                                          | Pages and route handlers: the Ward Flow routes plus sign-in and the `/mockups` digest | `src/app/ward-flow/, src/app/ward-flow-sign-in/, src/app/mockups/` |
-| `latest-decision`   | D-81                                        | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                      |
-| `next-decision`     | D-82                                        | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                      |
-| `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                               | `package.json`                                                     |
-| `backend-env-vars`  | 29 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
+| Fact | Value | Meaning | Read from |
+| --- | --- | --- | --- |
+| `database-provider` | Supabase | Database used when `WARD_DATABASE_PROVIDER` is not set | `backend/ward-flow/config.mjs` |
+| `auth-provider` | Supabase Auth | Sign-in service used when `WARD_AUTH_PROVIDER` is not set | `backend/ward-flow/config.mjs` |
+| `latest-migration` | 014-archived-records | Newest shared-workspace database migration | `backend/ward-flow/migrations/` |
+| `migration-count` | 14 | Numbered database migrations | `backend/ward-flow/migrations/` |
+| `ward-route-count` | 53 | `page.tsx` routes under `/ward-flow` | `src/app/ward-flow/` |
+| `app-route-count` | 55 | Pages and route handlers: the Ward Flow routes plus sign-in and the `/mockups` digest | `src/app/ward-flow/, src/app/ward-flow-sign-in/, src/app/mockups/` |
+| `latest-decision` | D-82 | Newest entry in the decision log | `docs/ward-flow/decisions.md` |
+| `next-decision` | D-83 | Number to use for the next decision | `docs/ward-flow/decisions.md` |
+| `node-engine` | >=24.15.0 <25 | Supported Node.js range | `package.json` |
+| `backend-env-vars` | 29 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads | `backend/ward-flow/*.mjs` |
 
 ## backend-env-vars
 
@@ -67,8 +67,8 @@ Ward Flow stores its shared workspace in <!-- fact:database-provider -->Supabase
 Listed in [`retired-terms.json`](retired-terms.json). Existing mentions in maintained docs warn;
 a pull request that adds a new one fails. Archives, dated records and logs are never scanned.
 
-| Term                          | Retired    | Why                                                                                                                                                                                  | Instead                                                                                                                                                      |
-| ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `second-role-approval`        | 2026-10-17 | D-66 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype.                                                                | Granted roles work immediately. Keep grant authority, scope, expiry, revocation and audit requirements.                                                      |
-| `azure`                       | 2026-10-15 | Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired.                                                | Name Supabase, or quote the current value with `<!-- fact:database-provider -->` from docs/FACTS.md. Delete the mention, or fence it as history.             |
+| Term | Retired | Why | Instead |
+| --- | --- | --- | --- |
+| `second-role-approval` | 2026-10-17 | D-66 removes the second approval requirement for coordinator and access-admin role grants in the synthetic prototype. | Granted roles work immediately. Keep grant authority, scope, expiry, revocation and audit requirements. |
+| `azure` | 2026-10-15 | Supabase is Ward Flow's database and sign-in service. Azure (Functions, Blob Storage, PostgreSQL) and Microsoft Entra ID are retired. | Name Supabase, or quote the current value with `<!-- fact:database-provider -->` from docs/FACTS.md. Delete the mention, or fence it as history. |
 | `retired-ward-decline-values` | 2026-10-22 | D-78 merges the ward and coordinator decline lists into one list in the coordinator's wording. The ward values No bed, Sex mix and Out of catchment are retired and convert on load. | Say No suitable bed (no_suitable_bed), Sex designation unavailable (sex_designation_unavailable) or Belongs to another service (belongs_to_another_service). |
