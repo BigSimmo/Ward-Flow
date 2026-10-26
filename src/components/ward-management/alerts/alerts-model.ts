@@ -6,7 +6,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref, patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
@@ -243,6 +243,8 @@ export type AlertAction = { kind: "link"; label: string; href: string } | { kind
 
 export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAction {
   const patientHref = subject.patientHref ?? "/ward-flow/movements";
+  // H-0975 (workflow-speed audit WS-10, 26 Oct 2026): a movement row opens its own movement.
+  const ownMovementHref = item.movementId ? movementHref(item.movementId) : "/ward-flow/movements";
   switch (alertKindOf(item.id)) {
     case "awol":
       return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
@@ -256,8 +258,10 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "hold":
       return { kind: "release", label: "Release bed" };
     case "transport":
-      return { kind: "link", label: "Chase transport", href: "/ward-flow/movements" };
+      return { kind: "link", label: "Chase transport", href: ownMovementHref };
     case "planned":
+      // H-0975: a planned arrival has no movement to open, and the booking id is kept out of every
+      // link (`ward-planned-admissions-panel.dom.test.tsx`), so the row still opens Capacity's list.
       return { kind: "link", label: "Open bookings", href: item.href ?? "/ward-flow/capacity" };
     case "duplicate":
       return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
@@ -271,7 +275,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
         return { kind: "link", label: "Open referral", href: "/ward-flow/referrals" };
       }
       if (item.id.includes("transport-booked")) {
-        return { kind: "link", label: "Book transport", href: "/ward-flow/movements" };
+        return { kind: "link", label: "Book transport", href: ownMovementHref };
       }
       return { kind: "link", label: "Open patient", href: patientHref };
   }

@@ -148,15 +148,19 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
     ? referredToLabel(openWardReferral.unitIds, (unitId) => units.find((unit) => unit.id === unitId)?.name)
     : undefined;
   const bedSearch = edBedSearchStep(movement, openWardReferral !== undefined);
+  // H-0974 (workflow-speed audit, 26 Oct 2026): once a bed is pulled and no transport is logged,
+  // logging the booking is the row's main button, ahead of a still-missing examination. Booking
+  // does not wait on the examination (`bookTransportBlockedReason`), and Record examination stays
+  // in the row's actions.
   const primaryAction =
     movement.edOutcome !== undefined && !movement.leftDepartmentAt
       ? "left"
       : movement.closure
         ? "closure"
-        : movement.examination === undefined
-          ? "exam"
-          : movement.stage === "pulled" && movement.transport === undefined
-            ? "transport"
+        : movement.stage === "pulled" && movement.transport === undefined
+          ? "transport"
+          : movement.examination === undefined
+            ? "exam"
             : movement.stage === "pulled" && movement.transport !== undefined
               ? "handover"
               : bedSearch === "refer"

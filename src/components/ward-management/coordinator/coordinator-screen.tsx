@@ -69,7 +69,7 @@ import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { useHomeLayout } from "./home-layout";
-import { BedsGapCard, ChosenAlertCard, MyListCard } from "./home-list-lazy";
+import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import { PlacementPrompt } from "./placement-prompt";
 import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
@@ -228,6 +228,7 @@ export function CoordinatorScreen() {
   // the full queue.
   const [homeView, setHomeView] = useState<"needs" | "queue">("needs");
   const [selectedAlertId, setSelectedAlertId] = useState<string | undefined>(undefined);
+  const [releaseAlertId, setReleaseAlertId] = useState<string | undefined>(undefined);
   // Act now and Referrals to decide in the hero narrow My list to that group.
   const [needsFocus, setNeedsFocus] = useState<"all" | "act" | "decide">("all");
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
@@ -536,6 +537,7 @@ export function CoordinatorScreen() {
   }, [referrals, units, movements, isReferralInServiceScope]);
   const actNowCount = actEntries.length + toPull.length;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
+  const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
   const alertHandlers: QueueHandlers = {
     selectedId: selectedAlertId,
@@ -544,6 +546,11 @@ export function CoordinatorScreen() {
       if (entry.item.movementId) selectMovement(entry.item.movementId);
     },
     onRelease: (entry) => {
+      // H-0977: an expired bed pull releases in place, in one sheet with its reason.
+      if (alertKindOf(entry.item.id) === "hold" && entry.movement) {
+        setReleaseAlertId(entry.item.id);
+        return;
+      }
       setSelectedAlertId(entry.item.id);
       if (entry.item.movementId) selectMovement(entry.item.movementId);
     },
@@ -1085,6 +1092,7 @@ export function CoordinatorScreen() {
               <ChosenAlertCard entry={chosenAlert} now={now} />
             </Sheet>
           ) : null}
+          {releaseAlert ? <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} /> : null}
           {isPhone && phoneSheet?.kind === "since" ? (
             <Sheet
               open
