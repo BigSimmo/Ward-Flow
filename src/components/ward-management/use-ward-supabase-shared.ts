@@ -112,6 +112,31 @@ const workingAs = {
     }
   },
 };
+// H-0305: a browser that blocks storage throws on any sessionStorage access. Reads then find
+// nothing and writes are skipped, so sign-in still starts and the session lives in memory.
+const tabStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {
+      // Storage refused: nothing is kept for a reload.
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Storage refused: there is nothing to remove.
+    }
+  },
+};
 // The next account at this tab picks its own role, even after an expiry rather than a sign-out.
 onWardSessionEnd(() => {
   workingAsInMemory = null;
@@ -121,7 +146,7 @@ const defaultCreateAuth = async (): Promise<WardBrowserAuthAdapter> =>
   new (await import("./ward-supabase-auth")).SupabaseWardAuth({
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
     publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
-    storage: window.sessionStorage,
+    storage: tabStorage,
     coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
     // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
     onSessionEnded: endWardFlowBrowserSession,
@@ -234,11 +259,7 @@ export function useWardSupabaseShared(
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: (options) => instance.token(options),
         workingAs,
-        recoveryStorage: {
-          getItem: (key) => window.sessionStorage.getItem(key),
-          setItem: (key, value) => window.sessionStorage.setItem(key, value),
-          removeItem: (key) => window.sessionStorage.removeItem(key),
-        },
+        recoveryStorage: tabStorage,
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
@@ -308,7 +329,7 @@ export function useWardSupabaseShared(
         } catch (error) {
           fragmentError = error;
         }
-        if (confirmation) window.sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
+        if (confirmation) tabStorage.removeItem(WARD_AUTH_STORAGE_KEY);
         const base = new URL(process.env.NEXT_PUBLIC_WARD_API_BASE_URL ?? "");
         const loopback =
           process.env.NODE_ENV === "development" &&
