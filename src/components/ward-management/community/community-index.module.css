@@ -288,11 +288,13 @@
 }
 
 .teamRowLink {
-  overflow: hidden;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   text-decoration: none;
-  text-overflow: ellipsis;
+  /* Layout sweep MEET-18: near-duplicate team names are the point of this list, so they wrap
+     rather than lose their end. */
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .teamRowLink::after {
@@ -504,7 +506,9 @@
 .sideTable {
   width: 100%;
   border-collapse: collapse;
-  white-space: nowrap;
+  /* Layout sweep MEET-19: a long spelling wraps between words inside its column instead of being
+     cut (the cells drop the shared table's nowrap below). */
+  overflow-wrap: break-word;
 }
 
 /* Cell padding and hairlines come from the wf table; only the compact height and text role differ. */
@@ -513,6 +517,7 @@
   height: var(--wf-row-compact);
   max-width: none;
   overflow: visible;
+  white-space: normal;
   text-align: left;
   text-transform: none;
   letter-spacing: normal;
@@ -583,10 +588,8 @@
 }
 
 .note span {
+  /* Layout sweep MEET-19: the note wraps; it is the only explanation of the comparison. */
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .serviceFigure {
@@ -1422,5 +1425,19 @@
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
   .toolbar > button[aria-pressed]::after {
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}
+
+/* Layout sweep MEET-18: on an iPad in landscape the two highlight chips take their own row under the
+   title and actions (as the band already does below 900px), so neither the chip nor the eyebrow is
+   cut. The first rule selects the band's row, the second its stats slot. */
+@media (min-width: 48.0625rem) and (max-width: 68.75rem) {
+  .main :has(> * > .heroChips) {
+    flex-wrap: wrap;
+  }
+
+  .main :has(> .heroChips) {
+    flex-basis: 100%;
+    order: 3;
   }
 }

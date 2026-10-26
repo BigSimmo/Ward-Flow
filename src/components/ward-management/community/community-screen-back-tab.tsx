@@ -9,6 +9,7 @@
  */
 
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
+import { Field, Select } from "@/components/wf";
 import { CommunityFollowUp } from "./community-follow-up";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
@@ -291,14 +292,14 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
               empty list does not establish that everybody is being followed up.
             </p>
 
-            <label>
-              Community follow-up filter
-              <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
+            {/* Layout sweep MEET-15: the design-system field and select, as every other control here. */}
+            <Field label="Community follow-up filter" className={styles.followUpFilter}>
+              <Select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
                 <option value="all">All community departures</option>
                 <option value="missing_arrangement">Missing arrangements</option>
                 <option value="missing_contact">No completed contact recorded</option>
-              </select>
-            </label>
+              </Select>
+            </Field>
             {filteredDepartures.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
                 {lists.dischargedIntoTheArea.length > 0 ? (
