@@ -1385,9 +1385,26 @@ export function createWorkspaceStore(
         body: row.body,
       }));
       const shown = view ? engine.scopeArchive(stored.payload, records, view.access, at, view.grants) : records;
+      // The sender progress for the archived records shown, worked out here from the full stored
+      // records (never from the masked copies sent below) and bound to this desk's access view and
+      // the revision it was worked out at, as the live snapshot's is. Ward and bed manager desks only.
+      const context = accessContext(at, view);
+      const senderView =
+        typeof context.accessContext === "string" &&
+        (view?.access?.role === "ward" || view?.access?.role === "bed_manager");
       return {
         archived: rows[0]?.archived ?? 0,
         records: shown.map((record) => ({ collection: record.collection, body: record.body })),
+        ...(senderView
+          ? {
+              revision: Number(stored.revision),
+              partialView: {
+                revision: Number(stored.revision),
+                accessContext: context.accessContext,
+                view: engine.archivePartialViewForWorld(stored.payload, records, view.access, at, view.grants),
+              },
+            }
+          : {}),
       };
     },
     /**

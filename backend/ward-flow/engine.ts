@@ -506,6 +506,50 @@ export function partialViewForWorld(
 }
 
 /**
+ * The sender display data for the archived records this desk is shown in History. It is derived
+ * here, privately, from the FULL workspace with the full archived records put back: never from the
+ * masked copies a desk is sent, which no longer say who answered. Like `partialViewForWorld`, it
+ * carries categories only (state, flags, times, progress) and never a unit or destination.
+ *
+ * It holds a row only for an archived record `scopeArchive` shows this desk, so a record the desk
+ * may not read gets no row, and only for a record the live workspace does not already hold, so the
+ * live row always wins. A desk that is not a ward or bed manager gets an empty view.
+ */
+export function archivePartialViewForWorld(
+  world: SharedWorld,
+  archived: readonly ArchivedRecord[],
+  access: WardAccess,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+) {
+  const empty = { version: 1 as const, referrals: [], movements: [] };
+  if ((access.role !== "ward" && access.role !== "bed_manager") || !archived.length) return empty;
+  const shown = new Set(
+    scopeArchive(world, archived, access, at, grants).map((record) => `${record.collection}\0${record.id}`),
+  );
+  const full = { ...world.state } as Record<string, unknown>;
+  for (const collection of ARCHIVED_COLLECTIONS)
+    full[collection] = [
+      ...archived.filter((record) => record.collection === collection).map((record) => record.body),
+      ...(world.state[collection] as unknown[]),
+    ];
+  const live = (collection: ArchivedCollection) =>
+    new Set((world.state[collection] as { id: string }[]).map((row) => row.id));
+  const liveReferrals = live("referrals");
+  const liveMovements = live("movements");
+  const projected = projectWardPartialView(full as unknown as WardFlowState, access, {
+    now: worldNow(world, at),
+    places: getWardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+  return {
+    version: 1 as const,
+    referrals: projected.referrals.filter((row) => shown.has(`referrals\0${row.id}`) && !liveReferrals.has(row.id)),
+    movements: projected.movements.filter((row) => shown.has(`movements\0${row.id}`) && !liveMovements.has(row.id)),
+  };
+}
+
+/**
  * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
  * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
  * in `CROSS_ROLE_ALLOWED`), and only about records inside its own place. A statewide coordinator may
