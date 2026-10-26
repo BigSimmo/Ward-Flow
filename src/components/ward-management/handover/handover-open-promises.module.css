@@ -10,6 +10,15 @@
   background: var(--wf-surface, transparent);
 }
 
+/* Phone: a rounded card like Since previous handover, inside the page gutter. */
+.panel[data-layout="phone"] {
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  box-shadow: var(--wf-e1);
+}
+
 .heading {
   margin: 0;
   font-size: var(--wf-fs-13);
@@ -25,28 +34,58 @@
 
 .list {
   display: grid;
-  gap: var(--wf-s-1);
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-1);
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* One compact tap target per row: name and ward, then the step and times. */
+.row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 24px;
+  padding-block: 4px;
+  color: inherit;
+  text-decoration: none;
   overflow-wrap: anywhere;
 }
 
-.link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
+/* A finger needs a 44px target; the row grows to hold it. */
+@media (pointer: coarse) {
+  .row {
+    min-height: 44px;
+  }
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.who {
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.name {
   color: var(--wf-accent-ink);
   font-weight: 600;
 }
 
-/* A finger needs a 44px target; the line grows to hold it. */
-@media (pointer: coarse) {
-  .link {
-    min-height: 44px;
-  }
+.row:hover .name {
+  text-decoration: underline;
+}
+
+.meta {
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
 }
 
 /* Spelled out in words beside the colour, never colour alone. */

@@ -1,0 +1,604 @@
+/*
+ * The Help sheet (polish, 26 Oct 2026): the same card language as the Activity and Tools drawers.
+ * The drawer frame itself (header tile, Esc key, close, body, foot) comes from
+ * `shell/ward-bar.module.css`; this module holds only what sits inside it. Lazy, like the sheet, so
+ * no page's first load carries it. Tokens only (`--wf-*`), no literal colour.
+ */
+.body {
+  gap: var(--wf-s-4, 16px);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.stack {
+  display: grid;
+  gap: var(--wf-s-4, 16px);
+  min-width: 0;
+}
+
+.group {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.groupHeading {
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A card: surface with a fine edge, light shadow, rows divided by hairlines. */
+.card {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  list-style: none;
+}
+
+.card > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* A row of words in a card: a title line, then the plain answer under it. */
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  margin: 0;
+  padding: 10px var(--wf-s-3);
+}
+
+.rowText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+}
+
+.rowText > strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.rowText > span {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+/* A word and its meaning, or a question and its answer. */
+.entry {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px var(--wf-s-3);
+}
+
+.entry > dt {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.entry > dd {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+/* A quiet dot in front of each point, aligned to the first line. */
+.point {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--wf-ink-3);
+}
+
+/* The step number in front of a job: a small framed tile, ink not colour. */
+.step {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+.paragraph {
+  composes: text;
+  padding: 10px var(--wf-s-3);
+}
+
+.note {
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: 1.45;
+}
+
+/* ── Your desk ───────────────────────────────────────────────────────────────────────────── */
+
+.desk {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.deskCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.deskText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.deskText > span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.deskText > h3 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+/* ── Buttons and links ───────────────────────────────────────────────────────────────────── */
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--wf-r-md);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 1px solid var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+}
+
+.primaryButton:hover {
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
+}
+
+.secondaryButton {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.secondaryButton:hover {
+  background: var(--wf-hover);
+}
+
+.primaryButton svg,
+.secondaryButton svg,
+.goLink svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* "Go to Referrals": a quiet link under a job, the page's own name in it. */
+.goLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  min-height: 28px;
+  margin-top: 2px;
+  color: var(--wf-accent-ink, var(--wf-accent-strong));
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.goLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linkButton {
+  composes: secondaryButton;
+  justify-self: start;
+}
+
+/* ── Section switch ──────────────────────────────────────────────────────────────────────── */
+
+.views {
+  min-width: 0;
+}
+
+.views > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Phone: the full-width pill track the Activity drawer uses, each section a 44px tap. */
+@media (max-width: 48rem) {
+  .views {
+    padding: 2px;
+    border-radius: var(--wf-r-track);
+  }
+
+  .views > button {
+    min-height: 44px;
+    padding: 0 4px;
+    border-radius: var(--wf-r-seg-item);
+    font-size: var(--wf-fs-13);
+  }
+}
+
+/* ── Search fields (Ask a question, Glossary) ────────────────────────────────────────────── */
+
+.label {
+  composes: groupHeading;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-3);
+}
+
+.searchField > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.searchField input {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  outline: none;
+}
+
+.searchField input::placeholder {
+  color: var(--wf-ink-3);
+}
+
+.searchField:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+/* ── Ask a question ──────────────────────────────────────────────────────────────────────── */
+
+.ask {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.example {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.example:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.results {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.results:empty {
+  display: none;
+}
+
+.answerTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 6px var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.answerTitle:hover {
+  background: var(--wf-hover);
+}
+
+.answerTitle[aria-expanded="true"] {
+  background: var(--wf-surface-2);
+}
+
+.caret {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.answerTitle[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
+}
+
+.answerBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/* A link row: the whole row is the door, a chevron at its end. */
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: 6px var(--wf-s-3);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+
+.linkRow:hover {
+  background: var(--wf-hover);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── This screen ─────────────────────────────────────────────────────────────────────────── */
+
+.screenHead {
+  display: grid;
+  gap: 4px;
+  padding: var(--wf-s-3);
+}
+
+.screenHead > h3 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.shortcuts > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: 6px var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.shortcuts > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shortcuts > summary:hover {
+  background: var(--wf-hover);
+}
+
+.shortcuts[open] > summary {
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.shortcuts[open] > summary .caret {
+  transform: rotate(180deg);
+}
+
+.rowIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.rowIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.keys {
+  display: grid;
+  margin: 0;
+}
+
+.keys > div + div {
+  border-top: 1px solid var(--wf-line);
+}
+
+.key {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  padding: 8px var(--wf-s-3);
+}
+
+.key dt,
+.key dd {
+  margin: 0;
+}
+
+.key dd {
+  color: var(--wf-ink-2);
+}
+
+.key kbd {
+  display: inline-grid;
+  place-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  white-space: nowrap;
+}
+
+/* ── What's new ──────────────────────────────────────────────────────────────────────────── */
+
+.date {
+  flex: none;
+  min-width: 3.75rem;
+  padding-top: 1px;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / 1.5 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Focus ───────────────────────────────────────────────────────────────────────────────── */
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.goLink:focus-visible,
+.example:focus-visible,
+.answerTitle:focus-visible,
+.linkRow:focus-visible,
+.shortcuts > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.goLink:focus-visible {
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .point {
+    background: CanvasText;
+  }
+}

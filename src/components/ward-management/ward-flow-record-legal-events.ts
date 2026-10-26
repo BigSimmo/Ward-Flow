@@ -10,6 +10,7 @@ import { countryExtensionEligible } from "@/components/ward-management/ward-lega
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
+import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 
 type RecordedLegalEvent = Extract<
@@ -179,16 +180,23 @@ export function reduceRecordedLegalEvent(
     }
 
     case "RECORD_LEGAL_FORM_WRITTEN": {
-      if (event.role !== "ed" && event.role !== "coordinator") {
+      if (event.role !== "ed" && event.role !== "coordinator" && event.role !== "ward") {
         return reject(
           state,
           event,
-          `${event.role} cannot record a written legal form; only ed and coordinator may record written forms`,
+          `${event.role} cannot record a written legal form; only ed, coordinator and the admitting ward may record written forms`,
         );
       }
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
+      // Walk-through WT-03 (Josh, 26 Oct 2026): once the person has arrived, the ward (or the
+      // coordinator for it) records the next form from the paper while they are still in the bed.
+      // ED records only while the journey is open. Which ward may record is checked by scope.
+      const admitted = admittedStayForArrival(movement, state.admissions) !== undefined;
+      if (event.role === "ward" && !admitted) {
+        return reject(state, event, "A ward records a written form only for a person admitted to its own bed.");
+      }
+      if (movement.closure && !(admitted && event.role !== "ed")) {
         return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
       }
       if (

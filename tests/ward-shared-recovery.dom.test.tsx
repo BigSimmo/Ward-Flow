@@ -176,7 +176,7 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("status").textContent).toBe(
       "Signed in. Connecting to the shared workspace. This can take up to 15 seconds.",
     );
-    expect(screen.getByRole("main", { name: "Coordinator sign-in" }).getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("main", { name: "Ward Flow sign-in" }).getAttribute("aria-busy")).toBe("true");
     expect(screen.getByRole("button", { name: "Reconnect" })).toBeVisible();
     view.rerender(
       <WardSharedAccess connection={{ ...shared, status: "unavailable", error: "Shared access is unavailable." }}>

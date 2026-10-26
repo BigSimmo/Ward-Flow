@@ -12,6 +12,7 @@ import {
   WARD_HOME_HREF,
   resolveWardScreenTitle,
 } from "@/components/ward-management/ward-nav";
+import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
 import styles from "./ward-phone-desktop-only.module.css";
 
 /**
@@ -35,11 +36,17 @@ export function WardPhoneDesktopOnly() {
   const pathname = usePathname() ?? "";
   const { units } = useWardFlowSelect("units");
   const [shownPath, setShownPath] = useState<string | null>(null);
+  // H-0386: this shell piece mounts on every page, so it also carries the one listener that brings a
+  // part-hidden chip in a sideways row fully into view on Tab.
+  useRevealFocusedInRow();
   if (!isPhoneDesktopOnlyPath(pathname) || shownPath === pathname) return null;
   const title = resolveWardScreenTitle(pathname, units);
 
   return (
-    <div className={styles.ground} data-phone-desktop-only>
+    // H-0882 (26 Oct 2026): the card is the page on a phone, so it is the main landmark and the skip
+    // link's target. It renders ahead of the route, so its id is the one the skip link finds; the
+    // route's own main is hidden while the card shows (the module CSS).
+    <main id="main-content" className={styles.ground} data-phone-desktop-only>
       <section className={styles.card} aria-labelledby="ward-phone-desktop-only-title">
         <Monitor aria-hidden="true" className={styles.icon} strokeWidth={1.75} />
         <h1 id="ward-phone-desktop-only-title" className={styles.title}>
@@ -53,6 +60,6 @@ export function WardPhoneDesktopOnly() {
           <Button onClick={() => setShownPath(pathname)}>Show anyway</Button>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

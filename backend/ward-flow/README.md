@@ -173,6 +173,9 @@ These source files do not establish a current hosted connection or deployment.
     append-only protection for break glass rows and server-side session sign-outs. The
     `/v1/workspace/record-access` and `/v1/workspace/sign-out` routes use these capabilities;
     before 11 record opens are not logged and sign-out does not revoke the session here.
+    `GET /v1/workspace/record-access` returns the last 7 days of record views and break glass
+    openings to any coordinator: statewide sees all, a service coordinator only records in its
+    own service (D-80).
     `infra/rollback-011-record-access-and-sign-out.sql` returns the schema to 10, dropping the
     record access and sign-out tables and removing break glass edit protection. Preserve any
     required record access history first. Apply it only with separate authority, in one

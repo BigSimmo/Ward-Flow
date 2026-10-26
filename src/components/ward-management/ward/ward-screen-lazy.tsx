@@ -3,12 +3,14 @@
 // The ward screen's client-only sections, each loaded when first needed. Split out of
 // `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import type { CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { wardRouteUnitId } from "../ward-chrome-role";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { recordIdFromParam } from "../shell/ward-record-address";
 import { useOptionalSearchParams } from "./ward-screen-helpers";
+import styles from "./ward.module.css";
 
 // PERF-05 (21 Oct 2026): each ward tab body below arrives as its own chunk, which is slow on a
 // phone. Until it does, hold most of a screen so the tab bar and action bar do not jump, and say
@@ -76,11 +78,11 @@ export const WardBedsMatrix = dynamic(() => import("./ward-beds-matrix").then((m
 // Design audit DA-02: the inbox sits above the ward's action bar and its chunk arrives late on a
 // phone, so while it loads it holds about the space its cards will take. That keeps the buttons
 // below it from moving under a finger. A ward with no entries holds no space, as the inbox shows none.
-// Heights are the rendered card's at phone width (header and one entry); a wider screen settles shorter.
+// The header and per-card heights live in ward.module.css (.inboxPlaceholder) by screen width:
+// H-0890 (26 Oct 2026) measured the old single 3rem + 10.5rem per card as 134px short on a phone
+// and 42px short on an iPad, which moved the whole ward page down as the inbox arrived.
 // The holder is a plain hidden box, not a named section: a screen reader must not meet an empty
 // "Ward referral inbox" before the real one arrives (overall review, 20 Oct 2026).
-const INBOX_HEADER_REM = 3;
-const INBOX_ENTRY_REM = 10.5;
 function WardReferralInboxPlaceholder() {
   const unitId = wardRouteUnitId(usePathname() ?? "");
   const { wardReferralInbox } = useWardFlowSelect("wardReferralInbox");
@@ -90,7 +92,8 @@ function WardReferralInboxPlaceholder() {
     <div
       aria-hidden="true"
       data-testid="ward-referral-inbox-placeholder"
-      style={{ minBlockSize: `${INBOX_HEADER_REM + count * INBOX_ENTRY_REM}rem` }}
+      className={styles.inboxPlaceholder}
+      style={{ "--inbox-entries": count } as CSSProperties}
     />
   );
 }

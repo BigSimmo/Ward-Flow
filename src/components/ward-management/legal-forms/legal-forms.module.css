@@ -703,6 +703,33 @@ button.taskLabel[aria-pressed="true"] {
   border-bottom: 0;
 }
 
+/* Admitted on a form (WT-03): who, the form line, and Record a form. */
+.admittedRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.admittedRow:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .admittedRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .admittedRow > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
 /* ---------- Side panel ---------- */
 
 .panel {

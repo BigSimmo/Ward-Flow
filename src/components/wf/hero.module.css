@@ -185,6 +185,16 @@
   }
 }
 
+/* Design regression review (26 Oct 2026): on a portrait tablet the title block keeps its place
+ * beside the lead ring and wraps its meta under the title. Sized to its one-line width, a long meta
+ * ("62 still in ED · 8 in transit or recorded departure · Limited demo coverage") pushed the whole
+ * title under the ring and the Live chip onto a row of its own. */
+@media (min-width: 48.0625rem) and (max-width: 900px) {
+  .titleBlock {
+    flex: 1 1 16rem;
+  }
+}
+
 /* Phone: stats wrap onto a grid so every label shows in full rather than clipping. */
 @media (max-width: 600px) {
   .stats {

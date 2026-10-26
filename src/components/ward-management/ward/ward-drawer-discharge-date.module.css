@@ -1,0 +1,35 @@
+/* WT-16: the ward sets the expected discharge date from the bed drawer. */
+.form {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.form label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.form p {
+  margin: 0;
+}
+
+.hint {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-1);
+}

@@ -68,7 +68,7 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
       );
     case "ed_access_risk":
       return row(
-        `ED access risk at ${forecastEdName(alert.edId)}`,
+        `May pass the ED access target at ${forecastEdName(alert.edId)}`,
         `${alert.people} ${alert.people === 1 ? "person passes" : "people pass"} the access target before a suitable bed is due, first in ${splitDuration(alert.firstMinutesLeft)}.${
           alert.alreadyOver > 0 ? ` ${alert.alreadyOver} already past it.` : ""
         } Your line is ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} hours` : splitDuration(alert.threshold)} ahead.`,

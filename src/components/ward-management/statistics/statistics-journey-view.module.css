@@ -351,7 +351,11 @@
   min-width: 0;
 }
 
-.hospitalName strong,
+/* H-0620 / H-0447: a long hospital name takes a second line rather than an ellipsis. */
+.hospitalName strong {
+  overflow-wrap: break-word;
+}
+
 .hospitalName small {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -528,5 +532,12 @@
 @media (max-width: 64rem) {
   .bedsRow.bedsRow {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* H-0618: on a touch screen each hospital row is a full-size tap target. */
+@media (pointer: coarse) {
+  .hospitalRow {
+    min-height: var(--wf-touch);
   }
 }

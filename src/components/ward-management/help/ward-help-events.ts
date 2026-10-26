@@ -6,17 +6,48 @@ const OPEN_HELP_EVENT = "ward-flow-open-help";
 
 export type HelpView = "desk" | "screen" | "glossary" | "new" | "tour";
 
+type OpenHelpDetail = { view?: HelpView; ask?: string; showMe?: string };
+
 /** Opens the Help sheet at `view`, from anywhere in the shell. */
 export function openWardHelp(view: HelpView = "screen"): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(OPEN_HELP_EVENT, { detail: { view } }));
+  window.dispatchEvent(new CustomEvent<OpenHelpDetail>(OPEN_HELP_EVENT, { detail: { view } }));
 }
 
-export function subscribeWardHelp(onOpen: (view: HelpView) => void): () => void {
+/**
+ * Opens Help with the Ask box filled with `question` (the header search hands a typed question
+ * over). The words travel in memory only, in this event, and are never stored.
+ */
+export function askWardHelp(question: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<OpenHelpDetail>(OPEN_HELP_EVENT, { detail: { ask: question } }));
+}
+
+/** Runs the Show me for the how-to `id` (`ward-help-howto.ts`). */
+export function showWardHowTo(id: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<OpenHelpDetail>(OPEN_HELP_EVENT, { detail: { showMe: id } }));
+}
+
+/**
+ * Whether a header search query reads as a question for Help ("how do I pull a bed") rather than
+ * a name, UMRN or place. Kept here, not with the how-to list, so the search loads no help content.
+ */
+export function looksLikeHelpQuestion(query: string): boolean {
+  return /^\s*(how|where|why|what)\b\s*\S/i.test(query);
+}
+
+export type HelpRequest =
+  { kind: "view"; view: HelpView } | { kind: "ask"; question: string } | { kind: "show-me"; id: string };
+
+export function subscribeWardHelp(onOpen: (request: HelpRequest) => void): () => void {
   function handler(event: Event) {
-    // Only `openWardHelp` sends this event, so its view is already a HelpView. No check is kept
-    // here: this file loads on every page, inside the phone script budget.
-    onOpen((event as CustomEvent<{ view?: HelpView }>).detail?.view ?? "screen");
+    // Only the functions above send this event, so its detail is already well formed. No check is
+    // kept here: this file loads on every page, inside the phone script budget.
+    const detail = (event as CustomEvent<OpenHelpDetail>).detail ?? {};
+    if (detail.showMe) onOpen({ kind: "show-me", id: detail.showMe });
+    else if (detail.ask !== undefined) onOpen({ kind: "ask", question: detail.ask });
+    else onOpen({ kind: "view", view: detail.view ?? "screen" });
   }
   window.addEventListener(OPEN_HELP_EVENT, handler);
   return () => window.removeEventListener(OPEN_HELP_EVENT, handler);
