@@ -25,6 +25,8 @@ import {
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { movementBedReservation } from "./ward-movement-bed-hold";
+import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
+import { sameObservation, type ObservationChange } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -489,6 +491,12 @@ export function reduceTransportEvent(
         // status check here too. Never once moving: arrival is always recorded.
         const arrivalLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
         if (arrivalLegalRefusal) return reject(state, event, arrivalLegalRefusal);
+        // Audit S-3: the sending ward records when seclusion or restraint ended before the stay
+        // leaves. Once moving, arrival is always recorded and the seclusion view flags the gap.
+        const sourceRestrictiveRefusal = source
+          ? openRestrictivePracticeRefusal(findUnit(state, source.unitId)?.restrictivePractice, source.id)
+          : undefined;
+        if (sourceRestrictiveRefusal) return reject(state, event, sourceRestrictiveRefusal);
       }
 
       const updatedUnit: Unit = {
@@ -554,8 +562,25 @@ export function reduceTransportEvent(
       if (pulledAdmission && pulledAdmission.state === "pulled") {
         const { bedNumber: _previousNumber, ...withoutBedNumber } = pulledAdmission;
         void _previousNumber;
+        // Audit S-2: the journey and the held bed record one observation level. If they still
+        // differ here (a record from before the two were joined), the later recorded change wins and
+        // the stay keeps the change in its history, so neither level is dropped silently.
+        const lastChangeAt = (changes: readonly ObservationChange[] | undefined) =>
+          changes?.at(-1)?.at ?? Number.NEGATIVE_INFINITY;
+        const journeyLevelWins =
+          !sameObservation(movement.observation, pulledAdmission.observation) &&
+          lastChangeAt(movement.observationChanges) >= lastChangeAt(pulledAdmission.observationChanges);
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...withoutBedNumber,
+          ...(journeyLevelWins
+            ? {
+                observation: movement.observation,
+                observationChanges: [
+                  ...(pulledAdmission.observationChanges ?? []),
+                  { at: event.now, from: pulledAdmission.observation, to: movement.observation },
+                ],
+              }
+            : {}),
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
