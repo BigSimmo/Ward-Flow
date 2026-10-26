@@ -216,6 +216,10 @@ const CLINICAL_VALUE_NOTES = {
   accessMaxTerm: {
     source: "D-80 (23 Oct 2026), a 12 month ceiling that fits the quarterly access review",
   },
+  observationGeneral: {
+    source:
+      "Audit F3, Option A (26 Oct 2026): General observation interval: hourly. Pending Josh's approval comment on the PR",
+  },
   observationIntermittentShort: {
     source: OBSERVATION_LEVEL_SOURCE,
   },
