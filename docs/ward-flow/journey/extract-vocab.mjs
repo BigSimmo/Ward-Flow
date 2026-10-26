@@ -9,6 +9,13 @@ const files = [
   "ward-model.ts",
   // F-17 (26 Oct 2026): the bed release word lists moved out of ward-model.ts to this sibling.
   "ward-model-bed-release.ts",
+  // H-0984 (26 Oct 2026): earlier ward-model splits moved these word lists to siblings the list
+  // never named, so 23 lists dropped out of vocabularies.json on the next rebuild.
+  "ward-model-vocabulary.ts",
+  "ward-model-movement-parts.ts",
+  "ward-model-referral-parts.ts",
+  "ward-model-leave.ts",
+  "ward-model-notices.ts",
   "ward-change-reasons.ts",
   "ward-admissions.ts",
   "ward-bed-availability.ts",
