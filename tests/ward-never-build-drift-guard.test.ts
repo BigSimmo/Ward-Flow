@@ -80,15 +80,6 @@ function negatedBefore(text: string, pattern: RegExp): boolean {
  *  entry to be deleted, so the list only shrinks. */
 const PENDING_WORDING: { id: string; file: string; text: RegExp }[] = [
   {
-    id: "NB-26-06",
-    file: "src/components/ward-management/community/community-screen-drawer.tsx",
-    text: /Recommended action:/u,
-  },
-  { id: "NB-26-07", file: "src/components/ward-management/forecast/ed-access-risk-card.tsx", text: /Access risk/u },
-  { id: "NB-26-07", file: "src/components/ward-management/forecast/forecast-alerts-group.tsx", text: /access risk/u },
-  { id: "NB-26-07", file: "src/components/ward-management/settings/settings-targets-column.tsx", text: /access risk/u },
-  { id: "NB-26-07", file: "src/components/ward-management/settings/settings-screen-model.ts", text: /access risk/u },
-  {
     id: "NB-26-08",
     file: "src/components/ward-management/patients/patient-transit-operations.tsx",
     text: /expires \$\{/u,
