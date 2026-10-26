@@ -393,7 +393,8 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
     expect(match, "the phone ward header must state how many beds are occupied").not.toBeNull();
     return Number(match![1]);
   }
-  const ready = region.getByRole("button", { name: /Ready now$/u });
+  // H-0181: the name may end ", N being made ready" when a bed is being prepared.
+  const ready = region.getByRole("button", { name: /Ready now(?:, \d+ being made ready)?$/u });
   const match = /^(\d+)/u.exec(((await ready.getAttribute("aria-label")) ?? (await ready.innerText())).trim());
   expect(match, "the phone ward header must state how many beds are ready now").not.toBeNull();
   return Number(match![1]);
