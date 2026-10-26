@@ -971,3 +971,10 @@ is inferred.
 - **Revisit:** both before any real patient data, together with the health service's IT (which Australian host they will approve, so the app moves once) and the privacy officer. Steps and options are in the B5 and B7 handover note for the sign-in and privacy stream.
 - **Boundary:** synthetic data only. This authorises no deployment, provider change or spending. A later move needs Josh's yes at the time, with a spending approval and hard cap for any new host.
 - **Why:** with synthetic data, moving hosts now is one to two days of work and a new monthly cost for no present benefit, and moving before IT names their host risks moving twice. A server-side TV account adds a role to the access model before anyone needs it.
+
+## D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026)
+
+- **Date:** 26 October 2026 (`2026-10-26`), 6:35 PM AWST (10:35 UTC). **Decided by:** Josh, in the Ward Flow project chat, answering the coordinator's blocker list. His words: "go ahead with al recommendations".
+- **Decision:** confirms D-81 for the wording question WL-Q4. A bed kept for a patient who is not yet on the ward is "pulled", in notices as well as on screens: the revoked examination, diversion, cancelled transport and withdrawn acceptance notices now say the bed stays pulled, no bed is pulled, or the bed pulled for them. "Held" on its own is used only for a bed kept for its own patient while they are on leave or away (for example at an emergency department). A delayed discharge is "held up".
+- **Boundary:** visible words only, as D-81. Code names, event names and stored values keep their names, and saved notice and audit text is not rewritten. Nothing is re-sorted or ranked.
+- **Why:** the 26 October wording audit (WL-08) found notices still calling an incoming bed "held", the word kept for leave beds.
