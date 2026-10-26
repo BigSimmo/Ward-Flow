@@ -62,9 +62,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   if (transportBookFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
   // The patient's name, as every other screen shows it. The movement id is never a person's name.
-  const patientName = movement
-    ? resolveSubjectPatient(movement, umrnLookup).displayName
-    : "the patient";
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
