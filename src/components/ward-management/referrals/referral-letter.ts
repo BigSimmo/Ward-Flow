@@ -84,7 +84,8 @@ export function referralIsbarText(
     `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. Referral sent ${sent.sentAt} to ${to}.`,
     `S: ${value(input.urgency)}. ${value(input.legalStatus)}.`,
     `B: ${value(input.history)}`,
-    `A: Risks ${input.risks.length ? input.risks.join(", ").toLowerCase() : "none selected"}. Medical clearance ${value(input.clearance).toLowerCase()}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim().toLowerCase()})` : ""}.`,
+    // Walk-through WT-40: the risk and clearance words keep their case ("ECG done", not "ecg done").
+    `A: Risks: ${input.risks.length ? input.risks.join(", ") : "None selected"}. Medical clearance: ${value(input.clearance)}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim()})` : ""}.`,
     `R: ${value(input.reason)}.${input.needs?.length ? ` ${input.needs.join(", ")}.` : ""}${sent.decisionDue ? ` Decision due ${sent.decisionDue}.` : ""}`,
   ].join("\n");
 }

@@ -359,10 +359,14 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                             ? null
                             : " · Catchment not confirmed"}
                         <span className={styles.wardMetaMore}>
-                          {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                          <span className={styles.mono}>
-                            {unit.siteCode ? `${unit.siteCode} · ${unit.unitId}` : unit.unitId}
-                          </span>
+                          {unit.healthService ? ` · ${unit.healthService}` : ""}
+                          {/* Walk-through WT-27: the site code only, never the internal ward id. */}
+                          {unit.siteCode ? (
+                            <>
+                              {" · "}
+                              <span className={styles.mono}>{unit.siteCode}</span>
+                            </>
+                          ) : null}
                         </span>
                       </span>
                     </span>
