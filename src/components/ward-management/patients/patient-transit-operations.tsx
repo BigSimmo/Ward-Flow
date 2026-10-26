@@ -156,7 +156,7 @@ export function PatientTransitOperations({
       nextActionRef.current?.focus({ preventScroll: true });
     }
   }, [workflowCheckpoint]);
-  const formRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const bookTriggerRef = useRef<HTMLButtonElement>(null);
   const open = !movement.closure && movement.stage !== "arrived";
   const destination = units.find((u) => u.id === movement.acceptedUnitId);
@@ -634,7 +634,9 @@ export function PatientTransitOperations({
           )}
           {open && movement.stage === "pulled" && !job && !booking && bookGate.note}
           {booking && !job && (
-            <div ref={formRef} className={styles.booking}>
+            // CS3-01: a page <form> is held against the board from its first touch. The shared booking
+            // form books only from its own button, so Enter in a field must never submit here.
+            <form ref={formRef} className={styles.booking} noValidate onSubmit={(e) => e.preventDefault()}>
               <h4>Sending team · record phone booking</h4>
               <TransportBookingForm
                 answers={bookingAnswers}
@@ -666,7 +668,7 @@ export function PatientTransitOperations({
                 }}
                 onCancel={closeBooking}
               />
-            </div>
+            </form>
           )}
           {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && (
             <button
