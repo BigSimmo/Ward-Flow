@@ -37,8 +37,19 @@ function fixture() {
     closure: undefined,
     ...patch,
   });
-  const run = (movements: Movement[]) =>
-    pilotMeasures({ movements, referrals: [], patients: state.patients, now: NOW, pullHoldMinutes: HOLD }, WEEK);
+  const run = (movements: Movement[], units: { allocatable: { confirmedAt: number } }[] = []) =>
+    pilotMeasures(
+      {
+        movements,
+        referrals: [],
+        patients: state.patients,
+        now: NOW,
+        pullHoldMinutes: HOLD,
+        units: units as never,
+        morningRollupDeadlineMinutes: 570,
+      },
+      WEEK,
+    );
   return { state, movement, run };
 }
 
@@ -85,6 +96,28 @@ describe("pilotMeasures", () => {
     expect(measures.steps.find((step) => step.id === "ask")?.summary).toMatchObject({ median: 30, sampleSize: 5 });
     expect(measures.steps.find((step) => step.id === "travel")?.summary).toMatchObject({ median: 60 });
     expect(measures.completeness).toEqual({ arrivals: 5, complete: 5 });
+  });
+
+  it("A35: measure 1 times request to arrival for arrivals in the week", () => {
+    const f = fixture();
+    const journeys = [100, 200, 300, 400, 500].map((heldAfter, index) =>
+      fullJourney(f, `MV-${index}`, DAY + index * 600, heldAfter),
+    );
+    // Each arrives 120 minutes after its bed was pulled.
+    expect(f.run(journeys).requestToArrival).toMatchObject({ median: 420, p90: 620, sampleSize: 5, population: 5 });
+  });
+
+  it("A35: measure 3 counts today's bed figures confirmed by the roll-up time", () => {
+    const f = fixture();
+    const measures = f.run(
+      [],
+      [
+        { allocatable: { confirmedAt: NOW + 500 } },
+        { allocatable: { confirmedAt: NOW + 600 } },
+        { allocatable: { confirmedAt: NOW - 100 } },
+      ],
+    );
+    expect(measures.bedFigures).toEqual({ wards: 3, confirmedToday: 2, onTime: 1, deadlineMinutes: 570 });
   });
 
   it("leaves out a hold made before the week, and says a thin sample is thin", () => {

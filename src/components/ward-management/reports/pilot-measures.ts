@@ -1,16 +1,25 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { MINIMUM_EFFECTIVENESS_SAMPLE } from "@/components/ward-management/ward-derivations-records";
 import { movementPersonId } from "@/components/ward-management/coordinator/missed-requests-check";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 
 import type { ReportWeek } from "./weekly-report";
 
 /**
- * PILOT MEASURES — the success measures Josh agreed for a pilot (product brief, "Success measures",
- * 25 Sep 2026), counted for one report week from the times this prototype already records.
- * Read-only: nothing new is stored.
+ * PILOT MEASURES — the four success measures Josh agreed on 24 Oct 2026 (relabelled here 26 Oct,
+ * decision A35, PR-13), counted from the times this prototype already records. Read-only: nothing
+ * new is stored.
+ *
+ *   1. Referral to arrival time — `requestToArrival`, for arrivals in the week.
+ *   2. Calls per placed referral — counted on the paper tally, never in the app.
+ *   3. Bed figures on time — `bedFigures`, today's confirmations against the roll-up time. Ward Flow
+ *      keeps only each ward's latest confirmation, so this is today's figure, not a week's.
+ *   4. Wrong-patient and lost-change events — counted on paper through the incident route.
+ *
+ * Everything else here (request to bed pulled, missed requests, pulls, transport, completeness)
+ * is a supporting figure.
  *
  * Each figure counts only what the record holds. A movement missing a time is left out of that
  * figure and the sample says so ("from 3 of 9"), the same discipline as `effectivenessNumbers`.
@@ -37,11 +46,18 @@ type PilotStep = { id: PilotStepId; label: string; summary: DurationSummary };
 
 export type PilotMeasures = {
   week: ReportWeek;
-  /** Measure 1: request raised to a bed held, for beds first held in the week. */
+  /** Measure 1: request raised to arrival on the ward, for arrivals in the week. */
+  requestToArrival: DurationSummary;
+  /**
+   * Measure 3: wards whose bed figure was confirmed today, and how many of those by the roll-up
+   * time. A ward that has not confirmed today counts in `wards` only.
+   */
+  bedFigures: { wards: number; confirmedToday: number; onTime: number; deadlineMinutes: number };
+  /** Supporting: request raised to a bed held, for beds first held in the week. */
   requestToBedHeld: DurationSummary;
   /** Where the time goes: each step's typical time, counted in the week the step finished. */
   steps: PilotStep[];
-  /** Measure 2: bed requests raised in the week. */
+  /** Supporting: bed requests raised in the week. */
   requests: {
     raised: number;
     /** No ward asked within `missedRequestWindow` of the request being raised. */
@@ -75,6 +91,10 @@ export type PilotMeasuresInput = {
   now: Instant;
   /** The configured hold length (`WardConfiguration.pullHoldMinutes`), minutes. */
   pullHoldMinutes: number;
+  /** The wards in view, for measure 3. */
+  units: readonly Pick<Unit, "allocatable">[];
+  /** The configured morning roll-up time (`WardConfiguration.morningRollupDeadlineMinutes`). */
+  morningRollupDeadlineMinutes: number;
 };
 
 function inWeek(at: Instant | null | undefined, week: ReportWeek): at is Instant {
@@ -186,12 +206,32 @@ function openedBefore(other: Movement, movement: Movement): boolean {
 }
 
 export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): PilotMeasures {
-  const { movements, referrals, patients, now, pullHoldMinutes } = input;
+  const { movements, referrals, patients, now, pullHoldMinutes, units, morningRollupDeadlineMinutes } = input;
   const records = { movements, referrals, patients };
   const windowMinutes = CLINICAL_VALUES.missedRequestWindow.value;
   const graceMinutes = CLINICAL_VALUES.lateArrivalGrace.value;
 
-  // Measure 1: request raised to bed first held, for holds made in the week.
+  // Measure 1: request raised to arrival on the ward, for arrivals in the week.
+  const arrivedInWeek = movements.filter((movement) => inWeek(arrived(movement), week));
+  const requestToArrival = summariseDurations(
+    arrivedInWeek
+      .map((movement) => between(movement.openedAt, arrived(movement)))
+      .filter((minutes): minutes is number => minutes !== undefined),
+    arrivedInWeek.length,
+  );
+
+  // Measure 3: today's bed figures against the roll-up time.
+  const confirmedTimes = units
+    .map((unit) => unit.allocatable?.confirmedAt)
+    .filter((at): at is Instant => typeof at === "number" && Number.isFinite(at) && dayOf(at) === dayOf(now));
+  const bedFigures = {
+    wards: units.length,
+    confirmedToday: confirmedTimes.length,
+    onTime: confirmedTimes.filter((at) => minuteOfDay(at) <= morningRollupDeadlineMinutes).length,
+    deadlineMinutes: morningRollupDeadlineMinutes,
+  };
+
+  // Supporting: request raised to bed first held, for holds made in the week.
   const heldInWeek = movements.filter((movement) => inWeek(firstReached(movement, "pulled"), week));
   const requestToBedHeld = summariseDurations(
     heldInWeek
@@ -243,7 +283,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     },
   ];
 
-  // Measure 2: requests raised in the week.
+  // Supporting: requests raised in the week.
   const raised = movements.filter((movement) => inWeek(movement.openedAt, week));
   const noWardAsked = raised.filter((movement) => {
     const due = movement.openedAt + windowMinutes;
@@ -322,6 +362,8 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
 
   return {
     week,
+    requestToArrival,
+    bedFigures,
     requestToBedHeld,
     steps,
     requests: { raised: raised.length, noWardAsked, duplicates, windowMinutes },
