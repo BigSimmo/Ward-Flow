@@ -124,7 +124,9 @@ export function useGovernanceAccessReview(governanceEvents: readonly AuditEvent[
     const units = world?.units ?? [];
     // A movement page logged before its patient was known carries the WF- number: match it by patient.
     const patientRecord = (record: string) =>
-      record.startsWith("WF-") ? (world?.movements.find((movement) => movement.id === record)?.patientId ?? record) : record;
+      record.startsWith("WF-")
+        ? (world?.movements.find((movement) => movement.id === record)?.patientId ?? record)
+        : record;
     if (read) {
       const at = loaded?.at ?? now;
       const openings = serverOpenings(loaded?.openings ?? [], at, units);
