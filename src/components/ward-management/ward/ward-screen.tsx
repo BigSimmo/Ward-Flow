@@ -88,7 +88,8 @@ import { roleLimitReason } from "@/components/ward-management/ward-role-permissi
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { buttonClass, CheckingFoot, durMinutes, Menu, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
+import { actionToastText, isWarningToast, type ActionToast } from "@/components/ward-management/ward-action-toast";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -441,7 +442,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       window.history.replaceState(state, "", url.toString());
     }
   }, [selectedBed, refusedBedParam]);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
+  // Walk-through WT-10: a refusal or a step that did not go through shows as a warning.
+  const warnToast = (text: string) => setToastMessage({ warning: text });
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
@@ -465,7 +468,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
     const failure = wardCommandFailure(check.outcome);
     if (failure && check.outcome?.status !== "refused") {
-      setToastMessage(failure);
+      warnToast(failure);
       return;
     }
     const refused = wardCommandRefusal(check.outcome, rejections, check.prior);
@@ -480,7 +483,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ? `${check.who}: ${reason}`
         : reason;
     if (namedReason !== undefined) {
-      setToastMessage(`Not recorded: ${namedReason}. Nothing was changed.`);
+      warnToast(`Not recorded: ${namedReason.replace(/\.$/u, "")}. Nothing was changed.`);
       return;
     }
     // Audit A1-12: "Has left" offers Undo like Move bed, through the same toast.
@@ -505,7 +508,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             undo: {
               durationMs: UNDO_TOAST_MS,
               onUndo: () => {
-                if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                if (wardUndoBlocked(check.outcome, warnToast)) return false;
                 return completeCommand(
                   wardCommandKey("undo-departure", undoAdmissionId),
                   () =>
@@ -547,7 +550,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       const failure = wardCommandFailure(check.outcome);
       if (failure && !notRecorded) {
         setBoardSay(failure);
-        setToastMessage(failure);
+        warnToast(failure);
         return;
       }
       const refused = wardCommandRefusal(check.outcome, rejections, check.prior, true);
@@ -587,7 +590,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
-                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                  if (wardUndoBlocked(check.outcome, warnToast)) return false;
                   return runBoardCommand(
                     () => {
                       // Literal types, one per kind, so the override-surface guard reads each one.
@@ -802,7 +805,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (check.outcome?.isCurrent && !check.outcome.isCurrent()) return;
     const failure = wardCommandFailure(check.outcome);
     if (failure && check.outcome?.status !== "refused") {
-      setToastMessage(failure);
+      warnToast(failure);
       return;
     }
     const refusal = wardCommandRefusal(check.outcome, rejections, check.prior);
@@ -839,7 +842,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               undo: {
                 durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
-                  if (wardUndoBlocked(check.outcome, setToastMessage)) return false;
+                  if (wardUndoBlocked(check.outcome, warnToast)) return false;
                   return runBoardCommand(
                     () =>
                       dispatch({
@@ -1100,7 +1103,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return;
     // A notice sent to the ward is the ward's to acknowledge; the reducer refuses anyone else's.
     if (routeRole === "bed_manager") {
-      setToastMessage("The ward acknowledges its own notices.");
+      warnToast("The ward acknowledges its own notices.");
       return;
     }
     raise("MARK_NOTICE_READ", {
@@ -1416,7 +1419,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) {
-          setToastMessage(failure);
+          warnToast(failure);
           return;
         }
         setDeclineOpenFor(undefined);
@@ -1606,11 +1609,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (!unit) return;
     const parsed = Number(capacityValue);
     if (capacityValue.trim() === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > unit.beds) {
-      setToastMessage(`Enter a whole number from 0 to ${unit.beds} beds.`);
+      warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
     if (capacityRevision !== (unit.allocatable.revision ?? 0)) {
-      setToastMessage("Capacity has changed. Refresh the current bed count before confirming.");
+      warnToast("Capacity has changed. Refresh the current bed count before confirming.");
       return;
     }
     completeCommand(
@@ -1625,7 +1628,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (capacityOutcome) => {
         const failure = wardCommandFailure(capacityOutcome);
         if (failure) {
-          setToastMessage(failure);
+          warnToast(failure);
           return;
         }
         const confirmed = () =>
@@ -1646,7 +1649,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }),
           (rollupOutcome) => {
             const rollupFailure = wardCommandFailure(rollupOutcome);
-            if (rollupFailure) setToastMessage(`Capacity saved. Morning roll-up is not confirmed. ${rollupFailure}`);
+            if (rollupFailure) warnToast(`Capacity saved. Morning roll-up is not confirmed. ${rollupFailure}`);
             else confirmed();
           },
         );
@@ -1736,7 +1739,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       () => raise("CONFIRM_BED_RELEASE", { releaseId, actingUnitId: unitId }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        if (failure) setToastMessage(failure);
+        if (failure) warnToast(failure);
       },
     );
     setNoticesForRelease(releaseId);
@@ -1873,7 +1876,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) {
-          setToastMessage(failure);
+          warnToast(failure);
           return;
         }
         setReleaseOpenFor(undefined);
@@ -2296,7 +2299,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               key={release.id}
               bedLabel={bed?.bedLabel ?? "this bed"}
               dueSoonHours={dueSoon ? Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60) : null}
-              recorded={{ release, actingUnitId: unitId, onFailure: setToastMessage }}
+              recorded={{ release, actingUnitId: unitId, onFailure: warnToast }}
               onClose={() => setNoticesForRelease(null)}
             />
           );
@@ -2503,21 +2506,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         ) : null}
 
         {/* Action Toast (Owner Rule D4) */}
-        <div className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`} role="status" aria-live="polite">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          <span>{toastMessage}</span>
+        <div
+          className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`}
+          role="status"
+          aria-live="polite"
+          data-testid="ward-action-toast"
+          data-tone={isWarningToast(toastMessage) ? "warning" : undefined}
+        >
+          <StatusGlyph tone={isWarningToast(toastMessage) ? "warning" : "success"} size={10} />
+          <span>{toastMessage === null ? null : actionToastText(toastMessage)}</span>
         </div>
         <WardPrototypeFooter
           testId="ward-unit-governance"

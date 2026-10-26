@@ -97,7 +97,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
         how: "Press Accept in principle and choose the pull time limit, or press Decline and pick a reason.",
         go: "home",
       },
-      { job: "Arrivals", how: "When the patient reaches the ward, press Confirm Arrival.", go: "movements" },
+      { job: "Arrivals", how: "When the patient reaches the ward, press Confirm arrival.", go: "movements" },
       {
         job: "Leave, away and discharge",
         how: "On a bed, Mark at an ED or Mark them back. Their bed is held while they are away. Record a discharge with They have left.",

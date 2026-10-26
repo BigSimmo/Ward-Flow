@@ -287,6 +287,8 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await openWardList(page, "Admissions");
   await expectAccessible(page, testInfo, "ward arrivals with the delivered patient");
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
+  // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
+  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   // One patient, one bed: Occupied rises by exactly one.

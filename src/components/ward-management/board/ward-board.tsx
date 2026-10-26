@@ -40,6 +40,8 @@ import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
+import { BoardToastView } from "./ward-board-toast";
+import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
@@ -281,7 +283,7 @@ export function WardBoard({
     }, 60);
     return () => window.clearTimeout(timer);
   }, [sheetOpen]);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
 
   /*
    * Walkthrough D12 (25 Sept 2026): the board announced success without checking whether the
@@ -320,8 +322,8 @@ export function WardBoard({
     rejections,
     now,
     routeRole: "ward",
-    onMessage: (message) => {
-      setToastMessage(message);
+    onMessage: (message, tone) => {
+      setToastMessage(tone === "warning" ? { warning: message } : message);
       announceToWardShell(
         message.startsWith("Recorded departure") ? "Recorded departure: this patient has left the ward." : message,
       );
@@ -369,7 +371,7 @@ export function WardBoard({
       : refused
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
-    setToastMessage(msg);
+    setToastMessage(refused || unaccepted ? { warning: msg } : msg);
     announceToWardShell(refused || unaccepted ? msg : check.spoken);
   }, [outcomeToken, rejections]);
 
@@ -902,7 +904,7 @@ export function WardBoard({
       const matchingMovement = movementForBoardArrival(movements, item.selectableKey);
       if (!matchingMovement) {
         const msg = `Cannot confirm arrival: no movement matches ${item.who || nameFor(item.selectableKey)}.`;
-        setToastMessage(msg);
+        setToastMessage({ warning: msg });
         announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
         return;
       }
@@ -922,7 +924,7 @@ export function WardBoard({
       const who = item.who || nameFor(item.selectableKey);
       if (!matchingLeave && !isAwayAtEd) {
         const msg = `Nothing to mark back: no leave or emergency department absence is recorded for ${who}. Nothing was changed.`;
-        setToastMessage(msg);
+        setToastMessage({ warning: msg });
         announceToWardShell(
           "Nothing to mark back: no leave or emergency department absence is recorded for this patient. Nothing was changed.",
         );
@@ -1468,11 +1470,7 @@ export function WardBoard({
           </div>
         ) : null}
 
-        {toastMessage ? (
-          <div className={styles.toast} role="status" aria-live="polite" data-testid="ward-board-toast">
-            {toastMessage}
-          </div>
-        ) : null}
+        <BoardToastView toast={toastMessage} />
       </main>
       <TransportExceptionDialog
         open={arriveCheck !== null}

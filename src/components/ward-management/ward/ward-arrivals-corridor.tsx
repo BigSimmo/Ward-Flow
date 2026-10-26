@@ -28,7 +28,7 @@ import { restrictionNotice, eligibilityWarning, stageCopy } from "@/components/w
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
-  PATIENT_ARRIVED: "Confirm Arrival",
+  PATIENT_ARRIVED: "Confirm arrival",
 };
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -45,6 +45,7 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
 import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { wardCopyReadmission } from "@/components/ward-management/ward-readmission-copy";
+import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 
 export { pullBlockedReason };
 
@@ -115,7 +116,10 @@ export function WardArrivalsCorridor({
 }: WardArrivalsCorridorProps) {
   // Audit r1 item 4: the journey whose arrival is waiting on the fit to travel warning.
   const [arriveCheckId, setArriveCheckId] = React.useState<string | null>(null);
+  // Walk-through WT-11: an arrival with nothing open still checks the name and UMRN first.
+  const [arriveConfirmId, setArriveConfirmId] = React.useState<string | null>(null);
   const arriveCheckMovement = accepted.find((movement) => movement.id === arriveCheckId);
+  const arriveConfirmMovement = accepted.find((movement) => movement.id === arriveConfirmId);
   // Audit 1, Josh 20 Oct (CS-07): releasing a stopped transport's held bed asks first, naming the person.
   const [releaseHeldId, setReleaseHeldId] = React.useState<string | null>(null);
   const releaseHeldMovement = heldAfterStop.find((movement) => movement.id === releaseHeldId);
@@ -249,7 +253,7 @@ export function WardArrivalsCorridor({
                   <div className={styles.tagCluster}>
                     {movement.legalForm ? (
                       <span className={styles.statusTag} data-type="legal">
-                        Form {movement.legalForm.code} Involuntary
+                        Form {movement.legalForm.code}, involuntary
                       </span>
                     ) : movement.legalStatus ? (
                       <span className={styles.statusTag} data-type="legal">
@@ -268,7 +272,7 @@ export function WardArrivalsCorridor({
                       </span>
                     ) : null}
                     <span className={styles.statusTag} data-type="mode">
-                      {transportMode ? ARRIVAL_MODE_LABELS[transportMode] : "Transit Stream"}
+                      {transportMode ? ARRIVAL_MODE_LABELS[transportMode] : "Transport not set"}
                     </span>
                     {/* D-80: the ward's copy carries the flag once it has accepted the person. */}
                     {readmission ? (
@@ -303,7 +307,7 @@ export function WardArrivalsCorridor({
                 <div className={styles.stepperWrap}>
                   <div className={styles.stepperLabelRow}>
                     <span>
-                      Transit Corridor: <strong>{stageCopy[movement.stage].label}</strong>
+                      Stage: <strong>{stageCopy[movement.stage].label}</strong>
                     </span>
                     <span className={styles.statusTag} data-type={canPull ? "acuity" : "mode"}>
                       {eta !== undefined
@@ -311,8 +315,8 @@ export function WardArrivalsCorridor({
                           ? `Late · Expected ${formatInstantWithDay(eta, now)}`
                           : `ETA: ${formatInstantWithDay(eta, now)}`
                         : canPull
-                          ? "Awaiting Ward Pull"
-                          : "Scheduled Transit"}
+                          ? "Waiting for the ward to pull"
+                          : "No arrival time yet"}
                     </span>
                   </div>
                   <div className={styles.corridorTrack}>
@@ -320,25 +324,25 @@ export function WardArrivalsCorridor({
                       className={styles.trackStep}
                       data-filled={stepIndex >= 0}
                       data-current={stepIndex === 0}
-                      title="Accepted awaiting bed"
+                      title="Accepted, awaiting bed"
                     />
                     <div
                       className={styles.trackStep}
                       data-filled={stepIndex >= 1}
                       data-current={stepIndex === 1}
-                      title="Bed Pulled / Transport Booked"
+                      title="Bed pulled or transport booked"
                     />
                     <div
                       className={styles.trackStep}
                       data-filled={stepIndex >= 2}
                       data-current={stepIndex === 2}
-                      title="In Transit Moving"
+                      title="In transit"
                     />
                     <div
                       className={styles.trackStep}
                       data-filled={stepIndex >= 3}
                       data-current={stepIndex === 3}
-                      title="At Ward Doors / Intake"
+                      title="At the ward"
                     />
                   </div>
                   <div className={styles.corridorSubtext}>
@@ -408,11 +412,11 @@ export function WardArrivalsCorridor({
                             : () => {
                                 // Audit r1 item 4: no transport leg and fit to travel open warns, never blocks.
                                 if (arrivalGaps(movement).length > 0) setArriveCheckId(movement.id);
-                                else confirmArrival(movement);
+                                else setArriveConfirmId(movement.id);
                               }
                         }
                       >
-                        Confirm Arrival
+                        Confirm arrival
                       </button>
                       {arriveBlocked ? (
                         <span id={`ward-confirm-arrival-unavailable-${movement.id}`} className="sr-only">
@@ -554,7 +558,7 @@ export function WardArrivalsCorridor({
 
       {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}
       <div className={styles.explanationNote}>
-        <strong>Operational Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but
+        <strong>Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but
         not offered; it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
       </div>
       <Dialog
@@ -620,6 +624,7 @@ export function WardArrivalsCorridor({
       <TransportExceptionDialog
         open={arriveCheckMovement !== undefined}
         who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).displayName : "this patient"}
+        identity={arriveCheckMovement ? patientIdentityLine(resolvePatientIdentity(arriveCheckMovement)) : undefined}
         action="Confirm arrival"
         gaps={arriveCheckMovement ? arrivalGaps(arriveCheckMovement) : []}
         onClose={() => setArriveCheckId(null)}
@@ -629,6 +634,17 @@ export function WardArrivalsCorridor({
             confirmArrival(arriveCheckMovement, { gaps: arrivalGaps(arriveCheckMovement), reason });
         }}
         testId="ward-arrive-check"
+      />
+      <ArrivalIdentityDialog
+        open={arriveConfirmMovement !== undefined}
+        who={arriveConfirmMovement ? resolvePatientIdentity(arriveConfirmMovement).displayName : "this patient"}
+        identity={arriveConfirmMovement ? patientIdentityLine(resolvePatientIdentity(arriveConfirmMovement)) : ""}
+        wardName={unit.name}
+        onClose={() => setArriveConfirmId(null)}
+        onConfirm={() => {
+          setArriveConfirmId(null);
+          if (arriveConfirmMovement) confirmArrival(arriveConfirmMovement);
+        }}
       />
     </section>
   );

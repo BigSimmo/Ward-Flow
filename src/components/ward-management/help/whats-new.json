@@ -73,5 +73,10 @@
     "id": "2026-10-26-handover-forecast-double-tap",
     "date": "2026-10-26",
     "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
+  },
+  {
+    "id": "2026-10-26-arrival-check-and-refusal-warnings",
+    "date": "2026-10-26",
+    "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
   }
 ]

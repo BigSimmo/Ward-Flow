@@ -73,7 +73,7 @@ const ANSWER_ALERT_LINE = 95;
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
-  PATIENT_ARRIVED: "Confirm Arrival",
+  PATIENT_ARRIVED: "Confirm arrival",
 };
 
 // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -165,7 +165,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
     },
   ];
-  const [toastMessage, setToastMessage] = useState<{ message: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ message: string; warning: boolean } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -182,7 +182,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       ? newestRejection
       : undefined;
 
-  const triggerToast = (message: string) => setToastMessage({ message });
+  // Walk-through WT-10: a refusal shows as a warning, never with the success tick.
+  const triggerToast = (message: string, tone: "success" | "warning" = "success") =>
+    setToastMessage({ message, warning: tone === "warning" });
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -337,7 +339,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   if ((acceptModalFor !== undefined && !acceptModalOpen) || phoneAcceptLeft) {
     setAcceptModalFor(undefined);
     if (phoneAcceptLeft) setPhoneSheet(null);
-    setToastMessage({ message: "This request was answered or withdrawn." });
+    setToastMessage({ message: "This request was answered or withdrawn.", warning: true });
   }
   function openPhoneAccept() {
     selectAnswer(activeAnswerIndex);
@@ -386,11 +388,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         setAnsweredHereId(undefined);
         triggerToast(
           outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
+          "warning",
         );
       }
     } catch {
       setAnsweredHereId(undefined);
-      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.");
+      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.", "warning");
     } finally {
       declinePendingRef.current = false;
       setDeclinePending(false);
@@ -1724,20 +1727,14 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
 
       {/* Action Toast */}
       {toastMessage ? (
-        <div className={styles.toast} role="status" aria-live="polite">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+        <div
+          className={styles.toast}
+          role="status"
+          aria-live="polite"
+          data-testid="ward-answer-toast"
+          data-tone={toastMessage.warning ? "warning" : "success"}
+        >
+          <StatusGlyph tone={toastMessage.warning ? "warning" : "success"} size={10} />
           <span>{toastMessage.message}</span>
         </div>
       ) : null}
