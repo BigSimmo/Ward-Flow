@@ -1,5 +1,6 @@
 "use client";
 
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
@@ -148,7 +149,7 @@ function usePatientFormSave(scope: string) {
       else
         setError({
           scope: submittedScope,
-          message: outcome?.message ?? "Save was not confirmed. Review the record before trying again.",
+          message: outcome?.message ?? SAVE_NOT_CONFIRMED,
         });
     };
     try {
@@ -172,6 +173,8 @@ interface PatientNowScreenProps {
   movementId?: string;
   initialTaskAction?: "refer" | "contact";
   initialExampleId?: "WF-009" | "WF-004";
+  /** DR-11: the tab title. The movement route passes "Movement record — Ward Flow"; never a name. */
+  documentTitle?: string;
 }
 
 export function PatientNowScreen({
@@ -179,6 +182,7 @@ export function PatientNowScreen({
   movementId,
   initialExampleId = "WF-009",
   initialTaskAction,
+  documentTitle = "Patient — Ward Flow",
 }: PatientNowScreenProps) {
   const thresholds = useDueSoonThresholds();
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
@@ -292,8 +296,8 @@ export function PatientNowScreen({
 
   // Synchronize document title
   useEffect(() => {
-    document.title = "Patient — Ward Flow";
-  }, []);
+    document.title = documentTitle;
+  }, [documentTitle]);
 
   // Dynamically resolve the patient record
   const resolved = useMemo(() => {
@@ -827,7 +831,7 @@ export function PatientNowScreen({
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}`,
+          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`,
         }
       : undefined,
     transportHref:

@@ -1,5 +1,5 @@
 // @ts-check
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -7,7 +7,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROUTES = new Map([
   ["/v1/workspace", "workspace"],
   ["/v1/workspace/commands", "workspace_commands"],
+  ["/v1/workspace/receipt", "workspace_receipt"],
   ["/v1/workspace/audit", "workspace_audit"],
+  ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -284,9 +286,14 @@ export function createSharedHandler({
           403,
           {
             error: "No Ward Flow role is assigned to this account",
-            // The form is offered only where a request can be filed, so not before migration 9.
-            ...(store.requestAccess
-              ? { code: "no-role", canRequest: store.takesRequests ? await store.takesRequests() : true }
+            // The form is offered only where a request can be filed, so not before migration 9. A
+            // role that names no health service (granted before one was required) is refused the
+            // same way, under its own code so the screen can say to have it given again (RA-02).
+            ...(store.requestAccess || view.needsService
+              ? {
+                  code: view.needsService ? "role-needs-service" : "no-role",
+                  canRequest: !store.requestAccess ? false : store.takesRequests ? await store.takesRequests() : true,
+                }
               : {}),
           },
           "auth_denied",
@@ -307,6 +314,13 @@ export function createSharedHandler({
       }
       const whole = view.access.role === "coordinator" && view.access.scope.kind === "statewide";
       if (path === "/v1/workspace" && request.method === "GET") {
+        // Missing session identity must not become a shared JSON-null recovery binding.
+        const receiptIdentity =
+          typeof session.sessionId === "string" && session.sessionId.trim().length > 0
+            ? session.sessionId
+            : Number.isFinite(started)
+              ? started
+              : undefined;
         // A locked store read can refresh this request's role and joined cover.
         const workspace = () => ({
           role: view.access.role,
@@ -314,6 +328,20 @@ export function createSharedHandler({
           workingAs: view.membershipId ?? "bootstrap",
           actorId,
           workspaceId: config.workspaceId,
+          // No session limit configured means no sign-in deadline (a set limit with no start time was
+          // already refused above), so only a role or grant expiry can bound access here.
+          accessUntil: Math.min(
+            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Infinity,
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+          ...(receiptIdentity === undefined || typeof store.receipt !== "function"
+            ? {}
+            : {
+                receiptScope: createHash("sha256")
+                  .update(JSON.stringify([config.workspaceId, actorId, view.membershipId, receiptIdentity]))
+                  .digest("hex"),
+              }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
@@ -339,23 +367,46 @@ export function createSharedHandler({
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
         return reply(200, { ...workspace(), data, snapshot });
       }
+      if (path === "/v1/workspace/receipt" && request.method === "GET") {
+        const commandId = new URL(request.url).searchParams.get("commandId");
+        if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
+        if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
+        return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
+      }
+      if (path === "/v1/workspace/archive" && request.method === "GET") {
+        // History's closed records older than 30 days (migration 14), each desk's own part only,
+        // as its live workspace is. A store without an archive answers with an empty list.
+        if (!store.archive) return reply(200, { archived: 0, records: [] });
+        return reply(200, await store.archive(view));
+      }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
         // them all; the access admin reads role changes only. Nobody else reads the audit.
         if (!whole && view.access.role !== "admin")
           return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
-        return reply(200, { events: await store.audit(view) });
+        const cursor = new URL(request.url).searchParams.get("before");
+        if (cursor !== null && (!/^[1-9][0-9]{0,18}$/.test(cursor) || BigInt(cursor) > 9223372036854775807n))
+          return reply(400, { error: "Invalid audit cursor" });
+        if (typeof store.auditPage === "function") return reply(200, await store.auditPage(view, cursor));
+        const events = cursor === null ? await store.audit(view) : await store.audit(view, cursor);
+        const complete = events.length < 200;
+        return reply(200, { events, complete, nextCursor: complete ? null : String(events.at(-1).sequence) });
       }
       if (path === "/v1/workspace/record-access") {
-        // Every desk logs the records it opens. A coordinator reads the log and the break glass
-        // openings for its review list: statewide every record, a service its own (D-80 item 14).
+        // Every desk logs the records it opens. The statewide coordinator reads the whole log; the
+        // access admin reads it for the desks inside its own place (D-80 item 14, Access log). A
+        // coordinator also reads the break glass openings for its review list: statewide every
+        // record, a service coordinator the records in its own service (D-80 item 14).
         if (request.method === "GET") {
-          if (view.access.role !== "coordinator")
+          const coordinator = view.access.role === "coordinator";
+          if (!whole && !coordinator && view.access.role !== "admin")
             return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
+          const views = store.recordViews ? await store.recordViews(view, patient) : [];
+          if (!coordinator) return reply(200, { views });
           return reply(200, {
-            views: store.recordViews ? await store.recordViews(view, patient) : [],
+            views,
             openings: store.breakGlassOpenings && patient === null ? await store.breakGlassOpenings(view) : [],
           });
         }

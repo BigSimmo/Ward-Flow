@@ -31,6 +31,37 @@ describe("bot-author PR policy", () => {
     expect(isSensitivePath("src/components/ward-management/shell/ward-prototype-footer.tsx")).toBe(false);
   });
 
+  it("protects Ward Flow's real migrations, sign-in, engine and legal logic", () => {
+    for (const file of [
+      "backend/ward-flow/migrations/013-referral-record-views.sql",
+      "backend/ward-flow/migrations.mjs",
+      "backend/ward-flow/engine.ts",
+      "backend/ward-flow/command-schemas.ts",
+      "backend/ward-flow/auth.mjs",
+      "backend/ward-flow/supabase-auth.mjs",
+      "src/components/ward-management/ward-eligibility.ts",
+      "src/components/ward-management/legal-forms/legal-form-progression.ts",
+      "src/components/ward-management/legal-forms/legal-forms-derivations.ts",
+      "src/components/ward-management/ward-legal-clock.ts",
+      "src/components/ward-management/ward-legal-forms.ts",
+      "src/components/ward-management/ward-stay-legal.ts",
+      "src/components/ward-management/ward-held-legal-check.ts",
+      "src/components/ward-management/ward-flow-record-legal-events.ts",
+    ]) {
+      expect(isSensitivePath(file), file).toBe(true);
+    }
+    for (const file of [
+      "backend/ward-flow/README.md",
+      "backend/ward-flow/server.mjs",
+      "backend/ward-flow/supabase-auth.test.mjs",
+      "src/components/ward-management/legal-forms/legal-forms.module.css",
+      "src/components/ward-management/legal-forms/legal-forms-panel.tsx",
+      "tests/ward-legal-clock.test.ts",
+    ]) {
+      expect(isSensitivePath(file), file).toBe(false);
+    }
+  });
+
   it("flags only bot commits whose own files are protected", () => {
     expect(
       botSensitiveCommitViolations([{ sha: "a".repeat(40), author: bot, files: ["data/mha-2014-sections.json"] }]),

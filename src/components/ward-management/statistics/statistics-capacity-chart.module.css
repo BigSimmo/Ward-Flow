@@ -441,6 +441,12 @@
   .bar > span {
     forced-color-adjust: none;
   }
+
+  /* R7-09 (device sweep): the legend swatches keep the fills the bars keep, so the key still reads. */
+  .legendSlot li > span[aria-hidden="true"] {
+    forced-color-adjust: none;
+    outline: 1px solid CanvasText;
+  }
 }
 
 /* Phone polish (8 Oct 2026): one grouping switch in the head (the scale stays on share), search and

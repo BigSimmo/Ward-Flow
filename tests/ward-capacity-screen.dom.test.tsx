@@ -117,14 +117,14 @@ describe("the Capacity screen", () => {
     const table = screen.getByTestId("ward-capacity-gap-table");
     for (const row of shortfallRows) {
       const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      // v6 wording: a glyph and the word "Short" (design/pages-v6/Capacity.png).
+      // A glyph, the size of the gap and the word: "6 short".
       expect(within(tableRow).getByText(/^short$/iu)).toBeInTheDocument();
       // The magnitude is real too — not just the word.
       expect(tableRow).toHaveTextContent(`${Math.abs(row.gap)} short`);
     }
   });
 
-  it("shows a non-negative gap as 'exactly enough' or 'spare capacity' in words, never only the word 'shortfall'", () => {
+  it("shows a non-negative gap as 'Enough' or 'N spare' in words, never the word 'short'", () => {
     const nonNegativeRows = gapRows.filter((row) => row.gap >= 0);
     expect(nonNegativeRows.length, "the fixture has no non-negative row — this guard proved nothing").toBeGreaterThan(
       0,
@@ -134,7 +134,8 @@ describe("the Capacity screen", () => {
     for (const row of nonNegativeRows) {
       const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
       expect(within(tableRow).queryByText(/^short$/iu)).toBeNull();
-      expect(within(tableRow).getByText(row.gap === 0 ? /^exactly enough$/iu : /^spare$/iu)).toBeInTheDocument();
+      expect(within(tableRow).getAllByText(row.gap === 0 ? /^enough$/iu : /^spare$/iu).length).toBeGreaterThan(0);
+      if (row.gap > 0) expect(tableRow).toHaveTextContent(`${row.gap} spare`);
     }
   });
 
@@ -146,7 +147,7 @@ describe("the Capacity screen", () => {
       String(gapTotals.bedsThatFit),
     );
     expect(totalRow).toHaveTextContent(
-      gapTotals.gap < 0 ? /short/iu : gapTotals.gap === 0 ? /exactly enough/iu : /spare/iu,
+      gapTotals.gap < 0 ? `${-gapTotals.gap} short` : gapTotals.gap === 0 ? /enough/iu : `${gapTotals.gap} spare`,
     );
   });
 

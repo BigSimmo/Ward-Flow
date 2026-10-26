@@ -52,7 +52,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 aria-pressed={caseloadFilter === "all"}
                 onClick={() => setCaseloadFilter("all")}
               >
-                <span>All Active Caseload</span>
+                <span>All active caseload</span>
                 <span className={styles.badgePill} id={`${baseId}-demo-chipAllCaseloadBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.length}
                 </span>
@@ -74,7 +74,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 aria-pressed={caseloadFilter === "high"}
                 onClick={() => setCaseloadFilter("high")}
               >
-                <span>High Acuity / Assertive Outreach</span>
+                <span>High acuity / assertive outreach</span>
                 <span className={styles.badgePill} id={`${baseId}-demo-chipHighAcuityBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("high")).length}
                 </span>
@@ -85,14 +85,14 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 aria-pressed={caseloadFilter === "depot"}
                 onClick={() => setCaseloadFilter("depot")}
               >
-                <span>Depot Clinic Due</span>
+                <span>Depot clinic due</span>
                 <span className={styles.badgePill} id={`${baseId}-demo-chipDepotBadge`}>
                   {DEMO_COMMUNITY_CASELOAD.filter((c) => c.category.includes("depot")).length}
                 </span>
               </button>
             </div>
             <div className={styles.filterMeta}>
-              <span id={`${baseId}-demo-caseloadSectorNote`}>{team.name} / Sector Catchment</span>
+              <span id={`${baseId}-demo-caseloadSectorNote`}>{team.name} / sector catchment</span>
             </div>
           </div>
 
@@ -104,11 +104,11 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                   <path d="M8 5v3l2 2" />
                 </svg>
                 <span id={`${baseId}-demo-caseloadTitle`}>
-                  Community Treatment Orders (Form 5A) &amp; High Acuity Caseload
+                  Community treatment orders (Form 5A) &amp; high acuity caseload
                 </span>
               </h2>
               <span className={styles.badgePill} id={`${baseId}-demo-caseloadHeadBadge`}>
-                {demoVisibleCaseload.length} Active Records
+                {demoVisibleCaseload.length} active records
               </span>
             </div>
             <div className={styles.tableScroll}>
@@ -119,13 +119,13 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
               >
                 <thead>
                   <tr>
-                    <th scope="col">UMRN / Patient</th>
-                    <th scope="col">Age / Sex</th>
-                    <th scope="col">Statutory Status</th>
-                    <th scope="col">Care Plan Tier</th>
-                    <th scope="col">Key Clinician</th>
-                    <th scope="col">Last Contact</th>
-                    <th scope="col">Next Scheduled Contact / Review</th>
+                    <th scope="col">UMRN / patient</th>
+                    <th scope="col">Age / sex</th>
+                    <th scope="col">Statutory status</th>
+                    <th scope="col">Care plan tier</th>
+                    <th scope="col">Key clinician</th>
+                    <th scope="col">Last contact</th>
+                    <th scope="col">Next scheduled contact / review</th>
                     <th scope="col" className={styles.cellEnd}>
                       Actions
                     </th>
@@ -181,13 +181,13 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
         <section
           className={styles.caseloadSection}
           id="section-caseload"
-          aria-label="Catchment Active Caseload and Statutory CTO Register"
+          aria-label="Catchment active caseload and statutory CTO register"
         >
           <div className={styles.caseloadHead}>
             <h3 className={styles.caseloadTitle}>
-              <span id={`${baseId}-caseloadTitle`}>Catchment Active Caseload &amp; Statutory Register</span>
+              <span id={`${baseId}-caseloadTitle`}>Catchment active caseload &amp; statutory register</span>
               <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
-                {caseloadRows.length} Patients
+                {caseloadRows.length} patients
               </span>
               <span id={`${baseId}-caseloadSectorNote`} className={styles.displayNone}>
                 {team.name}
@@ -196,7 +196,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 Depot
               </span>
               <span id={`${baseId}-chipHighAcuityBadge`} className={styles.displayNone}>
-                High Acuity
+                High acuity
               </span>
             </h3>
             <div className={styles.filterChipsGroup}>
@@ -206,7 +206,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                 aria-pressed={caseloadFilter === "all"}
                 onClick={() => setCaseloadFilter("all")}
               >
-                <span>All Active</span>
+                <span>All active</span>
                 <span id={`${baseId}-chipAllCaseloadBadge`} className={styles.badgePill}>
                   {caseloadRows.length}
                 </span>

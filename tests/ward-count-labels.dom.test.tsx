@@ -28,7 +28,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { openJourneySplit, waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { openEdJourneys, openJourneySplit } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -86,22 +86,23 @@ describe("count labels say what they count", () => {
   });
 
   // Audit 6 (Josh, 20 Oct 2026): the figures the audit found still counting for themselves.
-  it("Statistics' Waiting in ED is the shared figure, and the open journeys are called Still open", () => {
+  it("Statistics names open ED journeys and retains them through transit", () => {
+    const expected = state.movements.filter(
+      (movement) => isOpen(movement) && movement.sourceAdmissionId === undefined && movement.originEdId !== undefined,
+    ).length;
     inProvider(<StatisticsScreen />);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
-    const waiting = within(chips)
-      .getByText(/^Waiting in ED · \d+ still open$/u)
-      .closest("button")!;
-    expect(waiting.textContent).toBe(
-      `${waitingInEds(state.movements, NOW_ANCHOR).total}Waiting in ED · ${state.movements.filter(isOpen).length} still open`,
-    );
+    const journeys = within(chips).getByText("Open ED journeys", { exact: true }).closest("button")!;
+    expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBe(expected);
+    expect(journeys.textContent).toBe(`${expected}Open ED journeys`);
   });
 
   it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {
     inProvider(<HandoverPage />);
     const strip = screen.getByTestId("ward-handover-kpi-strip");
-    const act = within(strip).getByRole("button", { name: /Act now$/u });
-    expect(act.textContent).toBe(`${activeActNowItems(state, NOW_ANCHOR).length}Act now`);
+    // Audit 24-4 decision 5 (Josh): the pill names people and alerts separately.
+    const act = within(strip).getByRole("button", { name: /Act now \(\d+ (?:person|people), \d+ alerts?\)$/u });
+    expect(act.textContent).toMatch(new RegExp(`^${activeActNowItems(state, NOW_ANCHOR).length}Act now \\(`, "u"));
     expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
   });
 

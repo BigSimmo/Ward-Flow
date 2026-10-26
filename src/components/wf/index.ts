@@ -68,7 +68,18 @@ export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
 export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
-export { Field, TextInput, Textarea, Select, Checkbox, Radio, Switch, Stepper } from "./form";
+export {
+  Field,
+  TextInput,
+  Textarea,
+  Select,
+  Checkbox,
+  Radio,
+  Switch,
+  Stepper,
+  ErrorSummary,
+  type ErrorSummaryItem,
+} from "./form";
 export { Timeline, Avatar, EmptyState, StatusLine, type TimelineItem } from "./feed";
 export { BarList, ColumnChart, Donut, type BarListRow } from "./chart";
 export {

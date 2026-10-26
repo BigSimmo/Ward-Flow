@@ -245,7 +245,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     ...movement,
     declines: movement.declines.filter((decline) => {
       if (!inWeek(decline.at, week)) return false;
-      if (knownDeclineReasons.has(decline.reason)) return true;
+      if (decline.reason !== undefined && knownDeclineReasons.has(decline.reason)) return true;
       unknownPlacementDeclines += 1;
       return false;
     }),

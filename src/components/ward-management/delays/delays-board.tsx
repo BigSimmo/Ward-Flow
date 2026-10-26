@@ -40,7 +40,6 @@ import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
   NO_FILTERS,
   OVER_24H,
-  OVER_8H,
   SILENT_MINUTES,
   H24,
   H8,
@@ -58,10 +57,12 @@ import {
   ownerTiles,
   runwayBins,
   wardSummary,
+  waitingOrderLine,
   waitTone,
   type BoardFilters,
   type BoardRow,
   isOver24hInEd,
+  isOver8hInEd,
 } from "./delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -397,8 +398,8 @@ export function DelaysBoard({
     return () => document.removeEventListener("keydown", onKey);
   }, [close, filters, selectedId]);
 
-  const over8 = rows.filter((row) => row.waited >= OVER_8H).length;
-  // Audit 6 (Josh, 20 Oct 2026): "Over 24h" is people in an ED 24 hours or more, as the TV counts it.
+  // Audit 6 (Josh, 20 Oct 2026) and Audit 24-4 NA2-10 (24 Oct): both count people still in an ED, as the TV does.
+  const over8 = rows.filter(isOver8hInEd).length;
   const over24 = rows.filter(isOver24hInEd).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
@@ -1076,6 +1077,9 @@ export function DelaysBoard({
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
+                <span className={styles.meta} data-testid="delays-order-note">
+                  {waitingOrderLine(flat)}
+                </span>
                 <span className={styles.wlegend} aria-hidden="true">
                   <span>
                     <i className={styles.lgAct} />

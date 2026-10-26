@@ -1,5 +1,5 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
-import { isDischargeBarrier } from "./ward-admissions";
+import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -42,7 +42,6 @@ export type BedEvent = Extract<
       | "BLOCK_BED_RELEASE"
       | "CLEAR_BED_RELEASE_BLOCK"
       | "SET_BED_PREPARATION"
-      | "RELEASE_BED"
       | "END_LEAVE_BED"
       | "END_COMMUNITY_TREATMENT_ORDER"
       | "REQUEST_CAPACITY_REFRESH"
@@ -99,7 +98,18 @@ export function reduceBedEvent(
         return reject(state, event, `This stay is already recorded in bed ${event.bedNumber}`);
       const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, admission.id);
       if (bedRefusal) return reject(state, event, bedRefusal);
-      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
+      const linkedMovement =
+        admission.state === "pulled" ? liveMovementForAdmission(admission, state.movements) : undefined;
+      const linkedReferral =
+        linkedMovement &&
+        state.referrals.find((referral) => referral.id === (admission.referralId ?? linkedMovement.referralId));
+      const linkedArm = linkedReferral?.destinations.find(
+        (arm) =>
+          arm.state === "accepted" &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      );
+      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber, linkedMovement?.id, linkedReferral?.id);
       if (heldRefusal) return reject(state, event, heldRefusal);
       const targetKind = numberedBedKind(unit, event.bedNumber)!;
       const priorKind =
@@ -141,6 +151,23 @@ export function reduceBedEvent(
                 row.id === unit.id ? { ...unit, allocatableLocked: lockedAfter } : row,
               ),
             }),
+        movements: linkedMovement
+          ? placed.movements.map((movement) =>
+              movement === linkedMovement ? { ...movement, heldBedNumber: event.bedNumber } : movement,
+            )
+          : placed.movements,
+        referrals: linkedArm
+          ? placed.referrals.map((referral) =>
+              referral === linkedReferral
+                ? {
+                    ...referral,
+                    destinations: referral.destinations.map((arm) =>
+                      arm === linkedArm ? { ...arm, heldBedNumber: event.bedNumber } : arm,
+                    ),
+                  }
+                : referral,
+            )
+          : placed.referrals,
         undoRecords: withUndoRecord(state.undoRecords, {
           kind: "bed-placement",
           admissionId: admission.id,
@@ -148,6 +175,13 @@ export function reduceBedEvent(
           at: event.now,
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
+          ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
+          ...(linkedArm
+            ? {
+                beforeReferralBed: linkedArm.heldBedNumber ?? null,
+                beforeReferralArmIndex: linkedReferral!.destinations.indexOf(linkedArm),
+              }
+            : {}),
           afterBed: event.bedNumber,
           bedKindChange: {
             before: admission.bedKind ?? null,
@@ -589,62 +623,6 @@ export function reduceBedEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return replaceBedRelease(state, release.id, prepared);
-    }
-
-    case "RELEASE_BED": {
-      const release = findBedRelease(state, event.releaseId);
-      if (!release) return reject(state, event, `no bed release found for id ${event.releaseId}`);
-      if (event.actingUnitId !== release.unitId) {
-        return reject(
-          state,
-          event,
-          `RELEASE_BED was raised acting as unit ${event.actingUnitId} but release ${release.id} belongs to unit ${release.unitId}`,
-        );
-      }
-      // Legal transitions: confirmed -> discharged and expected -> discharged; `discharged` is
-      // terminal (owner ruling: discharged, not released). Expected is accepted deliberately: "the
-      // person has left" is a fact about an empty bed.
-      if (release.state === "discharged") {
-        return reject(state, event, `release ${release.id} is already discharged and cannot be discharged again`);
-      }
-      const unit = findUnit(state, release.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${release.unitId}`);
-      // Owner decision: this completes a release only once its named admission has left. While they
-      // are still in the bed, `RECORD_LEAVING` is what completes it. See `departAdmission`.
-      const releasedAdmission = findAdmission(state, release.admissionId);
-      if (!releasedAdmission) {
-        return reject(
-          state,
-          event,
-          `release ${release.id} names admission ${release.admissionId}, which does not exist`,
-        );
-      }
-      if (releasedAdmission.state !== "departed") {
-        return reject(
-          state,
-          event,
-          `release ${release.id} completes when admission ${releasedAdmission.id} is recorded as having left (RECORD_LEAVING); they are still ${releasedAdmission.state}`,
-        );
-      }
-      // Spec D7: same freshness restatement as CONFIRM_BED_RELEASE. The blocked flag comes off here
-      // too: once the bed is free nothing is held up.
-      const updatedRelease: BedRelease = {
-        ...release,
-        state: "discharged",
-        waitingOn: null,
-        blocker: null,
-        blockedBy: null,
-        confirmedAt: event.now,
-      };
-      // The person has already left (refused above otherwise) and `departAdmission` moved the
-      // figures then; this event only records the stage and never moves a count, so the unit is left
-      // as it is. `unitCapacity`'s reconciliation identity (`tests/ward-capacity-reconciliation.test.ts`)
-      // depends on that. `sexMix` is not touched either: a release does not say who left, so the
-      // count moves when the admission departs (owner rulings), never by guessing here. Audit A1-11:
-      // recording the stage never stamps the ward's figures as confirmed.
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceBedRelease(state, release.id, updatedRelease);
     }
 
     case "END_LEAVE_BED": {

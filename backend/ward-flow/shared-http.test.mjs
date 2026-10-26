@@ -1,5 +1,6 @@
 // @ts-check
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
 import { storageFailure } from "./shared-http.mjs";
@@ -99,7 +100,7 @@ test("a named coordinator can read audit events without reading or commanding th
   const { calls, handler } = setup();
   const response = await handler(request("/audit"));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { events: [auditEvent] });
+  assert.deepEqual(await response.json(), { events: [auditEvent], complete: true, nextCursor: null });
   assert.deepEqual(calls, [["audit", { ...STATEWIDE_VIEW, actorId: coordinator }]]);
 });
 test("another tenant account cannot read audit events or reach the workspace", async () => {
@@ -615,6 +616,23 @@ test("cover, requests and answers check their fields; asking for access needs no
     takesRequests: async () => false,
   });
   assert.equal((await (await early.handler(request("/access"))).json()).canRequest, false);
+  // A role the server cannot read because it names no health service is refused the same way, under
+  // its own code, so the screen can say to have it given again (RA-02).
+  for (const requestAccess of [answer("request"), undefined]) {
+    const unnamed = setup(other, "prototype", {
+      viewer: async () => ({ status: "none", needsService: true }),
+      ...(requestAccess ? { requestAccess } : {}),
+    });
+    for (const path of ["/access", ""]) {
+      const refusedUnnamed = await unnamed.handler(request(path));
+      assert.equal(refusedUnnamed.status, 403, path);
+      assert.deepEqual(await refusedUnnamed.json(), {
+        error: "No Ward Flow role is assigned to this account",
+        code: "role-needs-service",
+        canRequest: !!requestAccess,
+      });
+    }
+  }
 });
 
 test("a signed-out sign-in is refused on every route at once; sign-out needs no role", async () => {
@@ -656,7 +674,7 @@ test("a database outage while checking a sign-out is a 503, never a pass", async
   assert.equal(calls.length, 0);
 });
 
-test("every desk logs the records it opens; only a coordinator reads the log and the openings", async () => {
+test("every desk logs the records it opens; the access admin reads the log, a coordinator the log and the openings", async () => {
   const logged = [];
   const store = {
     logView: async (view, patientId, surface) => {
@@ -695,15 +713,124 @@ test("every desk logs the records it opens; only a coordinator reads the log and
     views: [{ patient_id: "PT-1001" }],
     openings: [{ id: "7", scope: "statewide" }],
   });
-  // A service coordinator reads them too; the store keeps it to its own service's records.
+  // The access admin reads the log for its Access log in Settings (D-80 item 14), without the
+  // openings.
+  const admin = setup(other, "prototype", {
+    ...store,
+    viewer: async () => ({
+      ...wardView,
+      access: { role: "admin", scope: { kind: "service", service: "North Metro" } },
+    }),
+  });
+  assert.deepEqual(await (await admin.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+  });
   const service = setup(other, "prototype", {
     ...store,
     viewer: async () => ({
       ...wardView,
-      access: { role: "coordinator", scope: { kind: "service", service: "Synthetic" } },
+      access: { role: "coordinator", scope: { kind: "service", service: "North Metro" } },
     }),
   });
-  assert.deepEqual((await (await service.handler(request("/record-access"))).json()).openings, [
-    { id: "7", scope: "service" },
-  ]);
+  // A service coordinator reads the log and the openings for its review list; the store keeps it
+  // to its own service's records (D-80 item 14).
+  assert.deepEqual(await (await service.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+    openings: [{ id: "7", scope: "service" }],
+  });
+});
+
+test("History's archive is read with the desk's own view, and a store without one sends an empty list", async () => {
+  const asked = [];
+  const records = [{ collection: "movements", body: { id: "WF-007" } }];
+  const ward = setup(other, "prototype", {
+    viewer: async () => wardView,
+    archive: async (view) => {
+      asked.push(view.access.role);
+      return { archived: 1, records };
+    },
+  });
+  const response = await ward.handler(request("/archive"));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { archived: 1, records });
+  assert.deepEqual(asked, ["ward"]);
+  const older = setup(other, "prototype", { viewer: async () => wardView });
+  assert.deepEqual(await (await older.handler(request("/archive"))).json(), { archived: 0, records: [] });
+});
+
+test("an older store without session identity omits receipt scope even with finite access expiry", async () => {
+  const { handler } = setup(coordinator, "prototype", {
+    sessionLimitMinutes: null,
+    receipt: async () => null,
+    viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
+  });
+  const response = await handler(request("", undefined, "Bearer unknown"));
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(Number.isFinite(value.accessUntil), true);
+  assert.equal(Object.hasOwn(value, "receiptScope"), false);
+});
+
+async function workspaceWithSessionIdentity(identity) {
+  const handler = createHandler({
+    config: { coordinatorIds: [coordinator], workspaceId: "synthetic-workspace" },
+    sharedStore: {
+      viewer: async () => ({ ...STATEWIDE_VIEW, actorId: coordinator, accessUntil: Date.now() + 60_000 }),
+      sessionLimitMinutes: null,
+      read: async () => ({ dataMode: "prototype", revision: 1 }),
+      receipt: async () => null,
+    },
+    authenticate: async (_token, { session }) => {
+      Object.assign(session, identity);
+      return coordinator;
+    },
+    log: () => {},
+  });
+  const response = await handler(request());
+  assert.equal(response.status, 200);
+  return response.json();
+}
+
+test("blank session IDs and nonfinite start times cannot enable receipt recovery", async () => {
+  for (const identity of [
+    { sessionId: "" },
+    { sessionId: "   " },
+    { sessionId: "", startedAt: Number.NaN },
+    { startedAt: Number.POSITIVE_INFINITY },
+  ]) {
+    const value = await workspaceWithSessionIdentity(identity);
+    assert.equal(Object.hasOwn(value, "receiptScope"), false);
+  }
+});
+
+test("usable session identities preserve the original receipt hash bytes", async () => {
+  const sessionId = " 11111111-1111-4111-8111-111111111111 ";
+  const cases = [
+    { identity: { sessionId, startedAt: 1_700_000_000_000 }, binding: sessionId },
+    { identity: { startedAt: 1_700_000_000_000 }, binding: 1_700_000_000_000 },
+    { identity: { sessionId: null, startedAt: 0 }, binding: 0 },
+  ];
+  const scopes = [];
+  for (const { identity, binding } of cases) {
+    const value = await workspaceWithSessionIdentity(identity);
+    const expected = createHash("sha256")
+      .update(JSON.stringify(["synthetic-workspace", coordinator, null, binding]))
+      .digest("hex");
+    assert.equal(value.receiptScope, expected);
+    scopes.push(value.receiptScope);
+  }
+  assert.equal(new Set(scopes).size, cases.length);
+});
+
+test("an adapter without receipts does not advertise recovery", async () => {
+  const { handler } = setup(coordinator, "prototype", { sessionLimitMinutes: null });
+  const response = await handler(request());
+  assert.equal(response.status, 200);
+  assert.equal(Object.hasOwn(await response.json(), "receiptScope"), false);
+});
+
+test("an unsupported receipt lookup returns not found rather than an internal error", async () => {
+  const { handler } = setup(coordinator, "prototype", { sessionLimitMinutes: null });
+  const receipt = await handler(request(`/receipt?commandId=${commandId}`));
+  assert.equal(receipt.status, 404);
 });

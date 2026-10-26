@@ -39,6 +39,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { allWardStatistics, wardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { axisMax } from "./statistics-axis";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { downloadCsv } from "./statistics-csv";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { edWaitFigures } from "./statistics-ed-waits";
@@ -429,6 +430,7 @@ function wardMetricValue(statistics: WardStatistics, metric: WardMetric): number
 }
 
 function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
+  const words = useStatisticsCounts();
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<WardMetric>("stay");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -476,7 +478,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
         ...shown.map((row) => [
           row.unit.name,
           row.unit.siteCode,
-          ...WARD_COLUMNS.map((column) => column.cell(row.statistics).text),
+          ...WARD_COLUMNS.map((column) => column.cell(row.statistics, words).text),
         ]),
       ],
       { asAt, scope: "Ward comparison; wards shown" },
@@ -571,6 +573,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
             caption="Ward measures, synthetic"
             rowHeader="Ward"
             columns={WARD_COLUMNS}
+            words={words}
             rows={shown.map((row) => ({
               id: row.unit.id,
               name: row.unit.name,
@@ -619,6 +622,7 @@ function edMetricValue(entry: EdCompareRow, metric: EdMetric): number {
 }
 
 function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
+  const words = useStatisticsCounts();
   const [view, setView] = useState<View>("chart");
   const [metric, setMetric] = useState<EdMetric>("open");
   const [order, setOrder] = useState<SortOrder>("high");
@@ -644,7 +648,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
         ...rows.map((entry) => [
           entry.department.name,
           entry.department.siteCode,
-          ...ED_COLUMNS.map((column) => column.cell(entry.row).text),
+          ...ED_COLUMNS.map((column) => column.cell(entry.row, words).text),
           entry.longestMinutes,
         ]),
       ],
@@ -700,6 +704,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
             caption="Emergency department measures, synthetic"
             rowHeader="Department"
             columns={ED_COLUMNS}
+            words={words}
             rows={rows.map((entry) => ({
               id: entry.department.id,
               name: shortDepartmentName(entry.department.name),
@@ -1089,13 +1094,22 @@ function UnitChooser({ units, emergencyDepartments }: { units: Unit[]; emergency
  */
 type CompareCell = { readonly text: string; readonly unmeasured?: boolean };
 
-type CompareColumn<Row> = { readonly header: string; readonly cell: (row: Row) => CompareCell };
+/**
+ * Issue #618: the executive desk's small number rule, so the table and its CSV word a small count of
+ * people the same way. Every other desk gets the counts back unchanged.
+ */
+type CountWords = Pick<ReturnType<typeof useStatisticsCounts>, "small" | "parts">;
+
+type CompareColumn<Row> = {
+  readonly header: string;
+  readonly cell: (row: Row, words: CountWords) => CompareCell;
+};
 
 type CompareRow<Row> = { readonly id: string; readonly name: string; readonly code: string; readonly row: Row };
 
 /** A measured count. Nought is a true and correct answer and renders as one — see `ward-statistics.ts`. */
-function count(value: number): CompareCell {
-  return { text: String(value) };
+function count(value: number, words: CountWords): CompareCell {
+  return { text: String(words.small(value)) };
 }
 
 /** A figure that cannot be FORMED, worded rather than flattened. Never a nought and never a dash. */
@@ -1121,15 +1135,18 @@ const WARD_COLUMNS: readonly CompareColumn<WardStatistics>[] = [
         : { text: `${statistics.averageLengthOfStayDays}d` },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
-  { header: "Blockers", cell: (statistics) => count(statistics.readyToLeaveCannot) },
-  { header: "Long stays", cell: (statistics) => count(statistics.longStays) },
+  { header: "Blockers", cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },
+  { header: "Long stays", cell: (statistics, words) => count(statistics.longStays, words) },
   {
     // `consideredCount` is met + missed: 0 of 0 is undefined, not zero, so it keeps the absence wording.
     header: "Dates met",
-    cell: ({ dischargeDateOutcomes }) =>
-      dischargeDateOutcomes.consideredCount === 0
-        ? cannotBeFormed("none yet")
-        : { text: `${dischargeDateOutcomes.met} of ${dischargeDateOutcomes.consideredCount} met` },
+    cell: ({ dischargeDateOutcomes }, words) => {
+      if (dischargeDateOutcomes.consideredCount === 0) return cannotBeFormed("none yet");
+      // Met and missed add up to the total shown, so met is withheld when missed could be worked back.
+      const { met, consideredCount } = dischargeDateOutcomes;
+      const [metShown] = words.parts([met, consideredCount - met]);
+      return { text: `${metShown} of ${words.small(consideredCount)} met` };
+    },
   },
 ];
 
@@ -1137,9 +1154,9 @@ type EdRow = { readonly onTheList: number; readonly urgent: number; readonly unp
 
 /** All three are lengths of a filtered list, so nought is a count and never an absence. */
 const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
-  { header: "On the list", cell: (row) => count(row.onTheList) },
-  { header: "Marked urgent", cell: (row) => count(row.urgent) },
-  { header: "No ward yet", cell: (row) => count(row.unplaced) },
+  { header: "On the list", cell: (row, words) => count(row.onTheList, words) },
+  { header: "Marked urgent", cell: (row, words) => count(row.urgent, words) },
+  { header: "No ward yet", cell: (row, words) => count(row.unplaced, words) },
 ];
 
 /** One comparison table: the record, in the recorded order, with no sorting, totals or row markers. */
@@ -1149,6 +1166,7 @@ function CompareTable<Row>({
   caption,
   rowHeader,
   columns,
+  words,
   rows,
 }: {
   testId: string;
@@ -1157,6 +1175,7 @@ function CompareTable<Row>({
   caption: string;
   rowHeader: string;
   columns: readonly CompareColumn<Row>[];
+  words: CountWords;
   rows: readonly CompareRow<Row>[];
 }) {
   return (
@@ -1182,7 +1201,7 @@ function CompareTable<Row>({
                 {unitLabel(name, code)}
               </th>
               {columns.map((column) => {
-                const cell = column.cell(row);
+                const cell = column.cell(row, words);
                 return (
                   <td key={column.header} className={styles.num}>
                     {cell.unmeasured ? <span className={styles.muted}>{cell.text}</span> : cell.text}

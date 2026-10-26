@@ -2,6 +2,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
   ACCESS_COVER_MIGRATION,
+  ARCHIVE_MIGRATION,
   LATEST_MIGRATION,
   MINIMUM_RUNTIME_MIGRATION,
   RECORDS_MIGRATION,
@@ -31,7 +32,26 @@ const inUse = (param) => `(m.kind = 'cover' OR coalesce(m.last_used_at, m.grante
 const MAX_OPEN_REQUESTS = 200;
 /** The most a whole workspace may hold, as before migration 10 split it into rows. */
 const MAX_WORLD_BYTES = 8_388_608;
+/** Past this a save logs a warning, well before the limit refuses every save. */
+export const WARN_WORLD_BYTES = 6_291_456;
+/** The size warning is logged at most this often by one server. */
+const SIZE_WARNING_EVERY_MS = 600_000;
+/** From migration 14, closed records are looked for at most once in this many saves. */
+export const ARCHIVE_EVERY_REVISIONS = 20;
+/** The newest archived records one desk reads for History. */
+export const ARCHIVE_READ_LIMIT = 5000;
 const RECORD_COLUMNS = "collection, record_id, kind, ordinal, revision, body";
+/**
+ * A copy of `value` with object keys in PostgreSQL's jsonb order (shorter keys first, then by
+ * bytes), so a record kept from a save reads back exactly as the database would send it.
+ */
+function jsonbOrdered(value) {
+  if (Array.isArray(value)) return value.map(jsonbOrdered);
+  if (!value || typeof value !== "object") return value;
+  const keys = Object.keys(value).map((key) => ({ key, bytes: Buffer.from(key, "utf8") }));
+  keys.sort((a, b) => a.bytes.length - b.bytes.length || Buffer.compare(a.bytes, b.bytes));
+  return Object.fromEntries(keys.map(({ key }) => [key, jsonbOrdered(value[key])]));
+}
 /** Whether a stored workspace row stands in for rows of `ward_flow.workspace_records`. */
 const hasMarkers = (payload) =>
   !!payload?.state &&
@@ -128,13 +148,27 @@ export function createWorkspaceStore(
     demoControls: demoEvents && (!view?.access || engine.wholeNetwork(view.access)),
     revision: Number(row.revision),
     ...accessContext(at, view),
+    ...(view
+      ? {
+          accessUntil: Math.min(
+            view.accessUntil ?? Infinity,
+            ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
+          ),
+        }
+      : {}),
     payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
     now: engine.worldNow(row.payload, at),
+    // From migration 14: how many records this world generation has archived, so a desk reads the
+    // archive again for History only when the number changes.
+    ...(Number.isSafeInteger(row.archived) ? { archived: row.archived } : {}),
   });
   /** The cutoff before which a role not used since switches off (synthetic, clinical values). */
   const unusedBefore = (at) => new Date(at.getTime() - engine.ACCESS_UNUSED_MINUTES * 60_000);
   // D-80: a role's end date is at most 12 months away.
   const tooLong = (expiresAt, at) => expiresAt.getTime() > at.getTime() + engine.ACCESS_MAX_TERM_MINUTES * 60_000;
+  // A role reads as ended 12 months after it was given, whatever end date it was stored with, so a
+  // grant made before the ceiling was checked stops there too (RA-06). A whole number, so safe inline.
+  const MAX_TERM = `interval '${Math.trunc(Number(engine.ACCESS_MAX_TERM_MINUTES))} minutes'`;
   /**
    * The place each desk (a membership a phone was turned on from) works across, as the viewer
    * builds it: a nurse in charge's own ward plus any ward cover that account holds, so night cover
@@ -183,6 +217,57 @@ export function createWorkspaceStore(
     return kept.slice(0, cap);
   }
   let known = { version: 0, until: 0 };
+  /**
+   * The workspace records this server last read or saved (limits audit, 25 Oct 2026: reading the
+   * whole board from the database on every save and refresh would use up Supabase's monthly data
+   * allowance in about a day). `confirmed` is a state read from the database. `pending` is the
+   * state a save of this server wrote, trusted only once the database shows that save committed.
+   * Each is named by the workspace row's revision and update time. A matching workspace row needs
+   * no record read; otherwise only records whose content changed since `confirmed` are sent. The
+   * bodies here are never handed out: every reader gets its own copy.
+   * @type {{ revision: number, updatedAt: number, rows: Map<string, any> } | null}
+   */
+  let confirmed = null;
+  /** @type {{ revision: number, updatedAt: number, rows: Map<string, any> } | null} */
+  let pending = null;
+  const rowKey = (collection, recordId) => `${collection}\u0000${recordId}`;
+  /** The cached state the workspace row names, promoting a committed save; null when none does. */
+  function cachedState(revision, updatedAt) {
+    const at = updatedAt instanceof Date ? updatedAt.getTime() : Number.NaN;
+    if (pending && pending.revision === Number(revision) && pending.updatedAt === at) confirmed = pending;
+    // A save still committing is newer than this row; any other pending state never committed.
+    if (!pending || pending.revision <= Number(revision)) pending = null;
+    return confirmed && confirmed.revision === Number(revision) && confirmed.updatedAt === at ? confirmed : null;
+  }
+  /** Remembers `rows` as the state at this workspace row, and returns copies for the caller. */
+  function remember(revision, updatedAt, rows, keep = true) {
+    if (keep && updatedAt instanceof Date)
+      confirmed = {
+        revision: Number(revision),
+        updatedAt: updatedAt.getTime(),
+        rows: new Map(rows.map((row) => [rowKey(row.collection, row.record_id), row])),
+      };
+    return copies(rows);
+  }
+  const copies = (rows) => rows.map((row) => ({ ...row, body: structuredClone(row.body) }));
+  /**
+   * Rows read with only the bodies changed since `confirmed` (`fresh`), completed from it. Null
+   * when an unchanged row is missing there (a rollback put records back, say): read them all.
+   */
+  function completed(rows) {
+    const out = [];
+    for (const { fresh, ...row } of rows) {
+      if (fresh) out.push(row);
+      else {
+        const kept = confirmed?.rows.get(rowKey(row.collection, row.record_id));
+        if (!kept) return null;
+        out.push({ ...row, body: kept.body });
+      }
+    }
+    return out;
+  }
+  /** When this server last logged the workspace size warning. */
+  let sizeWarnedAt = -Infinity;
   async function schemaVersion() {
     const now = clock().getTime();
     if (known.until > now) return known.version;
@@ -260,14 +345,33 @@ export function createWorkspaceStore(
   async function readWorld(connection, columns = "data_mode, revision, payload") {
     for (let attempt = 0; ; attempt += 1) {
       const records = known.version >= RECORDS_MIGRATION;
+      // Records are sent only when the workspace row is not the cached one, and then only the
+      // bodies changed since it (the limits audit). A second read sends them all if one is missing.
+      const base = attempt === 0 ? (pending ?? confirmed) : null;
+      const since = attempt === 0 ? (confirmed?.revision ?? -1) : -1;
       try {
         const { rows } = await connection.query(
-          `SELECT ${columns}${records ? `, (SELECT coalesce(jsonb_agg(jsonb_build_object('collection', r.collection, 'record_id', r.record_id, 'kind', r.kind, 'ordinal', r.ordinal, 'revision', r.revision, 'body', r.body)), '[]'::jsonb) FROM ward_flow.workspace_records r WHERE r.workspace_id = w.id) AS records` : ""} FROM ward_flow.workspaces w WHERE id=$1 AND data_mode='prototype'`,
-          [workspaceId],
+          `SELECT ${columns}${records ? `, w.revision AS cache_revision, date_trunc('milliseconds', w.updated_at) AS cache_updated_at, CASE WHEN w.revision = $2 AND date_trunc('milliseconds', w.updated_at) = $3 THEN NULL ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object('collection', r.collection, 'record_id', r.record_id, 'kind', r.kind, 'ordinal', r.ordinal, 'revision', r.revision, 'fresh', r.revision > $4, 'body', CASE WHEN r.revision > $4 THEN r.body END)), '[]'::jsonb) FROM ward_flow.workspace_records r WHERE r.workspace_id = w.id) END AS records` : ""} FROM ward_flow.workspaces w WHERE id=$1 AND data_mode='prototype'`,
+          records ? [workspaceId, base?.revision ?? -1, base ? new Date(base.updatedAt) : null, since] : [workspaceId],
         );
         const row = rows[0];
         if (!row) return null;
-        if (records) return { ...row, payload: assembleWorld(row.payload, row.records) };
+        if (records) {
+          const { cache_revision: revision, cache_updated_at: updatedAt, records: read, ...fields } = row;
+          const cached = cachedState(revision, updatedAt);
+          let stored;
+          if (read === null && cached) stored = copies([...cached.rows.values()]);
+          else {
+            const whole = read && completed(read);
+            if (!whole) {
+              confirmed = null;
+              if (attempt === 0) continue;
+              throw new Error("Stored workspace records are incomplete");
+            }
+            stored = remember(revision, updatedAt, whole);
+          }
+          return { ...fields, payload: assembleWorld(row.payload, stored) };
+        }
         if (attempt === 0 && hasMarkers(row.payload)) {
           known = { version: 0, until: 0 };
           if ((await schemaVersion()) >= RECORDS_MIGRATION) continue;
@@ -289,7 +393,11 @@ export function createWorkspaceStore(
     if (engine.wholeNetwork(view.access)) return null;
     const stored = await readWorld(pool, "payload");
     if (!stored || !engine.validWorld(stored.payload)) return [];
-    const { state } = engine.scopeWorld(stored.payload, view.access, at, []);
+    return placeRecords(stored.payload, view.access, at);
+  }
+  /** The ids `recordsInPlace` lists, from a world already in hand. */
+  function placeRecords(world, access, at) {
+    const { state } = engine.scopeWorld(world, access, at, []);
     const ids = [
       ...state.patients.map((patient) => patient.id),
       ...state.movements.flatMap((movement) => [movement.id, movement.patientId]),
@@ -302,19 +410,46 @@ export function createWorkspaceStore(
    * stored workspace row in `core` and its records in `stored`. The records are read after the
    * lock is held, so a save that committed while this waited is never missed.
    */
-  async function lockedWorld(client, mode) {
+  async function lockedWorld(client, mode, keep = true) {
     const { rows } = await client.query(
-      `SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR ${mode}`,
+      `SELECT data_mode, revision, payload, date_trunc('milliseconds', updated_at) AS cache_updated_at FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR ${mode}`,
       [workspaceId],
     );
-    const row = rows[0];
-    if (!row) return null;
+    const found = rows[0];
+    if (!found) return null;
+    const { cache_updated_at: updatedAt, ...row } = found;
     if (!keepsRecords(row.payload)) return { ...row, core: null, stored: [] };
-    const { rows: stored } = await client.query(
-      `SELECT ${RECORD_COLUMNS} FROM ward_flow.workspace_records WHERE workspace_id=$1`,
-      [workspaceId],
-    );
-    return { ...row, core: row.payload, stored, payload: assembleWorld(row.payload, stored) };
+    // Under the lock no save can commit, so the cached state is exact when the row names it, and
+    // otherwise only bodies changed since it are read (the limits audit, 25 Oct 2026).
+    const cached = keep ? cachedState(row.revision, updatedAt) : null;
+    let stored;
+    if (cached) stored = copies([...cached.rows.values()]);
+    else {
+      const since = keep ? (confirmed?.revision ?? -1) : -1;
+      const { rows: read } = await client.query(
+        `SELECT ${RECORD_COLUMNS.replace("body", "CASE WHEN revision > $2 THEN body END AS body")}, revision > $2 AS fresh FROM ward_flow.workspace_records WHERE workspace_id=$1`,
+        [workspaceId, since],
+      );
+      let whole = completed(read);
+      if (!whole) {
+        confirmed = null;
+        ({ rows: whole } = await client.query(
+          `SELECT ${RECORD_COLUMNS} FROM ward_flow.workspace_records WHERE workspace_id=$1`,
+          [workspaceId],
+        ));
+      }
+      // A read after this transaction's own writes (a new workspace) is never remembered: it may
+      // still roll back.
+      stored = remember(row.revision, updatedAt, whole, keep);
+    }
+    // `cache`: the cached state `stored` was copied from, which a save here builds on.
+    return {
+      ...row,
+      core: row.payload,
+      stored,
+      cache: keep ? confirmed : null,
+      payload: assembleWorld(row.payload, stored),
+    };
   }
   /**
    * Saves `world` at `revision` over `row` from `lockedWorld`. From migration 10 only the records
@@ -331,7 +466,12 @@ export function createWorkspaceStore(
       ]);
       return;
     }
-    if (JSON.stringify(world).length > MAX_WORLD_BYTES) throw new Error("Workspace too large");
+    const bytes = JSON.stringify(world).length;
+    if (bytes > WARN_WORLD_BYTES && at.getTime() - sizeWarnedAt >= SIZE_WARNING_EVERY_MS) {
+      sizeWarnedAt = at.getTime();
+      log({ event: "ward_backend_workspace_size_warning", bytes, limit: MAX_WORLD_BYTES });
+    }
+    if (bytes > MAX_WORLD_BYTES) throw new Error("Workspace too large");
     const plan = planSave(row.stored, world, revision, row.core);
     await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
       workspaceId,
@@ -340,6 +480,84 @@ export function createWorkspaceStore(
       at,
     ]);
     await writeRecords(client, plan, at);
+    pending = savedState(row, plan, revision, at);
+  }
+  /**
+   * The records as this save leaves them, from the cached rows it started from; trusted once the
+   * database shows the save committed (`cachedState`). Null when a row it kept is not cached.
+   */
+  function savedState(row, plan, revision, at) {
+    if (!row.cache) return null;
+    const rows = new Map();
+    for (const kept of row.stored) {
+      const key = rowKey(kept.collection, kept.record_id);
+      const cached = row.cache.rows.get(key);
+      if (!cached) return null;
+      rows.set(key, cached);
+    }
+    for (const gone of plan.deletes) rows.delete(rowKey(gone.collection, gone.recordId));
+    for (const part of plan.upserts)
+      rows.set(rowKey(part.collection, part.recordId), {
+        collection: part.collection,
+        record_id: part.recordId,
+        kind: part.kind,
+        ordinal: part.ordinal,
+        revision: String(part.revision),
+        body: jsonbOrdered(part.body),
+      });
+    return { revision: Number(revision), updatedAt: at.getTime(), rows };
+  }
+  /**
+   * From migration 14, moves this world's closed records older than 30 days into the archive table
+   * (`engine.archiveClosed`), in the save's own transaction, and returns the smaller world. Each row
+   * is written before the record leaves the workspace, so nothing is lost if the save fails.
+   */
+  async function archiveOld(client, world, revision, at) {
+    const { world: kept, archived } = engine.archiveClosed(world, at);
+    if (!archived.length) return world;
+    await client.query(
+      "INSERT INTO ward_flow.archived_records(workspace_id, world_generation, collection, record_id, closed_at, body, archived_revision, archived_at) SELECT $1, $2, r.collection, r.record_id, r.closed_at, r.body, $3, $4 FROM jsonb_to_recordset($5::jsonb) AS r(collection text, record_id text, closed_at integer, body jsonb) ON CONFLICT DO NOTHING",
+      [
+        workspaceId,
+        world.state.worldGeneration,
+        revision,
+        at,
+        JSON.stringify(
+          archived.map((record) => ({
+            collection: record.collection,
+            record_id: record.id,
+            closed_at: record.closedAt,
+            body: record.body,
+          })),
+        ),
+      ],
+    );
+    return kept;
+  }
+  /**
+   * How many records this world generation has archived; `undefined` before migration 14 (as last
+   * read) or when the count cannot be read, so a read never fails over the History extra. Inside a transaction
+   * the count runs under a savepoint: a failed count (the table rolled back under a cached version)
+   * must never abort the save it rides on, which would otherwise end in a silent rollback.
+   */
+  async function archivedCount(connection, world) {
+    // The version this store last read, never a new read: the History count must not change when
+    // the store notices a rollback.
+    if (known.version < ARCHIVE_MIGRATION) return undefined;
+    const guarded = connection !== pool;
+    if (guarded) await connection.query("SAVEPOINT archived_count");
+    try {
+      const { rows } = await connection.query(
+        "SELECT count(*)::integer AS archived FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2",
+        [workspaceId, world.state.worldGeneration],
+      );
+      if (guarded) await connection.query("RELEASE SAVEPOINT archived_count");
+      return rows[0]?.archived ?? 0;
+    } catch (error) {
+      if (guarded) await connection.query("ROLLBACK TO SAVEPOINT archived_count");
+      forgetVersionOnMissing(error);
+      return undefined;
+    }
   }
   async function writeRecords(client, plan, at) {
     if (plan.deletes.length)
@@ -386,7 +604,7 @@ export function createWorkspaceStore(
           changes: {},
         });
       }
-      row = await lockedWorld(client, "UPDATE");
+      row = await lockedWorld(client, "UPDATE", false);
     }
     at.setTime(clock().getTime());
     if (row?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
@@ -647,8 +865,15 @@ export function createWorkspaceStore(
     if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
     const stored = await readWorld(pool);
-    if (stored && engine.validWorld(stored.payload)) return snapshot(stored, at, view);
-    return transaction(async (client, now) => snapshot(await lock(client, actorId, now, view), now, view));
+    if (stored && engine.validWorld(stored.payload)) {
+      stored.archived = await archivedCount(pool, stored.payload);
+      return snapshot(stored, at, view);
+    }
+    return transaction(async (client, now) => {
+      const row = await lock(client, actorId, now, view);
+      row.archived = await archivedCount(client, row.payload);
+      return snapshot(row, now, view);
+    });
   }
   /**
    * A member's full snapshot, with the role and covers resolved again under a share lock on the
@@ -666,6 +891,7 @@ export function createWorkspaceStore(
       if (current.status !== "ok") throw new Error("role-ended");
       // The HTTP reply uses this request's view for its access metadata too.
       Object.assign(view, current);
+      row.archived = await archivedCount(client, row.payload);
       return snapshot(row, at, current);
     });
     if (ready) return ready;
@@ -674,6 +900,7 @@ export function createWorkspaceStore(
     return transaction(async (client, now) => {
       const row = await lock(client, actorId, now, current);
       Object.assign(view, current);
+      row.archived = await archivedCount(client, row.payload);
       return snapshot(row, now, current);
     });
   }
@@ -691,6 +918,7 @@ export function createWorkspaceStore(
   /** Resolve through the caller's connection so locked writes never use a stale joined scope. */
   async function resolveViewer(actorId, { bootstrap = false, workingAs = null }, connection, at, version) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
+    let needsService = false;
     if (version >= ROLE_ACCESS_MIGRATION) {
       // From 9, a role not worked as for the set time is switched off (cover is too short to go
       // unused), and cover is a membership of its own kind.
@@ -698,8 +926,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? "SELECT id, role, scope, kind, last_used_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20"
-            : "SELECT id, role, scope, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 ORDER BY granted_at, id LIMIT 20",
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -709,11 +937,20 @@ export function createWorkspaceStore(
       const roles = [];
       const wardCovers = [];
       for (const row of rows) {
-        // A row the access table would not allow is skipped, never widened.
+        // A row the access table would not allow is skipped, never widened. One that names no
+        // health service is noted, so the account is told why it has no role (RA-02).
         const access = engine.parseAccess(row.role, row.scope);
-        if (!access) continue;
+        if (!access) {
+          if (engine.accessNeedsService(row.role, row.scope)) needsService = true;
+          continue;
+        }
         if (row.kind === "cover" && access.role === "ward")
-          wardCovers.push({ membershipId: row.id, access, lastUsed: row.last_used_at ?? null });
+          wardCovers.push({
+            membershipId: row.id,
+            access,
+            lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
+          });
         // Cover gives no place of its own, so it can never be passed on (own: null).
         else
           roles.push({
@@ -721,6 +958,7 @@ export function createWorkspaceStore(
             access,
             own: row.kind === "cover" ? null : access,
             lastUsed: row.last_used_at ?? null,
+            accessUntil: new Date(row.expires_at).getTime(),
           });
       }
       // Cover of a ward joins a nurse in charge's own ward, so night cover of two wards is one desk.
@@ -731,6 +969,7 @@ export function createWorkspaceStore(
           choice.access.role === "ward" && wardCovers.length
             ? {
                 ...choice,
+                accessUntil: Math.min(choice.accessUntil, ...wardCovers.map((cover) => cover.accessUntil)),
                 access: engine.withCover(
                   choice.access,
                   wardCovers.map((cover) => cover.access.scope),
@@ -751,7 +990,9 @@ export function createWorkspaceStore(
             status: "choose",
             choices: choices.map((choice) => ({ workingAs: choice.membershipId ?? "bootstrap", ...choice.access })),
           }
-        : { status: "none" };
+        : needsService && !choices.length
+          ? { status: "none", needsService: true }
+          : { status: "none" };
     let grants = [];
     let recentGrant = false;
     const writeEvery = new Date(at.getTime() - LAST_USED_EVERY_MS);
@@ -803,6 +1044,7 @@ export function createWorkspaceStore(
       actorId,
       version,
       membershipId: chosen.membershipId,
+      accessUntil: "accessUntil" in chosen && typeof chosen.accessUntil === "number" ? chosen.accessUntil : Infinity,
       access: chosen.access,
       // The role as granted, before any cover joined it: what this desk may give cover of. `null`
       // when the desk is working as cover, which is never given on.
@@ -944,6 +1186,35 @@ export function createWorkspaceStore(
       view.version >= ACCESS_COVER_MIGRATION &&
       engine.PUSH_ROLES.includes(view.access.role)
     );
+  }
+  /** A bounded audit page; its cursor includes progress through rows outside this desk. */
+  async function auditPage(view, cursor = null) {
+    const whole = !view || engine.wholeNetwork(view.access);
+    const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
+    const statewide = whole || view.access.scope.kind === "statewide";
+    let payload;
+    if (!statewide) {
+      payload = (await readWorld(pool, "payload"))?.payload;
+      if (!payload || !engine.validWorld(payload)) return { events: [], complete: true, nextCursor: null };
+    }
+    // Scan at most ten raw pages per request, applying scope before the public 200-row cap.
+    // Sequence stays as the database's bigint text: never round a cursor through Number.
+    const selected = [];
+    let before = cursor;
+    for (let page = 0; page < 10; page++) {
+      const { rows } = await pool.query(
+        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+        before === null ? [workspaceId] : [workspaceId, before],
+      );
+      for (const row of rows) {
+        before = row.sequence;
+        const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
+        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+        if (selected.length === 200) return { events: selected, complete: false, nextCursor: String(before) };
+      }
+      if (rows.length < 200) return { events: selected, complete: true, nextCursor: null };
+    }
+    return { events: selected, complete: false, nextCursor: String(before) };
   }
   return {
     pushEnabled: !!push,
@@ -1098,6 +1369,37 @@ export function createWorkspaceStore(
     },
     viewer,
     /**
+     * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world
+     * generation, newest closed first, narrowed by the desk's place exactly as its live workspace is
+     * (`engine.scopeArchive`). Before 14 there is no archive and the list is empty.
+     */
+    async archive(view) {
+      if ((await schemaVersion()) < ARCHIVE_MIGRATION) return { archived: 0, records: [] };
+      const at = clock();
+      const stored = await readWorld(pool);
+      if (!stored || !engine.validWorld(stored.payload)) return { archived: 0, records: [] };
+      const { rows } = await pool
+        .query(
+          "SELECT collection, record_id, closed_at, body, count(*) OVER ()::integer AS archived FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 ORDER BY closed_at DESC, collection, record_id LIMIT $3",
+          [workspaceId, stored.payload.state.worldGeneration, ARCHIVE_READ_LIMIT],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      const records = rows.map((row) => ({
+        collection: row.collection,
+        id: row.record_id,
+        closedAt: row.closed_at,
+        body: row.body,
+      }));
+      const shown = view ? engine.scopeArchive(stored.payload, records, view.access, at, view.grants) : records;
+      return {
+        archived: rows[0]?.archived ?? 0,
+        records: shown.map((record) => ({ collection: record.collection, body: record.body })),
+      };
+    },
+    /**
      * The accounts holding any current role here, waiting approval included. The sign-in check
      * reads this list now and then (cached) before it calls Supabase, so made-up accounts get only a
      * small allowance. Before migration 8 there are no roles to hold. Running cover is a membership,
@@ -1121,20 +1423,21 @@ export function createWorkspaceStore(
      * access admin reads only role changes inside their own place, never which patient was opened.
      * The HTTP layer refuses everyone else before this runs.
      */
-    async audit(view) {
-      const whole = !view || engine.wholeNetwork(view.access);
-      const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
+    auditPage,
+    // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
+    async audit(view, cursor = null) {
+      return (await auditPage(view, cursor)).events;
+    },
+    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
+    async receipt(actorId, commandId) {
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"} ORDER BY sequence DESC LIMIT 200`,
-        [workspaceId],
+        "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
+        [workspaceId, actorId, commandId],
       );
-      if (whole || view.access.scope.kind === "statewide") return rows;
-      const payload = (await readWorld(pool, "payload"))?.payload;
-      if (!payload || !engine.validWorld(payload)) return [];
-      return rows.filter((row) => {
-        const access = engine.parseAccess(row.changes?.role, row.changes?.scope);
-        return !!access && engine.scopeWithin(payload, access.scope, view.access.scope);
-      });
+      const row = rows[0];
+      return row
+        ? { outcome: row.status === 200 ? "accepted" : "refused", commandRevision: row.result.commandRevision }
+        : null;
     },
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each
@@ -1149,12 +1452,16 @@ export function createWorkspaceStore(
         const access = engine.parseAccess(row.role, row.scope);
         return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
       };
+      // A role that names no health service gives nothing and has no place to filter by, so only a
+      // statewide access admin sees it, marked to be given again with a service (RA-02).
+      const statewide = view.access.scope.kind === "statewide";
+      const needsGrant = (row) => statewide && engine.accessNeedsService(row.role, row.scope);
       // The place filter runs here, so read oldest grant first a page at a time until this admin's
       // own 500 are found: roles elsewhere never crowd them out.
       const memberships = await pagedMemberships(
         "workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2",
         [workspaceId, at],
-        inside,
+        (row) => inside(row) || needsGrant(row),
       );
       const requests =
         view.version >= ACCESS_COVER_MIGRATION
@@ -1168,7 +1475,9 @@ export function createWorkspaceStore(
       return {
         status: 200,
         body: {
-          memberships: memberships.map((row) => presentMembership(row, at)),
+          memberships: memberships.map((row) =>
+            needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
+          ),
           requests: requests.filter(inside).map((row) => presentRequest(row, at)),
         },
       };
@@ -1444,29 +1753,61 @@ export function createWorkspaceStore(
       });
     },
     /**
-     * The newest record openings of the last 7 days, optionally for one patient. A coordinator
-     * reads them: the statewide one every record, a service one only the records in its own part of
-     * the workspace (D-80 item 14). The HTTP layer refuses everyone else before this runs. Each row
-     * says how many minutes before the server's now it was opened.
+     * The newest record openings, optionally for one patient. The statewide coordinator reads them
+     * all. A service coordinator reads those of the last 7 days for the records in its own part of
+     * the workspace, for its review list (D-80 item 14). An access admin below statewide reads the
+     * openings by desks inside its own place. That place filter runs in the query, so openings
+     * elsewhere never crowd those out of the limit: the desks that have opened anything are few, so
+     * each is checked here and only those inside are asked for. The HTTP layer refuses everyone else
+     * before this runs. `minutes` is the opening's time as minutes from the server's now.
      */
     async recordViews(view, patientId = null) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
       const at = clock();
-      const inPlace = await recordsInPlace(view, at);
-      if (inPlace?.length === 0) return [];
-      const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
-      const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
-      const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
+      if (view.access.role === "coordinator" && view.access.scope.kind !== "statewide") {
+        const inPlace = await recordsInPlace(view, at);
+        if (inPlace?.length === 0) return [];
+        const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+        const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
+        const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
+        const { rows } = await pool.query(
+          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+          params,
+        );
+        return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
+      }
+      const params = [workspaceId];
+      let where = "workspace_id=$1 AND data_mode='prototype'";
+      if (patientId) {
+        params.push(patientId);
+        where += ` AND patient_id=$${params.length}`;
+      }
+      if (view.access.scope.kind !== "statewide") {
+        const world = await read(view.actorId);
+        const { rows: desks } = await pool.query(
+          `SELECT DISTINCT actor_role, actor_scope FROM ward_flow.record_access WHERE ${where}`,
+          params,
+        );
+        const inside = desks
+          .filter((desk) => {
+            const access = engine.parseAccess(desk.actor_role, desk.actor_scope);
+            return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+          })
+          .map((desk) => JSON.stringify([desk.actor_role, desk.actor_scope]));
+        if (inside.length === 0) return [];
+        params.push(inside);
+        where += ` AND jsonb_build_array(actor_role, actor_scope) = ANY($${params.length}::jsonb[])`;
+      }
       const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
         params,
       );
-      return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
+      return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
     },
     /**
      * D-80 item 14: the newest break glass openings for the coordinator's review list, with the
-     * desk that opened each (its role and place, from its membership) and why. Scoped and refused
-     * as `recordViews`. The record itself shows only on the screens the coordinator already has.
+     * desk that opened each (its role and place, from its membership) and why. Scoped as a service
+     * coordinator's `recordViews`; the HTTP layer gives them to coordinators only. The record itself shows only on the screens the coordinator already has.
      */
     async breakGlassOpenings(view) {
       if (!(view.version >= ROLE_ACCESS_MIGRATION)) return [];
@@ -1564,7 +1905,7 @@ export function createWorkspaceStore(
      * reply carries only its part of the workspace. `options.seen` maps record tokens to the later
      * revision the sender has seen each at (CS-19 follow-up, `conflicts` in records.mjs); an
      * accepted reply names the records it checked as `covered`.
-     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, accessUntil?: number, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view, seen = null } = options;
@@ -1601,6 +1942,7 @@ export function createWorkspaceStore(
           [workspaceId, actorId, commandId],
         );
         if (previous.rowCount) {
+          row.archived = await archivedCount(client, row.payload);
           const receipt = previous.rows[0];
           if (receipt.fingerprint !== fingerprint && receipt.fingerprint !== legacyFingerprint)
             return {
@@ -1725,6 +2067,15 @@ export function createWorkspaceStore(
             }
             row.revision = priorRevision + 1;
             row.payload = applied.world;
+            // Josh, 25 Oct 2026: closed records older than 30 days leave the live workspace, looked
+            // for every few saves and on every save once the workspace passes the size warning, so
+            // a workspace near its limit is never stuck waiting for a round revision it cannot reach.
+            if (
+              row.core &&
+              (row.revision % ARCHIVE_EVERY_REVISIONS === 0 || JSON.stringify(row.payload).length > WARN_WORLD_BYTES) &&
+              (await schemaVersion()) >= ARCHIVE_MIGRATION
+            )
+              row.payload = await archiveOld(client, row.payload, row.revision, at);
             await saveWorld(client, row, row.payload, row.revision, at);
             if (push) {
               // Phone push must never cost the coordinator their change: an evaluation error rolls
@@ -1773,6 +2124,7 @@ export function createWorkspaceStore(
             },
           ],
         );
+        if (!(revisionOnly && status === 200)) row.archived = await archivedCount(client, row.payload);
         return {
           status,
           body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at, view) }) },

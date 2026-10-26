@@ -100,7 +100,9 @@ describe("Case 1 — Capacity identifies synthetic data via the governance foote
     // Hospital names are real directory facts. The synthetic marker applies to the operational data.
     const governance = screen.getByTestId("ward-capacity-governance");
     expect(within(governance).getByText("Synthetic prototype")).toBeVisible();
-    expect(governance).toHaveTextContent(/Statewide bed capacity/u);
+    expect(governance).toHaveTextContent(/Modelled network bed capacity/u);
+    expect(governance).toHaveTextContent(/CAHS inpatient wards are not modelled/u);
+    expect(governance).toHaveTextContent(/private live feeds are unavailable/u);
     expect(governance).toHaveTextContent(/Not approved for clinical use/u);
   });
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
@@ -66,16 +66,19 @@ describe("Q004 refinement interaction regressions", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("returns from Resolved today to Open and resolved and focuses the requested attention record", () => {
+  it("returns from Resolved today to Open and resolved and focuses the requested attention record", async () => {
     renderMovements();
     const { button, movementId } = firstAttentionTarget();
     const resolvedTab = screen.getByRole("tab", { name: /Resolved today/u });
 
     fireEvent.click(resolvedTab);
+    // The tab lives in the address (usability review, 24 Oct 2026), announced a microtask later.
+    await act(async () => {});
     expect(resolvedTab).toHaveAttribute("aria-selected", "true");
     expect(document.querySelector(`li[data-record-key='${movementId}']`)).toBeNull();
 
     fireEvent.click(button);
+    await act(async () => {});
     expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -138,7 +141,7 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
     renderCoordinator();
-    const hero = screen.getByRole("region", { name: /waiting in ED, \d+ beds? ready/u });
+    const hero = screen.getByRole("region", { name: /^\d+ open ED journeys, \d+ beds? ready$/u });
     const chip = within(hero).getByRole("button", { name: /Overdue/u });
     const count = Number(chip.textContent!.match(/\d+/u)![0]);
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);

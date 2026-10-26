@@ -17,6 +17,8 @@ import type {
   ReferralOwnerDesk,
 } from "@/components/ward-management/referrals/referral-owner-and-calls";
 import type { WardClosureReason } from "@/components/ward-management/capacity/ward-closure";
+// Closing-the-loop package A (24 Oct 2026): response commitments.
+import type { ReferralCommitmentStep } from "@/components/ward-management/referrals/referral-commitments";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
@@ -96,6 +98,8 @@ export { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { ObservationLevelEvent } from "@/components/ward-management/ward-flow-observation-events";
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
+// Closing the loop, package D (24 Oct 2026).
+import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
 import type {
   ArrivalCheckEvent,
   ReleaseNoticeEvent,
@@ -750,6 +754,28 @@ export type WardFlowEvent =
       contact: ReferralContactTarget;
       outcome: ReferralContactOutcome;
     }
+  // ── Closing-the-loop package A (24 Oct 2026): response commitments ──
+  | {
+      /**
+       * Record a commitment on one ward's copy of a referral still waiting on its answer: a step
+       * from `REFERRAL_COMMITMENT_STEPS` (response requested, acknowledged, promised by a time,
+       * resolved), a next callback time, or both. Appends to `ReferralAddressing.commitments`.
+       * Steps only move forward; a promise may be re-recorded with a new time. The coordinator
+       * records any step; a ward records acknowledged or promised for its own copy. Never typed,
+       * never an answer: `state` and the decision clock are untouched.
+       */
+      type: "RECORD_REFERRAL_COMMITMENT";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      step?: ReferralCommitmentStep;
+      /** Required with `step: "promised"`, refused otherwise. */
+      promisedFor?: Instant;
+      nextCallbackAt?: Instant;
+    }
   | {
       /**
        * Smart features idea 7 (19 Oct 2026): close a whole ward to new admissions. Sets
@@ -805,6 +831,9 @@ export type WardFlowEvent =
     }
   // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
   | RestrictivePracticeWardFlowEvent
+  // Closing the loop, package D (24 Oct 2026): cancelled-move checks, acceptance conditions,
+  // restriction reviews and closure transition marks. Records only.
+  | LoopCheckWardFlowEvent
   | {
       type: "CHANGE_URGENCY";
       role: WardFlowRole;
@@ -885,6 +914,13 @@ export type WardFlowEvent =
        * constrains future callers rather than this one.
        */
       actingUnitId?: string;
+      /**
+       * Audit 24-7 (CT-06): the pull an Undo was offered for — the unit and the index of its
+       * `to: "pulled"` entry in `stageChanges`. When given, the release is refused unless that entry
+       * is still the movement's latest stage change at that unit, so an Undo never releases a
+       * different pull made since. Absent for every other caller, which behave as before.
+       */
+      expectedPull?: { unitId: string; stageIndex: number };
     }
   | {
       /**
@@ -1252,19 +1288,6 @@ export type WardFlowEvent =
       note?: BedPreparationNote;
     }
   | {
-      type: "RELEASE_BED";
-      role: WardFlowRole;
-      now: Instant;
-      /**
-       * Completes a release only when its named admission has already left. While the person is
-       * still in the bed it is refused — record the leaving (`RECORD_LEAVING`), which completes the
-       * release itself. Changes no bed figure.
-       */
-      releaseId: string;
-      /** Same claim-not-proof discipline as `CONFIRM_BED_RELEASE`'s own field. */
-      actingUnitId: string;
-    }
-  | {
       type: "RECORD_LEAVE_BED";
       role: WardFlowRole;
       now: Instant;
@@ -1457,6 +1480,15 @@ export type WardFlowEvent =
        * Absent means nobody has recorded one.
        */
       tentativeDiagnosis?: TentativeDiagnosisBlock;
+    }
+  | {
+      type: "HOLD_REFERRAL_BED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      actingUnitId: string;
+      bedNumber: number;
     }
   | {
       type: "ACCEPT_REFERRAL";
@@ -2418,6 +2450,11 @@ export type WardFlowEvent =
       /** The age group booked for: from the record for a linked patient, recorded for initials. */
       ageBand: Cohort;
       /**
+       * Audit 24-1 CS2-19: required, from `OVERRIDE_REASONS`, when the ward is not authorised for
+       * involuntary admissions and the legal status needs one; ignored otherwise.
+       */
+      overrideReason?: OverrideReason;
+      /**
        * The demo calendar's date at `now` ("yyyy-mm-dd", from `calendarDateOf(now, dayZero)`).
        * Required with `patientId`: the reducer holds no calendar, and refuses an `ageBand` that the
        * record's date of birth does not give on the expected arrival's date, counted from this one.
@@ -2445,6 +2482,8 @@ export type WardFlowEvent =
       legalStatus: LegalStatus;
       /** As on `BOOK_PLANNED_ADMISSION`: required when a linked booking's arrival moves to another day. */
       calendarDate?: string;
+      /** As on `BOOK_PLANNED_ADMISSION`: the reason a change onto an unauthorised ward needs. */
+      overrideReason?: OverrideReason;
       actingUnitId?: string;
     }
   | {
@@ -2500,9 +2539,15 @@ export type WardFlowEvent =
   // #398, the arrival checklist (D-72) and Ask more wards (D-76): declared beside their reducer cases.
   | ReleaseNoticeEvent
   | ArrivalCheckEvent
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
+  | import("./discharges/discharge-dependency-events").DischargeDependencyEvent
   | ObservationLevelEvent
   | RecordWardDiagnosisEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
+  // Closing-the-loop (package E): return requested vs home service agreed.
+  | import("./out-of-area/home-service-return").HomeServiceReturnEvent
+  // Closing-the-loop (package E): an on-call directory entry checked now.
+  | import("./on-call/on-call-checks").DirectoryCheckEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

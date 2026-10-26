@@ -925,6 +925,20 @@
   border-radius: var(--wf-r-ctl);
 }
 
+/* Usability review, Josh approved 24 Oct 2026: a greyed action's visible "why", with its one fix beside it, under the
+   buttons. The shared reason line truncates to one line; here it may wrap. */
+.unavailableLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem 0.5rem;
+}
+
+.unavailableLine span[id] {
+  white-space: normal;
+}
+
 /* Below 1400px the bar also caps its own height and keeps clear of the phone's safe area. */
 @media (width < 87.5rem) {
   .actionToolbar {
@@ -1133,7 +1147,7 @@
     background: var(--scrim);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
-    z-index: 940;
+    z-index: calc(var(--z-overlay) - 1);
     animation: shortlistFadeIn 0.2s ease-out forwards;
   }
 
@@ -1152,7 +1166,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 950;
+    z-index: var(--z-overlay);
     width: 100%;
     margin: 0;
     pointer-events: none;

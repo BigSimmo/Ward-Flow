@@ -385,6 +385,7 @@ export const CHECK_INTEGRITY_GATE_STEPS = [
   { label: "check-codebase-index-coverage", args: ["scripts/check-codebase-index-coverage.mjs"] },
   { label: "check-ward-doc-links", args: ["scripts/ward-flow/check-doc-links.mjs"] },
   { label: "check-stale-docs", args: ["scripts/check-stale-docs.mjs"] },
+  { label: "check-living-docs-freshness", args: ["scripts/check-living-docs-freshness.mjs"] },
   { label: "check-ward-legal-language", args: ["scripts/ward-flow/check-ward-legal-language.mjs"] },
   { label: "check-ward-reference", args: ["scripts/ward-flow/check-ward-reference.mjs"] },
   { label: "doc-facts", args: ["scripts/doc-facts.mjs"] },

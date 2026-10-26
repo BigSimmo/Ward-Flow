@@ -38,7 +38,6 @@ import {
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
 import {
-  MOVEMENT_STAGES,
   PARALLEL_REFERRAL_CAP,
   type BedReleaseState,
   type Decline,
@@ -50,7 +49,7 @@ import {
   type Referral,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
@@ -105,7 +104,7 @@ export { stageCopy };
  * the passing gate so a coordinator sees it before confirming.
  *
  * ⚠️ `!unitHasOpenBeds(unit)` — WHOLLY locked, not merely "has some locked beds" — deliberately,
- * since the 2026-09-04 locked/open split added mixed wards. `MORE_RESTRICTIVE_NOTE` below says "a
+ * since the 2026-09-04 locked/open split added mixed wards. The notice this raises says "a
  * locked ward"; a mixed ward with open beds free is not one, and this function does not know which
  * specific bed a mixed-ward placement would land on. Flagging every mixed ward here would call a
  * ward "locked" that is mostly open — the exact ward-level/bed-level conflation the owner's
@@ -118,10 +117,6 @@ export function isMoreRestrictiveThanRequired(movement: Movement, unit: Unit): b
   return movement.security === "Open" && !unitHasOpenBeds(unit);
 }
 
-/** The wording used wherever `isMoreRestrictiveThanRequired` is surfaced, so it reads identically
- * on the shortlist row, the gate note, the suggestion badge and the diagram node. */
-export const MORE_RESTRICTIVE_NOTE = "More restrictive than required — a locked ward for an open-status movement";
-
 /** A real, per-movement audit trail built from actual fields — never generic flavour text. */
 export function movementTimeline(movement: Movement) {
   const events: Array<{ at: Instant; label: string }> = [{ at: movement.openedAt, label: "Movement opened" }];
@@ -131,7 +126,9 @@ export function movementTimeline(movement: Movement) {
   for (const decline of movement.declines) {
     events.push({
       at: decline.at,
-      label: `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`,
+      label: decline.reason
+        ? `Declined by referral: ${DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}`
+        : "Declined by referral",
     });
   }
   if (movement.transport?.acceptedAt !== undefined) {
@@ -194,21 +191,6 @@ export const BED_RELEASE_BLOCKED_LABEL = "Blocked";
  */
 export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Discharges held up";
 
-/** Counts are derived from whatever `movements` list the caller passes — every screen now
- * passes the live provider state (Task 6), so the pipeline strip can never advertise a count
- * a different surface would compute differently from the same instant. */
-export function stageSummaries(movements: Movement[]) {
-  const counts = new Map<MovementStage, number>();
-  for (const movement of movements) {
-    counts.set(movement.stage, (counts.get(movement.stage) ?? 0) + 1);
-  }
-  return MOVEMENT_STAGES.map((id) => ({
-    id,
-    ...stageCopy[id],
-    count: counts.get(id) ?? 0,
-  }));
-}
-
 /**
  * The one canonical order of the health services, and the list every screen that groups by service
  * iterates — the ED ward table, the coordinator flow diagram, the network map's two columns and the
@@ -241,10 +223,6 @@ export const roleTaskLabel: Record<WardRole, string> = {
   ward: "Accept and pull bed",
 };
 
-const edServiceById = new Map<string, HealthService | undefined>(
-  allEmergencyDepartments().map((candidate) => [candidate.id, siteByCode(candidate.siteCode)?.service]),
-);
-
 const unitMapCache = new WeakMap<readonly Unit[], Map<string, Unit>>();
 
 function getUnitByIdMap(units: readonly Unit[]): Map<string, Unit> {
@@ -266,7 +244,8 @@ export function movementHealthService(movement: Movement): HealthService | undef
   // D-76: a journey from a community team takes the service of the location its referral gave.
   if (movement.originEdId === undefined)
     return movement.originCommunity && siteByCode(movement.originCommunity.siteCode)?.service;
-  return edServiceById.get(movement.originEdId);
+  const originEd = edById(movement.originEdId);
+  return originEd && siteByCode(originEd.siteCode)?.service;
 }
 
 /**
@@ -769,7 +748,7 @@ export function buildActionInbox(
       tone: "danger",
       icon: CircleAlert,
       title: "No eligible bed: shown to the bed coordinator",
-      detail: "No ward in the network is currently eligible; the patient stays on the waitlist",
+      detail: "No ward in the network is currently eligible; the patient stays on the waiting list",
       owner: "Bed coordinator",
       movementId: movement.id,
     });
@@ -942,8 +921,9 @@ export function allDeclines(movements: Movement[]): DeclineEntry[] {
     movement.declines
       .filter(
         (decline) =>
-          !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
-          !decline.reason.includes("waitlist"),
+          decline.reason === undefined ||
+          (!(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason) &&
+            !decline.reason.includes("waitlist")),
       )
       .map((decline) => ({ movement, decline })),
   );
@@ -1229,26 +1209,20 @@ export function expectFlagKindFor(
   return age >= EXPECT_FLAG_INVOLUNTARY_MINUTES ? "involuntary_7d" : null;
 }
 
-function toInstantMinutes(val: Instant | string): number {
-  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
-  const parsed = Date.parse(val);
-  if (Number.isNaN(parsed)) return 0;
-  return Math.floor(parsed / 60_000);
-}
-
 /**
  * Top 25 items 1 and 5: occupied stays whose ward's own expected discharge falls from now to the
  * discharge prep window ahead (`CLINICAL_VALUES.dischargePrepWindow`). The ward discharge prep
  * prompt and the discharge support notices both read this one list, so they always agree.
  */
-export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant | string): Admission[] {
-  const nowMin = toInstantMinutes(now);
+export function deriveAfternoonDischarges(admissions: readonly Admission[], now: Instant): Admission[] {
+  // EDR-09: `now` is an Instant only. A non-finite one finds nobody rather than reading as minute zero.
+  if (!Number.isFinite(now)) return [];
   const windowMinutes = CLINICAL_VALUES.dischargePrepWindow.value;
   return admissions.filter((adm) => {
     if (!bedIsOccupied(adm) || adm.expectedDischargeAt === null || !Number.isFinite(adm.expectedDischargeAt)) {
       return false;
     }
-    const diff = adm.expectedDischargeAt - nowMin;
+    const diff = adm.expectedDischargeAt - now;
     return diff >= 0 && diff <= windowMinutes;
   });
 }
@@ -1314,7 +1288,9 @@ export function deriveNextWardsAfterRefusal(
 ): NextWardsAfterRefusal | undefined {
   // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.
   const refusals = movement.declines.filter(
-    (decline) => !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
+    (decline) =>
+      decline.reason === undefined ||
+      !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
   );
   if (refusals.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
   const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));

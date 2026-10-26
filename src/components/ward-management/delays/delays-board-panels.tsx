@@ -155,7 +155,7 @@ export function PersonPanel({
 
         {cause === "bed_pull_expired" ? (
           <p className={styles.reminder} data-testid={`delays-reserved-time-${movement.id}`}>
-            Pull expired, bed still pulled. Release the bed or set a new reserved time.
+            Pull expired, bed still pulled. Release the bed or set a new pull time limit.
           </p>
         ) : null}
         {silenceReminder !== undefined ? (
@@ -326,7 +326,7 @@ export function PersonPanel({
             href={unitHref(pullHolder.id)}
             data-testid={`delays-release-pull-${movement.id}`}
           >
-            Open {pullHolder.name} to release the bed or set a new reserved time
+            Open {pullHolder.name} to release the bed or set a new pull time limit
           </Link>
         ) : null}
         {movement.declines.length > 0 ? (

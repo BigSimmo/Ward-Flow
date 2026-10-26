@@ -49,7 +49,7 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { notWaitingMoreText, openJourneySplit, waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import {
   Button,
@@ -455,7 +455,7 @@ export function CoordinatorScreen() {
         return {
           ...item,
           title: "Pull expired, bed still pulled",
-          detail: `${item.detail} · Release the bed or set a new reserved time`,
+          detail: `${item.detail} · Release the bed or set a new pull time limit`,
         };
       }),
     [
@@ -605,13 +605,15 @@ export function CoordinatorScreen() {
       }),
     [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network],
   );
-  // The one "waiting" figure (`ward-shared-figures.ts`): the service picker and Network read it too.
-  const waitingInEd = useMemo(() => waitingInEds(movements, now).total, [now, movements]);
-  // Overall review, 20 Oct 2026: the queue lists every open journey, so the hero names the people on
-  // it who are not waiting in ED ("8 more in transit") and its figures add up to the queue's count.
-  const notWaitingOnQueue = useMemo(() => notWaitingMoreText(openJourneySplit(movements)), [movements]);
-  const notWaitingMeta =
-    notWaitingOnQueue === null ? null : <span data-testid="ward-home-hero-not-waiting">{notWaitingOnQueue}</span>;
+  // Journey accountability continues through transit; the ED strip keeps physical inpatient waits.
+  const edJourneys = useMemo(() => openEdJourneys(movements, now), [now, movements]);
+  // The queue may also contain ward/community origins, so its population is broader than ED journeys.
+  const notWaitingMeta = (
+    <span data-testid="ward-home-ed-population">
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure · Limited demo
+      coverage
+    </span>
+  );
   const bedsReady = counts.capacity?.value ?? 0;
   // The two highlight chips count the queue they highlight (after the ED and service filters).
   const overdueInQueue = queue.filter(
@@ -638,7 +640,7 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{waitingInEd}</span> waiting in ED,{" "}
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED journeys,{" "}
       <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );
@@ -746,12 +748,14 @@ export function CoordinatorScreen() {
             className={styles.homeHero}
             // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
             // title, three figures you can tap, then New since and Pause.
-            eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
+            eyebrow={
+              isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
+            }
             title={heroTitle}
             titleMeta={
               isPhone ? (
                 <>
-                  {/* The phone title keeps its one line; the people in transit get a line of their own. */}
+                  {/* The physical split stays beside the journey total on every screen size. */}
                   {notWaitingMeta ? (
                     <>
                       {notWaitingMeta}
@@ -912,7 +916,7 @@ export function CoordinatorScreen() {
                       tone: wardsNotReporting > 0 ? "warning" : "neutral",
                     },
                   ]}
-                  notChecked={["private hospitals, no feed"]}
+                  notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
                 />
               )
             }
@@ -1137,7 +1141,8 @@ export function CoordinatorScreen() {
           testId="ward-coordinator-governance"
           note={
             <>
-              Demo coordinator view · Not approved for clinical use
+              Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are
+              not modelled; private live feeds are unavailable
               <span
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}

@@ -8,10 +8,18 @@
  *
  * Read-only demonstration content. It is never stored, never typed by a user and never names a
  * destination: no ward, hospital bed or community team that the journey was referred to appears
- * anywhere below. Every person is invented and every phone number is in the 0491 570 to 0491 579
- * range the ACMA keeps for fiction.
+ * anywhere below. Every person is invented. Contacts use the 08 5550 landline range accepted by
+ * the repository's synthetic-data guard for fiction.
  */
 import type { REFERRAL_RISK_FLAGS } from "./referrals/referral-submission";
+import type { Movement } from "./ward-model";
+// The @/ paths let a live shared build swap the demo modules for empty stand-ins (next.config.ts).
+import { wardMovements } from "@/components/ward-management/ward-movements";
+import { demoNetwork, type DemoNetworkVariant } from "./ward-demo-network";
+import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
+import { rulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
+import { NOW_ANCHOR } from "./ward-sites";
+import { syntheticMovementReferralDossier } from "./ward-referral-intake-seed";
 
 export type DossierRow = { label: string; detail: string };
 
@@ -78,7 +86,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable, within normal range" },
       ],
-      contact: "Dr Orla Linforth, ED registrar · 0491 570 159",
+      contact: "Dr Orla Linforth, ED registrar · 08 5550 0201",
     },
     physicalHealth: [
       { label: "Conditions", detail: "AF, type 2 diabetes, CKD stage 3a, osteoarthritis" },
@@ -104,7 +112,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     supports: [
       {
         label: "NOK",
-        detail: "Petra Winterthorn, daughter · 0491 570 156. Knows about the referral and supports admission.",
+        detail: "Petra Winterthorn, daughter · 08 5550 0301. Knows about the referral and supports admission.",
       },
       { label: "Carer role", detail: "Main carer for his wife, who has dementia and is now in respite." },
     ],
@@ -112,7 +120,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       name: "Dr Kalan Moongate",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "0491 570 158",
+      phone: "08 5550 0101",
       email: "kalan.moongate@example.org",
     },
     arrival: [
@@ -149,7 +157,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Maren Glasswell, ED consultant · 0491 571 266",
+      contact: "Dr Maren Glasswell, ED consultant · 08 5550 0202",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Recent AKI, now resolved. Hypertension. Benign prostatic hyperplasia." },
@@ -170,14 +178,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Bipolar affective disorder, current episode manic without psychotic features.",
     history: "Three previous manic admissions, last in 2021. Stable on lithium until this year.",
     supports: [
-      { label: "NOK", detail: "Kalan Sallowfield, son · 0491 571 491. Holds enduring power of attorney." },
+      { label: "NOK", detail: "Kalan Sallowfield, son · 08 5550 0302. Holds enduring power of attorney." },
       { label: "Living", detail: "Lives alone in a unit. Son visits daily." },
     ],
     referrer: {
       name: "Dr Junia Huntmire",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "0491 571 804",
+      phone: "08 5550 0102",
       email: "junia.huntmire@example.org",
     },
     arrival: [
@@ -204,7 +212,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "Police transport only, no charges" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 190,
+      clearedAfterMinutes: 100,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -214,7 +222,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable after fluids" },
       ],
-      contact: "Dr Nolan Inkstone, ED registrar · 0491 572 549",
+      contact: "Dr Nolan Inkstone, ED registrar · 08 5550 0203",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Asthma, mild" },
@@ -233,14 +241,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     },
     workingDiagnosis: "First episode psychosis. Differential is cannabis induced psychotic disorder.",
     supports: [
-      { label: "NOK", detail: "Petra Loxbury, sister · 0491 572 665. Lives interstate." },
+      { label: "NOK", detail: "Petra Loxbury, sister · 08 5550 0303. Lives interstate." },
       { label: "Living", detail: "Lives alone. Works part time in retail." },
     ],
     referrer: {
       name: "Dr Reya Jorrowfen",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "0491 572 983",
+      phone: "08 5550 0103",
       email: "reya.jorrowfen@example.org",
     },
     arrival: [
@@ -280,7 +288,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Sabine Kellbourne, ED registrar · 0491 573 770",
+      contact: "Dr Sabine Kellbourne, ED registrar · 08 5550 0204",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Obesity, prediabetes" },
@@ -299,14 +307,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Schizophrenia, acute relapse with persecutory delusions.",
     history: "Diagnosed 2002. Four admissions, two to secure care. Under a community team on depot.",
     supports: [
-      { label: "NOK", detail: "Quinta Shalecroft, mother · 0491 573 087. Asks that the brother is not given updates." },
+      { label: "NOK", detail: "Quinta Shalecroft, mother · 08 5550 0304. Asks that the brother is not given updates." },
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
       name: "Dr Lark Pallowmere",
       role: "Consultant psychiatrist, liaison",
       location: "Emergency department",
-      phone: "0491 574 118",
+      phone: "08 5550 0104",
       email: "lark.pallowmere@example.org",
     },
     arrival: [
@@ -343,7 +351,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "not_indicated" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Calder Moongate, medical registrar · 0491 574 632",
+      contact: "Dr Calder Moongate, medical registrar · 08 5550 0205",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Paracetamol hepatotoxicity, resolving" },
@@ -363,14 +371,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Adjustment disorder with depressed mood. Emotionally unstable personality traits.",
     history: "Two previous overdoses, no admissions.",
     supports: [
-      { label: "NOK", detail: "Fiora Flint, mother · 0491 575 254. Lives in the South West." },
+      { label: "NOK", detail: "Fiora Flint, mother · 08 5550 0305. Lives in the South West." },
       { label: "Living", detail: "Was staying with her former partner. Now without accommodation." },
     ],
     referrer: {
       name: "Dr Tansy Quenfold",
       role: "Psychiatry liaison registrar",
       location: "Medical ward",
-      phone: "0491 575 789",
+      phone: "08 5550 0105",
       email: "tansy.quenfold@example.org",
     },
     arrival: [
@@ -397,7 +405,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "None" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 95,
+      clearedAfterMinutes: 85,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -407,7 +415,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Bramwen Linforth, ED registrar · 0491 576 398",
+      contact: "Dr Bramwen Linforth, ED registrar · 08 5550 0206",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Nil significant" },
@@ -426,14 +434,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     },
     workingDiagnosis: "Major depressive disorder, single episode, severe without psychotic features.",
     supports: [
-      { label: "NOK", detail: "Delia Kestrelworth, partner · 0491 576 801" },
+      { label: "NOK", detail: "Delia Kestrelworth, partner · 08 5550 0306" },
       { label: "Living", detail: "Lives with her partner. No children." },
     ],
     referrer: {
       name: "Dr Eamon Ferrowmoor",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "0491 577 426",
+      phone: "08 5550 0106",
       email: "eamon.ferrowmoor@example.org",
     },
     arrival: [
@@ -460,7 +468,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       { label: "Police or court", detail: "On a community order for a driving offence" },
     ],
     medicalClearance: {
-      clearedAfterMinutes: 160,
+      clearedAfterMinutes: 65,
       clearedBy: "ED registrar",
       checks: [
         { label: "Examination", status: "done" },
@@ -470,7 +478,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Heart rate settling" },
       ],
-      contact: "Dr Orla Norrowfield, ED registrar · 0491 577 644",
+      contact: "Dr Orla Norrowfield, ED registrar · 08 5550 0207",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Hepatitis C, treated 2023" },
@@ -486,14 +494,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Methamphetamine induced psychotic disorder. Differential is schizophrenia.",
     history: "One previous admission for drug induced psychosis in 2024.",
     supports: [
-      { label: "NOK", detail: "Sabine Duskwell, mother · 0491 578 957" },
+      { label: "NOK", detail: "Sabine Duskwell, mother · 08 5550 0307" },
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
       name: "Dr Gareth Moongate",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "0491 578 148",
+      phone: "08 5550 0107",
       email: "gareth.moongate@example.org",
     },
     arrival: [
@@ -507,10 +515,44 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
 
 /** The synthetic referral details for one seeded journey, with its documents. `undefined` for any
  *  journey that has none, which the referral view shows as "not recorded on this referral". */
-export function seededReferralDossier(movementId: string): ReferralDossier | undefined {
-  const dossier = SEEDED_DOSSIERS[movementId];
+export function seededReferralDossier(movementId: string, movement?: Movement): ReferralDossier | undefined {
+  const seeded = movement ? knownSeedMovement(movementId) : undefined;
+  if (
+    movement &&
+    (movement.id !== movementId ||
+      !seeded ||
+      seeded.patientId !== movement.patientId ||
+      seeded.referralId !== movement.referralId)
+  )
+    return undefined;
+  const original = SEEDED_DOSSIERS[movementId];
+  const dossier =
+    original ??
+    (seeded && seeded.patientId === movement?.patientId ? syntheticMovementReferralDossier(movement!) : undefined);
   if (!dossier) return undefined;
   return dossier.documents.length > 0 ? dossier : { ...dossier, documents: dossierDocuments(movementId, dossier) };
+}
+
+/** Never manufacture demonstration letters for a new or relinked user-entered record. */
+function knownSeedMovement(id: string): Movement | undefined {
+  if (id.startsWith("WF-WS-")) return waSyntheticNetwork().movements.find((entry) => entry.id === id);
+  if (id.startsWith("WF-DN-")) {
+    for (const variant of [
+      "demo",
+      "surge",
+      "quiet",
+      "winter",
+      "ed-crisis",
+    ] as const satisfies readonly DemoNetworkVariant[]) {
+      const movement = demoNetwork(variant).movements.find((entry) => entry.id === id);
+      if (movement) return movement;
+    }
+    return undefined;
+  }
+  return (
+    wardMovements.find((entry) => entry.id === id) ??
+    rulingsDemoOverlay(NOW_ANCHOR).movements.find((entry) => entry.id === id)
+  );
 }
 
 const STATUS_WORDS: Record<DossierCheckStatus, string> = {
@@ -572,7 +614,8 @@ function dossierDocuments(movementId: string, dossier: ReferralDossier): Dossier
       title: "Blood results",
       pages: 1,
       author: "Pathology",
-      addedAfterMinutes: Math.max(90, clearedAt - 15),
+      // These results support clearance, including journeys cleared within the first 90 minutes.
+      addedAfterMinutes: Math.max(0, clearedAt - 15),
       paragraphs: [`${checkLine("Bloods")}`, `Drug screen: ${checkLine("Drug screen")}`],
     },
   ];

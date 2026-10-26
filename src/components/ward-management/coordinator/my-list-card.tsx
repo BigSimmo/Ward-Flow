@@ -5,6 +5,7 @@
 
 import { useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 
 import {
   GroupHead,
@@ -20,11 +21,31 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
-import { Button, buttonClass, Card, StatusGlyph } from "@/components/wf";
+import { Button, buttonClass, Card, Sheet, StatusGlyph } from "@/components/wf";
+// Closing-the-loop package A (24 Oct 2026): chase count and overdue promise on a referral row, and
+// the coordinated call sheet. The sheet's code loads only when it is opened.
+import {
+  chaseCountLabel,
+  openCommitmentItems,
+  promiseOverdue,
+} from "@/components/ward-management/referrals/referral-commitments-model";
 
 import styles from "./home-list.module.css";
 
 const WAIT_ROWS_SHOWN = 3;
+
+const CallSheet = dynamic(() => import("./call-sheet").then((m) => m.CallSheet), { loading: () => null });
+
+/** "Asked 3 times · Promise overdue", from the records alone, or undefined when nothing is recorded. */
+function followUpMarker(referral: Referral, now: Instant): string | undefined {
+  const items = openCommitmentItems([referral]);
+  const asked = items.reduce((total, item) => total + item.chases, 0);
+  const parts = [
+    asked > 0 ? chaseCountLabel(asked) : undefined,
+    items.some((item) => promiseOverdue(item.status, now)) ? "Promise overdue" : undefined,
+  ].filter((part): part is string => part !== undefined);
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+}
 
 /** Row text only: "Emergency Department" reads as "ED", as Placement's own header already does. */
 function shortPlace(place: string): string {
@@ -301,6 +322,7 @@ export function MyListCard({
   onShowAll?: () => void;
 }) {
   const [allWaiting, setAllWaiting] = useState(false);
+  const [callSheetOpen, setCallSheetOpen] = useState(false);
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
@@ -331,6 +353,7 @@ export function MyListCard({
         const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
         const profile = referral.homeRegion ? `${referral.ageBand}, ${referral.homeRegion}` : referral.ageBand;
         const age = minutesText(Math.max(0, now - referral.raisedAt));
+        const marker = followUpMarker(referral, now);
         const shared = {
           data: { "data-referral-id": referral.id },
           tone: "info" as const,
@@ -343,13 +366,19 @@ export function MyListCard({
           umrn: who.umrn,
         };
         return phone ? (
-          <PhoneRow key={referral.id} {...shared} line={`${from} · ${profile}`} age={age} owner={undefined} />
+          <PhoneRow
+            key={referral.id}
+            {...shared}
+            line={[from, profile, marker].filter(Boolean).join(" · ")}
+            age={age}
+            owner={undefined}
+          />
         ) : (
           <HomeRow
             key={referral.id}
             {...shared}
             where={from}
-            extra={profile}
+            extra={marker ? `${profile} · ${marker}` : profile}
             age={age}
             ageNote="waiting"
             action={
@@ -430,7 +459,27 @@ export function MyListCard({
       <div className={styles.needsFoot}>
         <StatusGlyph tone="neutral" size={9} />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
+        <button
+          type="button"
+          className={styles.footLink}
+          aria-haspopup="dialog"
+          onClick={() => setCallSheetOpen(true)}
+          data-testid="home-call-sheet-open"
+        >
+          Call sheet
+        </button>
       </div>
+      {callSheetOpen ? (
+        <Sheet
+          open
+          onClose={() => setCallSheetOpen(false)}
+          title="Call sheet"
+          description="Referrals waiting on each ward. Screen and print only."
+          testId="home-call-sheet"
+        >
+          <CallSheet />
+        </Sheet>
+      ) : null}
     </Card>
   );
 }

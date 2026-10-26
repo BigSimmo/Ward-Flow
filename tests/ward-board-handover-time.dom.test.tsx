@@ -23,4 +23,16 @@ describe("the board's handover time", () => {
     expect(digest).toHaveTextContent(`before the handover at ${formatInstant(DAY_SHIFT_END_MINUTE)}.`);
     expect(digest).not.toHaveTextContent("15:30");
   });
+
+  // Audit 24-6 TC-02: in the evening the next handover is the late shift's end, not 15:00.
+  it("names the current shift's end in the evening", () => {
+    render(
+      <WardFlowProvider initialNow={20 * 60}>
+        <WardBoard unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+    const digest = screen.getByTestId("ward-board-work-band-digest");
+    expect(digest).toHaveTextContent(`before the handover at ${formatInstant(SHIFT_PATTERN[1].endMinute)}.`);
+    expect(digest).not.toHaveTextContent("15:00");
+  });
 });

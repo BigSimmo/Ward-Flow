@@ -10,6 +10,7 @@
  * of one ward or ED for one shift at most, and end it early. Every change goes behind the step-up
  * check and through the same rules the server uses (`ward-access-admin.ts`).
  *
+ * The roles list ends with the Access log (`access-log.tsx`): who opened which person's record.
  * The local demo works on made-up staff held for this tab only. The shared workspace reads its
  * lists from the server (`access-shared-source.ts`, through `SharedAccessContext`).
  */
@@ -59,6 +60,7 @@ import {
 } from "@/components/ward-management/shell/ward-access-admin-store";
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
 import { useSharedAdminSource, useSharedCoverSource } from "./access-shared-source";
+import { AccessLog } from "./access-log";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 
 import styles from "./access-settings.module.css";
@@ -278,6 +280,7 @@ function AccessAdminPanel() {
           </ul>
         </CardBody>
       </Card>
+      <AccessLog />
       {dialog}
     </>
   );

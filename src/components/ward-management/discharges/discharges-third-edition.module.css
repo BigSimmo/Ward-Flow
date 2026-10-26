@@ -197,6 +197,14 @@
   width: 12rem;
 }
 
+/* B6-27 (device sweep): on a laptop the five filters share one row rather than leaving Sort alone
+   on a second one. */
+@media (min-width: 62.5625rem) and (max-width: 100rem) {
+  .filters > .filterField > .filterSelect {
+    width: 10rem;
+  }
+}
+
 .clearButton {
   flex: none;
 }
@@ -407,6 +415,15 @@
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
+}
+
+/* Item 4: why the list is in its order, one line under the header. */
+.orderNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .listBody {
@@ -1310,6 +1327,15 @@
   .workTable tr {
     break-inside: avoid;
   }
+
+  /* Audit 24-7 (CT-04): the name is a button, and the global print rule hides every button, so the
+     paper list lost every name. Print it as plain text. */
+  .workTable .recordButton {
+    display: inline !important;
+    border: 0;
+    background: none;
+    color: CanvasText;
+  }
 }
 
 /* Phone (8 Oct 2026): today's releases first. The hero keeps three status figures in one row,
@@ -1425,8 +1451,25 @@
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
+  /* R1-24 / R2-11 / R3-20 / B6-26 (device sweep, 24 Oct 2026): the act-now row keeps its first
+     cell where every other row has it; its red edge moves into the row's own left padding below. */
   .workTable tr[data-act="true"] > td:first-child {
-    padding-inline-start: 12px;
+    padding-inline-start: 0;
+  }
+
+  /* Doubled class: outranks the every-breakpoint marker rule further down this file. */
+  .workTable.workTable tr[data-act="true"] > td:first-child::before {
+    inset-inline-start: calc(-1 * var(--wf-s-3) + 4px);
+  }
+
+  /* R3-20 / B6-26: rows are cards here, so the column head (which split over two rows with broken
+     rules at 768) is kept for screen readers only, as it already is under 40rem. */
+  .workTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
   .workTable td,
@@ -1855,7 +1898,8 @@
     display: none;
   }
 
-  .register .highlightNote {
+  .register .highlightNote,
+  .register .orderNote {
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
@@ -1931,9 +1975,11 @@
     color: var(--wf-ink-2);
   }
 
+  /* R1-11 / B6-14 (device sweep): a long barrier drops under the stage word as one line, instead of
+     squeezing into a narrow second column beside it. */
   .stageCluster {
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--wf-s-1);
     min-width: 0;

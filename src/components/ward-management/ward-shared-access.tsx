@@ -24,12 +24,33 @@ import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-a
 import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
 import { sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
+
+const UNAVAILABLE_ACCESS_MESSAGE =
+  "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
+/** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
+const unavailableAccessApi: SharedAccessApi = {
+  listAccess: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  listCovers: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  listRecordViews: async () => {
+    throw new Error(UNAVAILABLE_ACCESS_MESSAGE);
+  },
+  grantAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  revokeAccess: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  giveCover: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  decideRequest: async () => UNAVAILABLE_ACCESS_MESSAGE,
+  breakGlass: async () => UNAVAILABLE_ACCESS_MESSAGE,
+};
 
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
@@ -53,7 +74,10 @@ export type WardSharedConnection = SharedView & {
   enabled: boolean;
   signedIn: boolean;
   signIn: () => void;
-  signOut: () => void;
+  /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
+  signOut: (reason?: unknown) => void;
+  /** When this sign-in reaches the session limit, in wall-clock milliseconds. */
+  sessionEndsAt?: number | null;
   retry: () => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
@@ -147,6 +171,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     return {
       listAccess: async () => connected().listAccess(),
       listCovers: async () => connected().listCovers(),
+      listRecordViews: async () => connected().listRecordViews(),
       grantAccess: async (input): Promise<SharedChangeResult> => connected().grantAccess(input),
       revokeAccess: async (id) => connected().revokeAccess(id),
       giveCover: async (input) => connected().giveCover(input),
@@ -369,7 +394,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     () =>
       sessionOpen
         ? {
-            signOut: () => latest.current.signOut(),
+            signOut: (reason) => latest.current.signOut(reason),
             logRecordView: (patientId, surface) => latest.current.logRecordView?.(patientId, surface),
           }
         : null,
@@ -377,8 +402,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   );
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
   const sharedAccess = useMemo(
-    () => (connected && accessApi ? { api: accessApi, actorId } : null),
-    [connected, accessApi, actorId],
+    () =>
+      connection.enabled
+        ? { api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi, actorId }
+        : null,
+    [connection.enabled, connection.recovering, connected, accessApi, actorId],
   );
   // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
   useEffect(() => {
@@ -541,6 +569,16 @@ function WardSharedWorkspaceContent({
   children: ReactNode;
 }) {
   "use no memo";
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
+    // A checkpoint updates checkedAt and re-arms this effect while the deadline is still ahead.
+    const timer = setTimeout(
+      () => setCheckedAt(Date.now()),
+      Math.min(2_147_483_647, Math.max(0, connection.accessUntil! - Date.now())),
+    );
+    return () => clearTimeout(timer);
+  }, [connection.accessUntil, checkedAt]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
@@ -594,15 +632,56 @@ function WardSharedWorkspaceContent({
         )}
       </main>
     );
-  const blocked = connection.status !== "ready";
+  const outage =
+    connection.status === "unavailable" &&
+    Number.isFinite(connection.accessUntil) &&
+    connection.accessUntil! > checkedAt;
+  const blocked = connection.status !== "ready" && !outage;
   return (
     <>
+      <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
       <WardSharedSaveStatus
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
       />
-      <FocusKeepingInert blocked={blocked}>{children}</FocusKeepingInert>
+      {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+      <FocusKeepingInert
+        key={JSON.stringify([
+          connection.actorId,
+          connection.workingAs,
+          connection.access,
+          connection.snapshot?.accessContext,
+        ])}
+        blocked={blocked}
+      >
+        {children}
+      </FocusKeepingInert>
     </>
+  );
+}
+
+/** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced before it ends (`sessionWarning`). */
+const SESSION_WARNING_MS = CLINICAL_VALUES.sessionWarning.value * 60_000;
+
+export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
+  // Wall-clock time, not the demonstration clock: the server measures the limit in real time.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (endsAt === null) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(timer);
+  }, [endsAt]);
+  if (endsAt === null || now < endsAt - SESSION_WARNING_MS) return null;
+  const at = new Date(endsAt).toLocaleTimeString("en-AU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Australia/Perth",
+  });
+  return (
+    <p role="alert" className={styles.sessionEnding} data-testid="ward-session-ending">
+      You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
+      typing and save it now.
+    </p>
   );
 }
 

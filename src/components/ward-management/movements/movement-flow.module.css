@@ -937,6 +937,8 @@
     margin: 0 0 var(--wf-s-3);
     overflow-x: auto;
     scrollbar-width: none;
+    /* DR-13: a stage reached by Tab scrolls fully into view with a little room beside it. */
+    scroll-padding-inline: var(--wf-s-4);
   }
 
   .phStage {

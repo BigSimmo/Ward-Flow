@@ -61,10 +61,10 @@ export type HandoverBedsProps = {
 type BedChip = "ready" | "stale" | "full" | "holds";
 
 const BED_CHIPS: { id: BedChip; label: string; test: (ward: HandoverWard, now: Instant) => boolean }[] = [
-  { id: "ready", label: "Ready beds", test: (ward) => ward.ready > 0 },
+  { id: "ready", label: "Wards with ready beds", test: (ward) => ward.ready > 0 },
   { id: "stale", label: "Feed over 15 min", test: (ward, now) => wardIsStale(ward, now) },
   { id: "full", label: "Full", test: (ward) => ward.beds > 0 && ward.occupied >= ward.beds },
-  { id: "holds", label: "Held discharges", test: (ward) => ward.holds > 0 },
+  { id: "holds", label: "Wards with discharges held up", test: (ward) => ward.holds > 0 },
 ];
 
 const SERVICE_TOKEN: Record<string, string> = {
@@ -217,7 +217,7 @@ function WardPanel({
     { label: "Due out today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
     { label: "Stays over 7 days", value: String(ward.longStays) },
-    { label: "Discharges held", value: String(ward.holds) },
+    { label: "Discharges held up", value: String(ward.holds) },
   ];
   return (
     <Card className={styles.panel} aria-labelledby={`ward-panel-${ward.id}`}>
@@ -507,12 +507,12 @@ export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPati
                   <th scope="col">Ready</th>
                   <th scope="col">Incoming</th>
                   <th scope="col">Updated</th>
-                  <th scope="col">Held</th>
+                  <th scope="col">Pulled</th>
                   <th scope="col" title="Out today">
                     Out today
                   </th>
                   <th scope="col">Past EDD</th>
-                  <th scope="col">Holds</th>
+                  <th scope="col">Held up</th>
                 </tr>
               </thead>
               {groups.map((group) => (

@@ -72,7 +72,7 @@ describe("patient profile acceptance and actual bed commitments", () => {
     for (const id of [f.movementId, f.patientId]) {
       const record = f.resolve(id);
       expect(record.verdict.short).toBe("Accepted, Awaiting Bed");
-      expect(record.verdict.title).toContain("no bed hold recorded");
+      expect(record.verdict.title).toContain("no bed pulled");
       expect(record.verdict.title).not.toContain("Bed allocated");
     }
   });

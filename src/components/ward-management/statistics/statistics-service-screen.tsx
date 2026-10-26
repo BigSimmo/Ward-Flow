@@ -41,12 +41,13 @@ import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-managem
 import { HEALTH_SERVICES, type HealthService, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
-import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
+import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
-import { edWaitFigures } from "./statistics-ed-waits";
+import { edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -98,8 +99,8 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  *
  * ⚠️ **EVERY UNIT READ HERE COMES FROM THE PROVIDER'S LIVE `units`, NEVER FROM `allUnits()` OR
  * `unitById()`.** Which SITE a health service owns, and which SITE an emergency department sits at,
- * is identity rather than capacity, so `siteDirectory`, `siteByCode` and `allEmergencyDepartments()` are
- * read directly.
+ * is identity rather than capacity. The provider's network supplies sites and departments so a
+ * scenario switch also invalidates their memoised identities; `siteByCode` resolves recorded origins.
  *
  * ⚠️ **DECLINES ATTRIBUTED TO A WARD OR A SERVICE ARE A WITHHELD PRODUCT DECISION, NOT BUILT HERE.**
  *
@@ -107,6 +108,7 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  * (owner, 25 Sept 2026: a made-up trend is not drawn), so it is left out rather than invented.
  */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
+  const { sites } = useWardNetwork();
   const live = useStatisticsLive();
   const { countsOnly, small, parts } = useStatisticsCounts();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements, dayZero } = live.state;
@@ -119,8 +121,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const service = useMemo(() => HEALTH_SERVICES.find((candidate) => candidate === serviceId), [serviceId]);
 
   const serviceSites = useMemo(
-    () => (service ? siteDirectory.filter((site) => site.service === service) : []),
-    [service],
+    () => (service ? sites.filter((site) => site.service === service) : []),
+    [service, sites],
   );
   const serviceSiteCodes = useMemo(() => new Set(serviceSites.map((site) => site.code)), [serviceSites]);
   const serviceUnits = useMemo(
@@ -128,8 +130,13 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     [service, liveUnits, serviceSiteCodes],
   );
   const serviceEds = useMemo(
-    () => (service ? allEmergencyDepartments().filter((department) => serviceSiteCodes.has(department.siteCode)) : []),
-    [service, serviceSiteCodes],
+    () =>
+      service
+        ? sites.flatMap((site) =>
+            site.emergencyDepartment && serviceSiteCodes.has(site.code) ? [site.emergencyDepartment] : [],
+          )
+        : [],
+    [service, serviceSiteCodes, sites],
   );
 
   // Ready is `unitCapacity`'s `available`, `min(allocatable, empty)`, per the owner's ruling.
@@ -332,7 +339,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <HeroStat value={totalReady} label="Ready" />
             <HeroStat
               value={small(edWaiting)}
-              label="In ED"
+              label="Open ED journeys"
               tone={
                 edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES))
                   ? "warning"
@@ -485,8 +492,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             id="ed-waits"
             className={detail.anchor}
             icon={Clock}
-            title="ED waits"
-            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            title="ED journeys"
+            aside={`${small(edWaiting)} open journeys from ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -498,7 +505,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 <StatisticsEdSwarm
                   rows={edSwarmRows}
                   labelWidth={180}
-                  label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
+                  label={`Each open ED journey from ${service}, by time since opening`}
                   testId="ward-statistics-service-ed-swarm"
                 />
               )}
@@ -671,7 +678,7 @@ function ServicePhone({
           </PhoneList>
         )}
       </PhoneGroup>
-      <PhoneGroup title="ED waits" aside={`${edWaiting} waiting`}>
+      <PhoneGroup title="ED journeys" aside={`${edWaiting} open ED journeys`}>
         {busiest.length === 0 ? (
           <p className={phone.note}>No emergency department is recorded for this service.</p>
         ) : (

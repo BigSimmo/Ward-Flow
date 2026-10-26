@@ -116,7 +116,7 @@ export function WardScreenCapacityModal({
                   </dd>
                 </div>
                 <div>
-                  <dt>Ready Vacant</dt>
+                  <dt>Ready</dt>
                   <dd className={styles.factValue}>
                     {capacity.available} {capacity.available === 1 ? "bed" : "beds"}
                   </dd>
@@ -256,6 +256,15 @@ export function WardScreenBedDrawer({
       // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
       if (outcome?.status === "refused") setToastMessage(notRecordedMessage(outcome.message));
       else setToastMessage(wardCommandFailure(outcome) ?? success);
+      // Audit 24-3 SV-7: a Retry that saves replaces this save's "not confirmed" message, not a newer one.
+      const unconfirmed = outcome?.status === "failed" ? wardCommandFailure(outcome) : undefined;
+      void outcome?.confirmation?.then(
+        (later) => {
+          if (unconfirmed && later.status === "accepted" && later.isCurrent?.() !== false)
+            setToastMessage((shown) => (shown === unconfirmed ? success : shown));
+        },
+        () => {},
+      );
     });
   }
   return selectedBed !== null
@@ -320,15 +329,20 @@ export function WardScreenBedDrawer({
             }
             onSetObservation={
               !pathname || routeRole === "ward" || routeRole === "coordinator"
-                ? (admissionId, observation) =>
+                ? (admissionId, observation, expected) => {
+                    // Audit 24-3 SV-4: the same answer also keeps the control open until accepted.
+                    let completion: ReturnType<WardCommandDispatch> = undefined;
                     recordFeedback(
                       () =>
-                        raise("RECORD_OBSERVATION_LEVEL", {
+                        (completion = raise("RECORD_OBSERVATION_LEVEL", {
                           target: { kind: "admission", admissionId, actingUnitId: unitId },
                           observation,
-                        }),
+                          expected,
+                        })),
                       `Observation level recorded: ${observationSummary(observation)}.`,
-                    )
+                    );
+                    return completion;
+                  }
                 : undefined
             }
             onMarkAtEd={(bedNum) => {

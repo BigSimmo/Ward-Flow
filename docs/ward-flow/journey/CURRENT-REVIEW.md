@@ -1,5 +1,9 @@
 # Journey Explorer review — 27 September 2026
 
+> **Historical review, 27 September 2026.** Its counts and status describe that build. Regenerate the Explorer with `npm run ward:journey` and see [the journey README](README.md) for current use.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 **Working-branch status:** The generated page and inventory were rebuilt successfully with all 96
 actions represented. Refusal test coverage was not measured for this build, and the page says so.
 The narrow ready check passed on the merged tree: Ward type checking found no errors and no unit

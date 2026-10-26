@@ -105,7 +105,6 @@ records vs archive). The most load-bearing entries:
 
 - `docs/codebase-index.md` — architecture and module map (start here)
 - `docs/site-map.md` — generated route map (`npm run docs:update`)
-- `docs/process-hardening.md` — verification gates, CI expectations, known limits
 - `docs/testing.md` — local test safety, focused/live commands, Playwright ownership, flake policy
 - `docs/clinical-governance.md` — deployment and source governance checklist
 - `docs/archive/deployment-architecture.md` — app/worker/Supabase deployment topology (removed in the 15 Oct 2026 docs trim, see `docs/ward-flow/ARCHIVE-NOTE.md`)

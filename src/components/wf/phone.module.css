@@ -646,11 +646,11 @@
   align-items: center;
 }
 
+/* B6-16 (device sweep, 24 Oct 2026): an eyebrow wraps to a second line rather than ending in
+   "Statewide · Day shi…" on a 320 phone. */
 .heroEyebrow {
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-hero-ink-2);
 }
@@ -778,6 +778,8 @@
      padding is the fade's width, so the last chip clears the fade once the row is scrolled to its
      end (device audit, 11 Oct 2026: clipped chips should read as scrollable). */
   padding: 4px var(--phone-fade) 4px 2px;
+  /* DR-13: a chip reached by Tab scrolls fully clear of the edge fades, not just to the edge. */
+  scroll-padding-inline: var(--phone-fade);
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0,
@@ -911,7 +913,8 @@
 
   .hero[data-band="on"] .heroEyebrow {
     min-height: 28px;
-    line-height: 28px;
+    padding-block: 6px;
+    line-height: var(--wf-lh-12);
     font-weight: 600;
     letter-spacing: var(--wf-tr-caps);
     text-transform: uppercase;

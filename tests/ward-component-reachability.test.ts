@@ -158,10 +158,6 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     module: "src/components/ward-management/shell/ward-dynamic-island.tsx",
     why: "its one route use was the ED page's 24 hour timeline, which left the page on 11 Oct 2026 (device audit, owner pick A2) as a link to Governance",
   },
-  {
-    module: "src/components/ward-management/statistics/statistics-insight-chart.tsx",
-    why: "v6 statistics pages (7 Oct 2026) chart with the wf primitives instead",
-  },
   /*
    * 🔴 **THE SECOND-EDITION CHROME — RETIRED, 2026-09-11, IN THE SAME CHANGE THAT MOUNTED THE
    * THIRD-EDITION SHELL.** These three entries are the honest record of a retirement, not of a

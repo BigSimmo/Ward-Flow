@@ -1,5 +1,9 @@
 # Full audit remediation requirements
 
+> **Dated plan record, 18 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 Source: user-requested Full Deep assessment and subsequent request to implement a detailed parallel plan. Audited revision `2c37e5ae`; implementation base is verified main `aa3a78b9`. This is local engineering for a synthetic prototype; no clinical, hosted or deployment readiness claim.
 
 | Finding | Required observable outcome                                                                                                                        | Primary source                                                                 |

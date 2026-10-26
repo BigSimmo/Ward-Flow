@@ -4,7 +4,6 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowErrorPanel } from "@/app/ward-flow/ward-flow-error-panel";
-import MockupsErrorBoundary from "@/app/mockups/error";
 
 /**
  * THE BOUNDARY OVER THE WARD SCREENS, AND THE TWO WAYS IT COULD BE MADE WORSE THAN NOTHING.
@@ -27,11 +26,7 @@ import MockupsErrorBoundary from "@/app/mockups/error";
  * quietly stopped finding its marker reads exactly like a passing one.
  */
 
-const BOUNDARY_FILES = [
-  "src/app/ward-flow/error.tsx",
-  "src/app/ward-flow/statistics/error.tsx",
-  "src/app/mockups/error.tsx",
-] as const;
+const BOUNDARY_FILES = ["src/app/ward-flow/error.tsx", "src/app/ward-flow/statistics/error.tsx"] as const;
 
 /** A file known to carry the directive, and one known not to — so the reader is provably able to
  *  return both answers. Without these a broken read would report "use client" absent everywhere,
@@ -106,6 +101,22 @@ describe("the ward flow error panel refuses to swallow the error", () => {
     expect(screen.getByTestId("ward-flow-error-message").textContent).toBe("no stage position for admission state");
   });
 
+  it("keeps the message and stack off screen in production, showing a fixed sentence and the digest (PS-05)", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      renderPanel({
+        message: "Synthetic Person Example has no bed",
+        stack: "Error: boom\n    at aNamedFrame (a.ts:1:1)",
+      });
+      expect(document.body.textContent).not.toContain("Synthetic Person Example");
+      expect(screen.queryByTestId("ward-flow-error-stack")).toBeNull();
+      expect(screen.getByTestId("ward-flow-error-message").textContent).toContain("Quote the digest");
+      expect(screen.getByTestId("ward-flow-error-digest").textContent).toContain("digest-for-the-server-log");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("logs the error OBJECT, so the stack is reachable in the console in every environment", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { error } = renderPanel();
@@ -146,67 +157,5 @@ describe("the ward flow error panel refuses to swallow the error", () => {
   it("keeps the synthetic notice on a failed screen, where a screenshot is most likely to be taken", () => {
     renderPanel();
     expect(screen.getByTestId("ward-flow-error-synthetic-notice").textContent).toContain("synthetic prototype");
-  });
-});
-
-describe("the mockups boundary catches what the two nearer ward flow boundaries cannot", () => {
-  /**
-   * `src/app/mockups/error.tsx` exists specifically to catch a throw out of
-   * `ward-flow/layout.tsx` — `DeveloperAreaGate`, `WardFlowProvider`, or its `useReducer`
-   * initialiser — none of which either nearer boundary can reach, because an `error.tsx` never
-   * wraps the `layout.tsx` sitting beside it in the same segment. This suite renders the mockups
-   * boundary's own default export directly (not a shared panel: it deliberately does not import
-   * `WardFlowErrorPanel`, because `tests/ward-flow-seam.test.ts` forbids anything outside Ward
-   * Flow's own folders from importing its code) and proves it behaves as a real boundary rather
-   * than existing only as a file on disk.
-   */
-  function renderBoundary(overrides: { message?: string; stack?: string } = {}) {
-    const error = Object.assign(new Error(overrides.message ?? "a throw from ward-flow/layout.tsx"), {
-      digest: "digest-for-the-layout-throw",
-    });
-    error.stack =
-      overrides.stack ??
-      "Error: a throw from ward-flow/layout.tsx\n    at WardFlowProvider (ward-flow-provider.tsx:1:1)";
-    const retry = vi.fn();
-    render(<MockupsErrorBoundary error={error} retry={retry} />);
-    return { error, retry };
-  }
-
-  it("renders the thrown message itself, not a stand-in for it", () => {
-    renderBoundary({ message: "seedWardFlowStateAt threw during layout render" });
-    expect(screen.getByTestId("mockups-error-message").textContent).toBe(
-      "seedWardFlowStateAt threw during layout render",
-    );
-  });
-
-  it("logs the error OBJECT under its own label, so it is distinguishable from the nearer boundaries in the console", () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { error } = renderBoundary();
-
-    const ourCalls = consoleError.mock.calls.filter(
-      (call) => call[0] === "Unhandled runtime error captured by the mockups boundary:",
-    );
-    expect(ourCalls).toHaveLength(1);
-    expect(ourCalls[0][1]).toBe(error);
-  });
-
-  it("shows the digest, which is the only handle on a server-side throw in production", () => {
-    renderBoundary();
-    expect(screen.getByTestId("mockups-error-digest").textContent).toContain("digest-for-the-layout-throw");
-  });
-
-  it("wires both recovery controls to real handlers, distinct from the ward flow boundaries' testids", () => {
-    const { retry } = renderBoundary();
-    expect(() => screen.getByTestId("ward-flow-error-retry")).toThrow();
-
-    const retryButton = screen.getByTestId("mockups-error-retry");
-    retryButton.click();
-    expect(retry).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId("mockups-error-reload")).toBeTruthy();
-  });
-
-  it("says plainly that the preview could not be shown", () => {
-    renderBoundary();
-    expect(screen.getByTestId("mockups-error-boundary").textContent).toContain("could not be shown");
   });
 });

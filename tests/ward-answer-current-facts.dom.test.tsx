@@ -126,7 +126,10 @@ describe("Ward answer current facts", () => {
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${MOVEMENT.id}`));
     const form = screen.getByTestId(`ward-decline-form-${MOVEMENT.id}`);
     const choices = within(form).getAllByRole("radio");
-    const submit = within(form).getByRole("button", { name: "Confirm decline" });
+    // Audit 24-7 CT-19: the submit names the patient the view header names.
+    const submit = within(form).getByRole("button", { name: /^Decline for \S/u });
+    const named = submit.textContent!.replace(/^Decline for /u, "");
+    expect(screen.getAllByText(new RegExp(named, "u")).length).toBeGreaterThan(1);
 
     expect(choices).toHaveLength(MOVEMENT_DECLINE_REASONS.length);
     expect(choices.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
@@ -213,12 +216,12 @@ describe("Ward answer current facts", () => {
 
     const capacityPanel = screen.getByRole("region", { name: "Confirm your beds" });
     expect(screen.getAllByTestId("ward-capacity-form")).toHaveLength(1);
-    expect(within(capacityPanel).getByText("Physically empty")).toBeInTheDocument();
-    expect(within(capacityPanel).getByText("Allocatable")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Empty")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Confirmed free")).toBeInTheDocument();
 
     const nextCapacity = HISTORY_UNIT.allocatable.value + 1;
     // v10: allocatable is a stepper only (no free number box).
-    fireEvent.click(within(capacityPanel).getByRole("button", { name: "Increase allocatable beds" }));
+    fireEvent.click(within(capacityPanel).getByRole("button", { name: "Increase free beds" }));
     expect(within(capacityPanel).getByTestId("ward-capacity-input")).toHaveAttribute(
       "aria-valuenow",
       String(nextCapacity),
@@ -236,7 +239,7 @@ describe("Ward answer current facts", () => {
     });
     declines.forEach(({ movementId, decline, declineIndex }) => {
       const row = within(history).getByTestId(`ward-answer-history-${movementId}-declined-${declineIndex}`);
-      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason]);
+      expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason!]);
       expect(row).toHaveTextContent(formatInstant(decline.at));
     });
     expect(within(history).getAllByText("Time not recorded")).toHaveLength(
@@ -258,7 +261,7 @@ describe("Ward answer current facts", () => {
     // would leave this movement's referredUnitIds untouched and "incoming" — capability_mismatch
     // still declines, which is what "incoming is empty" below needs.
     fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
-    fireEvent.click(within(form).getByRole("button", { name: "Confirm decline" }));
+    fireEvent.click(within(form).getByRole("button", { name: /^Decline for \S/u }));
 
     // Empty state: the v6 card head reads "Bed request" with a quiet "none waiting" count
     // (design/pages-v6/Ward_answer.png), not a coloured badge.

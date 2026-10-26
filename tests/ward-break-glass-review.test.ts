@@ -121,16 +121,33 @@ describe("break glass on the review list", () => {
     const views = markBreakGlass(
       serverViews(
         [
-          { id: "1", actor_role: "ward", actor_scope: scope, patient_id: "PT-1", surface: "patient", minutes: -20 },
+          {
+            id: "1",
+            actor_id: "A1",
+            actor_role: "ward",
+            actor_scope: scope,
+            patient_id: "PT-1",
+            surface: "patient",
+            minutes: -20,
+          },
           {
             id: "2",
+            actor_id: "A2",
             actor_role: "coordinator",
             actor_scope: { kind: "statewide" },
             patient_id: "PT-1",
             surface: "referral",
             minutes: -8 * 24 * 60,
           },
-          { id: "3", actor_role: "ward", actor_scope: scope, patient_id: "PT-1", surface: "search", minutes: -1 },
+          {
+            id: "3",
+            actor_id: "A1",
+            actor_role: "ward",
+            actor_scope: scope,
+            patient_id: "PT-1",
+            surface: "search",
+            minutes: -1,
+          },
         ],
         1000,
         units,

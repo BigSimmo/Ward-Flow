@@ -1,5 +1,9 @@
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
 import { reduceWardDiagnosis } from "./ward-flow-diagnosis-events";
+// Closing-the-loop (package E): return requested vs home service agreed.
+import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
+import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
+import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -159,9 +163,14 @@ import { reduceReferralSendEvent } from "./ward-flow-referral-send-events";
 import { reduceReferralFollowUpEvent } from "./ward-flow-referral-followup-events";
 import { reduceReferralAskEvent } from "./ward-flow-referral-ask-events";
 import { reduceReferralOwnerEvent } from "./ward-flow-referral-owner-events";
+import { reduceReferralCommitmentEvent } from "./ward-flow-referral-commitment-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reduceArrivalCheckEvent, reduceReleaseNoticeEvent } from "./ward-flow-release-notice-events";
+import { reduceDischargeDependencyEvent } from "./discharges/discharge-dependency-events";
 import { reduceBedMeetingEvent } from "./ward-flow-bed-meeting-events";
+// Closing the loop, package D (24 Oct 2026).
+import { reduceLoopCheckEvent } from "./ward-flow-loop-check-events";
+import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { reduceRestrictivePracticeEvent } from "./ward-flow-restrictive-practice-events";
 import { subjectId } from "./ward-flow-subject-id";
 import { reduceReferralAnswerEvent } from "./ward-flow-referral-answer-events";
@@ -365,6 +374,16 @@ export type WardFlowState = WardAuditState & {
    * job. One record per admission; a second is refused.
    */
   repatriations: RepatriationRecord[];
+  /**
+   * Closing-the-loop (package E): return requested and the home service's answer, one per stay
+   * (`RECORD_HOME_SERVICE_RETURN`). Optional: absent in older saves, read as none.
+   */
+  homeServiceReturns?: HomeServiceReturnRecord[];
+  /**
+   * Closing-the-loop (package E): the latest recorded check of each on-call directory entry
+   * (`RECORD_DIRECTORY_CHECK`). Entry id, time and desk only. Optional: absent in older saves.
+   */
+  directoryChecks?: DirectoryCheckRecord[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
@@ -496,7 +515,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     frontDoorReferralSequence: 0,
     patients: structuredClone(network?.patients ?? wardPatients),
     patientSequence: 0,
-    admissions: structuredClone(network?.admissions ?? wardAdmissions),
+    // Closing-the-loop (package E): one discharge date moved this shift, standard night only.
+    admissions: network ? structuredClone(network.admissions) : withDischargeMoveDemo(structuredClone(wardAdmissions)),
     admissionSequence: 0,
     inboxAcknowledgements: {},
     inboxCompletions: {},
@@ -513,7 +533,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissions: network ? [] : structuredClone(wardPlannedAdmissions),
     plannedAdmissionSequence: 0,
   };
-  return network ? seed : applyRulingsDemoOverlay(seed, NOW_ANCHOR);
+  // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
+  return network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /**
@@ -613,6 +634,7 @@ function pullOverrides(
   admissions: WardFlowState["admissions"],
   event: Extract<WardFlowEvent, { type: "PULL_PATIENT" }>,
   checkEligibility: boolean,
+  bedKindTaken?: "open" | "locked",
 ): Movement["overrides"] {
   if (event.overrideReason === undefined || !OVERRIDE_REASONS.includes(event.overrideReason)) return movement.overrides;
   const gates: NonNullable<Movement["overrides"][number]["gate"]>[] = [];
@@ -625,7 +647,11 @@ function pullOverrides(
       gates.push("authorisation");
   }
   if (checkEligibility) {
-    if (movement.security === "Secure" && lockedBedsFree(unit) <= 0) gates.push("locked_bed_capacity");
+    if (
+      movement.security === "Secure" &&
+      (bedKindTaken === "open" || (bedKindTaken === undefined && lockedBedsFree(unit) <= 0))
+    )
+      gates.push("locked_bed_capacity");
     gates.push(
       ...eligibility(movement, unit, event.now)
         .gates.filter((gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate))
@@ -649,8 +675,14 @@ function pullOverrides(
 /** The planned admissions module, handed this reducer's own rejection and placement refusal. */
 function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
   return (
-    reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
-      eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+    reducePlannedAdmissionEvent(
+      state,
+      event,
+      decision,
+      reject,
+      (movement, unit, now, waived) =>
+        eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now, waived),
+      OVERRIDE_REASON_REQUIRED,
     ) ?? state
   );
 }
@@ -687,6 +719,12 @@ function eligibilityRefusal(
   movement: Movement,
   unit: Unit,
   now: Instant,
+  /**
+   * Audit 24-1 CS2-19: gates already answered by a reason recorded elsewhere — only a planned
+   * booking's recorded authorisation reason, for its own ward. Never the gender gate (checked
+   * first, above any waiver) and never a capacity refusal (refused before this is called).
+   */
+  waived: readonly EligibilityGate[] = [],
 ): string | null {
   /**
    * T10 (item 8): the `gender_designation` check runs first, before the override early return
@@ -718,11 +756,13 @@ function eligibilityRefusal(
     return null;
   }
   // `verdict` was already computed above, before the gender check — not recomputed here.
-  const failed = verdict.gates.find((gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate));
+  const failed = verdict.gates.find(
+    (gate) => !gate.pass && SUITABILITY_GATES.includes(gate.gate) && !waived.includes(gate.gate),
+  );
   if (!failed) return null;
   return (
     `${unit.name} is not eligible for movement ${movement.id} — failed gate ${failed?.gate}: ` +
-    `${candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
+    `${waived.length > 0 ? failed.detail : candidateReason(verdict)}. This placement ${OVERRIDE_REASON_REQUIRED}.`
   );
 }
 
@@ -1022,12 +1062,17 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
   // ceiling or rewrite physical empty. Record the disagreement for explicit re-confirmation.
   const releaseCountDisagrees =
     unit.allocatable.value === unit.beds || (lockedBedReleased && unit.allocatableLocked === unit.lockedBeds);
+  // Audit 24-1 B-02: a seeded pulled stay (`movementId: null`) sits outside the empty count
+  // (`bedStates`), so its bed becomes physically empty again here. Without this the released bed
+  // stayed in Occupied with nobody in it, and a Closed bed read as an unnamed Occupied one.
+  const seededPullReleased = heldAdmission?.movementId === null;
   const releasedUnit: Unit = {
     ...unit,
     allocatable: {
       ...unit.allocatable,
       value: Math.min(unit.beds, unit.allocatable.value + 1),
     },
+    ...(seededPullReleased ? { empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) } } : {}),
     allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
     ...(releaseCountDisagrees
       ? {
@@ -1045,7 +1090,25 @@ export function releasePulledBedAndAdmission(state: WardFlowState, movement: Mov
         }
       : {}),
   };
-  const withUnit = replaceUnit(state, unit.id, releasedUnit);
+  // Audit 24-1 CS2-03: the deleted stay's span stays in the bed replay, so a later pull keeps its bed.
+  const pulledAt = heldAdmission?.pulledAt;
+  const releasedSpan =
+    heldAdmission === undefined || pulledAt == null
+      ? undefined
+      : {
+          admissionId: heldAdmission.id,
+          pulledAt,
+          leftAt: Math.max(now, pulledAt),
+          ...(heldAdmission.bedKind === undefined ? {} : { bedKind: heldAdmission.bedKind }),
+          ...(heldAdmission.bedNumber === undefined ? {} : { bedNumber: heldAdmission.bedNumber }),
+        };
+  const withUnit = replaceUnit(
+    state,
+    unit.id,
+    releasedSpan === undefined
+      ? releasedUnit
+      : { ...releasedUnit, releasedPullSpans: [...(unit.releasedPullSpans ?? []), releasedSpan] },
+  );
   if (movement.admissionId === undefined) return withUnit;
   return {
     ...withUnit,
@@ -1720,7 +1783,6 @@ export function reduceClinicalEvent(
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "END_LEAVE_BED":
     case "END_COMMUNITY_TREATMENT_ORDER":
     case "REQUEST_CAPACITY_REFRESH":
@@ -1841,6 +1903,7 @@ export function reduceClinicalEvent(
     case "DECLINE":
     case "RECEIVE_REFERRAL":
     case "ACCEPT_REFERRAL":
+    case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
       return reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);
@@ -1851,6 +1914,9 @@ export function reduceClinicalEvent(
     case "ASSIGN_REFERRAL":
     case "LOG_REFERRAL_CONTACT":
       return reduceReferralOwnerEvent(state, event, decision, { findReferral, reject, replaceReferral });
+    // Closing-the-loop package A (24 Oct 2026): response commitments.
+    case "RECORD_REFERRAL_COMMITMENT":
+      return reduceReferralCommitmentEvent(state, event, decision, { findReferral, reject, replaceReferral });
     case "ASK_MORE_WARDS":
       return reduceReferralAskEvent(state, event, decision, { findReferral, findUnit, reject, replaceReferral });
     case "CLOSE_WARD_TO_ADMISSIONS":
@@ -1863,8 +1929,25 @@ export function reduceClinicalEvent(
       return reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
     case "SEND_RELEASE_SUPPORT_NOTICE":
       return reduceReleaseNoticeEvent(state, event, decision, BED_EVENT_HELPERS);
+    // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes.
+    case "RECORD_DISCHARGE_DEPENDENCY":
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
+      return reduceDischargeDependencyEvent(state, event, decision, BED_EVENT_HELPERS);
     case "RECORD_ARRIVAL_CHECK":
       return reduceArrivalCheckEvent(state, event, decision, { findMovement, reject, replaceMovement });
+    // Closing the loop, package D (24 Oct 2026).
+    case "MARK_CANCELLED_MOVE_CHECK":
+    case "RECORD_ACCEPTANCE_CONDITION":
+    case "MARK_ACCEPTANCE_CONDITION_MET":
+    case "RECORD_RESTRICTION_REVIEW":
+    case "MARK_CLOSURE_TRANSITION_ITEM":
+      return reduceLoopCheckEvent(state, event, decision, {
+        findMovement,
+        findUnit,
+        reject,
+        replaceMovement,
+        replaceUnit,
+      });
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return reduceBedMeetingEvent(state, event, decision, {
@@ -2233,6 +2316,11 @@ export function reduceClinicalEvent(
     }
     case "RECORD_WARD_DIAGNOSIS":
       return reduceWardDiagnosis(state, event, reject);
+    // Closing-the-loop (package E).
+    case "RECORD_HOME_SERVICE_RETURN":
+      return reduceHomeServiceReturn(state, event, reject);
+    case "RECORD_DIRECTORY_CHECK":
+      return reduceDirectoryCheck(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;
@@ -2338,6 +2426,8 @@ const PLACEMENT_EVENT_HELPERS = {
   OVERRIDE_REASON_REQUIRED,
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
+  bedNumberRefusal,
+  heldBedRefusal,
   eligibilityRefusal,
   findMovement,
   findUnit,
@@ -2359,6 +2449,7 @@ const TRANSPORT_EVENT_HELPERS = {
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
   bedNumberRefusal,
+  heldBedRefusal,
   departAdmission,
   findAdmission,
   findMovement,

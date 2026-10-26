@@ -1,8 +1,8 @@
 # Ward Flow scripts inventory
 
-_Updated 2026-10-21 - exact generated counts and executable documentation boundary; Documentation owns._
+_Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (131 files) and the `package.json` script surface (85 entries),
+Curated map of `scripts/` (134 files) and the `package.json` script surface (85 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -37,7 +37,6 @@ and the review server. Their history is in Git.
 | `npm run verify:pr-local`                                      | `verify-pr-local.mjs`                                                                   | Local pre-push readiness selected from CI scope rules; inspect the dry run for the actual local stages.                       |
 | `npm run verify:cheap`                                         | the `package.json` command chain                                                        | Unconditional broad offline documentation, static, lint, typecheck and unit checks.                                           |
 | `npm run test:live`                                            | `run-live-tests.mjs`                                                                    | Provider-backed live tests; refuses unless `ALLOW_PROVIDER_TESTS=true` is set for an approved run. No live tests exist today. |
-| `npm run bench`                                                | none                                                                                    | Vitest benchmarks.                                                                                                            |
 
 Shared helpers for these runners: `owned-child.mjs` (and its Windows companion), `test-run-lock.mjs`,
 `test-environment.mjs` (offline, provider-free test environment), `test-run-selection.mjs`,
@@ -57,7 +56,12 @@ The unit shards use `ward-flow/unit-durations.mjs`, `ward-flow/test-module-depen
 result on main), `changed-checks.mjs` (format, lint and the test-deletion guard on changed files),
 `check-contracts.mjs` and `check-policy-contracts.mjs` (the workflow's own contracts),
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
-`bot-author-policy.mjs` for the bot author workflow. CI also runs
+`bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
+before the production build measures the phone script budget) and `budget-recheck.mjs` (run by
+`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves).
+The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
+`release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
+30 minutes and opens an issue for the owner when it stays down. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`.
@@ -98,7 +102,7 @@ set. CI directly checks reference-pack integrity and scope-selected owner-ruling
 organisation outputs. The full `docs:maintain:check` aggregate additionally runs
 `ward-flow/screen-map.mjs`, `ward-flow/mockup-manifest.mjs` and
 `ward-flow/screen-verification.mjs` (using `ward-flow/screen-pairs.mjs` and the verification library).
-`check-stale-docs.mjs` is a separate advisory age-and-reference report, not a generator drift check.
+`check-stale-docs.mjs` is a separate advisory age-and-reference report, not a generator drift check. `check-living-docs-freshness.mjs` (`npm run docs:freshness`) is the advisory re-check reminder for living pages: it reads each page's `<!-- last-checked: YYYY-MM-DD -->` marker.
 `ward-flow/sync-lessons.mjs` is a retired stub that only refuses; a documentation test still
 checks that refusal.
 

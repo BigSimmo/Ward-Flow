@@ -210,12 +210,19 @@ export function serverOpenings(
 export function serverViews(rows: readonly SharedRecordView[], at: Instant, units: readonly Unit[]): RecordView[] {
   return rows.flatMap((row) => {
     const access = accessOf(row?.actor_role, row?.actor_scope);
-    if (!access || typeof row.patient_id !== "string" || !SURFACES.has(row.surface) || !Number.isFinite(row.minutes))
+    const minutes = row?.minutes;
+    if (
+      !access ||
+      typeof row.patient_id !== "string" ||
+      !SURFACES.has(row.surface) ||
+      typeof minutes !== "number" ||
+      !Number.isFinite(minutes)
+    )
       return [];
     return [
       {
         key: `view-${String(row.id)}`,
-        at: at + row.minutes,
+        at: at + minutes,
         record: row.patient_id,
         desk: access.role,
         place: accessPlaceLabel(access, units),

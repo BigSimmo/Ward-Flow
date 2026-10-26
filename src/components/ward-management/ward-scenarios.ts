@@ -1,5 +1,6 @@
 import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
-import type { Unit } from "@/components/ward-management/ward-model";
+import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
+import type { EmergencyDepartment, Unit } from "@/components/ward-management/ward-model";
 import {
   activateWardNetwork,
   STANDARD_WARD_SITES,
@@ -8,7 +9,7 @@ import {
 } from "@/components/ward-management/ward-sites";
 
 export type WardScenario =
-  "standard" | "scarce" | "emhs-demo" | "emhs-surge" | "quiet-day" | "winter-surge" | "ed-crisis";
+  "standard" | "scarce" | "emhs-demo" | "emhs-surge" | "quiet-day" | "winter-surge" | "ed-crisis" | "wa-synthetic";
 export const WARD_SCENARIOS: readonly WardScenario[] = [
   "standard",
   "scarce",
@@ -17,6 +18,7 @@ export const WARD_SCENARIOS: readonly WardScenario[] = [
   "quiet-day",
   "winter-surge",
   "ed-crisis",
+  "wa-synthetic",
 ] as const;
 
 /** The one-tap demo reset choices (Josh, 15 Oct 2026). */
@@ -36,6 +38,7 @@ export const scenarioLabels: Record<WardScenario, string> = {
   "quiet-day": "Quiet day",
   "winter-surge": "Winter surge",
   "ed-crisis": "ED crisis",
+  "wa-synthetic": "Fictional WA-like network",
 };
 
 export const scenarioDescriptions: Record<WardScenario, string> = {
@@ -46,6 +49,8 @@ export const scenarioDescriptions: Record<WardScenario, string> = {
   "quiet-day": "Beds free across the network and short ED waits.",
   "winter-surge": "Every ward full or nearly full and more people waiting in ED.",
   "ed-crisis": "Busy wards and many people waiting in East Metro EDs, some for over two days.",
+  "wa-synthetic":
+    "Invented services and records, with an illustrative historical occupancy comparison. Not population calibration.",
 };
 
 /** The network variant each demonstration scenario loads. The standard and scarce nights have none. */
@@ -63,6 +68,7 @@ const SCENARIO_VARIANT: Partial<Record<WardScenario, DemoNetworkVariant>> = {
  * `undefined` for the standard and scarce nights, which keep the standard network and its seed.
  */
 export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined {
+  if (scenario === "wa-synthetic") return waSyntheticNetwork();
   const variant = SCENARIO_VARIANT[scenario];
   return variant ? demoNetwork(variant) : undefined;
 }
@@ -78,6 +84,18 @@ export function activateScenarioNetwork(scenario: WardScenario): void {
 /** The scenario's wards, as an input a screen passes on (`useWardNetwork()`). */
 export function scenarioWardNetwork(scenario: WardScenario): WardNetwork {
   return wardNetworkOf(scenarioNetwork(scenario)?.sites ?? STANDARD_WARD_SITES);
+}
+
+/**
+ * The emergency departments of one world's own network. The engine checks an event's `edId`
+ * against these rather than the module-wide active network, which only a browser provider switches:
+ * the shared server never does, so a wa-synthetic world there accepted a department from another
+ * network and then failed its own save check (stress test 25 Oct 2026, CS2-20).
+ */
+export function scenarioEmergencyDepartments(scenario: WardScenario): EmergencyDepartment[] {
+  return scenarioWardNetwork(scenario).sites.flatMap((site) =>
+    site.emergencyDepartment ? [site.emergencyDepartment] : [],
+  );
 }
 
 /**

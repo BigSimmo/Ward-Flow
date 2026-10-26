@@ -1,5 +1,10 @@
 # Data, seeds and domain rules
 
+**Status:** the per-file entries began as the 25 September 2026 census; the dated sections below
+correct parts of it. Line numbers and importer counts are history. A 24 October 2026 check against
+`main` at `899b232e` found every file this part names still present, except the removed D-29 demo
+and the removed contention brief noted in place. Back to [the code map index](README.md).
+
 ## Output accuracy corrections
 
 Physical ED wait counts use `ward-ed-presence.ts` to exclude ward-origin transfers and stop at
@@ -178,11 +183,11 @@ capacity figure anywhere in this group is real.
   including `referralState`, `referralCandidates`, `referralQueueOrder`, `recentlyDecidedReferrals`,
   `referralClocks`, `hasConfirmedCapacity`, `noBedBreakdown`, `matchReason`,
   `DECLINE_REASON_LABELS`, `COMMUNITY_DECLINE_REASON_LABELS`, `groupCandidatesByTravelBand`,
-  `outOfAreaLedger`, `canReassessReferral`, `isBedHoldExpired`, `BED_HOLD_EXPIRY_MINUTES`. Holds no
+  `outOfAreaLedger`, `canReassessReferral`. Holds no
   seed data of its own — the referral fixtures it operates on live in `ward-movements.ts`.
 - **`src/components/ward-management/ward-referral-visibility.ts`** (1,076 lines, 6 importers) —
   Scopes a `Referral` to what each role may see: `wardScopedReferral(s)`,
-  `communityScopedReferral(s)`, `edScopedReferral(s)`, `coordinatorScopedReferral(s)`,
+  `communityScopedReferral(s)`, `edScopedReferral`, `coordinatorScopedReferral(s)`,
   `coordinatorWorksReferral`, `coordinatorWorklistReferrals`, plus the
   `WardScopedReferral`/`CommunityScopedReferral`/`EdScopedReferral`/`CoordinatorScopedReferral`
   shape types and `ReferralDirection` ("arriving" | "leaving").
@@ -221,7 +226,7 @@ capacity figure anywhere in this group is real.
 - **`src/components/ward-management/ward-legal-clock.ts`** — Legal-form vocabulary, compatibility
   types and operational warnings; it does not compute legal expiry or extension periods. The
   record keeps the expiry typed from the paper form. Key exports: `LEGAL_CLOCK_FORM_CODES`,
-  `isLegalClockFormCode`, `isArrivalLate`, `leaveBedNeedsOpenWarning` and `HANDOVER_COMPLETION_WINDOWS`.
+  `isLegalClockFormCode`, `isArrivalLate` and `leaveBedNeedsOpenWarning`.
   No file computes an Act period:
   [D-70](../decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)
   removed the D-29 demo (`legal-forms/act-periods-demo.ts`). The Legal forms screen shows only the
@@ -243,15 +248,13 @@ capacity figure anywhere in this group is real.
   `headlineAvailable`, `acceptingBedCounts`, `constraintSentence`, `sinceYesterday`,
   `arrowTargets`, `derivedSexMix`.
 - **`src/components/ward-management/ward-board-time-features.ts`** (89 lines, 6 importers) — Board
-  time labels built only from times a record already holds (pull-hold expiry, transport ETA, the
-  handover open-work list against the 15:00 day-shift end). Invents no Mental Health Act limit or
-  curfew. Key exports: `pullHoldRemainingLabel`, `transportEtaRemainingLabel`,
-  `openWorkBeforeShiftEnd`, `openWorkBeforeShiftEndLabel`, `DAY_SHIFT_END_MINUTE` (15:00).
+  time labels built only from times a record already holds (pull-hold expiry, transport ETA), plus
+  the 15:00 day-shift end the beds matrix shows. Invents no Mental Health Act limit or curfew. Key exports: `pullHoldRemainingLabel`, `transportEtaRemainingLabel`,
+  `DAY_SHIFT_END_MINUTE` (15:00).
 - **`src/components/ward-management/ward-discharge-dates.ts`** (255 lines, 6 importers) — Derives
   forward-looking `BedRelease[]` from each admission's single `expectedDischargeAt`. Pure; does no
   bed-count arithmetic itself (that stays in `ward-bed-availability.ts`, which buckets this
-  output). Key exports: `derivedBedReleases`, `statewideReleaseCount`, `blockedReleaseCount`,
-  `dischargeDateAccuracy`.
+  output). Key exports: `derivedBedReleases`, `blockedReleaseCount`.
 - **`src/components/ward-management/ward-discharge-records.ts`** (170 lines, 10 importers) —
   Access-controlled read of discharge records: who (`WardRecordActor`) may read which
   `DischargeRecord`/`DischargeIdentity`, and safe lookups that fail closed (`RecordRead<T>` is
@@ -262,8 +265,8 @@ capacity figure anywhere in this group is real.
   only) — Reports, but does not resolve, when more than one live claim (referral, acceptance, or
   parallel referral) is counting on the same unit's bed. Its own doc comment states this is
   deliberately unwired: "No existing caller is wired up here" pending an owner decision on how
-  contention should be resolved (`docs/ward-flow/brief-contention-model-2026-09-04.md`). See
-  [Pitfalls](#pitfalls-in-this-area). Key exports: `contention`, `contentionPairs`.
+  contention should be resolved (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). See
+  [Pitfalls](#pitfalls-in-this-area). Key export: `contention`.
 - **`src/components/ward-management/ward-pressure.ts`** (65 lines, 7 importers) — Ranks EDs by
   pressure: a passed legal deadline outranks a long wait, which outranks volume. `movements` is a
   required parameter — an earlier version defaulted it to the seed array, silently hiding a caller
@@ -271,8 +274,7 @@ capacity figure anywhere in this group is real.
 - **`src/components/ward-management/ward-morning-rollup.ts`** (306 lines, 10 importers) — Rolls
   per-unit `capacityBreakdown` figures up to site and service level for the coordinator's morning
   page. Computes only sums of existing figures plus a freshness derivation — no new bed arithmetic.
-  Key exports: `serviceRollup`, `morningHandoverInstant`, `peopleWaitingCount`,
-  `wardsConfirmedLabel`, `MORNING_HANDOVER_MINUTES` (08:00), `CAPACITY_FIGURE_LABELS`.
+  Key exports: `serviceRollup`, `MORNING_HANDOVER_MINUTES` (08:00), `CAPACITY_FIGURE_LABELS`.
 - **`src/components/ward-management/ward-statistics.ts`** (347 lines, 12 importers) — Six pure
   ward/system-level flow figures (never about a person, never a ranking or target).
   `null` means "nothing to average" and must never be reported as `0` (a ward with no discharges
@@ -390,7 +392,9 @@ capacity figure anywhere in this group is real.
   so "the role IS the route". A chrome hint only, never a permission (permissions stay in the
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
   `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
-  readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
+  readmission flag is the coordinator's on every route, Josh, 9 Oct 2026; since D-80 a ward also
+  sees it on its own accepted journeys, carried on its scoped copy as the discharge time only by
+  `ward-readmission-copy.ts`), `CHROME_ROLE_LABELS`.
 - **`src/components/ward-management/ward-role-permissions.ts`** (145 lines, added 9 Oct 2026,
   feature 11) — Whether the route's role may take an action: `EVENT_ROLE` plus the one explicit
   `CROSS_ROLE_ALLOWED` list of borrowed-role pairs (Patient page, Legal forms Mark received, ward
@@ -430,7 +434,7 @@ capacity figure anywhere in this group is real.
   only) — Built, tested, and explicitly **not wired into any screen or the reducer**, by design.
   Its header states the function reports contention (two live claims resting on the same bed) but
   never ranks, resolves or decides who wins one, because that decision has not been made by the
-  product owner (`docs/ward-flow/brief-contention-model-2026-09-04.md`). Read before either wiring
+  product owner (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). Read before either wiring
   it up or deleting it — it is neither dead code nor a shipped feature, it is a deliberately
   unreached primitive.
 

@@ -1008,13 +1008,13 @@
 /* v10 phone downtime pack: Beds, ED, Moves and Forms stay pinned under the bar while the list
  * scrolls, with an 8px canvas collar so no row shows round the switch. The shared bar keeps the same height
  * throughout the scroll; the canvas collar fills the join beneath it. Phone-only element. */
+/* Device sweep R1-19/R2-12 (24 Oct 2026): as on the statistics phone, the inset shadow drew a faint
+ * square frame round the rounded track. Only the canvas ring that hides scrolled rows stays. */
 .phoneSegPinned {
   position: sticky;
   top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
-  box-shadow:
-    0 0 0 var(--wf-s-2) var(--wf-canvas),
-    inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
 
 /* Keep the first report load recognisable without inventing any figures or table rows. */

@@ -150,6 +150,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
   },
   {
+    id: "pull-second-tap-guard",
+    why: "How long a second tap after Pull a bed is ignored, so a double tap cannot land on Release (audit 24-7, CT-22); a UI pause, not a limit.",
+    file: /^ward\/ward-arrivals-corridor\.tsx$/,
+    name: /^PULL_SECOND_TAP_GUARD_MS$/,
+  },
+  {
     id: "restore-notice-pause",
     why: "How long the routine restored-save notice stays before it hides itself (simplification A3, 19 Oct 2026); a UI pause, not a limit.",
     file: /^shell\/ward-recovery-notice\.tsx$/,

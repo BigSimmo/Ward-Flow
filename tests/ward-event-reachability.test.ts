@@ -51,6 +51,8 @@ const DEFINITION_FILES = new Set([
   `${WARD_ROOT}/ward-flow-bed-meeting-events.ts`,
   // 21 Oct 2026: declares SEND_RELEASE_SUPPORT_NOTICE and RECORD_ARRIVAL_CHECK beside their cases.
   `${WARD_ROOT}/ward-flow-release-notice-events.ts`,
+  // Closing-the-loop package B (24 Oct 2026): discharge dependency events beside their cases.
+  `${WARD_ROOT}/discharges/discharge-dependency-events.ts`,
   // 19 Oct 2026: subjectId moved out of the reducer unchanged, for the line cap.
   `${WARD_ROOT}/ward-flow-subject-id.ts`,
   // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.

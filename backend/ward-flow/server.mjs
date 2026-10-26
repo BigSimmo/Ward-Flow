@@ -9,6 +9,7 @@ import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
+import { logFailure, startErrorReporting } from "./error-report.mjs";
 
 const BODY_LIMIT = 1_048_576;
 /** `/healthz` asks the database at most this often, so an unauthenticated caller cannot load it. */
@@ -189,6 +190,14 @@ export const MAX_CONNECTIONS = 256;
 /** Replies smaller than this are sent as they are; compressing them saves almost nothing. */
 export const GZIP_MIN_BYTES = 1024;
 export const HEADERS_TIMEOUT_MS = 5_000;
+/**
+ * Audit BE-01: one overall deadline for a handler, below the 15 second socket and browser limits.
+ * A command that is still running then gets a "not confirmed saved" 503 the desk can retry, rather
+ * than a dropped connection. Receipts make retrying the same command ID safe.
+ */
+export const HANDLER_DEADLINE_MS = 12_000;
+/** Audit BE-02: the Fetch standard cannot build a Request for TRACE, TRACK or CONNECT. */
+const ALLOWED_METHODS = "GET, HEAD, POST, OPTIONS";
 
 /** True when Accept-Encoding lists gzip without `q=0`, which means "not acceptable". */
 export function acceptsGzip(header) {
@@ -204,21 +213,60 @@ export function acceptsGzip(header) {
     });
 }
 
-export function listen(handler, config) {
+/**
+ * The reply when a handler passes its deadline. Closed fields only, and CORS headers for the
+ * configured origin so the browser can read the message.
+ * @param {import("node:http").IncomingMessage} incoming
+ * @param {{ origin?: string | null }} config
+ */
+function deadlineResponse(incoming, config) {
+  /** @type {Record<string, string>} */
+  const headers = { "cache-control": "no-store", "x-content-type-options": "nosniff" };
+  const origin = incoming.headers.origin;
+  if (origin && config.origin && origin === config.origin) {
+    headers["access-control-allow-origin"] = origin;
+    headers.vary = "Origin";
+  }
+  const error =
+    incoming.method === "POST"
+      ? "Database unavailable; this change is not confirmed saved. Retry the same command ID."
+      : "Database unavailable; try again shortly";
+  return Response.json({ error }, { status: 503, headers });
+}
+
+export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {}) {
   const server = createServer(
     { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
     async (incoming, outgoing) => {
+      if (!ALLOWED_METHODS.split(", ").includes(incoming.method ?? "")) {
+        outgoing.writeHead(405, { allow: ALLOWED_METHODS, "cache-control": "no-store" });
+        outgoing.end();
+        return;
+      }
+      /** @type {ReturnType<typeof setTimeout> | undefined} */
+      let timer;
       try {
         const request = new Request(`http://backend${incoming.url}`, {
           method: incoming.method,
           headers: /** @type {HeadersInit} */ (/** @type {unknown} */ (incoming.headers)),
-          ...(["GET", "HEAD"].includes(incoming.method)
+          ...(["GET", "HEAD"].includes(incoming.method ?? "")
             ? {}
             : { body: /** @type {BodyInit} */ (/** @type {unknown} */ (Readable.toWeb(incoming))), duplex: "half" }),
         });
-        const response = await handler(request, {
-          clientAddress: clientAddress(incoming, config.trustedProxyAddresses),
-        });
+        // Whichever settles first is the only reply. The race keeps a handler that finishes or
+        // fails later from writing a second response or raising an unhandled rejection.
+        const response = await Promise.race([
+          handler(request, {
+            clientAddress: clientAddress(incoming, config.trustedProxyAddresses),
+          }),
+          new Promise((resolve) => {
+            timer = setTimeout(() => {
+              logFailure({ event: "ward_backend_deadline_exceeded", method: incoming.method });
+              resolve(deadlineResponse(incoming, config));
+            }, deadlineMs);
+          }),
+        ]);
+        clearTimeout(timer);
         const headers = Object.fromEntries(response.headers);
         let body = Buffer.from(await response.arrayBuffer());
         // Audit F-04: a full workspace read is tens of kilobytes of JSON; gzip cuts it to a few.
@@ -235,9 +283,10 @@ export function listen(handler, config) {
         outgoing.writeHead(response.status, headers);
         outgoing.end(body);
       } catch (error) {
+        clearTimeout(timer);
         // Name and code only: a database or engine message can quote values from the request.
         const { errorName, errorCode } = errorFields(error);
-        console.error(JSON.stringify({ event: "ward_backend_unhandled_failure", errorName, errorCode }));
+        logFailure({ event: "ward_backend_unhandled_failure", errorName, errorCode });
         if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
         outgoing.end();
       }
@@ -249,7 +298,7 @@ export function listen(handler, config) {
 }
 
 /** One phone-push re-check. A failure is logged with closed diagnostic fields, never exception text. */
-export async function sweepPush(sharedStore, log = (event) => console.error(JSON.stringify(event))) {
+export async function sweepPush(sharedStore, log = logFailure) {
   try {
     await sharedStore.sweepPush();
   } catch (error) {
@@ -286,7 +335,7 @@ export function registerShutdown(server, pool, signals = process) {
   signals.once("SIGTERM", close);
   signals.on?.("unhandledRejection", (error) => {
     const { errorName, errorCode } = errorFields(error);
-    console.error(JSON.stringify({ event: "ward_backend_unhandled_rejection", errorName, errorCode }));
+    logFailure({ event: "ward_backend_unhandled_rejection", errorName, errorCode });
     signals.exitCode = 1;
     const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     forceExit.unref?.();
@@ -294,7 +343,7 @@ export function registerShutdown(server, pool, signals = process) {
   });
   signals.on?.("uncaughtException", (error) => {
     const { errorName, errorCode } = errorFields(error);
-    console.error(JSON.stringify({ event: "ward_backend_uncaught_exception", errorName, errorCode }));
+    logFailure({ event: "ward_backend_uncaught_exception", errorName, errorCode });
     signals.exitCode = 1;
     const forceExit = setTimeout(() => signals.exit?.(1), 5_000);
     forceExit.unref?.();
@@ -311,6 +360,8 @@ export function registerShutdown(server, pool, signals = process) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let pool;
   try {
+    // Optional Sentry error reporting, off unless SENTRY_DSN is set (see error-report.mjs).
+    startErrorReporting();
     const config = readConfig();
     const backend = await createBackend(config);
     pool = backend.pool;

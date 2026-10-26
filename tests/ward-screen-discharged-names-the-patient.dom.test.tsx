@@ -150,7 +150,7 @@ describe("a bed held for an absence without leave never reads as approved leave 
     expect(bed, "the held bed is on the bed grid").not.toBeNull();
     expect(bed).toHaveAttribute("data-state", "leave");
     expect(bed).toHaveAccessibleName(/Absent without leave/u);
-    expect(bed).not.toHaveAccessibleName(/On Leave/u);
+    expect(bed).not.toHaveAccessibleName(/On leave/u);
   });
 });
 

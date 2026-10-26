@@ -578,7 +578,9 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot?.demoControls).toBe(false);
     client.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: 642, minutes: 15 } as WardFlowEvent);
     await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
-    expect(view?.error).toBe("Demo controls are switched off on the shared workspace. Nothing was changed.");
+    expect(view?.error).toBe(
+      "Demo controls are switched off on the shared workspace. Nothing was changed. Ask whoever runs the demonstration to switch them on.",
+    );
     client.dispose();
   });
   it("says why when a command names a record outside the desk's place", async () => {
@@ -1060,7 +1062,10 @@ describe("shared workspace connection", () => {
       changed: (next) => {
         view = next;
       },
-      fetch: async () => (++calls <= 2 ? Response.json({ snapshot: snapshot(1) }) : Response.json({}, { status: 403 })),
+      fetch: async () =>
+        ++calls <= 2
+          ? Response.json({ snapshot: snapshot(1) })
+          : Response.json({ error: "Origin not allowed" }, { status: 403 }),
     });
     await client.refresh();
     client.dispatch(event);

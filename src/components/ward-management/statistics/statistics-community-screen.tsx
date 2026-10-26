@@ -22,7 +22,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -80,6 +80,7 @@ import detail from "./statistics-detail.module.css";
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
   const { countsOnly, small, parts } = useStatisticsCounts();
+  const canOpen = useCanOpenHref();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = live.state;
@@ -126,7 +127,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   const lists = communityHubLists(admissions, team, referrals);
   const figures = communityFigures(lists, communityMembershipResolution(admissions, team, referrals));
   const unseen = admissionsWithNoCommunityTeam(admissions, referrals);
-  const allTeams = COMMUNITY_TEAM_PAGES.map((candidate) => ({
+  // D-80: a team desk's copy holds only its own people, so other teams are left out rather than
+  // shown as empty, and the network-wide coverage line goes with them.
+  const openTeams = COMMUNITY_TEAM_PAGES.filter(
+    (each) => each.id === team.id || canOpen(communityStatisticsHref(each.id)),
+  );
+  const wholeNetwork = canOpen(STATISTICS_TEAMS_HREF);
+  const allTeams = openTeams.map((candidate) => ({
     team: candidate,
     figures: communityFigures(
       communityHubLists(admissions, candidate, referrals),
@@ -163,7 +170,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   })();
 
   const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
-    { key: "admitted", label: "In a bed, or holding one", figure: figures.admitted },
+    { key: "admitted", label: "In a bed, or with one pulled", figure: figures.admitted },
     { key: "expected", label: "With a discharge date", figure: figures.expected },
     { key: "discharged", label: "Discharged into the area", figure: figures.discharged },
     { key: "other", label: "Left the ward another way", figure: figures.other },
@@ -186,27 +193,31 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       testId="ward-statistics-community-screen"
       title={team.name}
       titleAction={
-        <>
-          <ChangeTeam currentId={team.id} />
-          <UnitStepper
-            items={COMMUNITY_TEAM_PAGES.map((each) => ({
-              id: each.id,
-              href: communityStatisticsHref(each.id),
-              label: each.name,
-            }))}
-            currentId={team.id}
-            noun="team"
-          />
-        </>
+        openTeams.length > 1 ? (
+          <>
+            <ChangeTeam teams={openTeams} currentId={team.id} />
+            <UnitStepper
+              items={openTeams.map((each) => ({
+                id: each.id,
+                href: communityStatisticsHref(each.id),
+                label: each.name,
+              }))}
+              currentId={team.id}
+              noun="team"
+            />
+          </>
+        ) : undefined
       }
       tools={
-        <HeroTool
-          href={STATISTICS_TEAMS_HREF}
-          icon={<LayoutList size={14} aria-hidden="true" />}
-          testId="ward-statistics-community-tool-teams"
-        >
-          All teams
-        </HeroTool>
+        wholeNetwork ? (
+          <HeroTool
+            href={STATISTICS_TEAMS_HREF}
+            icon={<LayoutList size={14} aria-hidden="true" />}
+            testId="ward-statistics-community-tool-teams"
+          >
+            All teams
+          </HeroTool>
+        ) : undefined
       }
       eyebrowLabel="Community team"
       eyebrowDetail={<span>{COMMUNITY_TEAM_PAGES.length} teams in the network</span>}
@@ -367,7 +378,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     data-testid="ward-statistics-community-in-hospital-count"
                     data-unmeasured={isUnmeasured(figures.admitted) || undefined}
                   >
-                    {countText(figures.admitted)} referred to this team and occupying or holding a bed now.
+                    {countText(figures.admitted)} referred to this team and in a bed, or with one pulled, now.
                   </p>
                   <p
                     data-testid="ward-statistics-community-in-hospital-with-date"
@@ -388,7 +399,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                     {countText(figures.other)} left a ward another way.
                   </p>
                 </SrOnly>
-                <CardFoot meta="Discharge dates are a subset of people holding a bed">
+                <CardFoot meta="Discharge dates are a subset of people in a bed or with one pulled">
                   <Link
                     href={communityTeamHref(team)}
                     className={buttonClass({ variant: "sec", size: "sm" })}
@@ -439,11 +450,17 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                   )}
                 </CardBody>
                 <CardFoot
-                  meta={`${small(unseen.length)} of ${small(admissions.length)} admissions have no community team`}
+                  meta={
+                    wholeNetwork
+                      ? `${small(unseen.length)} of ${small(admissions.length)} admissions have no community team`
+                      : undefined
+                  }
                 >
-                  <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
-                    {small(unseen.length)} of {small(admissions.length)} admissions without a community team
-                  </span>
+                  {wholeNetwork ? (
+                    <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
+                      {small(unseen.length)} of {small(admissions.length)} admissions without a community team
+                    </span>
+                  ) : null}
                   <Link
                     href={communityTeamHref(team)}
                     className={styles.footLink}
@@ -572,7 +589,9 @@ function TeamPhone({
           <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
         ) : sorted.length === 0 ? (
           <p className={phone.note}>
-            {inBedMeasured ? "Nobody referred to this team holds a bed now." : `In a bed: ${inBedText}`}
+            {inBedMeasured
+              ? "Nobody referred to this team is in a bed or has one pulled now."
+              : `In a bed: ${inBedText}`}
           </p>
         ) : (
           <PhoneList label="Referred to this team, in a bed now">
@@ -662,18 +681,18 @@ function TeamPhone({
 }
 
 const HERO_LABELS: Record<keyof CommunityFigures, string> = {
-  admitted: "In a bed or holding",
+  admitted: "In a bed, or with one pulled",
   expected: "With a discharge date",
   discharged: "Discharged here",
   other: "Left another way",
 };
 
-function ChangeTeam({ currentId }: { currentId: string }) {
+function ChangeTeam({ teams, currentId }: { teams: readonly CommunityTeam[]; currentId: string }) {
   const router = useOptionalRouter();
   return (
     <Menu
       label="Change team"
-      items={COMMUNITY_TEAM_PAGES.map((each) => ({
+      items={teams.map((each) => ({
         id: each.id,
         label: each.name,
         disabled: each.id === currentId,
@@ -695,7 +714,7 @@ function ChangeTeam({ currentId }: { currentId: string }) {
 
 type Measure = keyof CommunityFigures;
 const MEASURES: { id: Measure; label: string; chart: string }[] = [
-  { id: "admitted", label: "In beds", chart: "People in a bed or holding one, by team" },
+  { id: "admitted", label: "In beds", chart: "People in a bed or with one pulled, by team" },
   { id: "expected", label: "With date", chart: "People with a discharge date, by team" },
   { id: "discharged", label: "Discharged", chart: "People discharged into the area, by team" },
   { id: "other", label: "Left", chart: "People who left the ward another way, by team" },

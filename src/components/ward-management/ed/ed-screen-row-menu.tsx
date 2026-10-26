@@ -4,7 +4,8 @@
 // sheet shows. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Dialog } from "@/components/wf";
+import { Dialog, DisabledReason } from "@/components/wf";
+import { MOVEMENT_STAGES, type Movement } from "@/components/ward-management/ward-model";
 import { movementReferralLink, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { canSetArrivalPlan } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
@@ -72,8 +73,117 @@ export function EdConfirmedStep({
   );
 }
 
+/**
+ * Usability review, Josh approved 24 Oct 2026 ("blocker named, with the fix beside it"): a greyed row
+ * action says why in visible words under it, and when the fix is another action on this same row,
+ * that action sits beside the words. Short words only; the full sentence stays on the button's
+ * `aria-describedby` and `title`, so screen readers hear what they heard before.
+ */
+export type EdUnavailableLine = { because: string; fix?: { label: string; testId: string; run: () => void } };
+
+/** The visible "why" under a greyed row action, and its one fix when this row offers one. */
+export function EdUnavailableNote({
+  testId,
+  line,
+  menuItem = false,
+}: {
+  testId: string;
+  line: EdUnavailableLine;
+  /** Set by the row's actions menu, as for `EdConfirmedStep`. */
+  menuItem?: boolean;
+}) {
+  return (
+    <span className={styles.unavailableNote} data-unavailable-note="" data-testid={testId}>
+      {/* The button already names the full reason to screen readers; this is the short visible copy. */}
+      <span aria-hidden="true">
+        <DisabledReason id={`${testId}-words`}>{line.because}</DisabledReason>
+      </span>
+      {line.fix ? (
+        <button
+          type="button"
+          role={menuItem ? "menuitem" : undefined}
+          className={styles.unavailableFix}
+          data-unavailable-fix=""
+          data-testid={line.fix.testId}
+          onClick={line.fix.run}
+        >
+          {line.fix.label}
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+const PULLED_STAGE_INDEX = MOVEMENT_STAGES.indexOf("pulled");
+
+/** Short words for a step that waits on a ward: before acceptance, or accepted but no bed pulled. */
+function waitsOnWard(movement: Movement): string | undefined {
+  const index = MOVEMENT_STAGES.indexOf(movement.stage);
+  if (index >= PULLED_STAGE_INDEX) return undefined;
+  return movement.stage === "accepted_awaiting_bed"
+    ? "Needs the ward to pull a bed first"
+    : "Needs a ward to accept first";
+}
+
+const COLLECTED = "Patient collected. The coordinator stops the journey";
+
+/**
+ * The short "why" for each greyed row action, read from the same facts the full reasons in
+ * `ed-blocked-reasons.ts` read, in the same order. Each is present only when its action is greyed;
+ * an unforeseen reason falls back to the full sentence, so a greyed action is never left silent.
+ */
+function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
+  const { movement, examBlocked, handoverBlocked, transportBlocked, withdrawBlocked, cmhtBlocked, edOutcomeBlocked } =
+    row;
+  const { toggleBookTransport, toggleExamination } = ctx;
+  const collected = movement.transport?.collectedAt !== undefined;
+  const ended = movement.closure ? "This movement has ended" : undefined;
+  const logBooking = {
+    label: "Log booking",
+    testId: `ward-ed-unavailable-fix-transport-${movement.id}`,
+    run: () => toggleBookTransport(movement.id),
+  };
+  const recordExam = {
+    label: "Record examination",
+    testId: `ward-ed-unavailable-fix-exam-${movement.id}`,
+    run: () => toggleExamination(movement.id),
+  };
+  const line = (blocked: string | undefined, because: string | undefined, fix?: EdUnavailableLine["fix"]) =>
+    blocked ? ({ because: because ?? blocked, fix } satisfies EdUnavailableLine) : undefined;
+  return {
+    exam: line(examBlocked, "Already examined"),
+    outcome: line(edOutcomeBlocked, ended ?? (collected ? COLLECTED : undefined)),
+    handover: line(
+      handoverBlocked,
+      waitsOnWard(movement) ??
+        (movement.stage === "pulled" && !movement.transport
+          ? "Needs transport logged first"
+          : movement.stage === "handover_ready"
+            ? "Already marked ready"
+            : "Patient is already on the way"),
+      movement.stage === "pulled" && !movement.transport && !transportBlocked ? logBooking : undefined,
+    ),
+    transport: line(
+      transportBlocked,
+      waitsOnWard(movement) ??
+        (movement.transport ? "Already logged. Cancel it before logging another" : "Patient is already on the way"),
+    ),
+    withdraw: line(withdrawBlocked, ended ?? (collected ? COLLECTED : "No live referral to withdraw")),
+    cmht: line(
+      cmhtBlocked,
+      ended ?? (collected ? COLLECTED : "Needs the examination outcome first"),
+      // Change 2 (D-77): the person sheet never offers one action twice, so where Record exam is
+      // already the sheet's pinned next step, the words stand alone.
+      !ended && !collected && !examBlocked && (ctx.boardTable || row.primaryAction !== "exam") ? recordExam : undefined,
+    ),
+  };
+}
+
 /** Every action the row offers. The board table puts them in the row's menu; the sheet lists them. */
 export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
+  const unavailable = edUnavailableLines(row, ctx);
+  const note = (key: string, line: EdUnavailableLine | undefined) =>
+    line ? <EdUnavailableNote testId={`ward-ed-unavailable-${key}-${row.movement.id}`} line={line} /> : null;
   const {
     movement,
     examBlocked,
@@ -133,6 +243,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           Record examination
         </button>
       )}
+      {!boardTable && primaryAction === "exam" ? null : note("exam", unavailable.exam)}
       <button
         type="button"
         data-testid={`ward-ed-outcome-toggle-${movement.id}`}
@@ -149,6 +260,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
       >
         Record outcome
       </button>
+      {note("outcome", unavailable.outcome)}
       {edOutcomeBlocked ? (
         <span id={`ward-ed-outcome-unavailable-${movement.id}`} className="sr-only">
           {edOutcomeBlocked}
@@ -175,6 +287,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
       >
         Mark handover ready
       </button>
+      {note("handover", unavailable.handover)}
       <button
         type="button"
         data-testid={`ward-ed-book-transport-toggle-${movement.id}`}
@@ -191,6 +304,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
                                 never "Book transport" as though the app were doing the booking. */}
         Transport booked
       </button>
+      {note("transport", unavailable.transport)}
       {canSetArrivalPlan(movement) ? (
         <button
           type="button"
@@ -279,6 +393,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
       >
         Withdraw referral
       </button>
+      {note("withdraw", unavailable.withdraw)}
       {isForm1A && movement.legalFormReceivedAt === undefined ? (
         <button
           type="button"
@@ -334,6 +449,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
       >
         Refer to a community team
       </button>
+      {note("cmht", unavailable.cmht)}
     </>
   );
 }

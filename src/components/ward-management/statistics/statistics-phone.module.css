@@ -303,13 +303,14 @@
   min-width: 0;
 }
 
+/* Device sweep R1-19/R2-12 (24 Oct 2026): the phone track is painted inside a square 48px band, so
+ * an inset shadow on the band drew a faint square frame round the rounded track. Only the canvas
+ * ring that hides the list scrolling under the pinned track stays. */
 .segPinned {
   position: sticky;
   top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
   z-index: 6;
-  box-shadow:
-    0 0 0 var(--wf-s-2) var(--wf-canvas),
-    inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
 }
 
 :global(body:has([data-scrolled="true"])) .segPinned {

@@ -14,7 +14,9 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ACTIVE_CI_RUN_STATES,
+  autoMergeGuard,
   autoMergeVerdict,
+  isNoPullRequestError,
   touchesProductionMigrations,
   changedFilesForRange,
   defaultRunsFetch,
@@ -116,6 +118,52 @@ describe("auto-merge verdict", () => {
 
   it("does not block when the PR is not OPEN", () => {
     expect(autoMergeVerdict("claude/x", { autoMergeRequest: {}, state: "MERGED" }).block).toBe(false);
+  });
+});
+
+describe("auto-merge guard when the armed state cannot be read", () => {
+  const forced = new Set(["claude/x"]);
+  const armed = () => ({ payload: { autoMergeRequest: { enabledAt: "t" }, state: "OPEN", number: 9 } });
+  const messageOf = (result: object) => ("message" in result ? String(result.message) : "");
+
+  it("blocks a force-push when gh is not installed, naming the fix", () => {
+    const result = autoMergeGuard(["claude/x"], forced, { ghAvailable: () => false });
+    expect(result.ok).toBe(false);
+    expect(messageOf(result)).toContain("claude/x (gh is not installed)");
+    expect(messageOf(result)).toContain("gh auth login");
+  });
+
+  it("blocks a force-push when gh is signed out, offline or rate-limited", () => {
+    const result = autoMergeGuard(["claude/x"], forced, {
+      ghAvailable: () => true,
+      prViewer: () => ({ error: "HTTP 401: Bad credentials" }),
+    });
+    expect(result.ok).toBe(false);
+    expect(messageOf(result)).toContain("HTTP 401");
+  });
+
+  it("still lets fast-forward pushes through when the state cannot be read", () => {
+    expect(autoMergeGuard(["claude/x"], new Set(), { ghAvailable: () => false }).ok).toBe(true);
+    const unreadable = autoMergeGuard(["claude/x"], new Set(), {
+      ghAvailable: () => true,
+      prViewer: () => ({ error: "offline" }),
+    });
+    expect(unreadable.ok).toBe(true);
+  });
+
+  it("allows a force-push to a branch with no PR and blocks one with auto-merge armed", () => {
+    expect(
+      autoMergeGuard(["claude/x"], forced, { ghAvailable: () => true, prViewer: () => ({ payload: null }) }).ok,
+    ).toBe(true);
+    const blocked = autoMergeGuard(["claude/x"], forced, { ghAvailable: () => true, prViewer: armed });
+    expect(blocked.ok).toBe(false);
+    expect(messageOf(blocked)).toContain("PR #9");
+  });
+
+  it("tells gh's no-PR answer apart from a sign-in failure", () => {
+    expect(isNoPullRequestError('no pull requests found for branch "claude/x"')).toBe(true);
+    expect(isNoPullRequestError("To get started with GitHub CLI, please run:  gh auth login")).toBe(false);
+    expect(isNoPullRequestError("")).toBe(false);
   });
 });
 
@@ -384,6 +432,13 @@ describe("static guard scope selection", () => {
       "eslint-rules/require-button-wiring.mjs",
     ]);
     expect(lintableFiles(["public/demo/x.js"])).toEqual([]);
+  });
+
+  it("lints changed backend sources and drops the folders Ward Flow does not have", () => {
+    expect(lintableFiles(["backend/ward-flow/server.mjs", "backend/ward-flow/migrations/013-x.sql"])).toEqual([
+      "backend/ward-flow/server.mjs",
+    ]);
+    expect(lintableFiles(["worker/index.ts", "supabase/functions/x/index.ts"])).toEqual([]);
   });
 
   it("splits a very long changed-file list into command-line-sized lint batches", () => {

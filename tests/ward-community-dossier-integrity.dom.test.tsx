@@ -92,7 +92,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
       openReferral("dossier-test");
       // D-39: the dialog names the person by name and UMRN, never by the referral number.
       const dossier = screen.getByRole("dialog", {
-        name: `Referral Triage: ${patientIdentityLine(resolveSubjectPatient(fixture({}), seed))}`,
+        name: `Referral triage: ${patientIdentityLine(resolveSubjectPatient(fixture({}), seed))}`,
       });
       expect(screen.queryByRole("dialog", { name: /dossier-test/ })).toBeNull();
       expect(dossier).toHaveTextContent("History not recorded");
@@ -129,7 +129,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     });
     openReferral("other-team-referral");
     expect(screen.getByRole("dialog", { name: "Referral unavailable" })).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: "Referral Triage: other-team-referral" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Referral triage: other-team-referral" })).not.toBeInTheDocument();
   });
 
   it("still reads a broken referral link as a gap, not as an empty team", () => {
@@ -171,7 +171,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     expect(document.getElementById("actionToastMsg")).toHaveTextContent("does not record patient or referral contact");
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
     const referralId = screen.getByTestId("referral-id").textContent!;
-    expect(screen.getByRole("dialog", { name: /^Referral Triage: / })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /^Referral triage: / })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: new RegExp(referralId) })).toBeNull();
   });
 

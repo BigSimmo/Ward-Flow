@@ -13,7 +13,7 @@ metadata:
 ⚠️ **Nothing is summarised — every folded section below is its original entry verbatim.** The merge exists because `MEMORY.md` is loaded in full at every session start and had exceeded its size limit, at which point it loads only PART of itself and says so nowhere. Each entry folded here gave back one index line. The only thing given up is recalling one of these without the others.
 
 Josh settled a message format on 2026-09-01, after re-explaining it to several chats one at a time.
-**Use it in every substantive reply.** Full text: `docs/ward-flow/how-to-write-to-the-owner.md` on
+**Use it in every substantive reply.** Full text: `docs/ward-flow/archive/dated-notes/how-to-write-to-the-owner.md` on
 the Ward Flow master line, pointed at from section 0 of the working agreement.
 
 **Detail first, at whatever length the subject genuinely needs — this is NOT a brevity rule.** Then

@@ -1,7 +1,7 @@
 import { standingFigures } from "../ward-standing-strip";
 import { bedsPendingPreparation, capacityBreakdown } from "../ward-bed-availability";
 import { unitHealthService } from "../ward-service-scope";
-import { waitingInEds } from "../ward-shared-figures";
+import { openEdJourneys } from "../ward-shared-figures";
 import { type DueSoonThresholds, formatInstant } from "../ward-clock";
 import { HEALTH_SERVICES, type HealthService } from "../ward-model";
 import type { WardNetwork } from "../ward-sites";
@@ -40,7 +40,7 @@ export function bedSummaryText(input: BedSummaryInput): string {
     blocked += capacity.blockedToday;
   }
   const beds = units.reduce((sum, unit) => sum + unit.beds, 0);
-  const waiting = waitingInEds(movements, now);
+  const waiting = openEdJourneys(movements, now);
   const flagged = standingFigures(
     {
       movements,
@@ -66,7 +66,8 @@ export function bedSummaryText(input: BedSummaryInput): string {
     `Mental health bed summary at ${formatInstant(now)} AWST`,
     `Ready beds: ${readyTotal} of ${beds}${pendingTotal > 0 ? `, ${pendingTotal} pending preparation` : ""}.`,
     byService ? `Ready by service: ${byService}.` : "Ready by service: none.",
-    `Waiting in EDs: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
+    `Open ED journeys: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
+    `Still in ED: ${waiting.stillInEd}. In transit or recorded departure: ${waiting.inTransit}.`,
     `Discharges today: ${confirmed} confirmed, ${expected} expected, ${blocked} blocked.`,
     ...(flagged.length > 0
       ? [`Flagged: ${flagged.map((figure) => `${figure.value} ${figure.label.toLowerCase()}`).join(", ")}.`]

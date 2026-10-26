@@ -270,7 +270,7 @@ export type AuditEvent = AuditBase &
     | {
         // v10 pass 2: the ward Bed board's pick up and place, and its Undo. Bed numbers only.
         category: "bed-placement";
-        action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED";
+        action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED" | "HOLD_REFERRAL_BED";
         details: { fromBed: number | null; toBed: number | null };
       }
     | {
@@ -334,7 +334,6 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "SEND_RELEASE_SUPPORT_NOTICE":
     case "RECORD_LEAVING":
     case "RECORD_ADMISSION_CARE":
@@ -360,6 +359,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
       return "undo";
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
+    case "HOLD_REFERRAL_BED":
       return "bed-placement";
     case "SET_CONFIGURATION":
       return "configuration";
@@ -478,7 +478,6 @@ function bedRequest(event: WardFlowEvent): BedReleaseAuditRequest | null {
       };
     case "CONFIRM_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
-    case "RELEASE_BED":
       return { action: event.type };
     case "SEND_RELEASE_SUPPORT_NOTICE":
       return { action: event.type, service: enumValue(SUPPORT_SERVICE_TYPES, event.service) };
@@ -606,6 +605,25 @@ export function captureAuditEvent(
         category: "undo",
         action: event.type,
         details: { undoneAction: record?.action ?? null, decidedAt: finiteInstant(record?.at) },
+      };
+      break;
+    }
+    case "HOLD_REFERRAL_BED": {
+      const held = (state: WardFlowState) =>
+        uniqueRecord(state.referrals, event.referralId)?.destinations.find(
+          (arm) =>
+            arm.destination.kind === "psychiatric_ward" &&
+            arm.state === "accepted" &&
+            (arm.acceptedUnitId ?? arm.destination.unitId) === event.unitId,
+        )?.heldBedNumber ?? null;
+      captured = {
+        ...base,
+        category: "bed-placement",
+        action: event.type,
+        details: {
+          fromBed: held(before),
+          toBed: decision.outcome === "accepted" ? held(after) : finiteInstant(event.bedNumber),
+        },
       };
       break;
     }
@@ -840,7 +858,6 @@ export function captureAuditEvent(
     case "BLOCK_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
-    case "RELEASE_BED":
     case "SEND_RELEASE_SUPPORT_NOTICE": {
       const requested = bedRequest(event);
       if (!requested) return null;

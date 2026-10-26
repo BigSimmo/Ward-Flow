@@ -49,7 +49,8 @@ describe("command-specific terminal completion", () => {
     response.resolve(Response.json({ snapshot: snapshot(2) }, { status }));
     await expect(result).resolves.toMatchObject({
       commandId: "command-one",
-      status: status === 200 ? "accepted" : status === 503 ? "failed" : "refused",
+      // A 401 without the server's own reason is a lost connection, not a sign-out (audit A4-02).
+      status: status === 200 ? "accepted" : status === 503 || status === 401 ? "failed" : "refused",
     });
     client.dispose();
   });
@@ -189,7 +190,14 @@ describe("working-role changes", () => {
           if (String(url).endsWith("/break-glass")) return Response.json({ snapshot: snapshot(1) });
           if (++reads === 1) return Response.json({ snapshot: snapshot(1) });
           if (typeof status !== "number") throw new Error("The sign-in check must stop this read before HTTP");
-          return Response.json({ code: status === 409 ? "choose-role" : "no-role", choices: [] }, { status });
+          return Response.json(
+            {
+              code: status === 409 ? "choose-role" : "no-role",
+              error: "Sign in with the authorised account",
+              choices: [],
+            },
+            { status },
+          );
         },
       });
       try {
@@ -208,7 +216,8 @@ describe("working-role changes", () => {
         );
         expect(latest?.snapshot).toBeNull();
         expect(result.isCurrent?.()).toBe(false);
-        expect(reads).toBe(status === "session" ? 1 : 2);
+        // A 401 is asked once more with a fresh token before it signs the desk out (audit A4-02).
+        expect(reads).toBe(status === "session" ? 1 : status === 401 ? 3 : 2);
       } finally {
         client.dispose();
       }
@@ -325,6 +334,10 @@ describe("working-role changes", () => {
         message: expect.stringContaining("may have been applied"),
       });
       await expect(queued).resolves.toMatchObject({ status: "cancelled" });
+      // The sent command's final answer keeps the uncertainty: it may have been applied (Codex, #722).
+      const confirmed = await (await first).confirmation;
+      expect(confirmed?.message).toContain("may have been applied");
+      expect(confirmed?.message).not.toContain("not saved");
       response.resolve(Response.json({ snapshot: snapshot(9) }));
       await vi.waitFor(() => expect(fetcher.mock.calls.filter(([, options]) => !options?.body)).toHaveLength(2));
       expect(fetcher.mock.calls.filter(([, options]) => options?.body)).toHaveLength(1);

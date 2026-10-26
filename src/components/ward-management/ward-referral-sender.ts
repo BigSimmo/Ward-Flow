@@ -62,7 +62,10 @@ export { routeSentKind };
  * forms screen share it.
  */
 export function journeySentByDesk(
-  records: { referrals: readonly Referral[]; admissions: readonly Pick<Admission, "id" | "unitId">[] },
+  records: {
+    referrals: readonly Pick<Referral, "id" | "source" | "originSiteCode" | "originUnitId" | "sendingTeamName">[];
+    admissions: readonly Pick<Admission, "id" | "unitId">[];
+  },
   movement: Pick<Movement, "referralId" | "sourceAdmissionId">,
   access: WardAccess,
   places: PlaceLookup,

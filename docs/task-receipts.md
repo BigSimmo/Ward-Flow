@@ -36,7 +36,7 @@ Schema version 1: project, repository, source_identity (`repository:task_id`), o
 
 Prepare the input manually or through an observable supported client event. Explicitly sanitise it: no transcripts, patient details, identifiers, credentials, .env contents or full log capture. The allowlist is not a content redactor. The exporter reads only the supplied bounded JSON and Git identity/revision. It does not open evidence locations. It rejects wrong repositories, unsupported fields/statuses, completion without evidence/time, and refreshing Last verified against unchanged evidence and revision. It flags a missing/mismatched source revision as stale; human review must also assess dirty inputs, dependencies and age. A receipt cannot prove its own factual claims.
 
-Accessible task results are reconciled by the parent's bounded hourly process. Inaccessible desktop, CLI, IDE and other chats have no universal event subscription here: their client must emit the receipt or the owner must hand it over. No real-time coverage or external delivery is claimed. Export success is not reconciliation success.
+Since 3 October 2026 the parent's bounded hourly reconciliation is optional, like Notion reconciliation (see the Prototype Mode Note above); when it runs, it covers only accessible task results. Inaccessible desktop, CLI, IDE and other chats have no universal event subscription here: their client must emit the receipt or the owner must hand it over. No real-time coverage or external delivery is claimed. Export success is not reconciliation success.
 
 ## Client loading and contributions
 

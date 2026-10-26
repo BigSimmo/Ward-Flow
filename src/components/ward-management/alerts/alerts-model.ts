@@ -143,7 +143,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   declines: "Every ward asked declined",
   unsuitable: "Destination unsuitable",
   nobed: "No eligible bed",
-  hold: "Bed hold expired",
+  hold: "Pull expired",
   transport: "Transport not yet left",
   planned: "Planned arrival not recorded",
   notify: "Notifications to record",
@@ -294,4 +294,16 @@ export function extractOverdue(detail: string): string | null {
 /** Queue order inside a group: oldest first, rows without a recorded start last. */
 export function byOldest(a: { at?: Instant }, b: { at?: Instant }): number {
   return (a.at ?? Number.POSITIVE_INFINITY) - (b.at ?? Number.POSITIVE_INFINITY);
+}
+
+/**
+ * Item 4 (usability, 24 Oct 2026): one line under the desktop Now list saying why it is in its
+ * order. Every group sorts by `byOldest`. By urgency shows Act now, then Waiting. Lanes put the
+ * running targets after the waiting rows. By owner puts you first, then the other owners A to Z,
+ * with snoozed rows after the active ones.
+ */
+export function alertsOrderLine(view: "urgency" | "lanes" | "owner"): string {
+  if (view === "lanes") return "Oldest first in each lane. Running targets after waiting.";
+  if (view === "owner") return "You first, then A to Z by owner. Oldest first in each, snoozed last.";
+  return "Act now first, then waiting. Oldest first in each.";
 }

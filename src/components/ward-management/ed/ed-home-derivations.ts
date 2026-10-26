@@ -1,6 +1,12 @@
 // src/components/ward-management/ed/ed-home-derivations.ts
 import { minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
-import { edInpatientWaitEnd, isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import {
+  edInpatientWaitEnd,
+  isEdOriginJourney,
+  isWaitingInEd,
+  recordedEdDeparture,
+} from "@/components/ward-management/ward-ed-presence";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
@@ -95,8 +101,12 @@ export const ED_STAGE_LABELS: Record<MovementStage, string> = {
   moving: "In transit",
   arrived: "Arrived",
 };
-/** A bed is accepted or pulled for them. */
-export const ED_HELD_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled"];
+/** Audit 24-4 NA2-04 (Josh, 24 Oct 2026): "Bed held" splits into these two, in Movements' words. */
+export const ED_ACCEPTED_NO_BED_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed"];
+export const ED_BED_PULLED_STAGES: readonly MovementStage[] = ["pulled"];
+export const ED_SPLIT_HELD_LABELS = { acceptedNoBed: "Accepted, no bed yet", bedPulled: "Bed pulled" } as const;
+/** A bed is accepted or pulled for them: both of the above, kept until the ED screens show the split. */
+export const ED_HELD_STAGES: readonly MovementStage[] = [...ED_ACCEPTED_NO_BED_STAGES, ...ED_BED_PULLED_STAGES];
 /** On their way out of the department. */
 export const ED_LEAVING_STAGES: readonly MovementStage[] = ["handover_ready", "moving"];
 
@@ -159,6 +169,36 @@ export function edOpenSummaries(movements: readonly Movement[], now: Instant): E
       siteName: siteNameOf(ed),
       open,
       waiting: open.length,
+      longestWaitMinutes: elapsed.length ? Math.max(...elapsed) : 0,
+      detained: open.filter((movement) => isDetainedUnderTheAct(movement.legalStatus)).length,
+    };
+  });
+}
+
+export type EdJourneySummary = EdOpenSummary & { stillInEd: number; inTransit: number };
+
+/** Open ED-origin journeys retain ED accountability through transport until arrival.
+ * Physical waits and their historical charts continue to use edOpenSummaries/edWaitingSeries.
+ * Still-in-ED presence includes recorded ED outcomes, unlike the narrower inpatient-bed wait.
+ * Ward transfers and community origins never enter this population.
+ */
+export function edJourneySummaries(movements: readonly Movement[], now: Instant): EdJourneySummary[] {
+  return allEmergencyDepartments().map((ed) => {
+    const open = movements.filter(
+      (movement) => isOpen(movement) && isEdOriginJourney(movement) && movement.originEdId === ed.id,
+    );
+    const elapsed = open.map((movement) => elapsedOpenMinutes(movement, now));
+    const stillInEd = open.filter(
+      (movement) => movement.stage !== "moving" && recordedEdDeparture(movement) === undefined,
+    ).length;
+    return {
+      ed,
+      service: healthServiceOf(ed),
+      siteName: siteNameOf(ed),
+      open,
+      waiting: open.length,
+      stillInEd,
+      inTransit: open.length - stillInEd,
       longestWaitMinutes: elapsed.length ? Math.max(...elapsed) : 0,
       detained: open.filter((movement) => isDetainedUnderTheAct(movement.legalStatus)).length,
     };

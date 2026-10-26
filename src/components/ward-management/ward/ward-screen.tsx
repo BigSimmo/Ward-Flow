@@ -2,8 +2,6 @@
 
 import { Bell, ChevronDown, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
-import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
-import type { LegalStatus } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
@@ -26,7 +24,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
-import { isConstantObservation, observationStaffOnWard } from "@/components/ward-management/ward-observation";
+import { observationStaffOnWard } from "@/components/ward-management/ward-observation";
 import {
   bedsPendingPreparation,
   capacityBreakdown,
@@ -77,16 +75,11 @@ import {
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import {
-  type DeclineReason,
-  RECORDED_SEXES,
-  type RecordedSex,
-  type Rejection,
-} from "@/components/ward-management/ward-model";
+import { type DeclineReason, type Rejection } from "@/components/ward-management/ward-model";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
-import { referralSuburbIsKnown, wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
+import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -99,7 +92,7 @@ import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
-  bedFits,
+  boardBedFits,
   bedNumberLabel,
   fitCount,
   pickedUpSay,
@@ -322,6 +315,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   );
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
+  const boardTabRequested = searchParams?.get("tab") === "board";
+  const [lastBoardTabRequest, setLastBoardTabRequest] = useState(false);
+  if (lastBoardTabRequest !== boardTabRequested) {
+    setLastBoardTabRequest(boardTabRequested);
+    if (boardTabRequested) setActiveTab("board");
+  }
   const bedParam = searchParams?.get("bed");
   const parseBed = (value: string | null | undefined) =>
     value !== null && value !== undefined && /^\d+$/.test(value) ? Number.parseInt(value, 10) : null;
@@ -373,11 +372,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </button>
       </span>
     ) : null;
-  // The raised referral's form link belongs to that toast message and that bed only, so it cannot linger
-  // on later toasts or on another patient's bed.
-  const [raisedReferral, setRaisedReferral] = useState<{ href: string; message: string; bed: number | null } | null>(
-    null,
-  );
   // An Undo pressed seconds later sends the clock as it is then, not as it was at the placement.
   const nowRef = useRef(now);
   const rejectionCountRef = useRef(rejections.length);
@@ -1175,101 +1169,40 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : selectedBed !== null
           ? bedsList.find((b) => b.bedNumber === selectedBed)
           : undefined;
-    const stayAdmission = targetBed?.admissionId ? admissions.find((a) => a.id === targetBed.admissionId) : undefined;
-    const stayMovement = stayAdmission
-      ? movements.find(
-          (m) =>
-            (stayAdmission.movementId !== null && m.id === stayAdmission.movementId) ||
-            (stayAdmission.referralId !== null && m.referralId === stayAdmission.referralId),
-        )
-      : undefined;
-    const patientRecord = targetBed?.patientInfo?.patient;
-    const verifiedPatientId =
-      patientRecord && patients.some((p) => p.id === patientRecord.id) ? patientRecord.id : undefined;
-
-    const derivedSex: RecordedSex = (() => {
-      if (stayMovement?.sex && (RECORDED_SEXES as readonly string[]).includes(stayMovement.sex)) {
-        return stayMovement.sex;
-      }
-      if (patientRecord?.sex && (RECORDED_SEXES as readonly string[]).includes(patientRecord.sex)) {
-        return patientRecord.sex as RecordedSex;
-      }
-      if (targetBed?.gender === "Female") return "Female";
-      if (targetBed?.gender === "Male") return "Male";
-      if (targetBed?.gender === "Non-binary" || targetBed?.gender === "Different term") return "Another term";
-      return "Not recorded";
-    })();
-
-    // The engine's own rule: every status but Voluntary (or none recorded) needs an authorised bed.
-    // The bed's status is typed as text but always holds a recorded status; the rule only tests "Voluntary".
-    const recordedStatus = (stayMovement?.legalStatus ?? targetBed?.legalStatus) as LegalStatus | undefined;
-    const involuntaryBedNeeded = requiresAuthorisedDestination(recordedStatus);
-    const secureBedNeeded = Boolean(stayMovement ? stayMovement.security === "Secure" : false);
-    const constantObservation = isConstantObservation(stayAdmission?.observation) || targetBed?.isSpecialling;
-    const highAcuityNursingNeeded = Boolean(stayAdmission?.highAcuity || constantObservation || targetBed?.highAcuity);
-    const derivedHomeRegion = stayMovement?.homeRegion ?? stayAdmission?.homeRegion ?? "Perth Metropolitan";
-    const derivedSuburb =
-      patientRecord?.suburb && referralSuburbIsKnown(patientRecord.suburb)
-        ? ({ kind: "named", name: patientRecord.suburb } as const)
-        : ({ kind: "unknown", reason: "not_known" } as const);
-
-    const record = () =>
-      dispatch({
-        type: "RECEIVE_REFERRAL",
-        role: "ward",
-        now,
-        ...(verifiedPatientId ? { patientId: verifiedPatientId } : {}),
-        ageBand: unit.cohort,
-        destinations: [
-          {
-            kind: "psychiatric_ward",
-            sex: derivedSex,
-            ...(targetBed?.gender ? { gender: targetBed.gender } : {}),
-            secureBedNeeded,
-            involuntaryBedNeeded,
-            highAcuityNursingNeeded,
-          },
-        ],
-        homeRegion: derivedHomeRegion,
-        suburb: derivedSuburb,
-        source: "psychiatric_ward",
-        originUnitId: unit.id,
-        actingUnitId: unit.id,
-        urgency: 2,
-        originSiteCode: unit.siteCode,
-        transportNeeded: false,
-        history: "",
-      });
-    const referralFormHref = fullWardReferralHref(verifiedPatientId);
-    const raisedMessage = targetBed?.patientAlias
-      ? `Ward referral raised for ${targetBed.patientAlias} (${unit.cohort}, ${derivedSex}).`
-      : `Ward referral raised from ${unit.name}.`;
-    completeCommand(wardCommandKey("raise-referral", targetBed?.bedNumber ?? unit.id), record, (outcome) => {
-      const failure = wardCommandFailure(outcome);
-      if (failure) {
-        setToastMessage(failure);
-        return;
-      }
-      setRaisedReferral({ href: referralFormHref, message: raisedMessage, bed: selectedBed });
-      setToastMessage(raisedMessage);
-    });
+    // Requirements and urgency need the referrer to confirm them in the full form.
+    const patientId = targetBed?.patientInfo?.patient?.id;
+    const href = fullWardReferralHref(patientId);
+    if (router) router.push(href);
+    else window.location.assign(href);
   }
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
   // then (v10 pass 3) the people the coordinator referred here, placed with ACCEPT_IN_PRINCIPLE.
   const boardWaiting: WaitingReferral[] = [
     ...inboxEntries
-      .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined)
+      .filter(
+        (entry) =>
+          (entry.state === "queued" || entry.state === "accepted") &&
+          entry.withdrawnAt === undefined &&
+          !movements.some((movement) => movement.referralId === entry.id) &&
+          !admissions.some(
+            (admission) =>
+              admission.referralId === entry.id &&
+              (admission.state === "pulled" || admission.state === "occupied" || admission.state === "departed"),
+          ),
+      )
       .map((entry) => ({
         id: entry.id,
+        accepted: entry.state === "accepted",
         name: resolvePatientIdentity(entry).displayName,
         umrn: resolvePatientIdentity(entry).umrn,
         sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
         waitedMinutes: Math.max(0, now - entry.raisedAt),
         secureBedNeeded: entry.destination.secureBedNeeded === true,
-        blockedReason: wardTransferNeedsCoordinator(entry, unit.id, units)
-          ? "Coordinator accepts transfers from another hospital"
-          : undefined,
+        blockedReason:
+          entry.state === "queued" && wardTransferNeedsCoordinator(entry, unit.id, units)
+            ? "Coordinator accepts transfers from another hospital"
+            : undefined,
       })),
     ...incoming.map((movement) => ({
       kind: "movement" as const,
@@ -1323,8 +1256,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       pickOnBoard(null);
       return;
     }
-    if (!bedFits(bed, boardPick, isMixed)) {
-      setBoardSay(`Bed ${bedNumberLabel(bedNumber)} does not fit, ${whyBedDoesNotFit(bed, boardPick, isMixed)}.`);
+    if (!boardBedFits(bedsList, bed, boardPick, isMixed)) {
+      setBoardSay(
+        `Bed ${bedNumberLabel(bedNumber)} does not fit, ${whyBedDoesNotFit(bed, boardPick, isMixed, bedsList)}.`,
+      );
       return;
     }
     const pick = boardPick;
@@ -1372,6 +1307,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bedNumber,
           }),
         check,
+      );
+    } else if (pick.accepted) {
+      runBoardCommand(
+        () =>
+          raise("HOLD_REFERRAL_BED", {
+            referralId: pick.referralId,
+            unitId: boardUnitId,
+            actingUnitId: boardUnitId,
+            bedNumber,
+          }),
+        {
+          prior: rejections.length,
+          bed: bedNumber,
+          success: `Held bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+        },
       );
     } else {
       const check: BoardCheck = {
@@ -1762,10 +1712,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
   function confirmBedRelease(releaseId: string) {
-    raise("CONFIRM_BED_RELEASE", {
-      releaseId,
-      actingUnitId: unitId,
-    });
+    // Audit 24-3 SV-5: a shared refusal is said on this screen, not only in the status line.
+    completeCommand(
+      `release:${releaseId}`,
+      () => raise("CONFIRM_BED_RELEASE", { releaseId, actingUnitId: unitId }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) setToastMessage(failure);
+      },
+    );
     setNoticesForRelease(releaseId);
   }
 
@@ -2282,7 +2237,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             tvViewsOn={tvViewsOn}
             handoverHref={handoverHref}
             handleRaiseWardReferral={handleRaiseWardReferral}
-            raisedReferral={raisedReferral}
+            raisedReferral={null}
             selectedBed={selectedBed}
             fullWardReferralHref={fullWardReferralHref}
             bedsList={bedsList}
@@ -2533,15 +2488,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <polyline points="20 6 9 17 4 12" />
           </svg>
           <span>{toastMessage}</span>
-          {raisedReferral && raisedReferral.message === toastMessage ? (
-            <Link
-              href={raisedReferral.href}
-              className={buttonClass({ variant: "ghost", size: "sm" })}
-              data-testid="ward-toast-full-referral-link"
-            >
-              Open full referral form…
-            </Link>
-          ) : null}
         </div>
         <WardPrototypeFooter
           testId="ward-unit-governance"

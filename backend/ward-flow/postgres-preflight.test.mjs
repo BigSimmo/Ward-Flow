@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
+import { NAMESPACE_OBJECT_LIMIT, verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 
 const sqlFiles = [
@@ -19,6 +19,7 @@ const sqlFiles = [
   "011-record-access-and-sign-out",
   "012-foreign-key-indexes",
   "013-referral-record-views",
+  "014-archived-records",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -530,7 +531,7 @@ test("catalogue and migration ledger reads fail without exposing upstream errors
 test("bounded catalog overflow and incomplete summaries refuse migration", async () => {
   for (const alter of [
     (c) => {
-      c.objects = Array.from({ length: 65 }, () => c.objects[0]);
+      c.objects = Array.from({ length: NAMESPACE_OBJECT_LIMIT + 1 }, () => c.objects[0]);
     },
     (c) => {
       c.constraints = undefined;
@@ -704,4 +705,14 @@ test("from migration 11 the record access log, its guards and sign-outs are exac
     alter(catalog);
     await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
   }
+});
+
+test("the namespace object bound keeps headroom above the latest schema", async () => {
+  // Production audit DB-04: hitting the bound refuses every migrate and prune as "unsafe namespace".
+  const catalog = fixture();
+  await verifyPostgresNamespace(pool(catalog));
+  assert.ok(
+    catalog.objects.length <= NAMESPACE_OBJECT_LIMIT - 10,
+    `${catalog.objects.length} objects is within 10 of the ${NAMESPACE_OBJECT_LIMIT} bound; raise it`,
+  );
 });

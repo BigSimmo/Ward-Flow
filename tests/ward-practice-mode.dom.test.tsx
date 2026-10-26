@@ -61,6 +61,29 @@ describe("practice mode visibility", () => {
   });
 });
 
+describe("practice mode in the shared workspace (audit 24-7, CT-01)", () => {
+  function SharedOn({ children }: { children: ReactNode }) {
+    const value = useWardFlow();
+    return (
+      <WardFlowOverride value={{ ...value, shared: { enabled: true, status: "ready", error: null } }}>
+        {children}
+      </WardFlowOverride>
+    );
+  }
+
+  it("offers no Start, since every practice step would be saved for everyone", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SharedOn>
+          <WardPracticeMode />
+        </SharedOn>
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId("ward-practice-shared-off")).toHaveTextContent("Practice is off in the shared workspace");
+    expect(screen.queryByTestId("ward-practice-start")).toBeNull();
+  });
+});
+
 describe("practice mode session", () => {
   it("keeps running when Tools closes and opens again", () => {
     const { show } = renderPractice();

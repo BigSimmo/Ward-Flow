@@ -163,11 +163,6 @@ export const SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES = 72 * MINUTES_PER_HOUR;
 export const LEAVE_BED_OPEN_WARNING_MINUTES = CLINICAL_VALUES.leaveOpenWarning.value;
 /** Patient search's wait filter: the band under this many hours, then up to the long wait. */
 export const WAIT_FILTER_SHORT_MINUTES = 6 * MINUTES_PER_HOUR;
-/**
- * A bed hold active this long without a confirmed dispatch is flagged for review, never released
- * (Josh, 26 Sept 2026: the 2 hours stay as his default, not the 4-hour pull hold).
- */
-export const BED_HOLD_EXPIRY_MINUTES = CLINICAL_VALUES.bedHoldReview.value;
 
 /** Occupancy colour bands on the side rail, as whole-number percentages of beds. */
 export const OCCUPANCY_ALERT_PERCENT = CLINICAL_VALUES.occupancyAmber.value;
@@ -254,7 +249,10 @@ export const OPERATIONAL_DEFAULTS: readonly OperationalDefault[] = [
   { name: "Leave bed flagged to consider opening after", display: hoursText(LEAVE_BED_OPEN_WARNING_MINUTES) },
   // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull hold rule. The marker every
   // page shows is derived from it (`ward-bed-hold.ts`), so this line names that, not a second timer.
-  { name: "Bed hold shown as running out", display: `${hoursText(DUE_SOON_URGENT_MINUTES)} before the Pull hold ends` },
+  {
+    name: "Pulled bed shown as running out",
+    display: `${hoursText(DUE_SOON_URGENT_MINUTES)} before the Pull time limit ends`,
+  },
   {
     name: "Patient search wait bands",
     display: `under ${hoursText(WAIT_FILTER_SHORT_MINUTES)}, then up to ${hoursText(LONG_WAIT_MINUTES)}, then over`,

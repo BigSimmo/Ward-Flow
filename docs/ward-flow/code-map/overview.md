@@ -284,7 +284,7 @@ Every page file is a server component that renders one client screen (or redirec
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries
 (`ward-flow/error.tsx`, `mockups/error.tsx`, `app/error.tsx`); corrected, see
-[Frame and PsychSift](frame-and-psychsift.md).
+[Frame and PsychSift](../archive/code-map/frame-and-psychsift.md).
 
 ### 3.2 Navigation
 
@@ -477,7 +477,7 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
   hash per drawing.
 - **No gate reads the drawings.** A fixed defect can be redrawn back into a drawing with nothing
   going red.
-- `docs/ward-flow/design/` (68 files) is earlier design exploration; `design/prototypes/` is in
+- `docs/ward-flow/archive/design/` (68 files) is earlier design exploration; `design/prototypes/` is in
   `.prettierignore` on purpose.
 
 ### 6.3 Other generated tools

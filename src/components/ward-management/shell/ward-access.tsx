@@ -14,7 +14,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -53,8 +53,10 @@ import {
   canBreakGlass,
   edInScope,
   homeHrefFor,
+  ownStatisticsHrefFor,
   screenDecision,
   screenForPath,
+  statisticsHeldToOwnPlace,
   unitInScope,
   type BreakGlassReasonId,
   type WardAccess,
@@ -169,7 +171,7 @@ function useSteadyLists(next: WardFlowContextValue): WardFlowContextValue {
 }
 
 export type StatisticsCounts = {
-  /** The executive desk: Statistics shows counts only, so a list of people is not shown. */
+  /** A counts-only desk (executive, or a ward, ED or community desk on its own page): no list of people is shown. */
   countsOnly: boolean;
   /** One count of people. Under the line it reads "fewer than 5". */
   small: (count: number) => number | string;
@@ -188,9 +190,12 @@ export function useStatisticsCounts(): StatisticsCounts {
   const on = useWardFeatureFlag("role-access");
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
+  // D-80: a ward, ED or community desk holds a `counts` grant on its own place's page, which is
+  // numbers without names. Only the executive also gets the small-number rule.
+  const countsOnly = hide || (on && statisticsHeldToOwnPlace(access));
   return useMemo(
     () => ({
-      countsOnly: hide,
+      countsOnly,
       // A worded count is a string and an exact one stays a number, so a caller can tell them apart.
       small: (count: number) => {
         if (!hide) return count;
@@ -199,7 +204,7 @@ export function useStatisticsCounts(): StatisticsCounts {
       },
       parts: (counts: readonly number[]) => (hide ? smallNumberParts(counts) : [...counts]),
     }),
-    [hide],
+    [hide, countsOnly],
   );
 }
 
@@ -440,11 +445,15 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
       if (!on || accessIsWholeNetwork(access)) return [...entries];
       const places = wardPlaceLookup(units);
       const own = OWN_PLACE_ENTRY[access.scope.kind];
+      // D-80: Statistics opens a ward, ED or team desk's own place's page.
+      const ownStatistics = ownStatisticsHrefFor(access, communityTeamSlug);
       return entries.flatMap((entry) => {
         const shown =
           own && entry.id === own.id
             ? { ...entry, href: homeHrefFor(access, communityTeamSlug), label: own.label }
-            : entry;
+            : ownStatistics && entry.id === "statistics"
+              ? { ...entry, href: ownStatistics }
+              : entry;
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
@@ -580,6 +589,25 @@ function WardRecordViewLog({ patientId, surface }: { patientId: string; surface:
   return null;
 }
 
+function samePath(a: string, b: string): boolean {
+  return a.replace(/\/+$/, "") === b.replace(/\/+$/, "");
+}
+
+/** Replaces the address with the desk's own home, so Back does not return to the closed one (DR-06). */
+function OwnHomeRedirect({ href }: { href: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(href);
+  }, [router, href]);
+  return (
+    <WardGround>
+      <main className={styles.closed} data-testid="ward-access-own-home">
+        <p role="status">Opening your home</p>
+      </main>
+    </WardGround>
+  );
+}
+
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const [switching, setSwitching] = useState(false);
   const { previewOf, switchFrom } = useWardAccessSnapshot();
@@ -593,6 +621,12 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   }, [opening]);
   const { units } = useUnscopedWardFlow();
   const home = homeHrefFor(access, communityTeamSlug);
+  // DR-06: Ward Flow's own address (the app icon, the brand) sends a desk whose Home is closed to
+  // that desk's own home instead of saying the screen is not part of the role.
+  const pathname = usePathname() ?? "";
+  const toOwnHome =
+    !opening && patientId === undefined && screenForPath(pathname)?.screen === "home" && !samePath(home, pathname);
+  if (toOwnHome) return <OwnHomeRedirect href={home} />;
   if (opening)
     return (
       <WardGround>
@@ -719,6 +753,7 @@ function WardBreakGlassNote({ patientId }: { patientId: string }) {
 }
 
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+const IDLE_WARNING_SECONDS = 60;
 
 /**
  * Shared computer lock (feature 10, readiness review item 8): after the set time with no use, the
@@ -736,11 +771,14 @@ export function WardIdleLock() {
   const onTv = useWardFeatureFlag("bed-meeting-tv") && pathname === WARD_BED_MEETING_TV_HREF;
   const session = useContext(SharedSessionContext);
   const [locked, setLocked] = useState<false | "screen" | "signed-out">(false);
+  // Seconds left on the "Still there?" countdown before an idle sign-out, or null (Josh, 21 Oct 2026).
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const lockRef = useRef<HTMLDivElement | null>(null);
+  const stillHere = useRef(() => {});
   const minutes = CLINICAL_VALUES.idleLock.value;
   // Escape must not unlock: only the visible button does, so the cover stays until someone acts on it.
   useModalFocus({
-    open: locked !== false,
+    open: locked !== false || secondsLeft !== null,
     onClose: () => undefined,
     panelRef: lockRef,
     closeOnEscape: false,
@@ -750,23 +788,82 @@ export function WardIdleLock() {
   useEffect(() => {
     // Every desk locks, the statewide coordinator's too: its view is the widest (review on PR #330).
     if (onTv) return;
+    let countdown: number | undefined;
+    // Wall-clock deadline, so a laptop woken after its timers were held still signs out on time.
+    let deadline = 0;
     const lock = () => {
+      window.clearInterval(countdown);
+      setSecondsLeft(null);
       lockWardDesk();
       forgetStepUp();
-      if (session) session.signOut();
+      // Only this tab: another tab in use keeps its own idle lock (Audit 4 A4-04, A4-06).
+      if (session) session.signOut(`Signed out after ${minutes} minutes without use. Sign in again to carry on.`);
       setLocked((current) => current || (session ? "signed-out" : "screen"));
+      // Past this lock, the next use (after "Carry on") starts a new clock rather than locking again.
+      deadline = Number.POSITIVE_INFINITY;
     };
-    let timer = window.setTimeout(lock, minutes * 60_000);
+    // A signed-in desk is asked "Still there?" for the last minute, so a person at it is not signed out.
+    const warn = () => {
+      const secondsTo = () => Math.ceil((deadline - Date.now()) / 1000);
+      // Audit 24-3 SM-5: a laptop woken after the deadline signs out at once, never counts below 1.
+      if (secondsTo() <= 0) {
+        lock();
+        return;
+      }
+      setSecondsLeft(Math.min(IDLE_WARNING_SECONDS, secondsTo()));
+      countdown = window.setInterval(() => {
+        const left = secondsTo();
+        if (left <= 0) lock();
+        else setSecondsLeft(left);
+      }, 1000);
+    };
+    const arm = () => {
+      deadline = Date.now() + minutes * 60_000;
+      return session
+        ? window.setTimeout(warn, minutes * 60_000 - IDLE_WARNING_SECONDS * 1000)
+        : window.setTimeout(lock, minutes * 60_000);
+    };
+    let timer = arm();
     const reset = () => {
+      if (Date.now() >= deadline) {
+        window.clearTimeout(timer);
+        lock();
+        return;
+      }
       window.clearTimeout(timer);
-      timer = window.setTimeout(lock, minutes * 60_000);
+      window.clearInterval(countdown);
+      setSecondsLeft(null);
+      timer = arm();
     };
+    stillHere.current = reset;
     for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, { passive: true });
     return () => {
       window.clearTimeout(timer);
+      window.clearInterval(countdown);
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset);
     };
   }, [access, minutes, onTv, session]);
+  if (!locked && secondsLeft !== null)
+    return (
+      <div
+        ref={lockRef}
+        className={styles.lock}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="ward-idle-warn-title"
+      >
+        <div className={styles.lockCard}>
+          <h1 id="ward-idle-warn-title">Still there?</h1>
+          <p data-testid="ward-idle-countdown">
+            This desk has not been used for {minutes - 1} minutes. You will be signed out in{" "}
+            {secondsLeft === 1 ? "1 second" : `${secondsLeft} seconds`}.
+          </p>
+          <Button variant="pri" data-testid="ward-idle-still-here" onClick={() => stillHere.current()}>
+            I&apos;m still here
+          </Button>
+        </div>
+      </div>
+    );
   if (!locked) return null;
   return (
     <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">

@@ -18,9 +18,10 @@ import type {
   SharedAccessRequest,
   SharedChangeResult,
   SharedMembership,
+  SharedRecordView,
 } from "@/components/ward-management/ward-shared-client";
 import type { SharedAccessApi } from "@/components/ward-management/shell/ward-shared-access-context";
-import { parseStoredAccess } from "@/components/ward-management/shell/ward-access-store";
+import { parseStoredAccess, sharedAccessNeedsService } from "@/components/ward-management/shell/ward-access-store";
 import type { StepUpResult } from "@/components/ward-management/shell/ward-step-up";
 
 const NOT_REACHED = "The server was not reached. Nothing was confirmed.";
@@ -31,12 +32,19 @@ function accountLabel(actorId: string, self: string | null): string {
 }
 
 function accessOf(role: string, scope: unknown): WardAccess | null {
-  return parseStoredAccess(JSON.stringify({ role, scope }));
+  return parseStoredAccess(JSON.stringify({ role, scope }), { shared: true });
 }
 
-/** A role from the server, on the demo clock. A row the access table would not allow is dropped. */
+/**
+ * A role from the server, on the demo clock. A row the access table would not allow is dropped,
+ * except a transport officer's role naming no health service: the server refuses it, so the admin
+ * sees it as not active and can give it again with one (audit 24-5 RA-02).
+ */
 export function sharedMembership(row: SharedMembership, now: Instant): AccessMembership | null {
-  const access = accessOf(row.role, row.scope);
+  const needsService = row.kind !== "cover" && sharedAccessNeedsService({ role: row.role, scope: row.scope });
+  const access = needsService
+    ? parseStoredAccess(JSON.stringify({ role: row.role, scope: row.scope }))
+    : accessOf(row.role, row.scope);
   const minutes = row.minutes;
   if (!access || typeof minutes?.granted !== "number" || typeof minutes.expires !== "number") return null;
   return {
@@ -49,7 +57,7 @@ export function sharedMembership(row: SharedMembership, now: Instant): AccessMem
     expiresAt: now + minutes.expires,
     approvedBy: row.approvedBy,
     // Only an older backend sends `approved: false`; it still refuses this role until it is updated.
-    ...(row.kind !== "cover" && row.approved === false ? { blockedByOlderServer: true } : {}),
+    ...((row.kind !== "cover" && row.approved === false) || needsService ? { blockedByOlderServer: true } : {}),
     lastUsedAt: typeof minutes.lastUsed === "number" ? now + minutes.lastUsed : null,
     revokedAt: null,
   };
@@ -114,6 +122,7 @@ function useServerList<T>(
 
 const readAccess = (api: SharedAccessApi) => api.listAccess();
 const readCovers = (api: SharedAccessApi) => api.listCovers();
+const readRecordViews = (api: SharedAccessApi) => api.listRecordViews();
 
 /** What `AccessSettings` needs for the admin's lists, from the server. */
 export type SharedAdminSource = {
@@ -207,4 +216,54 @@ export function useSharedCoverSource(
       end: (id) => settle(api.revokeAccess(id)),
     };
   }, [api, value, at, problem, loading, self, after]);
+}
+
+/** One record opening in the Access log, on the demo clock. */
+export type RecordOpening = {
+  readonly id: string;
+  readonly actorId: string;
+  /** The desk the account was working as, or null when the server sent one this table refuses. */
+  readonly access: WardAccess | null;
+  readonly recordId: string;
+  readonly surface: string;
+  readonly at: Instant | null;
+};
+
+export type SharedRecordViewSource = {
+  readonly openings: readonly RecordOpening[];
+  readonly problem: string | null;
+  readonly loading: boolean;
+  readonly label: (actorId: string) => string;
+};
+
+function sharedRecordOpening(row: SharedRecordView, now: Instant): RecordOpening | null {
+  if (typeof row?.actor_id !== "string" || typeof row.patient_id !== "string") return null;
+  return {
+    id: String(row.id),
+    actorId: row.actor_id,
+    access: accessOf(row.actor_role, row.actor_scope),
+    recordId: row.patient_id,
+    surface: row.surface,
+    at: typeof row.minutes === "number" ? now + row.minutes : null,
+  };
+}
+
+/** The Access log's openings from the server (D-80 item 14). Read once when the tab opens. */
+export function useSharedRecordViews(
+  shared: { api: SharedAccessApi; actorId: string | null } | null,
+  now: Instant,
+  enabled: boolean,
+): SharedRecordViewSource | null {
+  const api = enabled ? (shared?.api ?? null) : null;
+  const self = shared?.actorId ?? null;
+  const { value, at, problem, loading } = useServerList(api, api ? readRecordViews : null, now);
+  return useMemo(() => {
+    if (!api) return null;
+    return {
+      openings: (value ?? []).map((row) => sharedRecordOpening(row, at)).filter(present),
+      problem,
+      loading,
+      label: (actorId) => accountLabel(actorId, self),
+    };
+  }, [api, value, at, problem, loading, self]);
 }

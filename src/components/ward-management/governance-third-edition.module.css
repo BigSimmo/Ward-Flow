@@ -16,6 +16,43 @@
   background: var(--wf-canvas);
 }
 
+/* Device sweep (24 Oct 2026): "Records opened outside care" (WardBreakGlassReview, shell) renders
+   bare markup, so on this page it sat as large plain text on the canvas. It reads as a card here. */
+.governanceRoute > [data-testid="ward-break-glass-review"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.governanceRoute > [data-testid="ward-break-glass-review"] h2 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.governanceRoute > [data-testid="ward-break-glass-review"] p,
+.governanceRoute > [data-testid="ward-break-glass-review"] ul {
+  margin: 0;
+}
+
+.governanceRoute > [data-testid="ward-break-glass-review"] ul {
+  padding-left: var(--wf-s-4);
+}
+
+.governanceRoute > [data-testid="ward-break-glass-review"] > p:last-child {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
 .heroActions {
   display: inline-flex;
   align-items: center;
@@ -29,6 +66,19 @@
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 23.25rem);
   gap: var(--wf-s-3);
   align-items: start;
+}
+
+/* Device sweep (24 Oct 2026): beside the review panel the register needs about 67rem in all, or
+   Outcome and Review are pushed out of sight (1024 and 1280 px). Below that the review panel goes
+   under the register, which keeps its own short scroll, so the panel stays close by. */
+.governanceWorkspace {
+  container-type: inline-size;
+}
+
+@container (max-width: 67rem) {
+  .govLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .registerCard,
@@ -408,6 +458,28 @@
 .capturedList {
   min-width: 0;
   overflow-x: auto;
+}
+
+/* Device sweep (24 Oct 2026): at 1024 and 1280 px the register sits beside the review panel and
+   scrolls sideways, which hid Outcome and Review with no sign. The right edge is drawn while
+   columns are still off to the right, the same scroll-driven edge as the shared ward table
+   (ward-table.module.css): a border, never a fade, and nothing when the register fits. */
+@keyframes govMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-ink-3);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .capturedList {
+    border-right: 2px solid transparent;
+    animation: govMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
 }
 
 .eventHeader,
@@ -939,14 +1011,15 @@
 
 /* v10 phone (11 Oct 2026): event rows read action, person, then outcome and who; Registers and
    Reports are two full-width rows with an icon. Phone tree only. */
+/* Device sweep (24 Oct 2026): the line wraps instead of cutting. As a flex box it could not show
+   an ellipsis, so "Bed coordinator" was cut mid word at 320 and 360 px. */
 .phoneMetaLine {
   display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .phoneMore {

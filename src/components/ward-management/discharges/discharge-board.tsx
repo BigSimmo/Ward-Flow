@@ -50,6 +50,7 @@ import {
   healthServiceLabel,
   WORK_STATUS_LABELS,
   WORK_ORDER,
+  dischargeOrderLine,
   kpiCardLabel,
   recordStage,
   recordStatus,
@@ -64,6 +65,8 @@ import { badge } from "./discharge-board-parts";
 import { DischargeBarrierTable, DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
+// Closing-the-loop package B (24 Oct 2026): the weekend and holiday list, loaded when idle.
+import { DischargeWeekendPrep } from "./discharge-logistics-lazy";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -128,6 +131,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     setPhoneGroupsFolded,
     view,
     setView,
+    sortMode,
     highlight,
     setHighlight,
     copyNote,
@@ -210,7 +214,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       <main id="main-content" className={pageStyles.main}>
         <h1 className={pageStyles.localTitle}>Discharges</h1>
         <p className={pageStyles.printScope}>
-          {population === "records" ? "Admission records" : "Anonymous releases"}
+          {population === "records" ? "Admission records" : "Bed releases"} · Identifiers may be included
           {" · "}
           {service === "all" ? "All services" : service}
           {" · "}
@@ -253,7 +257,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <LiveChip state="live" onHero />
               {isPhone ? null : (
                 <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
-                  Copy summary
+                  Copy counts
                 </Button>
               )}
               <Button
@@ -263,6 +267,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
+                aria-label="Print list (may include identifiers)"
               >
                 Print list
               </Button>
@@ -463,6 +468,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     : `${shown} shown`}
               </span>
             </header>
+            {(population === "records" && guarded.status === "denied") || shown === 0 ? null : (
+              <p className={pageStyles.orderNote} data-testid="ward-discharge-order-note">
+                {dischargeOrderLine({
+                  population,
+                  view,
+                  sortMode,
+                  allStatuses: status === "all",
+                  highlighted: highlight !== null,
+                })}
+              </p>
+            )}
             <div
               ref={listRef}
               className={pageStyles.listBody}
@@ -482,7 +498,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 <table className={pageStyles.workTable}>
                   <caption className={pageStyles.localTitle}>
                     {population === "releases"
-                      ? "Bed frees (no name), blocked first. Completed releases cover the last 24 hours."
+                      ? "Bed releases, blocked first. Rows may include identifiers. Completed releases cover the last 24 hours."
                       : "Admission records, blocked first. Expected dates do not imply confirmation."}
                   </caption>
                   <thead>
@@ -959,6 +975,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               onClear={() => setHighlight(null)}
             />
           </div>
+        ) : null}
+        {guarded.status === "allowed" && population === "releases" ? (
+          <DischargeWeekendPrep
+            releases={s.bedReleases.filter((release) => units.some((unit) => unit.id === release.unitId))}
+            units={units}
+            nameFor={(release) => {
+              const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+              return record ? recordName(record) : null;
+            }}
+            now={now}
+            dayZero={dayZero}
+            onOpen={s.selectRelease}
+          />
         ) : null}
         <WardPrototypeFooter
           testId="ward-discharge-governance"

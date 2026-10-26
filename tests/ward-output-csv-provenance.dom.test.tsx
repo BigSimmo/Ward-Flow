@@ -113,7 +113,7 @@ it("searched roster export names matching rows without repeating the typed searc
   const roster = screen.getByTestId("ward-statistics-ward-roster");
   const csv = await captureCsv(() => fireEvent.click(within(roster).getByRole("button", { name: "CSV" })));
   const lines = csv.split("\r\n");
-  expect(lines[2]).toContain("matching roster rows; status filter: all");
+  expect(lines[2]).toContain("matching roster rows; status filter: all; search applied");
   expect(lines[2]).not.toContain(admission.id);
   expect(lines[2]).not.toContain("all roster rows");
   expect(lines).toHaveLength(7);
@@ -124,7 +124,7 @@ it("capacity export names the alert-line highlight while still exporting every m
   render(
     <StatisticsCapacityChart units={allUnits().slice(0, 2)} bedReleases={[]} asAt="Fri, 1 Jan 2027, 00:05 AWST" />,
   );
-  fireEvent.click(screen.getByRole("button", { name: /At or over the alert line/u }));
+  fireEvent.click(screen.getByRole("button", { name: /at or over the alert line/iu }));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
   expect(csv).toMatch(/all matching rows; all services highlighted, only rows at or above the \d+% alert line;/u);
 });

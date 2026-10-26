@@ -1,5 +1,7 @@
 # Ward Flow Git and publication workflow
 
+_Updated 2026-10-24 - in-flight CI check described once, with its fail-open and fail-closed cases from `scripts/guard-push.mjs`; Documentation owns._
+
 Read this reference before committing, publishing, reviewing or observing CI. [AGENTS.md](../../AGENTS.md) governs safeguards. Use only the applicable section; provider and ownership boundaries remain binding.
 
 ## Commit as you go
@@ -27,11 +29,12 @@ When the user says `open PR`, `create PR` or `publish PR` without also asking fo
 - **For normal engineering pushes, run `npm run format -- --files <exact-owned-paths>` on every owned file you will push, including docs and config, and commit the result before pushing.** This rule does not apply to the explicit bare PR publication route above. Formatting after the commit does nothing for the push. Never format or stage another owner's files. `npm run format:all` is a separate whole-tree write that needs explicit scope.
 - For normal Ward Flow readiness pushes, never an explicit bare PR publication, assemble the commits, check the remote, branch, CI triggers and deployment effects, run the selected gate for the actual changed files, then verify the exact pushed commit.
 - `.githooks/pre-push` holds the local push guard. Before relying on it, check that `core.hooksPath` is `.githooks` and that the guard checks the real remote URL. A missing or bypassed hook grants no permission to push anywhere else.
-- The in-flight CI push check in `scripts/guard-push.mjs` is a blocking check, not an advisory one. Run directly, it refuses a push while a required run is active on the branch (bypass one push with `SKIP_IN_FLIGHT_CI_GUARD=1`). The installed `.githooks/pre-push` runs the check by default; a normal push does not export that bypass. Opt out for one push explicitly with `SKIP_IN_FLIGHT_CI_GUARD=1`, or with `GUARD_PUSH_DISABLE=1`, which also skips the format and static checks.
+- The in-flight CI push check in `scripts/guard-push.mjs` is a blocking check, not an advisory one. It blocks a push to an open PR branch while a required Ward Flow CI run is active, because the new push would cancel it. The installed `.githooks/pre-push` runs it by default. Opt out for one push with `SKIP_IN_FLIGHT_CI_GUARD=1`, or with `GUARD_PUSH_DISABLE=1`, which also skips the format and static checks but never destination identity or auto-merge ownership. Without `gh` installed the check is skipped (fail-open); if `gh` cannot read the CI state, the push is blocked.
 - Leave unrelated open PRs alone. Before calling a GitHub `DIRTY` or `CONFLICTING` branch a real conflict, run `git merge-tree --write-tree origin/main <tip>`. A clean tree means the branch is only behind.
 - Each push to a PR cancels its running CI and starts a new run, and one run fills most of the account's 20 runners, so other PRs wait. Gather a round of fixes (a review round or a CI failure) into one push, not one push per finding. Merge `origin/main` into a PR branch only for a real conflict or a failing check whose fix is on main, or when the owner asks for the branch sync below. Being behind main is not a reason on its own.
 - Background PR sweeps, the branch-sync scripts and the inherited `Run PR` and babysit shortcuts are retired. Sync a PR branch with `main` only when the owner asks, one branch at a time, with a normal merge.
 - If asked to watch CI, check at most every 5 minutes for at most 30 minutes, then report where it stands. Never leave a scheduled job watching a PR. Treat merge-queue state as read-only.
+- **A PR that changes something staff will see adds one plain line to the end of `src/components/ward-management/help/whats-new.json`** (a new `id`, the merge date and a sentence under 120 characters, no PR numbers or code words). The app's What's new note and Help list show it after the next daily release, and the release workflow copies it into that release's notes. Engineering-only changes add nothing. When two PRs both append, keep both entries in merge order.
 - Bundle changes into one PR only after checking the branch, owner and authorised scope. Never weaken, skip or relax a required check to save time.
 
 ## Reviews

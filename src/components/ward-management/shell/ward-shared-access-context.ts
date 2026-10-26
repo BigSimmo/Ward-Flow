@@ -12,7 +12,14 @@ import type { SharedWorkspaceClient } from "../ward-shared-client";
 /** The shared workspace's access calls (`SharedWorkspaceClient`). */
 export type SharedAccessApi = Pick<
   SharedWorkspaceClient,
-  "listAccess" | "listCovers" | "grantAccess" | "revokeAccess" | "giveCover" | "decideRequest" | "breakGlass"
+  | "listAccess"
+  | "listCovers"
+  | "listRecordViews"
+  | "grantAccess"
+  | "revokeAccess"
+  | "giveCover"
+  | "decideRequest"
+  | "breakGlass"
 > &
   /** D-80 item 14: the coordinator's record views and break glass openings. */
   Partial<Pick<SharedWorkspaceClient, "readRecordAccess">>;

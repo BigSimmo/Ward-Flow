@@ -1,6 +1,8 @@
 # Ward Flow documentation index
 
-_Updated 2026-10-21 - audience routes and explicit historical navigation; Documentation owns._
+<!-- last-checked: 2026-10-24 -->
+
+_Updated 2026-10-24 - removed a duplicated link-check paragraph, listed every agent topic file, marked the two historical process playbooks and added operations, facts and decisions to Start here; Documentation owns._
 
 > **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
 > [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
@@ -20,25 +22,22 @@ The [task contract](task-receipts.md) preserves one original objective and exist
 | Continue commissioned work       | [Task/receipt contract](task-receipts.md) and [plan navigation](ward-flow/plans/README.md)                      |
 | Find historical context          | [Historical collections](#historical-collections) and [preserved catalogue](#historical-discovery-catalogue)    |
 
-`npm run docs:check-links` checks relative links and anchors in every tracked Markdown file, outside marked history sections.
-For maintained Markdown elsewhere, use `node scripts/ward-flow/check-doc-links.mjs --file README.md`
-(repeat `--file` for each owned file); `--anchors` additionally checks supported Markdown headings.
-Explicit selection excludes paired historical sections. Web URLs, reference-style links and
-renderer extensions are not validated. `npm run docs:check-scripts` checks maintained npm
-references; generated inventory/index checks do not prove architectural truth or prose freshness.
-
 `npm run docs:check-links` checks inline local paths and supported heading anchors in maintained
 sections of **every Git-tracked Markdown file**, including root and nested agent instructions.
-Paired historical markers exclude preserved source sections; a banner alone does not exclude text.
-Stage new owned documents before this check. Untracked scratch is not part of its acceptance scope.
-Local PR verification and Ward CI also run the maintained architecture and script-inventory checks.
+Paired historical markers exclude preserved sections; a banner alone does not exclude text. Stage
+new documents before the check, because untracked files are not scanned. To check one file, use
+`node scripts/ward-flow/check-doc-links.mjs --file <path> --anchors` (repeat `--file`). Web URLs,
+reference-style links and renderer extensions are not validated. `npm run docs:check-scripts`
+checks maintained npm references. None of these checks proves prose is current; the full rules are
+in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 
 ## Start here
 
 | Doc                                                                                                       | What it is                                                                                           |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [codebase-index.md](codebase-index.md)                                                                    | Maintained Ward orientation followed by preserved historical architecture                            |
-| [README.md](README.md)                                                                                    | Maintained entry pointers and inherited discovery catalogue                                          |
+| [Operations runbook](ward-flow/OPERATIONS-RUNBOOK.md) · [DATABASE.md](ward-flow/DATABASE.md)              | Running the hosted prototype; the database provider and connection rules                             |
+| [FACTS.md](FACTS.md) · [decisions.md](ward-flow/decisions.md)                                             | Generated current facts; the owner's recorded decisions                                              |
 | [site-map.md](site-map.md)                                                                                | **Generated** route map — regenerate with `npm run docs:update`, verify with `npm run sitemap:check` |
 | [ward-flow/README.md](ward-flow/README.md) · [ward-flow/LOCAL-FIRST-RUN.md](ward-flow/LOCAL-FIRST-RUN.md) | **Ward Flow** local bed-flow prototype — product entry + UI boot on this machine                     |
 | [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                  |
@@ -82,13 +81,12 @@ Local PR verification and Ward CI also run the maintained architecture and scrip
 
 ## Process and review
 
-- [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) — daily builder loop, file sign-out, commits, and fold gate selection
+- [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) — picking up work, branches and file sign-out, commits, integration, testing and owner rules
 - [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) — GitHub Actions workflow (`ward-flow.yml`) jobs, shards, and local equivalents
-- [`testing.md`](testing.md) — fast local unit testing (`npx vitest run <path>`), focused/slotted runs, and Playwright journeys
-- [`development-speed-playbook.md`](development-speed-playbook.md) — fast local iteration, gate selection, and worktree reuse
-- [`process-hardening.md`](process-hardening.md) — verification gates, CI expectations, and process safeguards
-- [`task-receipts.md`](task-receipts.md) — task lifecycle, canonical checkpoints, and sanitized receipt handoff
-- [`agents/`](agents/) — delegated agent workflow rules (`task-efficiency.md`, `wiring-and-bundle-budget.md`, `dead-code-deletion.md`, `test-deletion-guard.md`, `codex-desktop-worktree-setup.md`, `codex-dependency-shortcut.md`, `shared-context-and-memory.md`, `context7.md`, `figma-sync.md`)
+- [`testing.md`](testing.md) — local unit commands, run admission, Playwright projects and CI topology
+- [`task-receipts.md`](task-receipts.md) — task lifecycle, canonical checkpoints, and sanitised receipt handoff
+- [`agents/`](agents/) — topic rules `AGENTS.md` links to: [`git-publication.md`](agents/git-publication.md), [`checks-and-evidence.md`](agents/checks-and-evidence.md), [`task-efficiency.md`](agents/task-efficiency.md), [`building-ui.md`](agents/building-ui.md), [`wiring-and-bundle-budget.md`](agents/wiring-and-bundle-budget.md), [`cloud-ownership.md`](agents/cloud-ownership.md), [`shortcuts.md`](agents/shortcuts.md), [`shared-context-and-memory.md`](agents/shared-context-and-memory.md), [`dead-code-deletion.md`](agents/dead-code-deletion.md), [`test-deletion-guard.md`](agents/test-deletion-guard.md), [`codex-desktop-worktree-setup.md`](agents/codex-desktop-worktree-setup.md), [`codex-dependency-shortcut.md`](agents/codex-dependency-shortcut.md), [`context7.md`](agents/context7.md), [`figma-sync.md`](agents/figma-sync.md)
+- Historical only, not current instructions: [`development-speed-playbook.md`](development-speed-playbook.md) (former PsychSift workflow, fully fenced as history); `process-hardening.md` was removed on 24 October 2026 (see [`ARCHIVE.md`](ARCHIVE.md))
 
 ## Maintenance rules
 
@@ -143,7 +141,6 @@ Every remaining tracked document in this category (architecture and design, plus
 
 ### Historical process & review catalogue
 
-- [process-hardening.md](process-hardening.md) — verification gates, CI expectations, known debts
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
 - [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
@@ -167,9 +164,9 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 Every remaining tracked document in this category (the Ward Flow developer-gated prototype's context, decisions, roadmap, ledgers and dated handovers), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
 - [ward-flow-context.md](ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
-- [ward-flow-phase-3-rulings.md](archive/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
+- [ward-flow-phase-3-rulings.md](ward-flow/archive/dated-notes/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
 - [ward-flow-phase-5-handover.md](ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
-- [ward-management-decisions.md](archive/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
+- [ward-management-decisions.md](ward-flow/archive/dated-notes/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
 
 ## Subdirectory map
 

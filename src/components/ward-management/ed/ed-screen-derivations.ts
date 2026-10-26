@@ -25,6 +25,7 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdNeedsItem } from "./ed-needs-you";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
   ANSWERED_VISIBLE_CAP,
@@ -277,11 +278,13 @@ export function deriveEdScreen({
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
     return true;
   };
+  // Audit 24-7 (CT-20): both sides fold the way the header search does, so "OQuinn" finds O'Quinn and
+  // accents and hyphens match. It only dims rows; the sort below is untouched.
+  const foldedQuery = foldPatientSearchText(patientQuery);
   const matchesPatientQuery = (movement: Movement) => {
-    const q = patientQuery.trim().toLowerCase();
-    if (!q) return true;
+    if (!foldedQuery) return true;
     const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
-    return `${person.displayName} ${person.umrn}`.toLowerCase().includes(q);
+    return foldPatientSearchText(`${person.displayName} ${person.umrn}`).includes(foldedQuery);
   };
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
     past: (m) => isWaitingInEd(m) && now - m.openedAt >= accessTarget,
@@ -354,7 +357,7 @@ export function deriveEdScreen({
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " holds the bed" : "A bed is held"} and no transport is booked. The handover cannot be marked ready until it is.`,
+        why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " has pulled the bed" : "A bed is pulled"} and no transport is booked. The handover cannot be marked ready until it is.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
         actionLabel: "Book transport",
         onAction: () => toggleBookTransport(m.id),

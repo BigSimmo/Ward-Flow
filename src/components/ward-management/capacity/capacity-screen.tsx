@@ -70,7 +70,7 @@ import styles from "./capacity.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { GapRow, GapWord, ReadyNowSection } from "./capacity-gap-rows";
-import { formatGap, isConfirmationFresh, phoneGap, totalsSentence } from "./capacity-gap-words";
+import { isConfirmationFresh, totalsSentence } from "./capacity-gap-words";
 import { NetworkServiceGroupRows } from "./capacity-network-rows";
 import { CapacityTabs, CapacityWardSidebar } from "./capacity-ward-sidebar";
 import { ReadyByRoadTime } from "./capacity-road-time";
@@ -123,17 +123,29 @@ const HIGHLIGHT_LABELS: Record<string, string> = {
 export function CapacityScreen() {
   const recordActorKey = JSON.stringify(useWardRecordActors());
   const thresholds = useDueSoonThresholds();
-  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
-    useWardFlowSelect(
-      "movements",
-      "units",
-      "bedReleases",
-      "admissions",
-      "leaveBeds",
-      "dispatch",
-      "worldGeneration",
-      "plannedAdmissions",
-    );
+  const {
+    movements,
+    units,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    dispatch,
+    worldGeneration,
+    plannedAdmissions,
+    referrals,
+    configuration,
+  } = useWardFlowSelect(
+    "referrals",
+    "configuration",
+    "movements",
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "dispatch",
+    "worldGeneration",
+    "plannedAdmissions",
+  );
   const network = useWardNetwork();
   // Home v7 (Josh, 22 Oct 2026): State bedflow left Home for the foot of this screen, unchanged.
   // No patient is chosen here, so it reads beds only: a ward can be picked out, never offered.
@@ -145,7 +157,6 @@ export function CapacityScreen() {
   );
   const patientOf = usePatientOf();
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  const bedMeetingActionsOn = useWardFeatureFlag("bed-meeting-actions");
   /**
    * SERVICE SCOPE — build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2
    * "Capacity" and task C1. `null` is "All services", the same reading `ward-bar.tsx` and
@@ -285,7 +296,7 @@ export function CapacityScreen() {
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // shell-1: the hero's figures are all whole-network, whatever service is chosen.
-  const heroScopeLabel = service === null ? "Statewide" : `Statewide, not only ${service}`;
+  const heroScopeLabel = service === null ? "Modelled network" : `Modelled network, not only ${service}`;
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = useMemo(
     () =>
@@ -721,7 +732,7 @@ export function CapacityScreen() {
           level={1}
           // v10: the Wards count appears once, here, never as a chip.
           // shell-1 (13 Oct 2026): every hero figure is whole-network (`networkRows`, `gapTotals`),
-          // so the eyebrow says Statewide even with a service chosen; it never names the service as
+          // so the eyebrow names the modelled network even with a service chosen; it never names the service as
           // the figures' scope. The ward list below is the part the service narrows.
           eyebrow={`Capacity · ${heroScopeLabel}${
             isPhone
@@ -764,12 +775,12 @@ export function CapacityScreen() {
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title. Option A: figures only on a phone.
             isPhone ? undefined : (
-              <OccupancyRing percent={occupancy.percent} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
+              <OccupancyRing percent={occupancy.percent} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope={heroScopeLabel} />
             )
           }
           bar={
             isPhone ? undefined : (
-              <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
+              <div className={styles.heroStatGroup} role="group" aria-label={`${heroScopeLabel} Bed Telemetry`}>
                 <HeroStat
                   inline
                   value={totalLockedReady}
@@ -826,6 +837,8 @@ export function CapacityScreen() {
                     thresholds,
                     service,
                     nameOf: (movement) => patientOf(movement).displayName,
+                    referrals,
+                    referralLimitMinutes: configuration.referralDecisionTargetMinutes,
                   })
                 }
               />
@@ -839,7 +852,7 @@ export function CapacityScreen() {
                   Open on TV
                 </Link>
               ) : null}
-              {!isPhone && bedMeetingActionsOn ? (
+              {!isPhone ? (
                 <Link
                   href={BED_MEETING_AGENDA_HREF}
                   className={buttonClass({ variant: "onHero" })}
@@ -975,7 +988,6 @@ export function CapacityScreen() {
                   <GapRow
                     key={row.id}
                     row={row}
-                    phone={isPhone}
                     tomorrow={isPhone ? undefined : tomorrowByKind.kinds.find((kind) => kind.id === row.id)}
                   />
                 ))}
@@ -992,10 +1004,7 @@ export function CapacityScreen() {
                   <td data-testid="ward-capacity-beds-that-fit">{gapTotals.bedsThatFit}</td>
                   <td data-testid="ward-capacity-gap-value">
                     <div className={styles.gapValueContainer}>
-                      <GapWord gap={gapTotals.gap} />{" "}
-                      <span className={styles.gapNumber}>
-                        {isPhone ? phoneGap(gapTotals.gap) : formatGap(gapTotals.gap)}
-                      </span>
+                      <GapWord gap={gapTotals.gap} />
                     </div>
                     <div
                       className={styles.gapMicroGauge}
@@ -1144,12 +1153,14 @@ export function CapacityScreen() {
               thresholds,
               service,
               nameOf: (movement) => patientOf(movement).displayName,
+              referrals,
+              referralLimitMinutes: configuration.referralDecisionTargetMinutes,
             })
           }
         />
         <WardPrototypeFooter
           testId="ward-capacity-governance"
-          note="Statewide bed capacity · Not approved for clinical use"
+          note="Modelled network bed capacity · Limited synthetic demo coverage: CAHS inpatient wards are not modelled; private live feeds are unavailable · Not approved for clinical use"
         />
       </main>
     </div>

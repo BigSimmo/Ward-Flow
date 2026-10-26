@@ -4,7 +4,6 @@ import { useMemo, type ReactNode } from "react";
 import { BedDouble, ClipboardCheck, Clock, Route, Truck, UserX } from "lucide-react";
 
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -26,7 +25,7 @@ function durationFigures(
 ): { typical: Figure; slow: Figure } {
   const sample = `from ${summary.sampleSize} of ${summary.population} ${what}`;
   if (summary.median === undefined || summary.p90 === undefined) {
-    // "from 0 of 0 beds held" read as a broken figure, so an empty week says so plainly.
+    // "from 0 of 0 beds pulled" read as a broken figure, so an empty week says so plainly.
     const note = summary.population === 0 ? empty : `${sample}, not enough data to publish`;
     return {
       typical: { id: "typical", label: "Typical", value: "—", note },
@@ -117,13 +116,11 @@ export function PilotMeasuresSection({
   isPhone: boolean;
 }) {
   const small = useSmallNumber();
-  const enabled = useWardFeatureFlag("pilot-measures");
   const measures = useMemo(
     () => pilotMeasures({ movements, referrals, patients, now, pullHoldMinutes }, week),
     [movements, referrals, patients, now, pullHoldMinutes, week],
   );
-  if (!enabled) return null;
-  const held = durationFigures(measures.requestToBedHeld, "beds held");
+  const held = durationFigures(measures.requestToBedHeld, "beds pulled");
   const travel = durationFigures(measures.transport.collectedToArrived, "arrivals by transport");
   const { requests, holds, transport, completeness } = measures;
   // A rate is worked back into the count it hides, so a person-derived rate shows only when
@@ -172,8 +169,8 @@ export function PilotMeasuresSection({
       key="holds"
       isPhone={isPhone}
       icon={BedDouble}
-      title="Bed holds"
-      meta={`${holds.held} held`}
+      title="Bed pulls"
+      meta={`${holds.held} pulled`}
       testId="ward-pilot-holds"
       figures={[
         {

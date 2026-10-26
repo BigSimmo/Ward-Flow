@@ -1,5 +1,10 @@
 # Ward Flow — open questions
 
+> **Historical since 17 September 2026. Not the list of what is left.** Josh decided on 24 October
+> 2026 that the one list is the [STATUS decision table and its "Waiting on Josh" list](STATUS.md#decision-status-d-numbers).
+> Answers are in [decisions.md](decisions.md) and dated `owner-answers-*.md` files. "None open" below
+> was true on 17 September only.
+
 **Rewritten 17 September 2026, evening, round 2. Keeps only what is still genuinely open.** Re-derive
 before acting on anything below. For the full history of how each item was closed, see the dated
 entries this replaces, kept below the line, and `docs/ward-flow-task-ledger.md` §7.8.

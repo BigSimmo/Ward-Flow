@@ -2,7 +2,16 @@
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
 import {
@@ -155,14 +164,14 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
-  const { dayZero, worldGeneration } = useWardFlowSelect("dayZero", "worldGeneration");
+  const { dayZero, worldGeneration, shared } = useWardFlowSelect("dayZero", "worldGeneration", "shared");
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
   // UX audit 21 Oct 2026: offline, the shell takes no pack because the data may be stale, so this
   // screen must not stamp a newer time on it either.
   const online = useOnlineStatus();
-  const canSnapshot = role === "coordinator" && ready && online;
+  const canSnapshot = role === "coordinator" && ready && online && (!shared?.enabled || shared.status === "ready");
 
   const take = useTakeDowntimePack();
 
@@ -186,11 +195,12 @@ export function DowntimePackScreen() {
   // compare two packs that were never side by side, so they show only against this one.
   const [twinFor, setTwinFor] = useState<DowntimePack | null>(null);
   const takingTimer = useRef<number | null>(null);
-  useEffect(
+  useLayoutEffect(
     () => () => {
       if (takingTimer.current !== null) window.clearTimeout(takingTimer.current);
+      takingTimer.current = null;
     },
-    [owner, worldGeneration, ready],
+    [owner, worldGeneration, ready, canSnapshot],
   );
   const newSnapshot = () => {
     if (!canSnapshot || taking) return;
@@ -223,7 +233,7 @@ export function DowntimePackScreen() {
     setTwinFor(null);
     setSheet(null);
   }
-  if (!ready && taking) setTaking(false);
+  if (!canSnapshot && taking) setTaking(false);
 
   const at = (instant: Instant | null) => {
     if (instant === null) return NOT_RECORDED;

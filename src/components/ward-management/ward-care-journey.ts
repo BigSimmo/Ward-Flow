@@ -412,6 +412,9 @@ export function separationHandoff(
   return {
     schemaVersion: 1,
     kind: "separation-review",
+    // Audit 24-7 (CT-16): the file says it is synthetic, as the scenario file does.
+    synthetic: true,
+    notice: "Synthetic demonstration data only. Not a clinical record.",
     admissionId: admission.id,
     separationCode: coding.separationCode,
     receivingClass: coding.receivingClass,

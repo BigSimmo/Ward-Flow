@@ -44,7 +44,12 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { blockedDischargesByReason } from "./statistics-derivations";
-import { LONG_WAIT_HOURS, VERY_LONG_WAIT_HOURS, edWaitFigures, type EdWaitingEntry } from "./statistics-ed-waits";
+import {
+  LONG_WAIT_HOURS,
+  VERY_LONG_WAIT_HOURS,
+  edJourneyWaitFigures as edWaitFigures,
+  type EdWaitingEntry,
+} from "./statistics-ed-waits";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -248,9 +253,9 @@ const lensStatus = (site: SiteFigures, lens: MapLens): WaMapNode["status"] => {
 const lensAria = (site: SiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
-    return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
+    return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
-    return `${site.name} ED: ${site.edWaiting} waiting${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
+    return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
   return `${site.name}: mean stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
@@ -265,9 +270,9 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   },
   {
     id: "ed",
-    label: "ED waits",
-    rankTitle: "Most waiting in ED",
-    key: `Ring: longest wait, to ${VERY_LONG_WAIT_HOURS}h. Centre: people waiting. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    label: "Open ED journeys",
+    rankTitle: "Most open ED journeys",
+    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED journeys. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -347,7 +352,7 @@ export function StatisticsMapView({
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "ED waits", count: network.edWaiting },
+    { id: "ed", label: "Open ED journeys", count: network.edWaiting },
     { id: "dis", label: "Discharge", count: network.dischargedToday + network.dueToday },
     { id: "stay", label: "Stay", count: network.meanStay === null ? "none" : daysText(network.meanStay) },
   ];
@@ -368,7 +373,7 @@ export function StatisticsMapView({
         ]
       : lens === "ed"
         ? [
-            { value: String(network.edWaiting), label: "Waiting in ED" },
+            { value: String(network.edWaiting), label: "Open ED journeys" },
             {
               value: network.longest?.edLongest == null ? "none" : durMinutes(Math.round(network.longest.edLongest)),
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",
@@ -583,7 +588,7 @@ function SiteCard({ site, lens, onClose }: { site: SiteFigures; lens: MapLens; o
           <div className={styles.siteGroup}>
             <span className={styles.siteLabel}>Emergency department</span>
             <Link href={edStatisticsHref(site.ed.id)} className={styles.siteRow}>
-              <span className={styles.siteName}>{site.edWaiting} waiting</span>
+              <span className={styles.siteName}>{site.edWaiting} open ED journeys</span>
               <span className={styles.siteFig}>
                 {site.edOver48 ? (
                   <StatusGlyph tone="danger" size={9} />
@@ -635,7 +640,7 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Everyone waiting, by ED"
+        title="Open ED journeys, by ED"
         aside={`${rows.length} EDs`}
         data-testid="ward-statistics-map-below"
       >

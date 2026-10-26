@@ -17,6 +17,8 @@ import {
   STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import { WEEKLY_REPORT_HREF } from "@/components/ward-management/reports/report-routes";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { statisticsHeldToOwnPlace } from "@/components/ward-management/ward-role-access";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-nav.module.css";
 
@@ -54,8 +56,13 @@ function scrollActiveIntoView(node: HTMLAnchorElement | null) {
     if (!row) return;
     const rowBox = row.getBoundingClientRect();
     const chipBox = node.getBoundingClientRect();
-    if (chipBox.left < rowBox.left) row.scrollLeft += chipBox.left - rowBox.left;
-    else if (chipBox.right > rowBox.right) row.scrollLeft += chipBox.right - rowBox.right;
+    // Device sweep R1-16/R2-09 (24 Oct 2026): stop at the row's own padding, so the current chip
+    // keeps the page gutter beside it rather than sitting flush against the screen edge.
+    const rowStyle = getComputedStyle(row);
+    const startInset = parseFloat(rowStyle.paddingLeft) || 0;
+    const endInset = parseFloat(rowStyle.paddingRight) || 0;
+    if (chipBox.left < rowBox.left + startInset) row.scrollLeft += chipBox.left - rowBox.left - startInset;
+    else if (chipBox.right > rowBox.right - endInset) row.scrollLeft += chipBox.right - rowBox.right + endInset;
   };
   reveal();
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(reveal);
@@ -121,6 +128,8 @@ export function StatisticsNav({
   const router = useOptionalRouter();
 
   const activeSection = currentSection || sectionOf(pathname);
+  // D-80: a ward, ED or team desk opens only its own place's page, so no section leads anywhere.
+  const ownPlaceOnly = statisticsHeldToOwnPlace(useEffectiveWardAccess());
 
   // The four unit kinds open their index pages (Statistics A, 9 Oct 2026): every service, ward, ED
   // and team on one page, each the way into its own page. The tab stays current on a detail page.
@@ -135,6 +144,8 @@ export function StatisticsNav({
     { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
+
+  if (ownPlaceOnly) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;
 
   if (variant === "chips") {
     // Phone review F-12 (15 Oct 2026): every statistics screen shows the same eight chips, in the

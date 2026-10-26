@@ -6,12 +6,13 @@ import { useOptionalToast } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import type { Rejection } from "@/components/ward-management/ward-model";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 export function wardCommandFailure(outcome?: WardCommandOutcome): string | undefined {
   if (!outcome || outcome.status === "accepted") return;
   return outcome.status === "refused"
     ? `Not recorded: ${outcome.message ?? "The action was refused."}`
-    : (outcome.message ?? "Save is not confirmed. Review the board before trying again.");
+    : (outcome.message ?? SAVE_NOT_CONFIRMED);
 }
 
 /** A command's refusal: the shared answer when there is one, otherwise a new local rejection. */

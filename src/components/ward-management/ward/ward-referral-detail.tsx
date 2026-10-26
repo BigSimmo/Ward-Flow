@@ -21,6 +21,7 @@ import {
   type ReferralDossier,
 } from "@/components/ward-management/ward-referral-dossier-seed";
 import { edById } from "@/components/ward-management/ward-sites";
+import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
   CLEARANCE_CHECK_LABELS,
   CLEARANCE_CHECKS,
@@ -134,6 +135,7 @@ export function WardReferralDetail({
   fit,
   onUpdateBeds,
 }: WardReferralDetailProps) {
+  const { dayZero } = useWardFlowSelect("dayZero");
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const patient = identity.patient;
   const ed = edById(movement.originEdId);
@@ -144,10 +146,9 @@ export function WardReferralDetail({
   const riskFlags = intake?.riskFlags ?? dossier?.riskFlags ?? [];
   const reason = intake?.reasonForReferral ?? dossier?.reasonForReferral;
   const diagnosis = tentativeDiagnosisPhrase(movement.tentativeDiagnosis ?? null) ?? dossier?.workingDiagnosis;
-  const cleared =
-    movement.medicalClearance?.cleared ??
-    intake?.medicalClearance.cleared ??
-    dossier?.medicalClearance.clearedBy !== undefined;
+  // Audit 24-1 A-03: the chip reads recorded facts only, as the answer card does. The seeded
+  // referral letter's "cleared by" is never a recorded clearance.
+  const cleared = movement.medicalClearance?.cleared ?? intake?.medicalClearance.cleared ?? false;
   const referrer = intake?.referrer ?? dossier?.referrer;
   const cto = patient?.communityTreatmentOrder;
 
@@ -156,7 +157,7 @@ export function WardReferralDetail({
       label: "Legal status",
       detail: movement.legalForm
         ? `${movement.legalStatus}. ${legalFormNameLabelFirst(movement.legalForm)}.`
-        : `${movement.legalStatus}. No forms in force.`,
+        : `${movement.legalStatus}. No form recorded.`,
     },
     ...(movement.legalFormReceivedAt === undefined
       ? []
@@ -164,7 +165,11 @@ export function WardReferralDetail({
     ...(intake && intake.legalStatus !== movement.legalStatus
       ? [{ label: "On the referral", detail: intake.legalStatus }]
       : []),
-    { label: "CTO", detail: cto && cto.endedAt === undefined ? `Form ${cto.form} in force` : "None" },
+    // Audit 24-1 A-04: recorded-only wording. Ward Flow computes no Act time or expiry.
+    {
+      label: "CTO",
+      detail: !cto ? "None recorded" : cto.endedAt === undefined ? `Form ${cto.form} in force` : "No CTO in force",
+    },
     ...(dossier?.legal ?? []),
   ];
 
@@ -179,14 +184,17 @@ export function WardReferralDetail({
       label: "Status",
       detail: intake.medicalClearance.cleared
         ? "Cleared"
-        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${intake.medicalClearance.expectedAt}` : ""}`,
+        : `Not yet cleared${intake.medicalClearance.expectedAt ? `, expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}` : ""}`,
     });
-  else if (dossier?.medicalClearance.clearedBy) {
-    const at = timeAfter(movement, dossier.medicalClearance.clearedAfterMinutes, now);
-    clearanceRows.push({
-      label: "Status",
-      detail: `Cleared by ${dossier.medicalClearance.clearedBy}${at ? `, ${at}` : ""}`,
-    });
+  else {
+    // Audit 24-1 A-03: no recorded clearance reads "Not recorded", as the answer card says. The
+    // referral letter's own words stay, labelled as such, with no time invented for them.
+    clearanceRows.push({ label: "Status", detail: "Not recorded" });
+    if (dossier?.medicalClearance.clearedBy)
+      clearanceRows.push({
+        label: "Referral letter says",
+        detail: `Cleared by ${dossier.medicalClearance.clearedBy}. Not a recorded clearance.`,
+      });
   }
   if (intake?.clearanceChecklist) {
     for (const check of CLEARANCE_CHECKS) {
@@ -519,7 +527,7 @@ export function WardReferralDetailDrawer({
         identity={identity}
         ageYears={ageYears}
         intake={intake}
-        dossier={seededReferralDossier(movement.id)}
+        dossier={seededReferralDossier(movement.id, movement)}
         fit={fit}
         onUpdateBeds={onUpdateBeds}
       />
