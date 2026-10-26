@@ -111,7 +111,7 @@ export function clearanceChecklistWords(checklist: ClearanceChecklist): string {
  * A27 (Josh, 26 Oct 2026): the two required charts may be marked "to follow" when they are not to
  * hand at send time. The referral then says so plainly. Nothing is chased or timed automatically.
  */
-export const FOLLOWABLE_CHART_KINDS = ["medication", "observation"] as const;
+const FOLLOWABLE_CHART_KINDS = ["medication", "observation"] as const;
 export type FollowableChartKind = (typeof FOLLOWABLE_CHART_KINDS)[number];
 
 export type ReferralContact = { name: string; email: string; phone: string; role: string; location: string };
