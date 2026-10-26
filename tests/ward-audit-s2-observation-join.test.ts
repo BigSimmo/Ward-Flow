@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR + 5;
@@ -53,6 +54,21 @@ describe("audit S-2: the journey and its held bed record one observation level",
     });
     expect(next.rejections.at(-1)?.reason).toBeUndefined();
     expect(levelOf(next, "admissions", admission.id)).toBe("arms_length");
+    expect(levelOf(next, "movements", movement.id)).toBe("arms_length");
+  });
+
+  it("an older pair that already differs can still be edited with a current token", () => {
+    const state = seedWardFlowState();
+    const { movement, admission } = joinedOnlyByMovement(state, "WF-011");
+    expect(movement.observation.level).not.toBe(admission.observation.level);
+    const next = apply(state, {
+      type: "RECORD_OBSERVATION_LEVEL",
+      role: "ed",
+      target: { kind: "movement", movementId: movement.id },
+      observation: ARMS_LENGTH,
+      expected: observationEditingToken("movement", movement.id, movement.observation, 0),
+    });
+    expect(next.rejections.at(-1)?.reason).toBeUndefined();
     expect(levelOf(next, "movements", movement.id)).toBe("arms_length");
   });
 
