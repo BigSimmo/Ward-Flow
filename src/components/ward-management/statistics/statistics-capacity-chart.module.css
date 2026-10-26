@@ -212,11 +212,11 @@
   padding: var(--wf-s-1) 0;
 }
 
+/* H-0447: a long hospital name, or its beds line, takes a second line instead of an ellipsis at
+   any width (the name column stops at 190px however wide the screen). */
 .rowName strong,
 .rowName small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .rowName strong {

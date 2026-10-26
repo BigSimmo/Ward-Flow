@@ -216,6 +216,22 @@
   font-family: var(--wf-font);
 }
 
+/* H-0446: "13 waiting · 7 fit" reads as one line. The column gap and inner padding split it into
+ * two cells with a break in the rule under them and a stray leading dot on the second. */
+@media (min-width: 48.0625rem) {
+  .screen .gapTable tr {
+    column-gap: 0;
+  }
+
+  .screen .gapTable [data-testid="ward-capacity-waiting"] {
+    padding-inline-end: 0;
+  }
+
+  .screen .gapTable [data-testid="ward-capacity-beds-that-fit"] {
+    padding-inline-start: 0.35em;
+  }
+}
+
 .screen .gapTable [data-testid="ward-capacity-gap-value"] {
   display: contents;
 }
