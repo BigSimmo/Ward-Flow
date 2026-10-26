@@ -109,6 +109,10 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mark moving, record reason" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("moving");
     fireEvent.click(screen.getByRole("button", { name: "Confirm arrival · receiving ward" }));
+    expect(screen.getByTestId("live-stage")).toHaveTextContent("moving");
+    fireEvent.click(
+      within(screen.getByTestId("ward-patient-arrival-identity")).getByRole("button", { name: "Confirm arrival" }),
+    );
     expect(screen.getByTestId("live-stage")).toHaveTextContent("arrived");
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("On ward");

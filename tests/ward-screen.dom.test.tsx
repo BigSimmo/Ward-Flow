@@ -518,23 +518,27 @@ describe("ward screen bed release controls", () => {
 });
 
 describe("ward screen incoming patient arrival confirmation", () => {
-  it("renders a Confirm Arrival button only for an incoming patient with collected transport and confirms arrival on click", () => {
+  it("renders a Confirm arrival button only for an incoming patient with collected transport and confirms arrival on click", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
 
-    // WF-003 is accepted_awaiting_bed, so it must not render a Confirm Arrival button
+    // WF-003 is accepted_awaiting_bed, so it must not render a Confirm arrival button
     expect(screen.queryByTestId("ward-confirm-arrival-WF-003")).not.toBeInTheDocument();
 
     // WF-014 is seeded at rph-adult-secure with stage: "moving" and transport collected
     const arrivalBtn = screen.getByTestId("ward-confirm-arrival-WF-014");
     expect(arrivalBtn).toBeInTheDocument();
-    expect(arrivalBtn).toHaveTextContent("Confirm Arrival");
+    expect(arrivalBtn).toHaveTextContent("Confirm arrival");
     expect(arrivalBtn).not.toHaveAttribute("aria-disabled");
 
     fireEvent.click(arrivalBtn);
+    // Walk-through WT-11: the name and UMRN are checked before the arrival is recorded.
+    const check = screen.getByTestId("ward-arrival-identity");
+    expect(within(check).getByTestId("ward-arrival-identity-check")).toHaveTextContent(/^Check: .+ · .+/);
+    fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));
 
     // After arrival, WF-014 closes and is no longer in the "Coming in" list
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
@@ -549,6 +553,9 @@ describe("ward screen incoming patient arrival confirmation", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Confirm arrival" }),
+    );
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
     const toast = screen.getByTestId("toast");
     expect(toast).toHaveTextContent(/^Arrival recorded for /);

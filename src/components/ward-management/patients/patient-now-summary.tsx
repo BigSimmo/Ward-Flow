@@ -313,7 +313,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                             value:
                               typeof resolved.liveAdmission?.expectedDischargeAt === "number"
                                 ? dayLabel(resolved.liveAdmission.expectedDischargeAt, dayZero).replace(",", "")
-                                : "None",
+                                : // Audit CS3-20: no date recorded is not the same as none expected.
+                                  "Not recorded",
                             label: "Expected out",
                           },
                         ]

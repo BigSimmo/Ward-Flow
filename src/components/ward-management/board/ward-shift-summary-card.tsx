@@ -32,7 +32,9 @@ export function WardShiftSummaryCard({ unit, now }: { unit: Pick<Unit, "id" | "n
     { label: "Left the ward", value: summary.left, testId: "left" },
     { label: "Beds pulled for an incoming patient", value: summary.bedsPulled, testId: "pulled" },
     { label: "Discharges confirmed", value: summary.dischargesConfirmed, testId: "confirmed" },
-    { label: "Expected dates changed", value: summary.datesMoved, testId: "dates" },
+    // Audit TC2-12: only the latest change is kept, so this counts dates whose last change fell in
+    // the shift, and says so.
+    { label: "Expected dates last changed this shift", value: summary.datesMoved, testId: "dates" },
     { label: "Observation levels changed", value: summary.observationChanges, testId: "observations" },
   ];
 

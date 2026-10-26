@@ -892,7 +892,7 @@ placeId?}`, `cadNumber?`, `estimatedAt?`, `acceptedAt?`/`enRouteAt?`/`collectedA
 - **`Override`** (`:718`) — `at`, `by`, `reason: OverrideReason`, `unitIds`, `numConsulted?`,
   `gate?` (which eligibility gate was overridden).
 - **`GenderPlacement`** (`:784`) — `at`, `by`, `unitIds`, `reason`, `wardChecked: true`.
-- **`BedRelease`** (`:1719`) — `id`, `unitId`, `state: BedReleaseState`, `expectedAt`,
+- **`BedRelease`** (`ward-model-bed-release.ts`, moved out of `ward-model.ts` 26 Oct 2026) — `id`, `unitId`, `state: BedReleaseState`, `expectedAt`,
   `waitingOn`, `blocker`, `preparing`, `confirmedAt`/`By`.
 - **`LeaveBed`** (`:1796`) — `id`, `unitId`, `expectedReturn`, `kind?`
   (`"off_ward" | "medical_trip"`), `openWarningAt?`.

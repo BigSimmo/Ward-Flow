@@ -325,10 +325,12 @@ export function WardBedDossierDrawer({
   // Top 25 item 5: due out within the discharge prep window, the barrier is asked for here.
   const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
   const dueForPrep = admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
+  // H-0981 / WS-17: while the blocker form is open the barrier shows as plain text, so recording a
+  // blocker is one choice, not two dropdowns. Its dropdown comes back when the blocker form closes.
   const barrierRow =
     admission && bedItem?.admissionId ? (
       <Row label="Barrier">
-        {onSetBarrier && stayDays !== null ? (
+        {onSetBarrier && stayDays !== null && !quickBlockerOpen ? (
           <select
             className={styles.select}
             aria-label="Discharge barrier"
@@ -775,7 +777,12 @@ export function WardBedDossierDrawer({
                   <Section title="This shift">
                     <dl className={styles.kv}>
                       <Row label="Where">
-                        {isAwayAtEd ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held` : "On the ward"}
+                        {/* WT-31: an incoming patient is not on the ward yet, so one location state. */}
+                        {isAwayAtEd
+                          ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
+                          : bedItem?.status === "incoming"
+                            ? "Arriving"
+                            : "On the ward"}
                       </Row>
                       <Row label="Observation level">{observation}</Row>
                       <Row label="High acuity">{bedItem?.highAcuity ? "Requested" : "Not requested"}</Row>

@@ -37,6 +37,15 @@
   }
 }
 
+/* A1K-01: iPad Safari sends a Mac user agent, so the server draws the desktop tree. On tablet
+   portrait the right column only appears once the page's code says otherwise, which made Home
+   jump. "desktop" at this width exists only before hydration, so hide the column until then. */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  .grid[data-layout="desktop"] > .rightCol {
+    display: none;
+  }
+}
+
 /* ---------- My list ---------- */
 
 .needsCard {
