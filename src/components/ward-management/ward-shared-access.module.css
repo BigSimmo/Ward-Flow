@@ -94,9 +94,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* Layout sweep SHELL-02 (25 Oct 2026): the face stays 28px on touch tablets too, matching the
+   * service pill beside it; the ::after below gives presses their 48px. */
   height: 28px;
-  /* Touch tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
-  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
   border-radius: var(--wf-r-ctl);
