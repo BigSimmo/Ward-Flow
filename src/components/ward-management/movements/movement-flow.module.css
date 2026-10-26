@@ -1145,8 +1145,26 @@
     font-weight: 600;
   }
 
+  /* Layout sweep PT-10: a long caption ("in journey before it ended") wraps under the time in a
+     narrow column, so the route and the closure reason keep their width and take two lines. */
   .row .waitWord {
+    max-width: 6.5rem;
+    white-space: normal;
+    text-align: right;
     text-transform: lowercase;
+  }
+
+  .row .main {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+
+  /* Layout sweep PT-14: the Arrange row and search line up with the tabs and cards above. */
+  .toolbar {
+    padding-inline: 0;
   }
 }
 
@@ -1253,6 +1271,23 @@
 @media (min-width: 48.0625rem) {
   .noDestination {
     display: none;
+  }
+
+  /* Layout sweep PT-09: beside Transport now the worklist is narrow, so the name, route, barrier,
+     legal form and next owner take up to two lines rather than an ellipsis after a few words. */
+  .row .name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .row .main,
+  .row .sub,
+  .row .nextOwner {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
   }
 }
 
