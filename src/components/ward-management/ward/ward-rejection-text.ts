@@ -16,7 +16,7 @@ export const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
   prior_decline: "Prior decline",
   security: "Security",
   gender_designation: "Bed designation",
-  sex_mix: "Sex mix",
+  sex_mix: "Gender mix",
   specialling: "Observation staff",
 };
 

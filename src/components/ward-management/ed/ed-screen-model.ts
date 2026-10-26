@@ -498,8 +498,12 @@ export function isEdInitiatedWithdrawal(movement: Movement): boolean {
 /**
  * L4 (site review 12 Oct 2026): the wait marker beside "In ED" reads the one tier-due rule Home
  * uses (`queueWaitThresholds`, from Settings' "Tier 1 overdue after 1h"), so a T1 patient nine
- * hours in is overdue here as on Home. Reaching the access target (at or over, the ops-16 rule in
- * ward-pressure.ts) also marks overdue.
+ * hours in is marked here as on Home.
+ *
+ * Red means at or over the access target only (Josh, 26 Oct 2026, decision A1, CS3-10): with the
+ * tier-overdue rule also painting red, about half the list was red on a normal day and 6 of 8 rows
+ * on a quiet one, so red stopped meaning anything. Tier due-soon and tier overdue now mark amber.
+ * Only the colour changes: the order of the list does not.
  */
 export function edWaitTone(
   urgency: number,
@@ -507,8 +511,8 @@ export function edWaitTone(
   accessTarget: number,
 ): "danger" | "warning" | undefined {
   const thresholds = queueWaitThresholds(urgency);
-  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment >= accessTarget) return "danger";
-  if (minutesInDepartment >= thresholds.dueSoon) return "warning";
+  if (minutesInDepartment >= accessTarget) return "danger";
+  if (minutesInDepartment >= thresholds.overdue || minutesInDepartment >= thresholds.dueSoon) return "warning";
   return undefined;
 }
 
