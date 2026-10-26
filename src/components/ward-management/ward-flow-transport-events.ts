@@ -1,7 +1,7 @@
 import { numberedBedKind } from "./ward-bed-designation";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
+import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
   CANCEL_TRANSPORT_REASONS,
   GENDER_NO_LONGER_SUITS_REFUSAL,
@@ -675,11 +675,13 @@ export function reduceTransportEvent(
               `BOOK_TRANSPORT was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can book transport`,
             );
           }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
+        } else {
+          // Audit 2 E-20, as in RECORD_TRANSPORT_NEED: with no sending ward (an ED or community
+          // start), no ward desk books the transport; the origin and coordinator do.
           return reject(
             state,
             event,
-            `BOOK_TRANSPORT was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot book transport`,
+            `BOOK_TRANSPORT was raised by ward ${event.actingUnitId}, but this patient did not start on a ward`,
           );
         }
       }
@@ -698,6 +700,22 @@ export function reduceTransportEvent(
           event,
           `BOOK_TRANSPORT actingPlaceId ${event.actingPlaceId} does not name a real community team`,
         );
+      }
+      // Only the team that sent the journey books its transport, matched by name or slug as
+      // WITHDRAW_REFERRAL matches the sending team.
+      if (event.role === "community" && event.actingPlaceId !== undefined) {
+        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        const sendingTeamName = referral?.sendingTeamName;
+        if (
+          sendingTeamName === undefined ||
+          (event.actingPlaceId !== sendingTeamName && event.actingPlaceId !== communityTeamSlug(sendingTeamName))
+        ) {
+          return reject(
+            state,
+            event,
+            `caller community team ${event.actingPlaceId} is not the referral origin team (${sendingTeamName}); only the sending community team can book transport`,
+          );
+        }
       }
       if (!movement.acceptedUnitId && !movement.admissionId) {
         return reject(
