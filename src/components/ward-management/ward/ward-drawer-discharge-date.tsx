@@ -15,7 +15,15 @@ import styles from "./ward-drawer-discharge-date.module.css";
  * discharge date here, with the same day list and typed time as the Patient page. The time is the
  * one typed; nothing is worked out.
  */
-export function WardDrawerDischargeDate({ admissionId, unitId }: { admissionId: string; unitId: string }) {
+export function WardDrawerDischargeDate({
+  admissionId,
+  unitId,
+  hasDate,
+}: {
+  admissionId: string;
+  unitId: string;
+  hasDate: boolean;
+}) {
   const { dispatch, dayZero } = useWardFlowSelect("dispatch", "dayZero");
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
@@ -39,7 +47,7 @@ export function WardDrawerDischargeDate({ admissionId, unitId }: { admissionId: 
           }}
           data-testid="ward-drawer-discharge-date-open"
         >
-          Set discharge date
+          {hasDate ? "Change discharge date" : "Set discharge date"}
         </Button>
       </span>
     );

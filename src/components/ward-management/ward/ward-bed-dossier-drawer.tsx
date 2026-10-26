@@ -321,7 +321,12 @@ export function WardBedDossierDrawer({
   // WT-16: the ward sets or changes the date here, not only the coordinator.
   const dateEditor =
     admission?.state === "occupied" ? (
-      <WardDrawerDischargeDate key={admission.id} admissionId={admission.id} unitId={unit.id} />
+      <WardDrawerDischargeDate
+        key={admission.id}
+        admissionId={admission.id}
+        unitId={unit.id}
+        hasDate={admission.expectedDischargeAt != null}
+      />
     ) : null;
 
   const dateMoves =

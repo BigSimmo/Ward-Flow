@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Plus, Tv } from "lucide-react";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 import {
@@ -90,6 +91,9 @@ export function EdOverview({
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
   // DA-09: an ED desk opens only its own department and not the TV, so those links follow the role filter.
   const canOpen = useCanOpenHref();
+  // WT-24: an ED desk's copy holds only its own department's people, so another department's 0 would
+  // be a false figure. Those tiles say the figure is not shown here instead.
+  const edDesk = useEffectiveWardAccess().role === "ed";
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -232,6 +236,7 @@ export function EdOverview({
           {departments.map((department) => {
             const isCurrent = department.id === departmentId;
             const href = `/ward-flow/ed/${department.id}`;
+            const notShown = edDesk && !isCurrent && !canOpen(href);
             const tile = {
               className: cx(styles.tile, isCurrent && styles.current),
               "data-ed": department.id,
@@ -245,11 +250,11 @@ export function EdOverview({
                   <span className={styles.service}>{serviceShort(department.service)}</span>
                 </span>
                 <span className={styles.waiting}>
-                  <b>{department.waiting}</b>
-                  <small>waiting</small>
+                  {notShown ? <small>Not shown at this desk</small> : <b>{department.waiting}</b>}
+                  {notShown ? null : <small>waiting</small>}
                 </span>
                 <span className={styles.longest}>
-                  {department.waiting === 0 ? (
+                  {notShown ? null : department.waiting === 0 ? (
                     <span className={styles.quiet}>No one waiting</span>
                   ) : (
                     <>
