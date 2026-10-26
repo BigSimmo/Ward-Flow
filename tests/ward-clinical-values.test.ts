@@ -296,8 +296,9 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   },
 ];
 
-/** Synthetic fixtures build made-up records; their times are data, not thresholds. */
-const FIXTURE_FILE = /(?:-seed\.ts|^ward-movements\.ts)$/;
+/** Synthetic fixtures build made-up records; their times are data, not thresholds.
+ *  F-17 (26 Oct 2026): the seeded referrals moved out of ward-movements.ts into its sibling. */
+const FIXTURE_FILE = /(?:-seed\.ts|^ward-movements(?:-referrals)?\.ts)$/;
 const VALUES_FILE = "ward-clinical-values.ts";
 
 function wardFiles(dir: string): string[] {
