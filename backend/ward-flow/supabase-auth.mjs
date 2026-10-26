@@ -141,6 +141,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     }
   }
 
+  /** @type {{ keys: Map<any, any>, listed: Set<any>, fetchedAt: number, attemptedAt: number, pending: Promise<void> | null }} */
   const jwks = { keys: new Map(), listed: new Set(), fetchedAt: -Infinity, attemptedAt: -Infinity, pending: null };
   /**
    * The usable published key for a kid, and whether a current key list (younger than the cache
@@ -207,6 +208,7 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
   }
 
   const confirmed = new Map();
+  /** @type {{ ids: Set<any>, nextReadAt: number, pending: Promise<void> | null, startedAt: number }} */
   const holders = { ids: new Set(), nextReadAt: -Infinity, pending: null, startedAt: -Infinity };
   /** Start a read. Only the latest read may change the list, so an abandoned one that ends late is ignored. */
   function startRead() {
@@ -334,6 +336,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
    * (above), `aal`, `secondStep`, and `sessionId`, the sign-in's own id, which a sign-out names so
    * this server refuses that sign-in's tokens before they expire. The subject is still the only
    * return value.
+   * @param {any} authorization
+   * @param {{ clientAddress?: string, session?: { signedInAt?: number, startedAt?: number, aal?: string, secondStep?: boolean, sessionId?: string } | null }} [options]
    */
   return async (authorization, { clientAddress = "unknown", session = null } = {}) => {
     const verified = (userId, claims) => {

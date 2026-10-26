@@ -24,10 +24,13 @@ function vapidKeys() {
   const publicJwk = publicKey.export({ format: "jwk" });
   const raw = Buffer.concat([
     Buffer.from([4]),
-    Buffer.from(publicJwk.x, "base64url"),
-    Buffer.from(publicJwk.y, "base64url"),
+    Buffer.from(/** @type {string} */ (publicJwk.x), "base64url"),
+    Buffer.from(/** @type {string} */ (publicJwk.y), "base64url"),
   ]);
-  return { publicKey: raw.toString("base64url"), privateKey: privateKey.export({ format: "jwk" }).d };
+  return {
+    publicKey: raw.toString("base64url"),
+    privateKey: /** @type {string} */ (privateKey.export({ format: "jwk" }).d),
+  };
 }
 const keys = vapidKeys();
 const env = {
@@ -231,12 +234,13 @@ test("the real web-push library accepts the configuration and encrypts the paylo
     keys: {
       p256dh: Buffer.concat([
         Buffer.from([4]),
-        Buffer.from(browser.x, "base64url"),
-        Buffer.from(browser.y, "base64url"),
+        Buffer.from(/** @type {string} */ (browser.x), "base64url"),
+        Buffer.from(/** @type {string} */ (browser.y), "base64url"),
       ]).toString("base64url"),
       auth: Buffer.alloc(16, 9).toString("base64url"),
     },
   });
+  assert.ok(subscription);
   const payload = JSON.stringify(pushPayload([{ id: "x", site: "Royal Perth Hospital" }]));
   const details = webpush.generateRequestDetails(
     { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
@@ -254,6 +258,9 @@ test("the real web-push library accepts the configuration and encrypts the paylo
 
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
+/**
+ * @param {{ actor?: string, push?: any, limit?: boolean, outcome?: string | null, viewer?: (...args: any[]) => Promise<any>, pushByRole?: (view: any) => boolean, sessionLimitMinutes?: number }} [options]
+ */
 function routes({
   actor = coordinator,
   push = readPushConfig(env),
@@ -456,7 +463,7 @@ test("configuration turns phone push on only with the shared workspace and all t
     }),
   };
   assert.equal(readConfig(shared).push, null);
-  assert.equal(readConfig({ ...shared, ...env }).push.publicKey, keys.publicKey);
+  assert.equal(readConfig({ ...shared, ...env }).push?.publicKey, keys.publicKey);
 });
 
 test("error diagnostics retain protocol codes but never arbitrary exception text", () => {

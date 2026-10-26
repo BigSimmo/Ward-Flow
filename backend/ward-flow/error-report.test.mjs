@@ -18,7 +18,10 @@ test("a DSN maps to its envelope address without putting the key in the URL", ()
     endpoint: "https://o123.ingest.de.sentry.io/api/4567/envelope/",
     auth: "Sentry sentry_version=7, sentry_key=publickey, sentry_client=ward-flow-backend/0.1.0",
   });
-  assert.equal(sentryTarget("https://k@self.example/sentry/9").endpoint, "https://self.example/sentry/api/9/envelope/");
+  assert.equal(
+    sentryTarget("https://k@self.example/sentry/9")?.endpoint,
+    "https://self.example/sentry/api/9/envelope/",
+  );
 });
 
 test("a report holds only the fixed event name, allow-listed error fields and labels", () => {
@@ -58,6 +61,7 @@ test("each failure kind is sent at most once per interval and send errors are sw
       },
     },
   );
+  assert.ok(report);
   report({ event: "ward_backend_unhandled_failure", errorName: "Error" });
   report({ event: "ward_backend_unhandled_failure", errorName: "Error" });
   report({ event: "ward_backend_push_sweep_failure", errorName: "Error" });

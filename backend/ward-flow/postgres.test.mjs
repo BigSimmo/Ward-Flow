@@ -771,7 +771,7 @@ test(
       });
       await t.test("a slow push service does not hold the save response", async () => {
         /** @type {(value: unknown) => void} */
-        let release;
+        let release = () => assert.fail("the held send was never created");
         const held = new Promise((resolve) => {
           release = resolve;
         });
@@ -924,7 +924,7 @@ test(
     const engine = await import("./dist/engine.mjs");
     const admin = new Pool({ connectionString: url, max: 2 });
     const database = `wardflow_rls_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     // Each pool acts as one role from the start of every connection, as the real logins do. The
     // forced drop at the end can reach a connection that is still closing; that notice is expected
@@ -1155,7 +1155,7 @@ test(
 test("real PostgreSQL: the Supabase runtime grants pass the runtime role check", { skip: !url }, async () => {
   const admin = new Pool({ connectionString: url, max: 1 });
   const database = `wardflow_supa_${randomUUID().replaceAll("-", "")}`;
-  const target = new URL(url);
+  const target = new URL(/** @type {string} */ (url));
   target.pathname = `/${database}`;
   // Supabase's browser roles, which the script revokes from by name.
   for (const role of ["anon", "authenticated"])
@@ -1489,7 +1489,7 @@ test(
       });
       const choose = await store.viewer(nurse);
       assert.equal(choose.status, "choose");
-      assert.equal(choose.choices.length, 2);
+      assert.equal(choose.choices?.length, 2);
       assert.equal((await store.viewer(nurse, { workingAs: nurseView.membershipId })).access.role, "ward");
       assert.deepEqual(await store.viewer(nurse, { workingAs: "bootstrap" }), { status: "none" });
 
@@ -1825,7 +1825,7 @@ test(
       const picking = await store.viewer(second, { bootstrap: true });
       assert.equal(picking.status, "choose");
       assert.deepEqual(
-        picking.choices.map((choice) => choice.workingAs),
+        picking.choices?.map((choice) => choice.workingAs),
         ["bootstrap", extra.id],
       );
       assert.deepEqual(
@@ -2102,7 +2102,10 @@ test(
     } finally {
       await Promise.all(
         servers.map(
-          (server) => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+          (server) =>
+            /** @type {Promise<void>} */ (
+              new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+            ),
         ),
       );
       await Promise.all(pools.map((pool) => pool.end()));
@@ -2524,6 +2527,7 @@ test("no undoable referral step copies the referrer's or clearance contact's det
     applied = engine.applyCommand(world, event, new Date(at.getTime() + (index + 1) * 60_000));
     assert.equal(applied.outcome, "accepted", `${event.type}: ${applied.reason}`);
     const facts = JSON.stringify(applied.changes.facts);
+    assert.ok(applied.changes.facts, event.type);
     assert.ok(!Object.hasOwn(applied.changes.facts, "undoRecords"), event.type);
     for (const secret of CONTACT_STRINGS) assert.ok(!facts.includes(secret), `${event.type} audits ${secret}`);
     assert.ok(
@@ -2668,6 +2672,7 @@ test("the synthetic-data guard's refusal names the kind of identifier, never the
   const engine = await import("./dist/engine.mjs");
   const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
   const reason = engine.privacyRefusal({ ...refresh, note: "Ring 0412 345 678" });
+  assert.ok(reason);
   assert.match(reason, /telephone number/);
   assert.ok(!reason.includes("0412"));
   assert.equal(engine.privacyRefusal({ ...refresh, note: "Ring 08 5550 0142" }), null);

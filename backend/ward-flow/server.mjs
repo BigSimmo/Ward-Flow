@@ -316,12 +316,14 @@ export function registerShutdown(server, pool, signals = process) {
   const close = () => {
     shutdown ??= (async () => {
       try {
-        await new Promise((resolve, reject) => {
-          server.close((error) => {
-            if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
-            else resolve();
-          });
-        });
+        await /** @type {Promise<void>} */ (
+          new Promise((resolve, reject) => {
+            server.close((error) => {
+              if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
+              else resolve();
+            });
+          })
+        );
       } finally {
         await pool?.end();
       }

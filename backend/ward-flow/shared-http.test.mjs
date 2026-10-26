@@ -184,6 +184,7 @@ test("every shared request is logged with its request ID and closed fields only"
   const response = await handler(request("/commands", body));
   assert.equal(response.status, 409);
   const requestId = response.headers.get("x-request-id");
+  assert.ok(requestId);
   assert.match(requestId, /^[0-9a-f-]{36}$/);
   assert.equal(logs.length, 1);
   const { durationMs, ...entry } = logs[0];
@@ -312,9 +313,9 @@ test("the poll names its revision; an unchanged workspace answers with the clock
   // A member desk names its access context (audit F-04); anything but a 64-hex hash is ignored.
   const context = "a".repeat(64);
   await handler(request(`?since=7&context=${context}`));
-  assert.equal(calls.at(-1).at(-1), context);
+  assert.equal(calls.at(-1)?.at(-1), context);
   await handler(request("?since=7&context=not-a-hash"));
-  assert.equal(calls.at(-1).at(-1), null);
+  assert.equal(calls.at(-1)?.at(-1), null);
   for (const since of ["0", "x", "1.5"]) {
     const { calls: plain, handler: other } = setup();
     assert.equal((await other(request(`?since=${since}`))).status, 200);
@@ -402,7 +403,7 @@ test("cross-origin calls may name the role they work as", async () => {
   });
   const response = await handler(preflight);
   assert.equal(response.status, 204);
-  assert.match(response.headers.get("access-control-allow-headers"), /X-Ward-Working-As/);
+  assert.match(response.headers.get("access-control-allow-headers") ?? "", /X-Ward-Working-As/);
 });
 
 test("access and break glass routes check their fields and pass the store's answer through", async () => {

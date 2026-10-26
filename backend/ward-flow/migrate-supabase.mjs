@@ -59,7 +59,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       "Unrecognised or unsafe Ward Flow database namespace",
       "Unsupported database migration version",
     ]);
-    const reason = safeReasons.has(error?.message) ? `: ${error.message}` : "";
+    const message = /** @type {{ message?: unknown } | null | undefined} */ (error)?.message;
+    const reason = typeof message === "string" && safeReasons.has(message) ? `: ${message}` : "";
     console.error(
       `Supabase migration refused or unavailable; inspect the private administrator configuration${reason}`,
     );
