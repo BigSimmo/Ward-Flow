@@ -154,9 +154,9 @@ const OWNER_WORDS: Record<DelayOwnerId, string> = {
 function nextStepFor(cause: DelayCause | undefined, movement: Movement, moving: boolean): [string, CensusGlyph] {
   switch (cause) {
     case "legal_breached":
-      return ["Form due time passed", "act"];
+      return ["Form due time (as written) passed", "act"];
     case "legal_expiring":
-      return ["Form due within the hour", "risk"];
+      return ["Form due (as written) within the hour", "risk"];
     case "no_eligible_bed":
       return ["No suitable bed", "risk"];
     case "awaiting_ward_answer":
