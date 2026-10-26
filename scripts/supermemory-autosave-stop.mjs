@@ -122,11 +122,7 @@ export function readTurn(entries) {
 
 export function hasSignal(turn) {
   if (!turn || turn.saved) return false;
-  return (
-    turn.worked ||
-    HUMAN_SIGNALS.some((r) => r.test(turn.human)) ||
-    AGENT_SIGNALS.some((r) => r.test(turn.agent))
-  );
+  return turn.worked || HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
 }
 
 export const REASON = [
