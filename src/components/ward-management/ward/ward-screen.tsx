@@ -1085,7 +1085,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) =>
         setToastMessage(
           wardCommandFailure(outcome) ??
-            `${morningRollupTimeLabel} Morning Bed Rollup confirmed: ${releasesCountedToday.length} discharges planned today.`,
+            `Morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
         ),
     );
   }
