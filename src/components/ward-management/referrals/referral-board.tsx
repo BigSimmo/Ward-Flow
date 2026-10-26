@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, referralPresentationLists } from "../ward-partial-view-presenters";
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
-import { acceptedWardOf } from "./accepted-ward-referral";
+import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -84,6 +84,9 @@ import { DecidedSection, QueuedSection } from "./referral-board-sections";
 const BedMeetingSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.BedMeetingSheet), { ssr: false });
 const IsbarSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.IsbarSheet), { ssr: false });
 const ShortcutsSheet = dynamic(() => import("./referral-board-sheets").then((m) => m.ShortcutsSheet), { ssr: false });
+const PullAcceptedReferral = dynamic(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral), {
+  ssr: false,
+});
 import a from "./referral-board.module.css";
 import p from "./referral-board-phone.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
@@ -309,6 +312,9 @@ export function ReferralBoard({
   const [phoneTimelineOpen, setPhoneTimelineOpen] = useState(false);
   const [phonePatientOpen, setPhonePatientOpen] = useState(false);
   const [sheet, setSheet] = useState<BoardSheet>(null);
+  // Held whole, not looked up: the referral leaves the awaiting list once its journey starts,
+  // before the bed is pulled, and the sheet must stay open for that second step.
+  const [pulling, setPulling] = useState<AcceptedAwaitingPull>();
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -416,6 +422,12 @@ export function ReferralBoard({
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
+  // WS-03: an accepted referral with no bed pulled, which the coordinator can pull here in one step.
+  const awaitingPull = useMemo(
+    () => (readOnly ? [] : acceptedReferralsAwaitingPull(referrals, units, movements)),
+    [readOnly, referrals, units, movements],
+  );
+  const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
@@ -495,6 +507,17 @@ export function ReferralBoard({
     setView("queue");
     handleSelect((after ?? overdueQueued[0]!).id);
   }
+
+  // WS-04 (workflow speed audit, 26 Oct 2026): Decide on Home opens this board on its referral. The
+  // decision is brought into view once, so Accept and Decline are not left below the board's header.
+  const linkedOpenScrolled = useRef(false);
+  const openedFromLink = chosenReferralId === undefined && linkedReferralId !== null;
+  useEffect(() => {
+    if (!openedFromLink || selectedReferralId !== linkedReferralId || linkedOpenScrolled.current) return;
+    linkedOpenScrolled.current = true;
+    if (typeof detailRef.current?.scrollIntoView === "function")
+      detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+  }, [openedFromLink, selectedReferralId, linkedReferralId]);
 
   useEffect(() => {
     if (!selectedReferralId) return;
@@ -1015,7 +1038,17 @@ export function ReferralBoard({
                             >
                               Open movement
                             </Link>
-                          ) : readOnly ? null : (
+                          ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
+                            // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setPulling(selectedToPull)}
+                              data-testid="ward-referral-pull-bed"
+                            >
+                              Pull the bed
+                            </Button>
+                          ) : (
                             <Link
                               href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
@@ -1294,6 +1327,17 @@ export function ReferralBoard({
           summary={bedsSummary}
         />
         <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
+        {pulling ? (
+          <Sheet
+            open
+            onClose={() => setPulling(undefined)}
+            title="Pull the bed"
+            description="Anything already recorded is filled in. Check the details, then pull the bed."
+            testId="ward-referral-pull-sheet"
+          >
+            <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
+          </Sheet>
+        ) : null}
 
         <WardPrototypeFooter
           testId="ward-referral-board-governance"

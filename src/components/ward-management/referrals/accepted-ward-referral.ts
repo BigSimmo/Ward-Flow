@@ -1,6 +1,10 @@
 import type { Admission } from "../ward-admissions";
-import type { Movement, Referral, Unit } from "../ward-model";
+import type { Instant } from "../ward-clock";
+import { isWaitingInEd } from "../ward-ed-presence";
+import type { LegalStatus, Movement, Referral, Unit } from "../ward-model";
+import type { Observation } from "../ward-observation";
 import { acceptedAddressing } from "../ward-referrals";
+import { allEmergencyDepartments } from "../ward-sites";
 
 /**
  * S-9 (audit 13 Oct 2026): accepting a referral into a ward pulls no bed and creates no movement
@@ -51,3 +55,90 @@ export function acceptedWardReferralFor(
   }
   return undefined;
 }
+
+/** An accepted ward referral the coordinator can pull a bed for, with the ward that accepted it. */
+export type AcceptedAwaitingPull = { referral: Referral; unitId: string; unitName: string };
+
+/**
+ * WS-02 (workflow speed audit, 26 Oct 2026): every referral a ward has accepted that still has no
+ * bed pulled, oldest decision first. Only the referrals a journey can start from directly: an ED
+ * referral or a community referral (D-76), accepted on a ward arm that its referrer has not
+ * withdrawn, with no bed held on that arm and no live journey raised from it. A journey that closed
+ * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then.
+ */
+export function acceptedReferralsAwaitingPull(
+  referrals: readonly Referral[],
+  units: readonly Pick<Unit, "id" | "name">[],
+  movements: readonly Pick<Movement, "referralId" | "closure">[],
+): AcceptedAwaitingPull[] {
+  return referrals
+    .flatMap((referral) => {
+      if (referral.source !== "ed_medical" && referral.source !== "community") return [];
+      const accepted = acceptedAddressing(referral);
+      if (!accepted || accepted.destination.kind !== "psychiatric_ward" || accepted.withdrawnAt !== undefined)
+        return [];
+      if (accepted.heldBedNumber !== undefined) return [];
+      if (
+        movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        )
+      )
+        return [];
+      const ward = acceptedWardOf(referral, units);
+      return ward ? [{ referral, ...ward, decidedAt: accepted.decidedAt ?? referral.raisedAt }] : [];
+    })
+    .sort((a, b) => a.decidedAt - b.decidedAt)
+    .map(({ referral, unitId, unitName }) => ({ referral, unitId, unitName }));
+}
+
+/** What a one-step pull can reuse, and where each value came from. Absent means nothing recorded. */
+export type RecordedPullDetails = {
+  legalStatus?: LegalStatus;
+  /** A form code, or `null` when the ED board records no form. Absent when there is no ED record. */
+  legalFormCode?: string | null;
+  /** The due time a person typed on the ED board's form. Carried, never computed. */
+  legalFormDueAt?: Instant;
+  observation?: Observation;
+  /** Where the legal form and observation came from: the person's open journey on the ED board. */
+  fromEdBoard: boolean;
+};
+
+/**
+ * WS-03 (workflow speed audit, 26 Oct 2026): the legal details already recorded for this person,
+ * so pulling the bed does not ask for them again. The person's open wait on the referring ED's
+ * board is the newest record of legal status, form and observation level; the referral's own
+ * recorded legal status is used when there is no such wait. Nothing is derived: a form is never
+ * worked out from a status, and an observation level is never inferred.
+ */
+export function recordedPullDetails(referral: Referral, movements: readonly Movement[]): RecordedPullDetails {
+  const ed = allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode);
+  const edWait =
+    referral.patientId === undefined || referral.source !== "ed_medical" || !ed
+      ? undefined
+      : movements
+          .filter(
+            (movement) =>
+              movement.patientId === referral.patientId &&
+              movement.originEdId === ed.id &&
+              movement.referralId !== referral.id &&
+              isWaitingInEd(movement),
+          )
+          .sort((a, b) => b.openedAt - a.openedAt)[0];
+  const referralStatus = LEGAL_STATUSES.find((status) => status === referral.intake?.legalStatus);
+  if (!edWait) return { ...(referralStatus ? { legalStatus: referralStatus } : {}), fromEdBoard: false };
+  return {
+    legalStatus: edWait.legalStatus,
+    legalFormCode: edWait.legalForm?.code ?? null,
+    ...(edWait.legalForm?.dueAt === undefined ? {} : { legalFormDueAt: edWait.legalForm.dueAt }),
+    observation: edWait.observation,
+    fromEdBoard: true,
+  };
+}
+
+/** Every `LegalStatus`, in the order the pickers list them. */
+export const LEGAL_STATUSES: readonly LegalStatus[] = [
+  "Voluntary",
+  "Referred for psychiatric examination",
+  "Detained awaiting examination",
+  "Involuntary inpatient",
+];
