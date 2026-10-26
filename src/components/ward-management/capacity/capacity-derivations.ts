@@ -219,6 +219,8 @@ export type NetworkWardRow = {
    * derivation here.**
    */
   confirmed: number | undefined;
+  /** How many of `confirmed` are also held up — `capacityBreakdown().confirmedHeldUpToday` (A16). */
+  confirmedHeldUp: number | undefined;
   /** Releases this ward expects today and has not yet confirmed — `capacityBreakdown().expectedToday`. */
   expected: number | undefined;
   /** Releases held up — `capacityBreakdown().blockedToday`, which tests `release.blocker !== null`. */
@@ -395,6 +397,8 @@ function wardReleaseFigures(unit: Unit, { now, releases, leave }: NetworkWardInp
   return {
     // 🔴 ALL FIVE FROM THE CANONICAL DERIVATIONS, NEVER COUNTED HERE — see the row type's note.
     confirmed: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
+    confirmedHeldUp:
+      releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedHeldUpToday,
     expected: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).expectedToday,
     blocked: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).blockedToday,
     // WLQ-10: unscoped by day, deliberately — see the field's own doc comment on `NetworkWardRow`.
@@ -503,6 +507,18 @@ export function freeingCellText(freeing: number | undefined): string {
    * none*. Collapsing them would be the fabrication this file's other comments exist to prevent.
    */
   return freeing === undefined ? "Not tracked here" : countCellText(freeing);
+}
+
+/**
+ * The note under the Confirmed cell (Josh, 26 Oct 2026, decision A16): "2" then "(1 also held up)".
+ * A confirmed discharge that is also held up stays in Confirmed here, and the bed meeting leaves it
+ * out of its own "confirmed", so the cell names the overlap rather than letting the two screens
+ * disagree silently. `undefined` when there is no overlap to name.
+ */
+export function confirmedHeldUpNote(confirmed: number | undefined, alsoHeldUp: number | undefined): string | undefined {
+  return confirmed === undefined || alsoHeldUp === undefined || alsoHeldUp === 0
+    ? undefined
+    : `(${alsoHeldUp} also held up)`;
 }
 
 /**
@@ -663,6 +679,7 @@ export type NetworkServiceGroupTotals = {
   freeing: number | undefined;
   dischargesDueToday: number | undefined;
   confirmed: number | undefined;
+  confirmedHeldUp: number | undefined;
   expected: number | undefined;
   blocked: number | undefined;
   pulled: number;
@@ -689,6 +706,7 @@ export function networkServiceGroupTotals(rows: NetworkWardRow[]): NetworkServic
     freeing: trackedSum(rows.map((row) => row.freeing)),
     dischargesDueToday: trackedSum(rows.map((row) => row.dischargesDueToday)),
     confirmed: trackedSum(rows.map((row) => row.confirmed)),
+    confirmedHeldUp: trackedSum(rows.map((row) => row.confirmedHeldUp)),
     expected: trackedSum(rows.map((row) => row.expected)),
     blocked: trackedSum(rows.map((row) => row.blocked)),
     pulled: rows.reduce((sum, row) => sum + row.pulled, 0),

@@ -124,7 +124,7 @@ function observationReviewTimeUnreadable(draft: ReferralDraftAnswers): boolean {
   return typed !== "" && minuteOfDayFromClockText(typed) === undefined;
 }
 
-/** A question on the ED "Raise into a movement" form that can still be unanswered. */
+/** A question on the ED "Ask for a bed" form that can still be unanswered. */
 export type ReferralDraftField =
   | "patient"
   | "cohort"

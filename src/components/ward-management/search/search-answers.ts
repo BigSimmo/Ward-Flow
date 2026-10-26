@@ -48,8 +48,8 @@ const QUESTIONS: readonly QuestionDefinition[] = [
   },
   {
     id: "found",
-    heading: "Bed found",
-    phrases: /^(?:bed found|beds found|bed reserved|reserved beds?)$/,
+    heading: "Accepted",
+    phrases: /^(?:accepted|bed found|beds found|bed reserved|reserved beds?)$/,
     test: (row) => row.group === "found",
   },
   {
