@@ -42,6 +42,8 @@ import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
+/** How long the first connection may wait before Reconnect is offered: one shared request's limit. */
+const CONNECTING_STALL_MS = 15_000;
 const UNAVAILABLE_ACCESS_MESSAGE =
   "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
 /** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
@@ -659,6 +661,24 @@ function WardSharedWorkspaceContent({
     );
     return () => clearTimeout(timer);
   }, [connection.accessUntil, checkedAt]);
+  // #805: while the saved sign-in is checked and the board first read, nothing has failed, so the
+  // screen says so instead of offering Reconnect or a sign-in button, which read as a sign-out.
+  // Reconnect comes back only if the wait runs past the request limit without an answer.
+  const connecting =
+    connection.enabled &&
+    connection.status === "loading" &&
+    !connection.error &&
+    !connection.credentials?.open &&
+    !connection.snapshot;
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setStalled(true), CONNECTING_STALL_MS);
+    return () => {
+      clearTimeout(timer);
+      setStalled(false);
+    };
+  }, [connecting]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
@@ -702,6 +722,27 @@ function WardSharedWorkspaceContent({
         onSignOut={connection.signOut}
       />
     );
+  if (connecting)
+    return (
+      <main id="main-content" className={styles.notice} aria-label="Opening Ward Flow" aria-busy="true">
+        <h1>Opening Ward Flow</h1>
+        <p role="status" data-testid="ward-shared-connecting">
+          {connection.signedIn
+            ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
+            : "Checking your sign-in."}
+        </p>
+        {stalled && (
+          <button type="button" onClick={connection.retry}>
+            {connection.signedIn ? "Reconnect" : "Try again"}
+          </button>
+        )}
+        {connection.signedIn && (
+          <button type="button" onClick={connection.signOut}>
+            Sign out
+          </button>
+        )}
+      </main>
+    );
   if (!connection.signedIn || !connection.snapshot)
     return (
       <main
@@ -713,11 +754,6 @@ function WardSharedWorkspaceContent({
         <h1>Ward Flow sign-in</h1>
         <p>Shared synthetic workspace. You see the screens your role needs.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
-        {connection.signedIn && connection.status === "loading" && !connection.error && (
-          <p role="status" data-testid="ward-shared-connecting">
-            Signed in. Connecting to the shared workspace. This can take up to 15 seconds.
-          </p>
-        )}
         {connection.credentials?.open ? (
           <WardCredentialFields form={connection.credentials} />
         ) : connection.signedIn && connection.status !== "not-authorised" ? (
