@@ -8,7 +8,13 @@ import {
 } from "../ward-model";
 import { NOT_ON_SENDING_WARD_REASONS } from "../ward-change-reasons";
 import { COMMUNITY_REFERRAL_PURPOSES } from "../ward-model-referral-parts";
-import { CLEARANCE_CHECKS, CLEARANCE_STATUSES, ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
+import {
+  CLEARANCE_CHECKS,
+  CLEARANCE_STATUSES,
+  ED_ARRIVAL_MODES,
+  FIRST_CONTACT_TARGETS,
+  REFERRAL_GENDER_NOT_RECORDED,
+} from "./referral-submission";
 import type { KeptDraft } from "./ward-referral-drawer-model";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -78,7 +84,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
     !oneOf(value.homeRegion, ["", ...HOME_REGIONS]) ||
     !oneOf(value.sourceKind, ["ed", "community"]) ||
     !oneOf(value.referralSex, RECORDED_SEXES) ||
-    !oneOf(value.referralGender, ["", ...REFERRAL_GENDERS]) ||
+    !oneOf(value.referralGender, ["", REFERRAL_GENDER_NOT_RECORDED, ...REFERRAL_GENDERS]) ||
     !optional(value.atsCategory, (item) => oneOf(item, ATS_CATEGORIES)) ||
     !optional(value.communityPurpose, (item) => oneOf(item, COMMUNITY_REFERRAL_PURPOSES)) ||
     !optional(value.unidentified, (item) => item === null || string(item)) ||

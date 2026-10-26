@@ -2904,6 +2904,13 @@
     min-width: 0;
     height: var(--wf-touch, 44px);
   }
+
+  /* Equal shares when they fit, but a tab never shrinks below its label and count: while the record
+     loads, all five tabs show with counts and drew over each other at 360 px. The track scrolls.
+     Two classes, so this outranks the screen's 44px button floor. */
+  .v6Tabs .v6Tab {
+    min-width: max-content;
+  }
 }
 
 /* v10 Patient, phone (11 Oct 2026): the mode as the eyebrow, one identity line under the name,

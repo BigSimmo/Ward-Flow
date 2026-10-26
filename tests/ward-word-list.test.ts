@@ -58,8 +58,6 @@ const BANNED: readonly Banned[] = [
 
 /** Exact counts of banned phrases left in files other work owns on 24 Oct 2026. Lower only. */
 const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  // Owned by the closing-the-loop features work when this was written.
-  "src/components/ward-management/ward-history.ts": { "held bed released after transport": 2 },
   // A statistics claim naming the `averageWaitlistWaitMinutes` field, not a patient-facing label.
   "src/components/ward-management/statistics/statistics-claims-other-surfaces.ts": { "the waitlist": 1 },
 };

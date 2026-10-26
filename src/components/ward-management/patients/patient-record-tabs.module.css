@@ -192,6 +192,30 @@ td.wrap {
     white-space: normal;
     overflow: visible;
   }
+
+  /* "Documents" is never broken mid-word beside its count and button: the count and
+     Record document details move to their own line, at the right, when the head is short of room. */
+  .docsHead {
+    flex-wrap: wrap;
+  }
+
+  .docsHead h2 {
+    overflow-wrap: normal;
+  }
+
+  .docsHead > div:last-child {
+    margin-left: auto;
+  }
+}
+
+/* The Form column sizes to its chip, so "Form 4A" is never cut at 360 px (layout sweep PT-03
+   leftover). The shared table gives every cell an equal share and an ellipsis. */
+table th.formCol,
+table td.formCol {
+  width: 1%;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .form {

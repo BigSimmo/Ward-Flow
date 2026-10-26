@@ -1001,6 +1001,16 @@
   color: var(--wf-ink-2);
 }
 
+/* WS-01: the gender review note under Bed requirements, said before Send. */
+.reviewNote {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
 .confirmRow {
   display: flex;
   flex-wrap: wrap;

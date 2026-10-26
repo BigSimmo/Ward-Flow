@@ -570,6 +570,7 @@ test("a verified token reports when the account last signed in, for the step-up 
     signedInAt: signedIn * 1000,
     startedAt: (signedIn - 600) * 1000,
     aal: "aal1",
+    secondStep: false,
     sessionId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
   });
   // A token with no sign-in record leaves the time unknown, so step-up asks again. A session id
@@ -583,4 +584,21 @@ test("a verified token reports when the account last signed in, for the step-up 
   const refused = {};
   await assert.rejects(verify(`${token}x`, { session: refused }));
   assert.deepEqual(refused, {});
+});
+
+test("a verified token reports whether the sign-in finished a second step (Part B item 49)", async () => {
+  const { verify } = setup();
+  const at = Math.floor(Date.now() / 1000) - 60;
+  const read = async (extra) => {
+    const session = {};
+    await verify(signed("ES256", "ec-1", claims(extra)), { session });
+    return session.secondStep;
+  };
+  // A Supabase factor raises the sign-in to aal2.
+  assert.equal(await read({ aal: "aal2", amr: [{ method: "totp", timestamp: at }] }), true);
+  // The health service's own single sign-on applies its multi-factor rule at its identity provider.
+  assert.equal(await read({ aal: "aal1", amr: [{ method: "sso/saml", timestamp: at }] }), true);
+  // A password alone, or a token that says nothing, is not a second step.
+  assert.equal(await read({ aal: "aal1", amr: [{ method: "password", timestamp: at }] }), false);
+  assert.equal(await read({}), false);
 });
