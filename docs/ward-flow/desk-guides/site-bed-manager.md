@@ -1,6 +1,6 @@
 # Desk guide: Site bed manager
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You look after bed flow for one hospital site. On **Capacity** and **Wards** you see your own site
 in detail and other sites as bed counts only.
@@ -8,6 +8,9 @@ in detail and other sites as bed counts only.
 ## What you see first
 
 **Capacity**, for your site. Your main menu: **Capacity, Wards, Movements, Waiting, Handover**.
+
+On a phone, the bar at the bottom has **Capacity, Wards, Create, Alerts, Handover**. Other pages
+are under **Menu**.
 
 ## Jobs you do most
 

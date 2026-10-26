@@ -1,6 +1,6 @@
 # Desk guide: ED mental health clinician
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You look after mental health patients waiting in your own emergency department.
 
@@ -8,6 +8,9 @@ You look after mental health patients waiting in your own emergency department.
 
 **My ED board**: your department's patients, longest wait first, and where each referral stands.
 Your main menu: **My ED board, My referrals, New referral, Find a bed**.
+
+On a phone, the bar at the bottom has **My ED, Referrals, Create, Alerts, Find a bed**. **Create**
+holds **New referral**.
 
 ## Jobs you do most
 
