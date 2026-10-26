@@ -147,9 +147,11 @@ describe("an observation draft's editing baseline", () => {
     (kind) => {
       const seed = seedWardFlowState();
       const held = { ...seed.admissions.find((admission) => admission.state === "occupied")!, id: "WF-OBS-ADMISSION" };
+      // The movement holds this bed, so it is accepted by the bed's ward, the ward acting below.
       const movement = {
         ...waiting().movements[0],
         admissionId: held.id,
+        acceptedUnitId: held.unitId,
         observationChanges: [{ at: NOW - 5, from: observationAt("within_sight"), to: GENERAL_OBSERVATION }],
       };
       const admission = {
@@ -161,7 +163,7 @@ describe("an observation draft's editing baseline", () => {
       const state = { ...seed, movements: [movement], admissions: [admission], rejections: [] };
       const target =
         kind === "movement"
-          ? { kind, movementId: movement.id }
+          ? { kind, movementId: movement.id, actingUnitId: held.unitId }
           : { kind, admissionId: admission.id, actingUnitId: admission.unitId };
       const event = {
         ...command(
@@ -219,6 +221,7 @@ describe("an observation draft's editing baseline", () => {
       const movement = {
         ...waiting().movements[0],
         admissionId: held.id,
+        acceptedUnitId: held.unitId,
         observation: kind === "movement" ? GENERAL_OBSERVATION : observationAt("arms_length"),
       };
       const admission = {
@@ -230,7 +233,7 @@ describe("an observation draft's editing baseline", () => {
       const state = { ...seed, movements: [movement], admissions: [admission], rejections: [] };
       const target =
         kind === "movement"
-          ? { kind, movementId: movement.id }
+          ? { kind, movementId: movement.id, actingUnitId: held.unitId }
           : { kind, admissionId: admission.id, actingUnitId: admission.unitId };
       const next = wardFlowReducer(state, {
         ...command(

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", import.meta.url), "utf8").replace(
@@ -446,8 +447,39 @@ requireWorkflow(workflow);
 // failure/cancellation/missing-result branch, including the trusted reuse route.
 const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
 assert.ok(verdictShell);
+// On Windows a bare "bash" can resolve to WSL's System32\bash.exe, which does not run this shell
+// against the given environment. Prefer Git Bash there; Linux and macOS keep the bash on PATH.
+function resolveBash() {
+  if (process.platform !== "win32") return "bash";
+  const env = process.env;
+  const candidates = [
+    env.ProgramFiles && path.win32.join(env.ProgramFiles, "Git", "bin", "bash.exe"),
+    env["ProgramFiles(x86)"] && path.win32.join(env["ProgramFiles(x86)"], "Git", "bin", "bash.exe"),
+    env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, "Programs", "Git", "bin", "bash.exe"),
+  ];
+  const gitExecPath = spawnSync("git", ["--exec-path"], { encoding: "utf8" });
+  // <git>/mingw64/libexec/git-core -> <git>/bin/bash.exe
+  if (gitExecPath.status === 0 && gitExecPath.stdout.trim())
+    candidates.push(path.win32.resolve(gitExecPath.stdout.trim(), "..", "..", "..", "bin", "bash.exe"));
+  const system32 = path.win32.join(env.SystemRoot || "C:\\Windows", "System32").toLowerCase();
+  const found = candidates.find(
+    (candidate) =>
+      candidate && existsSync(candidate) && !path.win32.resolve(candidate).toLowerCase().startsWith(system32),
+  );
+  if (found) return found;
+  throw new Error(
+    "check-contracts needs Git Bash on Windows (%ProgramFiles%\\Git\\bin\\bash.exe); it refuses the WSL System32\\bash.exe.",
+  );
+}
+const bash = resolveBash();
+const baseEnv = {
+  PATH: process.env.PATH ?? "",
+  ...(process.platform === "win32" && process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
+};
 const runVerdict = (env) =>
-  spawnSync("bash", ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], { env }).status;
+  spawnSync(bash, ["--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verdictShell], {
+    env: { ...baseEnv, ...env },
+  }).status;
 let verdictCases = 0;
 for (let bits = 0; bits < 16; bits++)
   for (const reuse of [false, true]) {
