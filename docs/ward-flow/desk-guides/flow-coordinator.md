@@ -1,6 +1,6 @@
 # Desk guide: Flow coordinator
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You see the whole network (statewide) or your own health service. You decide referrals and keep
 patients moving from referral to arrival.
@@ -13,6 +13,9 @@ pre-selected for you.
 
 Your main menu: **My list, Capacity, Movements, Referrals, Handover**. Other pages are under
 **More** (desktop) or **Menu** (phone).
+
+On a phone, the bar at the bottom has **Home, Referrals, Create, Alerts, Activity**. **Create**
+holds **New referral**.
 
 ## Jobs you do most
 
