@@ -26,6 +26,8 @@ export type BoardCheck = {
     | { kind: "stay"; admissionId: string; unitId: string }
     | { kind: "referral"; referralId: string; unitId: string }
     | { kind: "movement"; movementId: string; unitId: string };
+  /** A stay move sent without a reason: a refusal asking for one opens the reason form (audit CS3-12). */
+  ask?: { admissionId: string; fromBed: number; bedNumber: number; name: string };
 };
 
 /** The undo event for what the Bed board placed or moved (v10 pass 2 and 3). */

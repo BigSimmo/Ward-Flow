@@ -221,7 +221,9 @@ const inBed = (admission: WardFlowState["admissions"][number]) => IN_A_BED.has(a
  * Ward closure mode: a ward closed before and after an accepted event gains no new acceptance or
  * hold. Existing holds are kept by design, so a hold made before closure may still arrive
  * (PATIENT_ARRIVED for a journey already accepted there), a pull may restore a journey that
- * already had its stay, and an undo may put back a stay the ward already had. Only
+ * already had its stay, and an undo may put back a stay the ward already had. Closure stops new
+ * admissions only (Josh, 26 Oct 2026, audit CS3-11), so a journey that already has a bed there
+ * (held, or its pulled stay) may move to another bed; a journey with no bed there may not gain one. Only
  * REOPEN_WARD_TO_ADMISSIONS clears `isClosed`.
  */
 function closedWardViolation(before: WardFlowState, event: WardFlowEvent, after: WardFlowState): Violation | null {
@@ -265,7 +267,9 @@ function closedWardViolation(before: WardFlowState, event: WardFlowEvent, after:
     const was = movementsBefore.get(movement.id);
     if (arrivalOfEarlierHold(unitId) || (pullRestoringStay && movement.id === movementId)) continue;
     if (was?.acceptedUnitId !== unitId) return broken(`accepted ${movement.id} onto closed ward ${unitId}`);
-    if (movement.heldBedNumber !== undefined && was.heldBedNumber !== movement.heldBedNumber)
+    const stayBefore = was.admissionId === undefined ? undefined : staysBefore.get(was.admissionId);
+    const hadBed = was.heldBedNumber !== undefined || (stayBefore?.unitId === unitId && inBed(stayBefore));
+    if (movement.heldBedNumber !== undefined && !hadBed)
       return broken(`held bed ${movement.heldBedNumber} on closed ward ${unitId} for ${movement.id}`);
   }
   const referralsBefore = new Map(before.referrals.map((referral) => [referral.id, referral]));
@@ -280,7 +284,7 @@ function closedWardViolation(before: WardFlowState, event: WardFlowEvent, after:
       if (arrivalOfEarlierHold(unitId)) continue;
       if (was?.state !== "accepted" || wasUnit !== unitId)
         return broken(`accepted referral ${referral.id} onto closed ward ${unitId}`);
-      if (arm.heldBedNumber !== undefined && was.heldBedNumber !== arm.heldBedNumber)
+      if (arm.heldBedNumber !== undefined && was.heldBedNumber === undefined)
         return broken(`held bed ${arm.heldBedNumber} on closed ward ${unitId} for referral ${referral.id}`);
     }
   }
@@ -556,6 +560,54 @@ describe("sequences the random run found", () => {
     expect(state.admissions.some((admission) => admission.id === admissionId)).toBe(false);
     expect(state.undoRecords?.some((record) => record.kind === "bed-placement")).toBe(false);
     expect(storageViolation(state)).toBeNull();
+  });
+
+  // Audit CS3-11 (seeds 7026, 7043): closure stops new admissions only (Josh, 26 Oct 2026), so a
+  // closed ward may still move a journey it already holds a bed for to another of its beds.
+  const closeThenMove: WardFlowEvent[] = [
+    {
+      now: 1855,
+      type: "CLOSE_WARD_TO_ADMISSIONS",
+      unitId: "dn-mid-secure",
+      actingUnitId: "dn-mid-secure",
+      reason: "staffing",
+      role: "coordinator",
+    },
+    {
+      now: 2545,
+      type: "PLACE_IN_BED",
+      admissionId: "AD-DN-mid-secure-T1",
+      actingUnitId: "dn-mid-secure",
+      bedNumber: 5,
+      role: "coordinator",
+    },
+  ] as WardFlowEvent[];
+
+  it("lets a closed ward move a journey it already holds a bed for to another bed", () => {
+    expect(replay("emhs-demo", closeThenMove)).toBeNull();
+    const after = closeThenMove.reduce(wardFlowReducer, seedWardFlowState("emhs-demo"));
+    expect(after.units.find((unit) => unit.id === "dn-mid-secure")?.isClosed).toBe(true);
+    expect(after.admissions.find((stay) => stay.id === "AD-DN-mid-secure-T1")?.bedNumber).toBe(5);
+  });
+
+  it("still flags a closed ward giving a held bed to a journey that had none", () => {
+    const closed = wardFlowReducer(seedWardFlowState("emhs-demo"), closeThenMove[0]!);
+    const subject = closed.movements.find((movement) => movement.acceptedUnitId === "dn-mid-secure");
+    expect(subject).toBeDefined();
+    const withoutHold = (state: WardFlowState): WardFlowState => ({
+      ...state,
+      movements: state.movements.map((movement) =>
+        movement.id === subject!.id ? { ...movement, heldBedNumber: undefined, admissionId: undefined } : movement,
+      ),
+    });
+    const before = withoutHold(closed);
+    const after = {
+      ...closed,
+      movements: closed.movements.map((movement) =>
+        movement.id === subject!.id ? { ...movement, heldBedNumber: 5 } : movement,
+      ),
+    };
+    expect(closedWardViolation(before, closeThenMove[1]!, after)?.detail).toMatch(/held bed 5 on closed ward/);
   });
 });
 

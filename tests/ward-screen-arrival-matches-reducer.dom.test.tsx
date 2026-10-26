@@ -55,7 +55,7 @@ function BookTransport({ movementId }: { movementId: string }) {
 describe("ward screen arrival and release controls follow the reducer", () => {
   const seed = seedWardFlowState();
 
-  it("offers Confirm Arrival for a pulled patient once no transport is needed", () => {
+  it("offers Confirm arrival for a pulled patient once no transport is needed", () => {
     const pulled = seed.movements.find(
       (movement) => movement.stage === "pulled" && movement.transport === undefined && !movement.closure,
     )!;

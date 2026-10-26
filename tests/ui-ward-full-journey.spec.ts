@@ -550,6 +550,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // the receiving ward closes the movement by confirming arrival, then the Home tab is reopened.
     await openAllArrivals(page);
     await wardScreenAfterArrival.getByTestId(`ward-confirm-arrival-${movementId}`).click();
+    // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
     await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);

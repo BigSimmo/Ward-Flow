@@ -12,6 +12,7 @@ import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fsh-adult-secure";
@@ -52,6 +53,8 @@ describe("numbered bed designation integrity", () => {
         admissionId: stay.id,
         actingUnitId: UNIT,
         bedNumber: target,
+        // Audit CS3-12: a stay with no recorded Voluntary status needs a reason to take an open bed.
+        ...(kind === "locked" ? { overrideReason: OVERRIDE_REASONS[1] } : {}),
       } as WardFlowEvent);
       const updated = moved.units.find((row) => row.id === UNIT)!;
       expect(moved.admissions.find((row) => row.id === stay.id)?.bedKind).toBe(targetKind);

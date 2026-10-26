@@ -2468,6 +2468,7 @@ export type TransportEventHelpers = typeof TRANSPORT_EVENT_HELPERS;
 
 const BED_EVENT_HELPERS = {
   admissionCriteriaEligibility,
+  admissionLegalStatus,
   appendNotices,
   bedNumberRefusal,
   findAdmission,

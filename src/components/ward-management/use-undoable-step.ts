@@ -89,7 +89,8 @@ export type UndoableStepOptions = {
   /** The page's own toast hook, when it has one; otherwise the layout's toast is used. */
   toast?: UndoToastApi | null;
   /** Where the outcome goes when there is no toast region at all (a screen rendered alone). */
-  onMessage?: (message: string) => void;
+  /** `tone` says whether the step was refused (walk-through WT-10), so the screen can show a warning. */
+  onMessage?: (message: string, tone: "success" | "warning") => void;
   /** Turns an engine refusal into page words (for example record codes into names). */
   sayRefusal?: (reason: string) => string;
 };
@@ -157,19 +158,19 @@ export function useUndoableStep({
             ? `Not recorded: ${sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused.")}`
             : (pending.outcome.message ?? SAVE_NOT_CONFIRMED);
         if (sink) sink.push({ tone: "warning", title: said });
-        else onMessage?.(said);
+        else onMessage?.(said, "warning");
         continue;
       }
       if (refused) {
         if (pending.refusalShownInline) continue;
         const said = `Not recorded: ${sayRefusal ? sayRefusal(refused.reason) : refused.reason}. Nothing was changed.`;
         if (sink) sink.push({ tone: "warning", title: said });
-        else onMessage?.(said);
+        else onMessage?.(said, "warning");
         continue;
       }
       const build = pending.undo;
       if (!sink) {
-        onMessage?.(pending.success);
+        onMessage?.(pending.success, "success");
         continue;
       }
       if (!build) {

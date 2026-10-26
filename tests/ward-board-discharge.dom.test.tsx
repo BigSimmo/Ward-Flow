@@ -97,6 +97,11 @@ function selectAnOccupiedBed() {
   return screen.getByTestId("ward-board-detail");
 }
 
+/** Audit CS3-07: where they went starts blank, so a test chooses it before recording. */
+function chooseDestination(id: string = LEAVING_DESTINATIONS[0].id) {
+  fireEvent.change(screen.getByTestId("ward-board-leaving-destination"), { target: { value: id } });
+}
+
 describe("recording a departure from the ward board", () => {
   it("offers the control on an occupied bed, with every destination the model allows", () => {
     const { unitId } = aWardWithAnOccupant();
@@ -114,7 +119,9 @@ describe("recording a departure from the ward board", () => {
      * label survives, a REMOVED destination does not) and stops a legitimate addition failing here
      * instead of in the file that owns the list.
      */
-    expect(within(destinations).getAllByRole("option")).toHaveLength(LEAVING_DESTINATIONS.length);
+    // Plus the blank "Choose" line it starts on (audit CS3-07): nothing is chosen for the ward.
+    expect(within(destinations).getAllByRole("option")).toHaveLength(LEAVING_DESTINATIONS.length + 1);
+    expect((destinations as HTMLSelectElement).value).toBe("");
     expect(LEAVING_DESTINATIONS.length, "the list emptied out; this assertion would pass on zero").toBeGreaterThan(4);
   });
 
@@ -162,6 +169,7 @@ describe("recording a departure from the ward board", () => {
       }).length;
 
     selectAnOccupiedBed();
+    chooseDestination();
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
     const after = screen.getByTestId("ward-board-beds");
@@ -200,6 +208,7 @@ describe("recording a departure from the ward board", () => {
     selectAnOccupiedBed();
 
     expect(screen.getByTestId("ward-board-detail-person")).toBeTruthy();
+    chooseDestination();
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
     // Left open, the panel would describe a bed this ward no longer fills.
@@ -270,6 +279,25 @@ describe("recording a departure from the ward board", () => {
           : ""),
     ).toBe(chosen);
   });
+
+  it("asks where they went when nothing is chosen, and records nothing until it is (audit CS3-07)", () => {
+    const { unitId } = aWardWithAnOccupant();
+    renderBoardWithModelProbeAt(unitId, OFF_ANCHOR);
+    const departures = () => screen.queryAllByTestId(/^model-departure-/u).length;
+    const before = departures();
+    selectAnOccupiedBed();
+    fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
+
+    const dialog = screen.getByRole("dialog", { name: "Confirm patient departure" });
+    const proceed = within(dialog).getByTestId("ward-board-confirm-proceed");
+    expect(proceed).toBeDisabled();
+    expect(departures()).toBe(before);
+    const chosen = LEAVING_DESTINATIONS[1];
+    fireEvent.change(within(dialog).getByTestId("ward-board-confirm-destination"), { target: { value: chosen.id } });
+    expect(within(dialog).getByTestId("ward-board-confirm-destination-text")).toHaveTextContent(chosen.label);
+    fireEvent.click(proceed);
+    expect(departures()).toBe(before + 1);
+  });
 });
 
 it("offers guarded Undo after a board departure and restores the occupied bed", () => {
@@ -286,6 +314,7 @@ it("offers guarded Undo after a board departure and restores the occupied bed", 
     Array.from(screen.getByTestId("model-departures").children).map((row) => row.getAttribute("data-admission-id")),
   );
   selectAnOccupiedBed();
+  chooseDestination();
   fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
   const added = Array.from(screen.getByTestId("model-departures").children).filter(
     (row) => !before.has(row.getAttribute("data-admission-id")),
