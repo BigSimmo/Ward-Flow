@@ -53,5 +53,10 @@
     "id": "2026-10-26-pull-names-patient",
     "date": "2026-10-26",
     "line": "Pulling a bed now names the person it was pulled for."
+  },
+  {
+    "id": "2026-10-26-form-not-recorded",
+    "date": "2026-10-26",
+    "line": "The handover and phone ED now say \"Form not recorded\" instead of \"No form\" unless the person is Voluntary, and a patient's expected out day says \"Not recorded\" when no date is set."
   }
 ]

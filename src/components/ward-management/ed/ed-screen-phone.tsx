@@ -11,6 +11,7 @@ import { EdBoardChips } from "./ed-board-chips";
 import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
+import { noFormWords } from "@/components/ward-management/ward-legal-status";
 import styles from "./ed.module.css";
 import foldRow from "./ed-phone-fold.module.css";
 
@@ -96,7 +97,8 @@ export function renderEdBoardPhoneRow(
           ...(isPhone
             ? []
             : [
-                movement.legalForm ? `Form ${movement.legalForm.code}` : "No form",
+                // Audit CS3-04: the desktop rule, "No form" only for a recorded Voluntary status.
+                movement.legalForm ? `Form ${movement.legalForm.code}` : noFormWords(movement.legalStatus),
                 medicalClearance === undefined
                   ? "Clearance pending"
                   : medicalClearance.cleared
