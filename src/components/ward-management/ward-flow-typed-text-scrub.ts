@@ -372,11 +372,35 @@ function keepHoldableIntake<T extends { intake?: ReferralIntakeDetails }>(referr
   return rest as T;
 }
 
-function matchesLedger(value: string, ledger: readonly string[]): boolean {
+/**
+ * Whether a string carries a typed value: it equals one, or contains one of at least
+ * `MIN_CONTAINED_LENGTH` characters (both normalised). Exact matches are a set lookup, and each
+ * string's answer is remembered for as long as the ledger is unchanged, so a save that repeats most
+ * of the world's strings checks only the new ones (fresh audit P-1, 26 Oct 2026).
+ */
+type LedgerMatcher = (value: string) => boolean;
+
+/** A matcher's memory is dropped past this many strings, so it cannot grow without bound. */
+const MATCH_MEMO_LIMIT = 50_000;
+
+function ledgerMatcher(typed: ReadonlySet<string>): LedgerMatcher {
+  const contained = [...typed].filter((value) => value.length >= MIN_CONTAINED_LENGTH);
+  const memo = new Map<string, boolean>();
+  return (value) => {
+    const known = memo.get(value);
+    if (known !== undefined) return known;
+    const normalised = normaliseTypedText(value);
+    const matched = typed.has(normalised) || contained.some((entry) => normalised.includes(entry));
+    if (memo.size >= MATCH_MEMO_LIMIT) memo.clear();
+    memo.set(value, matched);
+    return matched;
+  };
+}
+
+/** One typed value as pass 2 holds it, or `undefined` when it is blank or fixture text. */
+function effectiveTyped(value: string, fixture: ReadonlySet<string>): string | undefined {
   const normalised = normaliseTypedText(value);
-  return ledger.some(
-    (typed) => normalised === typed || (typed.length >= MIN_CONTAINED_LENGTH && normalised.includes(typed)),
-  );
+  return normalised === "" || fixture.has(normalised) ? undefined : normalised;
 }
 
 /**
@@ -386,9 +410,14 @@ function matchesLedger(value: string, ledger: readonly string[]): boolean {
  * stop every save. A typed field holding such a value on a new record is still replaced by pass 1,
  * which keeps fixture text only where the fixture put it.
  */
-function effectiveLedger(ledger: TypedTextLedger, worlds: FixtureWorlds): string[] {
+function effectiveLedger(ledger: TypedTextLedger, worlds: FixtureWorlds): Set<string> {
   const fixture = fixtureEntries(worlds).strings;
-  return [...new Set(ledger.map(normaliseTypedText))].filter((typed) => typed !== "" && !fixture.has(typed));
+  const typed = new Set<string>();
+  for (const value of ledger) {
+    const kept = effectiveTyped(value, fixture);
+    if (kept !== undefined) typed.add(kept);
+  }
+  return typed;
 }
 
 /**
@@ -401,15 +430,23 @@ export function redactTypedTextForDevice(
   worlds: FixtureWorlds,
   loadedWorld = false,
 ): WardFlowState | null {
-  const typed = effectiveLedger(ledger, worlds);
+  return redactWithMatcher(state, ledgerMatcher(effectiveLedger(ledger, worlds)), worlds, loadedWorld);
+}
+
+function redactWithMatcher(
+  state: WardFlowState,
+  matchesLedger: LedgerMatcher,
+  worlds: FixtureWorlds,
+  loadedWorld: boolean,
+): WardFlowState | null {
   let keyLeak = false;
   const replaceValues = (value: unknown): unknown => {
-    if (typeof value === "string") return matchesLedger(value, typed) ? TYPED_TEXT_NOT_KEPT : value;
+    if (typeof value === "string") return matchesLedger(value) ? TYPED_TEXT_NOT_KEPT : value;
     if (Array.isArray(value)) return value.map(replaceValues);
     if (value && typeof value === "object")
       return Object.fromEntries(
         Object.entries(value).map(([key, entry]) => {
-          if (matchesLedger(key, typed)) keyLeak = true;
+          if (matchesLedger(key)) keyLeak = true;
           return [key, replaceValues(entry)];
         }),
       );
@@ -445,8 +482,67 @@ function numberCriterionStandIns(state: WardFlowState): WardFlowState {
 }
 
 /**
+ * The session's ledger, read one event at a time (fresh audit P-1, 26 Oct 2026). The provider only
+ * ever appends to its list of typed events, or starts a new one on a reseed, so a list that starts
+ * with the events already read needs only its new events read. Any other list is read from the
+ * start. `unreadable` holds once one event cannot be read, and stays for every longer list.
+ */
+interface ReadLedger {
+  events: readonly WardFlowEvent[];
+  worlds: FixtureWorlds;
+  typed: Set<string>;
+  unreadable: boolean;
+  matcher?: LedgerMatcher;
+}
+
+let readLedger: ReadLedger | undefined;
+
+let typedTextEventsRead = 0;
+
+/** How many events the ledger has read since this module loaded. For the cost test only. */
+export function typedTextEventsReadSoFar(): number {
+  return typedTextEventsRead;
+}
+
+function extendsReadLedger(read: ReadLedger | undefined, events: readonly WardFlowEvent[], worlds: FixtureWorlds) {
+  if (!read || read.worlds !== worlds || read.events.length > events.length) return false;
+  if (read.events === events) return true;
+  // Reference checks only: no event is read again.
+  for (let index = 0; index < read.events.length; index += 1) if (read.events[index] !== events[index]) return false;
+  return true;
+}
+
+function ledgerFor(events: readonly WardFlowEvent[], worlds: FixtureWorlds): ReadLedger {
+  const read: ReadLedger = extendsReadLedger(readLedger, events, worlds)
+    ? readLedger!
+    : { events: [], worlds, typed: new Set(), unreadable: false };
+  if (read.events.length < events.length) {
+    const fixture = fixtureEntries(worlds).strings;
+    for (let index = read.events.length; index < events.length && !read.unreadable; index += 1) {
+      typedTextEventsRead += 1;
+      const values = typedTextOf(events[index]);
+      if (values === null) {
+        read.unreadable = true;
+        break;
+      }
+      for (const value of values) {
+        const kept = effectiveTyped(value, fixture);
+        if (kept !== undefined && !read.typed.has(kept)) {
+          read.typed.add(kept);
+          read.matcher = undefined;
+        }
+      }
+    }
+    read.events = events;
+  }
+  readLedger = read;
+  return read;
+}
+
+/**
  * The device copy for a session that dispatched `events` carrying typed text (memory only, held by the
- * provider). `null` when one of them cannot be read, so nothing typed is ever guessed at.
+ * provider). `null` when one of them cannot be read, so nothing typed is ever guessed at. The same
+ * copy as `redactTypedTextForDevice` with every event's `typedTextOf` values as the ledger.
  */
 export function deviceCopyFromEvents(
   state: WardFlowState,
@@ -454,11 +550,8 @@ export function deviceCopyFromEvents(
   worlds: FixtureWorlds,
   loadedWorld = false,
 ): WardFlowState | null {
-  const ledger: string[] = [];
-  for (const event of events) {
-    const typed = typedTextOf(event);
-    if (typed === null) return null;
-    ledger.push(...typed);
-  }
-  return redactTypedTextForDevice(state, ledger, worlds, loadedWorld);
+  const read = ledgerFor(events, worlds);
+  if (read.unreadable) return null;
+  read.matcher ??= ledgerMatcher(read.typed);
+  return redactWithMatcher(state, read.matcher, worlds, loadedWorld);
 }

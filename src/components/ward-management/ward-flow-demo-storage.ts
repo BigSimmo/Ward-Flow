@@ -125,6 +125,43 @@ export function deviceCopyOf(
   return typedTextScrub?.deviceCopyFromEvents(state, held.typedTextEvents ?? [], fixtureWorlds, held.typedTextFromFile);
 }
 
+/** What one device save was written from (fresh audit P-1, 26 Oct 2026). */
+export type DeviceSaveInputs = {
+  state: WardFlowState;
+  held: TypedTextHeld;
+  locked: boolean;
+  dayZero: Date;
+  mountedAtAbsolute: number;
+};
+
+/**
+ * True when a save from `next` would store the same world as the save already written from
+ * `previous`: the same typed-text inputs (so the same ledger), and a world that differs at most in
+ * its refusals, which are never stored (D-18). A refused or empty action then writes nothing and
+ * builds no typed-text copy. Only the save's clock pair would differ, and both halves of it move
+ * together, so the earlier save restores to the same moment.
+ */
+export function deviceSaveUnchanged(previous: DeviceSaveInputs | undefined, next: DeviceSaveInputs): boolean {
+  if (
+    !previous ||
+    previous.locked !== next.locked ||
+    previous.dayZero !== next.dayZero ||
+    previous.mountedAtAbsolute !== next.mountedAtAbsolute ||
+    previous.held.typedTextSeen !== next.held.typedTextSeen ||
+    previous.held.typedTextEvents !== next.held.typedTextEvents ||
+    previous.held.typedTextFromFile !== next.held.typedTextFromFile
+  )
+    return false;
+  const before = previous.state as unknown as Record<string, unknown>;
+  const after = next.state as unknown as Record<string, unknown>;
+  if (before === after) return true;
+  const keys = Object.keys(after);
+  return (
+    keys.length === Object.keys(before).length &&
+    keys.every((key) => key === "rejections" || (Object.hasOwn(before, key) && before[key] === after[key]))
+  );
+}
+
 const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";
 
 /** The saved session for this mount, read once it has loaded; undefined until then and whenever
