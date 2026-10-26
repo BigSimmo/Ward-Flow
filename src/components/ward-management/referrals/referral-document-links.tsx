@@ -3,7 +3,7 @@
 import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
-function documentLabel(kind: ReferralChart["kind"]) {
+export function documentLabel(kind: ReferralChart["kind"]) {
   return kind === "medication"
     ? "Medication chart"
     : kind === "observation"
