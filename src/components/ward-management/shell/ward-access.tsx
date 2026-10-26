@@ -605,7 +605,8 @@ export function WardAccessBanner() {
     <div className={styles.banner} role="status" data-testid="ward-access-banner">
       <span>
         {previewOf ? "Previewing as " : "Desk: "}
-        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {accessPlaceLabel(access, units)}. Lists show only the places this desk covers.
+        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {accessPlaceLabel(access, units)}. Lists show only the places this
+        desk covers.
       </span>
       {previewOf ? (
         <Button size="sm" variant="sec" onClick={endAccessPreview} data-testid="ward-access-end-preview">
