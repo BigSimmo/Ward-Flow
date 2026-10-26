@@ -775,7 +775,12 @@ export function WardBedDossierDrawer({
                   <Section title="This shift">
                     <dl className={styles.kv}>
                       <Row label="Where">
-                        {isAwayAtEd ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held` : "On the ward"}
+                        {/* WT-31: an incoming patient is not on the ward yet, so one location state. */}
+                        {isAwayAtEd
+                          ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
+                          : bedItem?.status === "incoming"
+                            ? "Arriving"
+                            : "On the ward"}
                       </Row>
                       <Row label="Observation level">{observation}</Row>
                       <Row label="High acuity">{bedItem?.highAcuity ? "Requested" : "Not requested"}</Row>
