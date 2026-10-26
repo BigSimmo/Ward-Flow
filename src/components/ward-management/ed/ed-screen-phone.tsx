@@ -88,7 +88,14 @@ export function renderEdBoardPhoneRow(
             <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
           </span>
         }
-        name={patientInfo.formalName}
+        // Audit CS3-09: the UMRN beside the name, as on the desktop row, so two look-alike names on
+        // a phone are told apart by a second identifier before a row is opened.
+        name={
+          <>
+            <span>{patientInfo.formalName}</span>
+            <span className={styles.phoneUmrn}> · {patientInfo.umrn}</span>
+          </>
+        }
         meta={[
           // No em-dash and no truncated destination; the form lives in the sheet. Change 2 (D-77):
           // the second line says where the referral stands, the same words as the board.

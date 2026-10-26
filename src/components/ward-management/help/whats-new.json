@@ -68,5 +68,10 @@
     "id": "2026-10-26-handover-over-midnight",
     "date": "2026-10-26",
     "line": "A handover page left open past midnight keeps the handover you chose, so it no longer says nothing has changed."
+  },
+  {
+    "id": "2026-10-26-phone-ed-umrn",
+    "date": "2026-10-26",
+    "line": "Each row of the ED board on a phone now shows the person's UMRN beside their name, so similar names are easier to tell apart."
   }
 ]
