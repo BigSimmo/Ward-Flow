@@ -15,7 +15,7 @@ import { isUnitTestFile, validateEntry } from "../scripts/check-ward-expected-re
  * that matters — **that the script's floors still have headroom against the real population.**
  *
  * ⚠️ **A FLOOR THAT DRIFTS UP TO MEET REALITY STOPS BEING A FLOOR.** The script refuses to compare
- * anything until it has walked at least 200 files and run at least 2500 tests, because set equality
+ * anything until it has walked at least 1000 files and run at least 6000 tests, because set equality
  * against an empty manifest is vacuous on a broken run — discover nothing, run nothing, fail
  * nothing, report success. Those numbers are only protective while the true population is
  * comfortably above them. If the suite ever shrinks toward the floor, the honest response is to
@@ -246,5 +246,11 @@ describe("the expected-red manifest", () => {
     ).toBeGreaterThan(20);
 
     expect(testFloor, "FLOOR_TESTS is not set to anything meaningful").toBeGreaterThan(100);
+    // H-0914: and not decoration either. A floor below half the population passes a run that
+    // discovered only half the suite.
+    expect(
+      fileFloor,
+      `FLOOR_FILES (${fileFloor}) is below half the ${population}-file population, so a run that lost half the suite still passes`,
+    ).toBeGreaterThanOrEqual(Math.floor(population / 2));
   });
 });
