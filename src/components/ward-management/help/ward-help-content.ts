@@ -47,7 +47,7 @@ const WHY_NO_ANSWER: HelpQuestion = {
 const TV_QUESTION: HelpQuestion = {
   question: "How do I put this on the meeting room TV?",
   answer:
-    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back.",
+    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back. On a TV that stays on the wall, Lock as TV keeps that browser on TV views, even after a reload, until someone presses Unlock.",
 };
 
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {

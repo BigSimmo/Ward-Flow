@@ -1,140 +1,38 @@
 {
  "vocabularies": {
-  "HEALTH_SERVICES": {
-   "file": "ward-model.ts",
-   "members": [
-    "North Metro",
-    "South Metro",
-    "East Metro",
-    "WACHS",
-    "CAHS",
-    "Private"
-   ]
-  },
-  "COHORTS": {
-   "file": "ward-model.ts",
-   "members": [
-    "Adult",
-    "Older adult",
-    "Youth"
-   ]
-  },
-  "BLOCKERS_MEANING_NOTHING_IS_BLOCKING": {
-   "file": "ward-model.ts",
-   "members": [
-    "No blocker",
-    "None — in transit",
-    "None — handover complete",
-    "None — the movement did not proceed",
-    "None — cleared"
-   ]
-  },
-  "SEXES": {
-   "file": "ward-model.ts",
-   "members": [
-    "Female",
-    "Male"
-   ]
-  },
-  "RECORDED_SEXES": {
-   "file": "ward-model.ts",
-   "members": [
-    "Another term",
-    "Not recorded"
-   ]
-  },
-  "URGENCY_LEVELS": {
-   "file": "ward-model.ts",
-   "members": [
-    "1",
-    "2",
-    "3"
-   ]
-  },
-  "ARRIVAL_MODES": {
-   "file": "ward-model.ts",
-   "members": [
-    "mental_health_transport",
-    "ambulance",
-    "police",
-    "hospital_transfer",
-    "self"
-   ]
-  },
-  "SEX_DESIGNATIONS": {
-   "file": "ward-model.ts",
-   "members": [
-    "Undesignated",
-    "Female only",
-    "Male only"
-   ]
-  },
-  "REFERRAL_GENDERS": {
-   "file": "ward-model.ts",
-   "members": [
-    "Female",
-    "Male",
-    "Non-binary",
-    "Different term"
-   ]
-  },
-  "MOVEMENT_STAGES": {
-   "file": "ward-model.ts",
-   "members": [
-    "placement_requested",
-    "destination_review",
-    "accepted_awaiting_bed",
-    "pulled",
-    "handover_ready",
-    "moving",
-    "arrived"
-   ]
-  },
   "DECLINE_REASONS": {
    "file": "ward-model.ts",
    "members": [
-    "no_bed",
-    "sex_mix",
+    "no_suitable_bed",
+    "age_band_not_provided_here",
+    "sex_designation_unavailable",
+    "secure_bed_unavailable",
+    "belongs_to_another_service",
+    "referred_elsewhere",
     "specialling_unavailable",
     "acuity_mix",
     "capability_mismatch",
     "bed_pulled_for_earlier_referral",
-    "out_of_catchment"
+    "another_reason"
    ]
   },
-  "STEP_BACK_REASONS": {
-   "file": "ward-model.ts",
+  "SUPPORT_SERVICE_TYPES": {
+   "file": "ward-model-bed-release.ts",
    "members": [
-    "recorded_in_error",
-    "the_decision_changed",
-    "the_patient_situation_changed",
-    "the_bed_was_lost"
+    "pharmacy",
+    "transport",
+    "cleaning"
    ]
   },
-  "TRANSPORT_PROVIDERS": {
-   "file": "ward-model.ts",
+  "ARRIVAL_CHECKS": {
+   "file": "ward-model-bed-release.ts",
    "members": [
-    "Ambulance service",
-    "Patient transport service",
-    "Ward escort"
-   ]
-  },
-  "TRANSPORT_LEGAL_STATUSES": {
-   "file": "ward-model.ts",
-   "members": [
-    "voluntary",
-    "involuntary"
-   ]
-  },
-  "MOVEMENT_REFERRAL_ABSENCE_REASONS": {
-   "file": "ward-model.ts",
-   "members": [
-    "none_raised",
-    "not_asked"
+    "contraband_search",
+    "medication_chart"
    ]
   },
   "BED_RELEASE_STATES": {
-   "file": "ward-model.ts",
+   "file": "ward-model-bed-release.ts",
    "members": [
     "expected",
     "confirmed",
@@ -142,7 +40,7 @@
    ]
   },
   "BED_RELEASE_WAITING_ON": {
-   "file": "ward-model.ts",
+   "file": "ward-model-bed-release.ts",
    "members": [
     "Awaiting ward round",
     "Awaiting family or carer agreement",
@@ -153,12 +51,181 @@
     "Nothing outstanding"
    ]
   },
+  "HEALTH_SERVICES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "North Metro",
+    "South Metro",
+    "East Metro",
+    "WACHS",
+    "CAHS",
+    "Private"
+   ]
+  },
+  "COHORTS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Adult",
+    "Older adult",
+    "Youth"
+   ]
+  },
+  "BLOCKERS_MEANING_NOTHING_IS_BLOCKING": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "No blocker",
+    "None — in transit",
+    "None — handover complete",
+    "None — the movement did not proceed",
+    "None — cleared"
+   ]
+  },
+  "SEXES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Female",
+    "Male"
+   ]
+  },
+  "RECORDED_SEXES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Another term",
+    "Not recorded"
+   ]
+  },
+  "URGENCY_LEVELS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "1",
+    "2",
+    "3"
+   ]
+  },
+  "ATS_CATEGORIES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ]
+  },
+  "ARRIVAL_MODES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "mental_health_transport",
+    "ambulance",
+    "police",
+    "hospital_transfer",
+    "self"
+   ]
+  },
+  "SEX_DESIGNATIONS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Undesignated",
+    "Female only",
+    "Male only"
+   ]
+  },
+  "REFERRAL_GENDERS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Female",
+    "Male",
+    "Non-binary",
+    "Different term"
+   ]
+  },
+  "MOVEMENT_STAGES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "placement_requested",
+    "destination_review",
+    "accepted_awaiting_bed",
+    "pulled",
+    "handover_ready",
+    "moving",
+    "arrived"
+   ]
+  },
+  "STEP_BACK_REASONS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "recorded_in_error",
+    "the_decision_changed",
+    "the_patient_situation_changed",
+    "the_bed_was_lost"
+   ]
+  },
+  "PAPER_EXPIRY_CORRECTION_REASONS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "transcription_error",
+    "paper_rechecked"
+   ]
+  },
+  "TRANSPORT_PROVIDERS": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "Ambulance service",
+    "Patient transport service",
+    "Ward escort"
+   ]
+  },
+  "TRANSPORT_LEGAL_STATUSES": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "voluntary",
+    "involuntary"
+   ]
+  },
+  "TRANSPORT_EXCEPTION_GAPS": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "legal_status_differs",
+    "transport_order_missing",
+    "fit_to_travel_missing"
+   ]
+  },
+  "TRANSPORT_EXCEPTION_REASONS": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "paper_sighted",
+    "treating_team_confirmed",
+    "urgent_to_follow"
+   ]
+  },
+  "MOVEMENT_REFERRAL_ABSENCE_REASONS": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "none_raised",
+    "not_asked"
+   ]
+  },
+  "EXAMINATION_OUTCOMES": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "inpatient_order",
+    "community_order",
+    "revoked",
+    "further_examination_ordered"
+   ]
+  },
+  "ED_OUTCOMES": {
+   "file": "ward-model-movement-parts.ts",
+   "members": [
+    "for_discharge",
+    "for_community_follow_up"
+   ]
+  },
   "REFERRAL_SOURCES": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "community",
     "crisis_service",
-    "police",
     "ambulance",
     "inter_hospital",
     "ed_medical",
@@ -167,27 +234,15 @@
    ]
   },
   "REFERRAL_STATES": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "queued",
     "accepted",
     "declined"
    ]
   },
-  "REFERRAL_DECLINE_REASONS": {
-   "file": "ward-model.ts",
-   "members": [
-    "no_suitable_bed",
-    "age_band_not_provided_here",
-    "sex_designation_unavailable",
-    "secure_bed_unavailable",
-    "belongs_to_another_service",
-    "referred_elsewhere",
-    "another_reason"
-   ]
-  },
   "COMMUNITY_DECLINE_REASONS": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "outside_the_teams_catchment",
     "needs_inpatient_care_not_community_follow_up",
@@ -196,7 +251,7 @@
    ]
   },
   "HOME_REGIONS": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "Perth Metropolitan",
     "Peel",
@@ -211,7 +266,7 @@
    ]
   },
   "REFERRAL_DESTINATION_KINDS": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "psychiatric_ward",
     "emergency_department",
@@ -219,15 +274,22 @@
    ]
   },
   "REFERRAL_PURPOSES": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "bed",
     "psychiatric_review",
     "medical_assessment"
    ]
   },
+  "COMMUNITY_REFERRAL_PURPOSES": {
+   "file": "ward-model-referral-parts.ts",
+   "members": [
+    "follow_up",
+    "assess_for_admission"
+   ]
+  },
   "REFERRAL_ADDRESSING_STATES": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "queued",
     "accepted",
@@ -236,9 +298,20 @@
    ]
   },
   "SUBURB_UNKNOWN_REASONS": {
-   "file": "ward-model.ts",
+   "file": "ward-model-referral-parts.ts",
    "members": [
     "not_known"
+   ]
+  },
+  "ABSENCE_STEPS": {
+   "file": "ward-model-leave.ts",
+   "members": [
+    "searched",
+    "psychiatrist_told",
+    "return_order_made",
+    "description_recorded",
+    "police_notified",
+    "next_of_kin_told"
    ]
   },
   "URGENCY_CHANGE_REASONS": {
@@ -365,6 +438,21 @@
     "Closer to the person's home or family"
    ]
   },
+  "REFERRAL_CAP_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "No answer yet from the wards already asked",
+    "Clinical urgency needs a wider search",
+    "The wards already asked are unlikely to have a bed soon"
+   ]
+  },
+  "NOT_ON_SENDING_WARD_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "Recently discharged from this ward",
+    "Known to this ward's team but not in a bed"
+   ]
+  },
   "BED_PREPARATION_NOTES": {
    "file": "ward-change-reasons.ts",
    "members": [
@@ -412,8 +500,26 @@
   "DISCHARGE_DELAY_REASONS": {
    "file": "ward-change-reasons.ts",
    "members": [
+    "accommodation",
+    "ndis_support",
+    "community_follow_up",
+    "medication_supply",
+    "transport",
+    "family_carer",
     "sat_hearing",
     "public_guardian"
+   ]
+  },
+  "DISCHARGE_DELAY_CLEAR_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "resolved_clinically",
+    "package_confirmed",
+    "accommodation_secured",
+    "transport_arranged",
+    "family_carer_ready",
+    "entered_in_error",
+    "other"
    ]
   },
   "ADMISSION_STATES": {
@@ -459,6 +565,33 @@
     "Ward manager"
    ]
   },
+  "PLANNED_ADMISSION_REASONS": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "court_ordered",
+    "planned_ect",
+    "respite",
+    "planned_transfer",
+    "other"
+   ]
+  },
+  "PLANNED_ADMISSION_CANCEL_REASONS": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "no_longer_needed",
+    "admitted_elsewhere",
+    "rebooked",
+    "booked_in_error"
+   ]
+  },
+  "PLANNED_ADMISSION_STATES": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "booked",
+    "cancelled",
+    "arrived"
+   ]
+  },
   "RELEASE_BANDS": {
    "file": "ward-bed-availability.ts",
    "members": [
@@ -495,7 +628,10 @@
     "catchmentCommunityTeam",
     "legalStatus",
     "aboriginalOrTorresStraitIslanderStatus",
-    "interpreterLanguage"
+    "interpreterLanguage",
+    "communityTreatmentOrder",
+    "addedAt",
+    "registrationScope"
    ]
   },
   "ELIGIBILITY_GATES": {
@@ -578,10 +714,6 @@
    "high_acuity_on_ward": "High acuity on the ward",
    "waiting_for_bed_clean": "Waiting for a bed to be cleaned",
    "other_call_the_ward": "Other — call the ward"
-  },
-  "dischargeDelayReasonLabels": {
-   "sat_hearing": "State Administrative Tribunal (SAT) hearing pending",
-   "public_guardian": "Public Guardian / Public Advocate determination pending"
   }
  }
 }

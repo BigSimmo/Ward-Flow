@@ -101,7 +101,7 @@ describe("Supabase shared sign-in", () => {
       fireEvent.click(screen.getByRole("button", { name: "Forgot password" }));
       await screen.findByText(/a recovery link will be emailed/i);
       expect(String(fetcher.mock.calls[0][0])).toContain("/recover?redirect_to=");
-      fireEvent.click(screen.getByRole("button", { name: "Create coordinator account" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create a Ward Flow account" }));
       fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
       fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "synthetic-password" } });
       fireEvent.click(screen.getByRole("button", { name: "Create account" }));
@@ -176,7 +176,7 @@ it("keeps signup confirmation tokens out of workspace and storage", async () => 
   const fetcher = vi.fn();
   vi.stubGlobal("fetch", fetcher);
   render(<Probe />);
-  await screen.findByRole("heading", { name: "Coordinator sign-in" });
+  await screen.findByRole("heading", { name: "Sign in to Ward Flow" });
   expect(window.location.hash).toBe("");
   expect(fetcher).not.toHaveBeenCalled();
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();

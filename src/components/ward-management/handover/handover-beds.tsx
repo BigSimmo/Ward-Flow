@@ -38,6 +38,9 @@ import {
   isStoppedAwaitingRelease,
 } from "./handover-model";
 import { wardClosedLine } from "../capacity/ward-closure";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./handover-beds.module.css";
 
@@ -390,7 +393,14 @@ export function incomingCounts(rows: readonly HandoverRow[]): Map<string, { acce
   return map;
 }
 
-export function HandoverBeds({ rows, wards, held, now, waitingForBed, onOpenPatient }: HandoverBedsProps) {
+export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, onOpenPatient }: HandoverBedsProps) {
+  // A scoped desk totals its own wards only; another ward's empty count must not read as its own.
+  const access = useEffectiveWardAccess();
+  const wards = useMemo(() => {
+    if (accessIsWholeNetwork(access)) return allWards;
+    const places = wardPlaceLookup(allWards.map((ward) => ward.unit));
+    return allWards.filter((ward) => unitInScope(access.scope, ward.id, places));
+  }, [allWards, access]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const baseId = useId();
   const [chips, setChips] = useState<ReadonlySet<BedChip>>(() => new Set());

@@ -9,7 +9,7 @@ import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { TextInput } from "@/components/wf";
@@ -441,7 +441,7 @@ export function WardScreenHomeSection({
                   data-state="blocked-release"
                   data-testid="ward-unit-blocked-releases"
                 >
-                  <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
+                  <span className={styles.statBoxLabel}>{BED_RELEASES_HELD_UP_ANY_DATE_LABEL}</span>{" "}
                   <strong className={styles.statBoxVal}>{blockedReleases.length}</strong>
                 </span>
                 <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">

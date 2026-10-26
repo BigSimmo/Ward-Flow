@@ -248,6 +248,24 @@
   gap: var(--wf-s-2);
 }
 
+/* H-0874: the chips share the first toolbar line with the grouping switch and wrap among
+   themselves. Sized from their content, they left about 10px spare at 1180px, so the wider fallback
+   font before the web font loads pushed the switch onto a second line and the table jumped
+   (layout shift 0.45 on an iPad in landscape). */
+@media (min-width: 48.0625rem) {
+  .chips {
+    flex: 1 1 0;
+    min-width: min(100%, 20rem);
+  }
+
+  /* A steady width for the count too, so the chips' wrap point does not sit at a common screen
+     width (it fell at 1440px). */
+  .matchCount {
+    min-width: 4rem;
+    text-align: right;
+  }
+}
+
 .matchCount {
   margin-left: auto;
   font-size: var(--wf-fs-12);
@@ -437,6 +455,11 @@ tr[data-dim="true"] .rowSub {
   .rowLink {
     display: inline-flex;
     align-items: center;
+    min-height: var(--wf-touch);
+  }
+
+  /* H-0618 / H-0879: each team chip is a full-size tap target on a touch tablet. */
+  .teamChip {
     min-height: var(--wf-touch);
   }
 }

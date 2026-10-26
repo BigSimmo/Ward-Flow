@@ -171,7 +171,7 @@ export function StatisticsCompareScreen({
             <HeroStat value={readyBeds} label="Ready" />
             <HeroStat
               value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
-              label="Mean stay"
+              label="Average stay"
             />
             <HeroStat value={totalBlockers} label="Blockers" />
           </>
@@ -184,7 +184,7 @@ export function StatisticsCompareScreen({
           {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
           <HeroStat
             value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
-            label="Mean stay"
+            label="Average stay"
           />
           <HeroStat value={totalBlockers} label="Blockers" />
           <HeroStat value={totalLongStays} label="Over 3 months" />
@@ -418,7 +418,7 @@ const VIEW_ITEMS: { id: View; label: string }[] = [
 type WardMetric = "stay" | "blocked" | "long";
 
 const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: string }> = {
-  stay: { label: "Stay", chart: "Ward average length of stay bar chart", unit: "days" },
+  stay: { label: "Stay", chart: "Ward average stay bar chart", unit: "days" },
   blocked: { label: "Blockers", chart: "Ward discharge blockers bar chart", unit: "people" },
   long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
 };

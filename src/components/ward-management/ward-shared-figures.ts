@@ -46,6 +46,16 @@ export function waitingInEds(movements: readonly Movement[], now: Instant): Wait
   return { total, byService };
 }
 
+/**
+ * WAITED OVER A LIMIT — an open journey whose person is still in an ED (`isWaitingInEd`) and has
+ * waited at least `minutes` since it opened. Waiting's "Over 8h" and "Over 24h" and Movements' "Over
+ * 8h" and "Past 24h" pills all read this (NA2-10 and NA3-03, audits 24 and 26 Oct 2026): Movements
+ * used to count every open journey for "Over 8h", so it read 19 against Waiting's 15.
+ */
+export function inEdOver(movement: Movement, now: Instant, minutes: number): boolean {
+  return isOpen(movement) && isWaitingInEd(movement) && Math.max(0, now - movement.openedAt) >= minutes;
+}
+
 /** All ED-origin journeys remain open during transport; this is not physical ED occupancy. */
 export function openEdJourneys(
   movements: readonly Movement[],

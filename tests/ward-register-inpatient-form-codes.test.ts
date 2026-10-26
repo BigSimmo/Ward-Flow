@@ -1,13 +1,15 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, it } from "vitest";
 
+import { STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import { wardFormsHeld } from "@/components/ward-management/wards/ward-index";
 import { officialForms } from "@/lib/form-register";
 
 /**
  * AN INPATIENT WARD MAY NOT LIST A COMMUNITY TREATMENT ORDER AMONG THE FORMS IT HOLDS.
  *
- * `ward-index.tsx` gives every ward an `mhaForms` line — the Mental Health Act 2014 authorities
+ * `ward-index.tsx` gives every authorised ward a forms line, derived since October 2026 by
+ * `wardFormsHeld` from the unit's `authorised` and `forensic` flags (it was a hand-typed `mhaForms`
+ * string per ward before) — the Mental Health Act 2014 authorities
  * under which that unit holds people. It renders on the ward profile as "WA MHA 2014 · {forms}".
  *
  * ⚠️ **WHY THIS FILE EXISTS, 2026-09-18.** All 24 ward entries and the unknown-ward fallback named
@@ -37,11 +39,11 @@ import { officialForms } from "@/lib/form-register";
  * standing list of authorities.
  */
 
-const WARD_INDEX_PATH = "src/components/ward-management/wards/ward-index.tsx";
-
-/** Every `mhaForms: "…"` value as written in source, including the unknown-ward fallback. */
-function declaredFormLines(source: string): string[] {
-  return [...source.matchAll(/mhaForms:\s*"([^"]+)"/gu)].map((entry) => entry[1]);
+/** The forms line each authorised unit in the standard network shows on its profile. */
+function declaredFormLines(): string[] {
+  return STANDARD_WARD_SITES.flatMap((site) => site.units)
+    .filter((unit) => unit.authorised)
+    .map((unit) => wardFormsHeld(unit).join(", "));
 }
 
 /**
@@ -53,8 +55,7 @@ const COMMUNITY_ORDER_CODES = officialForms
   .map((form) => form.code);
 
 describe("ward register MHA authorities", () => {
-  const source = readFileSync(WARD_INDEX_PATH, "utf8");
-  const formLines = declaredFormLines(source);
+  const formLines = declaredFormLines();
 
   it("reads the register's community-order category at all, so an empty list cannot pass everything", () => {
     // Without this, renaming the category in form-register.ts would empty COMMUNITY_ORDER_CODES and
@@ -69,8 +70,8 @@ describe("ward register MHA authorities", () => {
   it("still declares ward authorities at all, so a deletion cannot make this file vacuous", () => {
     expect(
       formLines.length,
-      `${WARD_INDEX_PATH} declares ${formLines.length} mhaForms lines; it carried 25 when this ` +
-        "guard was written. A large drop means the register was gutted, not that it became safe.",
+      `the standard network yields ${formLines.length} authorised forms lines; it carried 25 when ` +
+        "this guard was written. A large drop means the register was gutted, not that it became safe.",
     ).toBeGreaterThanOrEqual(20);
   });
 
@@ -90,7 +91,7 @@ describe("ward register MHA authorities", () => {
   });
 
   it("names the inpatient treatment order, so the correction is present rather than merely absent", () => {
-    // The assertion above passes just as well if every mhaForms line were emptied. This one fails
+    // The assertion above passes just as well if every forms line were emptied. This one fails
     // in that case, and fails again if a later edit quietly drops 6A back out.
     const withInpatientOrder = formLines.filter((line) => /\bForm 6A\b/u.test(line));
     expect(

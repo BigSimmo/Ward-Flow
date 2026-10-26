@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -96,5 +96,12 @@ describe("discharge prep on the ward screen", () => {
     expect(screen.getByTestId("ward-drawer-discharge-prep")).toHaveTextContent(/Due out within 24 hours/);
     fireEvent.change(select!, { target: { value: "NDIS" } });
     expect(flow!.admissions.find((admission) => admission.id === admissionId)?.dischargeBarrier).toBe("NDIS");
+
+    // H-0981 / WS-17: recording a blocker is one choice. The barrier is plain text while that form is open.
+    const drawer = within(select!.closest("aside, [role='dialog']") as HTMLElement);
+    fireEvent.click(drawer.getByRole("button", { name: /^(Record|Update) blocker$/ }));
+    expect(screen.queryByTestId("ward-drawer-barrier-select")).toBeNull();
+    expect(drawer.getByRole("combobox", { name: /blocker/i })).toBeInTheDocument();
+    expect(drawer.queryByRole("combobox", { name: /barrier/i })).toBeNull();
   });
 });

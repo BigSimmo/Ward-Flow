@@ -407,13 +407,21 @@ export function createSharedHandler({
       }
       if (path === "/v1/workspace/record-access") {
         // Every desk logs the records it opens. The statewide coordinator reads the whole log; the
-        // access admin reads it for the desks inside its own place (D-80 item 14, Access log).
+        // access admin reads it for the desks inside its own place (D-80 item 14, Access log). A
+        // coordinator also reads the break glass openings for its review list: statewide every
+        // record, a service coordinator the records in its own service (D-80 item 14).
         if (request.method === "GET") {
-          if (!whole && view.access.role !== "admin")
+          const coordinator = view.access.role === "coordinator";
+          if (!whole && !coordinator && view.access.role !== "admin")
             return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
-          return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });
+          const views = store.recordViews ? await store.recordViews(view, patient) : [];
+          if (!coordinator) return reply(200, { views });
+          return reply(200, {
+            views,
+            openings: store.breakGlassOpenings && patient === null ? await store.breakGlassOpenings(view) : [],
+          });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;

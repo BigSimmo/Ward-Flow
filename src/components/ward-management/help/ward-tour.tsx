@@ -282,7 +282,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           <div
             ref={spotRef}
             className={styles.spot}
-            style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+            style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
             data-testid="ward-tour-spot"
             aria-hidden="true"
           />

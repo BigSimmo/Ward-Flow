@@ -123,11 +123,15 @@ export type MissCandidate = {
  * Recorded events between the forecast and the day's figure that a person might look at: a
  * transfer that did not proceed, a booked transport cancelled, or a discharge date moved. In
  * recorded order. Shown as links only; none is ever turned into a reason.
+ *
+ * W-5 (fresh audit 26 Oct 2026): a moved discharge date names the person and ward (D-83, names in
+ * full), never the internal admission id. `describe` is the screen's own resolver.
  */
 export function missCandidates(
   day: Pick<TrackRecordDay, "forecastAt" | "actualAt">,
   movements: readonly Movement[],
   admissions: readonly Admission[],
+  describe: (admission: Admission) => string,
 ): MissCandidate[] {
   const within = (at: Instant | null | undefined): at is Instant =>
     typeof at === "number" && at > day.forecastAt && at <= day.actualAt;
@@ -155,7 +159,7 @@ export function missCandidates(
       candidates.push({
         key: `discharge-${admission.id}`,
         fits: "discharge_postponed",
-        label: `Discharge date moved, ${admission.id}`,
+        label: `Discharge date moved, ${describe(admission)}`,
         source: { kind: "discharge", admissionId: admission.id },
       });
     }

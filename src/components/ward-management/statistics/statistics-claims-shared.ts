@@ -60,6 +60,8 @@ export type ModelClaim = {
 
 export const WARD_MODEL = "src/components/ward-management/ward-model.ts";
 export const WARD_MODEL_MOVEMENT_PARTS = "src/components/ward-management/ward-model-movement-parts.ts";
+// F-17 (26 Oct 2026): `BedRelease` and its word lists moved out of ward-model.ts unchanged.
+export const WARD_MODEL_BED_RELEASE = "src/components/ward-management/ward-model-bed-release.ts";
 export const WARD_ADMISSIONS = "src/components/ward-management/ward-admissions.ts";
 export const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 export const WARD_RECORD_EVENTS = "src/components/ward-management/ward-flow-record-events.ts";

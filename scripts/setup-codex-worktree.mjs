@@ -11,6 +11,7 @@ import {
   installedMetadataMatches as fullInstalledMetadataMatches,
   installedTreeParity,
 } from "./check-installed-lock-parity.mjs";
+import { installLockedDependencies } from "./install-locked-dependencies.mjs";
 
 const logPrefix = "[codex-worktree:setup]";
 
@@ -193,6 +194,54 @@ function installHooks(projectRoot) {
   if (result.status !== 0) fail(`Git hook setup failed with exit ${result.status ?? "unknown"}.`);
 }
 
+export const BACKEND_DIRECTORY = path.join("backend", "ward-flow");
+
+function listWorktrees(root) {
+  const worktreeResult = run("git", ["worktree", "list", "--porcelain"], { cwd: root, capture: true });
+  if (worktreeResult.status !== 0) fail("Could not enumerate local Git worktrees.");
+  return parseWorktreeList(worktreeResult.stdout);
+}
+
+/**
+ * The separately packaged backend gets the same donor-copy route as the root, falling back to the
+ * locked install boundary CI uses for it. A checkout without the backend or its lockfile is skipped.
+ */
+function ensureBackendDependencies(root, options, worktrees) {
+  const backendRoot = path.join(root, BACKEND_DIRECTORY);
+  if (!existsSync(path.join(backendRoot, "package.json")) || !existsSync(path.join(backendRoot, "package-lock.json")))
+    return;
+  if (installationIsComplete(backendRoot)) {
+    log(`${options.dryRun ? "DRY RUN: " : ""}existing backend dependencies match its package-lock.json.`);
+    return;
+  }
+  const donorRoot = findDependencyDonor(
+    (worktrees ?? listWorktrees(root)).map((worktree) => path.join(worktree, BACKEND_DIRECTORY)),
+    backendRoot,
+  );
+  if (options.dryRun) {
+    log(
+      donorRoot
+        ? `DRY RUN: would reuse byte-identical backend dependencies from ${donorRoot}.`
+        : "DRY RUN: no complete byte-identical backend donor; would run the locked backend installation.",
+    );
+    return;
+  }
+  if (donorRoot) {
+    log(`Reusing byte-identical backend dependencies from ${donorRoot}.`);
+    copyDependencies(donorRoot, backendRoot);
+  } else {
+    log("No complete byte-identical backend install found; running the locked backend installation.");
+    removePartialInstall(backendRoot);
+    try {
+      installLockedDependencies({ root: backendRoot, log });
+    } catch (error) {
+      fail(error instanceof Error ? error.message : String(error));
+    }
+  }
+  if (!installationIsComplete(backendRoot)) fail("Installed backend dependencies do not match its package-lock.json.");
+  log("PASS: backend dependencies match its package-lock.json.");
+}
+
 export function main(projectRoot = process.cwd(), options = {}) {
   const root = path.resolve(projectRoot);
   if (!existsSync(path.join(root, ".git")) || !existsSync(path.join(root, "package-lock.json"))) {
@@ -203,17 +252,18 @@ export function main(projectRoot = process.cwd(), options = {}) {
   const currentInstallationComplete = installationIsComplete(root);
   if (options.dryRun && currentInstallationComplete) {
     log("DRY RUN: existing dependencies match package-lock.json.");
+    ensureBackendDependencies(root, options);
     return;
   }
   if (currentInstallationComplete) {
+    ensureBackendDependencies(root, options);
     installHooks(root);
     log("PASS: existing dependencies match package-lock.json.");
     return;
   }
 
-  const worktreeResult = run("git", ["worktree", "list", "--porcelain"], { cwd: root, capture: true });
-  if (worktreeResult.status !== 0) fail("Could not enumerate local Git worktrees.");
-  const donor = findDependencyDonor(parseWorktreeList(worktreeResult.stdout), root);
+  const worktrees = listWorktrees(root);
+  const donor = findDependencyDonor(worktrees, root);
 
   if (options.dryRun) {
     log(
@@ -221,6 +271,7 @@ export function main(projectRoot = process.cwd(), options = {}) {
         ? `DRY RUN: would reuse byte-identical dependencies from ${donor}.`
         : "DRY RUN: no complete byte-identical donor; would run locked npm installation.",
     );
+    ensureBackendDependencies(root, options, worktrees);
     return;
   }
 
@@ -237,6 +288,7 @@ export function main(projectRoot = process.cwd(), options = {}) {
   }
 
   if (!installationIsComplete(root)) fail("Installed dependencies do not match package-lock.json.");
+  ensureBackendDependencies(root, options, worktrees);
   installHooks(root);
   log("PASS: worktree dependencies match package-lock.json.");
 }

@@ -1,0 +1,40 @@
+/* Settings, Data: Help answers used on this device. Rows divided by hairlines, as the Data card. */
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--wf-line);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 8px var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.count {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty,
+.note {
+  margin: 0;
+  padding: 10px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.note {
+  color: var(--wf-ink-3);
+}

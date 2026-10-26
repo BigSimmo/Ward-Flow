@@ -2517,7 +2517,7 @@
   position: fixed;
   inset: 0;
   background: var(--scrim);
-  z-index: 100;
+  z-index: var(--z-modal);
   display: none;
   align-items: center;
   justify-content: center;
@@ -2590,7 +2590,7 @@
   font-size: var(--t-1, 13px);
   font-weight: 500;
   box-shadow: var(--lift);
-  z-index: 120;
+  z-index: var(--z-toast);
   transform: translateY(120%);
   opacity: 0;
   transition:
@@ -4338,5 +4338,27 @@
 @media (max-width: 48rem) {
   .heroMeta {
     white-space: normal;
+  }
+}
+
+/* H-0890 (26 Oct 2026): the referral inbox's loading holder (ward-screen-lazy.tsx) takes the height
+   its cards render at, measured on the seeded wards. A phone card wraps more the narrower the screen
+   (246px at 360, 228px at 390, 210px at 430), so the phone card height follows the width. */
+.inboxPlaceholder {
+  --inbox-head: 4.875rem;
+  --inbox-entry: 10.875rem;
+  min-block-size: calc(var(--inbox-head) + var(--inbox-entries, 1) * var(--inbox-entry));
+}
+
+@media (max-width: 48rem) {
+  .inboxPlaceholder {
+    --inbox-head: 3.875rem;
+    --inbox-entry: clamp(10.875rem, calc(26.85rem - 51vw), 16rem);
+  }
+}
+
+@media (min-width: 90rem) {
+  .inboxPlaceholder {
+    --inbox-entry: 9.25rem;
   }
 }

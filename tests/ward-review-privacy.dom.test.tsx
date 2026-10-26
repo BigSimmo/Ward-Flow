@@ -318,7 +318,9 @@ describe("review privacy boundaries", () => {
         ...connection,
         actorId: change === "account" ? "different-synthetic-account" : connection.actorId,
         access:
-          change === "scope" ? { role: "coordinator", scope: { kind: "service", service: "SMHS" } } : connection.access,
+          change === "scope"
+            ? { role: "coordinator", scope: { kind: "service", service: "South Metro" } }
+            : connection.access,
         snapshot: change === "temporary-opening" ? { ...snapshot, accessContext: "b".repeat(64) } : snapshot,
       } as WardSharedConnection;
       ui.rerender(

@@ -22,9 +22,12 @@
     0 0 0 200vmax var(--wf-scrim-strong),
     0 0 0 200vmax var(--wf-scrim-strong);
   pointer-events: none;
+  /* H-0376/H-0890: placed by transform from the corner, not top and left, so the spotlight finding
+     its control on a first visit is not counted as the page jumping (layout shift). */
+  top: 0;
+  left: 0;
   transition:
-    top 200ms ease,
-    left 200ms ease,
+    transform 200ms ease,
     width 200ms ease,
     height 200ms ease;
 }

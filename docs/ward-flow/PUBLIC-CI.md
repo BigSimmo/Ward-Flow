@@ -1,6 +1,6 @@
 # Public Ward Flow PR checks
 
-_Updated 2026-10-20 - verified scope, shared production proof and browser build fan-out; Documentation owns._
+_Updated 2026-10-26 - main push queue, parallel release-gate legs, four unit workers; Documentation owns._
 
 The `Ward Flow CI` workflow in `.github/workflows/ward-flow.yml` checks the public
 `BigSimmo/Ward-Flow` repository with pinned actions, locked dependencies, a read-only token and
@@ -15,6 +15,11 @@ unit or browser matrices can be allocated. Static checks and scoped backend work
 The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
 all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
+A newer push to a pull request cancels that PR's older run. Main pushes share one queue: the main
+run in progress always finishes, and a newer merge replaces any main run still waiting, so a burst
+of merges is checked once, on the newest main. The daily release takes the newest CI-passed main.
+Unit shards run four Vitest workers, one per hosted-runner vCPU.
+
 | Job                                             | Work                                                                                                                                                                                                       |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Ward Flow scope plan`                          | Computes and verifies install, policy, frontend static, backend, unit, browser and production-build flags.                                                                                                 |
@@ -24,7 +29,7 @@ all executable work. `Ward Flow required` rejects missing plans, unexpected skip
 | `Ward Flow unit shard 1` to `8`                 | Eight disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                                    |
 | `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                                    |
 | `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                           |
-| `Ward Flow release gate`                        | Four required journeys on desktop Chromium and phone WebKit: eight required cases with accessibility checks. Consumes the prepared build, or builds fresh on verified main reuse.                          |
+| `Ward Flow release gate <project>`              | Six required journeys with accessibility checks, as two parallel legs: desktop Chromium and phone WebKit, twelve required cases. Consumes the prepared build, or builds fresh on verified main reuse.      |
 | `Ward Flow secret scan`                         | Full-history gitleaks scan with a pinned, checksum-verified binary.                                                                                                                                        |
 | `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                     |
 | `Ward Flow coverage`                            | Merges all eight unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                        |
