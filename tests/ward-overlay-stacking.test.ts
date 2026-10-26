@@ -42,7 +42,7 @@ describe("in-page slide-overs stay under the modal layer", () => {
   });
 });
 
-// H-0876 (A1K-03, 26 Oct 2026): 13 overlays sat on hard-coded layers above the dialog layer (120,
+// H-0876 (A1K-03, 26 Oct 2026): 16 overlays sat on hard-coded layers above the dialog layer (120,
 // 900, 990, 1000, 9999, 99999). Any sheet opened from one of them would open underneath, the same
 // dead-button pattern as above. Toasts sit on the toast rung, dialogs on the modal rung and in-page
 // drawer backdrops on the overlay rung.
@@ -61,6 +61,9 @@ describe("overlays use the shared layers, not hard-coded ones", () => {
     ["referrals/arrival-time-modal.module.css", ".overlay", "--z-modal"],
     ["ward-tasks-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["ward-standing-strip.module.css", ".hudAnchor", "--z-toast"],
+    ["board/board.module.css", ".toast", "--z-toast"],
+    ["board/board.module.css", ".modalBackdrop", "--z-modal"],
+    ["ed/ed.module.css", ".modalBackdrop", "--z-modal"],
   ])("%s %s uses %s", (file, selector, token) => {
     const values = zIndexOf(css(file), selector);
     expect(values.length).toBeGreaterThan(0);
