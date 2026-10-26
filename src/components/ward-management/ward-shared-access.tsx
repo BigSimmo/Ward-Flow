@@ -19,7 +19,13 @@ import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from 
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
-import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
+import {
+  markSignInLanding,
+  parseStoredAccess,
+  readWardAccessSnapshot,
+  sameDesk,
+  setWardAccess,
+} from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
 import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
@@ -182,6 +188,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       ownRequest: async () => connected().ownRequest(),
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
+      readRecordAccess: async () => connected().readRecordAccess(),
     };
   }, [supabase.client, accountBinding]);
   if (!supabaseMode)
@@ -391,8 +398,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   useEffect(() => {
     if (!serverAccess) return;
     const { desk, previewOf, covers } = readWardAccessSnapshot();
-    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0)
+    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0) {
       setWardAccess(serverAccess, { fromServer: true });
+      // #804, #797: a page closed to this desk opens its home, not "Not part of your role".
+      if (!sameDesk(previewOf ?? desk, serverAccess)) markSignInLanding(window.location.pathname);
+    }
   }, [serverAccess]);
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled
@@ -646,6 +656,19 @@ function WardSharedWorkspaceContent({
     return (
       <WardAskForAccess
         canRequest={connection.canRequest === true}
+        reason={connection.noRoleReason}
+        api={connection.accessApi ?? null}
+        onRetry={connection.retry}
+        onSignOut={connection.signOut}
+      />
+    );
+  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
+  // with the desk it held before, so it falls back to the no-role screen. A server that names no
+  // access at all (`connection.access` absent) is the older shared workspace and still opens.
+  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
+    return (
+      <WardAskForAccess
+        canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
         onSignOut={connection.signOut}
@@ -672,10 +695,7 @@ function WardSharedWorkspaceContent({
         aria-busy={connection.signedIn && connection.status === "loading"}
       >
         <h1>Ward Flow sign-in</h1>
-        <p>
-          Shared synthetic workspace. Sign in to reach the Ward Flow workflows your access covers. Coordinator access
-          still needs to be set up.
-        </p>
+        <p>Shared synthetic workspace. You see the screens your role needs.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
         {connection.signedIn && connection.status === "loading" && !connection.error && (
           <p role="status" data-testid="ward-shared-connecting">

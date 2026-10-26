@@ -1,6 +1,6 @@
 # Desk guide: Community clinician
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 You work for one community mental health team. You send referrals and answer the ones sent to
 your team.
@@ -8,7 +8,11 @@ your team.
 ## What you see first
 
 **My team**: referrals waiting for your team's answer, people in a bed, and your caseload. Your
-main menu: **My team, Referrals, New referral**. **Movements** shows your own journeys.
+main menu: **My team, Referrals, New referral**. **Movements**, under **More**, shows your own
+journeys.
+
+On a phone, the bar at the bottom has **My team, Referrals, Create, Alerts, Activity**. **Create**
+holds **New referral**, and **Movements** is under **Menu**.
 
 ## Jobs you do most
 

@@ -67,7 +67,7 @@ function countInCategory(category: keyof typeof INBOX_CATEGORIES): number {
 
 /** Every condition this screen claims to watch, by its name in the hero's Checking list. */
 const CONDITIONS = [
-  "Form due passed",
+  "Legal due time passed",
   "Every ward declined",
   "Unsuitable destination",
   "Pull expired",

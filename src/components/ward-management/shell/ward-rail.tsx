@@ -29,7 +29,8 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -346,7 +347,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
-  const currentPersona = DESK_PERSONAS[personaRole];
+  // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
+  const currentPersona = useEffectiveWardAccess().role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
   const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
@@ -360,7 +362,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
   const alertCount = bedAlerts.services.filter((svc) => isBedAlert(svc.occupancyPercent)).length;
-  const alertCountLabel = alertCount === 0 ? "No alerts" : `${alertCount} ${alertCount === 1 ? "alert" : "alerts"}`;
+  // Says what it counts, services over the bed alert line, so it is never read as the Alerts page's
+  // own list (#793: "2 alerts" here while Alerts said no alert needs you).
+  const alertCountLabel = `${alertCount === 0 ? "None" : alertCount} over ${BED_ALERT_THRESHOLD_PERCENT}%`;
   const metroPercent = bedAlerts.metroOccupancyPercent;
   const metroLabel = metroPercent === null ? "Metro —" : `Metro ${formatOccupancyPercent(metroPercent)}`;
   const hottestLabel = hottest ? `${hottest.shortName} ${formatOccupancyPercent(hottest.occupancyPercent)}` : "";

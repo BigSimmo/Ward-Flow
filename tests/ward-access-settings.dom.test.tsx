@@ -370,7 +370,7 @@ describe("the Access tab", () => {
     expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED mental health clinician");
     expect(rows[0]).toHaveTextContent("2 hours ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
-    expect(rows[1]).toHaveTextContent("You, Flow coordinator, Statewide. 3 minutes ago.");
+    expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 minutes ago.");
     expect(log).not.toHaveTextContent("Demo only");
     expect(api.listRecordViews).toHaveBeenCalledTimes(1);
   });

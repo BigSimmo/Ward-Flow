@@ -147,6 +147,10 @@ export function WardAskForAccess({
           }}
         >
           <h2>Ask for access</h2>
+          <p>
+            Bed coordinator and Access admin roles are given by an access admin, so they are not listed. Ask your access
+            admin directly if you need one.
+          </p>
           <label>
             Role
             <select
