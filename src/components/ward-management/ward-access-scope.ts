@@ -348,7 +348,7 @@ const COLLECTION_FIELDS = [
  */
 function collectionMovement(
   movement: Movement,
-  riskFlags: Movement["collectionRiskFlags"],
+  referral: Referral | undefined,
   fromUnitId: string | undefined,
 ): Movement {
   const trimmed: Record<string, unknown> = {
@@ -378,10 +378,10 @@ function collectionMovement(
     blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
   };
   for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
-  // The browser scopes the server's officer copy again, with no referrals or stays left to read,
-  // so a copy keeps what the first pass found (review on PR #637).
-  const flags = riskFlags ?? movement.collectionRiskFlags;
+  // A second pass over the officer copy has no referrals or stays, so keep what the first found (PR #637).
+  const flags = referral?.intake?.riskFlags ?? movement.collectionRiskFlags;
   if (flags?.length) trimmed.collectionRiskFlags = [...flags];
+  if (movement.patientId === undefined && referral?.patientId !== undefined) trimmed.patientId = referral.patientId;
   const from = fromUnitId ?? movement.collectionFromUnitId;
   if (from !== undefined) trimmed.collectionFromUnitId = from;
   return trimmed as Movement;
@@ -1097,12 +1097,12 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
       // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026). The
-      // referral's risk categories ride on the job as flags (D-80 item 7).
-      const riskFlags = new Map(workspace.referrals.map((referral) => [referral.id, referral.intake?.riskFlags]));
+      // referral's risk flags (D-80 item 7) and, if the journey names no one, its person (WT-01) ride on it.
+      const referrals = new Map(workspace.referrals.map((referral) => [referral.id, referral]));
       movements = movements.map((movement) =>
         collectionMovement(
           movement,
-          movement.referralId === undefined ? undefined : riskFlags.get(movement.referralId),
+          movement.referralId === undefined ? undefined : referrals.get(movement.referralId),
           movement.sourceAdmissionId === undefined ? undefined : admissionUnits.get(movement.sourceAdmissionId),
         ),
       );

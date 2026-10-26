@@ -83,6 +83,7 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-arrivals-corridor.tsx": { cover: "page form" },
   "ward/ward-bed-dossier-drawer.tsx": { cover: "popup", why: "The bed drawer is modal." },
   "ward/ward-discharge-criteria-card.tsx": { cover: "held" },
+  "ward/ward-leave-paper-authority.tsx": { cover: "popup", why: "Opens only inside the bed drawer (WT-02)." },
   "ward/ward-observation-control.tsx": { cover: "held" },
   "ward/ward-screen.tsx": { cover: "held" },
 };

@@ -55,6 +55,7 @@ import {
   type Observation,
 } from "@/components/ward-management/ward-observation";
 import { WardObservationControl, observationWithReview } from "./ward-observation-control";
+import { WardLeavePaperAuthority, useLeaveNeedsPaperAuthority } from "./ward-leave-paper-authority";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 
 interface WardBedDossierDrawerProps {
@@ -129,6 +130,8 @@ function bedTone(bedItem: BedItem | undefined, isReady: boolean): WfTone | null 
 /** Shortens "Form 6A Involuntary inpatient" to "Form 6A" for the fact tile; the full label stays in Overview. */
 function shortLegal(label: string | undefined): string {
   if (!label) return "Not recorded";
+  // WT-03: "Form 6A not recorded (Form 1A ended ...)" keeps its "not recorded" on the tile.
+  if (label.includes(" not recorded (")) return label.split(" (")[0]!;
   return label.startsWith("Form ") ? label.split(" ").slice(0, 2).join(" ") : label;
 }
 
@@ -254,6 +257,10 @@ export function WardBedDossierDrawer({
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
+  const leavePaper =
+    useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination) && admission ? (
+      <WardLeavePaperAuthority admissionId={admission.id} who={occupantAlias} unitId={unit.id} />
+    ) : null;
   // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
   const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;
   const sentJourneyControls = useStayJourneyIsMine(sentJourney) ? (
@@ -580,6 +587,7 @@ export function WardBedDossierDrawer({
           setDrawerLeavingDestination={setDrawerLeavingDestination}
           onClose={onClose}
           onRecordLeft={() => setConfirmStep("leave")}
+          leavePaper={leavePaper}
           blockerSave={blockerSave}
           onSetObservation={onSetObservation}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
@@ -945,10 +953,12 @@ export function WardBedDossierDrawer({
                       {criteriaDepartureNote}
                     </p>
                   ) : null}
+                  {leavePaper}
                   <Button
                     variant="pri"
                     size="lg"
                     className={styles.pill}
+                    disabledReason={leavePaper ? "Record the paper authority first." : undefined}
                     aria-describedby={
                       criteriaDepartureNote
                         ? "drawer-leaving-summary drawer-leaving-criteria"
@@ -1109,6 +1119,8 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
+  /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
+  leavePaper?: ReactNode;
 }
 
 /**
@@ -1158,6 +1170,7 @@ function PhoneBedSheet({
   sentJourney,
   leavingCriteriaNote,
   readyNote,
+  leavePaper,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
@@ -1340,9 +1353,11 @@ function PhoneBedSheet({
                     {leavingCriteriaNote}
                   </p>
                 ) : null}
+                {leavePaper}
                 <Button
                   variant={leavingNow ? "pri" : "sec"}
                   className={styles.pill}
+                  disabledReason={leavePaper ? "Record the paper authority first." : undefined}
                   aria-describedby={
                     leavingCriteriaNote
                       ? "drawer-leaving-summary-phone drawer-leaving-criteria-phone"
