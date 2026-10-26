@@ -58,7 +58,9 @@ function requireWorkflow(source) {
   assert.match(source, /^permissions:\n {2}contents: read$/mu);
   assert.match(
     source,
-    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
+    // A PR's newer push cancels its older run; main pushes share one queue whose running check is never
+    // cancelled (a newer merge only replaces a waiting one); scheduled and manual runs stay separate.
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
   );
   assert.doesNotMatch(source, /^\s*(?:shell|defaults):/mu);
   for (const pattern of [
@@ -255,6 +257,22 @@ function requireWorkflow(source) {
     "Run the release-gate journeys",
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
+  );
+  // Desktop and phone run as parallel legs: together exactly both device projects, neither dropped
+  // by fail-fast, and each leg's runner narrowed only through WARD_RELEASE_GATE_PROJECT.
+  assert.match(
+    jobs.get("release-gate"),
+    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}project: \[release-gate-desktop, release-gate-phone\]\n/mu,
+  );
+  assert.ok(
+    step("release-gate", "Run the release-gate journeys").text.includes(
+      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.project")}\n`,
+    ),
+  );
+  assert.ok(
+    jobs
+      .get("release-gate")
+      .includes(`ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}`),
   );
   exact(
     "build",
