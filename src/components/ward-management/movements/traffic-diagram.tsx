@@ -294,11 +294,15 @@ export function TrafficDiagram({
                     key={`${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage} rank`}
                     className={isItemActive ? styles.railItemActive : undefined}
                   >
-                    <button type="button" className={styles.railRow} {...highlight({
-                      type: "corridor",
-                      originEdId: corridor.originEdId,
-                      destinationId: corridor.acceptedUnitId,
-                    })}>
+                    <button
+                      type="button"
+                      className={styles.railRow}
+                      {...highlight({
+                        type: "corridor",
+                        originEdId: corridor.originEdId,
+                        destinationId: corridor.acceptedUnitId,
+                      })}
+                    >
                       <span>
                         {ed ? `${ed.siteCode} ED` : corridor.originEdId} to{" "}
                         {wardLabel(corridor.acceptedUnitId, unit?.name)}
@@ -330,11 +334,15 @@ export function TrafficDiagram({
                   key={`${corridor.originEdId} ${corridor.unitId} refused rank`}
                   className={isItemActive ? styles.railItemActive : undefined}
                 >
-                  <button type="button" className={styles.railRow} {...highlight({
-                    type: "corridor",
-                    originEdId: corridor.originEdId,
-                    destinationId: corridor.unitId,
-                  })}>
+                  <button
+                    type="button"
+                    className={styles.railRow}
+                    {...highlight({
+                      type: "corridor",
+                      originEdId: corridor.originEdId,
+                      destinationId: corridor.unitId,
+                    })}
+                  >
                     <span>
                       {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
                       <small>{corridor.reasons.map(reasonLabel).join(", ")}</small>
