@@ -27,6 +27,14 @@ function jobAt(offset: number): { name: string; text: string } | undefined {
 }
 
 describe("Ward backend CI", () => {
+  it("lints the backend in the whole-tree lint, locally and in CI (H-0296, H-0913)", () => {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    expect(pkg.scripts["lint:internal"]).toMatch(/eslint\.js src tests scripts backend /u);
+    expect(step("Lint the whole tree").text).toMatch(/eslint\.js src tests scripts backend /u);
+  });
+
   it("installs and tests the nested backend in a job the required check depends on", () => {
     const install = step("Install locked Ward backend dependencies");
     const backendTest = step("Run Ward backend tests");

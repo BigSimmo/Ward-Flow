@@ -146,7 +146,7 @@ function requireWorkflow(source) {
     ],
     [
       "Lint the whole tree",
-      "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern",
+      "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts backend playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern",
       frontend,
     ],
     ["Check for new unused code", "npm run check:knip", frontend],
