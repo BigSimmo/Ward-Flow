@@ -1,4 +1,7 @@
+// Registers every reducer slice before the engine runs a command (see ward-flow-reducer-slice-registry.ts).
+import "../../src/components/ward-management/ward-flow-reducer-slices";
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
+import { projectWardPartialView } from "../../src/components/ward-management/ward-partial-view-projector";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
@@ -487,6 +490,21 @@ export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, gra
   return { ...world, state };
 }
 
+/** Response-only sender display data, derived privately from the full stored world.
+ * It is never put into scopeWorld, a saved world or a command-authorisation input. */
+export function partialViewForWorld(
+  world: SharedWorld,
+  access: WardAccess,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+) {
+  return projectWardPartialView(world.state, access, {
+    now: worldNow(world, at),
+    places: getWardPlaceLookup(world.state.units),
+    grants: worldGrants(world, grants, at),
+  });
+}
+
 /**
  * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
  * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
@@ -641,9 +659,34 @@ export function scopedActNowAlerts(world: SharedWorld, access: WardAccess, at: D
   if (!validWorld(world) || !PUSH_ROLES.includes(access.role)) return [];
   const heard: PushAlert["kind"] =
     access.role === "officer" ? "job" : access.role === "community" ? "community" : "act-now";
-  const alerts = accessIsWholeNetwork(access)
-    ? actNowAlerts(world, at)
-    : actNowAlerts(scopeWorld(world, access, at), at);
+  let alertWorld = accessIsWholeNetwork(access) ? world : scopeWorld(world, access, at);
+  if (access.role === "ward" || access.role === "bed_manager") {
+    // Masking a sender's foreign requests must not erase its existing alert conditions. Derive
+    // privately from the two original condition inputs only while the server's current sender
+    // READ classifier permits them. Other scoped fields/links stay intact, receiving-only rows
+    // stay masked, and no restored input is sent.
+    const senderIds = new Set(
+      partialViewForWorld(world, access, at)
+        .movements.filter((row) => row.kind === "sender")
+        .map((row) => row.id),
+    );
+    if (senderIds.size > 0) {
+      const full = new Map(world.state.movements.map((movement) => [movement.id, movement]));
+      alertWorld = {
+        ...alertWorld,
+        state: {
+          ...alertWorld.state,
+          movements: alertWorld.state.movements.map((movement) => {
+            const source = senderIds.has(movement.id) ? full.get(movement.id) : undefined;
+            return source
+              ? { ...movement, declines: source.declines, referredUnitIds: source.referredUnitIds }
+              : movement;
+          }),
+        },
+      };
+    }
+  }
+  const alerts = actNowAlerts(alertWorld, at);
   return alerts.filter((alert) => alert.kind === heard);
 }
 

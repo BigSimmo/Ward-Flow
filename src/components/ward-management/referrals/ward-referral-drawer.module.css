@@ -726,6 +726,8 @@
 @media (max-width: 48rem), (pointer: coarse) {
   .patientSearchInput {
     font-size: max(1rem, 16px);
+    /* Layout sweep (REF-17): at 16px the placeholder ends in an ellipsis, not mid-word. */
+    text-overflow: ellipsis;
   }
 }
 
@@ -822,13 +824,18 @@
   flex: 1;
 }
 
+/* Layout sweep (REF-17): the name and its age and sex take a second line beside the badge rather
+   than being cut to "Underbridge, Warrick (4…". */
 .searchResultName {
+  display: -webkit-box;
   overflow: hidden;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .searchResultMeta {
@@ -992,6 +999,16 @@
 
 .lateNote {
   color: var(--wf-ink-2);
+}
+
+/* WS-01: the gender review note under Bed requirements, said before Send. */
+.reviewNote {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }
 
 .confirmRow {
@@ -1487,12 +1504,11 @@
   font-weight: 600;
 }
 
+/* Layout sweep (REF-19): the hint wraps, so "up to 2 MB" is never cut on a phone. */
 .uploadDescription span {
-  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .fileInput {
@@ -1572,6 +1588,11 @@
 .wardTable {
   overflow: hidden;
   border-top: 1px solid var(--wf-line);
+}
+
+/* Layout sweep (REF-10): the "No wards match" line sits inside the card's padding, not on its edges. */
+.wardTable > .bodyMeta {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
 
 .wardTableHead,
@@ -2009,6 +2030,16 @@ details.refCard > summary {
 
 .sendTargetLabel[data-tone="danger"] {
   color: var(--wf-ink-1);
+}
+
+/* Layout sweep (REF-13): the line that says what blocks the next step takes up to two lines
+   rather than being cut ("…or choose "No…"). */
+.sendTargetSummary[role="alert"] .sendTargetLabel > span {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .sendTargetName {
@@ -3069,7 +3100,8 @@ details.refCard > summary {
 
   .drawerWide[data-ph-mode="sheet"] .phSheetHead {
     position: sticky;
-    z-index: 2;
+    /* Above the patient search results (z-index 20), which scroll under the pinned head (REF-09). */
+    z-index: 30;
     top: 0;
     display: block;
     margin: 0 calc(var(--wf-s-4) * -1);
@@ -3450,4 +3482,30 @@ details.refCard > summary {
 
 .fastTrackBtn:hover {
   background: var(--wf-surface-2);
+}
+
+/* Layout sweep (REF-16): on a touch screen the submitted-details summary, the section steps and
+   the New referral / Ward inboxes switch are full-size touch targets. */
+@media (pointer: coarse) {
+  /* Padding rather than flex, which would drop the disclosure triangle. */
+  details.refCard > summary {
+    padding-block: 13px;
+  }
+
+  .stepItem {
+    min-height: 44px;
+  }
+
+  .headTabs > button {
+    height: auto;
+    min-height: 44px;
+  }
+}
+
+/* Layout sweep (REF-14): on a phone a card title wraps beside its tag ("Legal status and urgency"
+   beside "limits not legally checked") rather than being cut to "Legal status …". */
+@media (max-width: 48rem) {
+  .cardTitle {
+    white-space: normal;
+  }
 }

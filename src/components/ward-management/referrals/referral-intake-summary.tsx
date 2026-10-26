@@ -1,7 +1,7 @@
 "use client";
 
 import { clearanceChecklistWords, referralNeedsWords, type ReferralIntakeDetails } from "./referral-submission";
-import { ReferralDocumentLinks } from "./referral-flow-panels";
+import { ReferralDocumentLinks } from "./referral-document-links";
 import styles from "./ward-referral-drawer.module.css";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";

@@ -128,6 +128,8 @@
 }
 
 .emptyCell {
+  margin: 0;
+  padding: var(--wf-s-6) var(--wf-s-4);
   color: var(--wf-ink-3);
   text-align: center;
 }
@@ -485,13 +487,11 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  /* D-80 item 14: Outcome is wide enough for "More than 3 in 12 hours"; What and By give way. */
-  grid-template-columns: minmax(4.5rem, 4.5rem) minmax(7.5rem, 1.6fr) minmax(7rem, 1.2fr) minmax(
-      5rem,
-      0.8fr
-    ) 10.5rem 7rem;
+  /* D-80 item 14: Outcome is wide enough for "More than 3 in 12 hours". The other tracks keep
+     the trimmed widths that fit the register at 1280 and 1440 (LEGAL-13). */
+  grid-template-columns: 4.5rem minmax(8rem, 1.6fr) minmax(7rem, 1.2fr) minmax(6rem, 0.8fr) 10.5rem 6.5rem;
   align-items: center;
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-2);
   min-width: 44rem;
   padding: 0 var(--wf-s-4);
   box-sizing: border-box;

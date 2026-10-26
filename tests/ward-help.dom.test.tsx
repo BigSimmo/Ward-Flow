@@ -33,7 +33,8 @@ import {
   filterGlossary,
   screenHelpFor,
 } from "@/components/ward-management/help/ward-help-content";
-import { DESK_GUIDES, SAVED_OR_NOT } from "@/components/ward-management/help/ward-help-guide";
+import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "@/components/ward-management/help/ward-help-guide";
+import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { WHATS_NEW } from "@/components/ward-management/help/ward-whats-new";
@@ -72,11 +73,11 @@ beforeEach(() => {
 afterEach(() => resetTourSeenForTests());
 
 describe("help content", () => {
-  it("finds the screen by the longest matching rail address", () => {
+  it("finds the screen by its own rail address, so Home never stands in for another page", () => {
     const entries = railEntries();
     expect(screenHelpFor("/ward-flow/movements", entries)?.title).toBe("Movements");
     expect(screenHelpFor("/ward-flow", entries)?.title).toBe("Home");
-    expect(screenHelpFor("/ward-flow/capacity/anything", entries)?.title).toBe("Capacity");
+    expect(screenHelpFor("/ward-flow/capacity/anything", entries)).toBeUndefined();
   });
 
   it("keeps every screen to at most three main actions", () => {
@@ -124,8 +125,15 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
   });
 
+  it("answers the screen's own questions and lists the keyboard shortcuts", () => {
+    route.pathname = "/ward-flow/handover";
+    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-help-questions").textContent).toContain("How do I hand over to the next shift?");
+    expect(screen.getByTestId("ward-help-shortcuts").textContent).toContain("Shift+R");
+  });
+
   it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
-    route.pathname = "/ward-flow/settings";
+    route.pathname = "/ward-flow/constellation";
     const onView = vi.fn();
     render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
     expect(screen.queryByTestId("ward-help-screen")).toBeNull();
@@ -166,6 +174,34 @@ describe("help sheet", () => {
       expect(guide.jobs.length, role).toBeLessThanOrEqual(6);
       const words = JSON.stringify(guide).toLowerCase();
       expect(words, role).not.toMatch(/best match|risk score|acuity|recommended ward|hold the bed|bed hold/);
+    }
+  });
+
+  it("says what to do when Ward Flow is down, on every desk's guide (PR-20)", () => {
+    render(<Harness initial="desk" />);
+    expect(screen.getByTestId("ward-help-downtime").textContent).toContain(WHEN_IT_IS_DOWN[0]);
+  });
+
+  it("reads a phone no keyboard hints (HF-14)", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === WF_PHONE_QUERY,
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      route.pathname = "/ward-flow/referrals";
+      render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
+      expect(screen.getByTestId("ward-help-screen").textContent).toContain("Tap a referral to open it");
+      expect(screen.getByTestId("ward-help-screen").textContent).not.toMatch(/keyboard|J and K/);
+      expect(screen.queryByTestId("ward-help-shortcuts")).toBeNull();
+    } finally {
+      window.matchMedia = original;
     }
   });
 

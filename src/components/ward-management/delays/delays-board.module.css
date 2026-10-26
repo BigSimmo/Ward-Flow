@@ -1008,7 +1008,9 @@ button.stat:hover .statV {
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  max-width: 9.5rem;
+  /* Layout sweep (WARD-09): labels sit 18% apart (delays-board-rows.tsx), so each keeps under that
+     width and neighbours never run into each other. */
+  max-width: min(9.5rem, 17%);
   transform: translateX(-50%);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
@@ -1023,7 +1025,7 @@ button.stat:hover .statV {
 }
 
 .sxL > span {
-  max-width: 9.5rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--wf-ink-3);
@@ -2279,8 +2281,9 @@ button.gLaneL:hover {
     font-size: var(--wf-fs-13);
   }
 
+  /* REF-15: one fixed time column so the wait, the update line and the status line up row to row. */
   .tbl .r {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) 6rem;
     grid-template-areas:
       "tier who wait"
       "tier who upd";
@@ -2309,6 +2312,7 @@ button.gLaneL:hover {
     grid-area: upd;
     grid-column: 3;
     justify-self: end;
+    text-align: right;
     color: var(--wf-ink-2);
     font-size: var(--wf-fs-12);
   }
@@ -2900,6 +2904,12 @@ button.gLaneL:hover {
 
   .owners.owners {
     padding-inline: 0;
+  }
+
+  /* Layout sweep (REF-02/WARD-08): the owner chips stay one sideways-scrolling row. The
+     `overflow: visible` above is for the table card; on the chips it cut off the last chip. */
+  .owners.owners.owners[data-ward-primitive] {
+    overflow-x: auto;
   }
 }
 

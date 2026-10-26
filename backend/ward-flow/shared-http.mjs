@@ -105,6 +105,8 @@ export function createSharedHandler({
   readBody,
   verifierUnavailable,
   verifierRateLimited = null,
+  // Part B item 49 groundwork: off until the health service's sign-in or Supabase factors are set up.
+  requireSecondStep = false,
   log = (event) => console.info(JSON.stringify(event)),
 }) {
   return async (request, meta = {}) => {
@@ -163,7 +165,7 @@ export function createSharedHandler({
       });
     }
     let actorId;
-    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string, sessionId?: string }} */
+    /** @type {{ signedInAt?: number, startedAt?: number, aal?: string, secondStep?: boolean, sessionId?: string }} */
     const session = {};
     try {
       actorId = await authenticate(request.headers.get("authorization"), {
@@ -228,6 +230,14 @@ export function createSharedHandler({
           : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
       }
     }
+    // When switched on, every other request needs a sign-in that finished its second step. Turning
+    // this device's phone alerts off and signing out still go through, so nobody is stuck signed in.
+    if (requireSecondStep && session.secondStep !== true && path !== "/v1/workspace/push-unsubscribe")
+      return reply(
+        401,
+        { code: "second-step-required", error: "Finish signing in with your second step, then carry on." },
+        "second_step_required",
+      );
     const workingAs = request.headers.get(WORKING_AS)?.toLowerCase() ?? null;
     if (workingAs !== null && workingAs !== "bootstrap" && !UUID.test(workingAs))
       return reply(400, { error: "Working as names one of this account's roles" });

@@ -41,15 +41,15 @@ describe("community demonstration queue totals", () => {
     renderTeam();
     expectTotals(2, 1);
     expect(within(screen.getByTestId("ward-community-waiting-list")).getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: /^All Referrals/u })).toHaveTextContent("2");
+    expect(screen.getByRole("button", { name: /^All referrals/u })).toHaveTextContent("2");
   });
 
   it("keeps the queue total while filtering its visible rows, including an empty priority", () => {
     renderTeam();
-    fireEvent.click(screen.getByRole("button", { name: /^Priority 2 Urgent/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Priority 2 urgent/u }));
     expect(within(screen.getByTestId("ward-community-waiting-list")).getAllByRole("listitem")).toHaveLength(1);
     expectTotals(2, 1);
-    fireEvent.click(screen.getByRole("button", { name: /^Priority 1 Immediate/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Priority 1 immediate/u }));
     expect(screen.getByTestId("ward-community-waiting-empty")).toBeInTheDocument();
     expectTotals(2, 1);
   });

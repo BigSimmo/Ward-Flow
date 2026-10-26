@@ -10,9 +10,16 @@ import {
   type ReferralDeclineReason,
   type Rejection,
 } from "@/components/ward-management/ward-model";
-import { referralSenderRole, referralWithdrawable } from "@/components/ward-management/ward-referrals";
+import { referralSenderRole } from "@/components/ward-management/ward-referrals";
 import styles from "./referrals.module.css";
 import { MATCH_VIEW_DECISION_EVENTS } from "./referral-match-model";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { referralPresentation } from "../ward-partial-view-presenters";
+import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { referralSentByDesk, routeSentKind } from "../ward-referral-sender";
+import { wardPlaceLookup } from "../ward-access-places";
+import { useHoldOpenForm } from "../use-hold-open-form";
 
 /**
  * The match view's state, its rejection check, the ward arm under review and the controls built
@@ -31,7 +38,19 @@ export function useReferralMatchState({
   now: Instant;
 }) {
   // S2-14: linked movements gate whole-referral withdrawal (in transit, arrived or closed refuses).
-  const linkedMovements = useOptionalWardFlowSelect("movements")?.movements;
+  const records = useOptionalWardFlowSelect("movements", "units");
+  const linkedMovements = records?.movements;
+  const sender = useSenderPresentation();
+  const senderSummary = sender.referralFor(referral);
+  const presentation = referralPresentation(referral, senderSummary, linkedMovements);
+  const routeRole = useRouteRole();
+  const access = useEffectiveWardAccess();
+  const gate = useRoleGate();
+  const scopedRecorder = senderSummary !== undefined || access.role !== "coordinator";
+  const senderCanWithdraw =
+    routeSentKind(routeRole, referral.source) &&
+    referralSentByDesk(referral, access, wardPlaceLookup(records?.units ?? [])) &&
+    gate("RECORD_REFERRER_WITHDRAWAL").allowed;
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -97,6 +116,9 @@ export function useReferralMatchState({
    */
   const [withdrawRecorder, setWithdrawRecorder] = useState<"coordinator" | "sender">("coordinator");
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
+  // Audit CS3-01: each inline confirm step is checked against the board as it was when it opened.
+  useHoldOpenForm(edAcceptConfirmOpen);
+  useHoldOpenForm(withdrawConfirmOpen);
   const [lastRejection, setLastRejection] = useState<Rejection | undefined>(undefined);
   // Same async-detection pattern the referral slide-out uses for its own send (`submissionRef`) —
   // `dispatch` never returns whether
@@ -167,9 +189,10 @@ export function useReferralMatchState({
     priorRejectionCountRef.current = rejections.length;
     dispatch({
       type: "RECORD_REFERRER_WITHDRAWAL",
-      role: withdrawRecorder === "sender" ? senderRole : "coordinator",
+      role: scopedRecorder ? routeRole : withdrawRecorder === "sender" ? senderRole : "coordinator",
       now,
       referralId: referral.id,
+      ...(scopedRecorder && routeRole === "ward" ? { actingUnitId: referral.originUnitId } : {}),
     });
     setWithdrawConfirmOpen(false);
     setCheckToken((token) => token + 1);
@@ -179,59 +202,70 @@ export function useReferralMatchState({
    * withdrawn; any answer already given stands. Offered only while the reducer would accept it.
    */
   // Audit 11 Oct 2026: Decide holds the decision; withdrawing sits one tap away in a disclosure.
-  const wholeWithdrawControl = referralWithdrawable(referral, linkedMovements) ? (
-    <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
-      <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
-      <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
-        <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
-          Referrer cancelled this referral — recorded by
-        </label>
-        <div className={styles.selectWithActionRow}>
-          <select
-            id="ward-referral-match-withdraw-recorder"
-            data-testid="ward-referral-match-withdraw-recorder"
-            className={styles.select}
-            value={withdrawRecorder}
-            onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
-          >
-            <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
-            <option value="sender">{senderLabel}</option>
-          </select>
-          {!withdrawConfirmOpen ? (
-            <button
-              type="button"
-              className={styles.declineButton}
-              data-testid="ward-referral-match-withdraw"
-              onClick={() => setWithdrawConfirmOpen(true)}
-            >
-              Withdraw referral
-            </button>
+  const wholeWithdrawControl =
+    presentation.kind !== "unavailable" && presentation.canWithdraw && (!scopedRecorder || senderCanWithdraw) ? (
+      <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
+        <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
+        <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
+          {!scopedRecorder ? (
+            <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
+              Referrer cancelled this referral — recorded by
+            </label>
           ) : (
-            <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+            <p className={styles.fieldLegend}>
+              Referrer cancelled this referral — recorded by {WARD_FLOW_ROLE_LABELS[routeRole]}
+            </p>
+          )}
+          <div className={styles.selectWithActionRow}>
+            {!scopedRecorder ? (
+              <select
+                id="ward-referral-match-withdraw-recorder"
+                data-testid="ward-referral-match-withdraw-recorder"
+                className={styles.select}
+                value={withdrawRecorder}
+                onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
+              >
+                <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
+                <option value="sender">{senderLabel}</option>
+              </select>
+            ) : null}
+            {!withdrawConfirmOpen ? (
               <button
                 type="button"
                 className={styles.declineButton}
-                data-testid="ward-referral-match-confirm-withdraw"
-                onClick={handleWholeWithdraw}
+                data-testid="ward-referral-match-withdraw"
+                onClick={() => setWithdrawConfirmOpen(true)}
               >
-                Confirm withdrawal
+                Withdraw referral
               </button>
-              <button
-                type="button"
-                className={styles.acceptButton}
-                data-testid="ward-referral-match-cancel-withdraw"
-                onClick={() => setWithdrawConfirmOpen(false)}
-              >
-                Keep referral
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className={styles.matchRowTop} data-testid="ward-referral-match-withdraw-confirm-group">
+                <button
+                  type="button"
+                  className={styles.declineButton}
+                  data-testid="ward-referral-match-confirm-withdraw"
+                  onClick={handleWholeWithdraw}
+                >
+                  Confirm withdrawal
+                </button>
+                <button
+                  type="button"
+                  className={styles.acceptButton}
+                  data-testid="ward-referral-match-cancel-withdraw"
+                  onClick={() => setWithdrawConfirmOpen(false)}
+                >
+                  Keep referral
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </details>
-  ) : null;
+      </details>
+    ) : null;
 
   return {
+    senderSummary,
+    presentation,
     linkedMovements,
     declineReason,
     setDeclineReason,

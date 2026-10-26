@@ -512,9 +512,9 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 
 - **`src/proxy.ts`** (no `middleware.ts`): blocks every `/mockups` path in production (the
   developer-gated list is empty since Ward Flow moved to `/ward-flow` on 19 October 2026),
-  forwards the old `/mockups/ward-flow` addresses permanently, and sets the Ward Flow offline header
-  after stripping any client copy.
-- **`src/app/layout.tsx`:** with that header, the Supabase auth providers are **not mounted**.
+  forwards the old `/mockups/ward-flow` addresses permanently, and sets the per-request CSP nonce.
+  The old Ward Flow offline header was removed on 26 October 2026 because nothing read it (CQ-14).
+- **`src/app/layout.tsx`:** reads the CSP nonce and theme cookies; it mounts no Supabase auth provider.
 - **`src/app/mockups/layout.tsx`:** 404 unless mockups are enabled
   (`mockupsEnabled()`) or the path is developer-gated; no Ward Flow route sits under it any more.
 - **Access:** open. The developer-key gate (`ward-flow-access-gate.tsx`) was removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.

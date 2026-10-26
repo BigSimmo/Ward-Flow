@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentType,
   type ReactNode,
 } from "react";
@@ -31,6 +32,8 @@ import { publishLiveRefresh } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
+import { WardPartialViewProvider } from "./ward-partial-view";
+import type { SenderReadSource } from "./ward-sender-read-collection";
 
 const UNAVAILABLE_ACCESS_MESSAGE =
   "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
@@ -227,6 +230,28 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
  */
 const NEW_PASSWORD_MIN_LENGTH = 15;
 
+/** Observe only the supplied session deadline. The external snapshot is a stable boolean;
+ * no report data is retained and the component does not read the wall clock during render. */
+function useDisplaySessionLifetime(until: number | null | undefined): boolean {
+  const current = useCallback(() => until == null || (Number.isFinite(until) && Date.now() < until), [until]);
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (until == null || !Number.isFinite(until)) return () => {};
+      let timer: ReturnType<typeof setTimeout>;
+      const check = () => {
+        const remaining = until - Date.now();
+        if (remaining <= 0) changed();
+        else timer = setTimeout(check, Math.min(remaining, 2_147_483_647));
+      };
+      check();
+      return () => clearTimeout(timer);
+    },
+    [until],
+  );
+  const server = useCallback(() => until == null, [until]);
+  return useSyncExternalStore(subscribe, current, server);
+}
+
 function WardCredentialFields({ form }: { form: WardCredentialForm }) {
   const [signup, setSignup] = useState(false);
   const signInAutofillHint = "current-password";
@@ -345,6 +370,7 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<DataModeSlot | null>(null);
+  const displaySessionCurrent = useDisplaySessionLifetime(connection.sessionEndsAt);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   // Audit 1 (CS-13, Josh 20 Oct): Live chips read Stale while the shared board cannot refresh or
   // its last good refresh is more than two refreshes old. The one publisher; nothing in local mode.
@@ -434,6 +460,24 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     typeof connection.snapshot?.accessContext === "string" && /^[a-f0-9]{64}$/u.test(connection.snapshot.accessContext)
       ? connection.snapshot.accessContext
       : null;
+  // Account/client ownership is established by the existing connection, not by an opaque hash.
+  // Only its exact already-adopted world may supply this display. Unknown session expiry adds
+  // no invented lifetime; when supplied, it is enforced without waiting for another poll.
+  const displayReady =
+    connection.enabled &&
+    connection.signedIn &&
+    connection.status === "ready" &&
+    connection.reportSnapshotReady === true &&
+    actorId !== null &&
+    actorId.length > 0 &&
+    serverAccess !== null &&
+    connection.snapshot !== null &&
+    packAccessContext !== null &&
+    displaySessionCurrent;
+  const displayReadSource = useMemo<SenderReadSource | null>(() => {
+    if (!displayReady || !serverAccess || !connection.snapshot) return null;
+    return { access: serverAccess, snapshot: connection.snapshot };
+  }, [displayReady, serverAccess, connection.snapshot]);
   const packIdentity = JSON.stringify([
     connection.enabled,
     connection.signedIn,
@@ -495,9 +539,20 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                   )}
                   <div hidden={showLiveInfo} inert={showLiveInfo}>
                     <WardSharedSaveContext.Provider value={saveRecovery}>
-                      <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                        {children}
-                      </WardSharedWorkspaceContent>
+                      <WardPartialViewProvider
+                        shared={shared}
+                        response={displayReady ? connection.snapshot?.partialView : null}
+                        currentRevision={displayReady ? (connection.snapshot?.revision ?? null) : null}
+                        currentAccessContext={displayReady ? packAccessContext : null}
+                        currentNow={displayReady ? (connection.snapshot?.now ?? null) : null}
+                        previewAllowed={displayReady && serverAccess?.role === "coordinator"}
+                        senderRequired={serverAccess?.role === "ward" || serverAccess?.role === "bed_manager"}
+                        readSource={displayReadSource}
+                      >
+                        <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
+                          {children}
+                        </WardSharedWorkspaceContent>
+                      </WardPartialViewProvider>
                     </WardSharedSaveContext.Provider>
                   </div>
                 </DataModeContext.Provider>
@@ -599,10 +654,20 @@ function WardSharedWorkspaceContent({
     );
   if (!connection.signedIn || !connection.snapshot)
     return (
-      <main id="main-content" className={styles.notice} aria-label="Coordinator sign-in">
+      <main
+        id="main-content"
+        className={styles.notice}
+        aria-label="Coordinator sign-in"
+        aria-busy={connection.signedIn && connection.status === "loading"}
+      >
         <h1>Ward Flow coordinator</h1>
         <p>Shared synthetic workspace. Your coordinator account has access to all Ward Flow workflows.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
+        {connection.signedIn && connection.status === "loading" && !connection.error && (
+          <p role="status" data-testid="ward-shared-connecting">
+            Signed in. Connecting to the shared workspace. This can take up to 15 seconds.
+          </p>
+        )}
         {connection.credentials?.open ? (
           <WardCredentialFields form={connection.credentials} />
         ) : connection.signedIn && connection.status !== "not-authorised" ? (

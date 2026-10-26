@@ -1,13 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
-import {
-  DEVELOPER_AREA_HEADER,
-  DEVELOPER_AREA_PATH_HEADER,
-  WARD_FLOW_OFFLINE_HEADER,
-  isDeveloperGatedPath,
-  isWardFlowPath,
-} from "@/lib/developer-area/headers";
+import { DEVELOPER_AREA_HEADER, DEVELOPER_AREA_PATH_HEADER, isDeveloperGatedPath } from "@/lib/developer-area/headers";
 import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspaceOrigins } from "@/lib/security-headers";
 
 // Next 16 renamed the `middleware` file convention to `proxy` (see
@@ -49,6 +43,15 @@ const staticRouteRedirects: Record<string, string> = {
   // /mockups/ward-flow and then, on 19 October 2026, out to /ward-flow.
   "/ward-flow/constellation": "/ward-flow",
   "/ward-flow/network": "/ward-flow",
+  // Device sweep A10 (Josh, 26 Oct 2026, decision A33): the other alias pages forwarded only after
+  // the app shell had loaded, so the redirect was a second full page load and showed the "Restored
+  // the last successful save" notice when nothing had failed. Forwarding here never renders the shell.
+  "/ward-flow/command": "/ward-flow",
+  "/ward-flow/queue": "/ward-flow/waiting",
+  "/ward-flow/escalation": "/ward-flow/waiting",
+  "/ward-flow/exceptions": "/ward-flow/waiting",
+  "/ward-flow/delays": "/ward-flow/waiting",
+  "/ward-flow/statistics/overview": "/ward-flow/statistics",
 };
 
 /**
@@ -115,13 +118,9 @@ export async function proxy(request: NextRequest) {
     // not (2026-09-02 audit, L76). Read the constant.
     headers.delete(DEVELOPER_AREA_HEADER);
     headers.delete(DEVELOPER_AREA_PATH_HEADER);
-    headers.delete(WARD_FLOW_OFFLINE_HEADER);
     if (isDeveloperGatedPath(pathname)) {
       headers.set(DEVELOPER_AREA_HEADER, "1");
       headers.set(DEVELOPER_AREA_PATH_HEADER, `${pathname}${request.nextUrl.search}`);
-    }
-    if (isWardFlowPath(pathname)) {
-      headers.set(WARD_FLOW_OFFLINE_HEADER, "1");
     }
     return headers;
   };

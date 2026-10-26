@@ -7,8 +7,8 @@ import {
   URGENCY_LEVELS,
   RECORDED_SEXES,
   REFERRAL_GENDERS,
+  genderReviewNeeded,
   type RecordedSex,
-  type ReferralGender,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
@@ -17,9 +17,13 @@ import { TENTATIVE_DIAGNOSIS_BLOCKS } from "../ward-diagnosis";
 import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import { ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
 import {
+  GENDER_UNANSWERED,
   LEGAL_STATUS_FORM_CODES,
   legalStatusOptionLabel,
+  REFERRAL_GENDER_NOT_RECORDED,
+  referralGenderOf,
   RISK_FLAG_LABELS,
+  type ReferralGenderAnswer,
   YES_NO,
   yesNo,
 } from "./ward-referral-drawer-model";
@@ -163,6 +167,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
   } = s;
   const community = destType === "community";
   const fromAsked = !sendingWard && !senderMissing;
+  const genderUnanswered = destType === "ward" && referralGender === "";
   // The step's faults in the order the step shows them, for the error summary.
   const problems: ErrorSummaryItem[] = attempted.referral
     ? [
@@ -187,8 +192,12 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
           ? [{ id: "refDocInput", text: `Shorten the reason for referral to ${reasonRoom} characters or fewer` }]
           : []),
         ...(storyError() ? [{ id: `${sectionId}-refSummaryText`, text: storyError()!.replace(/\.$/u, "") }] : []),
+        ...(genderUnanswered ? [{ id: `${sectionId}-gender`, text: GENDER_UNANSWERED.replace(/\.$/u, "") }] : []),
       ]
     : [];
+  // WS-01: said before Send, so the referrer knows the ward cannot accept until a coordinator reviews.
+  const genderReview =
+    destType === "ward" && !genderUnanswered && genderReviewNeeded(referralGenderOf(referralGender), referralSex);
   return (
     <div
       id={`${sectionId}-referral`}
@@ -518,15 +527,24 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   </select>
                 </SelectBox>
               </Field>
-              <Field label="Gender identity" htmlFor={`${sectionId}-gender`}>
+              {/* WS-01 (workflow speed audit, 26 Oct 2026): gender decides which bed, so it is asked
+                  before Send. "Not yet recorded" is a real answer; leaving it unanswered is not. */}
+              <Field
+                label="Gender identity"
+                htmlFor={`${sectionId}-gender`}
+                required
+                error={attempted.referral && genderUnanswered ? GENDER_UNANSWERED : null}
+              >
                 <SelectBox>
                   <select
                     id={`${sectionId}-gender`}
                     className={styles.fieldSelect}
                     value={referralGender}
-                    onChange={(e) => setReferralGender(e.target.value as ReferralGender | "")}
+                    onChange={(e) => setReferralGender(e.target.value as ReferralGenderAnswer)}
+                    data-testid="ward-referral-gender"
                   >
-                    <option value="">Not recorded</option>
+                    <option value="">Choose a gender</option>
+                    <option value={REFERRAL_GENDER_NOT_RECORDED}>Not yet recorded</option>
                     {REFERRAL_GENDERS.map((gender) => (
                       <option key={gender}>{gender}</option>
                     ))}
@@ -550,6 +568,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 </span>
               </div>
             </div>
+            {genderReview ? (
+              <p className={styles.reviewNote} role="note" data-testid="ward-referral-gender-review">
+                <StatusGlyph tone="warning" size={9} />
+                Gender or recorded sex is not female or male, or not yet recorded. The ward cannot accept until a
+                coordinator records a reason after checking with the ward.
+              </p>
+            ) : null}
           </div>
         </section>
       )}

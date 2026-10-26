@@ -273,6 +273,11 @@ describe("handoverBlockedReason", () => {
       "This patient is placement requested, not bed pulled — a handover can only be marked ready once a bed is pulled.",
     );
   });
+  it("says a handover already marked ready is ready, not that no bed is pulled (blocker review, 26 Oct 2026)", () => {
+    expect(handoverBlockedReason(movement({ stage: "handover_ready", transport: job() }), "Alex Test")).toBe(
+      "Alex Test is already marked handover ready.",
+    );
+  });
   it("allows a pulled bed with transport booked, or with 'no transport needed' recorded", () => {
     expect(handoverBlockedReason(movement({ stage: "pulled", transport: job() }))).toBeUndefined();
     expect(

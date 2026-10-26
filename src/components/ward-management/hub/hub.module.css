@@ -1198,6 +1198,15 @@
   min-height: var(--wf-touch);
 }
 
+/* Layout sweep SHELL-13 (25 Oct 2026): the kit's phone switch keeps each option at its full width
+ * (`.seg .segItem`), so at 360px the four kinds ran 15px past the track and cut "Teams 64". Here
+ * they share the track and tighten their sides instead. Doubled class to outrank the kit rule. */
+.phoneKindBar.phoneKindBar > div > button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 6px;
+}
+
 .phoneSearchRow {
   display: flex;
   align-items: center;

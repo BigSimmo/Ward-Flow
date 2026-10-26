@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**599 rulings/items extracted, across 38 of 44 files.**
+**602 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 342 distinct IDs
+## ID index — 345 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -250,6 +250,9 @@ safe global key across 30 files.
 | `D-79` | `decisions.md`:917 | D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026) |
 | `D-80` | `decisions.md`:928 | D-80. Role access plan version 2: all 17 recommendations (23 October 2026) |
 | `D-81` | `decisions.md`:942 | D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026) |
+| `D-82` | `decisions.md`:949 | D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026) |
+| `D-83` | `decisions.md`:957 | D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026) |
+| `D-84` | `decisions.md`:967 | D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -533,13 +536,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 38 files
 
-### `decisions.md` (2026-09-01 – 2026-10-25 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-10-26 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-81 item(s):
+84 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -622,6 +625,9 @@ safe global key across 30 files.
 - `D-79` — line 917, heading: "D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)"
 - `D-80` — line 928, heading: "D-80. Role access plan version 2: all 17 recommendations (23 October 2026)"
 - `D-81` — line 942, heading: "D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)"
+- `D-82` — line 949, heading: "D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026)"
+- `D-83` — line 957, heading: "D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)"
+- `D-84` — line 967, heading: "D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

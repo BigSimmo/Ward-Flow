@@ -252,6 +252,7 @@ export function WardBoardDetailPanel({
                     </button>
                     {dateEdit?.admissionId === selectedTile.key ? (
                       <form
+                        className={styles.dateEditForm}
                         onSubmit={(event) => {
                           event.preventDefault();
                           const admission = admissions.find((row) => row.id === selectedTile.key);

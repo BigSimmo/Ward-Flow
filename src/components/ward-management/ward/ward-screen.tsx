@@ -23,8 +23,11 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
-import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
-import { observationStaffOnWard } from "@/components/ward-management/ward-observation";
+import {
+  LEAVING_DESTINATIONS,
+  observationStaffOnWard,
+  type LeavingDestination,
+} from "@/components/ward-management/ward-admissions";
 import {
   bedsPendingPreparation,
   capacityBreakdown,
@@ -131,6 +134,7 @@ import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placemen
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 type WardScreenProps = {
   departurePlanning?: boolean;
@@ -267,6 +271,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
+  // Audit CS3-01: the decline and release forms are checked against the board they opened on.
+  useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `movement:${declineOpenFor}`);
+  useHoldOpenForm(releaseOpenFor !== undefined, releaseOpenFor && `movement:${releaseOpenFor}`);
   const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
@@ -2021,6 +2028,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
         ]}
         notChecked={["roster, no feed"]}
+        // On a phone this line sits on the white "Ward details and checks" card, not the dark hero.
+        surface={isPhone ? "page" : "hero"}
       />
     </span>
   );

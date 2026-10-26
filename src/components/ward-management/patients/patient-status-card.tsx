@@ -23,6 +23,15 @@ import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import styles from "./patient-status-card.module.css";
 import { observationSummary } from "@/components/ward-management/ward-observation";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { movementPresentation } from "../ward-partial-view-presenters";
+import type { SenderMovementPartialView } from "../ward-partial-view-contract";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useRouteRole } from "../ward-role-gate";
+import { canDispatch } from "../ward-role-permissions";
+import { unitInScope } from "../ward-role-access";
+import { wardPlaceLookup } from "../ward-access-places";
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
 interface StatusCell {
@@ -263,13 +272,22 @@ function legalValue(record: Movement | undefined, patient: Patient | undefined):
  * The status for this mode, with every action the route's role may not take shown as unavailable
  * with its reason ("Ward only"), never hidden. The role rule is `ward-role-permissions.ts`.
  */
-export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext): PatientStatus {
-  const status = statusFor(mode, ctx);
+export function buildPatientStatus(
+  mode: PatientMode,
+  ctx: PatientStatusContext,
+  summary?: SenderMovementPartialView | null,
+  acceptedPlacementAllowed = false,
+): PatientStatus {
+  const status = statusFor(mode, ctx, summary);
   const limit = ctx.roleLimit;
-  if (!limit) return status;
   const limited = (action: StatusAction | undefined): StatusAction | undefined => {
+    if (summary !== undefined && action?.kind === "button" && action.onClick === ctx.onOpenPlacement) {
+      if (mode !== "held" || !acceptedPlacementAllowed) return undefined;
+      const reason = limit?.("PULL_PATIENT");
+      return reason ? { kind: "unavailable", label: action.label, reason } : action;
+    }
     if (action?.kind !== "button" || action.event === undefined) return action;
-    const reason = limit(action.event);
+    const reason = limit?.(action.event);
     return reason ? { kind: "unavailable", label: action.label, reason } : action;
   };
   return {
@@ -280,10 +298,67 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
   };
 }
 
-function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus {
+function statusFor(
+  mode: PatientMode,
+  ctx: PatientStatusContext,
+  summary?: SenderMovementPartialView | null,
+): PatientStatus {
   const { movement, admission, patient, now } = ctx;
+  // Only the placement modes show destination progress; leave, AWOL and ED statuses come from the
+  // stay and must stay available when the movement is closed or hidden.
+  const placing = mode === "find" || mode === "held" || mode === "transit";
+  if (placing && movement && summary !== undefined && movementPresentation(movement, summary).kind === "unavailable") {
+    return {
+      tone: "warning",
+      verdict: "Progress unavailable",
+      meta: "Destination progress is unavailable",
+      cells: [
+        {
+          key: "bed",
+          icon: BedDouble,
+          label: "Bed",
+          owner: "Bed coordinator",
+          tone: "warning",
+          value: "Progress unavailable",
+          sub: "Destination details are restricted",
+        },
+        clearanceCell(movement, ctx.onClearance),
+        withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
+      ],
+    };
+  }
 
   if (mode === "find" && movement) {
+    if (summary !== undefined) {
+      const presentation = movementPresentation(movement, summary);
+      const progress = presentation.kind === "sender" ? presentation.progress : undefined;
+      const labels = {
+        not_requested: "No ward asked",
+        awaiting_answer: "Awaiting answer",
+        none_found: "None found",
+        withdrawn: "Requests withdrawn",
+        accepted: "Accepted",
+        escalated: "Escalated",
+      };
+      return withMeter({
+        tone: "danger",
+        verdict: "Cannot move",
+        meta: "Bed is the blocker",
+        cells: [
+          {
+            key: "bed",
+            icon: BedDouble,
+            label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
+            owner: "Bed coordinator",
+            tone: "warning",
+            value: progress ? labels[progress] : "Progress unavailable",
+            sub: "Destination details are restricted",
+          },
+          clearanceCell(movement, ctx.onClearance),
+          withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
+        ],
+      });
+    }
     // `referredUnitIds` holds only live requests: a decline or withdrawal removes its ward.
     const pending = movement.referredUnitIds.length;
     const declined = movement.declines.length;
@@ -865,7 +940,24 @@ export function PatientStatusCard({
   /** v10 phone: the quiet line at the foot of the card ("Arrived Mon 5 Oct 09:12"). Phone only. */
   phoneFoot?: string;
 }) {
-  const status = buildPatientStatus(mode, context);
+  const sender = useSenderPresentation();
+  const access = useEffectiveWardAccess();
+  const routeRole = useRouteRole();
+  const records = useOptionalWardFlowSelect("units");
+  const acceptingUnitId = context.movement?.acceptedUnitId;
+  // The real accepting unit and the desk's existing permission/scope keep its receiving action.
+  // Display summaries never supply this evidence or change the operation's command checks.
+  const acceptedPlacementAllowed =
+    typeof acceptingUnitId === "string" &&
+    (routeRole === "ward" || routeRole === "coordinator") &&
+    canDispatch(routeRole, "PULL_PATIENT") &&
+    unitInScope(access.scope, acceptingUnitId, wardPlaceLookup(records?.units ?? []));
+  const status = buildPatientStatus(
+    mode,
+    context,
+    context.movement ? sender.movementFor(context.movement) : undefined,
+    acceptedPlacementAllowed,
+  );
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
     status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;

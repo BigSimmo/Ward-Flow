@@ -189,8 +189,25 @@
 .total {
   flex-shrink: 0;
   margin-bottom: 4px;
+  /* Layout sweep WARD-20: the figure sits on its column's own fill, so the dashed mean line
+     passes behind it rather than through it. */
+  padding: 1px 3px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.day[data-weekend] .total {
+  background: var(--wf-surface-2);
+}
+
+.day:hover .total {
+  background: var(--wf-hover);
+}
+
+.day[aria-pressed="true"] .total {
+  background: var(--wf-selected);
 }
 
 .barExpected,

@@ -15,9 +15,9 @@ referrals. Your main menu: **My ward, Coming and going, Referrals to answer, Han
    roll-up time. The time is your service's default, not a legal limit.
 2. **Read the referral.** Tap the patient's name on the incoming card, or **View referral**. You
    see the full referral, with name, UMRN and attached documents, before you answer.
-3. **Answer it.** Press **Accept in principle**, choose the pull time limit (standard or extra
-   travel), then **Confirm Acceptance in Principle**. Or press **Decline**, pick a reason and
-   **Confirm decline**.
+3. **Answer it.** Choose the pull time limit (standard or extra travel), then press **Accept in
+   principle**. It saves in one tap, and the message that appears has **Undo** if you pressed it by
+   mistake. Or press **Decline**, pick a reason and **Confirm decline**.
 4. **Arrivals.** When the patient reaches the ward, press **Confirm Arrival**.
 5. **Away and discharge.** On a bed, use **Mark at an ED** when your patient goes to an ED, and
    **Mark them back** when they return. Record a discharge with **They have left**.

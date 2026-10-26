@@ -52,7 +52,44 @@ export function reduceReferralFollowUpEvent(
 ): WardFlowState {
   const referral = findReferral(state, event.referralId);
   if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
+  if (event.type === "MARK_REFERRAL_INFORMATION_MET") {
+    const all = event.allRequestingWards !== undefined;
+    const named = event.wardUnitId !== undefined;
+    if (
+      all === named ||
+      (all && event.allRequestingWards !== true) ||
+      (named && (typeof event.wardUnitId !== "string" || event.wardUnitId.length === 0)) ||
+      !REFERRAL_INFORMATION_NEED_IDS.includes(event.need)
+    )
+      return reject(state, event, "Choose one information request target and a listed item.");
+    // The shared command boundary independently verifies this desk against the stored sender.
+    // Keep the existing ward-source restriction for both target shapes.
+    if (event.role === "ward" && referral.source !== "psychiatric_ward")
+      return reject(state, event, `only the desk that sent referral ${referral.id} ticks its items off`);
+    if (all) {
+      let changed = false;
+      const destinations = referral.destinations.map((arm) => {
+        if (arm.destination.kind !== "psychiatric_ward" || !awaitingAnswer(arm)) return arm;
+        const needs = arm.informationNeeds;
+        if (!needs?.some((entry) => entry.need === event.need && entry.metAt === undefined)) return arm;
+        changed = true;
+        return {
+          ...arm,
+          informationNeeds: needs.map((entry) =>
+            entry.need === event.need && entry.metAt === undefined
+              ? { ...entry, metAt: event.now, metBy: WARD_FLOW_ROLE_LABELS[event.role] }
+              : entry,
+          ),
+        };
+      });
+      if (!changed) return reject(state, event, "No current request is waiting on that item.");
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return replaceReferral(state, referral.id, { ...referral, destinations });
+    }
+  }
   const unitId = event.type === "MARK_REFERRAL_INFORMATION_MET" ? event.wardUnitId : event.unitId;
+  if (typeof unitId !== "string") return reject(state, event, "Choose an information request target.");
   const addressing = wardCopy(referral, unitId);
   if (!addressing) return reject(state, event, `referral ${referral.id} was not sent to unit ${unitId}`);
   const update = (next: ReferralAddressing) =>

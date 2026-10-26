@@ -367,8 +367,12 @@ function PersonPreview({
             <dd>{patient.preferredName}</dd>
           </>
         ) : null}
-        <dt>Status</dt>
-        <dd>{patient.legalStatus}</dd>
+        {patient.legalStatus ? (
+          <>
+            <dt>Status</dt>
+            <dd>{patient.legalStatus}</dd>
+          </>
+        ) : null}
         {whereNow ? (
           <>
             <dt>Now</dt>
