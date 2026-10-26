@@ -22,6 +22,7 @@ import {
 
 import {
   Badge,
+  Checkbox,
   Drawer,
   Icon,
   Kbd,
@@ -516,15 +517,14 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
         </div>
       ) : null}
       {accessOn && currentAccess.role === "coordinator" && !searching ? (
-        <label className={styles.empty}>
-          <input
-            type="checkbox"
+        <div className={styles.previewOnly}>
+          <Checkbox
             checked={previewOnly}
             onChange={(event) => setPreviewOnly(event.target.checked)}
             data-testid="workstation-preview-only"
-          />{" "}
-          Preview only, then come back to the coordinator desk in one tap
-        </label>
+            label="Preview only, then come back to the coordinator desk in one tap"
+          />
+        </div>
       ) : null}
       {accessOn && shared && !searching ? (
         <p className={styles.empty} role="note" data-testid="workstation-shared-role-note">

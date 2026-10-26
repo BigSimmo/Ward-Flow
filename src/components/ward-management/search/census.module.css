@@ -147,8 +147,22 @@
 
 .searchForm .dobInput {
   flex: none;
-  width: 88px;
+  /* Layout sweep CRIT-05 (25 Oct 2026): sized by its own font, so the 16px touch size still shows
+   * the whole "DD/MM/YYYY" (88px cut it to "DD/MM/YYY" on an iPad). */
+  width: 11ch;
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* CRIT-05: with the date of birth open, the name field gives up width first, so the DOB switch stays
+ * on the box's one line at a 380px box (iPad, 16px text). */
+.searchForm:has(.dobSeg) input:not(.dobInput) {
+  flex-basis: 5rem;
+}
+
+/* CRIT-05: with the date of birth open the "/" hint has no room and dropped onto a second line
+ * inside the box. The field already has focus by then, so the hint goes. */
+.dobSeg ~ .kbd {
+  display: none;
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
@@ -398,7 +412,11 @@
   }
 }
 
-@container patient-search (min-width: 56rem) {
+/* Layout sweep SHELL-03 (25 Oct 2026): beside a 300px side panel, a page under 68rem left the table
+ * (720px at least) too narrow, so it scrolled sideways and hid the Time column at 1024 and 1280.
+ * Under 68rem the panel stays hidden, as on narrower screens, so choosing a row opens the details
+ * drawer (previewCardHidden) rather than updating a card far below the table. */
+@container patient-search (min-width: 68rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
   }
