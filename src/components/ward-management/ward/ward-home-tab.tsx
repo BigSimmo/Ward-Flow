@@ -35,7 +35,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
-  PATIENT_ARRIVED: "Confirm Arrival",
+  PATIENT_ARRIVED: "Confirm arrival",
 };
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
@@ -70,6 +70,7 @@ import {
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { declineTargetLeftNote } from "./decline-target-left";
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =
   "Choose an override reason and confirm nurse unit manager consultation when needed.";
@@ -1183,6 +1184,9 @@ export function WardHomeTab({
   const todayRows = outRows.filter((row) => row.group === "today");
   const laterRows = outRows.filter((row) => row.group === "later");
   const answered = recentAnswers.slice(0, 6);
+  const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
+    withdrawn.some((movement) => movement.id === id),
+  );
 
   const bedKeyBlock = (
     <div className={styles.bedKey}>
@@ -1262,6 +1266,11 @@ export function WardHomeTab({
                 </h3>
                 <Count n={incoming.length} />
               </div>
+              {declineLeftNote ? (
+                <p className={styles.noticeProminent} role="status" data-testid="ward-decline-target-left">
+                  {declineLeftNote}
+                </p>
+              ) : null}
               {incoming.length === 0 ? (
                 <p className={styles.groupEmpty}>
                   No referral is currently awaiting an answer from {unit.name}. New referrals appear here as soon as
@@ -1277,7 +1286,12 @@ export function WardHomeTab({
                     const declineOpen = declineOpenFor === movement.id;
 
                     return (
-                      <li key={movement.id} className={styles.awaitingRow} data-testid={`ward-incoming-${movement.id}`}>
+                      <li
+                        key={movement.id}
+                        className={styles.awaitingRow}
+                        data-testid={`ward-incoming-${movement.id}`}
+                        data-held-form={`movement:${movement.id}`}
+                      >
                         <AwaitingIdentity
                           movement={movement}
                           person={resolvePatientIdentity(movement)}

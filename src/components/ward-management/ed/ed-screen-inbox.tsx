@@ -70,6 +70,7 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                 key={`${referral.id}-${destination.edId}-${destination.purpose}`}
                 className={styles.inboxItem}
                 data-testid={`ward-ed-inbox-row-${referral.id}`}
+                data-held-form={`referral:${referral.id}`}
                 data-purpose={destination.purpose}
                 data-ed-id={destination.edId}
                 data-minutes-since-referral={clocks.sinceReferral}

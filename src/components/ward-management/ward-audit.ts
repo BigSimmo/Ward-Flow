@@ -271,7 +271,7 @@ export type AuditEvent = AuditBase &
         // v10 pass 2: the ward Bed board's pick up and place, and its Undo. Bed numbers only.
         category: "bed-placement";
         action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED" | "HOLD_REFERRAL_BED";
-        details: { fromBed: number | null; toBed: number | null };
+        details: { fromBed: number | null; toBed: number | null; openBedReason?: OverrideReason };
       }
     | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
@@ -649,6 +649,10 @@ export function captureAuditEvent(
                 : (record?.beforeBed ?? null),
         },
       };
+      // Audit CS3-12: the reason a stay needing a locked bed was moved to an open one.
+      const openBedReason = event.type === "PLACE_IN_BED" ? enumValue(OVERRIDE_REASONS, event.overrideReason) : null;
+      if (openBedReason !== null && decision.overrideFactRecorded === true)
+        captured.details = { ...captured.details, openBedReason };
       break;
     }
     case "TAKE_INBOX_ITEM_OWNERSHIP":

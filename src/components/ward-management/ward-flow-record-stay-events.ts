@@ -25,6 +25,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { nextRuntimeIdNumber } from "@/components/ward-management/ward-runtime-ids";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { scenarioHasSite, scenarioSite } from "@/components/ward-management/ward-scenarios";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -427,7 +428,7 @@ export function reduceRecordedStayEvent(
       if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
-      if (!siteByCode(event.homeHospital)) {
+      if (!scenarioHasSite(state.scenario, event.homeHospital)) {
         return reject(state, event, `RECORD_REPATRIATION homeHospital ${event.homeHospital} does not name a real site`);
       }
       if (typeof event.receivingWardAgreed !== "boolean") {
@@ -495,7 +496,7 @@ export function reduceRecordedStayEvent(
           allEmergencyDepartments().find((ed) => ed.siteCode === currentSite?.code)?.id ??
           allEmergencyDepartments()[0]?.id ??
           "rph-ed";
-        const targetSite = siteByCode(homeHospital);
+        const targetSite = scenarioSite(state.scenario, homeHospital);
         const targetHealthService = targetSite?.service ?? "North Metro";
 
         const returnMovement: Movement = {

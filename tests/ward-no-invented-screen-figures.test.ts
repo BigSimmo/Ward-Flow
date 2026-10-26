@@ -156,6 +156,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^PULL_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "accept-second-tap-guard",
+    why: "How long a second tap after Accept presentation is ignored, so a double tap cannot confirm it (audit CS3-08); a UI pause, not a limit.",
+    file: /^referrals\/use-referral-match-state\.tsx$/,
+    name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
+  },
+  {
     id: "restore-notice-pause",
     why: "How long the routine restored-save notice stays before it hides itself (simplification A3, 19 Oct 2026); a UI pause, not a limit.",
     file: /^shell\/ward-recovery-notice\.tsx$/,
