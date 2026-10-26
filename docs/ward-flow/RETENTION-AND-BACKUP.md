@@ -193,6 +193,30 @@ original date and results are preserved; this discrepancy remains unresolved unt
 drill evidence is recovered or a separately authorised repeat records the actual ledger. This
 correction is not a new restore result or sign-off.
 
+## Hosted copy restore drill (26 October 2026)
+
+- **Result: fail.** The data survived; the audit locks did not.
+- **What was restored:** a copy of the hosted `ward_flow` schema made at 05:11 UTC by a script that
+  rebuilds tables and copies rows through Supabase's management service. It was **not** a
+  `pg_dump`. Nothing was written to the live database.
+- **Target:** a throwaway PostgreSQL 17.11 in Docker on Josh's computer, with networking off.
+- **Timing:** restore 0.3 seconds with no errors (32 seconds including container start-up).
+
+| Check                                                                   | Result                                     |
+| ----------------------------------------------------------------------- | ------------------------------------------ |
+| Rows per table against the live counts taken 25 October (13 tables)     | Same in all 13. Pass                       |
+| Migration ledger 1 to 13                                                | Identical to live. Pass                    |
+| `audit`, `record_access`, `break_glass` refuse UPDATE, DELETE, TRUNCATE | 0 of 9 refused (rolled back). **Fail**     |
+| Row-level security on every table                                       | Pass                                       |
+| Backend against the restored copy                                       | Not run: the copy lacked the locks to test |
+
+**Why it failed.** The management-service copy left out all 4 triggers, 4 functions, all 51 check
+constraints, 4 sequences and the `wardflow_backend` grants. It also writes two-column keys in
+alphabetical rather than real column order. A copy made that way is not a usable backup.
+
+**Next.** Repeat with `pg_dump -Fc` over a session-pooler connection, as the
+[runbook](OPERATIONS-RUNBOOK.md#backup-restore-drill) now requires.
+
 ## Steps for Josh in the Supabase console
 
 Do these in the Ward Flow project only, after checking the project name and ID match

@@ -613,6 +613,11 @@ export function outstandingItem(movement: Movement): OutstandingItem {
         detail: "Bed pulled — no transport needed (patient walking or private transport).",
       };
     }
+    // Blocker review (26 Oct 2026): a handover waits on a logged booking, so this line never says
+    // "ready" while the Mark handover ready button is greyed for it.
+    if (!movement.transport) {
+      return { kind: "handover", label: "Handover", detail: "Bed pulled. Transport not logged yet." };
+    }
     return { kind: "handover", label: "Handover", detail: "Bed pulled — ready to mark the handover to transport." };
   }
   if (movement.stage === "handover_ready" || movement.stage === "moving") {

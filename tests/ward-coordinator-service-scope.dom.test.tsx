@@ -167,7 +167,9 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
-    const strip = screen.getByRole("region", { name: "Emergency department pressure" });
+    const strip = screen.getByRole("region", {
+      name: "Emergency department pressure: physically waiting for an inpatient bed",
+    });
     for (const ed of MEMBER_EDS) {
       expect(within(strip).getByTestId(`ward-ed-${ed.id}`), `${ed.id} belongs to South Metro`).toBeInTheDocument();
     }

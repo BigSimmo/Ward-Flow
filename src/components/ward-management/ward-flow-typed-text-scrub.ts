@@ -1,5 +1,6 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { isDischargeCriterion } from "./ward-discharge-criteria";
+import { isSyntheticReferralTimelineBase } from "./ward-referral-seed-time";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isValidStoredWardFlowState, typedCriterionNotKept } from "./ward-flow-storage-validation";
@@ -183,20 +184,24 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
   return text;
 }
 
-let reanchoredText: { from: FixtureWorlds; scenario: string; offset: number; places: ReadonlySet<string> } | undefined;
+type ReanchoredFixtureTarget = { value: string; base: string };
+let reanchoredText:
+  | {
+      from: FixtureWorlds;
+      scenario: string;
+      offset: number;
+      targets: ReadonlyMap<string, ReanchoredFixtureTarget>;
+    }
+  | undefined;
 
-/**
- * The fixture's own text once the session clock has moved it. A re-anchored session (a reset or a
- * scenario switch after the clock has run) holds the seeded referral targets shifted by the same
- * whole offset as its other instants, so they no longer equal the offset-zero fixture strings. The
- * offset is read from a referral the state shares with its scenario's fixture, and only strings the
- * fixture itself would carry at that offset count: a typed time that is not exactly that figure
- * stays replaceable. Empty when the session sits on the fixture's own anchor.
- */
-function reanchoredFixturePlaces(state: WardFlowState, worlds: FixtureWorlds): ReadonlySet<string> {
+/** Exact shifted fixture targets, admitted only with each target's own bundled provenance. */
+function reanchoredFixtureTargets(
+  state: WardFlowState,
+  worlds: FixtureWorlds,
+): ReadonlyMap<string, ReanchoredFixtureTarget> {
   fixtureEntries(worlds);
   const world = fixtureText?.worlds.find((candidate) => candidate.scenario === state.scenario);
-  if (!world) return NO_PLACES;
+  if (!world) return NO_TARGETS;
   let offset: number | undefined;
   for (const referral of state.referrals) {
     const seeded = world.referrals.find((candidate) => candidate.id === referral.id);
@@ -205,24 +210,37 @@ function reanchoredFixturePlaces(state: WardFlowState, worlds: FixtureWorlds): R
       break;
     }
   }
-  if (offset === undefined || offset === 0) return NO_PLACES;
+  if (offset === undefined || offset === 0) return NO_TARGETS;
   if (reanchoredText?.from === worlds && reanchoredText.scenario === state.scenario && reanchoredText.offset === offset)
-    return reanchoredText.places;
-  const places = new Set<string>();
-  const visit = (value: unknown, place: string[]): void => {
-    if (typeof value === "string") places.add(placed(place, value));
-    else if (Array.isArray(value)) value.forEach((entry, index) => visit(entry, [...place, entryPlace(entry, index)]));
-    else if (value && typeof value === "object")
-      for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
-  };
+    return reanchoredText.targets;
   const moved = worlds(offset).find((candidate) => candidate.scenario === state.scenario);
-  if (!moved) return NO_PLACES;
-  visit({ referrals: moved.referrals }, []);
-  reanchoredText = { from: worlds, scenario: state.scenario, offset, places };
-  return places;
+  if (!moved) return NO_TARGETS;
+  const targets = new Map<string, ReanchoredFixtureTarget>();
+  for (const referral of moved.referrals) {
+    for (const [group, field] of [
+      ["medicalClearance", "expectedAt"],
+      ["arrival", "estimatedAt"],
+    ] as const) {
+      const target = referral.intake?.[group] as
+        { expectedAt?: string; estimatedAt?: string; syntheticTimelineBase?: string } | undefined;
+      const value = target?.[field];
+      if (
+        typeof value !== "string" ||
+        !Number.isFinite(Date.parse(value)) ||
+        !isSyntheticReferralTimelineBase(target?.syntheticTimelineBase)
+      )
+        continue;
+      targets.set(["referrals", "#" + referral.id, "intake", group, field].join("\u0001"), {
+        value,
+        base: target.syntheticTimelineBase,
+      });
+    }
+  }
+  reanchoredText = { from: worlds, scenario: state.scenario, offset, targets };
+  return targets;
 }
 
-const NO_PLACES: ReadonlySet<string> = new Set();
+const NO_TARGETS: ReadonlyMap<string, ReanchoredFixtureTarget> = new Map();
 
 /**
  * Pass 1 alone: every typed field that is not fixture text becomes the placeholder. `loadedWorld`
@@ -231,18 +249,27 @@ const NO_PLACES: ReadonlySet<string> = new Set();
 export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds, loadedWorld = false): WardFlowState {
   const rules = loadedWorld ? [...HUMAN_ONLY_RULES, ...MIXED_RULES] : HUMAN_ONLY_RULES;
   const fixture = fixtureEntries(worlds).places;
-  const reanchored = reanchoredFixturePlaces(state, worlds);
+  const reanchored = reanchoredFixtureTargets(state, worlds);
   // Fixture text where the fixture put it ships in the bundle, and a fixed-list discharge criterion
   // is chosen, not typed.
-  const keptAsIs = (value: string, path: readonly string[], place: readonly string[]): boolean =>
-    value.trim() === "" ||
-    fixture.has(placed(place, value)) ||
-    reanchored.has(placed(place, value)) ||
-    (path.at(-1) === "criterion" && isDischargeCriterion(value));
+  const keptAsIs = (
+    value: string,
+    path: readonly string[],
+    place: readonly string[],
+    parent?: Record<string, unknown>,
+  ): boolean => {
+    const target = reanchored.get(place.join("\u0001"));
+    return (
+      value.trim() === "" ||
+      fixture.has(placed(place, value)) ||
+      (target?.value === value && target.base === parent?.syntheticTimelineBase) ||
+      (path.at(-1) === "criterion" && isDischargeCriterion(value))
+    );
+  };
   // `path` matches the field rules (`[]` for any array position); `place` finds the fixture's own text.
-  const visit = (value: unknown, path: string[], place: string[]): unknown => {
+  const visit = (value: unknown, path: string[], place: string[], parent?: Record<string, unknown>): unknown => {
     if (typeof value === "string")
-      return keptAsIs(value, path, place) || !rules.some((rule) => matchesRule(path, rule))
+      return keptAsIs(value, path, place, parent) || !rules.some((rule) => matchesRule(path, rule))
         ? value
         : TYPED_TEXT_NOT_KEPT;
     if (Array.isArray(value))
@@ -258,6 +285,7 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
             entry,
             referralCopies?.[key] ? ["referrals", "[]"] : (rebased?.[key] ?? [...path, key]),
             referralCopies?.[key] ?? [...place, key],
+            value as Record<string, unknown>,
           ),
         ]),
       );

@@ -1015,7 +1015,9 @@
   display: none;
 }
 
-/* Sublabels sit under the title and are never cut. */
+/* Sublabels sit under the title and are never cut. Layout sweep SHELL-16 (25 Oct 2026): a long one
+ * ("releases held up, today and tomorrow") wraps to a second line instead of running under the
+ * row's chevron. */
 .railState {
   margin-top: 1px;
   color: var(--wf-ink-3);
@@ -1023,7 +1025,7 @@
   line-height: var(--wf-lh-11);
   font-weight: 400;
   letter-spacing: -0.005em;
-  white-space: nowrap;
+  text-wrap: pretty;
 }
 
 /* Counts sit on the title line in a small mono pill. */

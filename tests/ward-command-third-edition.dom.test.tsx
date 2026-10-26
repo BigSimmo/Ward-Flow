@@ -72,10 +72,11 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // ED strip (heading for screen readers) and the queue. Home v7 (Josh, 22 Oct 2026): State
     // bedflow moved to Capacity, Beds that fit takes its place, and Placement previews nobody.
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(atRest[0]).toMatch(/^\d+ waiting in ED, \d+ beds? ready$/u);
-    // Overall review, 20 Oct 2026: the queue also lists people already in transit, so the hero names
-    // them beside the title, and its figures add up to the queue's Patients count.
-    expect(screen.getByTestId("ward-home-hero-not-waiting")).toHaveTextContent(/^\d+ more in transit$/u);
+    expect(atRest[0]).toMatch(/^\d+ open ED journeys, \d+ beds? ready$/u);
+    // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
+      /^\d+ still in ED · \d+ in transit or recorded departure · Limited demo coverage$/u,
+    );
     expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "Beds that fit", "Placement"]);
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();

@@ -1,5 +1,8 @@
 "use client";
 
+import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, Clock, Hospital, Users } from "lucide-react";
@@ -20,7 +23,11 @@ import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 
-import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "./statistics-ed-waits";
+import {
+  ED_WAIT_BANDS,
+  edJourneyWaitBands as edWaitBands,
+  edJourneyWaitFigures as edWaitFigures,
+} from "./statistics-ed-waits";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -64,6 +71,7 @@ type EdSortKey = "name" | "waiting" | "unplaced" | "over24" | "over48" | "longes
  * is past the first), so they are shown side by side and never summed.
  */
 export function StatisticsEdsIndexScreen() {
+  const { parts } = useStatisticsCounts();
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
@@ -126,6 +134,8 @@ export function StatisticsEdsIndexScreen() {
 
   const total = (pick: (row: Row) => number) => departments.reduce((sum, row) => sum + pick(row), 0);
   const waiting = total((row) => row.waiting);
+  const edJourneys = openEdJourneys(movements, now);
+  const [stillInEdShown, inTransitShown] = parts([edJourneys.stillInEd, edJourneys.inTransit]);
   const over24 = total((row) => row.over24);
   const over48 = total((row) => row.over48);
   const unplaced = total((row) => row.unplaced);
@@ -167,7 +177,7 @@ export function StatisticsEdsIndexScreen() {
         </HeroTool>
       }
       phone={{
-        title: `${waiting} waiting in EDs`,
+        title: `${waiting} open ED journeys`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
@@ -179,7 +189,7 @@ export function StatisticsEdsIndexScreen() {
       }}
       stats={
         <>
-          <HeroStat value={waiting} label="Waiting" />
+          <HeroStat value={waiting} label="Open ED journeys" />
           <HeroStat
             value={waitText(longestRow?.longest ?? null)}
             label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
@@ -199,6 +209,10 @@ export function StatisticsEdsIndexScreen() {
         </>
       }
     >
+      <p className={styles.muted} data-testid="ward-statistics-eds-population">
+        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
+        accountability until arrival. The physical split includes recorded ED outcomes; times run from journey opening.
+      </p>
       {isPhone ? (
         <PhoneBody testId="ward-statistics-eds-phone">
           <PhoneList label="Emergency departments, busiest first">
@@ -224,24 +238,20 @@ export function StatisticsEdsIndexScreen() {
               );
             })}
           </PhoneList>
-          <PhoneGroup title="Wait bands" aside="everyone waiting">
+          <PhoneGroup title="Time since opening" aside="Open ED journeys">
             <div className={phone.chartCard}>
-              <ColumnChart
-                label="People waiting in an emergency department, by how long"
-                columns={bands}
-                height={160}
-              />
+              <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={160} />
             </div>
           </PhoneGroup>
           <PhoneSheetRow
             icon={Users}
-            title="Everyone, one mark each"
+            title="Open ED journeys, one mark each"
             sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
             testId="ward-statistics-eds-phone-swarm"
           >
             <StatisticsEdSwarm rows={swarmRows} labelWidth={96} testId="ward-statistics-eds-swarm" />
             <p className={phone.note}>
-              {`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
+              {`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits.`}
             </p>
           </PhoneSheetRow>
         </PhoneBody>
@@ -251,11 +261,11 @@ export function StatisticsEdsIndexScreen() {
             icon={Users}
             id="everyone-waiting"
             className={index.anchorTarget}
-            title="Everyone waiting, by ED"
+            title="Open ED journeys, by ED"
             aside={
               <span
                 className={cx(styles.muted, index.phoneHide)}
-              >{`${waiting} waiting across ${departments.length} EDs`}</span>
+              >{`${waiting} open journeys across ${departments.length} EDs`}</span>
             }
             data-testid="ward-statistics-eds-swarm-card"
           >
@@ -263,7 +273,7 @@ export function StatisticsEdsIndexScreen() {
               <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
             </div>
             <CardFoot
-              meta={`Each mark is one person. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits. Open a row for that ED's page.`}
+              meta={`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits. Open a row for that ED's page.`}
             />
           </StatCard>
 
@@ -284,13 +294,13 @@ export function StatisticsEdsIndexScreen() {
               >
                 <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
                   <caption className={styles.srOnly}>
-                    Every emergency department: people waiting for a mental health bed, those with no ward yet, long
-                    waits, the longest and the median wait
+                    Every emergency department: open ED journeys, including transit, those with no ward yet, long waits,
+                    the longest and the median wait
                   </caption>
                   <thead>
                     <tr>
                       <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                      <SortTh id="waiting" label="Waiting" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="waiting" label="Open journeys" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh
@@ -362,18 +372,14 @@ export function StatisticsEdsIndexScreen() {
                 icon={Clock}
                 id="wait-bands"
                 className={index.anchorTarget}
-                title="Wait bands"
-                aside={<span className={cx(styles.muted, index.phoneHide)}>Everyone waiting</span>}
+                title="Time since opening"
+                aside={<span className={cx(styles.muted, index.phoneHide)}>Open ED journeys</span>}
                 data-testid="ward-statistics-eds-bands"
               >
                 <CardBody>
-                  <ColumnChart
-                    label="People waiting in an emergency department, by how long"
-                    columns={bands}
-                    height={220}
-                  />
+                  <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={220} />
                 </CardBody>
-                <CardFoot meta="The bands do not overlap: they add up to everyone waiting." />
+                <CardFoot meta="The bands do not overlap: they add up to all open ED journeys." />
               </StatCard>
             </Follow>
           </FlushRow>

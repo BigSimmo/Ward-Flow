@@ -47,7 +47,7 @@ import { useWardNetwork } from "@/components/ward-management/ward-flow-provider"
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
-import { edWaitFigures } from "./statistics-ed-waits";
+import { edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -339,7 +339,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <HeroStat value={totalReady} label="Ready" />
             <HeroStat
               value={small(edWaiting)}
-              label="In ED"
+              label="Open ED journeys"
               tone={
                 edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES))
                   ? "warning"
@@ -492,8 +492,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             id="ed-waits"
             className={detail.anchor}
             icon={Clock}
-            title="ED waits"
-            aside={`${small(edWaiting)} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            title="ED journeys"
+            aside={`${small(edWaiting)} open journeys from ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>
@@ -505,7 +505,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 <StatisticsEdSwarm
                   rows={edSwarmRows}
                   labelWidth={180}
-                  label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
+                  label={`Each open ED journey from ${service}, by time since opening`}
                   testId="ward-statistics-service-ed-swarm"
                 />
               )}
@@ -678,7 +678,7 @@ function ServicePhone({
           </PhoneList>
         )}
       </PhoneGroup>
-      <PhoneGroup title="ED waits" aside={`${edWaiting} waiting`}>
+      <PhoneGroup title="ED journeys" aside={`${edWaiting} open ED journeys`}>
         {busiest.length === 0 ? (
           <p className={phone.note}>No emergency department is recorded for this service.</p>
         ) : (

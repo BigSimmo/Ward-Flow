@@ -296,7 +296,7 @@ export function CapacityScreen() {
   // Phone hero: the ring's figure without the ring, one decimal with %.
   const occupancyPercentText = formatWardOccupancy(occupancy, "Not known");
   // shell-1: the hero's figures are all whole-network, whatever service is chosen.
-  const heroScopeLabel = service === null ? "Statewide" : `Statewide, not only ${service}`;
+  const heroScopeLabel = service === null ? "Modelled network" : `Modelled network, not only ${service}`;
   // The ward whose count is oldest: the hero's jump chip opens it.
   const oldestCount = useMemo(
     () =>
@@ -732,7 +732,7 @@ export function CapacityScreen() {
           level={1}
           // v10: the Wards count appears once, here, never as a chip.
           // shell-1 (13 Oct 2026): every hero figure is whole-network (`networkRows`, `gapTotals`),
-          // so the eyebrow says Statewide even with a service chosen; it never names the service as
+          // so the eyebrow names the modelled network even with a service chosen; it never names the service as
           // the figures' scope. The ward list below is the part the service narrows.
           eyebrow={`Capacity · ${heroScopeLabel}${
             isPhone
@@ -775,12 +775,12 @@ export function CapacityScreen() {
           lead={
             // v10 Capacity: the one ring on the page, ahead of the title. Option A: figures only on a phone.
             isPhone ? undefined : (
-              <OccupancyRing percent={occupancy.percent} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
+              <OccupancyRing percent={occupancy.percent} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope={heroScopeLabel} />
             )
           }
           bar={
             isPhone ? undefined : (
-              <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
+              <div className={styles.heroStatGroup} role="group" aria-label={`${heroScopeLabel} Bed Telemetry`}>
                 <HeroStat
                   inline
                   value={totalLockedReady}
@@ -1160,7 +1160,7 @@ export function CapacityScreen() {
         />
         <WardPrototypeFooter
           testId="ward-capacity-governance"
-          note="Statewide bed capacity · Not approved for clinical use"
+          note="Modelled network bed capacity · Limited synthetic demo coverage: CAHS inpatient wards are not modelled; private live feeds are unavailable · Not approved for clinical use"
         />
       </main>
     </div>

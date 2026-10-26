@@ -109,6 +109,19 @@ test("snapshot factory adds a lifetime-bound sender sibling without changing its
   assert.equal(JSON.stringify(world), before);
 });
 
+test("a sender snapshot keeps the access expiry and the sender sibling together without leaking either into the other", async () => {
+  const { world, access } = fixture();
+  const accessUntil = at.getTime() + 3_600_000;
+  const snapshot = await readSnapshot(world, access, [], { accessUntil });
+  assert.equal(snapshot.accessUntil, accessUntil);
+  assert.ok(snapshot.partialView, "Sender response sibling is present beside the expiry");
+  assert.equal(snapshot.partialView.accessContext, snapshot.accessContext);
+  assert.equal(Object.hasOwn(snapshot.partialView, "accessUntil"), false);
+  assert.equal(Object.hasOwn(snapshot.partialView.view, "accessUntil"), false);
+  assert.equal(JSON.stringify(snapshot.partialView).includes("rph-adult-secure"), false);
+  assert.deepEqual(snapshot.payload, engine.scopeWorld(world, access, at));
+});
+
 test("engine summary uses the full world for queued and accepted destination progress without mutation", () => {
   for (const answer of ["queued", "accepted"]) {
     const { world, id, access } = fixture(answer);

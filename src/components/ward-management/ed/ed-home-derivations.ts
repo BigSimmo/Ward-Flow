@@ -1,6 +1,12 @@
 // src/components/ward-management/ed/ed-home-derivations.ts
 import { minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
-import { edInpatientWaitEnd, isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import {
+  edInpatientWaitEnd,
+  isEdOriginJourney,
+  isWaitingInEd,
+  recordedEdDeparture,
+} from "@/components/ward-management/ward-ed-presence";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
@@ -163,6 +169,36 @@ export function edOpenSummaries(movements: readonly Movement[], now: Instant): E
       siteName: siteNameOf(ed),
       open,
       waiting: open.length,
+      longestWaitMinutes: elapsed.length ? Math.max(...elapsed) : 0,
+      detained: open.filter((movement) => isDetainedUnderTheAct(movement.legalStatus)).length,
+    };
+  });
+}
+
+export type EdJourneySummary = EdOpenSummary & { stillInEd: number; inTransit: number };
+
+/** Open ED-origin journeys retain ED accountability through transport until arrival.
+ * Physical waits and their historical charts continue to use edOpenSummaries/edWaitingSeries.
+ * Still-in-ED presence includes recorded ED outcomes, unlike the narrower inpatient-bed wait.
+ * Ward transfers and community origins never enter this population.
+ */
+export function edJourneySummaries(movements: readonly Movement[], now: Instant): EdJourneySummary[] {
+  return allEmergencyDepartments().map((ed) => {
+    const open = movements.filter(
+      (movement) => isOpen(movement) && isEdOriginJourney(movement) && movement.originEdId === ed.id,
+    );
+    const elapsed = open.map((movement) => elapsedOpenMinutes(movement, now));
+    const stillInEd = open.filter(
+      (movement) => movement.stage !== "moving" && recordedEdDeparture(movement) === undefined,
+    ).length;
+    return {
+      ed,
+      service: healthServiceOf(ed),
+      siteName: siteNameOf(ed),
+      open,
+      waiting: open.length,
+      stillInEd,
+      inTransit: open.length - stillInEd,
       longestWaitMinutes: elapsed.length ? Math.max(...elapsed) : 0,
       detained: open.filter((movement) => isDetainedUnderTheAct(movement.legalStatus)).length,
     };

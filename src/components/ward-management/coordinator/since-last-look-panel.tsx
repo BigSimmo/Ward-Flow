@@ -224,7 +224,7 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
     });
   }
   if (changes.newMovementIds.length > 0) {
-    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new in ED` });
+    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new journeys` });
   }
   if (bedsTotal > 0) {
     groups.push({

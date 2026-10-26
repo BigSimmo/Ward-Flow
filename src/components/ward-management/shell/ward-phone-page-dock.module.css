@@ -38,10 +38,18 @@
     --wf-dock-top: calc(50px + max(8px, env(safe-area-inset-bottom, 0px)));
   }
 
-  /* R7-23 / R2-22 (device sweep, 24 Oct 2026): plus a small gap, so the page's last line ends clear
-     of the + hump rather than touching it. */
   :global(body):has(.pageDock) :global([data-wf-scroller]) {
-    padding-bottom: calc(var(--wf-dock-clear) + var(--wf-s-3, 12px));
+    padding-bottom: var(--wf-dock-clear);
+  }
+
+  /* R7-23 / R2-22 (device sweep, 24 Oct 2026): plus a small gap, so the page's last line ends clear
+     of the + hump rather than touching it. LEGAL-01 (layout sweep, 25 Oct 2026): the gap is content
+     at the scroller's end, not padding, because a pinned bar stops above the scroller's padding and
+     12px more padding lifted every bar seated on the dock off its edge, with rows showing between. */
+  :global(body):has(.pageDock) :global([data-wf-scroller])::after {
+    content: "";
+    flex: none;
+    height: var(--wf-s-3, 12px);
   }
 
   /* While a sheet or dialog is open the dock steps out of view (Josh, 12 Oct 2026, iPhone: the dock

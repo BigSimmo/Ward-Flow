@@ -284,6 +284,12 @@ export function reducePlacementEvent(
        */
       const secureBedNeeded = movement.security === "Secure";
       const reservedBed = movementBedReservation(movement, state.referrals, unit.id).bedNumber;
+      if (reservedBed !== undefined) {
+        const numberedRefusal =
+          helpers.bedNumberRefusal(state, unit, reservedBed, undefined) ??
+          helpers.heldBedRefusal(state, unit, reservedBed, movement.id, movement.referralId);
+        if (numberedRefusal) return reject(state, event, numberedRefusal);
+      }
       const reservedKind = reservedBed === undefined ? undefined : numberedBedKind(unit, reservedBed);
       if (reservedBed !== undefined && reservedKind === undefined)
         return reject(state, event, "The numbered bed reservation is outside this ward.");
@@ -294,15 +300,16 @@ export function reducePlacementEvent(
           `No free ${reservedKind} bed remains for the numbered reservation at ${unit.name}.`,
         );
       const noLockedBedFree = lockedBedsFree(unit) <= 0;
-      if (secureBedNeeded && reservedKind === "open" && !noLockedBedFree)
-        return reject(state, event, "The numbered reservation is an open bed, but this request needs a locked bed.");
-      const bedKindOverrideNeeded = secureBedNeeded && noLockedBedFree;
+      // A valid reservation keeps its designation when another kind later frees up.
+      // Secure requests still need a recorded override to consume a reserved Open bed.
+      const bedKindOverrideNeeded =
+        secureBedNeeded && (reservedKind === "open" || (reservedKind === undefined && noLockedBedFree));
       const bedKindAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
       if (!bedKindAnswered && bedKindOverrideNeeded) {
         return reject(
           state,
           event,
-          `No locked bed is free at ${unit.name}. This placement ${OVERRIDE_REASON_REQUIRED} to use an open bed.`,
+          `${reservedKind === "open" && !noLockedBedFree ? `The numbered reservation at ${unit.name} is an open bed for a Secure request.` : `No locked bed is free at ${unit.name}.`} This placement ${OVERRIDE_REASON_REQUIRED} to use an open bed.`,
         );
       }
       const bedKindTaken: "locked" | "open" =
@@ -372,6 +379,7 @@ export function reducePlacementEvent(
         // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
         // See `Admission.bedKind`.
         bedKind: bedKindTaken,
+        ...(reservedBed === undefined ? {} : { bedNumber: reservedBed }),
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,
@@ -404,7 +412,7 @@ export function reducePlacementEvent(
         // mark exactly this one as having arrived. See `Movement.admissionId`.
         admissionId: admission.id,
         stageChanges: [...movement.stageChanges, { at: event.now, from: movement.stage, to: "pulled", by: event.role }],
-        overrides: pullOverrides(movement, unit, state.admissions, event, true),
+        overrides: pullOverrides(movement, unit, state.admissions, event, true, bedKindTaken),
       };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
       const withPerson: WardFlowState = {

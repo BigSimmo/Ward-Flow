@@ -1,5 +1,5 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
-import { isDischargeBarrier } from "./ward-admissions";
+import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -98,7 +98,18 @@ export function reduceBedEvent(
         return reject(state, event, `This stay is already recorded in bed ${event.bedNumber}`);
       const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, admission.id);
       if (bedRefusal) return reject(state, event, bedRefusal);
-      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
+      const linkedMovement =
+        admission.state === "pulled" ? liveMovementForAdmission(admission, state.movements) : undefined;
+      const linkedReferral =
+        linkedMovement &&
+        state.referrals.find((referral) => referral.id === (admission.referralId ?? linkedMovement.referralId));
+      const linkedArm = linkedReferral?.destinations.find(
+        (arm) =>
+          arm.state === "accepted" &&
+          arm.destination.kind === "psychiatric_ward" &&
+          (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      );
+      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber, linkedMovement?.id, linkedReferral?.id);
       if (heldRefusal) return reject(state, event, heldRefusal);
       const targetKind = numberedBedKind(unit, event.bedNumber)!;
       const priorKind =
@@ -140,6 +151,23 @@ export function reduceBedEvent(
                 row.id === unit.id ? { ...unit, allocatableLocked: lockedAfter } : row,
               ),
             }),
+        movements: linkedMovement
+          ? placed.movements.map((movement) =>
+              movement === linkedMovement ? { ...movement, heldBedNumber: event.bedNumber } : movement,
+            )
+          : placed.movements,
+        referrals: linkedArm
+          ? placed.referrals.map((referral) =>
+              referral === linkedReferral
+                ? {
+                    ...referral,
+                    destinations: referral.destinations.map((arm) =>
+                      arm === linkedArm ? { ...arm, heldBedNumber: event.bedNumber } : arm,
+                    ),
+                  }
+                : referral,
+            )
+          : placed.referrals,
         undoRecords: withUndoRecord(state.undoRecords, {
           kind: "bed-placement",
           admissionId: admission.id,
@@ -147,6 +175,13 @@ export function reduceBedEvent(
           at: event.now,
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
+          ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
+          ...(linkedArm
+            ? {
+                beforeReferralBed: linkedArm.heldBedNumber ?? null,
+                beforeReferralArmIndex: linkedReferral!.destinations.indexOf(linkedArm),
+              }
+            : {}),
           afterBed: event.bedNumber,
           bedKindChange: {
             before: admission.bedKind ?? null,

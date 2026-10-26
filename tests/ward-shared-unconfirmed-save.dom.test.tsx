@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   SharedWorkspaceClient,
+  WARD_COMMAND_RECOVERY_KEY,
   type SharedSnapshot,
   type SharedView,
 } from "@/components/ward-management/ward-shared-client";
@@ -116,6 +117,101 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
       expect(commits).toBe(1);
       expect(view()?.snapshot?.revision).toBe(2);
       expect(view()?.unconfirmedSave).toBe(false);
+      expect(reloadIsGuarded()).toBe(false);
+    },
+  );
+
+  it.each([false, true])(
+    "keeps storage-enabled same-tab polling behind explicit Retry (server committed: %s)",
+    async (committedBeforeLoss) => {
+      const commandId = "11111111-1111-4111-8111-111111111111";
+      const receiptScope = "opaque-session-role-binding";
+      const expiresAt = Date.now() + 60_000;
+      const storage = new Map<string, string>();
+      const bodies: string[] = [];
+      let commits = 0;
+      let receiptReads = 0;
+      let boardReads = 0;
+      let currentView: SharedView | undefined;
+      const view = () => currentView;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "synthetic-token",
+        commandId: () => commandId,
+        changed: (next) => {
+          currentView = next;
+        },
+        recoveryStorage: {
+          getItem: (key) => storage.get(key) ?? null,
+          setItem: (key, value) => {
+            storage.set(key, value);
+          },
+          removeItem: (key) => {
+            storage.delete(key);
+          },
+        },
+        fetch: async (url, init) => {
+          if (init?.method === "POST") {
+            bodies.push(String(init.body));
+            if (bodies.length === 1) {
+              if (committedBeforeLoss) commits++;
+              throw new Error("Synthetic lost response");
+            }
+            if (!committedBeforeLoss) commits++;
+            return Response.json({ outcome: "accepted", snapshot: snapshot(2), replayed: committedBeforeLoss });
+          }
+          if (String(url).includes("/receipt?")) {
+            receiptReads++;
+            return Response.json({
+              receipt: committedBeforeLoss ? { outcome: "accepted", commandRevision: 2 } : null,
+            });
+          }
+          boardReads++;
+          return Response.json({ snapshot: snapshot(commits ? 2 : 1), receiptScope, accessUntil: expiresAt });
+        },
+      });
+      clients.push(client);
+      await client.refresh();
+      const original = await client.dispatchConfirmed(event);
+      expect(original).toMatchObject({ commandId, status: "failed" });
+      expect(original.confirmation).toBeDefined();
+      let confirmed = false;
+      void original.confirmation!.then(() => {
+        confirmed = true;
+      });
+      const stored = storage.get(WARD_COMMAND_RECOVERY_KEY)!;
+      expect(JSON.parse(stored)).toEqual({ commandId, receiptScope, expiresAt });
+      expect(stored).not.toMatch(/REQUEST_CAPACITY_REFRESH|synthetic-ward|event|payload/);
+
+      // These are ordinary same-tab polls, not a reloaded client without the original payload.
+      for (let poll = 0; poll < 2; poll++) {
+        await client.refresh();
+        expect(receiptReads).toBe(0);
+        expect(bodies).toHaveLength(1);
+        expect(view()).toMatchObject({
+          status: "unavailable",
+          boardCurrent: true,
+          recovering: false,
+          unconfirmedSave: true,
+        });
+        expect(storage.get(WARD_COMMAND_RECOVERY_KEY)).toBe(stored);
+        expect(confirmed).toBe(false);
+        expect(reloadIsGuarded()).toBe(true);
+      }
+      expect(boardReads).toBe(3);
+      await expect(client.dispatch(event)).resolves.toMatchObject({ status: "cancelled" });
+      expect(bodies).toHaveLength(1);
+
+      await client.retry();
+      await expect(original.confirmation).resolves.toMatchObject({ commandId, status: "accepted" });
+      expect(bodies).toHaveLength(2);
+      expect(bodies[1]).toBe(bodies[0]);
+      expect(JSON.parse(bodies[1]).commandId).toBe(commandId);
+      expect(receiptReads).toBe(0);
+      expect(commits).toBe(1);
+      expect(view()?.snapshot?.revision).toBe(2);
+      expect(view()?.unconfirmedSave).toBe(false);
+      expect(storage.has(WARD_COMMAND_RECOVERY_KEY)).toBe(false);
       expect(reloadIsGuarded()).toBe(false);
     },
   );

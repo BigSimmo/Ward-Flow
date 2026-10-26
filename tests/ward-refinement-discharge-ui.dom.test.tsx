@@ -147,10 +147,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
       within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
     );
 
-    expect(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: /^Now, bed releases \d+$/u })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
@@ -160,9 +157,9 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100003");
   });
 
-  it("keeps anonymous releases and admission records as separate counted populations", () => {
+  it("keeps bed releases and admission records as separate counted populations", () => {
     renderDischarges();
-    const releases = screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u });
+    const releases = screen.getByRole("button", { name: /^Now, bed releases \d+$/u });
     const records = screen.getByRole("button", { name: /^History, admission records \d+$/u });
     const releaseCount = populationCount(releases);
     const recordCount = populationCount(records);
@@ -215,7 +212,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Now, anonymous releases \d+$/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Now, bed releases \d+$/u }));
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
   });

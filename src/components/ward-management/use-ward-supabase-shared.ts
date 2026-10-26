@@ -1,4 +1,5 @@
 "use client";
+import { forgetDowntimePack } from "./reports/downtime-pack";
 import { useEffect, useRef, useState } from "react";
 import { setActNowAppBadge } from "./shell/ward-act-now-notifications";
 import { releasePhonePush, rememberPhonePushOwnership } from "./shell/ward-phone-push";
@@ -188,6 +189,7 @@ export function useWardSupabaseShared(
         channel.postMessage({ ask: id, userId: auth.userId, within: CLINICAL_VALUES.idleLock.value * 60_000 });
       });
     const disconnect = (forgetDrafts = true) => {
+      forgetDowntimePack();
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
       if (forgetDrafts) clearReferralDraftSession();
       connectedActorId = null;
@@ -232,6 +234,11 @@ export function useWardSupabaseShared(
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: (options) => instance.token(options),
         workingAs,
+        recoveryStorage: {
+          getItem: (key) => window.sessionStorage.getItem(key),
+          setItem: (key, value) => window.sessionStorage.setItem(key, value),
+          removeItem: (key) => window.sessionStorage.removeItem(key),
+        },
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
