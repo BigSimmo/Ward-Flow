@@ -46,7 +46,10 @@ test("when switched on, a sign-in without a second step is asked to finish signi
   assert.equal(await refusedForSecondStep(response), true);
   assert.equal((await response.json()).error, "Finish signing in with your second step, then carry on.");
   // A token that says nothing about a second step fails closed too.
-  assert.equal(await refusedForSecondStep(await handler({ requireSecondStep: true })(request(""))), true);
+  assert.equal(
+    await refusedForSecondStep(await handler({ requireSecondStep: true, secondStep: undefined })(request(""))),
+    true,
+  );
 });
 
 test("when switched on, a sign-in that finished its second step is served", async () => {
