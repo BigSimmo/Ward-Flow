@@ -9,6 +9,7 @@ import {
   CardHead,
   DisabledReason,
   Field,
+  Hero,
   Select,
   StatusGlyph,
   TextInput,
@@ -72,10 +73,13 @@ export function SeclusionScreen() {
 
   return (
     <main id="main-content" className={styles.main} data-testid="seclusion-screen">
-      <header className={styles.header}>
-        <h1 className={styles.title}>Seclusion, restraint and incidents</h1>
-        <span className={styles.meta}>as at {formatInstantWithDay(now, now)}</span>
-      </header>
+      {/* C3 (25 Oct 2026 design re-score): the shared header band every other screen opens with. */}
+      <Hero
+        level={1}
+        eyebrow="Restrictive practice"
+        title="Seclusion, restraint and incidents"
+        titleMeta={`as at ${formatInstantWithDay(now, now)}`}
+      />
       <p className={styles.note} data-testid="seclusion-scope-note">
         Operational view only. Times are shown as they were typed, and nothing here works out an order length, a review
         or any legal limit. The legal register stays in the health service&apos;s own system.

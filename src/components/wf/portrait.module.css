@@ -126,7 +126,9 @@
 
 .rowButton {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto minmax(0, 0.9fr) 16px;
+  /* KIT-03 / SHELL-12 (layout sweep, 25 Oct 2026): the figure column has one width on every row
+     (wider only for a longer figure), so the next-step column starts at the same place each time. */
+  grid-template-columns: 16px minmax(0, 1.4fr) minmax(8.5rem, max-content) minmax(0, 0.8fr) 16px;
   align-items: center;
   column-gap: var(--wf-s-3);
   width: 100%;
@@ -200,6 +202,15 @@
 
 .next {
   color: var(--wf-ink-2);
+}
+
+/* KIT-03 (layout sweep, 25 Oct 2026): a longer next step takes a second line before it is cut. */
+.rowButton .next {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
 }
 
 .chevron {

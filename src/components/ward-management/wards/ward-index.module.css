@@ -530,13 +530,15 @@
 }
 
 /* Table */
+/* The table scrolls sideways at every width rather than cutting off its right-hand columns
+   (layout sweep WARD-01, 25 Oct 2026). */
 .tableCard {
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .table {
-  min-width: 0;
+  min-width: min-content;
 }
 
 .tr {
@@ -643,14 +645,6 @@
 @media (max-width: 60rem) {
   .cardGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tableCard {
-    overflow-x: auto;
-  }
-
-  .table {
-    min-width: 860px;
   }
 }
 
@@ -1119,9 +1113,17 @@
     border-radius: var(--wf-r-ctl);
   }
 
+  /* Layout sweep WARD-12: the no-match note and Reset wrap onto their own lines, not cut to stubs. */
   .shownCount {
+    flex-wrap: wrap;
     justify-content: space-between;
+    row-gap: var(--wf-s-1);
     padding: 0 var(--wf-s-1);
+    white-space: normal;
+  }
+
+  .shownCount > span {
+    overflow: visible;
   }
 }
 

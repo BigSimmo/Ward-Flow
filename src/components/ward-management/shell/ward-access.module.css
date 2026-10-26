@@ -93,6 +93,27 @@
   font-weight: 600;
 }
 
+/* Layout sweep SHELL-06 (25 Oct 2026): on a phone the desk line keeps to one row, so it does not
+ * take two or three permanent lines off every page. The whole sentence stays in the accessibility
+ * tree; the row ends in an ellipsis on screen. */
+@media (max-width: 48rem) {
+  .banner {
+    flex-wrap: nowrap;
+    padding-block: 4px;
+  }
+
+  .banner > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .banner > :not(span) {
+    flex: none;
+  }
+}
+
 .readOnly {
   margin: var(--wf-s-2) var(--wf-s-4);
   padding: var(--wf-s-2) var(--wf-s-3);

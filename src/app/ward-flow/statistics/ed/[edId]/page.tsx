@@ -5,10 +5,16 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { knownEmergencyDepartment } from "@/components/ward-management/ward-known-places";
 import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-url";
 
-export const metadata: Metadata = {
-  title: "Emergency department statistics — Ward Flow",
-  description: "Synthetic single-department statistics section for the Ward Flow prototype.",
-};
+// B2 (25 Oct 2026 design re-score): the tab names the place, so several open tabs can be told
+// apart. An unknown id keeps the generic title; the typed address never reaches it (DR-20).
+export async function generateMetadata({ params }: { params: Promise<{ edId: string }> }): Promise<Metadata> {
+  const id = safeDecodeURIComponent((await params).edId);
+  const name = knownEmergencyDepartment(id)?.name;
+  return {
+    title: name ? `${name} — Statistics — Ward Flow` : "Emergency department statistics — Ward Flow",
+    description: "Synthetic single-department statistics section for the Ward Flow prototype.",
+  };
+}
 
 /**
  * One route serving every emergency department, not a page per department.

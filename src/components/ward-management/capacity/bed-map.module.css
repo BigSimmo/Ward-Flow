@@ -369,15 +369,17 @@
   outline-offset: 2px;
 }
 
+/* Layout sweep WARD-18: a long ward name takes two lines before it is shortened. */
 .wardNameText,
 .mapWardName {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
   font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-1);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .bedTotalBadge {

@@ -1419,13 +1419,11 @@
     display: block;
   }
 
+  /* Layout sweep WARD-17: the filters live in the phone sheet, where each select keeps its
+     visible name (Service, Ward, Status, Blocker, Sort) as on the larger screen. */
   .filterField .filterLabelText {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    display: block;
+    margin-bottom: var(--wf-s-1);
   }
 
   .filterSelect {

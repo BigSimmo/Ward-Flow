@@ -24,19 +24,20 @@
 
 .titleWrap {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--wf-s-2);
+  gap: 2px var(--wf-s-2);
   min-width: 0;
   flex: 1 1 auto;
 }
 
+/* KIT-01 (layout sweep, 25 Oct 2026): the title and the meta are never cut off together ("Ask a
+   que…", "Forecast al…"). The title wraps, and a meta that does not fit beside it drops below. */
 .title {
   margin: 0;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
   min-width: 0;
 }
 
@@ -50,11 +51,9 @@
 .meta {
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
 }
 
 .aside {
@@ -75,6 +74,7 @@
 
 .foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-height: 52px;
@@ -84,13 +84,13 @@
   margin-top: auto;
 }
 
+/* KIT-04 / STATS-08 (layout sweep, 25 Oct 2026): a foot note is often the chart's legend, so it
+   wraps instead of ending in an ellipsis. Actions sit beside it while it keeps 16rem, else below. */
 .footMeta {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 1 1 16rem;
   color: var(--wf-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .footActions {

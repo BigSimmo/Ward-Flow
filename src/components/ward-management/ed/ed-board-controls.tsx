@@ -554,7 +554,10 @@ export function EdActionsMenu({
           className={styles.actionItems}
           onFocus={(event) =>
             setReason(
-              event.target instanceof HTMLButtonElement && event.target.getAttribute("aria-disabled") === "true"
+              event.target instanceof HTMLButtonElement &&
+                event.target.getAttribute("aria-disabled") === "true" &&
+                // The blocker mock-up (26 Oct 2026): a note that opens its own reason in place needs no copy below.
+                !event.target.nextElementSibling?.hasAttribute("data-unavailable-detail")
                 ? event.target.title
                 : undefined,
             )

@@ -96,9 +96,15 @@
   text-overflow: ellipsis;
 }
 
+/* STATS-09 (layout sweep, 25 Oct 2026): a long name takes a second line before it is cut. */
 .barLabel > span {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .barSub {
@@ -120,7 +126,8 @@
 .barPick {
   grid-column: 1 / -1;
   align-self: stretch;
-  min-height: 28px;
+  /* KIT-06 (layout sweep, 25 Oct 2026): touch tablets get the kit's 44px touch size. */
+  min-height: max(28px, var(--wf-tablet-tap, 0px));
   margin: 0 calc(-1 * var(--wf-s-1));
   padding: 0;
   border: 1px solid transparent;
