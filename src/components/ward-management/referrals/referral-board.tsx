@@ -14,7 +14,7 @@ import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } fr
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { type Referral } from "@/components/ward-management/ward-model";
+import { type Movement, type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-management/ward-readmission-flag";
@@ -95,6 +95,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
+import type { IsbarRecorded } from "./referral-board-sheets";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -1258,6 +1260,7 @@ export function ReferralBoard({
                   umrn={selectedUmrn}
                   demographics={demographicLabel(selectedReferral)}
                   now={now}
+                  recorded={isbarRecorded(selectedReferral, movements, referrals)}
                 />
               </Card>
             ) : (
@@ -1302,4 +1305,17 @@ export function ReferralBoard({
       </main>
     </div>
   );
+}
+
+/** The record's legal status and clearance for the summary: the linked journey's, or the referral's own. */
+function isbarRecorded(
+  referral: Referral,
+  movements: readonly Movement[],
+  referrals: readonly Referral[],
+): IsbarRecorded {
+  const linked = movements.find((movement) => movement.referralId === referral.id && !movement.closure);
+  return {
+    legalStatus: linked?.legalStatus,
+    clearance: linked ? recordedMovementMedicalClearance(linked, referrals) : referral.medicalClearance,
+  };
 }
