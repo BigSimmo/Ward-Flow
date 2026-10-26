@@ -93,6 +93,19 @@ describe("help and tour audit fixes", () => {
     }
   });
 
+  it("never tells staff the TV hides names, since every TV view shows them in full (D-83, WT-20)", () => {
+    const answers = ["/ward-flow/capacity", "/ward-flow/ward/u1", "/ward-flow/ed/e1"]
+      .flatMap((path) => screenHelpFor(path, entries)?.questions ?? [])
+      .map((item) => item.answer)
+      .join(" ");
+    expect(answers).toContain("full names");
+    expect(answers).not.toMatch(/initials/i);
+  });
+
+  it("names both ED row buttons that start a referral (WT-35)", () => {
+    expect(screenHelpFor("/ward-flow/ed/e1", entries)?.actions.join(" ")).toMatch(/Refer to a ward.*Ask for a bed/);
+  });
+
   it("gives a phone a line it can use instead of a keyboard hint (HF-14)", () => {
     const referrals = screenHelpFor("/ward-flow/referrals", entries);
     expect(referrals?.actions.join(" ")).toContain("On a keyboard");
