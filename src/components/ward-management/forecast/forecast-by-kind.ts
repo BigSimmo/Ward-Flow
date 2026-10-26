@@ -119,6 +119,7 @@ export function forecastByKind(
     new Set(units.map((unit) => unit.id)),
     until,
     waitingMovements,
+    admissions,
   );
 
   const kinds = KIND_ORDER.map((id): KindForecast => {

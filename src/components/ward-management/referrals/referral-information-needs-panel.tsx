@@ -22,6 +22,7 @@ import {
   type ReferralInformationNeed,
 } from "./referral-information-needs";
 import type { WardReferralInboxEntry } from "./referral-inbox";
+import { useSenderPresentation } from "../ward-sender-presentation";
 import styles from "./referral-information-needs.module.css";
 
 /**
@@ -127,6 +128,12 @@ const TICK_OFF_ROLES = ["ed", "community", "ward", "coordinator"] as const;
 
 /** The referrer's side: what each ward is still waiting on, ticked off one item at a time. */
 export function ReferralInformationNeedsPanel({ referral, now }: { referral: Referral; now: Instant }) {
+  const summary = useSenderPresentation().referralFor(referral);
+  if (summary === null) return <p role="status">Information requests unavailable.</p>;
+  if (summary)
+    return summary.informationNeeds.length > 0 ? (
+      <SenderNeedsToTickOff referral={referral} needs={summary.informationNeeds} />
+    ) : null;
   const arms = referral.destinations.flatMap((arm) => {
     // Once the ward has answered, or the referrer has withdrawn, its asks are closed (the reducer agrees).
     const waiting =
@@ -137,6 +144,50 @@ export function ReferralInformationNeedsPanel({ referral, now }: { referral: Ref
   });
   // Nothing asked: render nothing, and read no workspace state (the timeline also renders alone).
   return arms.length === 0 ? null : <NeedsToTickOff referral={referral} arms={arms} now={now} />;
+}
+
+/** Sender categories have no ward, request time, recipient count or destination handle. */
+function SenderNeedsToTickOff({ referral, needs }: { referral: Referral; needs: readonly ReferralInformationNeed[] }) {
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
+  const access = useEffectiveWardAccess();
+  const { units } = useWardFlowSelect("units");
+  const reasonId = useId();
+  const sent =
+    routeSentKind(routeRole, referral.source) && referralSentByDesk(referral, access, wardPlaceLookup(units));
+  const refusal = !(TICK_OFF_ROLES as readonly string[]).includes(routeRole)
+    ? rolesOnlyReason([...TICK_OFF_ROLES])
+    : sent
+      ? undefined
+      : "Only the desk that sent this referral can mark these provided.";
+  return (
+    <section className={styles.panel} aria-label="Information requested" data-testid="ward-referral-needs-panel">
+      <p className={styles.heading}>Information requested</p>
+      <ul className={styles.list}>
+        {needs.map((need) => (
+          <li key={need} className={styles.row}>
+            <span>
+              <StatusGlyph tone="warning" size={8} /> {referralInformationNeedLabel(need)}
+            </span>
+            <Button
+              size="sm"
+              variant="sec"
+              aria-disabled={refusal !== undefined ? "true" : undefined}
+              aria-describedby={refusal ? reasonId : undefined}
+              aria-label={`Mark ${referralInformationNeedLabel(need)} as provided`}
+              onClick={() => {
+                if (refusal) return;
+                raise("MARK_REFERRAL_INFORMATION_MET", { referralId: referral.id, allRequestingWards: true, need });
+              }}
+            >
+              Provided
+            </Button>
+          </li>
+        ))}
+      </ul>
+      {refusal ? <DisabledReason id={reasonId}>{refusal}</DisabledReason> : null}
+    </section>
+  );
 }
 
 function NeedsToTickOff({

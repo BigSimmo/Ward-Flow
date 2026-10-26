@@ -10,6 +10,7 @@ import { useRouteRole } from "../ward-role-gate";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { openInformationNeeds } from "./referral-information-needs";
 import type { WardReferralInboxEntry } from "./referral-inbox";
+import { useSenderPresentation } from "../ward-sender-presentation";
 
 /**
  * Smart features ideas 3 and 4 (19 Oct 2026): the referral screens import the "what we still need"
@@ -37,7 +38,11 @@ export function WardInformationNeedsPicker(props: ComponentProps<typeof LazyPick
 
 /** The referrer's list to tick off. Nothing asked: nothing loads. */
 export function ReferralInformationNeedsPanel({ referral, now }: { referral: Referral; now: Instant }) {
-  const asked = referral.destinations.some((arm) => openInformationNeeds(arm.informationNeeds).length > 0);
+  const summary = useSenderPresentation().referralFor(referral);
+  if (summary === null) return <p role="status">Information requests unavailable.</p>;
+  const asked = summary
+    ? summary.informationNeeds.length > 0
+    : referral.destinations.some((arm) => openInformationNeeds(arm.informationNeeds).length > 0);
   return asked ? <LazyTickOff referral={referral} now={now} /> : null;
 }
 

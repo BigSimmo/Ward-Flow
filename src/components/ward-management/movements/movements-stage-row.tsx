@@ -26,10 +26,18 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 import { type MovementLegState } from "./movements-derivations";
 import { ChevronRight, Lock } from "lucide-react";
 import { SrOnly, StatusGlyph, TierTile, Timer, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
-import { movementNextStep, nextStepTarget } from "./movement-next-step";
+import { movementNextStep, nextStepTarget, type MovementNextStep } from "./movement-next-step";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { movementPresentation } from "../ward-partial-view-presenters";
 import flow from "./movement-flow.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { LEG_STATE_LABEL, MS_PER_MINUTE, meaningfulBlocker, transportRouteLabels } from "./movements-screen-helpers";
+import {
+  LEG_STATE_LABEL,
+  MS_PER_MINUTE,
+  meaningfulBlocker,
+  transportRouteLabels,
+  movementProgressText,
+} from "./movements-screen-helpers";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 export function HighlightStat({
@@ -157,6 +165,9 @@ export function StageRow({
   selected: boolean;
 }) {
   const thresholds = useDueSoonThresholds();
+  const sender = useSenderPresentation();
+  const presentation = movementPresentation(movement, sender.movementFor(movement));
+  const progressText = movementProgressText(presentation);
   const rowRef = useRef<HTMLLIElement>(null);
   const revealRequest = reveal?.id === movement.id ? reveal.request : null;
   useEffect(() => {
@@ -243,6 +254,7 @@ export function StageRow({
   }
 
   const waitedMinutes = Math.max(clockEnd - movement.openedAt, 0);
+  if (progressText && !movement.acceptedUnitId && !leg) routeSub = progressText;
   // "Due soon" from the named ED severe-pressure default, "Overdue" past the configured ED access
   // target. No tier-specific window is invented here.
   const waitThresholds = { dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES, overdue: accessTargetMinutes };
@@ -276,7 +288,19 @@ export function StageRow({
   ]
     .filter(Boolean)
     .join(" · ");
-  const step = movementNextStep(movement);
+  const recordedStep = movementNextStep(movement);
+  let step: MovementNextStep | null = presentation.kind === "record" ? recordedStep : null;
+  if (presentation.kind === "sender" && presentation.nextStep !== "none") {
+    if (recordedStep?.kind === presentation.nextStep) step = recordedStep;
+    else if (presentation.nextStep === "wait" || (presentation.nextStep === "pull" && !movement.acceptedUnitId))
+      step = { kind: "wait", label: progressText!, owner: "" };
+    else
+      step = {
+        kind: presentation.nextStep,
+        label: { refer: "Ask wards", escalate: "Escalate", pull: "Pull bed" }[presentation.nextStep],
+        owner: "Coordinator",
+      };
+  }
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
@@ -405,7 +429,9 @@ export function StageRow({
         </span>
       </span>
       <span className={flow.next}>
-        {step === null ? (
+        {presentation.kind === "unavailable" ? (
+          <span className={flow.nextOwner}>{progressText}</span>
+        ) : step === null ? (
           <span className={flow.nextOwner}>{closure ? `Closed ${formatInstantWithDay(closure.at, now)}` : ""}</span>
         ) : step.kind !== "wait" ? (
           <Link
