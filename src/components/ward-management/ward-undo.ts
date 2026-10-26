@@ -160,6 +160,26 @@ export function stepUndoFor(
 }
 
 /**
+ * The record number an Undo of `undoType` on `subjectId` would be checked against (H-0246): a step
+ * record, or the referral decision or bed move record those two older undos keep. A toast sends it
+ * as `recordSeq`, so its Undo is refused once a later decision or move has replaced the record.
+ */
+export function undoRecordSeqFor(
+  records: readonly UndoRecord[] | undefined,
+  undoType: string,
+  subjectId: string,
+): number | undefined {
+  if (undoType === "UNDO_REFERRAL_DECISION")
+    return (records ?? []).find((record) => record.kind === "referral-decision" && record.referralId === subjectId)
+      ?.seq;
+  if (undoType === "UNDO_PLACE_IN_BED")
+    return (records ?? []).find((record) => record.kind === "bed-placement" && record.admissionId === subjectId)?.seq;
+  return (UNDO_STEP_TYPES as readonly string[]).includes(undoType)
+    ? stepUndoFor(records, undoType as UndoStepType, subjectId)?.seq
+    : undefined;
+}
+
+/**
  * State keys a step undo never snapshots: the audit trail, refusals, counters, the clock, the
  * configuration and the undo records themselves. Ids are never reused, so counters stay where
  * they are; `dischargeRevisions` only moves forward (a removed stay's entry is dropped on undo).
