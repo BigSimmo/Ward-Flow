@@ -119,7 +119,7 @@ type AuditBase = {
  * (`governance-access-review.ts`). The desk is its role and place in words; `deskCount` is how many
  * openings that desk made in the 12 hours up to this one, so more than 3 reads as a pattern.
  */
-export type BreakGlassAuditDetails = {
+type BreakGlassAuditDetails = {
   record: string | null;
   reason: BreakGlassReasonId | null;
   until: Instant | null;
