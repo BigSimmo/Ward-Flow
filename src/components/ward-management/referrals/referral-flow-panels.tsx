@@ -11,6 +11,7 @@ import {
   type FollowableChartKind,
   type ReferralChart,
   type ReferralContact,
+  type ReferralIntakeDetails,
 } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -29,6 +30,17 @@ export type DocumentationDraft = {
 /** A required chart is answered when it is attached or marked to follow (A27). */
 export function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKind): boolean {
   return draft.charts.some((chart) => chart.kind === kind) || (draft.toFollow ?? []).includes(kind);
+}
+
+/** The intake's chart fields: what is attached, and what is marked to follow (A27). A chart attached
+ *  after it was marked to follow counts as attached. Community referrals carry no charts. */
+export function intakeCharts(
+  draft: DocumentationDraft,
+  community: boolean,
+): Pick<ReferralIntakeDetails, "charts" | "chartsToFollow"> {
+  if (community) return { charts: [] };
+  const chartsToFollow = (draft.toFollow ?? []).filter((kind) => !draft.charts.some((chart) => chart.kind === kind));
+  return { charts: draft.charts, ...(chartsToFollow.length ? { chartsToFollow } : {}) };
 }
 
 export const EMPTY_DOCUMENTATION: DocumentationDraft = {

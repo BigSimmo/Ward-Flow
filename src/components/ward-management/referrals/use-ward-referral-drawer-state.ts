@@ -46,7 +46,7 @@ import {
   communityUrgency,
 } from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
-import { documentationError, EMPTY_DOCUMENTATION, type DocumentationDraft } from "./referral-flow-panels";
+import { documentationError, EMPTY_DOCUMENTATION, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
@@ -961,10 +961,6 @@ export function useWardReferralDrawerState({
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
-    // A27: a chart attached after it was marked to follow is attached, not to follow.
-    const chartsToFollow = (documentation.toFollow ?? []).filter(
-      (kind) => !documentation.charts.some((chart) => chart.kind === kind),
-    );
     const intake: ReferralIntakeDetails = {
       catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
       reasonForReferral: referralReason,
@@ -981,8 +977,7 @@ export function useWardReferralDrawerState({
             }),
       },
       triageAndRampCompleted: !community && documentation.triage === "yes",
-      charts: community ? [] : documentation.charts,
-      ...(!community && chartsToFollow.length ? { chartsToFollow } : {}),
+      ...intakeCharts(documentation, community),
       additionalDocuments: !community && documentation.additional === "yes",
       referrer: contact,
       ...(destType === "ward"
