@@ -1992,3 +1992,25 @@ html.theme-transitioning *:after {
     display: none !important;
   }
 }
+
+/* Wave 4 L2 (26 Oct 2026), forced colours across the app. Outlines only, so no rule here removes a
+   page's own fill, border or focus ring, and a page's own outline still wins. */
+@media (forced-colors: active) {
+  /* H-0165, H-0884: a button keeps an edge. Forced colours drop the tint or shadow that drew it, so
+     Close, primary buttons and the Tools and Menu rows read as plain text. Zero specificity, so a
+     component's own outline and focus ring win. */
+  :where(button, [role="button"], [role="menuitem"], [role="menuitemradio"]):not(:disabled) {
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
+  }
+
+  /* H-0426: the current page in the rail, the phone menu and the dock, and selected tabs and
+     segments that have no forced-colours rule of their own, stay marked. */
+  [aria-current="page"],
+  [role="tab"][aria-selected="true"],
+  [aria-pressed="true"],
+  [role="radio"][aria-checked="true"] {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+}
