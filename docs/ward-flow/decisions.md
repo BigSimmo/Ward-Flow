@@ -953,4 +953,3 @@ is inferred.
 - **Replaces:** the working practice of asking Josh for each raise, and the 21 October 2026 "no raises" instruction, which asked for trims instead. Trimming first is still required.
 - **Where it lives:** the rule text is in [HOW-WE-WORK section 6](HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews); this entry is the record.
 - **Why:** each owner approval for a 1 to 4 KB raise held up otherwise finished PRs, and the cap keeps the total growth small and visible.
-
