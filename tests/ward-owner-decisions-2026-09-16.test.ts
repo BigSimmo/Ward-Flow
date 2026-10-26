@@ -150,13 +150,23 @@ describe("2026-09-16 Product Owner Rulings Verification", () => {
 
   describe("Ruling 11: Transport cancellation authority", () => {
     it("allows ward role to cancel transport if it booked it", () => {
-      const state = seedWardFlowState();
-      const pulled = state.movements.find((m) => m.stage === "pulled" && !m.closure);
+      const seed = seedWardFlowState();
+      const pulled = seed.movements.find((m) => m.stage === "pulled" && !m.closure);
       expect(pulled).toBeDefined();
       if (!pulled) return;
 
-      const bookingUnit = state.units[0];
-      const otherUnit = state.units[1];
+      const bookingUnit = seed.units[0];
+      const otherUnit = seed.units[1];
+      // A ward-to-ward transfer: the journey leaves the booking ward's own occupied stay, so that
+      // ward is its sender (BOOK_TRANSPORT refuses a ward on an ED or community start).
+      const stay = seed.admissions.find((a) => a.unitId === bookingUnit.id && a.state === "occupied");
+      expect(stay).toBeDefined();
+      const state = {
+        ...seed,
+        movements: seed.movements.map((m) =>
+          m.id === pulled.id ? { ...m, sourceAdmissionId: stay!.id, patientId: stay!.patientId ?? undefined } : m,
+        ),
+      };
 
       const booked = wardFlowReducer(state, {
         type: "BOOK_TRANSPORT",

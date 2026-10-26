@@ -29,7 +29,8 @@ import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-coun
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -314,6 +315,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
+  /** Where focus goes when Go to a desk closes: the rail's person or, on iPad, the Menu button. */
+  const deskReturnRef = useRef<HTMLElement | null>(null);
   // The person using the shell: the desk a switch announced (persona sync), or with role access on,
   // the desk's own role. Shared with the desk picker so both name the same person.
   const personaRole = useShellPersonaRole();
@@ -344,7 +347,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const canOpen = useCanOpenHref();
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
-  const currentPersona = DESK_PERSONAS[personaRole];
+  // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
+  const currentPersona = useEffectiveWardAccess().role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
   const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
@@ -358,7 +362,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
   const alertCount = bedAlerts.services.filter((svc) => isBedAlert(svc.occupancyPercent)).length;
-  const alertCountLabel = alertCount === 0 ? "No alerts" : `${alertCount} ${alertCount === 1 ? "alert" : "alerts"}`;
+  // Says what it counts, services over the bed alert line, so it is never read as the Alerts page's
+  // own list (#793: "2 alerts" here while Alerts said no alert needs you).
+  const alertCountLabel = `${alertCount === 0 ? "None" : alertCount} over ${BED_ALERT_THRESHOLD_PERCENT}%`;
   const metroPercent = bedAlerts.metroOccupancyPercent;
   const metroLabel = metroPercent === null ? "Metro —" : `Metro ${formatOccupancyPercent(metroPercent)}`;
   const hottestLabel = hottest ? `${hottest.shortName} ${formatOccupancyPercent(hottest.occupancyPercent)}` : "";
@@ -1100,6 +1106,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 return;
               }
               setOpenOverlay(null);
+              deskReturnRef.current = personaTriggerRef.current;
               setDeskModalOpen(true);
             }}
             aria-expanded={deskModalOpen}
@@ -1121,7 +1128,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               isOpen
               onClose={() => {
                 setDeskModalOpen(false);
-                personaTriggerRef.current?.focus();
+                deskReturnRef.current?.focus();
               }}
             />
           ) : null}
@@ -1150,7 +1157,25 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           // Device audit (11 Oct 2026): the list scrolls above a pinned foot that keeps the person,
           // Settings and Appearance in reach on iPad, where the sheet used to cut off at Governance.
           <>
-            <div className={styles.moreFootPerson} title={`${currentPersona.name} · ${currentPersona.role}`}>
+            {/* WT-39 (walk-through, 26 Oct 2026): on iPad portrait there is no rail, so the menu's
+                person opens Go to a desk, as the rail's person does. */}
+            <button
+              type="button"
+              className={`${styles.moreFootPerson} ${styles.moreFootPersonBtn}`}
+              data-testid="ward-rail-sheet-persona-trigger"
+              onClick={() => {
+                setMoreOpen(false);
+                if (onOpenOperatorModal) {
+                  onOpenOperatorModal();
+                  return;
+                }
+                deskReturnRef.current = moreTriggerRef.current;
+                setDeskModalOpen(true);
+              }}
+              aria-haspopup="dialog"
+              aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
+              title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+            >
               <span className={styles.userAvatar} aria-hidden="true">
                 {currentPersona.initials}
               </span>
@@ -1158,7 +1183,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 <span className={styles.userName}>{currentPersona.name}</span>
                 <span className={styles.userRole}>{currentPersona.role}</span>
               </span>
-            </div>
+              <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
+            </button>
             <div className={styles.moreFootActions}>
               <Link
                 href={settingsHref()}

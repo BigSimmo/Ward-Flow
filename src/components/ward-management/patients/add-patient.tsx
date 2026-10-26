@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { calendarDateOf, perthIsoDay } from "@/components/ward-management/ward-clock";
 import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -181,8 +182,10 @@ const MATCH_LABEL: Record<MatchKind, string> = {
 };
 
 export function AddPatientForm() {
-  const { patients, worldGeneration } = useWardFlowSelect("patients", "worldGeneration");
+  const { patients, worldGeneration, dayZero } = useWardFlowSelect("patients", "worldGeneration", "dayZero");
   const now = useWardFlowClock();
+  // TC2-10: a birth date is checked against the demo's own day, not the computer's date.
+  const demoToday = perthIsoDay(calendarDateOf(now, dayZero));
   const role = useRouteRole();
   const access = useEffectiveWardAccess();
   // A ward adds a patient in its own name, registered to its own ward (role access plan v2, D-80).
@@ -468,6 +471,11 @@ export function AddPatientForm() {
       showMissingFields();
       return;
     }
+    if (answered.dateOfBirth > demoToday) {
+      setAttemptedSubmit(true);
+      document.getElementById("ward-add-patient-date-of-birth")?.focus();
+      return;
+    }
     setIsSubmitting(true);
     setLastRejection(undefined);
     setSavedOutsideView(null);
@@ -562,6 +570,7 @@ export function AddPatientForm() {
     const value = draft[key].trim();
     if (key === "umrn" && duplicateUmrn !== null && value.toLowerCase() === duplicateUmrn.toLowerCase())
       return "This UMRN is already on file.";
+    if (key === "dateOfBirth" && value > demoToday) return "The date of birth is after today.";
     if (!attemptedSubmit || value !== "") return undefined;
     return REQUIRED_CONTROLS.find((control) => control.key === key)?.missing;
   }
@@ -866,6 +875,7 @@ export function AddPatientForm() {
                     data-testid="ward-add-patient-date-of-birth"
                     type="date"
                     aria-required="true"
+                    max={demoToday}
                     className={styles.mono}
                     value={draft.dateOfBirth}
                     onChange={(event) => setDraftField("dateOfBirth")(event.target.value)}

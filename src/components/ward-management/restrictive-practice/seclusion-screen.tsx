@@ -65,10 +65,20 @@ export function SeclusionScreen() {
   const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
   const wardId = visible.some((unit) => unit.id === chosen) ? chosen : (visible[0]?.id ?? "");
   const ward = visible.find((unit) => unit.id === wardId);
-  const inUse = visible.flatMap((unit) => openEpisodes(unit.restrictivePractice).map((episode) => ({ unit, episode })));
+  // Audit S-3 (26 Oct 2026): an episode whose patient has left the ward is not "in use now" and
+  // does not hold the room; the ward still sees it on its own card to record when it ended.
+  const isOnWard = (unitId: string) => (admissionId: string) =>
+    admissions.some((stay) => stay.id === admissionId && stay.unitId === unitId && stay.state === "occupied");
+  const inUse = visible.flatMap((unit) =>
+    openEpisodes(unit.restrictivePractice)
+      .filter((episode) => isOnWard(unit.id)(episode.admissionId))
+      .map((episode) => ({ unit, episode })),
+  );
   const nameOf = (admissionId: string) => {
     const stay = admissions.find((admission) => admission.id === admissionId);
-    return stay ? patientOf(stay).displayName : "No longer on this ward";
+    if (!stay) return "No longer on this ward";
+    const name = patientOf(stay).displayName;
+    return stay.state === "occupied" ? name : `${name} (left the ward, end not recorded)`;
   };
 
   return (
@@ -122,7 +132,9 @@ export function SeclusionScreen() {
         </Field>
       ) : null}
 
-      {ward ? <WardCard key={ward.id} ward={ward} role={role} now={now} nameOf={nameOf} /> : null}
+      {ward ? (
+        <WardCard key={ward.id} ward={ward} role={role} now={now} nameOf={nameOf} isOnWard={isOnWard(ward.id)} />
+      ) : null}
       <WardPrototypeFooter testId="seclusion-footer" />
     </main>
   );
@@ -133,17 +145,19 @@ function WardCard({
   role,
   now,
   nameOf,
+  isOnWard,
 }: {
   ward: Unit;
   role: WardFlowRole;
   now: Instant;
   nameOf: (admissionId: string) => string;
+  isOnWard: (admissionId: string) => boolean;
 }) {
   const raise = useWardRaise(role);
   // D-80: a record about one patient on one ward is made by the ward that is present. The site's bed
   // manager keeps this view and the room status, so it is offered no recording form.
   const mayRecord = canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_START");
-  const room = seclusionRoomView(ward.restrictivePractice);
+  const room = seclusionRoomView(ward.restrictivePractice, isOnWard);
   const open = openEpisodes(ward.restrictivePractice);
   const incidents = recentIncidents(ward.restrictivePractice, now);
   const acting = { unitId: ward.id, ...(role === "ward" ? { actingUnitId: ward.id } : {}) };

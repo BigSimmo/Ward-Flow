@@ -857,7 +857,7 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
     expect(notice.to).toEqual({ role: "ward", placeId: "fre-adult-open" });
     expect(notice.about).toEqual({ movementId: "WF-005", unitId: "fre-adult-open" });
     expect(notice.sentence).toBe(
-      "The examination for WF-005 was revoked after transport was booked. The bed stays held until a person decides whether to release it.",
+      "The examination for WF-005 was revoked after transport was booked. The bed stays pulled until a person decides whether to release it.",
     );
   });
 
@@ -885,7 +885,7 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
     expect(notice.to).toEqual({ role: "ward", placeId: ACCEPTED_UNIT_ID });
     expect(notice.about).toEqual({ movementId: MOVEMENT_ID, unitId: ACCEPTED_UNIT_ID });
     expect(notice.sentence).toBe(
-      `The examination for ${MOVEMENT_ID} was revoked. The bed stays held until a person decides whether to release it.`,
+      `The examination for ${MOVEMENT_ID} was revoked. The bed stays pulled until a person decides whether to release it.`,
     );
   });
 

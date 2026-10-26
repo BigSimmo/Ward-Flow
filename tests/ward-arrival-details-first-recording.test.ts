@@ -168,7 +168,16 @@ describe("arrival plan: first recording is kept", () => {
       },
     };
     const measures = pilotMeasures(
-      { movements: [movement], referrals: [], patients: state.patients, now: 8 * DAY, pullHoldMinutes: HOLD },
+      {
+        movements: [movement],
+        referrals: [],
+        patients: state.patients,
+        now: 8 * DAY,
+        pullHoldMinutes: HOLD,
+        units: [],
+        morningRollupConfirmations: {},
+        morningRollupDeadlineMinutes: 570,
+      },
       week,
     );
     expect(measures.holds).toEqual({ held: 1, ranOut: 0, givenBack: 0 });

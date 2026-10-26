@@ -1312,7 +1312,7 @@ export function reduceReferralAnswerEvent(
       // bed number is stripped (that strip changes state on its own).
       const bedReleased = holdsBed ? releasePulledBedAndAdmission(state, movement, event.now) : state;
       if (holdsBed && bedReleased === state) {
-        return reject(state, event, `movement ${movement.id}'s held bed matches no releasable reservation`);
+        return reject(state, event, `movement ${movement.id}'s pulled bed matches no releasable reservation`);
       }
       const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
       const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
@@ -1387,7 +1387,7 @@ export function reduceReferralAnswerEvent(
           "acceptance_withdrawn_ward",
           { role: "ward", placeId: withdrawnUnitId },
           { movementId: movement.id, unitId: withdrawnUnitId },
-          `The coordinator withdrew this ward's acceptance of ${movement.id}${holdsBed ? " and released the bed held for them" : ""}. The patient is not coming unless this ward is asked again.`,
+          `The coordinator withdrew this ward's acceptance of ${movement.id}${holdsBed ? " and released the bed pulled for them" : ""}. The patient is not coming unless this ward is asked again.`,
         ),
       ];
       // Addendum §1.3, as in `RELEASE_PULL`: "a referrer not told goes on believing a bed is coming."
@@ -1399,7 +1399,7 @@ export function reduceReferralAnswerEvent(
             "bed_pull_released",
             { role: "ed", placeId: movement.originEdId },
             { movementId: movement.id, unitId: withdrawnUnitId },
-            `The coordinator withdrew ${withdrawnUnitId === undefined ? "the ward" : unitName(state, withdrawnUnitId)}'s acceptance of ${movement.id} and released the bed held for them (${reasonText}).`,
+            `The coordinator withdrew ${withdrawnUnitId === undefined ? "the ward" : unitName(state, withdrawnUnitId)}'s acceptance of ${movement.id} and released the bed pulled for them (${reasonText}).`,
           ),
         );
       }

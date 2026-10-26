@@ -1,7 +1,9 @@
 import type { AuditEvent } from "./ward-audit";
 import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
+import { recordedCommunityTransition } from "./ward-care-journey";
 import { criteriaEligibility, communityDischargeCriteria, type CriteriaEligibility } from "./ward-discharge-criteria";
+import { legalStatusIsDetained } from "./ward-legal-status";
 import type { Movement } from "./ward-model";
 import { activeCommunityTreatmentOrder, type Patient } from "./ward-patients";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -137,6 +139,28 @@ export function admissionCriteriaEligibility(state: LegalStatusRecords, admissio
     movement?.legalStatus ?? plannedAdmissionLegalStatus(state, admission),
     activeCommunityTreatmentOrder(patient) !== undefined,
   );
+}
+
+/** What the ward is told when an involuntary stay is recorded as leaving without that paper. */
+export const INVOLUNTARY_DEPARTURE_REFUSAL =
+  "This patient is recorded as involuntary. Record the revocation, Form 5A or Form 5B from the paper before recording that they have left.";
+
+/**
+ * WA Mental Health Act 2014 boundary: an involuntary stay leaves for the community, or against
+ * advice, only once a revocation or community treatment order transition is recorded from the
+ * paper. `RECORD_LEAVING` refuses without it, and the ward bed drawer asks for it first (WT-02).
+ */
+export function departureNeedsPaperAuthority(
+  state: LegalStatusRecords,
+  admission: Admission,
+  destination: Admission["leavingDestination"],
+): boolean {
+  if (destination !== "discharged-to-the-community" && destination !== "left-against-advice") return false;
+  const movement = dischargeMovement(state, admission);
+  const involuntary =
+    legalStatusIsDetained(uniqueRecord(state.patients, admission.patientId)?.legalStatus) ||
+    stayLegalStatusIsInvoluntary(state, admission, movement);
+  return involuntary && !recordedCommunityTransition(admission, movement?.statusChanges.at(-1)?.at, destination);
 }
 
 export function dischargeIdentity(state: WardFlowState, admission: Admission): DischargeIdentity {

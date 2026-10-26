@@ -147,7 +147,7 @@ describe("Option A: Cross-Ward Authority Safeguards", () => {
   });
 
   describe("A1-5: RECORD_LEGAL_FORM_WRITTEN role & expiry shortening rules", () => {
-    it("refuses RECORD_LEGAL_FORM_WRITTEN from ward and community callers", () => {
+    it("refuses RECORD_LEGAL_FORM_WRITTEN from community, and from a ward on an open journey", () => {
       const state = seeded();
       const wardAttempt = wardFlowReducer(state, {
         type: "RECORD_LEGAL_FORM_WRITTEN",
@@ -161,7 +161,7 @@ describe("Option A: Cross-Ward Authority Safeguards", () => {
 
       expect(wardAttempt.rejections).toHaveLength(state.rejections.length + 1);
       expect(wardAttempt.rejections.at(-1)?.reason).toContain(
-        "RECORD_LEGAL_FORM_WRITTEN requires role ed or coordinator, but was raised by role ward",
+        "A ward records a written form only for a person admitted to its own bed.",
       );
 
       const communityAttempt = wardFlowReducer(state, {
@@ -176,7 +176,7 @@ describe("Option A: Cross-Ward Authority Safeguards", () => {
 
       expect(communityAttempt.rejections).toHaveLength(state.rejections.length + 1);
       expect(communityAttempt.rejections.at(-1)?.reason).toContain(
-        "RECORD_LEGAL_FORM_WRITTEN requires role ed or coordinator, but was raised by role community",
+        "RECORD_LEGAL_FORM_WRITTEN requires role ed or coordinator or ward, but was raised by role community",
       );
     });
 
@@ -445,7 +445,7 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
       const addedNotices = revoked.notices.slice(beforeCount);
       const revokedNotice = addedNotices.find((n) => n.kind === "examination_revoked_ward");
       expect(revokedNotice).toBeDefined();
-      expect(revokedNotice!.sentence).toContain("The bed stays held until a person decides whether to release it.");
+      expect(revokedNotice!.sentence).toContain("The bed stays pulled until a person decides whether to release it.");
       expect(revokedNotice!.sentence).not.toContain("has been released");
     });
   });

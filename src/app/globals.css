@@ -1045,8 +1045,10 @@ body {
  * This rule is intentionally unlayered so it wins over Tailwind's layered
  * text-* utilities, giving every control a 16px floor on small screens
  * (search field, scope filter, PDF page input) without per-call-site edits.
+ * A phone held sideways is wider than 640px, so short touch screens get the
+ * floor too. Tablets and desktops keep their own control sizes.
  */
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-height: 500px) {
   input,
   select,
   textarea {

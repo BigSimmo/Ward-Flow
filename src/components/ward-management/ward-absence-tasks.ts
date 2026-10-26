@@ -6,7 +6,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { isOnOrder, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
+import { isOnOrder, stayLegalStatus, type StayLegalSource } from "@/components/ward-management/ward-stay-legal";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 
@@ -25,6 +25,7 @@ export type AbsenceTaskSource = {
   movements?: readonly Movement[];
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
+  plannedAdmissions?: StayLegalSource["plannedAdmissions"];
   units?: readonly Pick<Unit, "id" | "name">[];
 };
 

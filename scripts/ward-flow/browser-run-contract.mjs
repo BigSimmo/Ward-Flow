@@ -23,9 +23,27 @@ export const REQUIRED_RELEASE_JOURNEY_FILES = Object.freeze([
   },
 ]);
 
-export function releaseGateCases(required) {
+export const RELEASE_GATE_PROJECTS = Object.freeze(["release-gate-desktop", "release-gate-phone"]);
+
+/**
+ * The release gate's device project for one CI leg (WARD_RELEASE_GATE_PROJECT), or null for both.
+ * Public CI runs desktop and phone as two parallel jobs; each leg must still run every journey on
+ * its own project, and the workflow contract pins that the legs together name both projects.
+ */
+/** @param {string | null | undefined} value @returns {string | null} */
+export function releaseGateProjectFor(value) {
+  const project = value?.trim();
+  if (!project) return null;
+  if (!RELEASE_GATE_PROJECTS.includes(project))
+    throw new Error(`WARD_RELEASE_GATE_PROJECT must be one of ${RELEASE_GATE_PROJECTS.join(", ")}; got "${project}".`);
+  return project;
+}
+
+/** @param {boolean} required @param {string | null} [only] one device project, or null for both */
+export function releaseGateCases(required, only = null) {
   if (!required) return [];
-  return ["release-gate-desktop", "release-gate-phone"].flatMap((project) => [
+  const projects = only === null ? RELEASE_GATE_PROJECTS : [releaseGateProjectFor(only)];
+  return projects.flatMap((project) => [
     ...REQUIRED_RELEASE_JOURNEYS.map((title) => ({ project, file: "release-gate-journeys.spec.ts", title })),
     ...REQUIRED_RELEASE_JOURNEY_FILES.map(({ file, title }) => ({ project, file, title })),
   ]);

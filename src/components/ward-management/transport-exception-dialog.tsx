@@ -23,6 +23,7 @@ import styles from "./transport-exception-dialog.module.css";
 export function TransportExceptionDialog({
   open,
   who,
+  identity,
   action,
   gaps,
   onConfirm,
@@ -31,6 +32,8 @@ export function TransportExceptionDialog({
 }: {
   open: boolean;
   who: string;
+  /** Name and UMRN to check before the step (walk-through WT-11), as `patientIdentityLine` gives them. */
+  identity?: string;
   /** The step's verb, as on its button ("Collected"). */
   action: string;
   gaps: TransportExceptionGap[];
@@ -73,6 +76,7 @@ export function TransportExceptionDialog({
         { label: "Cancel", onAction: close, disabledReason: pending ? "Waiting for confirmation" : undefined },
       ]}
     >
+      {identity ? <p data-testid={`${testId}-identity`}>Check: {identity}</p> : null}
       <ul aria-label="Not recorded" className={styles.gapList}>
         {gaps.map((gap) => (
           <li key={gap} className={styles.gapItem}>

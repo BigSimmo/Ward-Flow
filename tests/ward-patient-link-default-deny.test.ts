@@ -212,6 +212,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   {
     file: "ward-movements.ts",
     reason:
+      "D-14 seed authoring: builds generatedMovementPatients from each generated movement's own " +
+      "patientId. Reads the static seed only; consumes it for no screen.",
+  },
+  // F-17 (26 Oct 2026): the seeded referrals moved out of ward-movements.ts unchanged, with this read.
+  {
+    file: "ward-movements-referrals.ts",
+    reason:
       "D-14 seed authoring: threads Referral.patientId through the MIDLAND_DEMONSTRATION_ROWS " +
       "builder and RF-010's own literal. Writes the field into the static seed; consumes it for no " +
       "screen.",
@@ -457,7 +464,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 47 → 48 on 2026-10-21: D-77 group A moved the community team's sent list into its own Sent tab file.
     // 48 → 49 on 2026-10-22: the reducer's protected record path moved to its own slice file, unchanged.
     // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(51);
+    // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(52);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

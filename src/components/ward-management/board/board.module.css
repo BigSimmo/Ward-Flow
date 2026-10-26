@@ -4290,6 +4290,12 @@
   pointer-events: none;
 }
 
+/* Walk-through WT-10: a refusal carries the warning glyph before its words. */
+.toastGlyph {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * PERFECTED PATIENT DETAIL PANEL
  * ═══════════════════════════════════════════════════════════════════════════ */

@@ -369,6 +369,18 @@ describe("the ward and ED TV views", () => {
     }
   });
 
+  it("closes the screen picker once a screen is chosen (WT-21)", () => {
+    renderTv();
+    const picker = screen.getByTestId("bed-meeting-tv-picker") as HTMLDetailsElement;
+    picker.open = true;
+    const link = within(picker).getAllByRole("link")[0];
+    if (!link) throw new Error("the picker has no screens");
+    // Stop the link navigating in jsdom; the close runs on the click itself.
+    link.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(picker.open).toBe(false);
+  });
+
   it("says what each time measures: the whole wait, and for a collected patient, the time on the road", () => {
     const { state, inputs } = seedInputs();
     // Overall review (20 Oct 2026): "In transit · 8h 00m" read as 8 hours in an ambulance.

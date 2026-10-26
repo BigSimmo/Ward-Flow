@@ -34,7 +34,11 @@ SDK, no CSP change). Each failed request sends the error type, stack frames and 
 Error messages, URLs, headers, bodies, users and breadcrumbs are dropped before sending.
 `logger.ts` warn and error lines also go to Sentry Logs unless `SENTRY_ENABLE_LOGS=false`.
 Optional `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` label events; Railway's commit SHA is the
-default release. No DSN has been configured or observed sending, so delivery is unverified.
+default release. Project notes record that Sentry was switched on on 26 October 2026, in the
+US-region organisation `clinibase-xz`, for synthetic test data only. Which services carry
+`SENTRY_DSN` was not re-read from Railway for this page, and no event has been seen arriving, so
+delivery is unverified. Before real data, switch it off or move it onshore unless the health
+service's privacy review accepts the scrubbing.
 
 The shared backend has its own optional reporter, `backend/ward-flow/error-report.mjs`, turned on
 by `SENTRY_DSN` on the `ward-flow-backend` service. It needs no SDK. Each report holds only a
