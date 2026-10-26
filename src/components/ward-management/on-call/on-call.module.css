@@ -1712,11 +1712,13 @@
 }
 
 .phoneRowName > b {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .phoneRowName > b .svc {
@@ -1897,6 +1899,11 @@
   .keys {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* The Next chip needs room for its whole sentence; below 1440px it was cut to a time and one
+   letter beside the hero buttons, so it is left out until it fits. */
+@media (max-width: 89.9375rem) {
   .changes {
     display: none;
   }
