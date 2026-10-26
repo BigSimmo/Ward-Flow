@@ -75,6 +75,18 @@ describe("copiedText", () => {
     expect(text).toBe("Alex Testperson\nWard 3");
   });
 
+  it.each([
+    [
+      "DOB: 14/03/1988",
+      "I: Alex Testperson, 41, female, DOB: 14/03/1988, Ward 3",
+      "I: Alex Testperson, 41, female, Ward 3",
+    ],
+    ["Date of birth: 1988-03-14", "Alex Testperson (Date of birth: 1988-03-14) to Ward 3", "Alex Testperson to Ward 3"],
+    ["DOB 14 March 1988", "Alex Testperson; DOB 14 March 1988. Ward 3", "Alex Testperson. Ward 3"],
+  ])("strips an inline date of birth (%s) mid-line (H-0332)", (_label, input, expected) => {
+    expect(withoutCopiedIdentifiers(input)).toBe(expected);
+  });
+
   it("leaves text without identifiers untouched", () => {
     const text = "Out of area: 3 away from home , 12 bed days.\nState bed desk 08 0000 1234, 08:00 to 20:00";
     expect(withoutCopiedIdentifiers(text)).toBe(text);

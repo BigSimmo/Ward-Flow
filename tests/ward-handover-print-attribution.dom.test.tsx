@@ -131,3 +131,35 @@ it("keeps the prepared copy's full calendar date across midnight", () => {
     expect(page).toHaveTextContent("Prepared Fri, 23 Oct 2026, 10:42 AWST");
   }
 });
+
+it("keeps one ResizeObserver across re-renders instead of rebuilding it each render (H-0350)", () => {
+  let built = 0;
+  let disconnected = 0;
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor() {
+        built += 1;
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {
+        disconnected += 1;
+      }
+    },
+  );
+  try {
+    renderSheet(null);
+    // The preview-width observer and the paper measurement observer.
+    const afterMount = built;
+    expect(afterMount).toBeGreaterThan(0);
+    vi.spyOn(window, "print").mockImplementation(() => {});
+    // Each press stamps a new prepared time, so the sheet re-renders.
+    fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
+    fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
+    expect(built).toBe(afterMount);
+    expect(disconnected).toBe(0);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

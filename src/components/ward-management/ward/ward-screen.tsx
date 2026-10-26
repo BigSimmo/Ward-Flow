@@ -664,14 +664,26 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         if (typeof window !== "undefined") {
           // Return to Census only for the exact bed its link opened, and only with a router to go
           // back through; a stale or unrelated marker is dropped and the drawer closes normally.
-          const target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
+          // H-0367: a blocked sessionStorage throws; treat it as no marker and close normally.
+          let target: string | null = null;
+          try {
+            target = window.sessionStorage.getItem(CENSUS_BED_OPENER_TARGET);
+            window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
+          } catch {
+            target = null;
+          }
           const fromCensus = target !== null && target === censusBedOpenerTarget(unitId, selectedBed);
-          window.sessionStorage.removeItem(CENSUS_BED_OPENER_TARGET);
           if (fromCensus && router && returnToCensus) {
             router.back();
             return;
           }
-          if (target !== null) window.sessionStorage.removeItem("wardflow:census-bed-opener");
+          if (target !== null) {
+            try {
+              window.sessionStorage.removeItem("wardflow:census-bed-opener");
+            } catch {
+              // Already treated as no marker above.
+            }
+          }
         }
         const bedNum = selectedBed;
         const stepped = bedDrawerSteppedRef.current;

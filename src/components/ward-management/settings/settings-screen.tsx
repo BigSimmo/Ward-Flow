@@ -502,22 +502,31 @@ export function SettingsScreen() {
   };
 
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+    // H-0351: clear the picker on every path, so choosing the same file again always fires a change.
+    const input = event.target;
+    const clearInput = () => {
+      input.value = "";
+    };
     if (!configurationGate.allowed) {
       showToast(configurationBlockReason!, "warning");
-      event.target.value = "";
+      clearInput();
       return;
     }
-    if (savingRef.current) return;
-    const file = event.target.files?.[0];
+    if (savingRef.current) {
+      clearInput();
+      return;
+    }
+    const file = input.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       showToast("Configuration file exceeds 10 MB limit.");
-      event.target.value = "";
+      clearInput();
       return;
     }
     const reader = new FileReader();
 
     reader.onload = (loaded) => {
+      clearInput();
       if (savingRef.current) return;
       try {
         const parsed: unknown = JSON.parse(loaded.target?.result as string);
@@ -535,7 +544,10 @@ export function SettingsScreen() {
       } catch {
         showToast("Invalid configuration file format.");
       }
-      event.target.value = "";
+    };
+    reader.onerror = () => {
+      clearInput();
+      showToast("This rules file could not be read. Select it again.");
     };
     reader.readAsText(file);
   };

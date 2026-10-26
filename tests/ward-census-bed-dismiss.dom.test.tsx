@@ -132,3 +132,33 @@ it("Escape returns from the Census-linked bed to its Ward bed link with no linge
   expect(window.sessionStorage.getItem("wardflow:census-bed-opener-target")).toBeNull();
   expect(window.sessionStorage.getItem("wardflow:census-bed-opener")).toBeNull();
 });
+
+it("opens Search detail and follows the Ward bed link when sessionStorage is blocked (H-0345)", () => {
+  const seed = seedWardFlowState();
+  const admission = { ...wardAdmissions.find((item) => item.state === "occupied")!, bedNumber: 1 };
+  const row = buildCensus({
+    ...seed,
+    admissions: [admission],
+    movements: [],
+    referrals: [],
+    now: NOW_ANCHOR,
+    thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+    dayZero: new Date("2026-10-01T00:00:00+08:00"),
+  }).rows.find((item) => item.kind === "admission" && item.unitId && item.bedNumber !== undefined)!;
+  for (const method of ["getItem", "setItem", "removeItem"] as const) {
+    const original = Storage.prototype[method];
+    const blocked = function (this: Storage, ...args: string[]) {
+      if (this === window.sessionStorage) throw new DOMException("Blocked", "SecurityError");
+      return (original as (...a: string[]) => unknown).apply(this, args);
+    };
+    vi.spyOn(Storage.prototype, method).mockImplementation(blocked as never);
+  }
+  const onNavigate = vi.fn();
+  try {
+    render(<CensusDetail row={row} now={NOW_ANCHOR} onNavigate={onNavigate} onCopy={() => {}} copyNote={null} />);
+    fireEvent.click(screen.getByRole("link", { name: "Ward bed" }));
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.restoreAllMocks();
+  }
+});

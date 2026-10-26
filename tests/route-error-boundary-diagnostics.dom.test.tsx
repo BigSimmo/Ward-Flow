@@ -22,7 +22,7 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const user = userEvent.setup();
-    render(<RouteErrorBoundary error={new Error("boom at /users/patient/source.pdf")} reset={() => undefined} />);
+    render(<RouteErrorBoundary error={new Error("boom at /users/patient/source.pdf")} retry={() => undefined} />);
 
     await user.click(screen.getByRole("button", { name: /Copy Diagnostics/i }));
 
@@ -40,7 +40,7 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
     render(
       <RouteErrorBoundary
         error={new Error("Error for patient UMRN: 1234567, Medicare 2123 45678 1, contact 0412 345 678")}
-        reset={() => undefined}
+        retry={() => undefined}
       />,
     );
 
@@ -58,7 +58,7 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
     const error = Object.assign(new Error("Failed for Jane Smith in bed 4"), { digest: "DIGEST-123" });
 
     const user = userEvent.setup();
-    render(<RouteErrorBoundary error={error} reset={() => undefined} />);
+    render(<RouteErrorBoundary error={error} retry={() => undefined} />);
     await user.click(screen.getByRole("button", { name: /Copy Diagnostics/i }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalled());
