@@ -71,7 +71,7 @@ describe("the network's structural cohort answer", () => {
      * owner's authorisation, exactly as that function's own comment says.
      *
      * 🔴 **AS OF 2026-09-06 THAT AUTHORISATION DOES NOT EXIST, AND ONE DOCUMENT LOOKS LIKE IT DOES.**
-     * `docs/ward-flow/assignment-register.md` carries a row reading
+     * `docs/ward-flow/archive/dated-notes/assignment-register.md` carries a row reading
      * `Forensic clause … | Builder Two | authorised 2026-09-06`. **That row is in the ASSIGNMENTS
      * table, not the "Closed by ruling" table, and "authorised" there is the register-keeper's own
      * word — no owner quote, no owner attribution.** Ward Lead searched every ward document and

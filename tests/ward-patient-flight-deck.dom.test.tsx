@@ -67,7 +67,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByTestId("ward-patient-destination-row"));
     expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
     // The clinical context sits beside the placement work on Now, not behind a second switch.
-    expect(screen.getByRole("heading", { name: "Why they're here" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Why" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
   });
   it("refers, accepts, pulls, books, dispatches and arrives through shared reducer state", () => {
@@ -173,7 +173,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
     fireEvent.click(screen.getByRole("button", { name: "Ask 1 ward" }));
     fireEvent.click(screen.getByText("Withdraw referral", { selector: "summary" }));
-    fireEvent.click(screen.getByLabelText("Confirm this bed search is no longer required"));
+    fireEvent.click(screen.getByLabelText(/^Confirm this bed search is no longer required for /));
     fireEvent.click(screen.getByRole("button", { name: /^Withdraw referral$/ }));
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");

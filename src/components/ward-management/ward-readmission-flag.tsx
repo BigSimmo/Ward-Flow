@@ -12,15 +12,18 @@ import styles from "./ward-readmission-flag.module.css";
 
 const LABEL = `${READMISSION_WINDOW_DAYS}d readmission`;
 
-/** "Discharged 3 Oct from Moodjar · 6d before". */
-function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date): string {
+/** What a ward's own copy carries (D-80): the discharge time only, never the other ward. */
+type ShownFlag = Pick<ReadmissionFlagValue, "dischargedAt" | "daysBefore"> & { unitName?: string };
+
+/** "Discharged 3 Oct from Moodjar · 6d before", or "from a psychiatric ward" on a ward's copy. */
+function readmissionDetailText(flag: ShownFlag, dayZero: Date): string {
   const date = new Date(dayZero.getTime() + flag.dischargedAt * 60_000).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",
     timeZone: "Australia/Perth",
   });
   const gap = flag.daysBefore === 0 ? "same day" : `${flag.daysBefore}d before`;
-  return `Discharged ${date} from ${flag.unitName} · ${gap}`;
+  return `Discharged ${date} from ${flag.unitName ?? "a psychiatric ward"} · ${gap}`;
 }
 
 /**
@@ -43,23 +46,26 @@ export function useReadmissionFlagVisible(): boolean {
 }
 
 /**
- * Compact 28 day readmission flag. Shown on the coordinator's screens only (Josh, 9 October 2026);
- * on any other role's route it renders nothing, wherever it is placed. The prior discharge date and ward show on hover (`title`) and,
+ * Compact 28 day readmission flag. Shown on the coordinator's screens (Josh, 9 October 2026), and
+ * as `wardCopy` on a ward's own accepted journey (D-80), whose scoped copy carries the discharge
+ * time only; on any other role's route it renders nothing, wherever it is placed. The prior discharge date and ward show on hover (`title`) and,
  * where `expandable`, on pressing the flag. Inside another control (a row that is itself a
  * button) pass `expandable={false}`: the detail is then hover text plus screen-reader text.
  */
 export function ReadmissionFlag({
   flag,
   expandable = true,
+  wardCopy = false,
   testId,
 }: {
-  flag: ReadmissionFlagValue | null;
+  flag: ShownFlag | null;
   expandable?: boolean;
+  wardCopy?: boolean;
   testId?: string;
 }) {
   const { dayZero } = useWardFlowSelect("dayZero");
   const [open, setOpen] = useState(false);
-  const visible = useReadmissionFlagVisible();
+  const visible = useReadmissionFlagVisible() || wardCopy;
   if (!flag || !visible) return null;
   const detail = readmissionDetailText(flag, dayZero);
 

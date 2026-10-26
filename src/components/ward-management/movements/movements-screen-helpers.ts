@@ -14,6 +14,7 @@ import type { HealthService, Movement, Referral, Unit } from "@/components/ward-
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import { type MovementLegState } from "./movements-derivations";
 import { type WfFill, type WfTone } from "@/components/wf";
@@ -86,7 +87,7 @@ export const CAUSES: CauseDefinition[] = [
     key: "bed_pull_expired",
     rank: 5,
     title: "Pull expired, bed still pulled",
-    note: "Release the bed or set a new reserved time",
+    note: "Release the bed or set a new pull time limit",
   },
   {
     key: "awaiting_bed_ready",
@@ -222,7 +223,8 @@ export function heroHighlights(now: Instant, accessTarget: number): HeroHighligh
       id: "past",
       label: `Past ${hours(accessTarget)}`,
       tone: "danger",
-      test: (m) => isOpen(m) && waited(m) >= accessTarget,
+      // Audit 24-4 NA2-10 (25 Oct 2026): people still in an ED, as Waiting's "Over 24h" counts them.
+      test: (m) => isOpen(m) && isWaitingInEd(m) && waited(m) >= accessTarget,
     },
     {
       id: "over",

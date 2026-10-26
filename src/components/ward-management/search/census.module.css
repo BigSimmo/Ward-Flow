@@ -81,6 +81,9 @@
 }
 
 .searchForm > div > div:first-of-type:focus-within {
+  /* A solid ring contrasts with the hero's painted gradient in both themes. */
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
   border-color: var(--wf-hero-ink);
   box-shadow:
     0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent),
@@ -91,9 +94,12 @@
   flex: none;
 }
 
+/* Device sweep L08/R3-10 (24 Oct 2026): a 100% width made the input its own wrapped line, so the
+ * icon, the placeholder and the DOB chip stacked on three lines. It now shares the pill's one row
+ * and only wraps when the date of birth field opens and there is no room. */
 .searchForm input {
-  flex: 1 1 auto;
-  width: 100%;
+  flex: 1 1 8rem;
+  width: auto;
   min-width: 0;
   min-height: 0;
   align-self: center;
@@ -105,7 +111,7 @@
 }
 
 .searchForm input::placeholder {
-  color: color-mix(in srgb, var(--wf-hero-2) 55%, transparent);
+  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
   font-weight: 400;
 }
 
@@ -141,8 +147,22 @@
 
 .searchForm .dobInput {
   flex: none;
-  width: 88px;
+  /* Layout sweep CRIT-05 (25 Oct 2026): sized by its own font, so the 16px touch size still shows
+   * the whole "DD/MM/YYYY" (88px cut it to "DD/MM/YYY" on an iPad). */
+  width: 11ch;
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* CRIT-05: with the date of birth open, the name field gives up width first, so the DOB switch stays
+ * on the box's one line at a 380px box (iPad, 16px text). */
+.searchForm:has(.dobSeg) input:not(.dobInput) {
+  flex-basis: 5rem;
+}
+
+/* CRIT-05: with the date of birth open the "/" hint has no room and dropped onto a second line
+ * inside the box. The field already has focus by then, so the hint goes. */
+.dobSeg ~ .kbd {
+  display: none;
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
@@ -392,7 +412,11 @@
   }
 }
 
-@container patient-search (min-width: 56rem) {
+/* Layout sweep SHELL-03 (25 Oct 2026): beside a 300px side panel, a page under 68rem left the table
+ * (720px at least) too narrow, so it scrolled sideways and hid the Time column at 1024 and 1280.
+ * Under 68rem the panel stays hidden, as on narrower screens, so choosing a row opens the details
+ * drawer (previewCardHidden) rather than updating a card far below the table. */
+@container patient-search (min-width: 68rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
   }
@@ -471,6 +495,28 @@
   overflow-x: auto;
 }
 
+/* Device sweep (24 Oct 2026): at 1024 px the census sits beside the "This shift" panel and scrolls
+   sideways with Time out of sight. The right edge is drawn while there is more to the right, the
+   same scroll-driven edge as the shared ward table: a border, never a fade, and nothing on a
+   table that fits. */
+@keyframes censusMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-ink-3);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll {
+    border-right: 2px solid transparent;
+    animation: censusMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 /* Cells, borders and padding come from the shared wf table; this adds the fixed layout and sticky head. */
 table.censusTable {
   min-width: 720px;
@@ -509,6 +555,8 @@ table.censusTable {
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
   letter-spacing: 0.05em;
+  /* A long header such as "Where now" wraps rather than clips in a narrow column. */
+  white-space: normal;
 }
 
 .censusTable td {
@@ -732,6 +780,15 @@ table.censusTable {
 
 .emptyActions {
   display: inline-flex;
+  gap: var(--wf-s-2);
+}
+
+/* Audit 24-7 item 2: near spellings sit above Add patient and wrap on a phone. */
+.emptyNear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: var(--wf-s-2);
 }
 

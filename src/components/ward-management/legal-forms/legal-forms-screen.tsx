@@ -98,6 +98,7 @@ import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
@@ -141,7 +142,7 @@ const GAP_ACTION: Record<RecordGap, string> = {
 const UNCONFIRMED_SAVE = {
   commandId: "",
   status: "failed",
-  message: "Save is not confirmed. Review the board before trying again.",
+  message: SAVE_NOT_CONFIRMED,
 } as const;
 
 function sameHighlight(a: Highlight, b: Highlight): boolean {
@@ -1131,6 +1132,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             return target ? `${nameOf(target)} · ${umrnOf(target)}` : "";
           })()}
           now={now}
+          dayZero={dayZero}
           onClose={() => setExtendId(null)}
           extendUnavailable={extendGate.reason}
           onExtendForm={(movement, dueAt) => {
@@ -1293,7 +1295,7 @@ function FormRow({
               <button
                 type="button"
                 className={styles.rowLink}
-                aria-label={`Record time written for ${name}`}
+                aria-label={`Add the time for ${name}`}
                 onClick={() => onAddTime(movement)}
               >
                 Add the time

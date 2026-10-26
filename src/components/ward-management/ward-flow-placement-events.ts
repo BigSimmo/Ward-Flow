@@ -284,6 +284,12 @@ export function reducePlacementEvent(
        */
       const secureBedNeeded = movement.security === "Secure";
       const reservedBed = movementBedReservation(movement, state.referrals, unit.id).bedNumber;
+      if (reservedBed !== undefined) {
+        const numberedRefusal =
+          helpers.bedNumberRefusal(state, unit, reservedBed, undefined) ??
+          helpers.heldBedRefusal(state, unit, reservedBed, movement.id, movement.referralId);
+        if (numberedRefusal) return reject(state, event, numberedRefusal);
+      }
       const reservedKind = reservedBed === undefined ? undefined : numberedBedKind(unit, reservedBed);
       if (reservedBed !== undefined && reservedKind === undefined)
         return reject(state, event, "The numbered bed reservation is outside this ward.");
@@ -294,15 +300,16 @@ export function reducePlacementEvent(
           `No free ${reservedKind} bed remains for the numbered reservation at ${unit.name}.`,
         );
       const noLockedBedFree = lockedBedsFree(unit) <= 0;
-      if (secureBedNeeded && reservedKind === "open" && !noLockedBedFree)
-        return reject(state, event, "The numbered reservation is an open bed, but this request needs a locked bed.");
-      const bedKindOverrideNeeded = secureBedNeeded && noLockedBedFree;
+      // A valid reservation keeps its designation when another kind later frees up.
+      // Secure requests still need a recorded override to consume a reserved Open bed.
+      const bedKindOverrideNeeded =
+        secureBedNeeded && (reservedKind === "open" || (reservedKind === undefined && noLockedBedFree));
       const bedKindAnswered = event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason);
       if (!bedKindAnswered && bedKindOverrideNeeded) {
         return reject(
           state,
           event,
-          `No locked bed is free at ${unit.name}. This placement ${OVERRIDE_REASON_REQUIRED} to use an open bed.`,
+          `${reservedKind === "open" && !noLockedBedFree ? `The numbered reservation at ${unit.name} is an open bed for a Secure request.` : `No locked bed is free at ${unit.name}.`} This placement ${OVERRIDE_REASON_REQUIRED} to use an open bed.`,
         );
       }
       const bedKindTaken: "locked" | "open" =
@@ -372,6 +379,7 @@ export function reducePlacementEvent(
         // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
         // See `Admission.bedKind`.
         bedKind: bedKindTaken,
+        ...(reservedBed === undefined ? {} : { bedNumber: reservedBed }),
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,
@@ -404,7 +412,7 @@ export function reducePlacementEvent(
         // mark exactly this one as having arrived. See `Movement.admissionId`.
         admissionId: admission.id,
         stageChanges: [...movement.stageChanges, { at: event.now, from: movement.stage, to: "pulled", by: event.role }],
-        overrides: pullOverrides(movement, unit, state.admissions, event, true),
+        overrides: pullOverrides(movement, unit, state.admissions, event, true, bedKindTaken),
       };
       const withUnit = replaceUnit(state, unit.id, updatedUnit);
       const withPerson: WardFlowState = {
@@ -423,6 +431,23 @@ export function reducePlacementEvent(
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) {
         return reject(state, event, `cannot release a pull for a closed movement (${movement.closure.reason})`);
+      }
+      // Audit 24-7 (CT-06): an Undo names the pull it was offered for. Once that pull is released or
+      // replaced, the Undo is refused rather than releasing whichever bed is pulled now.
+      if (event.expectedPull) {
+        const { unitId, stageIndex } = event.expectedPull;
+        const stillThatPull =
+          movement.stage === "pulled" &&
+          movement.acceptedUnitId === unitId &&
+          movement.stageChanges.length === stageIndex + 1 &&
+          movement.stageChanges[stageIndex]?.to === "pulled";
+        if (!stillThatPull) {
+          return reject(
+            state,
+            event,
+            "the bed pull this Undo was for has since been released or replaced; the bed pulled now was left as it is",
+          );
+        }
       }
       // WFA-004: physical collection is not erased by a stage correction. Releasing the bed after
       // collection is `STOP_TRANSPORT`, never `RELEASE_PULL`.
@@ -627,6 +652,10 @@ export function reducePlacementEvent(
           reason: diversionReason,
         },
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
+        // Ledger L3-06 (audit 24-7): the journey is over, so it no longer lingers as live at any
+        // ward, as `RELEASE_HELD_BED` already does when it ends a bed search.
+        acceptedUnitId: undefined,
+        referredUnitIds: [],
       };
       const next = replaceMovement(withoutHeldBed, movement.id, released);
       if (event.role === "ward" || movement.acceptedUnitId === undefined) {

@@ -58,13 +58,15 @@ const ON_WARD_UMRN = "UM100028";
 const OFF_WARD_UMRN = "UM100023";
 const OTHER_WARD_UMRN = "UM100030";
 const heldBedWard = seed.units.find((unit) => unit.id === "rph-older-adult")!;
+const SEEDED_REFERRAL_IDS = new Set(seed.referrals.map((referral) => referral.id));
 
 type KeptWards = { selectedUnitIds: string[] };
 type KeptReason = { notOnWard?: { unitId: string; reason: string } };
 
 function Probe() {
   const { referrals, rejections } = useWardFlow();
-  const sent = referrals.filter((referral) => referral.intake);
+  // The seeded referrals already carry authored intakes; "sent" means sent in this session.
+  const sent = referrals.filter((referral) => referral.intake && !SEEDED_REFERRAL_IDS.has(referral.id));
   return (
     <>
       <output data-testid="sent">
@@ -226,11 +228,13 @@ describe("the New referral sheet on a ward page", () => {
     route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OTHER_WARD_UMRN);
     expect(screen.getByTestId("ward-referral-not-on-sending-ward")).toHaveTextContent(
-      `They already hold a bed on ${heldBedWard.name}`,
+      `They already have a bed, or a pulled bed, on ${heldBedWard.name}`,
     );
     expect(screen.queryByLabelText("Why is the ward referring them?")).toBeNull();
     next("Next, referral");
-    expect(screen.getByRole("alert")).toHaveTextContent(`This person already holds a bed on ${heldBedWard.name}`);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      `This person already has a bed, or a pulled bed, on ${heldBedWard.name}`,
+    );
     expect(screen.queryByLabelText(/Patient story/)).not.toBeVisible();
     // A community team takes no ward bed, so the same person is only asked why.
     fireEvent.click(screen.getByTestId("ward-referral-refer-to-community"));

@@ -35,6 +35,13 @@ describe("practiceProgress", () => {
     expect(Object.values(progress.done).some(Boolean)).toBe(false);
   });
 
+  it("keeps following the first request raised since Start when a later one appears (audit 24-7, CT-05)", () => {
+    const f = fixture();
+    const first = f.fresh({});
+    const later = { ...f.fresh({ openedAt: 20_000 }), id: "MV-later" as Movement["id"] };
+    expect(practiceProgress([...f.state.movements, first, later], f.startedWith).movementId).toBe(first.id);
+  });
+
   it("ticks raise, then needs two wards asked before ask is done", () => {
     const f = fixture();
     const one = practiceProgress([...f.state.movements, f.fresh({ referredUnitIds: [f.unitA.id] })], f.startedWith);

@@ -378,13 +378,14 @@ export function refusedCorridorCounts(movements: Movement[], now: Instant): Refu
       const existing = rows.get(key);
       if (existing) {
         existing.count += 1;
-        if (!existing.reasons.includes(decline.reason)) existing.reasons.push(decline.reason);
+        if (decline.reason !== undefined && !existing.reasons.includes(decline.reason))
+          existing.reasons.push(decline.reason);
       } else {
         rows.set(key, {
           originEdId,
           unitId: decline.unitId,
           count: 1,
-          reasons: [decline.reason],
+          reasons: decline.reason === undefined ? [] : [decline.reason],
         });
       }
     }

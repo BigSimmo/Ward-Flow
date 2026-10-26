@@ -170,13 +170,16 @@
   font: inherit;
 }
 
+/* Device sweep (24 Oct 2026): at 320 px the service's counts wrap under its name rather than run
+   past the card edge ("86.2% in"). */
 .foldButton {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1) var(--wf-s-2);
   width: 100%;
   min-height: 36px;
-  padding: 0 var(--wf-s-3);
+  padding: var(--wf-s-1) var(--wf-s-3);
   border: 0;
   background: var(--wf-surface);
   color: var(--wf-ink-1);
@@ -1195,6 +1198,15 @@
   min-height: var(--wf-touch);
 }
 
+/* Layout sweep SHELL-13 (25 Oct 2026): the kit's phone switch keeps each option at its full width
+ * (`.seg .segItem`), so at 360px the four kinds ran 15px past the track and cut "Teams 64". Here
+ * they share the track and tighten their sides instead. Doubled class to outrank the kit rule. */
+.phoneKindBar.phoneKindBar > div > button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 6px;
+}
+
 .phoneSearchRow {
   display: flex;
   align-items: center;
@@ -1522,10 +1534,21 @@
   }
 }
 
-/* Audit 11 Oct 2026, iPad: pinning moves to the preview, so the rows lose their column of stars. */
+/* Audit 11 Oct 2026, iPad: pinning moves to the preview, so the rows lose their column of stars.
+   Device sweep (24 Oct 2026): without the star the Ready figures sat flush on the card edge and the
+   header still kept the star's 36px, so Beds and Ready sat left of their figures. Both keep the
+   same right padding instead. */
 @media (min-width: 48.0625rem) and (max-width: 73.75rem) {
   .pinButton {
     display: none;
+  }
+
+  .listHead {
+    padding-right: var(--wf-s-3);
+  }
+
+  .resultMain {
+    padding-right: var(--wf-s-3);
   }
 }
 

@@ -40,7 +40,7 @@ import { CANCEL_TRANSPORT_REASONS } from "@/components/ward-management/ward-chan
 
 const NOW = 10_000;
 const COLLECTED =
-  'The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays held until it is released.';
+  'The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.';
 const NOT_UNTIL_EXAMINED = "Not offered until the examination outcome is recorded.";
 
 function movement(overrides: Partial<Movement> = {}): Movement {
@@ -271,6 +271,11 @@ describe("handoverBlockedReason", () => {
     );
     expect(handoverBlockedReason(movement())).toBe(
       "This patient is placement requested, not bed pulled — a handover can only be marked ready once a bed is pulled.",
+    );
+  });
+  it("says a handover already marked ready is ready, not that no bed is pulled (blocker review, 26 Oct 2026)", () => {
+    expect(handoverBlockedReason(movement({ stage: "handover_ready", transport: job() }), "Alex Test")).toBe(
+      "Alex Test is already marked handover ready.",
     );
   });
   it("allows a pulled bed with transport booked, or with 'no transport needed' recorded", () => {

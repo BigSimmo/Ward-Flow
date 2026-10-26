@@ -443,6 +443,16 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // site, so the construction-site scan above still sees and counts each one.
   // R01 (16 Oct 2026): step and Undo now share submit(event, ...), whose one dispatch(event)
   // forwards the caller-built event. Their literal construction sites remain scanned above.
+  // #631 (24 Oct 2026): the ED examination save keeps the event it dispatched so a same-command Retry can be
+  // reconciled against the committed record. It builds that event as an object literal with a literal
+  // `type: "RECORD_EXAMINATION"` in the same function, so the construction-site scan above still sees it.
+  "src/components/ward-management/ed/use-ed-examination-save.ts :: recordedEvent":
+    "useEdExaminationSave(): dispatches the RECORD_EXAMINATION event it built as a literal just above, so it can retain it for Retry",
+  // M2 (24 Oct 2026): the correction controller forwards only the three literal-typed events
+  // built by its own handlers below: CHANGE_URGENCY, CHANGE_LEGAL_STATUS and
+  // CORRECT_LEGAL_FORM_RECEIPT. Those construction sites remain visible to the scan above.
+  "src/components/ward-management/ed/use-ed-record-save.ts :: event":
+    "useEdRecordSave(): forwards only CHANGE_URGENCY, CHANGE_LEGAL_STATUS or CORRECT_LEGAL_FORM_RECEIPT literals built in this file's three submit handlers",
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
   // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
@@ -503,7 +513,15 @@ describe("ward override-surface guard", () => {
    * judgement someone may override, or a fact they may not? Ward Lead's proposal, taken over my
    * single named pin, which protected against a fifth member and not against the existing four.
    */
-  const EXPECTED_OVERRIDABLE_EVENTS = ["REFER_TO_UNITS", "ACCEPT_IN_PRINCIPLE", "PULL_PATIENT", "ACCEPT_REFERRAL"];
+  // Audit 24-1 decision 2 (Josh, 25 Oct 2026): a planned booking onto an unauthorised ward needs a reason.
+  const EXPECTED_OVERRIDABLE_EVENTS = [
+    "REFER_TO_UNITS",
+    "ACCEPT_IN_PRINCIPLE",
+    "PULL_PATIENT",
+    "ACCEPT_REFERRAL",
+    "BOOK_PLANNED_ADMISSION",
+    "CHANGE_PLANNED_ADMISSION",
+  ];
 
   it("the derived overridable set equals its snapshot, so any change is a decision somebody takes", () => {
     expect([...overridableEventTypes].sort()).toEqual([...EXPECTED_OVERRIDABLE_EVENTS].sort());
@@ -656,7 +674,9 @@ describe("ward override-surface guard", () => {
     // 2 -> 3, fix list 1.5 (15 Oct 2026): the named raise helper in ward-flow-raise.ts.
     // 3 -> 2, R01 (16 Oct 2026): Undo's dispatch(undoEvent) and run's dispatch(event) now
     // converge on submit(...), which retains the one direct dispatch(event) forwarding site.
-    expect(nonLiteralDispatchCalls.length).toBe(2);
+    // 2 -> 3, #631 (24 Oct 2026): the ED examination save forwards the literal-typed event it built and retains.
+    // 3 -> 4, M2 (24 Oct 2026): the correction controller forwards its three literal-typed events.
+    expect(nonLiteralDispatchCalls.length).toBe(4);
   });
 
   /**
@@ -709,12 +729,19 @@ describe("ward override-surface guard", () => {
     // one construction site each) left with the file itself, deleted outright by item 41
     // (owner-approved 2026-09-17). Re-derived by running this file, not by arithmetic.
     expect(counts).toEqual({
+      // Audit 24-1 decision 2: the booking form's Book and Save.
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx::BOOK_PLANNED_ADMISSION": 1,
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx::CHANGE_PLANNED_ADMISSION": 1,
       // Top 25 item 8: the step down board's plain Refer (allowlisted above).
       "src/components/ward-management/capacity/step-down-board.tsx::REFER_TO_UNITS": 1,
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
+      // PR #675 (24 Oct 2026): HOLD_REFERRAL_BED rechecks an accepted referral's suitability with a
+      // synthetic ACCEPT_REFERRAL that carries the override already recorded at acceptance
+      // (`arm.acceptOverrideReason`); it is a check, not a new acceptance surface.
+      "src/components/ward-management/ward-flow-referral-answer-events.ts::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason

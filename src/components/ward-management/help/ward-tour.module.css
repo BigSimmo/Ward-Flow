@@ -34,8 +34,12 @@
   display: grid;
   gap: 0.5rem;
   width: min(22.5rem, calc(100vw - 1rem));
-  max-height: calc(100vh - 1rem);
+  /* R7-16 / D2 (device sweep, 24 Oct 2026): the visible window, less a margin each end, so the card
+     never runs to or past the bottom edge; anything longer scrolls inside it. */
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 0.875rem 1rem;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
@@ -70,6 +74,7 @@
   left: 50%;
   width: calc(100vw - 1rem);
   max-height: calc(100vh - 1rem);
+  max-height: calc(100dvh - 1rem);
 }
 
 .head {
@@ -148,7 +153,7 @@
 }
 
 .canTitle {
-  color: var(--wf-success);
+  color: var(--wf-success-ink);
 }
 
 .askTitle {
@@ -196,10 +201,20 @@
 }
 
 .buttons {
+  /* R7-16 (device sweep, 24 Oct 2026): on a short screen the card scrolls, and Back, Skip tour and
+     Next stay pinned to its foot rather than scrolling out of reach. The negative margin keeps the
+     card's own bottom padding, so a card that fits looks as before. */
+  position: sticky;
+  /* The card's own bottom padding, which a sticky box otherwise stops short of. */
+  bottom: -0.875rem;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: -0.875rem;
+  padding: 0.25rem 0 0.875rem;
+  background: var(--wf-surface);
 }
 
 .primary,
@@ -225,7 +240,7 @@
   margin-left: auto;
   border-color: var(--wf-accent);
   background: var(--wf-accent);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
 }
 
 .secondary:disabled {
@@ -268,4 +283,18 @@
   .layer {
     display: none;
   }
+}
+
+.layer[data-device="phone"] .close {
+  position: relative;
+}
+
+.layer[data-device="phone"] .close::after {
+  position: absolute;
+  content: "";
+  inset-block: 0;
+  left: 50%;
+  width: 100%;
+  min-width: var(--wf-touch);
+  transform: translateX(-50%);
 }

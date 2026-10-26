@@ -50,9 +50,9 @@ describe("saved print provenance", () => {
     expect(text).toContain("synthetic figures, not a record of any real day");
   });
 
-  it("adds the same provider moment and synthetic notice to the community MDT summary", () => {
+  it("adds the same provider moment and synthetic notice to the community catchment counts print", () => {
     render(wrap(<CommunityScreen teamId="albany" />));
-    fireEvent.click(screen.getAllByRole("button", { name: "Catchment MDT" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Catchment counts" })[0]);
     const text = document.querySelector('[id="handoverModal"]')?.textContent;
     expect(text).toContain(stamp);
     expect(text).toContain("Synthetic figures, not a record of any real day");

@@ -26,7 +26,12 @@ export interface SettingsSearchEntry {
 export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "ed-target", label: "ED wait target", tab: "rules", keywords: "emergency access wait timing" },
   { id: "wards-asked", label: "Wards asked at once", tab: "rules", keywords: "parallel referral cap enquiry" },
-  { id: "pull-hold", label: "Pull hold", tab: "rules", keywords: "pulled held bed reservation return expires hold" },
+  {
+    id: "pull-hold",
+    label: "Pull time limit",
+    tab: "rules",
+    keywords: "pulled bed pull hold reservation return expires time limit",
+  },
   { id: "morning-count", label: "Morning count", tab: "rules", keywords: "rollup ward count deadline" },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge" },
   { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },

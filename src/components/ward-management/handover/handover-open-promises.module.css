@@ -1,0 +1,46 @@
+/* Open promises carried over at handover (closing-the-loop package A). */
+
+.panel {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-block: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface, transparent);
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+/* Spelled out in words beside the colour, never colour alone. */
+.overdue {
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}

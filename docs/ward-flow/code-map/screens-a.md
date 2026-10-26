@@ -1,5 +1,31 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+_Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
+
+## Current-tree check — 24 October 2026
+
+Checked against `main` at `899b232e`. These census entries name files that are no longer in the
+repository: the statistics styles `statistics-community-third-edition.module.css`,
+`statistics-landing-third-edition.module.css`, `statistics-service-screen.module.css`,
+`statistics-service-third-edition.module.css`, `statistics-third-edition.module.css` and
+`statistics-ward-third-edition.module.css`, and the root `ward-chrome-search.tsx` (top-bar search
+now runs through `ward-global-search.tsx` and `ward-global-search-lazy.tsx`). `ward-figure`,
+`ward-freshness` and `ward-panel` are now `.tsx` files. List the folder (`ls
+src/components/ward-management/statistics/`) before trusting a style-file entry.
+
+## ED examination save recovery — 23 October 2026
+
+The ED examination form delegates to `ed/use-ed-examination-save.ts`, on the network sweep's
+`8c2ff460` main base. The hook retains the selected outcome until acceptance, guards repeated
+submissions and uses the existing command completion and Undo feedback. An unconfirmed shared
+save disables a fresh submission while the existing Retry remains available in the active sheet.
+Shared Retry uses the command's private definitive completion, so acceptance remains confirmed
+when a replay carries a newer examination. Record, time and history matching is reserved for
+legacy local void dispatch. A refused Retry retains the draft and its own refusal. Undo follows
+the definitive answer while preserving the original command lifetime and its own step metadata.
+World, command lifetime, movement and selection checks stop old replies clearing a newer draft.
+`ward-ed-examination-save.dom.test.tsx` covers these save and recovery paths.
+
 ## Confirmed usability fixes — 19 October 2026
 
 Referral `Field` associates hints and errors with native controls, including controls inside
@@ -449,7 +475,8 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - Pure helpers: `community-screen-helpers.ts` (labels, caseload rows, `referralsWaitingOnTeam`,
   `categoriseTeamAdmission`).
 - Hooks: `use-community-screen-overlays.ts` (overlay focus, plus transport booking and cancelling),
-  `use-community-screen-demo-lists.ts`, `use-community-screen-window-bridge.ts`.
+  `use-community-screen-demo-lists.ts`, `community-drawer-test-openers.ts` (two drawer openers on
+  `window`, test builds only).
 - Sections: `community-screen-hero.tsx`, `community-screen-panels.tsx`, `community-screen-phone.tsx`,
   `community-screen-waiting-tab.tsx`, `community-screen-in-bed-tab.tsx`,
   `community-screen-back-tab.tsx`, `community-screen-caseload-tab.tsx`,

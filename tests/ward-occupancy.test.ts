@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { unitsInService, wardBedsInUse, wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import type { HealthService, Unit } from "@/components/ward-management/ward-model";
+import { wardBedsInUse, wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { wardSites } from "@/components/ward-management/ward-sites";
+
+/** The wards of one health service, by their site (test helper; the app has no reader for it). */
+function unitsInService(units: readonly Unit[], service: HealthService): Unit[] {
+  const codes = new Set(wardSites.filter((site) => site.service === service).map((site) => site.code));
+  return units.filter((unit) => codes.has(unit.siteCode));
+}
 
 /**
  * Device audit, 11 Oct 2026 (top recommendation 1): one occupancy figure everywhere. The Home ring,

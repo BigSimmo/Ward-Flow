@@ -1,5 +1,4 @@
 [
-  "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:extendBroadcastAlert",
   "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:initialWardBroadcastState",
   "exports:src/components/ward-management/alerts/ward-broadcast-reducer.ts:wardBroadcastReducer",
   "exports:src/components/ward-management/patients/patient-now-records.ts:PATIENT_NOW_RECORDS",
@@ -8,7 +7,6 @@
   "exports:src/components/ward-management/shell/ward-bar-page-tools.tsx:WardBarPageTools",
   "exports:src/components/ward-management/shell/ward-reconciliation-line.tsx:WardReconciliationLine",
   "exports:src/components/ward-management/ward-change-reasons.ts:DISCHARGE_DELAY_REASONS",
-  "exports:src/components/ward-management/ward-derivations.ts:MORE_RESTRICTIVE_NOTE",
   "exports:src/components/ward-management/ward-derivations.ts:isMoreRestrictiveThanRequired",
   "exports:src/components/ward-management/ward-derivations.ts:leaveBedNeedsOpenWarning",
   "exports:src/components/ward-management/ward-derivations.ts:movementTimeline",
@@ -18,10 +16,8 @@
   "exports:src/components/ward-management/ward-movements.ts:movementsByStage",
   "files:src/components/clinical-dashboard/brand.tsx",
   "files:src/components/ward-management/statistics/statistics-disclaimers.tsx",
-  "files:src/components/ward-management/statistics/statistics-section-frame.tsx",
   "types:src/components/ward-management/alerts/ward-broadcast-reducer.ts:WardBroadcastStandaloneAction",
   "types:src/components/ward-management/alerts/ward-broadcast-reducer.ts:WardBroadcastStandaloneState",
   "types:src/components/ward-management/ward-admissions.ts:PullReleaseReason",
-  "types:src/components/ward-management/ward-flow-provider.tsx:UnreviewedStringOrUnknownKeys",
-  "types:src/components/ward-management/ward-patients.ts:WardPatient"
+  "types:src/components/ward-management/ward-flow-provider.tsx:UnreviewedStringOrUnknownKeys"
 ]

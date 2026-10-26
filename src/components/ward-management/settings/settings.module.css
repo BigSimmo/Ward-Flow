@@ -231,6 +231,7 @@
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
+  container-type: inline-size;
 }
 
 .scopeLine {
@@ -310,9 +311,14 @@
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Layout sweep SHELL-08, SHELL-10 (25 Oct 2026): a description wraps rather than ending
+   * mid-sentence in an ellipsis. */
+  overflow-wrap: break-word;
+}
+
+/* The words take the room the control leaves, so the switch stays at the right of its row. */
+.row:not(.rowStacked) > .rowText {
+  flex: 1 1 0;
 }
 
 .rowControl {
@@ -558,6 +564,15 @@
 .keys {
   display: inline-flex;
   gap: 4px;
+}
+
+/* Layout sweep SHELL-09 (25 Oct 2026): touch screens hide stray key hints (globals.css), but this
+ * card is the shortcut list itself, opened on purpose (as `dt > kbd` lists are), and a touch iPad
+ * may have a keyboard. Without the keys it listed actions beside an empty column. */
+@media (pointer: coarse) {
+  .keys > kbd {
+    display: inline-flex !important;
+  }
 }
 
 /* Data and about ---------------------------------------------------------------------------- */
@@ -1008,6 +1023,26 @@
 
 .phoneSheetBody .rowControl {
   max-width: 100%;
+}
+
+/* Device sweep (24 Oct 2026): two columns at 1280 px left each rule card too narrow for the four
+   tracks, so "Shown on…" ran off the card edge. In a narrow column the effect takes its own line
+   under the rule, as it does below 761px. */
+@media (min-width: 761px) {
+  @container (max-width: 34rem) {
+    .ruleRow {
+      grid-template-columns: minmax(0, 1fr) 28px 9.5rem;
+    }
+
+    .effectCell {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: var(--wf-s-3);
+      text-align: left;
+    }
+  }
 }
 
 @media (max-width: 1100px) {

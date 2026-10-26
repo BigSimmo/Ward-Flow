@@ -1,0 +1,145 @@
+/*
+ * Closing-the-loop package B (24 Oct 2026): discharge dependencies and the weekend and holiday
+ * list. Plain rows on the existing tokens; state is said in words, never by colour alone.
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-top: var(--wf-s-4);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.meta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.recheck {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-left: 3px solid var(--wf-warning, var(--wf-ink-2));
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.time {
+  min-height: 32px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.prep {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  margin-top: var(--wf-s-4);
+  /* Layout sweep WARD-10: inner padding, as every other card on the page has. */
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.groupTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.rowButton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}

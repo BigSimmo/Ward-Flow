@@ -1,5 +1,8 @@
+// Registers every reducer slice before the engine runs a command (see ward-flow-reducer-slice-registry.ts).
+import "../../src/components/ward-management/ward-flow-reducer-slices";
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
+import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
 import {
   PUSH_ROLES,
@@ -126,6 +129,135 @@ export function boundAudit(state: WardFlowState): WardFlowState {
     ...state,
     auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
   };
+}
+
+/**
+ * Closed records older than this leave the live workspace for the archive table (Josh, 25 Oct
+ * 2026). The live workspace has an 8 MB limit and every desk reads it whole; History still shows
+ * archived records, which the browser reads from the archive and puts back beside the live ones.
+ */
+export const ARCHIVE_AFTER_MINUTES = 30 * 24 * 60;
+/** The lists that are archived. Every other list stays whole in the live workspace. */
+export const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
+export type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
+export type ArchivedRecord = { collection: ArchivedCollection; id: string; closedAt: number; body: unknown };
+
+/** Every text value anywhere in `value`, so a record named by any live record can be found. */
+function textsIn(value: unknown, into: Set<string>): Set<string> {
+  if (typeof value === "string") into.add(value);
+  else if (Array.isArray(value)) for (const entry of value) textsIn(entry, into);
+  else if (value && typeof value === "object") for (const entry of Object.values(value)) textsIn(entry, into);
+  return into;
+}
+
+/**
+ * Splits off the closed records whose closing is older than `ARCHIVE_AFTER_MINUTES`: movements
+ * that arrived or did not proceed, the referrals only those movements carry, and alerts stood down
+ * or expired. A record any live record still names by id (an open movement, an admission, an undo
+ * step, a recent audit entry) stays live, so the workspace never points at something it lacks;
+ * it is archived on a later save once nothing names it. The result is checked as a whole: if the
+ * smaller workspace would not pass the shared-state check, nothing is archived.
+ */
+export function archiveClosed(world: SharedWorld, at: Date): { world: SharedWorld; archived: ArchivedRecord[] } {
+  if (!validWorld(world)) return { world, archived: [] };
+  const { state, archived } = archiveClosedState(world.state, worldNow(world, at));
+  return { world: archived.length ? { ...world, state } : world, archived };
+}
+
+/** `archiveClosed` on the state alone, at the workspace's own minute `now`. */
+export function archiveClosedState(
+  state: WardFlowState,
+  now: number,
+): { state: WardFlowState; archived: ArchivedRecord[] } {
+  const none = { state, archived: [] };
+  const cutoff = now - ARCHIVE_AFTER_MINUTES;
+  const movements = new Map<string, number>();
+  for (const movement of state.movements)
+    if (movement.closure && movement.closure.at < cutoff) movements.set(movement.id, movement.closure.at);
+  const alerts = new Map<string, number>();
+  for (const alert of state.broadcastAlerts) {
+    const closedAt =
+      alert.status === "stood_down" ? alert.stoodDownAt : alert.status === "expired" ? alert.expiresAt : undefined;
+    if (typeof closedAt === "number" && closedAt < cutoff) alerts.set(alert.id, closedAt);
+  }
+  if (!movements.size && !alerts.size) return none;
+  // A referral goes with its movements, only when every movement that carries it is going.
+  const referrals = new Map<string, number>();
+  for (const movement of state.movements) {
+    if (!movement.referralId) continue;
+    const closedAt = movements.get(movement.id);
+    if (closedAt === undefined) referrals.set(movement.referralId, Number.NaN);
+    else if (!Number.isNaN(referrals.get(movement.referralId) ?? 0))
+      referrals.set(movement.referralId, Math.max(closedAt, referrals.get(movement.referralId) ?? closedAt));
+  }
+  for (const [id, closedAt] of referrals) if (Number.isNaN(closedAt)) referrals.delete(id);
+  const going: Record<ArchivedCollection, Map<string, number>> = { movements, referrals, broadcastAlerts: alerts };
+  // Keep anything a staying record names; keeping one can make another stay, so repeat until settled.
+  for (;;) {
+    const named = new Set<string>();
+    for (const [key, value] of Object.entries(state)) {
+      if (!(ARCHIVED_COLLECTIONS as readonly string[]).includes(key)) {
+        textsIn(value, named);
+        continue;
+      }
+      const leaving = going[key as ArchivedCollection];
+      for (const record of value as { id: string }[]) if (!leaving.has(record.id)) textsIn(record, named);
+    }
+    let kept = false;
+    for (const leaving of Object.values(going))
+      for (const id of [...leaving.keys()])
+        if (named.has(id)) {
+          leaving.delete(id);
+          kept = true;
+        }
+    // A referral that stays keeps every movement that carries it: a referral is never left without one.
+    for (const movement of state.movements)
+      if (movement.referralId && movements.has(movement.id) && !referrals.has(movement.referralId)) {
+        movements.delete(movement.id);
+        kept = true;
+      }
+    if (!kept) break;
+  }
+  const archived: ArchivedRecord[] = [];
+  const next = { ...state };
+  for (const collection of ARCHIVED_COLLECTIONS) {
+    const leaving = going[collection];
+    if (!leaving.size) continue;
+    const list = state[collection] as { id: string }[];
+    for (const record of list)
+      if (leaving.has(record.id))
+        archived.push({ collection, id: record.id, closedAt: leaving.get(record.id)!, body: record });
+    (next as Record<string, unknown>)[collection] = list.filter((record) => !leaving.has(record.id));
+  }
+  if (!archived.length || !isValidSharedWardFlowState(next)) return none;
+  return { state: next, archived };
+}
+
+/**
+ * The archived records this desk may see: the same scoping rule as its live workspace, applied to
+ * the live workspace with the archived records put back, keeping only the archived ones.
+ */
+export function scopeArchive(
+  world: SharedWorld,
+  archived: readonly ArchivedRecord[],
+  access: WardAccess,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+): ArchivedRecord[] {
+  if (accessIsWholeNetwork(access) || !archived.length) return [...archived];
+  const merged = { ...world.state };
+  for (const collection of ARCHIVED_COLLECTIONS)
+    (merged as Record<string, unknown>)[collection] = [
+      ...archived.filter((record) => record.collection === collection).map((record) => record.body),
+      ...(world.state[collection] as unknown[]),
+    ];
+  const scoped = scopeWorld({ ...world, state: merged as WardFlowState }, access, at, grants).state;
+  // The desk's own copy of each record, as the rule shaped it (a decline reason it may not read is
+  // replaced there), never the stored body.
+  return archived.flatMap((record) => {
+    const own = (scoped[record.collection] as { id: string }[]).find((kept) => kept.id === record.id);
+    return own ? [{ ...record, body: own }] : [];
+  });
 }
 
 // Audit E-01: Undo snapshots copy whole rows, a referral's contacts included, and stay private to
@@ -282,8 +414,15 @@ export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
   let parsed: WardAccessScope | null = null;
   switch (fields.kind) {
     case "statewide":
-    case "jobs":
       parsed = only() ? { kind: fields.kind } : null;
+      break;
+    case "jobs":
+      // A granted officer holds its own service's jobs only (D-80 item 7). A row from before the
+      // service was named fails closed until it is granted again.
+      parsed =
+        only("service") && (HEALTH_SERVICES as readonly unknown[]).includes(fields.service)
+          ? { kind: "jobs", service: fields.service as HealthService }
+          : null;
       break;
     case "service":
       parsed =
@@ -314,6 +453,18 @@ export function parseAccess(role: unknown, scope: unknown): WardAccess | null {
   if (!parsed) return null;
   const access = { role: role as WardAccess["role"], scope: parsed };
   return accessIsValid(access) ? access : null;
+}
+
+/**
+ * True for a stored role that `parseAccess` refuses only because it names no health service, such
+ * as an officer granted before the service was required (D-80 item 7). It still gives nothing; it
+ * lets the server say why, and an access admin find it to give it again with a service.
+ */
+export function accessNeedsService(role: unknown, scope: unknown): boolean {
+  if (parseAccess(role, scope) || !scope || typeof scope !== "object" || Array.isArray(scope)) return false;
+  const rest = { ...(scope as Record<string, unknown>) };
+  delete rest.service;
+  return HEALTH_SERVICES.some((service) => parseAccess(role, { ...rest, service }) !== null);
 }
 
 /** The bootstrap view: an account named in WARD_COORDINATOR_USER_IDS works as this. */
@@ -483,14 +634,19 @@ export function revokeRefusal(
 /** Who hears phone alerts by role (feature 10). One list, in the access admin's rules. */
 export { PUSH_ROLES };
 
-/** The act-now rows this desk may hear about: `actNowAlerts` on its own scoped workspace. */
-export function scopedActNowAlerts(
-  world: SharedWorld,
-  access: WardAccess,
-  at: Date,
-): { id: string; site: string | null }[] {
+/**
+ * What this desk may hear about: `actNowAlerts` on its own scoped workspace. An officer hears its
+ * jobs and a community team its own updates, never act-now rows; every other desk hears act-now
+ * rows only (D-80).
+ */
+export function scopedActNowAlerts(world: SharedWorld, access: WardAccess, at: Date): PushAlert[] {
   if (!validWorld(world) || !PUSH_ROLES.includes(access.role)) return [];
-  return accessIsWholeNetwork(access) ? actNowAlerts(world, at) : actNowAlerts(scopeWorld(world, access, at), at);
+  const heard: PushAlert["kind"] =
+    access.role === "officer" ? "job" : access.role === "community" ? "community" : "act-now";
+  const alerts = accessIsWholeNetwork(access)
+    ? actNowAlerts(world, at)
+    : actNowAlerts(scopeWorld(world, access, at), at);
+  return alerts.filter((alert) => alert.kind === heard);
 }
 
 export const BREAK_GLASS_REASON_IDS: readonly string[] = BREAK_GLASS_REASONS.map((reason) => reason.id);
@@ -620,9 +776,17 @@ function refusalReason(reason: unknown): string {
  * may carry. Only the row's inbox id (for deduplication, never sent) and the hospital site the
  * movement started at. No title, detail, movement id, name, UMRN or typed text leaves here.
  */
-export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: string | null }[] {
+/**
+ * Everything a phone may be told about, each with its kind: act-now rows for the coordinator and
+ * place desks, and the officer and community updates (`ward-role-alerts.ts`). The push service keeps
+ * one baseline of these ids and gives each desk the kind it hears.
+ */
+export type PushAlert = { id: string; site: string | null; kind: "act-now" | RoleAlertKind };
+
+export function actNowAlerts(world: SharedWorld, at: Date): PushAlert[] {
   if (!validWorld(world)) return [];
   const state = world.state;
+  const now = worldNow(world, at);
   const sites = scenarioNetwork(state.scenario)?.sites ?? STANDARD_WARD_SITES;
   const siteByOrigin = new Map<string, string>();
   for (const candidate of sites) {
@@ -637,8 +801,17 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
   const origins = new Map<string, string | undefined>(
     state.movements.map((movement) => [movement.id, movement.originEdId ?? movement.originCommunity?.siteCode]),
   );
-  return activeActNowItems(state, worldNow(world, at)).map((item) => {
-    const origin = origins.get(item.movementId);
-    return { id: item.id, site: (origin ? siteByOrigin.get(origin) : undefined) ?? null };
-  });
+  const siteOf = (movementId: string | undefined) => {
+    const origin = movementId === undefined ? undefined : origins.get(movementId);
+    return (origin ? siteByOrigin.get(origin) : undefined) ?? null;
+  };
+  return [
+    ...activeActNowItems(state, now).map((item) => ({
+      id: item.id,
+      site: siteOf(item.movementId),
+      kind: "act-now" as const,
+    })),
+    ...jobAlerts(state).map((alert) => ({ id: alert.id, site: siteOf(alert.movementId), kind: alert.kind })),
+    ...communityAlerts(state, now).map((alert) => ({ id: alert.id, site: null, kind: alert.kind })),
+  ];
 }

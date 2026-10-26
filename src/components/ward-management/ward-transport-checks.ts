@@ -223,21 +223,40 @@ export type TransportBookingAnswers = {
   estimatedDay: "today" | "tomorrow";
 };
 
+/** What each unanswered booking question asks, in the order the popups show them. */
+const TRANSPORT_ANSWER_ASKS = {
+  provider: "choose who is collecting the patient",
+  escort: "answer the escort question",
+  cad: "enter the CAD transport number",
+  legalStatus: "state whether the transport is voluntary or involuntary",
+  time: "enter the estimated time",
+} as const;
+
+export type TransportAnswer = keyof typeof TRANSPORT_ANSWER_ASKS;
+
+/**
+ * The booking questions still unanswered, in the popup's order. Blocker mock-up (Josh approved 26
+ * Oct 2026): the ED popup names them and moves to the first. A typed CAD number the rule refuses
+ * is a wrong answer, not a missing one, so it is not listed here.
+ */
+export function transportAnswersMissing(draft: TransportBookingAnswers, now: Instant): TransportAnswer[] {
+  const missing: TransportAnswer[] = [];
+  if (draft.provider === undefined) missing.push("provider");
+  if (draft.escortRequired === undefined) missing.push("escort");
+  if (draft.cadNumber.trim().length === 0) missing.push("cad");
+  if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
+  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) missing.push("time");
+  return missing;
+}
+
 /**
  * Why the booking confirm control is unavailable, or `undefined` when every answer is in. Owner's
  * third ruling, 2026-09-17: the CAD number, legal status and time are read off the phone call and
  * none is filled in for the person booking.
  */
 export function transportAnswersBlockedReason(draft: TransportBookingAnswers, now: Instant): string | undefined {
-  const missing: string[] = [];
-  if (draft.provider === undefined) missing.push("choose who is collecting the patient");
-  if (draft.escortRequired === undefined) missing.push("answer the escort question");
+  const missing = transportAnswersMissing(draft, now).map((answer) => TRANSPORT_ANSWER_ASKS[answer]);
   const cadProblem = cadNumberProblem(draft.cadNumber);
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD transport number");
-  if (draft.transportLegalStatus === undefined) missing.push("state whether the transport is voluntary or involuntary");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
   // A typed CAD number the rule refuses is a wrong answer, not a missing one, so it gets its own
   // sentence rather than the "none is filled in for you" line.
   const refused = draft.cadNumber.trim().length > 0 && cadProblem !== undefined ? cadNumberSentence(cadProblem) : "";

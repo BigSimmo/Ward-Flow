@@ -39,6 +39,12 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-patients.ts",
   // D-60: discharge criteria on an admission hold when they were set and when each was met.
   "src/components/ward-management/ward-discharge-criteria.ts",
+  // Closing-the-loop package A: a response commitment entry holds a promised time and a callback time.
+  "src/components/ward-management/referrals/referral-commitments.ts",
+  // Closing-the-loop (package E): a home service return records when it was asked, answered and next reviewed.
+  "src/components/ward-management/out-of-area/home-service-return.ts",
+  // Closing-the-loop package B (24 Oct 2026): discharge dependencies and plan changes on a bed release.
+  "src/components/ward-management/discharges/discharge-dependencies.ts",
 ];
 
 /**
@@ -125,6 +131,41 @@ describe("re-anchoring moves every instant and nothing else", () => {
         "than a point in time, say so here beside clockOffsetMinutes rather than leaving the two " +
         "lists silently different.",
     ).toEqual([...INSTANT_FIELDS].sort());
+  });
+
+  it("keeps the old and corrected paper expiry aligned when a saved synthetic scenario moves to another day", () => {
+    const state = seedWardFlowState();
+    const movement = state.movements.find((candidate) => !candidate.closure)!;
+    movement.legalForm = { code: "1A", dueAt: 700 };
+    movement.legalClock = undefined;
+    movement.formedAt = 400;
+    const corrected = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "coordinator",
+      now: 540,
+      movementId: movement.id,
+      dueAt: 650,
+      correction: {
+        expectedFormCode: "1A",
+        expectedFormWrittenAt: 400,
+        expectedDueAt: 700,
+        reason: "transcription_error",
+      },
+    });
+    expect(corrected.rejections).toHaveLength(state.rejections.length);
+    const shifted = shiftInstants(corrected, 60);
+    const shiftedMovement = shifted.movements.find((candidate) => candidate.id === movement.id)!;
+    expect(shiftedMovement.legalForm?.dueAt).toBe(710);
+    expect(shiftedMovement.legalFormExpiryCorrections?.at(-1)).toMatchObject({
+      at: 600,
+      formWrittenAt: 460,
+      previousDueAt: 760,
+      dueAt: 710,
+    });
+    expect(shifted.auditEvents.at(-1)).toMatchObject({
+      at: 600,
+      details: { previousDueAt: 760, dueAt: 710 },
+    });
   });
 
   it("moves both D-34 pause and producer-recorded re-clearance times while preserving their interval", () => {

@@ -41,7 +41,12 @@ export type WardAccessScope =
   | { readonly kind: "ward"; readonly unitIds: readonly string[] }
   | { readonly kind: "ed"; readonly edId: string }
   | { readonly kind: "team"; readonly teamName: string }
-  | { readonly kind: "jobs" };
+  /**
+   * A transport officer's jobs. A granted officer holds its own health service's jobs only (D-80
+   * item 7); the server refuses a membership without one. The local demo's officer desk has no
+   * service and sees every open job.
+   */
+  | { readonly kind: "jobs"; readonly service?: HealthService };
 
 export type WardAccess = { readonly role: WardAccessRole; readonly scope: WardAccessScope };
 
@@ -164,6 +169,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     board: "own",
     discharges: "own",
     "bed-meeting": "own",
+    // D-80: read only, its own wards' incoming lines. The board offers it no action and the server
+    // refuses every referral change from it (no bed manager in EVENT_ROLE for one).
+    referrals: "own",
     patient: "own",
     movements: "own",
     delays: "own",
@@ -197,6 +205,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "on-call": "all",
     // D-72: the ward's own seclusion room, restraint in use and incidents.
     seclusion: "own",
+    // D-80: its own ward's statistics only, as counts (`OWN_STATISTICS_SECTION`).
+    statistics: "counts",
     settings: "own",
   },
   ed: {
@@ -211,6 +221,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     handover: "own",
     search: "own",
     downtime: "own",
+    // D-80: its own ED's statistics only, as counts.
+    statistics: "counts",
     alerts: "own",
     "on-call": "all",
     settings: "own",
@@ -221,9 +233,13 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // D-80: the team books transport for its own journeys (D-76), so it follows them here.
+    movements: "own",
     delays: "own",
     "legal-forms": "own",
     search: "own",
+    // D-80: its own team's statistics only, as counts.
+    statistics: "counts",
     alerts: "own",
     "on-call": "all",
     settings: "own",
@@ -395,6 +411,34 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
 /** The statistics sections a bed manager may open: its own site's wards, as counts. */
 const BED_MANAGER_STATISTICS = new Set(["overview", "weekly", "wards", "ward"]);
 
+/**
+ * D-80: a ward, ED or team desk opens only its own place's statistics page, never the network
+ * hub, Compare, Weekly or an index of every place. The place itself is checked below.
+ */
+const OWN_STATISTICS_SECTION: Partial<Record<WardAccessRole, string>> = {
+  ward: "ward",
+  ed: "ed",
+  community: "community",
+};
+
+/** True for a desk whose Statistics is its own place's page alone (D-80). */
+export function statisticsHeldToOwnPlace(access: WardAccess): boolean {
+  return OWN_STATISTICS_SECTION[access.role] !== undefined;
+}
+
+/** Where Statistics opens for a desk held to its own place's page (D-80), or `undefined`. */
+export function ownStatisticsHrefFor(
+  access: WardAccess,
+  slugForTeam: (teamName: string) => string,
+): string | undefined {
+  const scope = access.scope;
+  if (!statisticsHeldToOwnPlace(access)) return undefined;
+  if (scope.kind === "ward") return `${BASE}/statistics/ward/${encodeURIComponent(scope.unitIds[0]!)}`;
+  if (scope.kind === "ed") return `${BASE}/statistics/ed/${encodeURIComponent(scope.edId)}`;
+  if (scope.kind === "team") return `${BASE}/statistics/community/${encodeURIComponent(slugForTeam(scope.teamName))}`;
+  return undefined;
+}
+
 /** What a scope needs answered about places, so this module stays free of the site registry. */
 export type PlaceLookup = {
   unitSiteCode(unitId: string): string | undefined;
@@ -458,6 +502,9 @@ export function screenDecision(
     if (address.statisticsSection !== undefined && !BED_MANAGER_STATISTICS.has(address.statisticsSection))
       return { open: false, why: "place" };
   }
+  const ownSection = OWN_STATISTICS_SECTION[access.role];
+  if (address.screen === "statistics" && ownSection !== undefined && address.statisticsSection !== ownSection)
+    return { open: false, why: "place" };
   // A desk held to one ED or one team never opens the index of every ED or team (review on PR #330).
   if (address.screen === "ed" && address.edId === undefined && scope.kind === "ed")
     return { open: false, why: "place" };

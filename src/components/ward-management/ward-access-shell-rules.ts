@@ -11,10 +11,19 @@ export const STEP_UP_MINUTES = CLINICAL_VALUES.stepUpWindow.value;
 
 /**
  * Who hears phone alerts by role (feature 10): a coordinator, a site bed manager, a nurse in
- * charge or an ED clinician, each for the act-now rows inside their own place only. An executive
- * sees counts, an access admin no patients, so neither is sent alerts.
+ * charge or an ED clinician, each for the act-now rows inside their own place only. A transport
+ * officer hears its new or changed jobs and a community team its own referral answers, admissions
+ * and discharges (D-80). An executive sees counts, an access admin no patients, so neither is sent
+ * alerts.
  */
-export const PUSH_ROLES: readonly WardAccessRole[] = ["coordinator", "bed_manager", "ward", "ed"];
+export const PUSH_ROLES: readonly WardAccessRole[] = [
+  "coordinator",
+  "bed_manager",
+  "ward",
+  "ed",
+  "officer",
+  "community",
+];
 
 /**
  * A nurse in charge working with cover of more wards: the covered wards join its own, so night

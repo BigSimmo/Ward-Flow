@@ -126,11 +126,7 @@ export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
       return;
     }
     const result = await loadScenarioFile(text);
-    setMessage(
-      result.ok
-        ? "Scenario loaded. A refresh keeps it, except its typed text, unless device saving is paused."
-        : result.reason,
-    );
+    setMessage(result.ok ? "Scenario loaded." : result.reason);
   }
 
   return (
@@ -199,7 +195,10 @@ export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
             onChange={(event) => void loadFromFile(event)}
           />
           {savingOnDevice === false ? (
-            <span className={styles.note}>Device save paused (D-18 free-text lock)</span>
+            <span className={styles.note} data-testid="ward-tools-device-save-paused">
+              Not saved on this device, because this world holds typed text. Reloading loses it, so use Save to file to
+              keep it.
+            </span>
           ) : null}
         </div>
       ) : null}

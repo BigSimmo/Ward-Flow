@@ -326,6 +326,8 @@ const sourceFiles = collectSourceFiles(SRC_ROOT);
  *  survives review can still arrive as a different byte — this project has lost a whole guard to a
  *  literal `\b` becoming 0x08 four times. */
 const HREF_QUOTE = "[\"'`]";
+/** A real href may select a tab or anchor after the path. */
+const HREF_QUERY = "(?:[?#][^\"'`\\s]*)?";
 /** One concrete path segment: `rph-adult-secure`, `peel-ed`. Deliberately cannot start with `[`,
  *  which is what keeps a prose mention of `/ward-flow/ward/[unitId]` out of the results. */
 const CONCRETE_SEGMENT = "[A-Za-z0-9][A-Za-z0-9._-]*";
@@ -342,8 +344,11 @@ function dynamicRouteLinkPatterns(route: string) {
     .join("/");
   const suffixPattern = suffix.length > 0 ? `/${suffix}` : "";
   return {
-    concrete: new RegExp(HREF_QUOTE + prefix + "/(" + CONCRETE_SEGMENT + ")" + suffixPattern + HREF_QUOTE, "g"),
-    built: new RegExp(HREF_QUOTE + prefix + "/" + BUILT_SEGMENT + suffixPattern + HREF_QUOTE),
+    concrete: new RegExp(
+      HREF_QUOTE + prefix + "/(" + CONCRETE_SEGMENT + ")" + suffixPattern + HREF_QUERY + HREF_QUOTE,
+      "g",
+    ),
+    built: new RegExp(HREF_QUOTE + prefix + "/" + BUILT_SEGMENT + suffixPattern + HREF_QUERY + HREF_QUOTE),
   };
 }
 
@@ -714,7 +719,6 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     expect(board?.builtSites).toEqual([
       "src/components/ward-management/movements/movement-drawer.tsx",
       "src/components/ward-management/movements/movements-stage-row.tsx",
-      "src/components/ward-management/referrals/referral-board.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
       // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
       "src/components/ward-management/wards/ward-index.tsx",
@@ -776,6 +780,10 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/patients/patient-now-screen.tsx",
+      // Accepted referrals open the ward's operational board tab to hold a bed.
+      "src/components/ward-management/referrals/referral-board.tsx",
+      // Census links select a numbered ward bed through a query.
+      "src/components/ward-management/search/patient-census-view.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);

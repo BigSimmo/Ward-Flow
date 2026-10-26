@@ -1250,6 +1250,13 @@
     color: var(--wf-warning-ink);
   }
 
+  /* Device sweep R1-07: the route line wraps to a second line rather than stopping mid-word. */
+  .nextCardLine:not(.warnText) {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .nextCardActions {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
@@ -1645,6 +1652,12 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--wf-s-2);
     width: 100%;
+  }
+
+  /* Device sweep R1-28/R2-18/R7-19: alone (no arrivals button), Copy handover spans both tracks, so
+     the empty track's gap no longer stops it short of the right gutter. */
+  .heroTools.heroTools > :only-child {
+    grid-column: 1 / -1;
   }
 
   .nextArrival {

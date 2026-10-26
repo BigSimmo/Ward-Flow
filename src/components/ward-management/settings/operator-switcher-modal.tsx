@@ -22,6 +22,7 @@ import {
 
 import {
   Badge,
+  Checkbox,
   Drawer,
   Icon,
   Kbd,
@@ -516,15 +517,14 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
         </div>
       ) : null}
       {accessOn && currentAccess.role === "coordinator" && !searching ? (
-        <label className={styles.empty}>
-          <input
-            type="checkbox"
+        <div className={styles.previewOnly}>
+          <Checkbox
             checked={previewOnly}
             onChange={(event) => setPreviewOnly(event.target.checked)}
             data-testid="workstation-preview-only"
-          />{" "}
-          Preview only, then come back to the coordinator desk in one tap
-        </label>
+            label="Preview only, then come back to the coordinator desk in one tap"
+          />
+        </div>
       ) : null}
       {accessOn && shared && !searching ? (
         <p className={styles.empty} role="note" data-testid="workstation-shared-role-note">
@@ -579,7 +579,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
                     {ed ? (
                       <span className={styles.mini}>
                         {ed.pastTarget ? <StatusGlyph tone="danger" /> : null}
-                        <span className={styles.mono}>{ed.waiting}</span> in ED
+                        <span className={styles.mono}>{ed.waiting}</span> awaiting bed in ED
                       </span>
                     ) : null}
                     {wards.length ? (
@@ -669,7 +669,7 @@ function groupByService(sites: { site: string; service?: string; desks: Desk[] }
 }
 
 function statewideLine(desk: Desk): string {
-  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} waiting in EDs`;
+  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} awaiting bed in ED`;
 }
 
 /** The ED access target as people say it: `24h`, or `5h 30m` when it is not whole hours. */

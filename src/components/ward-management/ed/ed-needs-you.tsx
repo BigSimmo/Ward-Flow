@@ -27,7 +27,7 @@ export type EdNeedsItem = {
 export function EdNeedsYou({
   items,
   framed = true,
-  heading = "Needs you",
+  heading = "My list",
   className,
   ...data
 }: {

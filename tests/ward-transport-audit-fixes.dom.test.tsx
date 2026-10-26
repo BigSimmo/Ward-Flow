@@ -93,7 +93,7 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
       target: { value: clock(NOW_ANCHOR + 120) },
     });
     expect(within(form).getByTestId("ward-patient-eta-after-hold")).toHaveTextContent(
-      /Arrives after the hold ends at \d\d:\d\d\. Extend the hold or rebook\./,
+      /Arrives after the pull time limit ends at \d\d:\d\d\. Extend the pull or rebook\./,
     );
 
     // A4-5: Save is the shared primary button, so it carries its own colours in the sheet.

@@ -779,7 +779,7 @@ export function WardHomeTab({
     });
 
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
-  // fact or one of the ward's own ticks; nothing is invented.
+  // fact or one of the ward's own reminder ticks, which are listed but never counted as to do.
   const confirmedOut = pendingBedReleases.filter((release) => release.state === "confirmed").length;
   const heldUp = pendingBedReleases.filter((release) => release.blocker !== null);
   type TodoRow = {
@@ -862,7 +862,7 @@ export function WardHomeTab({
   if (heldAfterStop.length > 0) {
     actNow.push({
       key: "stopped-holds",
-      title: heldAfterStop.length === 1 ? "Stopped transport holding bed" : "Stopped transports holding beds",
+      title: heldAfterStop.length === 1 ? "Stopped transport, bed still pulled" : "Stopped transports, beds pulled",
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).displayName}, transport stopped after collection`)
         .join("; "),
@@ -1028,7 +1028,7 @@ export function WardHomeTab({
     };
     (at === null ? laterToday : doneRows).push(row);
   }
-  const todoOpen = actNow.length + laterToday.length;
+  const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
   // Length of stay: people in beds now, grouped by recorded stay in days.
   const stayDays = bedRows
@@ -1099,7 +1099,9 @@ export function WardHomeTab({
     );
   }
 
-  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[], extra?: React.ReactNode) {
+  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
+    const items = rows.filter((row) => !row.tick);
+    const reminders = rows.filter((row) => row.tick);
     return (
       <section className={styles.todoCol} aria-labelledby={`ward-todo-${id}`}>
         <div className={styles.groupHead}>
@@ -1107,71 +1109,72 @@ export function WardHomeTab({
           <h3 id={`ward-todo-${id}`} className={styles.groupTitle}>
             {title}
           </h3>
-          <Count n={rows.length} />
-          {extra}
+          <Count n={items.length} />
         </div>
-        {rows.length === 0 ? (
-          <p className={styles.groupEmpty}>Nothing here.</p>
-        ) : (
-          <ul className={styles.todoList}>
-            {rows.map((row) => (
-              <li key={row.key} className={styles.todoItem}>
-                <div className={styles.todoRow}>
-                  <StatusGlyph tone={row.tone} size={9} />
-                  {row.tick ? (
-                    <label className={styles.todoMain}>
-                      <input
-                        type="checkbox"
-                        className={styles.todoTick}
-                        checked={localChecks[row.tick] !== null}
-                        onChange={() => {
-                          if (row.tick) toggleLocalCheck(row.tick);
-                        }}
-                        aria-label={row.title}
-                      />
-                      <span className={styles.todoTitle}>{row.title}</span>
-                      <span className={styles.todoDetail}>{row.detail}</span>
-                    </label>
-                  ) : (
-                    <span className={styles.todoMain}>
-                      <span className={styles.todoTitle}>{row.title}</span>
-                      <span className={styles.todoDetail} title={row.detail}>
-                        {row.detail}
-                      </span>
-                    </span>
-                  )}
-                  {row.meta ? (
-                    <span
-                      className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}
-                    >
-                      {row.meta}
-                    </span>
-                  ) : null}
-                  {row.action ? (
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "sec", size: "sm" })}
-                      onClick={row.action.run}
-                    >
-                      {row.action.label}
-                      <SrOnly> {row.title}</SrOnly>
-                    </button>
-                  ) : null}
-                </div>
-                {row.secondaryAction ? (
-                  <button
-                    type="button"
-                    className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
-                    onClick={row.secondaryAction.run}
-                  >
-                    {row.secondaryAction.label}
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+        {items.length === 0 ? <p className={styles.groupEmpty}>Nothing here.</p> : renderTodoList(items)}
+        {reminders.length > 0 ? (
+          <>
+            <h4 className={styles.groupHead}>Reminders, not saved</h4>
+            {renderTodoList(reminders)}
+          </>
+        ) : null}
       </section>
+    );
+  }
+
+  function renderTodoList(rows: TodoRow[]) {
+    return (
+      <ul className={styles.todoList}>
+        {rows.map((row) => (
+          <li key={row.key} className={styles.todoItem}>
+            <div className={styles.todoRow}>
+              <StatusGlyph tone={row.tone} size={9} />
+              {row.tick ? (
+                <label className={styles.todoMain}>
+                  <input
+                    type="checkbox"
+                    className={styles.todoTick}
+                    checked={localChecks[row.tick] !== null}
+                    onChange={() => {
+                      if (row.tick) toggleLocalCheck(row.tick);
+                    }}
+                    aria-label={row.title}
+                  />
+                  <span className={styles.todoTitle}>{row.title}</span>
+                  <span className={styles.todoDetail}>{row.detail}</span>
+                </label>
+              ) : (
+                <span className={styles.todoMain}>
+                  <span className={styles.todoTitle}>{row.title}</span>
+                  <span className={styles.todoDetail} title={row.detail}>
+                    {row.detail}
+                  </span>
+                </span>
+              )}
+              {row.meta ? (
+                <span className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
+                  {row.meta}
+                </span>
+              ) : null}
+              {row.action ? (
+                <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={row.action.run}>
+                  {row.action.label}
+                  <SrOnly> {row.title}</SrOnly>
+                </button>
+              ) : null}
+            </div>
+            {row.secondaryAction ? (
+              <button
+                type="button"
+                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
+                onClick={row.secondaryAction.run}
+              >
+                {row.secondaryAction.label}
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     );
   }
 
@@ -1667,7 +1670,7 @@ export function WardHomeTab({
           {/* Option B (Josh, 20 Oct 2026): what needs this ward in one card. The answers waiting,
               then This shift and Ward flow as rows, which were chips above the tabs. */}
           <h2 className={styles.phoneSectionHead}>
-            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "Needs you"}</span>
+            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "My list"}</span>
           </h2>
           <div className={styles.needsCard}>
             {incoming.length === 0 ? (

@@ -19,7 +19,7 @@
  *    `aria-disabled` (typically with a "coming soon" note) — and passes.
  *
  * Which of the two to reach for is a real decision, not a stylistic one, and
- * `docs/wiring-conventions.md` is where it is made: a control that is
+ * `docs/ward-flow/archive/wiring-conventions-historical.md` is where it is made: a control that is
  * unavailable for a *stated reason* (feature not built, this record has no such
  * data) carries `aria-disabled="true"` plus an inert handler, because the native
  * attribute removes the tab stop and the reason then cannot be reached by

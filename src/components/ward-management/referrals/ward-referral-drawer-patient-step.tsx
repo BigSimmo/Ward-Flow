@@ -20,7 +20,7 @@ import {
 import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
-import { StatusGlyph } from "@/components/wf";
+import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
@@ -103,12 +103,36 @@ export function ReferralPatientStep({
     setNotOnWardReason,
     heldBedWardName,
   } = s;
+  const someoneChosen = !!patientRecord || unidentified !== null;
+  // The step's faults in field order, worded as the fields word them, for the error summary.
+  const problems: ErrorSummaryItem[] = patientShowErrors
+    ? [
+        ...(!someoneChosen
+          ? [{ id: searchId, text: "Find a patient, add a new patient, or choose Not yet identified" }]
+          : []),
+        ...(!patientRecord && unidentified !== null && !unidentified.trim()
+          ? [{ id: `${sectionId}-unidentified`, text: "Describe the person" }]
+          : []),
+        ...(sendingWard && notOnSendingWard && someoneChosen && !heldBedWardName && !notOnWardReason
+          ? [{ id: `${sectionId}-not-on-ward`, text: "Choose why the ward is referring them" }]
+          : []),
+        ...(!liveMovement && someoneChosen && !ageBand
+          ? [{ id: `${sectionId}-age-band`, text: "Choose the age band" }]
+          : []),
+        ...(!catchmentTeam.trim() ? [{ id: `${sectionId}-team`, text: "Choose the catchment" }] : []),
+        ...(!homeRegion ? [{ id: `${sectionId}-region`, text: "Choose the home region" }] : []),
+        ...(!catchmentConfirmed
+          ? [{ id: `${sectionId}-confirm-catchment`, text: "Confirm the catchment before continuing" }]
+          : []),
+      ]
+    : [];
   return (
     <div
       id={`${sectionId}-patient`}
       className={styles.sectionPanel}
       hidden={previewOpen || confirmationOpen || activeSection !== "patient"}
     >
+      <ErrorSummary items={problems} action="before the next step" />
       <section className={styles.refCard}>
         <CardHead icon={User} title="Patient">
           <button
@@ -409,7 +433,7 @@ export function ReferralPatientStep({
                   <strong>Not in a bed on {sendingWard.name}</strong>
                   <small>
                     {heldBedWardName
-                      ? `They already hold a bed on ${heldBedWardName}, so this ward cannot send them as a new admission.`
+                      ? `They already have a bed, or a pulled bed, on ${heldBedWardName}, so this ward cannot send them as a new admission.`
                       : destType === "ward"
                         ? "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."
                         : "A ward usually refers its own inpatients."}
@@ -581,6 +605,9 @@ export function ReferralPatientStep({
               onClick={() => {
                 setCatchmentEditing(true);
                 setCatchmentConfirmed(false);
+                // With no catchment chosen the fields are already open, so moving to the suburb field
+                // is the visible answer to the press (Josh, 25 Oct 2026: "Change" did nothing).
+                window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
               }}
             >
               Change
@@ -700,6 +727,7 @@ export function ReferralPatientStep({
               <>
                 <button
                   type="button"
+                  id={`${sectionId}-confirm-catchment`}
                   className={`${styles.btn} ${styles.btnTint}`}
                   aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
                   // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.

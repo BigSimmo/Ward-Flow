@@ -312,7 +312,28 @@ describe("every release path restores the bed kind PULL_PATIENT took", () => {
     expect(unitIn(referred).allocatable.value).toBe(unitBefore.allocatable.value);
   });
 
-  it("RECORD_EXAMINATION (revoked, at the pulled stage) restores a locked bed", () => {
+  // Audit 24-1 decision 3 (owner): `revoked` no longer releases the bed itself, so the examination
+  // release path is proved with `community_order`, and the revoked case with RELEASE_HELD_BED.
+  it("RECORD_EXAMINATION (community_order, at the pulled stage) restores a locked bed", () => {
+    const before = bench();
+    const unitBefore = unitIn(before);
+    const pulled = pull(before, "WF-BK-SEC-A");
+    expect(pulled.rejections).toEqual([]);
+    expect(lockedBedsFree(unitIn(pulled))).toBe(lockedBedsFree(unitBefore) - 1);
+
+    const examined = wardFlowReducer(pulled, {
+      type: "RECORD_EXAMINATION",
+      role: "ed",
+      now: PULL_NOW + 5,
+      movementId: "WF-BK-SEC-A",
+      outcome: "community_order",
+    });
+    expect(examined.rejections).toEqual([]);
+    expect(lockedBedsFree(unitIn(examined))).toBe(lockedBedsFree(unitBefore));
+    expect(unitIn(examined).allocatable.value).toBe(unitBefore.allocatable.value);
+  });
+
+  it("RECORD_EXAMINATION (revoked, at the pulled stage) keeps the locked bed until RELEASE_HELD_BED restores it", () => {
     const before = bench();
     const unitBefore = unitIn(before);
     const pulled = pull(before, "WF-BK-SEC-A");
@@ -327,8 +348,18 @@ describe("every release path restores the bed kind PULL_PATIENT took", () => {
       outcome: "revoked",
     });
     expect(examined.rejections).toEqual([]);
-    expect(lockedBedsFree(unitIn(examined))).toBe(lockedBedsFree(unitBefore));
-    expect(unitIn(examined).allocatable.value).toBe(unitBefore.allocatable.value);
+    expect(lockedBedsFree(unitIn(examined))).toBe(lockedBedsFree(unitBefore) - 1);
+    expect(unitIn(examined).allocatable.value).toBe(unitIn(pulled).allocatable.value);
+
+    const released = wardFlowReducer(examined, {
+      type: "RELEASE_HELD_BED",
+      role: "coordinator",
+      now: PULL_NOW + 6,
+      movementId: "WF-BK-SEC-A",
+    });
+    expect(released.rejections).toEqual([]);
+    expect(lockedBedsFree(unitIn(released))).toBe(lockedBedsFree(unitBefore));
+    expect(unitIn(released).allocatable.value).toBe(unitBefore.allocatable.value);
   });
 
   /**

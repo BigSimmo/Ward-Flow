@@ -1,7 +1,7 @@
 /* The Delays board (approved Delays page mockup, October 2026). v6 tokens only: every colour,
  * radius and type size resolves through a `--wf-*` token. Nothing on screen is set below 12px.
  * Desktop: table and rail side by side, graphs underneath. Below 64rem the rail stacks and the
- * person's panel becomes a sheet. Below 40rem each table row becomes a card. */
+ * person's panel becomes a sheet. Below 48rem each table row becomes a card. */
 
 .num {
   font-family: var(--wf-mono);
@@ -600,7 +600,18 @@ button.stat:hover .statV {
 
 /* Wide enough for "10h 00m ago"; a longer line such as "Escalated 2h 10m" wraps (.cUpd below). */
 .colU {
-  width: 6.5rem;
+  width: 7.5rem;
+}
+
+/* Device sweep (24 Oct 2026): on a 4K screen the bed and last-update columns get room to breathe. */
+@media (min-width: 120rem) {
+  .colB {
+    width: 12rem;
+  }
+
+  .colU {
+    width: 9rem;
+  }
 }
 
 /* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so it may give
@@ -612,8 +623,10 @@ button.stat:hover .statV {
 }
 
 /* The table, not the phone cards: the profile line under the name wraps to two lines instead of
-   being cut after a few words, and legal status and last update wrap inside their columns. */
-@media (min-width: 40.0625rem) {
+   being cut after a few words, and legal status and last update wrap inside their columns.
+   Device sweep (24 Oct 2026): breakpoints match the 48rem phone styles and useIsPhone, so 641-768px
+   gets the cards rather than a half-phone table. */
+@media (min-width: 48.0625rem) {
   .tbl .whoBtn > span {
     display: -webkit-box;
     overflow: hidden;
@@ -995,7 +1008,9 @@ button.stat:hover .statV {
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  max-width: 9.5rem;
+  /* Layout sweep (WARD-09): labels sit 18% apart (delays-board-rows.tsx), so each keeps under that
+     width and neighbours never run into each other. */
+  max-width: min(9.5rem, 17%);
   transform: translateX(-50%);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
@@ -1010,7 +1025,7 @@ button.stat:hover .statV {
 }
 
 .sxL > span {
-  max-width: 9.5rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--wf-ink-3);
@@ -1849,7 +1864,7 @@ button.gLaneL:hover {
 
 /* ---------- phone: each row a card ---------- */
 
-@media (max-width: 40rem) {
+@media (max-width: 48rem) {
   .chead {
     padding: 10px var(--wf-s-3);
   }
@@ -2028,8 +2043,15 @@ button.gLaneL:hover {
 
   .bar > span,
   .wbAct,
+  .wbQ,
   .sxAct {
     forced-color-adjust: none;
+  }
+
+  /* R7-09 (device sweep): the Active / Quiet / Quiet 2h+ key keeps the fills the bars keep. */
+  .wlegend i {
+    forced-color-adjust: none;
+    outline: 1px solid CanvasText;
   }
 }
 
@@ -2881,6 +2903,12 @@ button.gLaneL:hover {
   .owners.owners {
     padding-inline: 0;
   }
+
+  /* Layout sweep (REF-02/WARD-08): the owner chips stay one sideways-scrolling row. The
+     `overflow: visible` above is for the table card; on the chips it cut off the last chip. */
+  .owners.owners.owners[data-ward-primitive] {
+    overflow-x: auto;
+  }
 }
 
 /*
@@ -2940,5 +2968,13 @@ button.gLaneL:hover {
     width: 100%;
     min-width: 0;
     margin: 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  .footNote > .lnk {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wf-touch);
   }
 }

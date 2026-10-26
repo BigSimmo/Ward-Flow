@@ -8,6 +8,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
+import { forecastReleaseAt } from "./forecast-release-date";
 
 export type ForecastLever =
   | { kind: "confirm_dates"; beds: number; likelyUplift: number; wards: string[] }
@@ -33,6 +34,8 @@ export function forecastLevers(
 ): ForecastLever[] {
   const until = now + MINUTES_PER_DAY;
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
+  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
   const pending = releases.filter((release) => release.state !== "discharged" && open.has(release.unitId));
   const flagged = new Set(pending.map((release) => release.admissionId));
 
@@ -48,7 +51,7 @@ export function forecastLevers(
     a.localeCompare(b),
   );
 
-  const due = pending.filter((release) => release.expectedAt <= until);
+  const due = pending.filter((release) => expectedAt(release) <= until);
   const heldUp = due.filter((release) => release.blocker !== null);
   const reasons = BED_RELEASE_BLOCKERS.map((reason) => ({
     reason,
@@ -56,7 +59,7 @@ export function forecastLevers(
   }))
     .filter((entry) => entry.count > 0)
     .sort((a, b) => b.count - a.count);
-  const overdue = due.filter((release) => release.blocker === null && dayOf(release.expectedAt) < dayOf(now)).length;
+  const overdue = due.filter((release) => release.blocker === null && dayOf(expectedAt(release)) < dayOf(now)).length;
 
   const moving = [
     {

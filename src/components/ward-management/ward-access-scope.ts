@@ -27,6 +27,7 @@ import { communityTeamOptions } from "@/components/ward-management/referrals/ref
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { withWardReadmission } from "@/components/ward-management/ward-readmission-copy";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditSubject } from "@/components/ward-management/ward-audit";
@@ -39,9 +40,11 @@ import {
   unitInScope,
   type PlaceLookup,
   type WardAccess,
+  type WardAccessScope,
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
+import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 
 const NO_GRANTS: ReadonlySet<string> = new Set<string>();
 /** Fixed picker vocabulary used by the team statistics join; arbitrary typed team labels stay hidden. */
@@ -187,10 +190,22 @@ function trimReferral(
 ): Referral | undefined {
   const destinations = referral.destinations.filter(keep);
   if (destinations.length === 0) return undefined;
-  if (destinations.length === referral.destinations.length) return referral;
+  if (
+    destinations.length === referral.destinations.length &&
+    referral.genderPlacements === undefined &&
+    referral.contactLog === undefined
+  )
+    return referral;
   const trimmed: Referral = { ...referral, destinations };
-  if (referral.contactLog === undefined) return trimmed;
   const keptUnits = new Set(referralDestinationUnitIds(trimmed));
+  // Placement history names wards independently of the addressing lines. A receiving desk must
+  // not recover a hidden destination from that history, even when all its lines were kept.
+  if (referral.genderPlacements)
+    trimmed.genderPlacements = referral.genderPlacements.flatMap((placement) => {
+      const unitIds = placement.unitIds.filter((id) => keptUnits.has(id));
+      return unitIds.length || !placement.unitIds.length ? [{ ...placement, unitIds }] : [];
+    });
+  if (referral.contactLog === undefined) return trimmed;
   const keptTeams = new Set(
     destinations.flatMap((line) =>
       line.destination.kind === "community_team" ? [communityTeamSlug(line.destination.teamName)] : [],
@@ -248,7 +263,11 @@ const COLLECTION_FIELDS = [
  * reaches the officer. The required histories it never reads are empty, and only cancelled
  * transports are kept from the unwind trail.
  */
-function collectionMovement(movement: Movement): Movement {
+function collectionMovement(
+  movement: Movement,
+  riskFlags: Movement["collectionRiskFlags"],
+  fromUnitId: string | undefined,
+): Movement {
   const trimmed: Record<string, unknown> = {
     id: movement.id,
     originEdId: movement.originEdId,
@@ -276,6 +295,12 @@ function collectionMovement(movement: Movement): Movement {
     blocker: ENGINE_BLOCKERS.has(movement.blocker) ? movement.blocker : "",
   };
   for (const field of COLLECTION_FIELDS) if (movement[field] !== undefined) trimmed[field] = movement[field];
+  // The browser scopes the server's officer copy again, with no referrals or stays left to read,
+  // so a copy keeps what the first pass found (review on PR #637).
+  const flags = riskFlags ?? movement.collectionRiskFlags;
+  if (flags?.length) trimmed.collectionRiskFlags = [...flags];
+  const from = fromUnitId ?? movement.collectionFromUnitId;
+  if (from !== undefined) trimmed.collectionFromUnitId = from;
   return trimmed as Movement;
 }
 
@@ -528,6 +553,26 @@ export function communityTeamKey(name: string | undefined): string {
     .replace(/ community team$/u, "");
 }
 
+/**
+ * Whether a job belongs to the officer's own health service (D-80 item 7): it leaves from an ED or
+ * ward of the service, or goes to one. An officer with no service (the local demo desk) has every job.
+ */
+function officerJobInService(
+  workspace: ScopableWorkspace,
+  scope: WardAccessScope,
+  places: PlaceLookup,
+): (movement: Movement) => boolean {
+  const service = scope.kind === "jobs" ? scope.service : undefined;
+  if (service === undefined) return () => true;
+  const admissionUnits = new Map(workspace.admissions.map((admission) => [admission.id, admission.unitId]));
+  const unitIn = (unitId: string | undefined) => unitId !== undefined && places.unitService(unitId) === service;
+  return (movement) =>
+    (movement.originEdId !== undefined && places.edService(movement.originEdId) === service) ||
+    unitIn(movement.acceptedUnitId) ||
+    (movement.sourceAdmissionId !== undefined && unitIn(admissionUnits.get(movement.sourceAdmissionId))) ||
+    unitIn(movement.collectionFromUnitId);
+}
+
 /** A patient with only what a transport officer needs: who to collect and how to keep them safe. */
 function officerPatient(patient: Patient): Patient {
   return {
@@ -614,6 +659,51 @@ function noticeInScope(notice: Notice, access: WardAccess, places: PlaceLookup):
     case "jobs":
       return true;
   }
+}
+
+const KEPT_ON_ED_COPY: readonly string[] = WAITLIST_INSTEAD_OF_DECLINE_REASONS;
+
+/** A movement on an ED's copy: each ward's decline without its reason, unless it waitlisted. */
+function edMovementCopy(movement: Movement): Movement {
+  const hidden = movement.declines.filter(
+    (decline) => decline.reason !== undefined && !KEPT_ON_ED_COPY.includes(decline.reason),
+  );
+  if (hidden.length === 0) return movement;
+  return {
+    ...movement,
+    declines: movement.declines.map(({ reason, ...decline }) =>
+      reason !== undefined && KEPT_ON_ED_COPY.includes(reason) ? { ...decline, reason } : decline,
+    ),
+    // The reducer also records the decline reason on the stage change it appends.
+    stageChanges: movement.stageChanges.map(({ reason, ...change }) =>
+      reason !== undefined && hidden.some((decline) => decline.at === change.at && decline.reason === reason)
+        ? change
+        : { ...change, ...(reason === undefined ? {} : { reason }) },
+    ),
+  };
+}
+
+/** The reducer's decline notices end in "(reason).", so an ED's copy drops that bracket. */
+function edNoticeCopy(notice: Notice): Notice {
+  if (notice.kind !== "referral_declined") return notice;
+  if (notice.about.referralId !== undefined && !notice.sentence.startsWith("psychiatric ward declined")) return notice;
+  return { ...notice, sentence: notice.sentence.replace(/\s*\([^()]*\)(\.?)$/, "$1") };
+}
+
+/** A referral on an ED's copy: a ward's answer without its decline reason. */
+function edReferralCopy(referral: Referral): Referral {
+  if (
+    !referral.destinations.some(
+      (line) => line.destination.kind === "psychiatric_ward" && line.declineReason !== undefined,
+    )
+  )
+    return referral;
+  return {
+    ...referral,
+    destinations: referral.destinations.map(({ declineReason, ...line }) =>
+      declineReason === undefined || line.destination.kind === "psychiatric_ward" ? line : { ...line, declineReason },
+    ),
+  };
 }
 
 /**
@@ -775,6 +865,8 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
             (movement.referralId !== undefined && sentReferralIds.has(movement.referralId)),
         ),
       );
+      // D-80: the readmission flag on its own accepted journeys, as a discharge time only.
+      movements = withWardReadmission(movements, workspace, unitIn);
       const referralIds = new Set(
         [
           ...movements.map((movement) => movement.referralId),
@@ -894,15 +986,26 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       break;
     }
     case "officer": {
+      const inService = officerJobInService(workspace, scope, places);
+      const admissionUnits = new Map(workspace.admissions.map((admission) => [admission.id, admission.unitId]));
       movements = workspace.movements.filter(
         (movement) =>
           movement.transport !== undefined &&
           movement.transport.arrivedAt === undefined &&
-          movement.closure === undefined,
+          movement.closure === undefined &&
+          inService(movement),
       );
       // A collection needs who, where, legal status and safety, never the working diagnosis
-      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026).
-      movements = movements.map(collectionMovement);
+      // (review on PR #330) or the rest of the journey's record (Josh's yes, 15 Oct 2026). The
+      // referral's risk categories ride on the job as flags (D-80 item 7).
+      const riskFlags = new Map(workspace.referrals.map((referral) => [referral.id, referral.intake?.riskFlags]));
+      movements = movements.map((movement) =>
+        collectionMovement(
+          movement,
+          movement.referralId === undefined ? undefined : riskFlags.get(movement.referralId),
+          movement.sourceAdmissionId === undefined ? undefined : admissionUnits.get(movement.sourceAdmissionId),
+        ),
+      );
       officer = true;
       break;
     }
@@ -938,15 +1041,31 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       admissions: new Set(admissions.map((admission) => admission.id)),
       referrals: new Set(referrals.map((referral) => referral.id)),
     };
+    // A ward or bed manager learns nothing about other wards through break glass either (FD-23,
+    // Audit 24-5 RA-01, Josh 24 Oct 2026): the same trim as its own copies.
+    const wardTrim = access.role === "ward" || access.role === "bed_manager";
     for (const movement of workspace.movements)
       if (movement.patientId && grantIds.has(movement.patientId) && !have.movements.has(movement.id))
-        movements.push(movement);
+        movements.push(wardTrim ? ownReferredUnits(movement, unitIn, false) : movement);
     for (const admission of workspace.admissions)
       if (admission.patientId && grantIds.has(admission.patientId) && !have.admissions.has(admission.id))
         admissions.push(admission);
-    for (const referral of workspace.referrals)
-      if (referral.patientId && grantIds.has(referral.patientId) && !have.referrals.has(referral.id))
+    for (const referral of workspace.referrals) {
+      if (!referral.patientId || !grantIds.has(referral.patientId) || have.referrals.has(referral.id)) continue;
+      if (!wardTrim) {
         referrals.push(referral);
+        continue;
+      }
+      const trimmed = trimReferral(
+        referral,
+        (addressing) =>
+          addressing.destination.kind === "psychiatric_ward" &&
+          (addressing.acceptedUnitId !== undefined
+            ? unitIn(addressing.acceptedUnitId)
+            : addressing.destination.unitId === undefined || unitIn(addressing.destination.unitId)),
+      );
+      if (trimmed) referrals.push(trimmed);
+    }
   }
 
   // Apply after grant expansion as well: community and count-only executive snapshots never
@@ -957,6 +1076,13 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
         ? { ...admission, dischargeCriteria: communityDischargeCriteria(admission.dischargeCriteria) }
         : admission,
     );
+  }
+
+  // D-80: other wards' decline reasons are the coordinator's. An ED still sees each ward
+  // answered, and a waitlist answer keeps its reason because it is the ward's state, not a refusal.
+  if (access.role === "ed") {
+    movements = movements.map(edMovementCopy);
+    referrals = referrals.map(edReferralCopy);
   }
 
   const patientIds = new Set<string>(grantIds);
@@ -978,7 +1104,16 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   if (officer) patients = patients.map(officerPatient);
   if (anonymise) patients = workspace.patients.filter((patient) => patientIds.has(patient.id)).map(anonymousPatient);
 
-  const notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  let notices = anonymise ? [] : workspace.notices.filter((notice) => noticeInScope(notice, access, places));
+  if (access.role === "ed") notices = notices.map(edNoticeCopy);
+  // A service's officer hears only about its own service's jobs, including ones since cancelled.
+  if (officer) {
+    const inService = officerJobInService(workspace, scope, places);
+    const outside = new Set(workspace.movements.filter((movement) => !inService(movement)).map(({ id }) => id));
+    notices = notices.filter(
+      (notice) => notice.about.movementId === undefined || !outside.has(notice.about.movementId),
+    );
+  }
 
   const visibleOnlyByGrant = new Set<string>();
   for (const id of grantIds) if (!ownPatientIds.has(id)) visibleOnlyByGrant.add(id);

@@ -13,7 +13,7 @@
  * - since you looked: `changesSinceLastLook` / `changesSinceInstant` (`coordinator/since-last-look.ts`).
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
+import { edJourneySummaries, edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
@@ -25,9 +25,9 @@ import {
 /**
  * WAITING — people physically in an emergency department awaiting a bed (`isWaitingInEd`), by the
  * health service that runs the department. The noun is "waiting". Transit, recorded
- * departures/outcomes and ward-origin transfers are excluded. Home's hero ("62 waiting in ED"),
- * the menu's Waiting badge, Waiting's own title, the header's service picker ("All services 62
- * waiting"), every ED tile and Network's ready-against-waiting rows all read this, so each service's
+ * departures/outcomes and ward-origin transfers are excluded. The menu's Waiting badge,
+ * Waiting's own title, the header's service picker ("All services 62 waiting") and physical ED tiles
+ * read this, so each service's
  * figure is the same everywhere and the services add up to the total: a person waits in exactly one
  * department. Somebody already on the road to a ward is not waiting; see `waitingSplit` below.
  */
@@ -44,6 +44,24 @@ export function waitingInEds(movements: readonly Movement[], now: Instant): Wait
     byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.waiting);
   }
   return { total, byService };
+}
+
+/** All ED-origin journeys remain open during transport; this is not physical ED occupancy. */
+export function openEdJourneys(
+  movements: readonly Movement[],
+  now: Instant,
+): WaitingFigure & { stillInEd: number; inTransit: number } {
+  const byService = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
+  let total = 0;
+  let stillInEd = 0;
+  let inTransit = 0;
+  for (const summary of edJourneySummaries(movements, now)) {
+    total += summary.waiting;
+    stillInEd += summary.stillInEd;
+    inTransit += summary.inTransit;
+    byService.set(summary.service, (byService.get(summary.service) ?? 0) + summary.waiting);
+  }
+  return { total, stillInEd, inTransit, byService };
 }
 
 /** "35 waiting", "none waiting": the picker's words, so the noun never leaves the number. */

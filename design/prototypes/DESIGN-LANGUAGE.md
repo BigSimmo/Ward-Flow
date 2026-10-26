@@ -1,5 +1,9 @@
 # Ward Flow — the "Board" design language
 
+> **Historical design reference, September 2026.** These "Board" prototypes were approved on 3–4 September 2026 and were later replaced by the third-edition drawings and then by the v9 standard. They do not govern current screens. The rendered app is the current design authority; written rules are in [design-system-v9.md](../v9/design-system-v9.md). Start at the [Ward Flow entry point](../../docs/ward-flow/README.md).
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 The owner chose this direction on 2026-09-03 from a two-way comparison. It now governs **every**
 Ward Flow surface, not only the seven screens being redesigned. Around 22 routes exist; seven
 bespoke pages would drift apart within a week, so the language lives in one place and is copied,
@@ -39,7 +43,7 @@ NEITHER block and never has.
 components resolve colour through `ward-tokens.module.css`, which resolves through ckb-v2 — because
 `local/no-hardcoded-hex` is an `error` and the two palettes differ in all but one role. The mapping
 is by ROLE and a value match against those numbers finds nothing:
-[`../second-edition-to-ckb-v2-role-map.md`](../../docs/ward-flow/design/second-edition-to-ckb-v2-role-map.md).
+[`../second-edition-to-ckb-v2-role-map.md`](../../docs/ward-flow/archive/design/second-edition-to-ckb-v2-role-map.md).
 
 **Copy the block for your edition verbatim** into your mockup and then add only the rules your
 screen needs, below a comment saying which screen they belong to. Do not edit the copied block. Do

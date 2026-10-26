@@ -495,6 +495,27 @@
   width: 5.5rem;
 }
 
+/* Layout sweep (REF-07): with a referral open on a tablet or small desktop the queue column is
+   narrower than the table's 44rem floor, which cut the Needs icons and hid Fit off to the side.
+   There the two icon columns step out (the open referral shows its needs and fit) and the floor
+   drops, so every remaining column is on the screen. */
+@container referral-queue (max-width: 44rem) {
+  .table {
+    --ward-table-min-width: 30rem;
+  }
+
+  .colAsk {
+    width: 7rem;
+  }
+
+  .colNeeds,
+  .colFit,
+  .table thead th:nth-child(n + 6),
+  .table tbody td:nth-child(n + 6) {
+    display: none;
+  }
+}
+
 /* Cell padding and dividers come from the canonical `.table` rule in ward-table.module.css. */
 .table thead th {
   color: var(--wf-ink-3);
@@ -814,6 +835,24 @@
   min-width: 0;
 }
 
+/* Layout sweep (REF-05): an accepted referral's links (Pull the bed, Open movement, Patient) take
+   their own row under the name, so the name is not cut and Close stays beside the tier. */
+.panelHead:has(> a) {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+/* A zero-height full-width break, so the links always start their own row. */
+.panelHead:has(> a)::after {
+  flex-basis: 100%;
+  order: 1;
+  content: "";
+}
+
+.panelHead > a {
+  order: 2;
+}
+
 .panelName {
   margin: 0;
   overflow: hidden;
@@ -976,14 +1015,18 @@
    hospital or the legal status ("Royal Perth Ho…"). Hairlines come from the grid gap, so a cell
    that moves to a new row keeps its rules. */
 @media (min-width: 48.0625rem) {
+  /* Layout sweep (REF-11): a wrapping flex row rather than an auto-fit grid, so the cells on the
+     last row stretch to fill it and no empty slot shows the grey hairline colour as a block. */
   .strip {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 1px;
     overflow: hidden;
     background: var(--wf-line);
   }
 
   .strip > div {
+    flex: 1 1 11rem;
     background: var(--wf-surface);
   }
 
@@ -1151,7 +1194,9 @@
 
 .checks > li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Layout sweep (REF-03): the label keeps at least 8rem and a long state wraps in what is left,
+     rather than the state taking its full width and running over a squeezed label. */
+  grid-template-columns: auto minmax(min(8rem, 50%), 1fr) minmax(0, max-content);
   gap: var(--wf-s-2);
   align-items: center;
   padding: var(--wf-s-1) 0;
@@ -1162,6 +1207,7 @@
 }
 
 .checkState {
+  min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   text-align: right;
@@ -1211,9 +1257,25 @@
   flex: 1 1 auto;
 }
 
+/* Layout sweep (REF-12): the referrer's number stays on one line beside its copy button, and the
+   role and the facility wrap rather than being cut in a wide panel. */
+.contact > .mono {
+  flex: none;
+  white-space: nowrap;
+}
+
+.contact > .who > span,
+.contact + .pCells dd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .timeline {
-  display: flex;
-  flex-direction: column;
+  /* Layout sweep (REF-04): one shared grid (subgrid rows), so the time column is as wide as the
+     longest time ("07:42, 3 days ago") and every row still lines up. */
+  display: grid;
+  grid-template-columns: max-content auto minmax(0, 1fr);
+  column-gap: var(--wf-s-2);
   margin: 0;
   padding: var(--wf-s-3);
   list-style: none;
@@ -1222,7 +1284,8 @@
 
 .timeline > li {
   display: grid;
-  grid-template-columns: 5.5rem auto minmax(0, 1fr);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   gap: var(--wf-s-2);
   align-items: center;
   padding: var(--wf-s-1) 0;
@@ -1327,7 +1390,8 @@
 
 .isbar > div {
   display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
+  /* Wide enough for "Recommendation", which ran into its answer at 7.5rem (layout sweep, REF-01). */
+  grid-template-columns: 9rem minmax(0, 1fr);
   gap: var(--wf-s-2);
 }
 
@@ -1374,6 +1438,14 @@
 /* ─── Tablet and phone ─────────────────────────────────────────────────────── */
 
 @media (max-width: 63.9375rem) {
+  /* Layout sweep (Josh's iPhone photo): the open referral's one grid row fills the sheet, so the
+     card and its pinned footer (Decline / Accept on a phone) reach the screen's bottom edge rather
+     than leaving an empty band below a short referral. The shared rule packs rows to the top. */
+  [data-referral-layout="queue-panel"] .layout .detail.detail.detail[data-has-selection="true"] {
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+  }
+
   .panel.panel {
     height: 100%;
     border: 0;
@@ -1508,10 +1580,12 @@
   }
 }
 
-/* v10 desktop toolbar: one row. The order note shrinks and truncates rather than wrapping. */
+/* v10 desktop toolbar: one row where it fits. Device sweep (24 Oct 2026): beside the detail panel
+   at 1024 and 1280 px one row ran past the card edge ("Filter queu", "Longe…"), so the tools wrap
+   to a second row there instead. */
 @media (min-width: 48.0625rem) {
   .toolbar {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
   .search {
@@ -1894,4 +1968,13 @@
 .rowOn[data-overdue="true"],
 .cardOn[data-overdue="true"] {
   background: var(--wf-selected);
+}
+
+/* Layout sweep (REF-16): "Show all" is a full-size touch target on a touch screen. */
+@media (pointer: coarse) {
+  .linkButton {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
 }

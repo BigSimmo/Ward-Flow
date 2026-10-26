@@ -8,7 +8,7 @@
 
 import { dayOf, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { STANDARD_WARD_SITES, wardNetworkOf } from "@/components/ward-management/ward-sites";
 
 /**
  * A fixture document's title, resolved from the Chief Psychiatrist register rather than
@@ -29,18 +29,27 @@ function officialFormName(code: string): string {
  * owns them, rather than typed a second time here — `tests/ward-flow-data-boundary.test.ts` fails
  * closed on any file outside that layer stating one of these names as its own string literal. A
  * non-null assertion is safe: every id below is a fixture id declared in `ward-sites.ts` itself.
+ *
+ * They are read from the fixed standard network, not the active one (`unitById`, `edById`): this
+ * module is loaded on first use, and when that happened under another scenario's network (Winter
+ * surge, the WA-like network) the lookup found nothing and every patient record crashed (stress
+ * test 25 Oct 2026).
  */
-const FSH_ADULT_SECURE = unitById("fsh-adult-secure")!.name;
-const RGH_ADULT_SECURE = unitById("rgh-adult-secure")!.name;
-const BTY_ADULT_SECURE = unitById("bty-adult-secure")!.name;
-const FRE_ADULT_OPEN = unitById("fre-adult-open")!.name;
-const SCGH_ADULT_OPEN = unitById("scgh-adult-open")!.name;
+const standardUnitName = (id: string) => wardNetworkOf(STANDARD_WARD_SITES).unitById(id)!.name;
+const standardEdName = (id: string) =>
+  STANDARD_WARD_SITES.find((site) => site.emergencyDepartment?.id === id)!.emergencyDepartment!.name;
 
-const PEEL_ED = edById("peel-ed")!.name;
-const FSH_ED = edById("fsh-ed")!.name;
-const JHC_ED = edById("jhc-ed")!.name;
-const RGH_ED = edById("rgh-ed")!.name;
-const SJGM_ED = edById("sjgm-ed")!.name;
+const FSH_ADULT_SECURE = standardUnitName("fsh-adult-secure");
+const RGH_ADULT_SECURE = standardUnitName("rgh-adult-secure");
+const BTY_ADULT_SECURE = standardUnitName("bty-adult-secure");
+const FRE_ADULT_OPEN = standardUnitName("fre-adult-open");
+const SCGH_ADULT_OPEN = standardUnitName("scgh-adult-open");
+
+const PEEL_ED = standardEdName("peel-ed");
+const FSH_ED = standardEdName("fsh-ed");
+const JHC_ED = standardEdName("jhc-ed");
+const RGH_ED = standardEdName("rgh-ed");
+const SJGM_ED = standardEdName("sjgm-ed");
 
 interface ClinicalGate {
   label: string;

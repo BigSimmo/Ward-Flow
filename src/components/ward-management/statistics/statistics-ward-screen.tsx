@@ -1,7 +1,5 @@
 "use client";
 
-import { downloadBlob } from "@/components/ward-management/ward-download";
-
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -38,7 +36,7 @@ import {
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
@@ -53,10 +51,9 @@ import {
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { MINUTES_PER_DAY, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, dayOf, splitDuration, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
@@ -71,7 +68,7 @@ import {
 } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
-import { csvCell } from "./statistics-csv";
+import { downloadCsv } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -112,11 +109,14 @@ export function StatisticsWardScreen({
   const { countsOnly, small, parts } = useStatisticsCounts();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
-  const { dayZero } = useWardFlowSelect("dayZero");
+  const { dayZero } = live.state;
   const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = useMemo(() => units.find((candidate) => candidate.id === unitId), [units, unitId]);
+  // D-80: a ward desk is offered only the wards it may open, and no way to the others.
+  const canOpen = useCanOpenHref();
+  const openUnits = units.filter((each) => each.id === unitId || canOpen(wardStatisticsHref(each.id)));
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -246,31 +246,37 @@ export function StatisticsWardScreen({
       testId="ward-statistics-ward-screen"
       title={unit.name}
       titleAction={
-        <span className={ward.titleTools}>
-          <ChangeWard units={units} currentId={unit.id} />
-          <UnitStepper
-            noun="ward"
-            currentId={unit.id}
-            items={units.map((each) => ({ id: each.id, href: wardStatisticsHref(each.id), label: each.name }))}
-          />
-        </span>
+        openUnits.length > 1 ? (
+          <span className={ward.titleTools}>
+            <ChangeWard units={openUnits} currentId={unit.id} />
+            <UnitStepper
+              noun="ward"
+              currentId={unit.id}
+              items={openUnits.map((each) => ({ id: each.id, href: wardStatisticsHref(each.id), label: each.name }))}
+            />
+          </span>
+        ) : undefined
       }
       tools={
         <>
-          <HeroTool
-            href={STATISTICS_WARDS_HREF}
-            icon={<ListOrdered size={14} aria-hidden="true" />}
-            testId="ward-statistics-ward-all-wards"
-          >
-            All wards
-          </HeroTool>
-          <HeroTool
-            href={STATISTICS_COMPARE_HREF}
-            icon={<Scale size={14} aria-hidden="true" />}
-            testId="ward-statistics-ward-compare"
-          >
-            Compare
-          </HeroTool>
+          {canOpen(STATISTICS_WARDS_HREF) ? (
+            <HeroTool
+              href={STATISTICS_WARDS_HREF}
+              icon={<ListOrdered size={14} aria-hidden="true" />}
+              testId="ward-statistics-ward-all-wards"
+            >
+              All wards
+            </HeroTool>
+          ) : null}
+          {canOpen(STATISTICS_COMPARE_HREF) ? (
+            <HeroTool
+              href={STATISTICS_COMPARE_HREF}
+              icon={<Scale size={14} aria-hidden="true" />}
+              testId="ward-statistics-ward-compare"
+            >
+              Compare
+            </HeroTool>
+          ) : null}
         </>
       }
       eyebrowLabel="Ward statistics"
@@ -1121,10 +1127,11 @@ function Roster({
         row.admission.dischargeDateMoves,
       ]),
     ];
-    downloadBlob(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      `ward-flow-synthetic-${unit.id}-roster.csv`,
-    );
+    downloadCsv(`ward-flow-synthetic-${unit.id}-roster.csv`, lines, {
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      // Audit 24-7 (CT-15): say a search narrowed the rows, never the typed text itself.
+      scope: `${unit.name}; matching roster rows; status filter: ${filter}${needle ? "; search applied" : ""}`,
+    });
   }
 
   return (

@@ -11,7 +11,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { teamId } = await params;
   const id = safeDecodeURIComponent(teamId);
   const team = communityTeamById(id);
-  const name = team?.name ?? id;
+  // DR-20: an unknown id never reaches the title; the address text is whatever was typed.
+  if (!team) return { title: "Community team not found — Ward Flow" };
+  const name = team.name;
   return {
     title: `${name} — Ward Flow`,
     description: `Synthetic single-team community mental health view for ${name} in the Ward Flow prototype.`,

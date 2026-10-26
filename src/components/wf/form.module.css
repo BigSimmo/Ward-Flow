@@ -270,6 +270,8 @@
   gap: var(--wf-s-3);
   min-width: 0;
   width: 100%;
+  /* KIT-06 (layout sweep, 25 Oct 2026): a 24px target with a mouse too. */
+  min-height: 24px;
   padding: 0;
   border: 0;
   background: none;
@@ -472,7 +474,9 @@
 /* Phone (8 Oct 2026): text fields reach a 44px tap height. The input also runs over the box's 1px
    top and bottom border (13 Oct 2026), so the whole 44px takes the tap, not just the 42px inside. */
 @media (max-width: 48rem) {
-  .in {
+  /* Not a textarea box: it grows with its rows and counter (a fixed 44px pushed the counter onto
+     the border, 25 Oct 2026). */
+  .in:not(.area) {
     height: 2.75rem;
   }
 
@@ -512,6 +516,13 @@
   }
 }
 
+/* SHELL-11 (layout sweep, 25 Oct 2026): at any width, a field that shows its own Clear button
+   drops the browser's clear "x", so there is only one. */
+.in:has(.clear) .control[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* Phone (v10): a search field shows no browser clear "x"; the field's own Clear button is the one. */
 @media (max-width: 48rem) {
   .control[type="search"]::-webkit-search-cancel-button,
@@ -531,4 +542,56 @@
     position: absolute;
     inset: -12px;
   }
+}
+
+/* Error summary: one counted list at the top of a form after a refused submit. A full hairline
+   in the danger colour, never an edge bar; the heading's words carry the state. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-danger);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summaryHead:focus-visible,
+.summaryHead:focus {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0 0 0 calc(9px + 6px);
+  list-style: none;
+}
+
+.summaryLink {
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.summaryLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
 }

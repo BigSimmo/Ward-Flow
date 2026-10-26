@@ -1,3 +1,10 @@
+// Closing the loop, package D (24 Oct 2026).
+import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import {
+  activeWardRestrictions,
+  closureTransitionItems,
+  currentAcceptanceConditions,
+} from "@/components/ward-management/loop-checks/ward-loop-checks";
 import { buildTurnaroundFixture } from "./ward-turnaround-fixture";
 import { unitTurnaroundSource } from "@/components/ward-management/ward-turnaround-priority";
 /**
@@ -35,12 +42,15 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../../src/components/ward-management/ward-change-reasons";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { numberedBedKindRefusal } from "@/components/ward-management/ward-bed-designation";
 import { ABSENCE_STEPS, SUPPORT_SERVICE_TYPES } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { undoStepTypeFor } from "../../src/components/ward-management/ward-undo";
 import {
   seedWardFlowState,
   wardFlowReducer,
+  bedNumberRefusal,
+  heldBedRefusal,
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../../src/components/ward-management/ward-legal-forms";
@@ -364,6 +374,19 @@ export function candidateEvents(
           referralId: referral.id,
           contact: { kind: "psychiatric_ward" as const, unitId },
           outcome: "no_answer" as const,
+        })),
+      );
+    // Closing-the-loop package A: every referral, asking each ward on its own for a response.
+    case "RECORD_REFERRAL_COMMITMENT":
+      return state.referrals.flatMap((referral) =>
+        unitIds.map((unitId) => ({
+          type,
+          role,
+          now,
+          referralId: referral.id,
+          unitId,
+          actingUnitId: unitId,
+          step: "response_requested" as const,
         })),
       );
     // Fix plan item 16 (D-76): every referral, asking each ward on its own.
@@ -968,6 +991,29 @@ export function candidateEvents(
           service,
         })),
       );
+    case "RECORD_DISCHARGE_DEPENDENCY":
+      // Closing-the-loop package B (24 Oct 2026): one outstanding pharmacy item per release,
+      // against the release's own unit. Logistics only; no legal figure.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        kind: "pharmacy" as const,
+        owner: "pharmacy" as const,
+        state: "outstanding" as const,
+      }));
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
+      // Closing-the-loop package B: one destination per release, against its own unit.
+      return state.bedReleases.map((release) => ({
+        type,
+        role,
+        now,
+        releaseId: release.id,
+        actingUnitId: release.unitId,
+        leavingDestination: LEAVING_DESTINATIONS[0].id,
+      }));
     case "REVERT_BED_RELEASE":
       // Bed-model rework (2026-08-28). One candidate per release crossed with every waiting-on
       // value — the same "one candidate per real domain value" precedent every list-valued event
@@ -1015,14 +1061,6 @@ export function candidateEvents(
           blocker,
         })),
       );
-    case "RELEASE_BED":
-      return state.bedReleases.map((release) => ({
-        type,
-        role,
-        now,
-        releaseId: release.id,
-        actingUnitId: release.unitId,
-      }));
     case "RECORD_LEAVE_BED":
       // One candidate per unit. This used to cross BOTH `usable` values, because the ward's
       // usable/not-usable statement was a real domain value the reducer stored verbatim. The owner
@@ -1283,6 +1321,28 @@ export function candidateEvents(
             unitId,
           })),
         );
+    case "HOLD_REFERRAL_BED":
+      // A hold answers an already accepted ward arm. Offer one bed per arm, the first the open/locked
+      // rule allows (bed 1 when none is free, so the refusal path still runs): offering every
+      // numbered bed at every visited state made each sweep shard outrun its time limit.
+      return state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (arm.state !== "accepted" || arm.withdrawnAt !== undefined || arm.destination.kind !== "psychiatric_ward")
+            return [];
+          const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
+          const unit = state.units.find((candidate) => candidate.id === unitId);
+          if (!unit) return [];
+          const secure = arm.destination.secureBedNeeded === true;
+          const bedNumber =
+            Array.from({ length: unit.beds }, (_, index) => index + 1).find(
+              (candidate) =>
+                numberedBedKindRefusal(unit, candidate, secure) === null &&
+                bedNumberRefusal(state, unit, candidate, undefined) === null &&
+                heldBedRefusal(state, unit, candidate, undefined, referral.id) === null,
+            ) ?? 1;
+          return [{ type, role, now, referralId: referral.id, unitId: unit.id, actingUnitId: unit.id, bedNumber }];
+        }),
+      );
     case "DECLINE_REFERRAL":
       // Every queued referral crossed with every real decline reason, same "offer every
       // legitimate candidate" reasoning as ACCEPT_REFERRAL above.
@@ -1491,6 +1551,68 @@ export function candidateEvents(
       });
       return [...arrivalCandidates, ...dischargeCandidates];
     }
+    // Closing-the-loop package E (24 Oct 2026): records only, against a current stay or a directory entry.
+    case "RECORD_HOME_SERVICE_RETURN":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    case "RECORD_DIRECTORY_CHECK":
+      return buildOnCallDirectory()
+        .slice(0, 3)
+        .map((entry) => ({ type, role, now, entryId: entry.id }));
+    // Closing the loop, package D (24 Oct 2026): records only, each against the records it names.
+    case "MARK_CANCELLED_MOVE_CHECK":
+      return state.movements
+        .filter((movement) => movement.closure?.outcome === "did_not_proceed")
+        .map((movement) => ({ type, role, now, movementId: movement.id, item: "escort", mark: "not_applicable" }));
+    case "RECORD_ACCEPTANCE_CONDITION":
+      return state.movements
+        .filter((movement) => movement.acceptedUnitId !== undefined && !movement.closure)
+        .map((movement) => ({
+          type,
+          role,
+          now,
+          movementId: movement.id,
+          condition: "call_ward_before_leaving",
+          agreedWith: "ed",
+        }));
+    case "MARK_ACCEPTANCE_CONDITION_MET":
+      return state.movements.flatMap((movement) =>
+        currentAcceptanceConditions(movement)
+          .filter((condition) => !condition.met)
+          .map((condition) => ({ type, role, now, movementId: movement.id, condition: condition.kind })),
+      );
+    case "RECORD_RESTRICTION_REVIEW":
+      return state.units.flatMap((unit) =>
+        activeWardRestrictions(unit).map((restriction) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          restriction,
+          reviewer: "nurse_unit_manager" as const,
+          expectedAt: now + 240,
+        })),
+      );
+    case "MARK_CLOSURE_TRANSITION_ITEM":
+      return state.units
+        .filter((unit) => unit.isClosed)
+        .flatMap((unit) =>
+          closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions).map((item) => ({
+            type,
+            role,
+            now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            item: item.kind,
+            ...(item.kind === "referral"
+              ? { referralId: item.recordId }
+              : item.kind === "booked_arrival"
+                ? { plannedAdmissionId: item.recordId }
+                : { movementId: item.recordId }),
+          })),
+        );
     default:
       return [];
   }
@@ -2124,6 +2246,63 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
   // satisfies the "Non-vacuity 3" check below rather than sidestepping it.
   for (const code of codes) {
     const accepted = coverage.get(code)!;
+    // A direct accepted referral has no movement of its own. Exercise its hold beside a real
+    // movement carrying this form, so both expiry modes retain the same provenance check.
+    const forHold = buildHeldMovementFor(code, NOW_ANCHOR);
+    if (supplyDueAt) {
+      forHold.state = wardFlowReducer(forHold.state, {
+        type: "RECORD_LEGAL_FORM_EXPIRY",
+        role: "ed",
+        now: NOW_ANCHOR,
+        movementId: forHold.movementId,
+        dueAt: suppliedDueAt(NOW_ANCHOR + 900_000),
+      });
+      expect(forHold.state.rejections, `Hold fixture expiry refused (${code})`).toEqual([]);
+      offenders.push(...offendingFormsIn(forHold.state, `HOLD_REFERRAL_BED fixture expiry(${code})`));
+    }
+    const receivedForHold = wardFlowReducer(forHold.state, {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now: NOW_ANCHOR,
+      ...RECEIVE_REFERRAL_CANDIDATE,
+    });
+    expect(receivedForHold.rejections, `Hold fixture referral refused (${code})`).toEqual([]);
+    offenders.push(...offendingFormsIn(receivedForHold, `HOLD_REFERRAL_BED fixture receive(${code})`));
+    const holdReferralId = receivedForHold.referrals.at(-1)!.id;
+    const holdUnitId = "scgh-adult-open";
+    const acceptedForHold = wardFlowReducer(receivedForHold, {
+      type: "ACCEPT_REFERRAL",
+      role: "ward",
+      now: NOW_ANCHOR,
+      referralId: holdReferralId,
+      destinationKind: "psychiatric_ward",
+      unitId: holdUnitId,
+      actingUnitId: holdUnitId,
+    });
+    expect(acceptedForHold.rejections, `Hold fixture acceptance refused (${code})`).toEqual([]);
+    offenders.push(...offendingFormsIn(acceptedForHold, `HOLD_REFERRAL_BED fixture acceptance(${code})`));
+    const beforeHold = acceptedForHold.referrals.find((referral) => referral.id === holdReferralId)!;
+    expect(beforeHold.destinations[0]!.state).toBe("accepted");
+    expect(beforeHold.destinations[0]!.heldBedNumber).toBeUndefined();
+    let held: { applied: WardFlowState; event: Extract<WardFlowEvent, { type: "HOLD_REFERRAL_BED" }> } | undefined;
+    for (const event of candidateEvents("HOLD_REFERRAL_BED", acceptedForHold, NOW_ANCHOR)) {
+      if (event.type !== "HOLD_REFERRAL_BED" || event.referralId !== holdReferralId) continue;
+      const applied = wardFlowReducer(acceptedForHold, event);
+      if (applied.rejections.length === acceptedForHold.rejections.length) {
+        held = { applied, event };
+        break;
+      }
+    }
+    expect(held, `HOLD_REFERRAL_BED was never accepted (${code})`).toBeDefined();
+    expect(held!.applied.referrals.find((referral) => referral.id === holdReferralId)!.destinations[0]).toEqual({
+      ...beforeHold.destinations[0]!,
+      heldBedNumber: held!.event.bedNumber,
+    });
+    expect(held!.applied.movements).toEqual(acceptedForHold.movements);
+    expect(held!.applied.admissions).toEqual(acceptedForHold.admissions);
+    expect(held!.applied.units).toEqual(acceptedForHold.units);
+    accepted.add("HOLD_REFERRAL_BED");
+    offenders.push(...offendingFormsIn(held!.applied, `HOLD_REFERRAL_BED(${code}) / supplyDueAt=${supplyDueAt}`));
 
     // Staging needs a waiting request AND a different occupied patient's confirmed departure.
     // The cyclic traversal cannot reliably keep both windows live; construct them via real
@@ -2882,12 +3061,6 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     expect(country.admissions).toBe(countryBase.admissions);
     expect(country.referrals).toBe(countryBase.referrals);
     expect(country.notices).toBe(countryBase.notices);
-    // Owner ruling 25 September 2026: a bed release names its stay and completes when the ward
-    // records the person leaving; that departure discharges the release in the same write, and
-    // RELEASE_BED refuses while the person is still in the bed. So no event sequence leaves a
-    // release RELEASE_BED can accept. Named, not "at most N", for the reason given above; its
-    // refusal while occupied is pinned in tests/ward-bed-release-lifecycle.test.ts (4 and 13).
-    const UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE = new Set(["RELEASE_BED"]);
     // Fix plan item 16 (D-76): asking more wards needs an open community referral already sent to a
     // NAMED ward, to copy its bed questions from. The seed has none open, and this sweep's only new
     // referral is the broad RECEIVE_REFERRAL_CANDIDATE, which asks no named ward. Named, not "at most
@@ -2900,7 +3073,6 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
         type !== "SET_SCENARIO" &&
         type !== "RECORD_COUNTRY_EXTENSION" && // explicit unchanged-state refusal proof above
         !NO_COMMITMENT_ROW_TO_ACT_ON.has(type) &&
-        !UNREACHABLE_SINCE_DEPARTURE_COMPLETES_THE_RELEASE.has(type) &&
         !NO_NAMED_WARD_REFERRAL_TO_ASK_FROM.has(type),
     );
     expect(

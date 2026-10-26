@@ -1,6 +1,7 @@
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState } from "react";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { type LeavingDestination } from "@/components/ward-management/ward-admissions";
@@ -277,8 +278,12 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const releaseActor = recordActorFor(detailRelease?.unitId);
-  const canChangeRelease = releaseActor.role === "ward" || releaseActor.role === "coordinator";
-  const canRecordDeparture = canChangeRelease && detailRelease?.state === "confirmed";
+  // D-80: the site bed manager clears a release blocker in its own name. The departure stays with
+  // the ward (and the coordinator), so it is offered no Record departure.
+  const canChangeRelease =
+    releaseActor.role === "ward" || releaseActor.role === "coordinator" || releaseActor.role === "bed_manager";
+  const canRecordDeparture =
+    (releaseActor.role === "ward" || releaseActor.role === "coordinator") && detailRelease?.state === "confirmed";
   const departureDestination: LeavingDestination =
     departure.releaseId === detailRelease?.id ? departure.destination : "discharged-to-the-community";
   // One primary per area: on a phone a blocked release keeps Clear blocker as the primary.
@@ -317,6 +322,8 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   };
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // USC-04: Escape that closed a sheet on top must not also close the drawer and drop its draft.
+      if (event.defaultPrevented || hasOpenSheet()) return;
       if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
         closeDrawer();
       }

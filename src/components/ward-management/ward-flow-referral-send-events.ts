@@ -34,7 +34,8 @@ import {
   type Referral,
   type ReferralCorrection,
 } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
+import { scenarioEmergencyDepartments } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
@@ -96,7 +97,9 @@ export function reduceReferralSendEvent(
         return reject(state, event, "RAISE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
       // D-76: with no ED named, only an accepted community referral's journey may start (checked below).
       const department =
-        event.edId === undefined ? undefined : allEmergencyDepartments().find((ed) => ed.id === event.edId);
+        event.edId === undefined
+          ? undefined
+          : scenarioEmergencyDepartments(state.scenario).find((ed) => ed.id === event.edId);
       if (event.edId !== undefined && !department) {
         return reject(state, event, `no emergency department found for id ${event.edId}`);
       }
@@ -449,7 +452,7 @@ export function reduceReferralSendEvent(
         movement,
       );
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
-      const originEd = allEmergencyDepartments().find((d) => d.id === movement.originEdId);
+      const originEd = scenarioEmergencyDepartments(state.scenario).find((d) => d.id === movement.originEdId);
       const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
 
       // Reuse a queued arm to this exact team rather than asking the same team twice. Settled arms

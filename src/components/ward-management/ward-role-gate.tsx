@@ -9,7 +9,7 @@ import { useCallback, useId, useSyncExternalStore, type ReactNode } from "react"
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
+import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { dispatchPermission, type WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 
 type DeskRoleOverride = {
@@ -44,7 +44,8 @@ export function setDeskRole(role: WardChromeRole, pathname = ""): void {
 
 const ROLE_DESK_LABELS: Record<WardChromeRole, string> = {
   coordinator: "Coordinator",
-  bed_manager: "Coordinator",
+  // D-80: the site bed manager is its own desk, never labelled as the coordinator's.
+  bed_manager: "Bed manager",
   executive: "Executive",
   ward: "Ward",
   ed: "ED",
@@ -110,6 +111,10 @@ export type RoleGate = {
 export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => RoleGate {
   const pathname = usePathname() ?? "";
   const role = useRouteRole();
+  // Audit RA-04: under role access a non-coordinator desk acts only as itself (`useRouteRole`), so
+  // an in-page desk switch would change nothing. Offer it only where it works: a coordinator's desk,
+  // or role access off (the effective access is then the statewide coordinator).
+  const canSwitchDesk = useEffectiveWardAccess().role === "coordinator";
   const baseId = useId();
   return useCallback(
     (eventType: WardFlowEventType, key?: string): RoleGate => {
@@ -123,19 +128,24 @@ export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => R
         buttonProps: { disabled: true, "aria-describedby": id },
         note: (
           <span className="lockline">
-            <DisabledReason id={id}>{permission.reason}</DisabledReason>{" "}
-            <button
-              type="button"
-              className="lockline"
-              onClick={() => setDeskRole(required.role, pathname)}
-              data-testid={`ward-role-switch-${required.role}`}
-            >
-              Switch to {required.label} desk →
-            </button>
+            <DisabledReason id={id}>{permission.reason}</DisabledReason>
+            {canSwitchDesk ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="lockline"
+                  onClick={() => setDeskRole(required.role, pathname)}
+                  data-testid={`ward-role-switch-${required.role}`}
+                >
+                  Switch to {required.label} desk →
+                </button>
+              </>
+            ) : null}
           </span>
         ),
       };
     },
-    [role, baseId, pathname],
+    [role, baseId, pathname, canSwitchDesk],
   );
 }

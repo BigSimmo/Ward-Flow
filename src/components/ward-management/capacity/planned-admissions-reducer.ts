@@ -18,11 +18,13 @@ import {
   PLANNED_ADMISSION_WINDOW_DAYS,
   type Admission,
   type PlannedAdmission,
+  type PlannedAdmissionAuthorisationOverride,
 } from "../ward-admissions";
+import { OVERRIDE_REASONS } from "../ward-change-reasons";
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
 import { dayOf, MINUTES_PER_DAY, perthCalendarDay, perthMidnight, type Instant } from "../ward-clock";
-import { adjustSexMix, mixSexOf } from "../ward-eligibility";
+import { adjustSexMix, eligibility, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
@@ -46,9 +48,22 @@ export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: stri
 /**
  * The reducer's own placement refusal (`eligibilityRefusal` in `ward-flow-reducer.ts`, the one
  * `PULL_PATIENT` calls), passed in rather than imported so this module never imports the reducer
- * at runtime. A conversion has no override path, so no override reason is ever supplied.
+ * at runtime. A conversion takes no override reason of its own; the one exception is the
+ * authorisation reason recorded on the booking for its own ward (`waived`, Audit 24-1 CS2-19).
  */
-export type PlacementRefusalFn = (movement: Movement, unit: Unit, now: Instant) => string | null;
+export type PlacementRefusalFn = (
+  movement: Movement,
+  unit: Unit,
+  now: Instant,
+  /** Audit 24-1 CS2-19: gates the booking's own recorded reason answers (authorisation only). */
+  waived?: readonly "authorisation"[],
+) => string | null;
+
+/**
+ * Audit 24-1 CS2-19: the reducer's `OVERRIDE_REASON_REQUIRED` fragment, passed in for the same
+ * reason as `PlacementRefusalFn`, so a booking's refusal names the state in the words a pull's does.
+ */
+export type OverrideReasonRequired = string;
 
 type PlannedAdmissionEvent = Extract<
   WardFlowEvent,
@@ -96,6 +111,45 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
+  };
+}
+
+/**
+ * Audit 24-1 CS2-19 (Josh, 24 Oct 2026): a booking whose legal status needs an authorised bed, on
+ * a ward that is not authorised, is refused unless a reason is recorded, as a pull past the same
+ * gate is (`PULL_PATIENT` through `eligibilityRefusal`). The same gate (`authorisation`, read by
+ * `eligibility()` on the booking's movement view), the same list (`OVERRIDE_REASONS`, checked by
+ * membership, never truthiness) and the same refusal shape. Only this gate is asked at booking:
+ * every other suitability gate is still asked when the person arrives (`CONVERT_PLANNED_ADMISSION`).
+ *
+ * Returns the refusal, or the override to record (`null` when no reason is needed; a reason sent
+ * when none is needed is not recorded, as `referralAcceptanceRefusal` records none on a clean verdict).
+ */
+function failedAuthorisationGate(booking: PlannedAdmission, unit: Unit, now: Instant) {
+  return eligibility(plannedAdmissionMovementView(booking, unit), unit, now).gates.find(
+    (candidate) => candidate.gate === "authorisation" && !candidate.pass,
+  );
+}
+
+function bookingAuthorisationCheck(
+  event: Extract<PlannedAdmissionEvent, { type: "BOOK_PLANNED_ADMISSION" | "CHANGE_PLANNED_ADMISSION" }>,
+  booking: PlannedAdmission,
+  unit: Unit,
+  overrideReasonRequired: OverrideReasonRequired,
+): { refusal: string } | { refusal: null; override: PlannedAdmissionAuthorisationOverride | null } {
+  const gate = failedAuthorisationGate(booking, unit, event.now);
+  if (!gate) return { refusal: null, override: null };
+  if (event.overrideReason === undefined)
+    return {
+      refusal:
+        `${unit.name} is not eligible for this planned admission — failed gate authorisation: ` +
+        `${gate.detail}. This booking ${overrideReasonRequired}.`,
+    };
+  if (!OVERRIDE_REASONS.includes(event.overrideReason))
+    return { refusal: `${event.type} overrideReason must be chosen from OVERRIDE_REASONS` };
+  return {
+    refusal: null,
+    override: { reason: event.overrideReason, unitId: unit.id, at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role] },
   };
 }
 
@@ -237,6 +291,7 @@ export function reducePlannedAdmissionEvent(
   decision: AuditDecision,
   reject: RejectFn,
   placementRefusal: PlacementRefusalFn,
+  overrideReasonRequired: OverrideReasonRequired,
 ): WardFlowState | null {
   switch (event.type) {
     case "BOOK_PLANNED_ADMISSION": {
@@ -307,6 +362,13 @@ export function reducePlannedAdmissionEvent(
         convertedAt: null,
         admissionId: null,
       };
+      // Audit 24-1 CS2-19: checked on the booking as it would be kept, so the forecast never counts
+      // a booking the authorisation gate refused.
+      const authorisation = bookedUnit
+        ? bookingAuthorisationCheck(event, booked, bookedUnit, overrideReasonRequired)
+        : { refusal: null, override: null };
+      if (authorisation.refusal !== null) return reject(state, event, authorisation.refusal);
+      if (authorisation.override) booked.authorisationOverride = authorisation.override;
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return {
@@ -361,6 +423,27 @@ export function reducePlannedAdmissionEvent(
       };
       if (gender === undefined) delete changed.gender;
       else changed.gender = gender;
+      // Audit 24-1 CS2-19: a change that moves the booking to another ward, or gives it a legal
+      // status that now needs an authorised bed, answers the authorisation gate as a new booking
+      // does. A booking already standing at its ward on the same footing stays, as a booking at a
+      // ward that has since closed does (Audit 2 E-02); a reason it already carries for this ward
+      // is kept unless a new one is chosen. A booking that lands where no reason is needed keeps
+      // none: the reason was about the ward it has left.
+      if (changedUnit) {
+        const keptOverride =
+          planned.authorisationOverride?.unitId === event.unitId ? planned.authorisationOverride : undefined;
+        const alreadyStanding =
+          planned.unitId === event.unitId && failedAuthorisationGate(planned, changedUnit, event.now) !== undefined;
+        const authorisation =
+          event.overrideReason === undefined &&
+          (alreadyStanding || keptOverride !== undefined) &&
+          failedAuthorisationGate(changed, changedUnit, event.now) !== undefined
+            ? { refusal: null, override: keptOverride ?? null }
+            : bookingAuthorisationCheck(event, changed, changedUnit, overrideReasonRequired);
+        if (authorisation.refusal !== null) return reject(state, event, authorisation.refusal);
+        if (authorisation.override) changed.authorisationOverride = authorisation.override;
+        else delete changed.authorisationOverride;
+      }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return {
@@ -438,7 +521,12 @@ export function reducePlannedAdmissionEvent(
       // A booking has no override path, so the same fact is a plain refusal here.
       if (view.security === "Secure" && lockedBedsFree(unit) <= 0)
         return reject(state, event, `No locked bed is free at ${unit.name} for this planned arrival.`);
-      const ineligible = placementRefusal(view, unit, event.now);
+      // Audit 24-1 CS2-19: a booking accepted with a recorded reason for this same ward is not then
+      // refused at arrival on that gate, as a pull with a recorded reason is not. Only the
+      // authorisation gate: every other gate is still asked, and a reason recorded for another
+      // ward, or none at all, buys nothing.
+      const waived = planned.authorisationOverride?.unitId === unit.id ? (["authorisation"] as const) : [];
+      const ineligible = placementRefusal(view, unit, event.now, waived);
       if (ineligible)
         return reject(state, event, ineligible.replace(`for movement ${view.id}`, "for this planned admission"));
       if (genderReviewNeeded(view.gender, view.sex))

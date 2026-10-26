@@ -1,0 +1,91 @@
+name: Ward Flow daily release
+
+# Railway deploys the live site from the `live` branch, not from `main`. Once a day, before day shift,
+# this moves `live` forward to the newest main commit that passed Ward Flow CI and writes a short
+# "what changed" release note, so the live site changes once a day instead of on every merge. A manual
+# run is the "release now" button for an urgent fix. It only fast-forwards `live`: it never rewrites
+# history, checks out nothing and runs no repository code. Rolling back is moving `live` back to the
+# previous `live-*` tag, by hand, with Josh's yes.
+on:
+  schedule:
+    # 22:00 UTC is 6 am in Perth (UTC+8, no daylight saving).
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Move live to the newest CI-passed main commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          target="$(gh api "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&event=push&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
+          case "$target" in *[!0-9a-f]* | "") echo "No CI-passed main commit found" >&2; exit 1 ;; esac
+          current="$(gh api "repos/$REPOSITORY/git/ref/heads/live" --jq .object.sha)"
+          if [ "$current" = "$target" ]; then
+            echo "Live is already at $target. Nothing to release."
+            exit 0
+          fi
+          status="$(gh api "repos/$REPOSITORY/compare/$current...$target" --jq .status)"
+          if [ "$status" != "ahead" ]; then
+            echo "Newest CI-passed main ($target) is not ahead of live ($current): $status. Not moving live." >&2
+            exit 1
+          fi
+
+          # Collect merged PR numbers from merge commits ("Merge pull request #N") and squash commits ("(#N)").
+          gh api "repos/$REPOSITORY/compare/$current...$target" --jq '.commits[].commit.message | split("\n")[0]' \
+            | grep -oE '^Merge pull request #[0-9]+|\(#[0-9]+\)$' | grep -oE '[0-9]+' | sort -un > prs.txt || true
+          : > new.txt; : > fixed.txt; : > other.txt
+          while read -r number; do
+            title="$(gh api "repos/$REPOSITORY/pulls/$number" --jq .title)"
+            line="- $title (#$number)"
+            case "$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]')" in
+              fix* | *": fix"* | "fix("*) echo "$line" >> fixed.txt ;;
+              docs* | chore* | ci* | test* | build* | refactor* | deps* | *dependabot* | *"bump "*) echo "$line" >> other.txt ;;
+              *) echo "$line" >> new.txt ;;
+            esac
+          done < prs.txt
+          # The plain lines staff see in the app's "What's new" note: entries of the app's list that
+          # this release adds. Read as data through the API, never run. A list missing at either end
+          # counts as empty, so the first release after the list began shows every line in it.
+          list="src/components/ward-management/help/whats-new.json"
+          read_list() {
+            local raw
+            raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$list?ref=$1" 2>/dev/null)" || raw="[]"
+            printf '%s' "$raw" | jq -c 'if type == "array" then . else [] end' 2>/dev/null || echo "[]"
+          }
+          before="$(read_list "$current")"; after="$(read_list "$target")"
+          jq -rn --argjson before "${before:-[]}" --argjson after "${after:-[]}" \
+            '($before | map(.id)) as $old | $after[] | select((.id | IN($old[])) | not) | "- \(.line)"' > staff.txt || : > staff.txt
+          {
+            echo "What changed on the live site since the last release."
+            if [ -s staff.txt ]; then printf '\n### For staff, shown in the app\n\n'; cat staff.txt; fi
+            for section in "New:new.txt" "Fixed:fixed.txt" "Behind the scenes:other.txt"; do
+              file="${section#*:}"
+              if [ -s "$file" ]; then printf '\n### %s\n\n' "${section%%:*}"; cat "$file"; fi
+            done
+            if [ ! -s prs.txt ]; then printf '\nNo pull requests found in this range.\n'; fi
+            printf '\nLive moved from %s to %s.\n' "${current:0:7}" "${target:0:7}"
+          } > notes.md
+
+          # Fast-forward only (force=false): GitHub refuses anything that would rewrite live.
+          gh api -X PATCH "repos/$REPOSITORY/git/refs/heads/live" -f sha="$target" -F force=false >/dev/null
+          stamp="$(TZ=Australia/Perth date +%Y-%m-%d-%H%M)"
+          gh api "repos/$REPOSITORY/releases" -f tag_name="live-$stamp" -f target_commitish="$target" \
+            -f name="Live release $stamp (Perth)" -F body=@notes.md >/dev/null
+          echo "Released $target as live-$stamp"
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"

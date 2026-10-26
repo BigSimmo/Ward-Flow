@@ -598,27 +598,30 @@ describe("the corrected comment claims on the statistics surface", () => {
    * must be found; a sentence only in a JSX comment and a sentence only in a block comment must not.
    */
   it("includes comment text, deliberately — and this pins it so a future strip cannot pass silently", () => {
-    const frame = statisticsSource("statistics-section-frame.tsx");
+    // Re-pointed from the deleted `statistics-section-frame.tsx` (production audit USC-07, 25 Oct
+    // 2026) to the overview screen, whose deletion record lives only in a comment.
+    const overview = statisticsSource("statistics-overview-screen.tsx");
 
     /*
-     * The frame carries 41 block-comment lines and one JSX comment, so the shape is reachable and
-     * this is not a vacuous check. Floored on the POPULATION — the file being long enough to hold
-     * its own record — rather than on any count of matches.
+     * Floored on the POPULATION — the file being long enough to hold its own record — rather than
+     * on any count of matches.
      */
-    expect(frame.length, "the frame collapsed to almost nothing; re-derive before reading below").toBeGreaterThan(2000);
+    expect(overview.length, "the overview collapsed to almost nothing; re-derive before reading below").toBeGreaterThan(
+      2000,
+    );
 
     /*
-     * A sentence that exists ONLY inside a block comment in that file. If somebody later makes this
+     * A sentence that exists ONLY inside a comment in that file. If somebody later makes this
      * helper strip comments, this goes red and sends them to the note above rather than letting the
      * change land silently — at which point every assertion in this file quietly stops covering the
      * record it was written for, with nothing failing.
      */
     expect(
-      frame,
+      overview,
       "this helper no longer sees comment text. That may be right — but every assertion in this file " +
         "is about the source RECORD, so they have all just stopped covering what they were written " +
         "for, and none of them will fail. Read the note above this test before proceeding.",
-    ).toContain("THIS FRAME ADDS NO CONTROLS.");
+    ).toContain("A SENTENCE WAS DELETED FROM THIS PARAGRAPH");
   });
 
   /** Every CSS module under `src/components/ward-management/`, walked rather than listed. */
@@ -668,12 +671,8 @@ describe("the corrected comment claims on the statistics surface", () => {
     ).toBeLessThan(withBannerAndBadge.length);
 
     const disclaimers = statisticsSource("statistics-disclaimers.tsx");
-    const frame = statisticsSource("statistics-section-frame.tsx");
 
-    for (const [fileName, source] of [
-      ["statistics-disclaimers.tsx", disclaimers],
-      ["statistics-section-frame.tsx", frame],
-    ] as const) {
+    for (const [fileName, source] of [["statistics-disclaimers.tsx", disclaimers]] as const) {
       // The retired wording, forbidden by name. A spelled-out count of the modules is the exact form
       // the defect took, in two different values in two files.
       for (const retired of ["eighteen ward", "seventeen ward", "nineteenth module"]) {
@@ -712,45 +711,6 @@ describe("the corrected comment claims on the statistics surface", () => {
     // The record of the deletion is still there, so a later reader is not left guessing why the
     // paragraph reads as it does — a negative alone is satisfied by deleting the explanation too.
     expect(overview).toContain("A SENTENCE WAS DELETED FROM THIS PARAGRAPH");
-  });
-
-  /**
-   * ⚠️ **AN ABSOLUTE STATED OVER A SCOPE THE SENTENCE NEVER NAMED.** The frame's doc comment said
-   * "NO CONTROLS. The only interactive element HERE is the link back to the hub", with
-   * `ClinicalRail` rendered as the frame's own first child: a menu button, an icon rail with an
-   * expand handler, a sidebar with a collapse handler and a sheet, one of which mutates persisted UI
-   * state. The substantive point — nothing on a section page looks as though it would change a
-   * figure — survives once the sentence says which scope it is about.
-   *
-   * ⚠️ **RE-DERIVED, Task 8, 2026-09-11.** The frame really did render `ClinicalRail` when this
-   * check was first written, so the last two assertions below used to pin the LITERAL JSX tag as
-   * proof the correction was about a component this file still used, not one it had already
-   * dropped. Task 8 removed that mount — the third-edition shell (`shell/ward-rail.tsx`) now
-   * mounts once in the layout instead — so the tag genuinely no longer appears here, and the frame's
-   * own comment says so in its own words rather than continuing to claim a present-tense render.
-   * Pinning the tag now would fail on correct work; these assertions check for that historical
-   * record instead, by locator rather than by quoting the tag `docs/agents/dead-code-deletion.md`'s
-   * neighbours warn against reproducing (Trap 4 of the Task 8 brief: "never by quoting the tag").
-   */
-  it("scopes the no-controls claim to what the frame itself adds", () => {
-    const frame = statisticsSource("statistics-section-frame.tsx");
-
-    expect(frame, "the unscoped absolute has returned").not.toContain("**NO CONTROLS.**");
-    expect(frame, "the unscoped absolute has returned").not.toContain("The only interactive element here is");
-
-    expect(frame).toContain("**THIS FRAME ADDS NO CONTROLS.**");
-    expect(frame).toContain("The only interactive element the frame itself adds is");
-    // The rail is named, because an unnamed exception is the same defect one step quieter.
-    expect(frame).toContain("ClinicalRail");
-    // And the comment now says, in its own words, that the mount is gone — not by quoting the
-    // removed tag (Trap 4), and not by continuing to claim a present-tense render that stopped
-    // being true the moment Task 8 removed it.
-    expect(frame, "the frame's own comment no longer records that the former mount is gone").toContain(
-      "MOUNT DESCRIBED ABOVE IS GONE",
-    );
-    expect(frame, "the removed JSX tag has returned, quoted, in this file's own comments").not.toContain(
-      "<ClinicalRail",
-    );
   });
 
   /**

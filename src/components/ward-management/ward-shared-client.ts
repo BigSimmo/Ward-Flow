@@ -1,10 +1,13 @@
+import { forgetDowntimePack } from "./reports/downtime-pack";
 import { openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
 import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
+import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -25,7 +28,15 @@ export type SharedSnapshot = {
   demoControls?: boolean;
   /** Opaque server access lifetime for retained reports; absent on older servers. Never a grant. */
   accessContext?: string;
+  /** Earliest known membership, cover or temporary-opening expiry. */
+  accessUntil?: number;
+  /** How many closed records this world has archived (migration 14); absent on older servers. */
+  archived?: number;
 };
+/** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
+const ARCHIVED_COLLECTIONS = ["movements", "referrals", "broadcastAlerts"] as const;
+type ArchivedCollection = (typeof ARCHIVED_COLLECTIONS)[number];
+type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
 /**
  * `choose-role`: the account holds more than one role and must say which to work as.
  * `no-role`: signed in, but no role is assigned. Neither signs the person out.
@@ -38,8 +49,10 @@ export type SharedView = {
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
-  /** An in-flight or uncertain command still lives in this tab. Never saved to browser storage. */
+  /** Payload stays in this tab; only opaque receipt identity may survive a reload. */
   unconfirmedSave?: boolean;
+  /** Audit 24-3 SM-4: `unavailable` only because a save waits on Retry; the board itself is current. */
+  boardCurrent?: boolean;
   eventLog?: readonly EventLogEntry[];
   /** The role and place the server says this account is working as now. Checked by the caller. */
   access?: unknown;
@@ -53,6 +66,11 @@ export type SharedView = {
   actorId?: string | null;
   /** This tab chose its role, so it can go back and choose another. */
   canSwitch?: boolean;
+  /** Server-bounded retention authorisation; a failed poll never renews it. */
+  accessUntil?: number;
+  receiptScope?: string;
+  recovery?: string;
+  recovering?: boolean;
 };
 /** A role or cover as the server lists it. Times are minutes from the server's now. */
 export type SharedMembership = {
@@ -74,6 +92,16 @@ export type SharedAccessRequest = {
   scope: unknown;
   decision: "approved" | "declined" | null;
   minutes: { requested: number | null };
+};
+/** One record opening from the server's access log. `minutes` is when, from the server's now. */
+export type SharedRecordView = {
+  id: number | string;
+  actor_id: string;
+  actor_role: string;
+  actor_scope: unknown;
+  patient_id: string;
+  surface: string;
+  minutes?: number | null;
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -112,6 +140,7 @@ type QueuedCommand = {
  * own saves from it.
  */
 type SheetSeen = { revision: number; records: Map<string, number> };
+export const WARD_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
@@ -155,22 +184,147 @@ function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
   };
 }
 
+/** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
+const FRESH_TOKEN = new Error("Ask again with a fresh token");
+
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
+  private accessTimer: ReturnType<typeof setTimeout> | undefined;
+  private recoveryPending = false;
+  private recoveryWrite(commandId: string) {
+    const { receiptScope, accessUntil } = this.view;
+    if (!receiptScope || !Number.isFinite(accessUntil) || accessUntil! <= Date.now()) return;
+    try {
+      this.options.recoveryStorage?.setItem(
+        WARD_COMMAND_RECOVERY_KEY,
+        JSON.stringify({ commandId, receiptScope, expiresAt: accessUntil }),
+      );
+    } catch {
+      /* Storage refusal keeps the unload warning and same-instance retry. */
+    }
+  }
+  private clearRecovery() {
+    this.recoveryPending = false;
+    try {
+      this.options.recoveryStorage?.removeItem(WARD_COMMAND_RECOVERY_KEY);
+    } catch {
+      /* Storage unavailable. */
+    }
+  }
+  private async recoverReceipt() {
+    if (this.pending || !this.options.recoveryStorage) return;
+    const generation = this.viewGeneration;
+    const grantGeneration = this.grantGeneration;
+    const roleSignal = this.roleLifetime.signal;
+    const receiptScope = this.view.receiptScope;
+    const current = () => {
+      if (
+        this.disposed ||
+        roleSignal.aborted ||
+        generation !== this.viewGeneration ||
+        grantGeneration !== this.grantGeneration ||
+        receiptScope !== this.view.receiptScope ||
+        (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now()) ||
+        (held && held.expiresAt <= Date.now())
+      ) {
+        // Role switches can occur in the promise continuation after request() validated its reply.
+        // Its refresh was deferred by this busy recovery, so ensure the current desk is read next.
+        if (!this.disposed && !this.gated()) this.needsRefresh = true;
+        throw new Error("The recovery view changed; reconnect to check the current desk.");
+      }
+    };
+    let held: { commandId: string; receiptScope: string; expiresAt: number } | undefined;
+    try {
+      const raw = this.options.recoveryStorage.getItem(WARD_COMMAND_RECOVERY_KEY);
+      if (!raw) {
+        if (this.recoveryPending) {
+          this.recoveryPending = false;
+          this.publish({ recovery: undefined });
+        }
+        return;
+      }
+      held = JSON.parse(raw);
+    } catch {
+      this.clearRecovery();
+      this.publish({ recovery: undefined });
+      return;
+    }
+    if (
+      !held ||
+      !UUID.test(held.commandId ?? "") ||
+      held.receiptScope !== this.view.receiptScope ||
+      !Number.isFinite(held.expiresAt) ||
+      held.expiresAt <= Date.now()
+    ) {
+      this.clearRecovery();
+      this.publish({
+        recovery: undefined,
+        ...(held &&
+        held.receiptScope === this.view.receiptScope &&
+        Number.isFinite(held.expiresAt) &&
+        held.expiresAt <= Date.now()
+          ? {
+              recovery:
+                "The previous save receipt has expired. Its outcome is unknown. Review the board before repeating any action.",
+            }
+          : {}),
+      });
+      return;
+    }
+    this.recoveryPending = true;
+    this.publish({
+      status: "saving",
+      recovering: true,
+      recovery: "Checking the previous uncertain save. Changes are disabled until its receipt is checked.",
+    });
+    current();
+    const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
+    current();
+    if (!response.ok) throw new Error("Receipt unavailable");
+    const outcome = value.receipt?.outcome;
+    if (outcome !== "accepted" && outcome !== "refused" && value.receipt !== null) throw new Error("Invalid receipt");
+    if (
+      outcome === "accepted" &&
+      Number.isSafeInteger(value.receipt.commandRevision) &&
+      value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
+    ) {
+      const latest = await this.request("/v1/workspace");
+      current();
+      if (!latest.response.ok || latest.value.snapshot?.revision < value.receipt.commandRevision)
+        throw new Error("The accepted save is not yet reflected in the board");
+      this.adopt(latest.value.snapshot);
+      current();
+      this.publish({ access: latest.value.access, accessUntil: latest.value.accessUntil });
+    }
+    current();
+    this.clearRecovery();
+    current();
+    this.publish({
+      status: "ready",
+      recovering: false,
+      recovery:
+        outcome === "accepted"
+          ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
+          : outcome === "refused"
+            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
+            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+    });
+  }
+
   /** A started POST may have committed even when changing roles aborts its response. */
   private sentCommandId: string | null = null;
   private queue: QueuedCommand[] = [];
   private unloadWarningActive = false;
   private readonly warnBeforeUnload = (event: BeforeUnloadEvent) => {
-    if (this.disposed || (!this.pending && !this.queue.length)) return;
+    if (this.disposed || (!this.pending && !this.queue.length && !this.recoveryPending)) return;
     event.preventDefault();
     event.returnValue = "";
   };
   /** Only commands need protection: an ordinary board refresh must not block leaving the page. */
   private syncUnloadWarning() {
     if (typeof window === "undefined") return;
-    const needed = !this.disposed && (this.pending !== null || this.queue.length > 0);
+    const needed = !this.disposed && (this.pending !== null || this.queue.length > 0 || this.recoveryPending);
     if (needed === this.unloadWarningActive) return;
     if (needed) window.addEventListener("beforeunload", this.warnBeforeUnload);
     else window.removeEventListener("beforeunload", this.warnBeforeUnload);
@@ -202,13 +356,19 @@ export class SharedWorkspaceClient {
       this.confirmations.delete(commandId);
     }
   }
-  private cancelQueued(message = "This queued action was cancelled. Review the board before trying again.") {
+  private cancelQueued(message = saveProblem("queuedCancelled")) {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
     this.syncUnloadWarning();
   }
-  private cancelAll(message: string) {
-    if (this.pending) this.settle(this.pending.commandId, "cancelled", message);
+  /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
+  private cancelAll(message: string, sentMessage = saveProblem("notConfirmed")) {
+    if (this.pending)
+      this.settle(
+        this.pending.commandId,
+        "cancelled",
+        this.sentCommandId === this.pending.commandId ? sentMessage : message,
+      );
     this.pending = null;
     this.sentCommandId = null;
     this.cancelQueued(message);
@@ -217,12 +377,8 @@ export class SharedWorkspaceClient {
     // Fence outgoing drawers before their unmount cleanup can autosave into the next desk.
     if (this.options.manageDrafts !== false) clearReferralDraftSession();
     if (this.pending && this.sentCommandId === this.pending.commandId)
-      this.settle(
-        this.pending.commandId,
-        "failed",
-        "The working role changed while this action was being saved. It may have been applied. Review the board before trying again.",
-      );
-    this.cancelAll("Your working role changed. Review the board before trying again.");
+      this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
+    this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
   /**
    * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
@@ -234,11 +390,7 @@ export class SharedWorkspaceClient {
     if (!pending) return;
     if (answered && body === pending) this.settle(pending.commandId, "refused", message);
     else if (this.sentCommandId === pending.commandId)
-      this.settle(
-        pending.commandId,
-        "failed",
-        "The session ended while this action was being saved. It may have been applied. Review the board before trying again.",
-      );
+      this.settle(pending.commandId, "failed", saveProblem("sessionEndedWhileSaving"));
   }
   private disposed = false;
   private busy = false;
@@ -276,12 +428,14 @@ export class SharedWorkspaceClient {
   constructor(
     private readonly options: {
       baseUrl: string;
-      token: () => Promise<string>;
+      token: (options?: { refresh?: boolean }) => Promise<string>;
       changed: (view: SharedView) => void;
       fetch?: typeof fetch;
       commandId?: () => string;
       /** False for detached sign-out cleanup: it never owns the current board's drafts. */
       manageDrafts?: boolean;
+      /** Tab-session opaque command identity only; never store an event or payload. */
+      recoveryStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
     },
@@ -336,10 +490,137 @@ export class SharedWorkspaceClient {
     for (const sheet of sheets ?? [])
       for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
   }
+  /**
+   * History's archived records for this desk and world generation, as the server last sent them.
+   * They are put back beside the live records of every snapshot this tab publishes, so History,
+   * reports and the patient record still show a closed record after it leaves the live workspace.
+   */
+  private archive: {
+    count: number;
+    generation: number;
+    accessContext: SharedSnapshot["accessContext"];
+    records: ArchivedRecords;
+  } | null = null;
+  /** The count the archive read in flight was asked for, so one read serves one change. */
+  private archiveAsked: number | null = null;
+  /** Bumped whenever the board is dropped, so an archive read sent before then is not used. */
+  private archiveEpoch = 0;
+  /** The last snapshot's payload as the server sent it, before archived records were put back. */
+  private rawPayload: SharedSnapshot["payload"] | null = null;
+  private withArchive(
+    payload: SharedSnapshot["payload"],
+    accessContext: SharedSnapshot["accessContext"],
+  ): SharedSnapshot["payload"] {
+    const archive = this.archive;
+    if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
+      return payload;
+    const state = { ...payload.state } as Record<string, unknown>;
+    for (const collection of ARCHIVED_COLLECTIONS) {
+      const live = payload.state[collection] as { id: string }[];
+      if (!archive.records[collection].length) continue;
+      const ids = new Set(live.map((record) => record.id));
+      state[collection] = [...archive.records[collection].filter((record) => !ids.has(record.id)), ...live];
+    }
+    return { ...payload, state: state as WardFlowState };
+  }
+  /** Reads the archive again when the server's count for it changed, then shows it. */
+  private async readArchive(count: number) {
+    if (this.archiveAsked === count || this.disposed) return;
+    this.archiveAsked = count;
+    const epoch = this.archiveEpoch;
+    const accessContext = this.view.snapshot?.accessContext;
+    try {
+      const { response, value } = await this.request("/v1/workspace/archive");
+      const held = this.view.snapshot;
+      if (
+        epoch !== this.archiveEpoch ||
+        !held ||
+        held.accessContext !== accessContext ||
+        !this.rawPayload ||
+        !response.ok ||
+        !Array.isArray(value?.records)
+      )
+        return;
+      const records: ArchivedRecords = { movements: [], referrals: [], broadcastAlerts: [] };
+      for (const record of value.records) {
+        const body = record?.body;
+        if (
+          !(ARCHIVED_COLLECTIONS as readonly string[]).includes(record?.collection) ||
+          !body ||
+          typeof body !== "object" ||
+          typeof body.id !== "string"
+        )
+          return;
+        records[record.collection as ArchivedCollection].push(body);
+      }
+      const archive = { count, generation: this.rawPayload.state.worldGeneration, accessContext, records };
+      const previous = this.archive;
+      this.archive = archive;
+      const payload = this.withArchive(this.rawPayload, accessContext);
+      // The records go back only when the board with them still passes the shared-state check.
+      if (!isValidSharedState?.(structuredClone(payload.state))) {
+        this.archive = previous;
+        return;
+      }
+      this.publish({ snapshot: { ...held, payload } });
+    } catch {
+      // History keeps what it had; the next count change asks again.
+    } finally {
+      if (epoch === this.archiveEpoch && this.archiveAsked === count) this.archiveAsked = null;
+    }
+  }
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
+    if (update.snapshot === null) {
+      // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
+      update = { accessUntil: undefined, recovery: undefined, ...update };
+      this.archive = null;
+      this.archiveAsked = null;
+      this.rawPayload = null;
+      this.archiveEpoch++;
+    }
     this.syncUnloadWarning();
-    this.view = { ...this.view, ...update, unconfirmedSave: this.pending !== null || this.queue.length > 0 };
+    this.view = {
+      ...this.view,
+      boardCurrent: false,
+      ...update,
+      recovering: this.recoveryPending,
+      unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
+    };
+    if ("accessUntil" in update) {
+      clearTimeout(this.accessTimer);
+      const deadline = this.view.accessUntil;
+      if (Number.isFinite(deadline)) {
+        const expire = () => {
+          if (this.disposed || this.view.accessUntil !== deadline) return;
+          const remaining = deadline! - Date.now();
+          if (remaining > 0) {
+            this.accessTimer = setTimeout(expire, Math.min(2_147_483_647, remaining));
+            return;
+          }
+          this.viewGeneration += 1;
+          this.roleLifetime.abort();
+          this.roleLifetime = new AbortController();
+          if (this.pending && this.sentCommandId === this.pending.commandId)
+            this.settle(
+              this.pending.commandId,
+              "failed",
+              "Access expired while this action was being saved. Its outcome is uncertain; review the board after reconnecting.",
+            );
+          this.cancelAll(`Access expired. ${saveProblem("notReady")}`);
+          this.clearRecovery();
+          forgetDowntimePack();
+          this.publish({
+            snapshot: null,
+            accessUntil: undefined,
+            status: "unavailable",
+            error: "Access verification expired. Reconnect to confirm your current role before viewing records.",
+          });
+        };
+        // Longer delays overflow browser timers; check again without ending future access.
+        this.accessTimer = setTimeout(expire, Math.min(2_147_483_647, Math.max(0, deadline! - Date.now())));
+      }
+    }
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
@@ -357,22 +638,57 @@ export class SharedWorkspaceClient {
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
       throw new Error("Incompatible workspace data");
+    if (Number.isFinite(snapshot.accessUntil)) {
+      if (snapshot.accessUntil! <= Date.now()) throw new Error("Access verification expired");
+      if (!Number.isFinite(this.view.accessUntil) || snapshot.accessUntil! < this.view.accessUntil!)
+        this.publish({ accessUntil: snapshot.accessUntil });
+    }
     const held = this.view.snapshot;
     if (snapshot.revision >= (held?.revision ?? 0)) {
       if (held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration) this.worldEpoch++;
+      // Cached and in-flight archive rows belong to the access view that requested them, even
+      // when the live payload, revision and whole-workspace archive count did not change.
+      if (held && snapshot.accessContext !== held.accessContext) {
+        this.archive = null;
+        this.archiveAsked = null;
+        this.archiveEpoch++;
+      }
       // Scoped polls also return full snapshots when only permissions may have changed. Keep
       // identical data stable for the provider and its field selectors, including draft owners.
-      const payload =
-        snapshot.revision === held?.revision && JSON.stringify(snapshot.payload) === JSON.stringify(held.payload)
-          ? held.payload
-          : snapshot.payload;
+      const same =
+        !!held &&
+        !!this.rawPayload &&
+        (snapshot.accessContext === held.accessContext || held.payload === this.rawPayload) &&
+        snapshot.revision === held.revision &&
+        JSON.stringify(snapshot.payload) === JSON.stringify(this.rawPayload);
+      if (!same) this.rawPayload = snapshot.payload;
+      const payload = same ? held.payload : this.withArchive(snapshot.payload, snapshot.accessContext);
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
       this.publish({ snapshot: { ...snapshot, payload }, receivedAt: Date.now() });
       this.noteOpenSheets();
+      const archived = snapshot.archived;
+      if (
+        typeof archived === "number" &&
+        archived > 0 &&
+        (archived !== this.archive?.count || this.archive.generation !== snapshot.payload.state.worldGeneration)
+      )
+        void this.readArchive(archived);
     }
   }
   private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
+    try {
+      return await this.requestOnce(path, body, false);
+    } catch (error) {
+      if (error !== FRESH_TOKEN) throw error;
+      return this.requestOnce(path, body, true);
+    }
+  }
+  private async requestOnce(
+    path: string,
+    body: PendingCommand | Record<string, unknown> | undefined,
+    retried: boolean,
+  ) {
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
@@ -384,7 +700,8 @@ export class SharedWorkspaceClient {
     await loadSharedStateCheck();
     let token: string;
     try {
-      token = await this.options.token();
+      // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
+      token = await (retried ? this.options.token({ refresh: true }) : this.options.token());
     } catch (error) {
       if (this.disposed || roleSignal.aborted) throw error;
       if (
@@ -393,6 +710,7 @@ export class SharedWorkspaceClient {
         error instanceof WardAuthError &&
         error.kind === "session"
       ) {
+        this.clearRecovery();
         this.settleForSessionEnd(body, error.message, false);
         this.cancelAll("The session ended. Sign in and review the board before trying again.");
         this.roleLifetime.abort();
@@ -406,8 +724,20 @@ export class SharedWorkspaceClient {
     const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
     const send = async (as: string | null) => {
-      if (path === "/v1/workspace/commands" && body && "commandId" in body)
+      // A token wait may outlive the ready board. Check at the actual access-write boundary too.
+      if (
+        body &&
+        (path.startsWith("/v1/workspace/access/") || path === "/v1/workspace/break-glass") &&
+        !this.accessChangeAllowed(path === "/v1/workspace/access/request")
+      )
+        throw new Error(`Shared access changes are unavailable. ${saveProblem("notReady")}`);
+      if (path === "/v1/workspace/commands" && body && "commandId" in body) {
+        if (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
+          throw new Error(`Access verification expired. ${saveProblem("notReady")}`);
         this.sentCommandId = body.commandId as string;
+        this.recoveryWrite(this.sentCommandId);
+      }
+
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -427,23 +757,22 @@ export class SharedWorkspaceClient {
       return { response, value, noRole };
     };
     const denied = (error: string) => {
+      this.clearRecovery();
       this.settleForSessionEnd(body, error, true);
-      this.cancelAll("The session ended. Review the board before trying again.");
+      this.cancelAll(saveProblem("sessionEnded"), saveProblem("sessionEndedWhileSaving"));
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
       this.publish({ snapshot: null, eventLog: [], status: "not-authorised", error });
       return new Error("Access denied");
     };
     const settleForRoleGate = () => {
+      this.clearRecovery();
       if (this.pending && body === this.pending)
-        this.settle(
-          this.pending.commandId,
-          "refused",
-          "Your working role ended. Review the board before trying again.",
-        );
+        this.settle(this.pending.commandId, "refused", saveProblem("roleEnded"));
       this.cancelForRoleChange();
     };
     const gate = (update: Partial<SharedView>) => {
+      this.clearRecovery();
       settleForRoleGate();
       this.roleLifetime.abort();
       this.roleLifetime = new AbortController();
@@ -495,8 +824,15 @@ export class SharedWorkspaceClient {
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
       throw denied(typeof value.error === "string" ? value.error : "Signed out. Sign in again to carry on.");
-    if (response.status === 401 || response.status === 403)
-      throw denied("Sign in with an account assigned a Ward Flow role.");
+    // Audit 4 A4-02: only the Ward Flow server's own refusal (JSON with its reason) ends the session.
+    // Its first 401 is asked once more with a fresh token, in case a refresh raced it; a command
+    // keeps its id, so it cannot run twice. A proxy's own 401 or 403 page is a lost connection.
+    if (response.status === 401 || response.status === 403) {
+      if (typeof value?.error !== "string") throw new Error("Workspace unavailable");
+      if (response.status === 401 && !retried) throw FRESH_TOKEN;
+      // Audit 24-3 SV-6: the server's own reason, as for `signed-out` and `session-limit` above.
+      throw denied(value.error);
+    }
     // The server holds more than one role for this account and needs to be told which.
     if (response.status === 409 && value?.code === "choose-role") {
       const choices: SharedRoleChoice[] = Array.isArray(value.choices)
@@ -521,7 +857,9 @@ export class SharedWorkspaceClient {
     return { response, value };
   }
   async refresh() {
-    if (this.busy || this.pending || this.disposed || this.gated()) return;
+    // Audit 4 A4-03: a save waiting on Retry does not stop the board being read: reads change
+    // nothing, and the person sees what changed before deciding to send it again.
+    if (this.busy || this.disposed || this.gated()) return;
     this.busy = true;
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -544,6 +882,8 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
+      if (Number.isFinite(value.accessUntil) && value.accessUntil <= Date.now())
+        throw new Error("Access verification expired");
       if (value?.notModified === true) {
         if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
@@ -553,16 +893,31 @@ export class SharedWorkspaceClient {
         this.adopt(value.snapshot);
         this.fullReadAt = Date.now();
       }
+      // Gate nested dispatches from changed() before exposing a recovered board as ready.
+      try {
+        this.recoveryPending =
+          !this.pending && (this.recoveryPending || !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY));
+      } catch {
+        /* Storage unavailable. */
+      }
       this.publish({
-        status: "ready",
-        error: this.view.status === "unavailable" ? null : this.view.error,
+        ...(this.pending
+          ? {
+              status: "unavailable" as const,
+              boardCurrent: true,
+              error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
+            }
+          : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
         access: value.access,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
         canSwitch: !!this.workingAs(),
         choices: undefined,
         canRequest: undefined,
+        accessUntil: Number.isFinite(value.accessUntil) ? value.accessUntil : undefined,
+        receiptScope: typeof value.receiptScope === "string" ? value.receiptScope : undefined,
       });
+      await this.recoverReceipt();
     } catch {
       if (
         generation === this.viewGeneration &&
@@ -570,12 +925,10 @@ export class SharedWorkspaceClient {
         !roleSignal.aborted &&
         !this.gated()
       ) {
-        this.cancelQueued(
-          "This queued action was cancelled because the board could not be refreshed. Reconnect and review the board before trying again.",
-        );
+        this.cancelQueued(saveProblem("queuedNotRefreshed"));
         this.publish({
           status: "unavailable",
-          error: "The shared board could not be refreshed. Reconnect before making changes.",
+          error: saveProblem("notRefreshed"),
         });
       }
     } finally {
@@ -593,11 +946,17 @@ export class SharedWorkspaceClient {
   dispatchConfirmed = (event: WardFlowEvent): Promise<WardCommandOutcome> => this.enqueue(event, true);
   private enqueue(event: WardFlowEvent, confirmed: boolean): Promise<WardCommandOutcome> {
     const commandId = (this.options.commandId ?? (() => crypto.randomUUID()))();
-    if (!this.view.snapshot || !["ready", "saving"].includes(this.view.status) || this.disposed)
+    if (
+      !this.view.snapshot ||
+      !["ready", "saving"].includes(this.view.status) ||
+      this.disposed ||
+      this.recoveryPending ||
+      (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
+    )
       return Promise.resolve({
         commandId,
         status: "cancelled",
-        message: "The workspace is not ready. Reconnect and review the board before trying again.",
+        message: saveProblem("notReady"),
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -644,11 +1003,7 @@ export class SharedWorkspaceClient {
           const queued = this.queue.shift();
           if (!snapshot || !queued) break;
           if (queued.worldEpoch !== this.worldEpoch) {
-            this.settle(
-              queued.commandId,
-              "cancelled",
-              "The workspace was replaced before this queued action ran. Review the current board.",
-            );
+            this.settle(queued.commandId, "cancelled", saveProblem("replaced"));
             continue;
           }
           const basis = this.basis(queued.sheets);
@@ -672,6 +1027,7 @@ export class SharedWorkspaceClient {
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
         this.sentCommandId = null;
+        this.clearRecovery();
         let reconciliationFailed = false;
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
@@ -755,7 +1111,7 @@ export class SharedWorkspaceClient {
           );
           this.publish({
             status: "unavailable",
-            error: `The action was ${response.ok ? "accepted" : "not applied"}, but the shared board could not be refreshed. Reconnect before making changes.`,
+            error: boardNotRefreshed(response.ok),
           });
           return;
         }
@@ -772,17 +1128,19 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? "This record changed while you were looking. Your action was not applied; review the latest details and try again."
+                ? saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
                     ? value.error
                     : command.event.role === "demo" && value.snapshot?.demoControls === false
-                      ? "Demo controls are switched off on the shared workspace. Nothing was changed."
+                      ? saveProblem("demoControlsOff")
                       : response.status === 422 && typeof value?.error === "string" && value.error.trim()
                         ? // Audit F-08: the workflow's own reason, as the local board shows it.
                           `${sentence(value.error)} Nothing was changed.`
-                        : "The action was not applied. Review the workflow requirements.",
+                        : response.status === 429
+                          ? saveProblem("busy")
+                          : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
           break;
@@ -800,18 +1158,13 @@ export class SharedWorkspaceClient {
       }
     } catch {
       if (generation === this.viewGeneration) {
-        if (this.pending)
-          this.settle(
-            this.pending.commandId,
-            "failed",
-            "Save is not confirmed. Reconnect and review the board before trying again.",
-          );
+        if (this.pending) this.settle(this.pending.commandId, "failed", saveProblem("connectionLost"));
         this.cancelQueued();
       }
       if (generation === this.viewGeneration && !this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({
           status: "unavailable",
-          error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
+          error: saveProblem("mayNotBeSaved"),
         });
     } finally {
       this.busy = false;
@@ -869,10 +1222,10 @@ export class SharedWorkspaceClient {
   }
   /**
    * Readiness review item 9: tells the server this desk opened a patient's record, on the patient
-   * or movement page. The server keeps it in a log nobody can change. Best effort: a failure never
+   * or movement page or in a referral's full detail (D-80). The server keeps it in a log nobody can change. Best effort: a failure never
    * stops the page, and the server ignores a repeat within a minute.
    */
-  async logRecordView(patientId: string, surface: "patient" | "movement"): Promise<void> {
+  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<void> {
     try {
       await this.request("/v1/workspace/record-access", { patientId, surface });
     } catch {
@@ -891,6 +1244,8 @@ export class SharedWorkspaceClient {
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
     this.cancelForRoleChange();
+    this.clearRecovery();
+    forgetDowntimePack();
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;
@@ -904,6 +1259,8 @@ export class SharedWorkspaceClient {
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
     this.cancelForRoleChange();
+    this.clearRecovery();
+    forgetDowntimePack();
     this.roleLifetime.abort();
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;
@@ -912,8 +1269,20 @@ export class SharedWorkspaceClient {
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
     void this.refresh();
   };
+  private accessChangeAllowed(requestingRole = false): boolean {
+    if (
+      this.disposed ||
+      this.recoveryPending ||
+      (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
+    )
+      return false;
+    if (requestingRole && this.view.status === "no-role") return true;
+    return !!this.view.snapshot && ["ready", "saving"].includes(this.view.status);
+  }
   /** A change on an access route: done, a fresh sign-in first, or the server's reason. */
   private async change(path: string, body: Record<string, unknown>): Promise<SharedChangeResult> {
+    if (!this.accessChangeAllowed(path === "/v1/workspace/access/request"))
+      return "Shared access changes are unavailable. Reconnect and finish checking any uncertain save first.";
     const { response, value } = await this.request(path, body);
     if (response.ok) return null;
     if (response.status === 401 && value?.code === "step-up") return "step-up";
@@ -928,6 +1297,16 @@ export class SharedWorkspaceClient {
       memberships: Array.isArray(value.memberships) ? value.memberships : [],
       requests: Array.isArray(value.requests) ? value.requests : [],
     };
+  }
+  /**
+   * The newest record openings for the Access log (D-80 item 14). Only the statewide coordinator
+   * and the access admin are answered; anyone else is refused.
+   */
+  async listRecordViews(): Promise<SharedRecordView[]> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok)
+      throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
+    return Array.isArray(value.views) ? value.views : [];
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */
   async listCovers(): Promise<SharedMembership[]> {
@@ -963,6 +1342,8 @@ export class SharedWorkspaceClient {
    * desk now sees it, so the record shows at once.
    */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
+    if (!this.accessChangeAllowed())
+      return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
     const { response, value } = await this.request("/v1/workspace/break-glass", { patientId, reason });
@@ -1010,8 +1391,12 @@ export class SharedWorkspaceClient {
   dispose() {
     this.disposed = true;
     this.stopWatchingSheets();
+    // Detached sign-out cleanup belongs to the outgoing account, never the replacement desk.
+    if (this.options.manageDrafts !== false) forgetDowntimePack();
+    clearTimeout(this.accessTimer);
+    this.syncUnloadWarning();
     this.lifetime.abort();
-    this.cancelAll("The connection closed. Review the board before trying again.");
+    this.cancelAll(saveProblem("connectionClosed"));
     this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   }
 }

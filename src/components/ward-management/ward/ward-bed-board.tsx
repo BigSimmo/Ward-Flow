@@ -4,6 +4,7 @@ import { Hand, LayoutGrid, List } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
@@ -14,7 +15,7 @@ import {
   usePatientNameDisplay,
 } from "@/components/ward-management/settings/discreet-names";
 
-import { bedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
+import { boardBedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
@@ -26,6 +27,7 @@ export type WaitingReferral = {
    * `ACCEPT_IN_PRINCIPLE` and a bed number); absent is a referral sent straight to the ward.
    */
   kind?: "referral" | "movement";
+  accepted?: boolean;
   id: string;
   name: string;
   /** For Discreet names on phone (A2-20): initials plus UMRN in place of the name. */
@@ -279,9 +281,10 @@ export function WardBedBoard({
   const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
-  const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined && !bed.preparing).length;
-  // The ready figure states how many beds are still being made ready, as every other ready figure does.
-  const { bedReleases } = useWardFlowSelect("bedReleases");
+  // Audit 24-4 NA2-09 (Josh, 24 Oct 2026): the ward's own ready figure (beds being made ready
+  // inside it), with the same "still being made ready" note as every other ready figure.
+  const { admissions, bedReleases } = useWardFlowSelect("admissions", "bedReleases");
+  const free = readyBedsNow(unit, admissions, bedReleases);
   const beingMadeReady = bedsPendingPreparation(unit.id, bedReleases);
   const leavingToday = beds.filter(
     (bed) =>
@@ -322,6 +325,7 @@ export function WardBedBoard({
                       : {
                           kind: "referral",
                           referralId: referral.id,
+                          accepted: referral.accepted,
                           name: referral.name,
                           secureBedNeeded: referral.secureBedNeeded,
                         },
@@ -331,6 +335,7 @@ export function WardBedBoard({
               <StatusGlyph tone={referral.waitedMinutes >= 240 ? "warning" : "neutral"} size={10} />
               <span className={styles.chipName}>{nameFor(referral.name, referral.umrn)}</span>
               <span className={styles.chipMeta}>
+                {referral.accepted ? "Accepted · hold or reassign · " : ""}
                 {referral.sex} · {durMinutes(referral.waitedMinutes)}
               </span>
             </button>
@@ -405,7 +410,7 @@ export function WardBedBoard({
                 style={{ "--cols": String(isPhone ? 4 : pods.length > 1 ? 4 : 8) } as CSSProperties}
               >
                 {pod.beds.map((bed) => {
-                  const fits = bedFits(bed, picked, isMixed);
+                  const fits = boardBedFits(beds, bed, picked, isMixed);
                   const source = picked?.kind === "stay" && picked.fromBed === Number(bed.bedNumber);
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
@@ -510,7 +515,7 @@ export function WardBedBoard({
         aside={
           <span className={styles.headCount}>
             <b>{free}</b> ready of {beds.length}
-            {beingMadeReady > 0 ? `, ${beingMadeReady} being made ready` : null}
+            {beingMadeReady > 0 ? `, ${beingMadeReady} still being made ready` : null}
           </span>
         }
         action={

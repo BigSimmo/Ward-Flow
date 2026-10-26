@@ -150,7 +150,6 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     </span>
                   </button>
                 </div>
-                <div className={styles.filterMeta}>Sorted by Longest Wait</div>
               </div>
               {demoVisibleReferrals.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
@@ -299,6 +298,10 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                     {edReferralsCount}
                   </span>
                 </button>
+              </div>
+              {/* The list is sorted by raisedAt, oldest first (community-screen.tsx), so it says so. */}
+              <div className={styles.filterMeta} data-testid="ward-community-waiting-order">
+                Longest wait first
               </div>
               {visibleWaitingReferrals.length === 0 ? (
                 <p className={styles.emptyNote}>

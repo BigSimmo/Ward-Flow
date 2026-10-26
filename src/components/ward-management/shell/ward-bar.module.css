@@ -174,7 +174,6 @@
   align-items: center;
   box-sizing: border-box;
   height: 28px;
-  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px 0 24px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
   border-radius: var(--wf-r-ctl);
@@ -193,13 +192,13 @@
 /* A7 (overall review, 20 Oct 2026): the demo clock's one place, beside the Prototype pill, on
  * screens wider than 1000px. It opens the demo controls in Tools. */
 .demoClock {
+  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 6px;
   box-sizing: border-box;
   height: 28px;
-  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
   border-radius: var(--wf-r-ctl);
@@ -208,6 +207,16 @@
   font: 500 12px / 1 var(--wf-font, inherit);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Layout sweep SHELL-02 (25 Oct 2026): a 28px face like the pills beside it, with a taller
+ * transparent hit area for touch tablets. */
+.demoClock::after {
+  content: "";
+  position: absolute;
+  inset: 50% -4px auto;
+  height: max(28px, var(--wf-tablet-tap, 0px));
+  transform: translateY(-50%);
 }
 
 .demoClock:hover {
@@ -293,12 +302,14 @@
     padding-left: max(18px, env(safe-area-inset-left, 0px));
   }
 
-  /* The title keeps its full width. */
+  /* Layout sweep WARD-04, MEET-22, STATS-04 (25 Oct 2026): the title gives way before New
+   * referral does. A long ward or page name ends in an ellipsis instead of pushing the + off screen. */
   .title {
-    flex-shrink: 0;
+    flex-shrink: 1;
+    min-width: 0;
   }
-  /* A long ward name still ends in an ellipsis rather than pushing the bar off the screen. */
   .titleGroup .place {
+    min-width: 0;
     max-width: 13rem;
   }
 
@@ -385,6 +396,46 @@
   display: flex;
   align-items: center;
   min-width: 0;
+}
+
+.screenHelp {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+/* Layout sweep SHELL-20 (25 Oct 2026): on touch tablets the 28px ? keeps its look and gains a
+ * 44px hit area, so the title row does not grow. */
+@media (pointer: coarse) {
+  .screenHelp {
+    position: relative;
+  }
+
+  .screenHelp::after {
+    content: "";
+    position: absolute;
+    inset: calc((28px - var(--wf-touch, 44px)) / 2);
+  }
+}
+
+.screenHelp:hover {
+  color: var(--wf-ink-1);
+  background: var(--wf-accent-tint);
+}
+
+.screenHelp:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
 }
 
 .place {
@@ -556,6 +607,18 @@
   }
 }
 
+/* R3-08 (device sweep, 24 Oct 2026): on a desktop bar the search folds first (its group starts from
+ * no width), so the title may still give way once the search is at its floor. Back or page tools
+ * kept it rigid, and a long page name ("Emergency department statistics" at 1024 and 1280) pushed
+ * New referral off the screen. The page name now ends in an ellipsis instead. Layout sweep WARD-04
+ * (25 Oct 2026): the same on a tablet portrait bar, where a long ward name did it at 820px. */
+@media (min-width: 48.0625rem) {
+  .deskBack + .title,
+  .bar:has(.pageTools:not(:empty)) .title {
+    flex-shrink: 1;
+  }
+}
+
 .mark {
   position: absolute;
   width: 1px;
@@ -623,7 +686,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  min-height: 36px;
+  /* SHELL-20: 44px rows on touch tablets. */
+  min-height: max(36px, var(--wf-tablet-tap, 0px));
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-sm);
@@ -1727,6 +1791,21 @@
   }
 }
 
+/* R7-08 (device sweep, 24 Oct 2026): the phone's scope line sits right under the title, and its
+ * forced-colours box (drawn on a hit area wider than the words) struck through the title. The
+ * phone draws the scope as plain text there, as it does in normal colours. */
+@media (forced-colors: active) and (max-width: 48rem) {
+  .scopeBadgeBtn::before {
+    border: 0;
+  }
+
+  /* The closed search's magnifier kept the dark band's white ink (an SVG keeps an author colour in
+     forced colours) and vanished on the system canvas. It takes the system text colour instead. */
+  .searchWrap :global([data-testid="ward-global-search"]) svg {
+    forced-color-adjust: auto;
+  }
+}
+
 @media print {
   .bar {
     display: none;
@@ -1913,6 +1992,22 @@
 .drawerFoot > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Layout sweep SHELL-20 (25 Oct 2026): the Demo time pill in the drawer foot keeps its 20px look
+ * and takes 44px of presses on a touch screen. */
+@media (pointer: coarse) {
+  .drawerFoot > button {
+    position: relative;
+  }
+
+  .drawerFoot > button::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    height: var(--wf-touch, 44px);
+    transform: translateY(-50%);
+  }
 }
 
 .footClock b {
@@ -2146,8 +2241,12 @@
   scroll-padding-inline: 0.375rem;
 }
 
+/* Layout sweep SHELL-17 (25 Oct 2026): the five categories ran 27px past the 461px drawer and cut
+ * "Transfers". Slimmer sides let them fit; they still scroll if a count grows. */
 .filterChipsTrack .filterChip {
   flex: 1 0 auto;
+  gap: 4px;
+  padding-inline: 5px;
 }
 
 /* An inset ring stays visible when a category scrolls into keyboard focus at either edge. */
@@ -2870,6 +2969,24 @@
     )
     .place {
     color: var(--wf-hero-ink);
+  }
+
+  /* Layout sweep SHELL-01 (25 Oct 2026): the screen help ? beside the title reads on the navy too. */
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .screenHelp {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .bar:is(
+      [data-band="ink"],
+      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+    )
+    .screenHelp:hover {
+    color: var(--wf-hero-ink);
+    background: var(--wf-on-hero-fill);
   }
 
   .bar:is(
@@ -3634,8 +3751,12 @@
     top: var(--wf-header-height, 3.5rem);
   }
 
-  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. */
+  /* The sheet is h-full of that shortened backdrop, so it ends at the bottom edge. B6-35 (device
+     sweep, 24 Oct 2026): it fills the width too, as below 640px, so no strip of page shows to its
+     left on a portrait tablet or a phone on its side. */
   .drawerSheetReferral {
+    width: 100vw;
+    max-width: 100vw;
     border-radius: 0;
   }
 }
@@ -3662,6 +3783,9 @@
       opacity: 1;
       color: transparent;
       caret-color: transparent;
+      /* R7-08: forced colours repainted the hidden text and its "Search" placeholder over the
+         magnifier. The closed field stays invisible there too; the open field below is themed. */
+      forced-color-adjust: none;
     }
 
     .bar .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
@@ -3709,6 +3833,7 @@
       :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
       color: var(--wf-ink-1);
       caret-color: var(--wf-focus-ring);
+      forced-color-adjust: auto;
     }
 
     .bar

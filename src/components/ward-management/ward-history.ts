@@ -64,11 +64,15 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge barrier recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
+  // Closing-the-loop (package E).
+  RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
+  RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
   RECEIVE_REFERRAL: { category: "patient", plainWording: "New referral received" },
   ACCEPT_REFERRAL: { category: "patient", plainWording: "Referral accepted by destination service" },
+  HOLD_REFERRAL_BED: { category: "both", plainWording: "Numbered bed held for accepted referral" },
   DECLINE_REFERRAL: { category: "patient", plainWording: "Referral declined by destination service" },
   RECORD_REFERRER_WITHDRAWAL: { category: "patient", plainWording: "Referral withdrawn by referrer" },
   ADD_REFERRAL_CORRECTION: { category: "patient", plainWording: "Referral details corrected" },
@@ -128,7 +132,6 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   BLOCK_BED_RELEASE: { category: "bed", plainWording: "Bed release blocked" },
   CLEAR_BED_RELEASE_BLOCK: { category: "bed", plainWording: "Bed release block cleared" },
   SET_BED_PREPARATION: { category: "bed", plainWording: "Bed cleaning and preparation status updated" },
-  RELEASE_BED: { category: "bed", plainWording: "Bed freed and returned to unit capacity" },
   RECORD_LEAVE_BED: { category: "bed", plainWording: "Patient leave of absence bed hold recorded" },
   END_LEAVE_BED: { category: "bed", plainWording: "Leave of absence bed hold concluded" },
   RECORD_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave recorded, bed held" },
@@ -160,6 +163,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   MARK_REFERRAL_INFORMATION_MET: { category: "patient", plainWording: "Information a ward asked for was provided" },
   ASSIGN_REFERRAL: { category: "patient", plainWording: "Referral assigned to a desk" },
   LOG_REFERRAL_CONTACT: { category: "patient", plainWording: "Call about a referral logged" },
+  RECORD_REFERRAL_COMMITMENT: { category: "patient", plainWording: "Response commitment on a referral recorded" },
   ASK_MORE_WARDS: { category: "patient", plainWording: "More wards asked about a referral" },
   CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
@@ -169,6 +173,12 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_RESTRICTIVE_PRACTICE_END: { category: "both", plainWording: "Seclusion or restraint ended" },
   RECORD_WARD_INCIDENT: { category: "bed", plainWording: "Ward incident recorded" },
   SET_SECLUSION_ROOM_STATUS: { category: "bed", plainWording: "Seclusion room status recorded" },
+  // Closing the loop, package D (24 Oct 2026).
+  MARK_CANCELLED_MOVE_CHECK: { category: "patient", plainWording: "Cancelled move check marked" },
+  RECORD_ACCEPTANCE_CONDITION: { category: "patient", plainWording: "Acceptance condition recorded" },
+  MARK_ACCEPTANCE_CONDITION_MET: { category: "patient", plainWording: "Acceptance condition met" },
+  RECORD_RESTRICTION_REVIEW: { category: "bed", plainWording: "Ward restriction review set" },
+  MARK_CLOSURE_TRANSITION_ITEM: { category: "bed", plainWording: "Closed ward item dealt with" },
   FLAG_MOVEMENT_URGENT: { category: "patient", plainWording: "Movement flagged as clinically urgent" },
   CLEAR_MOVEMENT_URGENT_FLAG: { category: "patient", plainWording: "Clinical urgency flag cleared" },
   RECORD_MOVEMENT_GENDER: { category: "patient", plainWording: "Patient gender placement guidance recorded" },
@@ -198,6 +208,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
   RECORD_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS notification recorded" },
   SEND_RELEASE_SUPPORT_NOTICE: { category: "bed", plainWording: "Discharge support notice sent" },
+  // Closing-the-loop package B (24 Oct 2026).
+  RECORD_DISCHARGE_DEPENDENCY: { category: "bed", plainWording: "Discharge dependency recorded" },
+  RECORD_DISCHARGE_PLAN_CHANGE: { category: "bed", plainWording: "Discharge plan changed" },
   RECORD_ARRIVAL_CHECK: { category: "patient", plainWording: "Arrival checklist item recorded" },
   // v10 pass 2 (10 Oct 2026): Undo and the ward Bed board.
   UNDO_REFERRAL_DECISION: { category: "patient", plainWording: "Referral decision undone" },
@@ -237,6 +250,15 @@ export function transportDeliveredWording(wardName?: string): string {
   return `Transport delivered to ${wardName && wardName.length > 0 ? wardName : "the receiving ward"}`;
 }
 
+/** Event types the engine no longer accepts, so records saved before removal still read plainly. Audit 24-1 decision 4 removed RELEASE_BED (24 Oct 2026). */
+const RETIRED_EVENT_HISTORY: Readonly<Record<string, EventTypeHistoryConfig>> = {
+  RELEASE_BED: { category: "bed", plainWording: "Bed freed and returned to unit capacity" },
+};
+
+function historyConfig(type: string): EventTypeHistoryConfig | undefined {
+  return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]] ?? RETIRED_EVENT_HISTORY[type];
+}
+
 /** The plain history wording for an event, with the officer's delivery told apart from arrival. */
 export function eventHistoryWording(
   type: string,
@@ -244,7 +266,7 @@ export function eventHistoryWording(
   wardName?: string,
 ): string | undefined {
   if (isTransportDelivery(type, role)) return transportDeliveredWording(wardName);
-  return EVENT_HISTORY_TABLE[type as WardFlowEvent["type"]]?.plainWording;
+  return historyConfig(type)?.plainWording;
 }
 
 function eventFieldString<K extends string>(event: WardFlowEvent, field: K): string | undefined {
@@ -349,7 +371,7 @@ export function selectPatientHistory(
   const matchingEntries: WardHistoryEntry[] = [];
 
   for (const event of events) {
-    const config = EVENT_HISTORY_TABLE[event.type];
+    const config = historyConfig(event.type);
     if (!config || (config.category !== "patient" && config.category !== "both")) continue;
 
     // D-14 (patient link is default-deny): match on the record ids only, never the patient link.
@@ -389,7 +411,7 @@ export function selectBedHistory(
   const matchingEntries: WardHistoryEntry[] = [];
 
   for (const event of events) {
-    const config = EVENT_HISTORY_TABLE[event.type];
+    const config = historyConfig(event.type);
     if (!config || (config.category !== "bed" && config.category !== "both")) continue;
 
     const unit = eventFieldString(event, "unitId");

@@ -40,7 +40,6 @@ import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
   NO_FILTERS,
   OVER_24H,
-  OVER_8H,
   SILENT_MINUTES,
   H24,
   H8,
@@ -58,10 +57,12 @@ import {
   ownerTiles,
   runwayBins,
   wardSummary,
+  waitingOrderLine,
   waitTone,
   type BoardFilters,
   type BoardRow,
   isOver24hInEd,
+  isOver8hInEd,
 } from "./delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -74,6 +75,7 @@ import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, 
 import styles from "./delays-board.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
+import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import {
   RowTimeline,
   WaitBar,
@@ -211,6 +213,14 @@ function useSideScroll(): [(node: HTMLDivElement | null) => void, { before: bool
   }, [node]);
   return [setNode, edges];
 }
+const WAITING_ROUTE = "/ward-flow/waiting";
+/** What Back brings back with the address's filters (`use-return-to-place.ts`): the opened groups. */
+type WaitingPlace = {
+  openGroups: Partial<Record<DelayCause, boolean>>;
+  moreGroups: Partial<Record<DelayCause, boolean>>;
+};
+const selectButton = (id: string) => rowWithAttribute("data-testid", `delays-select-${id}`, "button");
+
 export function DelaysBoard({
   groups,
   now,
@@ -294,8 +304,10 @@ export function DelaysBoard({
     writeDelaysFlat(next);
     replaceSearchParams({ order: next ? "longest" : "blocker" });
   };
-  const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
-  const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
+  const returned = useReturnedView<WaitingPlace>(WAITING_ROUTE);
+  const [openGroups, setOpenGroups] = useState<WaitingPlace["openGroups"]>(returned?.openGroups ?? {});
+  const [moreGroups, setMoreGroups] = useState<WaitingPlace["moreGroups"]>(returned?.moreGroups ?? {});
+  useReturnToPlace<WaitingPlace>(WAITING_ROUTE, { openGroups, moreGroups }, selectButton);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
   const [sideScrollRef, sideScroll] = useSideScroll();
@@ -338,6 +350,7 @@ export function DelaysBoard({
   // On a phone or tablet the person's panel is a sheet, so an explicit row choice brings it into view.
   const explicitSelect = useRef(false);
   const select = (id: string) => {
+    rememberReturnRow(WAITING_ROUTE, id);
     explicitSelect.current = selectedId !== id;
     setSelectedId((current) => (current === id ? null : id));
   };
@@ -366,6 +379,7 @@ export function DelaysBoard({
     if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
     // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
     explicitSelect.current = true;
+    rememberReturnRow(WAITING_ROUTE, id);
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
@@ -397,8 +411,8 @@ export function DelaysBoard({
     return () => document.removeEventListener("keydown", onKey);
   }, [close, filters, selectedId]);
 
-  const over8 = rows.filter((row) => row.waited >= OVER_8H).length;
-  // Audit 6 (Josh, 20 Oct 2026): "Over 24h" is people in an ED 24 hours or more, as the TV counts it.
+  // Audit 6 (Josh, 20 Oct 2026) and Audit 24-4 NA2-10 (24 Oct): both count people still in an ED, as the TV does.
+  const over8 = rows.filter(isOver8hInEd).length;
   const over24 = rows.filter(isOver24hInEd).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
@@ -1076,6 +1090,9 @@ export function DelaysBoard({
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
+                <span className={styles.meta} data-testid="delays-order-note">
+                  {waitingOrderLine(flat)}
+                </span>
                 <span className={styles.wlegend} aria-hidden="true">
                   <span>
                     <i className={styles.lgAct} />

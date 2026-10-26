@@ -9,6 +9,7 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 
 import { downtimePack, lastDowntimeSyncAt, noteDowntimeSync, rememberDowntimePack } from "./downtime-pack";
 import { useDowntimePackAccess } from "./downtime-pack-context";
+import { useOwnUnits } from "./use-own-units";
 
 /**
  * Takes a downtime pack of the desk's current scope and remembers it in this tab's memory (D-18).
@@ -18,25 +19,31 @@ import { useDowntimePackAccess } from "./downtime-pack-context";
  */
 export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | null }) => void {
   const now = useWardFlowClock();
-  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = useWardFlowSelect(
+  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration, shared } = useWardFlowSelect(
     "units",
     "admissions",
     "bedReleases",
     "leaveBeds",
     "movements",
     "worldGeneration",
+    "shared",
   );
+  // Beds of the desk's own wards only (issue #628): another ward's stays are not in this desk's
+  // records. Every ward still names a destination.
+  const bedUnits = useOwnUnits(units);
   const patientOf = usePatientOf();
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
+  const canTake = !shared?.enabled || shared.status === "ready";
   useEffect(() => {
-    if (online) noteDowntimeSync(now, worldGeneration);
-  }, [online, now, worldGeneration]);
+    if (online && canTake) noteDowntimeSync(now, worldGeneration);
+  }, [online, canTake, now, worldGeneration]);
   return useCallback(
     (options?: { shiftChangeAt?: Instant | null }): void => {
-      if (!ready) return;
+      if (!ready || !canTake) return;
       const pack = downtimePack({
         units,
+        bedUnits,
         admissions,
         bedReleases,
         leaveBeds,
@@ -55,6 +62,20 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         owner,
       );
     },
-    [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration, owner, ready, online],
+    [
+      units,
+      bedUnits,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      movements,
+      now,
+      patientOf,
+      worldGeneration,
+      owner,
+      ready,
+      online,
+      canTake,
+    ],
   );
 }

@@ -16,7 +16,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * THE TRANSPORT-LEG STEPPER, added to the transport officer's job cards per
- * `docs/ward-flow/build-contracts-2026-09-12/contract-transport-officer.md` §"What was built".
+ * `docs/ward-flow/archive/build-contracts-2026-09-12/contract-transport-officer.md` §"What was built".
  *
  * WF-005 is the seeded fixture's own case (`ward-movements.ts`): `transport.acceptedAt` is set and
  * `enRouteAt`/`collectedAt`/`arrivedAt` are not, so `transportLeg` reads "Accepted" and the next

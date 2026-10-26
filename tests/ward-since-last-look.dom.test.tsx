@@ -61,6 +61,42 @@ describe("the Command screen's 'Since you last looked' list", () => {
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
   });
 
+  it("does not save the picture when the screen closes because the session ended (Audit 4 A4-07)", async () => {
+    const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
+    const { unmount } = renderCommand();
+    endWardFlowBrowserSession();
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+  });
+
+  it("does not save the picture when the screen re-renders signed out before it closes (Audit 4 A4-07)", async () => {
+    const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
+    const account = { actorId: "synthetic-account-one", api: {} as SharedAccessApi };
+    const Command = ({ value }: { value: typeof account | null }) => (
+      <WardFlowProvider initialNow={NOW}>
+        <SharedAccessContext.Provider value={value}>
+          <CoordinatorScreen />
+        </SharedAccessContext.Provider>
+      </WardFlowProvider>
+    );
+    const view = render(<Command value={account} />);
+    endWardFlowBrowserSession();
+    // The real order: the workspace drops its account context, the screen re-renders, then closes.
+    view.rerender(<Command value={null} />);
+    view.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+
+    // A new sign-in saves on the way out again.
+    const next = render(<Command value={{ ...account }} />);
+    next.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
+      "synthetic-account-one",
+    );
+  });
+
   it("lists what is new since the remembered picture, and clears when marked as seen", () => {
     const snapshot = seededSnapshot();
     const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;

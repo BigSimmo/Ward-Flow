@@ -39,7 +39,6 @@
     "test:focused": "node scripts/test-focused.mjs",
     "test:live": "node scripts/run-live-tests.mjs",
     "test:coverage": "node scripts/run-vitest.mjs run --coverage --coverage.reportOnFailure=true && npm run check:coverage-inventory",
-    "bench": "vitest bench --run --config vitest.bench.config.mts",
     "test:e2e": "node scripts/run-playwright.mjs",
     "test:e2e:pr": "node scripts/run-playwright.mjs --project=chromium --grep-invert \"@quarantine|@mockup\"",
     "check:playwright-browser-revision": "node scripts/check-playwright-browser-revision.mjs",
@@ -90,6 +89,7 @@
     "docs:maintain": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --write",
     "docs:maintain:check": "node scripts/ward-flow/maintain-docs-and-organisation.mjs --check",
     "docs:facts": "node scripts/doc-facts.mjs",
+    "docs:freshness": "node scripts/check-living-docs-freshness.mjs",
     "docs:facts:write": "node scripts/doc-facts.mjs --write",
     "typecheck:backend": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow run typecheck",
     "test:backend:integration": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow run test:integration",
@@ -123,7 +123,6 @@
   "devDependencies": {
     "@axe-core/playwright": "~4.13.0",
     "@babel/parser": "^8.0.7",
-    "@codspeed/vitest-plugin": "^6.1.0",
     "@next/bundle-analyzer": "^16.4.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.2",

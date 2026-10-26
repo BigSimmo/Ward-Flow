@@ -1,4 +1,5 @@
 import { HEALTH_SERVICES, type HealthService } from "../ward-model";
+import { isSyntheticReferralTimelineBase } from "../ward-referral-seed-time";
 
 export const CHART_MAX_BYTES = 2 * 1024 * 1024;
 export const CHART_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const;
@@ -96,12 +97,19 @@ export type ReferralIntakeDetails = {
   reasonForReferral: string;
   legalStatus: string;
   riskFlags: (typeof REFERRAL_RISK_FLAGS)[number][];
-  medicalClearance: { cleared: boolean; expectedAt?: string; contactName?: string; contactPhone?: string };
+  medicalClearance: {
+    cleared: boolean;
+    expectedAt?: string;
+    contactName?: string;
+    contactPhone?: string;
+    /** Only generated seed targets carry their original Perth midnight for display rebasing. */
+    syntheticTimelineBase?: string;
+  };
   triageAndRampCompleted: boolean;
   charts: ReferralChart[];
   additionalDocuments: boolean;
   referrer: ReferralContact;
-  arrival?: { transport: string; reference: string; estimatedAt?: string };
+  arrival?: { transport: string; reference: string; estimatedAt?: string; syntheticTimelineBase?: string };
   clearanceChecklist?: ClearanceChecklist;
   needs?: ReferralNeeds;
 };
@@ -207,10 +215,12 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
     return "Choose recorded risk flags.";
   const medical = intake.medicalClearance;
   if (
-    !onlyFields(medical, ["cleared", "expectedAt", "contactName", "contactPhone"]) ||
+    !onlyFields(medical, ["cleared", "expectedAt", "contactName", "contactPhone", "syntheticTimelineBase"]) ||
     typeof medical.cleared !== "boolean"
   )
     return "Answer medical clearance.";
+  if (medical.syntheticTimelineBase !== undefined && !isSyntheticReferralTimelineBase(medical.syntheticTimelineBase))
+    return "Check the synthetic medical review timeline.";
   if (
     !medical.cleared &&
     (typeof medical.expectedAt !== "string" ||
@@ -257,7 +267,7 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
     return "Confirm the additional document.";
   if (
     intake.arrival &&
-    (!onlyFields(intake.arrival, ["transport", "reference", "estimatedAt"]) ||
+    (!onlyFields(intake.arrival, ["transport", "reference", "estimatedAt", "syntheticTimelineBase"]) ||
       typeof intake.arrival.transport !== "string" ||
       intake.arrival.transport.length > 100 ||
       typeof intake.arrival.reference !== "string" ||
@@ -265,6 +275,11 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       (intake.arrival.estimatedAt !== undefined && !Number.isFinite(Date.parse(intake.arrival.estimatedAt))))
   )
     return "Check the proposed arrival plan.";
+  if (
+    intake.arrival?.syntheticTimelineBase !== undefined &&
+    !isSyntheticReferralTimelineBase(intake.arrival.syntheticTimelineBase)
+  )
+    return "Check the synthetic arrival timeline.";
   const checklist = intake.clearanceChecklist;
   if (
     checklist !== undefined &&

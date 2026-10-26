@@ -9,6 +9,7 @@
  */
 import { BED_FINDER_MENU_ID } from "@/components/ward-management/shell/ward-rail-entries";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import type { SiteIdentity } from "@/components/ward-management/ward-sites";
 
 export type ScreenHelp = {
   /** The screen's name as the rail shows it. */
@@ -25,13 +26,13 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "What needs the coordinator now, across every ward, ED and movement.",
     actions: [
       "Work down the act-now list first. Each row opens the record it is about.",
-      "Check the ready and held bed figures before the bed meeting.",
+      "Check the ready and pulled bed figures before the bed meeting.",
       "Open Tasks in the header for everything addressed to this desk.",
     ],
   },
   capacity: {
     title: "Capacity",
-    purpose: "Each ward's confirmed beds, what is free, held or closed, and when it was last confirmed.",
+    purpose: "Each ward's confirmed beds, what is free, pulled or closed, and when it was last confirmed.",
     actions: [
       "Ask a ward to confirm its beds when the figure is old.",
       "Open a ward to see its beds and who is coming in.",
@@ -170,7 +171,8 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Handover ready", meaning: "The bed and paperwork are ready. Only the physical move is left." },
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
   { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },
-  { term: "Held bed", meaning: "A bed kept for one patient who has not arrived yet." },
+  { term: "Held bed", meaning: "A bed kept for a patient on leave or away from the ward, ready for their return." },
+  { term: "Pull time limit", meaning: "How long a pulled bed is kept before it returns to the ward." },
   { term: "Confirmed beds", meaning: "The bed figures a ward last confirmed, with the time it did so." },
   {
     term: "Tentative diagnosis",
@@ -190,14 +192,30 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "WACHS", meaning: "WA Country Health Service." },
 ];
 
-/** Every glossary term, Ward Flow's words then each hospital site code, sorted A to Z. */
+/** Initial glossary retained for existing imports. The help sheet reads the active directory below. */
 export const GLOSSARY: readonly GlossaryTerm[] = [
   ...WARD_FLOW_TERMS,
   ...siteDirectory.map((site) => ({ term: site.code, meaning: site.name })),
 ].toSorted((left, right) => left.term.localeCompare(right.term, "en-AU"));
 
+const glossaries = new WeakMap<readonly SiteIdentity[], readonly GlossaryTerm[]>([[siteDirectory, GLOSSARY]]);
+
+/** Stable terms for one scenario's identity directory; pass sites explicitly in React consumers. */
+export function glossaryForSites(sites: readonly SiteIdentity[]): readonly GlossaryTerm[] {
+  const existing = glossaries.get(sites);
+  if (existing) return existing;
+  const terms = [...WARD_FLOW_TERMS, ...sites.map((site) => ({ term: site.code, meaning: site.name }))].toSorted(
+    (left, right) => left.term.localeCompare(right.term, "en-AU"),
+  );
+  glossaries.set(sites, terms);
+  return terms;
+}
+
 /** Terms whose word or meaning contains `query`, ignoring case. An empty query matches all. */
-export function filterGlossary(query: string, terms: readonly GlossaryTerm[] = GLOSSARY): readonly GlossaryTerm[] {
+export function filterGlossary(
+  query: string,
+  terms: readonly GlossaryTerm[] = glossaryForSites(siteDirectory),
+): readonly GlossaryTerm[] {
   const needle = query.trim().toLocaleLowerCase("en-AU");
   if (!needle) return terms;
   return terms.filter(

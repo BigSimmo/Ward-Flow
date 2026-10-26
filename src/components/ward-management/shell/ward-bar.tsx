@@ -75,7 +75,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
+import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -116,6 +116,7 @@ import {
   WardBarServiceSelector,
 } from "./ward-bar-controls";
 import { WardBarActivityBody } from "./ward-bar-activity";
+import { usePhoneActivitySheet } from "./ward-phone-menu";
 import styles from "./ward-bar.module.css";
 
 // Moved to `ward-bar-model.ts`; re-exported so existing importers keep working.
@@ -366,6 +367,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
+  const tasksDismissalGuardRef = useRef<(() => boolean) | null>(null);
   // `ward-service-store.ts` — a `sessionStorage`-backed module store, not component-local state, so
   // the choice survives a remount (a route change unmounts and remounts this bar) and stays in sync
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
@@ -394,9 +396,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
-  // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
+  // Phone: the menu's sheets return focus to Menu, or to Back where a drill-down shows it instead.
   const phoneMenuRef = useRef<HTMLButtonElement>(null);
-  // On a phone drill-down Back replaces Menu, so focus returns to whichever of the two is showing.
   const phoneBackRef = useRef<HTMLButtonElement>(null);
   const phoneReturnTarget = useMemo<RefObject<HTMLButtonElement | null>>(
     () => ({
@@ -634,6 +635,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (id: WardBarPopoverId, announce = true) => {
       // Do not issue another Back while the first one is still waiting for popstate.
       if (closingViaHistoryRef.current !== null) return;
+      if (id === "tasks" && tasksDismissalGuardRef.current?.() === false) return;
       if (typeof window === "undefined" || !window.history) {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -689,6 +691,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
+      if (openPanel === "tasks" && id !== "tasks" && tasksDismissalGuardRef.current?.() === false) return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -729,7 +732,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       tasksActiveCount,
     ],
   );
-
+  const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
    * fresh with what this open asked for. `returnFocus` is where focus goes when it closes.
@@ -1112,14 +1115,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
         roleCategory={roleCategory}
-        onOpenDrawer={openPopover}
+        onOpenDrawer={activitySheet.openFromPhone}
         onOpenReferral={openReferral}
         liveOverSheet={headerLiveOverSheet}
       />
-      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's
-          tap target, not only the 91 x 18 service line. A tap on the title forwards to the service
-          button, which stays the one keyboard and screen-reader control; taps inside the button's
-          own container (the button itself, the sheet and its scrim) are left to it. */}
+      {/* Device audit (11 Oct 2026): on the phone the whole title block is the service control's tap
+          target, not the 91 x 18 line alone. A title tap forwards to the service button, the one keyboard
+          and screen-reader control; taps in its own container (button, sheet, scrim) are left to it. */}
       {backHref ? <WardBarBack parentHref={backHref} phone={false} /> : null}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
@@ -1141,6 +1143,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           >
             {routeTitle}
           </span>
+          {isPhone ? null : <WardHelpScreenButton title={routeTitle} className={styles.screenHelp} />}
         </div>
 
         <WardBarServiceSelector
@@ -1187,7 +1190,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
         <span
           className={styles.mark}
-          title="Patient and flow data are synthetic; WA hospital sites and health-service names are real. Not approved for clinical use."
+          title="Patient and flow data are synthetic; service names depend on the selected demonstration scenario. Not approved for clinical use."
         >
           <span className={styles.markLong}>Synthetic </span>prototype
         </span>
@@ -1280,7 +1283,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={isPhone ? phoneReturnTarget : activityTriggerRef}
+        {...activitySheet.sheetProps}
         descriptionContent={
           isPhone ? (
             // v10 Activity sheet (phone): one quiet line, then the list.
@@ -1378,6 +1381,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               now={now}
               dispatch={dispatch}
               onClose={() => closePopover("tasks")}
+              dismissalGuardRef={tasksDismissalGuardRef}
               onSelectMovement={openMovement}
               onSelectDischarge={openDischarge}
               records={{ movements, admissions, patients, referrals, units }}

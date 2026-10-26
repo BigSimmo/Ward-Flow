@@ -18,6 +18,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { bedsForecastSources, type BedsForecastSources } from "./beds-forecast-sources";
 import { plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
+import { forecastReleaseAt } from "../forecast/forecast-release-date";
 
 /**
  * Tomorrow and the day after, as rolling windows from now (24 and 48 hours). Written in days so the
@@ -108,6 +109,8 @@ export function bedsForecast(
   const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], []).ready, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
+  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
   const pending = releases.filter((release) => release.state !== "discharged" && openUnitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
   const waitingMovements = movements.filter(
@@ -122,9 +125,9 @@ export function bedsForecast(
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
     const until = now + days * MINUTES_PER_DAY;
     const hours = (days * MINUTES_PER_DAY) / 60;
-    const due = pending.filter((release) => release.expectedAt <= until);
+    const due = pending.filter((release) => expectedAt(release) <= until);
     const clear = due.filter((release) => release.blocker === null);
-    const onTime = clear.filter((release) => dayOf(release.expectedAt) >= dayOf(now));
+    const onTime = clear.filter((release) => dayOf(expectedAt(release)) >= dayOf(now));
     const confirmed = onTime.filter((release) => release.state === "confirmed").length;
     const expected = onTime.filter((release) => release.state === "expected").length;
     const heldUp = due.length - clear.length;

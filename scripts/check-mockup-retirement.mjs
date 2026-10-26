@@ -107,7 +107,7 @@ export const OWNER_DECISION_TABLE_HEADER = ["Retired", "Route", "Approved by", "
 export const DEVELOPER_GATE_SOURCE = "src/lib/developer-area/headers.ts";
 
 /** Directories under the mockup route root that are shell/infrastructure, not routes. */
-const NON_ROUTE_ENTRIES = new Set(["mockups.css", "layout.tsx", "mockups-layout-client.tsx"]);
+const NON_ROUTE_ENTRIES = new Set(["mockups.css", "layout.tsx", "error.tsx", "mockups-layout-client.tsx"]);
 
 const errorMessage = (error) => (error instanceof Error ? error.message.split(/\r?\n/, 1)[0] : String(error));
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { usePracticeRunning } from "@/components/ward-management/demo-reset/ward-practice-session";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -10,10 +11,11 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 import styles from "./ward-offline-banner.module.css";
 
 // Design audit DA-07: a screen in full screen (the bed meeting TV) shows only the element it made
-// full screen, so the notice moves inside that element, pinned to its top corner, while it lasts.
+// full screen, so the notice moves inside that element, pinned to its bottom corner so it never
+// covers "Leave full screen" or "Leave TV view" at the top (DR-10), while it lasts.
 const FULLSCREEN_PLACEMENT = {
   position: "fixed",
-  insetBlockStart: "0.75rem",
+  insetBlockEnd: "0.75rem",
   insetInlineEnd: "0.75rem",
   zIndex: 10,
   maxInlineSize: "min(36rem, calc(100% - 1.5rem))",
@@ -43,12 +45,35 @@ function useLastDowntimePackAt(): number | null {
 }
 
 /**
+ * Audit 24-7 (CT-17): while a practice runs, the real screens look the same, so a slim line on every
+ * Ward Flow page says practice is on and its steps are real saves. Hidden when none is running.
+ */
+function WardPracticeLine() {
+  const running = usePracticeRunning();
+  if (!running) return null;
+  return (
+    <p className={styles.quiet} role="status" data-testid="ward-practice-line">
+      Practising: synthetic demo steps are real saves on this device. Stop in Tools.
+    </p>
+  );
+}
+
+/**
  * A quiet notice when the device loses its network connection. The prototype keeps its state in
  * this tab's memory, so screens keep working; the notice says so, and that nothing is syncing, so
  * nobody reads "Live" as current while Wi-Fi is down. It also says which downtime pack to use if
- * the screen stops. Renders nothing while online.
+ * the screen stops. Renders nothing while online. It also carries the practice line (CT-17).
  */
 export function WardOfflineBanner() {
+  return (
+    <>
+      <WardPracticeLine />
+      <WardOfflineNotice />
+    </>
+  );
+}
+
+function WardOfflineNotice() {
   const online = useOnlineStatus();
   const fullscreenElement = useFullscreenElement();
   const lastPackAt = useLastDowntimePackAt();

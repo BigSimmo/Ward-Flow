@@ -1,5 +1,7 @@
-# Weekly dependency updates, grouped so each ecosystem opens one minor/patch PR a week.
-# Majors still arrive as their own PRs so a breaking change is reviewed on its own.
+# Security updates only (Josh, 24 October 2026). A limit of 0 turns off routine version-update PRs;
+# Dependabot still opens a PR when a dependency has a published security advisory, grouped so each
+# ecosystem's fixes arrive together. This needs "Dependabot security updates" switched on in the
+# repository's Code security settings.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,7 +11,7 @@ updates:
       day: monday
       time: "06:00"
       timezone: Australia/Perth
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     # axe 4.14 turns on label-content-name-mismatch, which flags about 30 existing components whose
     # aria-label leaves out their visible text. Held at 4.13 until those labels are fixed (October 2026).
     ignore:
@@ -22,8 +24,9 @@ updates:
       - dependency-name: "typescript"
         versions: [">=7.0.0"]
     groups:
-      root-minor-and-patch:
-        update-types: [minor, patch]
+      root-security:
+        applies-to: security-updates
+        patterns: ["*"]
 
   - package-ecosystem: npm
     directory: /backend/ward-flow
@@ -32,10 +35,11 @@ updates:
       day: monday
       time: "06:00"
       timezone: Australia/Perth
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0
     groups:
-      backend-minor-and-patch:
-        update-types: [minor, patch]
+      backend-security:
+        applies-to: security-updates
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -44,8 +48,8 @@ updates:
       day: monday
       time: "06:00"
       timezone: Australia/Perth
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0
     groups:
-      actions:
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]
-        update-types: [minor, patch]

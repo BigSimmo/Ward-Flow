@@ -863,7 +863,6 @@
     "tests/ward-statistics-empty-bed-spread.dom.test.tsx": 7.5,
     "tests/ward-statistics-hero-export.dom.test.tsx": 3.5,
     "tests/ward-statistics-incoherent-gap.test.ts": 0.1,
-    "tests/ward-statistics-insight-chart.dom.test.tsx": 4.2,
     "tests/ward-statistics-journey-view.dom.test.tsx": 2.4,
     "tests/ward-statistics-map-view.dom.test.tsx": 3,
     "tests/ward-statistics-navigation.dom.test.tsx": 1.9,

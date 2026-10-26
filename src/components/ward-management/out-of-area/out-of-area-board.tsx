@@ -1,7 +1,6 @@
 "use client";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -30,7 +29,12 @@ import {
   DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -41,7 +45,7 @@ import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-manageme
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 
 import {
@@ -76,6 +80,7 @@ import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-ma
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -101,6 +106,8 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
+
+const OUT_OF_AREA_TABS = ["now", "history"] as const;
 
 /**
  * Only a resolved person gets a link. A UMRN is never put in a URL (it can be typed text, and the
@@ -200,7 +207,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [region, setRegion] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
-  const [tab, setTab] = useState<"now" | "history">("now");
+  // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+  const [tab, setTab] = useAddressTab("tab", OUT_OF_AREA_TABS, "now");
 
   const selectionOriginRef = useRef<HTMLElement | null>(null);
   const detailColumnRef = useRef<HTMLDivElement | null>(null);
@@ -567,10 +575,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ]);
     }
     try {
-      downloadBlob(
-        new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-        "ward-flow-synthetic-out-of-area.csv",
-      );
+      downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope:
+          "Out-of-area admissions; the complete current ledger, regardless of search, highlights or the selected tab",
+      });
     } catch {
       setToolNote("Export is not available in this browser");
     }

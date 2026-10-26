@@ -1,4 +1,5 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { isSyntheticReferralTimelineBase } from "@/components/ward-management/ward-referral-seed-time";
 
 /**
  * Shifts a seeded Ward Flow state onto a different anchor, preserving every relative offset.
@@ -90,12 +91,18 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "confirmedAt",
   "decidedAt",
   "dueAt",
+  "previousDueAt",
   "enRouteAt",
   "expectedAt",
+  // Closing-the-loop package B (24 Oct 2026): the time a discharge plan change moved away from.
+  "previousExpectedAt",
   "expectedReturn",
   "formedAt",
+  "formWrittenAt",
   "openedAt",
   "raisedAt",
+  // D-80: the discharge a ward copy's readmission flag points back to (`Movement.readmissionDischargedAt`).
+  "readmissionDischargedAt",
   /**
    * FD-5's withdrawal time on a `ReferralAddressing` (O-17.11, 2026-09-12). ⚠️ **Found by this set's
    * own guard, not by remembering** — the field landed in `ward-model.ts` and the test went red
@@ -107,6 +114,9 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
    * read a data error.
    */
   "withdrawnAt",
+  // Closing-the-loop package A: a promised answer time and a next callback time on a commitment entry.
+  "promisedFor",
+  "nextCallbackAt",
   // ── `Admission`, in `ward-admissions.ts`. Absent until 2026-08-31 because the guard test never
   //    looked at that file; see this set's own comment for what each one was getting wrong.
   "pulledAt",
@@ -182,6 +192,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "metAt",
   // The criteria status's derived lapse time. Never stored, but declared as an Instant beside them.
   "lapsesAt",
+  // Closing-the-loop (package E): a home service return's request, answer and review day.
+  "requestedAt",
+  "answeredAt",
+  "nextReviewAt",
 ]);
 
 /**
@@ -195,16 +209,36 @@ export function shiftInstants<T>(value: T, offsetMinutes: number): T {
   return shift(value, offsetMinutes) as T;
 }
 
-function shift(value: unknown, offsetMinutes: number): unknown {
-  if (Array.isArray(value)) return value.map((entry) => shift(entry, offsetMinutes));
+function shift(value: unknown, offsetMinutes: number, path: string[] = []): unknown {
+  if (Array.isArray(value)) return value.map((entry) => shift(entry, offsetMinutes, path));
   if (value === null || typeof value !== "object") return value;
 
   const result: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    // Form targets are ISO strings; shift only these structured intake fields, never prose.
+    const isoTarget =
+      path.at(-2) === "intake" &&
+      ((path.at(-1) === "medicalClearance" && key === "expectedAt") ||
+        (path.at(-1) === "arrival" && key === "estimatedAt"));
+    if (
+      isoTarget &&
+      isSyntheticReferralTimelineBase((value as Record<string, unknown>).syntheticTimelineBase) &&
+      typeof entry === "string" &&
+      offsetMinutes !== 0 &&
+      Number.isFinite(Date.parse(entry))
+    ) {
+      // An offset that carries the date outside the representable range leaves the text as written
+      // rather than throwing: the numeric instants beside it simply become large numbers.
+      const moved = new Date(Date.parse(entry) + offsetMinutes * 60_000);
+      if (Number.isFinite(moved.getTime())) {
+        result[key] = moved.toISOString();
+        continue;
+      }
+    }
     result[key] =
       INSTANT_FIELDS.has(key) && typeof entry === "number"
         ? ((entry + offsetMinutes) as Instant)
-        : shift(entry, offsetMinutes);
+        : shift(entry, offsetMinutes, [...path, key]);
   }
   return result;
 }

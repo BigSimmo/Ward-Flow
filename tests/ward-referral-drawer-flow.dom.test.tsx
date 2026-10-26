@@ -140,9 +140,11 @@ describe("approved four-tab referral drawer journey", () => {
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
     fireEvent.click(first);
     expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();
+    // The seeded referrals already carry authored intakes, so count from that baseline.
+    const baseline = Number(screen.getByTestId("submitted-count").textContent);
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
-    expect(screen.getByTestId("submitted-count")).toHaveTextContent("0");
+    expect(screen.getByTestId("submitted-count")).toHaveTextContent(String(baseline));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "sender@example.com" } });
     fireEvent.change(screen.getByLabelText("Phone number"), { target: { value: "0412345678" } });
@@ -150,14 +152,14 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.change(screen.getByLabelText("Location or service"), { target: { value: "Royal Perth ED" } });
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Referral sent" })).toBeVisible());
-    expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("submitted-count")).toHaveTextContent(String(baseline + 1));
     expect(screen.getByTestId("referral-errors")).toBeEmptyDOMElement();
     // A2-6: the details sent are kept in tab memory for the next referral, never browser storage.
     expect(readLastReferrerContact()).toMatchObject({ name: "Demo Sender", role: "Nurse" });
     forgetReferrerContact();
     expect(JSON.stringify(sessionStorage)).not.toContain("sender@example.com");
     fireEvent.submit(document.getElementById("referralConfirmForm")!);
-    expect(screen.getByTestId("submitted-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("submitted-count")).toHaveTextContent(String(baseline + 1));
     const inbox = screen.getByRole("region", { name: "Ward referral inbox" });
     expect(inbox).toHaveTextContent("Synthetic patient story for inbox review");
     fireEvent.click(within(inbox).getByRole("button", { name: "Waitlist" }));
@@ -186,7 +188,12 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 
     expect(origin()).toHaveAttribute("aria-invalid", "true");
     expect(origin()).toHaveAccessibleDescription("Choose the location of referral");
-    await waitFor(() => expect(origin()).toHaveFocus());
+    // Error summary (Josh approved 24 Oct 2026): focus lands on the step's summary; its link reaches the field.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
+    expect(origin()).toHaveFocus();
 
     fireEvent.change(origin(), { target: { value: "RPH" } });
     expect(origin()).not.toHaveAttribute("aria-invalid");
@@ -203,6 +210,10 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("Choose the location of referral");
     expect(origin()).toBeVisible();
-    await waitFor(() => expect(origin()).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
+    expect(origin()).toHaveFocus();
   });
 });

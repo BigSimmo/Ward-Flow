@@ -3421,9 +3421,6 @@
   .heroMeta {
     font-size: var(--wf-fs-13);
     color: var(--wf-hero-ink-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .heroBedListLink {
@@ -3765,13 +3762,13 @@
     outline-offset: 2px;
   }
 
+  /* Layout sweep WARD-15: the shift line wraps at every width, so the involuntary and staffing
+     status at its end is never cut off (a touch screen cannot hover to read it). */
   .heroMeta {
     display: block;
     min-width: 0;
     font-size: var(--wf-fs-12);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
   }
 
   .heroMetaIcon {
@@ -3915,6 +3912,12 @@
     display: none;
   }
 
+  /* Layout sweep CRIT-08: the find box shrinks so Find, More and Raise referral stay on one row
+     beside the tabs instead of Raise referral dropping to a second line. */
+  .tabTools {
+    flex-wrap: nowrap;
+  }
+
   .toolMore {
     display: inline-flex;
   }
@@ -3989,8 +3992,11 @@
 
 /* Option B (Josh, 20 Oct 2026): under the hero's numbers, one quiet line with the confirm time,
    Confirm numbers, the Notices bell and More. These replace the chip row above the tabs. */
+/* Device sweep R1-09/B6-15: the row wraps, so on a narrow phone the confirm time keeps its own full
+   line above the buttons instead of being cut to "Confir…". */
 .phoneHeroFoot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   width: 100%;
@@ -3999,12 +4005,20 @@
 
 .phoneHeroConfirmed {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: min(100%, max-content);
   overflow: hidden;
   font-size: var(--wf-fs-12);
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--wf-hero-ink-2);
+}
+
+/* A narrow phone gives the confirm time the first line and keeps the three buttons together on the
+   second, rather than leaving the bell and More on a line of their own. */
+@media (max-width: 30rem) {
+  .phoneHeroConfirmed {
+    flex-basis: 100%;
+  }
 }
 
 .phoneHeroAction {
@@ -4086,6 +4100,10 @@
   flex: none;
 }
 
+.phoneHeroTitle .wardSwitchName {
+  overflow: hidden;
+}
+
 .phoneHeroTitle {
   position: relative;
   display: flex;
@@ -4100,6 +4118,11 @@
    name never pushes it off the right edge of a phone. */
 .phoneHeroTitle > .wardSwitchAnchor {
   position: static;
+  /* Layout sweep WARD-03: the anchor may shrink, so a long ward name ends in an ellipsis rather
+     than pushing the hero past a 360px screen. */
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .phoneHeroTitle > .wardSwitchAnchor > [role="menu"] {

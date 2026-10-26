@@ -22,6 +22,7 @@ import {
   type BroadcastTargetScope,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { directiveDesks, wardsInBroadcastScope } from "./alerts/global-alert-view";
+import { meetingActionOfInboxId } from "./bed-meeting/bed-meeting-actions";
 import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
 import { movementSourceAdmission, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
@@ -248,6 +249,14 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   rejections: () => [],
   refreshRequests: (context) =>
     context.coordinator ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId)) : [],
+  // Closing-the-loop (package E): directory checks name a mock directory entry and a desk, never a
+  // person, so every desk keeps them.
+  directoryChecks: (context) => context.state.directoryChecks ?? [],
+  // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
+  homeServiceReturns: (context) =>
+    context.coordinator
+      ? (context.state.homeServiceReturns ?? []).filter((record) => context.admissionIds.has(record.admissionId))
+      : [],
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
@@ -462,30 +471,69 @@ function closeReferences(
   };
 }
 
-/** Every record id a command could name, by the list it lives in, audit entries and reviews included. */
-function recordIds(state: WardFlowState): Set<string> {
-  return new Set<string>([
-    ...state.patients.map((patient) => patient.id),
-    ...state.movements.map((movement) => movement.id),
-    ...state.admissions.map((admission) => admission.id),
-    ...state.referrals.map((referral) => referral.id),
-    ...state.plannedAdmissions.map((booking) => booking.id),
-    ...state.bedReleases.map((release) => release.id),
-    ...state.leaveBeds.map((bed) => bed.id),
-    ...state.notices.map((notice) => notice.id),
-    ...state.broadcastAlerts.map((alert) => alert.id),
-    ...state.auditEvents.map((event) => event.id),
-    ...state.auditReviews.map((review) => review.id),
-  ]);
+/** Existing-record pointers only. Creation/correlation ids and text are not record lookups. */
+const COMMAND_RECORD_FIELDS = {
+  patientId: "patients",
+  movementId: "movements",
+  admissionId: "admissions",
+  referralId: "referrals",
+  plannedAdmissionId: "plannedAdmissions",
+  releaseId: "bedReleases",
+  leaveBedId: "leaveBeds",
+  noticeId: "notices",
+  alertId: "broadcastAlerts",
+  eventId: "auditEvents",
+  reviewId: "auditReviews",
+} as const;
+type CommandRecordCollection = (typeof COMMAND_RECORD_FIELDS)[keyof typeof COMMAND_RECORD_FIELDS] | "invalid";
+type CommandRecordReference = { collection: CommandRecordCollection; id: string };
+
+function inboxRecordReference(rowId: string): CommandRecordReference | null {
+  rowId = rowId.trim();
+  const category = Object.entries(INBOX_CATEGORIES)
+    .filter(([, { idPrefix }]) => rowId.startsWith(idPrefix))
+    .sort((a, b) => b[1].idPrefix.length - a[1].idPrefix.length)[0];
+  if (!category) return { collection: "invalid", id: rowId };
+  const [kind, { idPrefix }] = category;
+  const id = rowId.slice(idPrefix.length);
+  switch (kind) {
+    case "daily_check":
+      return null;
+    case "bed_meeting_action": {
+      const action = meetingActionOfInboxId(rowId);
+      return action
+        ? { collection: action.subject.kind === "movement" ? "movements" : "admissions", id: action.subject.id }
+        : { collection: "invalid", id: rowId };
+    }
+    case "support_notification_discharge":
+    case "absent_without_leave":
+      return { collection: "admissions", id };
+    case "planned_arrival_overdue":
+      return { collection: "plannedAdmissions", id };
+    case "duplicate_bed_request":
+      return { collection: "patients", id };
+    default:
+      return { collection: "movements", id };
+  }
 }
 
-/** Every string inside a command, however deep. */
-function commandStrings(value: unknown, into: string[] = [], depth = 0): string[] {
+/** Includes named pointers in nested observation targets, never arbitrary string values or ids. */
+function commandRecordReferences(
+  value: unknown,
+  into: CommandRecordReference[] = [],
+  depth = 0,
+): CommandRecordReference[] {
   if (depth > 8) return into;
-  if (typeof value === "string") into.push(value);
-  else if (Array.isArray(value)) for (const item of value) commandStrings(item, into, depth + 1);
+  if (Array.isArray(value)) for (const item of value) commandRecordReferences(item, into, depth + 1);
   else if (value && typeof value === "object")
-    for (const item of Object.values(value as Record<string, unknown>)) commandStrings(item, into, depth + 1);
+    for (const [key, item] of Object.entries(value)) {
+      if (typeof item === "string" && Object.hasOwn(COMMAND_RECORD_FIELDS, key))
+        into.push({ collection: COMMAND_RECORD_FIELDS[key as keyof typeof COMMAND_RECORD_FIELDS], id: item });
+      else if (key === "inboxItemId" && typeof item === "string") {
+        const reference = inboxRecordReference(item);
+        if (reference) into.push(reference);
+      } else commandRecordReferences(item, into, depth + 1);
+    }
   return into;
 }
 
@@ -619,18 +667,17 @@ export function commandScopeRefusal(
     ? scopeWardFlowState(state, access, options)
     : { breakGlassPatientIds: new Set<string>() };
   const glass = (item: { patientId?: string | null }) => seenThroughBreakGlass(item, breakGlassPatientIds);
-  const writable = recordIds({
+  const writableState = {
     ...scopedWithoutGrants,
     patients: scopedWithoutGrants.patients.filter((patient) => !breakGlassPatientIds.has(patient.id)),
     movements: scopedWithoutGrants.movements.filter((movement) => !glass(movement)),
     admissions: scopedWithoutGrants.admissions.filter((admission) => !glass(admission)),
     referrals: scopedWithoutGrants.referrals.filter((referral) => !glass(referral)),
-  });
-  const all = recordIds(state);
+  };
   // A seeded governance entry can be reviewed, and the whole workspace finds one about any record
   // (`governanceAuditEntry`), so every seeded id counts as a record. A coordinator may name only the
   // ones its own screens show.
-  if (access.role === "coordinator") for (const id of seededAuditIds(scopedWithoutGrants, state)) writable.add(id);
+  const seeded = access.role === "coordinator" ? seededAuditIds(scopedWithoutGrants, state) : new Set<string>();
   if (
     (access.role === "ward" || access.role === "coordinator") &&
     (command.type === "RECORD_SUPPORT_NOTIFICATION" || command.type === "UNDO_SUPPORT_NOTIFICATION") &&
@@ -645,11 +692,27 @@ export function commandScopeRefusal(
     )
       return outside;
   }
-  for (const text of commandStrings(command)) {
-    if ((all.has(text) || text.startsWith("audit-seed-")) && !writable.has(text)) return outside;
-    const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => text.startsWith(idPrefix));
-    const subject = category ? text.slice(category.idPrefix.length) : undefined;
-    if (subject !== undefined && all.has(subject) && !writable.has(subject)) return outside;
+  const references = commandRecordReferences(command);
+  if (
+    (command.type === "RECORD_BED_MEETING_ACTION" || command.type === "COMPLETE_BED_MEETING_ACTION") &&
+    command.subject &&
+    typeof command.subject === "object"
+  ) {
+    // These are the only command contracts whose generic `id` is an existing-record pointer.
+    // Other generic ids may be creation/correlation values and are never looked up globally.
+    const subject = command.subject as { kind?: unknown; id?: unknown };
+    if (typeof subject.id === "string")
+      references.push({
+        collection: subject.kind === "movement" ? "movements" : subject.kind === "admission" ? "admissions" : "invalid",
+        id: subject.id,
+      });
+  }
+  for (const { collection, id } of references) {
+    // Hidden and absent references fail identically. Never consult the whole world's id set:
+    // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
+    if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
+      if (collection !== "auditEvents" || !seeded.has(id)) return outside;
+    }
   }
   // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
   const actsFrom = (id: string) =>

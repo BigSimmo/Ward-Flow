@@ -7,114 +7,39 @@ import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
-import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs, type EdStepEvent } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
+import type { useEdRecordSave } from "./use-ed-record-save";
 
 export function edScreenActions({
   raise,
   now,
-  dayZero,
   thisEdId,
-  recordEdStep,
+  submitExamination,
+  submitLegalFormExpiry,
+  recordSave,
   panels,
 }: {
   raise: WardRaise;
   now: Instant;
   dayZero: WardFlowContextValue["dayZero"];
   thisEdId: string;
-  recordEdStep: (event: EdStepEvent) => void;
+  submitExamination: (event: FormEvent<HTMLFormElement>, movementId: string) => void;
+  submitLegalFormExpiry: (
+    event: FormEvent<HTMLFormElement>,
+    movementId: string,
+    currentDueAt: Instant | undefined,
+  ) => void;
+  recordSave: Pick<
+    ReturnType<typeof useEdRecordSave>,
+    "submitUrgencyChange" | "submitLegalStatusChange" | "submitReceiptCorrection"
+  >;
   panels: ReturnType<typeof useEdRowPanels>;
 }) {
-  const {
-    examinationOutcome,
-    setExaminationOpenFor,
-    setExaminationOutcome,
-    urgencyDraft,
-    setUrgencyChangeOpenFor,
-    legalStatusDraft,
-    setLegalStatusChangeOpenFor,
-    setWithdrawOpenFor,
-    legalFormExpiryDraft,
-    setLegalFormExpiryOpenFor,
-    setLegalFormExpiryDraft,
-    receiptCorrectionReasonDraft,
-    setReceiptCorrectionOpenFor,
-    setReceiptCorrectionReasonDraft,
-    transportDraft,
-    closeTransportDialog,
-  } = panels;
-
-  function submitExamination(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    if (!examinationOutcome) return;
-    recordEdStep({ type: "RECORD_EXAMINATION", role: "ed", now, movementId, outcome: examinationOutcome });
-    setExaminationOpenFor(undefined);
-    setExaminationOutcome(undefined);
-  }
-
-  function submitUrgencyChange(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises.
-    if (urgencyDraft.reason === undefined) return;
-    raise("CHANGE_URGENCY", {
-      movementId,
-      urgency: urgencyDraft.urgency,
-      reason: urgencyDraft.reason,
-    });
-    setUrgencyChangeOpenFor(undefined);
-  }
-
-  function submitLegalStatusChange(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // This IS a real <form>, so Enter inside a field submits it whatever the button advertises —
-    // the same bypass the raise-referral form guards. An `aria-disabled` control alone would not
-    // catch it, and the reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
-    if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
-    raise("CHANGE_LEGAL_STATUS", {
-      movementId,
-      legalStatus: legalStatusDraft.legalStatus,
-      reason: legalStatusDraft.reason,
-    });
-    setLegalStatusChangeOpenFor(undefined);
-  }
+  const { setWithdrawOpenFor, transportDraft, closeTransportDialog } = panels;
 
   function confirmWithdrawReferral(movementId: string) {
     raise("WITHDRAW_REFERRAL", { movementId, actingPlaceId: thisEdId });
     setWithdrawOpenFor(undefined);
-  }
-
-  function submitLegalFormExpiry(
-    event: FormEvent<HTMLFormElement>,
-    movementId: string,
-    currentDueAt: Instant | undefined,
-  ) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises, the same
-    // bypass every other panel on this screen guards against.
-    const dueAt = instantFromDateAndTimeInputs(legalFormExpiryDraft.date, legalFormExpiryDraft.time, dayZero);
-    // Never dispatched half-answered or backwards. Both refusals are the reducer's own rule
-    // ("There is no legal form…"/"An extension's new expiry must be later…") — this mirrors them
-    // rather than owning them, the same discipline `submitBookTransport` below holds to, so the
-    // control never advertises a save it already knows the reducer would refuse.
-    if (dueAt === undefined) return;
-    if (currentDueAt !== undefined && dueAt <= currentDueAt) return;
-    raise("RECORD_LEGAL_FORM_EXPIRY", { movementId, dueAt });
-    setLegalFormExpiryOpenFor(undefined);
-    setLegalFormExpiryDraft(BLANK_TYPED_EXPIRY_DRAFT);
-  }
-
-  function submitReceiptCorrection(event: FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises, the same
-    // bypass every other panel on this screen guards against — the reducer requires a reason, so
-    // an unguarded Enter would dispatch `undefined`.
-    if (receiptCorrectionReasonDraft === undefined) return;
-    raise("CORRECT_LEGAL_FORM_RECEIPT", {
-      movementId,
-      reason: receiptCorrectionReasonDraft,
-    });
-    setReceiptCorrectionOpenFor(undefined);
-    setReceiptCorrectionReasonDraft(undefined);
   }
 
   function submitBookTransport(movementId: string) {
@@ -145,11 +70,9 @@ export function edScreenActions({
 
   return {
     submitExamination,
-    submitUrgencyChange,
-    submitLegalStatusChange,
     confirmWithdrawReferral,
     submitLegalFormExpiry,
-    submitReceiptCorrection,
     submitBookTransport,
+    ...recordSave,
   };
 }

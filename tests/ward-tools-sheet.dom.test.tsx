@@ -90,17 +90,19 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    // Audit 24-1 decision 1: no legal status is assumed, so the tool opens asking for one.
     expect(within(screen.getByTestId("ward-tools-bed-finder")).getByRole("status").textContent).toMatch(
-      /synthetic beds free on/u,
+      /Choose a legal status/u,
     );
     fireEvent.click(toggle);
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
   });
 
-  it.each([6, 7])("discloses the six-ward shortlist only when %i wards match", (count) => {
+  // Audit 24-1 decision 1 replaced the six-ward shortlist: every ward in scope is listed.
+  it.each([6, 7])("lists all %i wards in scope, with no shortlist", (count) => {
     function MatchingWards() {
       const flow = useWardFlow();
-      const template = findBeds(flow.units, [], DEFAULT_BED_FINDER_FILTERS)[0]?.unit;
+      const template = findBeds(flow.units, [], { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" })[0]?.unit;
       if (!template) throw new Error("the fixture needs one matching adult ward");
       const units = Array.from({ length: count }, (_, index) => ({
         ...template,
@@ -120,15 +122,14 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       </WardFlowProvider>,
     );
     const finder = screen.getByTestId("ward-tools-bed-finder");
+    fireEvent.click(
+      within(within(finder).getByRole("group", { name: "Legal status" })).getByRole("button", { name: "Voluntary" }),
+    );
     expect(within(finder).getByRole("status")).toHaveTextContent(`${count} wards`);
     expect(
-      within(within(finder).getByRole("list", { name: "Wards with a free bed" })).getAllByRole("listitem"),
-    ).toHaveLength(6);
-    const disclosure = within(finder).queryByText(
-      `Showing 6 of ${count} matching wards. Narrow the filters to see other wards.`,
-    );
-    if (count > 6) expect(disclosure).toBeInTheDocument();
-    else expect(disclosure).not.toBeInTheDocument();
+      within(within(finder).getByRole("list", { name: "Ready beds by ward" })).getAllByRole("listitem"),
+    ).toHaveLength(count);
+    expect(within(finder).queryByText(/Showing 6 of/u)).not.toBeInTheDocument();
   });
 
   it("offers no unbuilt rows, and keeps Bed meeting TV off the phone", () => {

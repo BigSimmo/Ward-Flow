@@ -5,10 +5,12 @@ import { currentLegalDueAt, formProgression } from "@/components/ward-management
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
+import { flushSync } from "react-dom";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { Fragment, useCallback, useMemo, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { holdOpenForm } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { Button, SrOnly, StatusGlyph, durMinutes, useIsPhone } from "@/components/wf";
+import { Button, DisabledReason, SrOnly, StatusGlyph, buttonClass, durMinutes, useIsPhone } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -81,6 +83,7 @@ import {
   type Referral,
   type Rejection,
   type Unit,
+  DECLINE_REASON_NOT_SHARED,
 } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS, referralSuburbLabel } from "@/components/ward-management/ward-referrals";
 import {
@@ -91,7 +94,7 @@ import {
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import {
   REFERENCE_DISTANCE_CAVEAT,
@@ -389,8 +392,10 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
 
 /** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
 function focusFirstCandidate(from: HTMLElement) {
-  const first = from
-    .closest("[data-testid^='ward-shortlist-']")
+  // From the parent, never the control itself: Refer and Override carry `ward-shortlist-` test ids
+  // too, and `closest` matches the element it starts on, which found no ward list (24 Oct 2026).
+  const first = from.parentElement
+    ?.closest("[data-testid^='ward-shortlist-']")
     ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
   first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
@@ -495,6 +500,11 @@ export function ShortlistPanel({
   const groups = useMemo(() => fitGroups(shortlist, movement), [shortlist, movement]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(true);
+  // A collapsed Candidates list hides every ward, so open it before taking the person there.
+  const chooseWard = (from: HTMLElement) => {
+    if (!candidatesOpen) flushSync(() => setCandidatesOpen(true));
+    focusFirstCandidate(from);
+  };
 
   // The unit whose gates this panel currently explains. A selection carried over from another
   // page (the diagram shares the same `selectedUnitId` state) is honoured even when it falls
@@ -640,6 +650,10 @@ export function ShortlistPanel({
     // fresh report FROM the treating team — a team that never made one. The two options say where
     // the entry came from, not why a status changed: an audit-trail defect, not a clinical one.
   }>({ legalStatus: movement?.legalStatus ?? "Voluntary", reason: undefined });
+  // Audit 4 A4-01: while either form is open, a save from it is checked against the board it
+  // opened on, as a popup's is, so another desk's change meanwhile is reported, not overwritten.
+  const recordFormOpen = urgencyChangeOpen || legalStatusChangeOpen;
+  useEffect(() => (recordFormOpen ? holdOpenForm() : undefined), [recordFormOpen]);
   // Task 3: the undo the prototype has never had. Both forms only ever OPEN when the reducer
   // would actually accept the event — see `canReleasePull`/`canCancelTransport` below — so
   // neither control can advertise an action the reducer would silently refuse.
@@ -1854,7 +1868,7 @@ export function ShortlistPanel({
                   data-testid="ward-shortlist-refer"
                   data-phone-choose="true"
                   className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={(event) => focusFirstCandidate(event.currentTarget)}
+                  onClick={(event) => chooseWard(event.currentTarget)}
                 >
                   Choose a ward to refer
                 </button>
@@ -1894,7 +1908,7 @@ export function ShortlistPanel({
                     ? () => setOverrideOpen((open) => !open)
                     : isPhone
                       ? // Phone: never greyed; with no ward picked it takes the person to the list.
-                        (event) => focusFirstCandidate(event.currentTarget)
+                        (event) => chooseWard(event.currentTarget)
                       : ignoreUnavailableActivation
                 }
               >
@@ -1909,6 +1923,25 @@ export function ShortlistPanel({
             {!canOverride ? (
               <span id="ward-shortlist-override-unavailable" className="sr-only">
                 {overrideUnavailableReason}
+              </span>
+            ) : null}
+            {!canOverride && !isPhone ? (
+              // Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker in short
+              // visible words, with the one fix beside it when the fix is on this screen. Screen readers
+              // keep the full sentence above (the button's description); the short words are visual.
+              // The fix is the same jump to the ward list the phone's Override already makes.
+              <span className={shortlistStyles.unavailableLine} data-testid="ward-placement-override-why">
+                <span aria-hidden="true">
+                  <DisabledReason id="ward-placement-override-words">Override needs a ward chosen first</DisabledReason>
+                </span>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  data-testid="ward-placement-override-fix"
+                  onClick={(event) => chooseWard(event.currentTarget)}
+                >
+                  Choose a ward
+                </button>
               </span>
             ) : null}
 
@@ -2318,7 +2351,11 @@ export function ShortlistPanel({
                     className={styles.shortlistDeclineRow}
                   >
                     <strong>{unit ? unit.name : "Unresolved unit"}</strong>
-                    <span>{DECLINE_REASON_LABELS[decline.reason] ?? decline.reason}</span>
+                    <span>
+                      {decline.reason
+                        ? (DECLINE_REASON_LABELS[decline.reason] ?? decline.reason)
+                        : DECLINE_REASON_NOT_SHARED}
+                    </span>
                     <span className={shortlistStyles.tabularTimestamp}>{formatInstantWithDay(decline.at, now)}</span>
                   </li>
                 );
@@ -2589,11 +2626,19 @@ export function ShortlistPanel({
                     </option>
                   ))}
                 </select>
+                {/* Audit 24-7 (CT-19): the final button sits beside the patient's name and UMRN. */}
+                <p id="ward-release-pull-who" data-testid="ward-release-pull-who">
+                  For {patientIdentityLine(patientIdentity)}
+                </p>
                 <button
                   type="submit"
                   className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                   aria-disabled={releasePullReason === undefined ? "true" : undefined}
-                  aria-describedby={releasePullReason === undefined ? "ward-release-pull-reason-blocked" : undefined}
+                  aria-describedby={
+                    releasePullReason === undefined
+                      ? "ward-release-pull-who ward-release-pull-reason-blocked"
+                      : "ward-release-pull-who"
+                  }
                   title={releasePullReason === undefined ? UNWIND_REASON_UNCHOSEN : undefined}
                   onClick={releasePullReason === undefined ? ignoreUnavailableActivation : undefined}
                 >
@@ -2635,12 +2680,18 @@ export function ShortlistPanel({
                     </option>
                   ))}
                 </select>
+                {/* Audit 24-7 (CT-19): the final button sits beside the patient's name and UMRN. */}
+                <p id="ward-cancel-transport-who" data-testid="ward-cancel-transport-who">
+                  For {patientIdentityLine(patientIdentity)}
+                </p>
                 <button
                   type="submit"
                   className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                   aria-disabled={cancelTransportReason === undefined ? "true" : undefined}
                   aria-describedby={
-                    cancelTransportReason === undefined ? "ward-cancel-transport-reason-blocked" : undefined
+                    cancelTransportReason === undefined
+                      ? "ward-cancel-transport-who ward-cancel-transport-reason-blocked"
+                      : "ward-cancel-transport-who"
                   }
                   title={cancelTransportReason === undefined ? UNWIND_REASON_UNCHOSEN : undefined}
                   onClick={cancelTransportReason === undefined ? ignoreUnavailableActivation : undefined}

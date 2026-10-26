@@ -18,7 +18,9 @@ import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
+import { withSeededDischargeLogistics } from "@/components/ward-management/discharges/discharge-dependency-seed";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
+import { completeSyntheticReferralIntakes } from "./ward-referral-intake-seed";
 
 /**
  * The transport-form name seeded onto `TransportJob.formRequired` below. This is a single fact
@@ -1876,10 +1878,14 @@ export function movementsByStage(stage: MovementStage): Movement[] {
  * many ready beds are still being cleaned have one real case to show. It is authored demo data, like
  * the seeded leave beds, never derived: no admission field says a bed is being cleaned.
  */
-export const bedReleases: BedRelease[] = derivedBedReleases(wardAdmissions, NOW_ANCHOR).map((release) =>
-  release.id === "derived-discharged-AD-LEFT-01"
-    ? { ...release, preparing: true, preparationNote: "Being cleaned" }
-    : release,
+export const bedReleases: BedRelease[] = withSeededDischargeLogistics(
+  derivedBedReleases(wardAdmissions, NOW_ANCHOR).map((release) =>
+    release.id === "derived-discharged-AD-LEFT-01"
+      ? { ...release, preparing: true, preparationNote: "Being cleaned" }
+      : release,
+  ),
+  // Closing-the-loop package B (24 Oct 2026): authored discharge logistics on four seeded releases.
+  NOW_ANCHOR,
 );
 
 /**
@@ -2284,7 +2290,7 @@ const midlandDemonstrationReferrals: Referral[] = MIDLAND_DEMONSTRATION_ROWS.map
   history: row.history,
 }));
 
-export const referrals: Referral[] = [
+export const referrals: Referral[] = completeSyntheticReferralIntakes([
   {
     id: "RF-001",
     // T2 (seed-audit follow-up, section 3): PT-079 (Tilly Mossgrave), hand-authored to agree —
@@ -2302,6 +2308,36 @@ export const referrals: Referral[] = [
           highAcuityNursingNeeded: false,
         },
         state: "queued",
+        // Closing-the-loop package A (24 Oct 2026), synthetic: the coordinator asked the youth unit
+        // for a response, the ward acknowledged and promised an answer that is now overdue, and a
+        // callback is booked. Shows the commitment line, "Promise overdue" and the call sheet.
+        commitments: [
+          { unitId: "bty-youth", step: "response_requested", at: NOW_ANCHOR - 35, by: "Flow coordinator" },
+          { unitId: "bty-youth", step: "acknowledged", at: NOW_ANCHOR - 30, by: "Ward manager" },
+          {
+            unitId: "bty-youth",
+            step: "promised",
+            promisedFor: NOW_ANCHOR - 5,
+            at: NOW_ANCHOR - 25,
+            by: "Ward manager",
+          },
+          { unitId: "bty-youth", nextCallbackAt: NOW_ANCHOR + 20, at: NOW_ANCHOR - 24, by: "Flow coordinator" },
+        ],
+      },
+    ],
+    // Closing-the-loop package A, synthetic: two calls to the youth unit, so the chase count reads 3.
+    contactLog: [
+      {
+        contact: { kind: "psychiatric_ward", unitId: "bty-youth" },
+        outcome: "no_answer",
+        at: NOW_ANCHOR - 36,
+        by: "Flow coordinator",
+      },
+      {
+        contact: { kind: "psychiatric_ward", unitId: "bty-youth" },
+        outcome: "call_back",
+        at: NOW_ANCHOR - 26,
+        by: "Flow coordinator",
       },
     ],
     homeRegion: "Perth Metropolitan",
@@ -2467,6 +2503,17 @@ export const referrals: Referral[] = [
           highAcuityNursingNeeded: false,
         },
         state: "queued",
+        // Closing-the-loop package A, synthetic: a response requested of FSH Older Adult with a
+        // callback booked inside the next shift, so the handover carries it over.
+        commitments: [
+          {
+            unitId: "fsh-older-adult",
+            step: "response_requested",
+            nextCallbackAt: NOW_ANCHOR + 45,
+            at: NOW_ANCHOR - 15,
+            by: "Flow coordinator",
+          },
+        ],
       },
     ],
     homeRegion: "Perth Metropolitan",
@@ -3271,4 +3318,4 @@ export const referrals: Referral[] = [
   // hand-authored referrals above and the nine added to populate one team's page is visible in the
   // array itself. See `MIDLAND_DEMONSTRATION_ROWS` for what they are and why they are safe.
   ...midlandDemonstrationReferrals,
-];
+]);

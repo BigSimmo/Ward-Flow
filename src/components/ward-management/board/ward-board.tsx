@@ -20,8 +20,8 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import { formatInstant } from "@/components/ward-management/ward-clock";
-import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
@@ -66,6 +66,7 @@ import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
+import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
 
 /**
@@ -359,7 +360,7 @@ export function WardBoard({
     const msg = unaccepted
       ? check.outcome!.status === "refused"
         ? `Action refused: ${check.outcome!.message ?? "The action was refused."}`
-        : (check.outcome!.message ?? "Save is not confirmed. Review the board before trying again.")
+        : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
@@ -939,13 +940,12 @@ export function WardBoard({
           const summarize = (outcomes: WardCommandOutcome[]) => {
             const unaccepted = outcomes.find((outcome) => outcome.status !== "accepted");
             if (unaccepted && outcomes.some((outcome) => outcome.status === "accepted"))
-              // A mixed result is reported as an unconfirmed save, never as a refusal, so the
-              // "Action refused" prefix cannot contradict the part that was saved.
+              // A mixed result is never reported as a refusal, so the "Action refused" prefix cannot
+              // contradict the part that was saved. Only a failed step is "not confirmed" (review: #722).
               return {
                 ...unaccepted,
                 status: "failed" as const,
-                message:
-                  "Part of this return was saved, but the other step is not confirmed. Review the board before trying again.",
+                message: saveProblem(unaccepted.status === "failed" ? "partlySaved" : "partlyRefused"),
               };
             return unaccepted ?? outcomes[0];
           };
@@ -969,8 +969,9 @@ export function WardBoard({
     }
   };
 
-  // The same day-shift end as the sidebar handover countdown, so the board never names another time.
-  const handoverAt = formatInstant(DAY_SHIFT_END_MINUTE);
+  // The end of the current shift, as the sidebar handover countdown counts to, so the board never
+  // names a handover already past in the evening or overnight (Audit 24-6 TC-02).
+  const handoverAt = formatInstantWithDay(shiftEndInstant(now), now);
   const shiftDigest =
     shiftTiles.length > 0
       ? `${shiftTiles.length} ${shiftTiles.length === 1 ? "thing needs" : "things need"} you before the handover at ${handoverAt}.`

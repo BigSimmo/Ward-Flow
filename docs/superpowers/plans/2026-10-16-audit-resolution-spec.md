@@ -1,5 +1,9 @@
 # Audit resolution specification
 
+> **Dated plan record, 16 October 2026. Do not execute as a new plan.** See the [plans index](../../ward-flow/plans/README.md) for recorded status, and check current source before resuming any item.
+
+_Updated 2026-10-24 - marked as a historical record in the documentation audit; Documentation owns._
+
 User request: resolve every retained issue, create a detailed plan and implement with multiple subagents. The prior review used main 5ddeb7d5; implementation starts at c9f271a98c96551bc3b3a725923461c02344a1f2, which includes merged PRs 365 and 366. The task is local engineering; remote publication, protection changes, hosted CI, provider access and deployment are separate actions.
 
 The earlier evidence and failure cases are leads. Reproduce current behavior before changing it. Already merged repairs need current regression evidence, not duplicate implementations.

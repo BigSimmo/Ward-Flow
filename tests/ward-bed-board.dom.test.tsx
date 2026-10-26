@@ -141,7 +141,9 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     } as WardFlowEvent;
     renderBoard([receive]);
 
-    const chip = document.querySelector<HTMLElement>("[data-testid^='ward-board-pick-']");
+    const chip = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-pick-']")].find(
+      (item) => !item.textContent?.includes("Accepted"),
+    );
     expect(chip, "the received referral is waiting on the board").not.toBeNull();
     fireEvent.click(chip!);
     expect(chip).toHaveAttribute("aria-pressed", "true");
@@ -151,8 +153,8 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
     expect(cellText(to)).toMatch(/pulled for/);
-    // The referral has left the waiting list.
-    expect(document.querySelector("[data-testid^='ward-board-pick-']")).toBeNull();
+    // The accepted arm can separately reassign its bed; acceptance still has its own Undo.
+    expect(screen.getByTestId(chip!.dataset.testid!)).toHaveTextContent("Accepted");
 
     act(() => {
       fireEvent.click(within(screen.getByTestId("toast")).getByRole("button", { name: /^Undo/ }));
@@ -237,8 +239,8 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       const numbers = rows.map((row) => Number(/^Bed (\d+)/.exec(row.getAttribute("aria-label") ?? "")?.[1]));
       expect(numbers).toEqual([...numbers].sort((left, right) => left - right));
       expect(screen.queryByTestId("ward-phone-bed-groups")).toBeNull();
-      // This shift and Ward flow are rows under Needs you, not chips above the tabs.
-      expect(screen.getByRole("heading", { name: "Needs you" })).toBeInTheDocument();
+      // This shift and Ward flow are rows under My list, not chips above the tabs.
+      expect(screen.getByRole("heading", { name: "My list" })).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
       expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();

@@ -861,7 +861,10 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
     );
   });
 
-  it("a revoked examination that releases the bed tells the accepting ward the bed has been released", () => {
+  // Audit 24-1 decision 3 (owner): a revoked examination before transport no longer releases the
+  // bed. The ward is still told, in the WLQ-4 wording, that the bed stays held for a person to
+  // release; the notice must not claim a release.
+  it("a revoked examination on a pulled bed tells the accepting ward the bed stays held", () => {
     const state = pulled(acceptedInPrinciple(referred(seeded())));
     const beforeUnit = state.units.find((candidate) => candidate.id === ACCEPTED_UNIT_ID)!;
     const before = state.notices.length;
@@ -873,16 +876,16 @@ describe("Item 48, Q3 — WITHDRAW_ACCEPTANCE and a revoked examination each not
       outcome: "revoked",
     });
     expect(after.rejections).toEqual([]);
-    // Sanity: the bed really was given back, so "the bed has been released" is not a false claim.
+    // Sanity: the bed really is still held, so "the bed stays held" is not a false claim.
     const afterUnit = after.units.find((candidate) => candidate.id === ACCEPTED_UNIT_ID)!;
-    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value + 1);
+    expect(afterUnit.allocatable.value).toBe(beforeUnit.allocatable.value);
     expect(after.notices).toHaveLength(before + 1);
     const notice = after.notices.at(-1)!;
     expect(notice.kind).toBe("examination_revoked_ward");
     expect(notice.to).toEqual({ role: "ward", placeId: ACCEPTED_UNIT_ID });
     expect(notice.about).toEqual({ movementId: MOVEMENT_ID, unitId: ACCEPTED_UNIT_ID });
     expect(notice.sentence).toBe(
-      `The examination for ${MOVEMENT_ID} was revoked. The patient is not coming and the bed has been released.`,
+      `The examination for ${MOVEMENT_ID} was revoked. The bed stays held until a person decides whether to release it.`,
     );
   });
 

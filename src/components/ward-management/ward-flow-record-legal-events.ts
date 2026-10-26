@@ -10,6 +10,7 @@ import { countryExtensionEligible } from "@/components/ward-management/ward-lega
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
+import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -58,19 +59,69 @@ export function reduceRecordedLegalEvent(
       // current entered values are; absence of an old actor-history record does not discard them.
       const legacyCalculatedExpiry =
         movement.legalClock !== undefined && currentDueAt === movement.legalClock.expiresAt;
+      const correction = event.correction;
+      if (correction !== undefined) {
+        if (
+          correction === null ||
+          typeof correction !== "object" ||
+          Array.isArray(correction) ||
+          Object.keys(correction).sort().join() !== "expectedDueAt,expectedFormCode,expectedFormWrittenAt,reason" ||
+          !PAPER_EXPIRY_CORRECTION_REASONS.includes(correction.reason) ||
+          !Number.isFinite(correction.expectedDueAt) ||
+          (correction.expectedFormWrittenAt !== null && !Number.isFinite(correction.expectedFormWrittenAt))
+        ) {
+          return reject(state, event, "Record the checked paper facts and a correction reason.");
+        }
+        if (
+          currentDueAt === undefined ||
+          legacyCalculatedExpiry ||
+          correction.expectedDueAt !== currentDueAt ||
+          correction.expectedFormCode !== movement.legalForm.code ||
+          correction.expectedFormWrittenAt !== (movement.formedAt ?? null)
+        ) {
+          return reject(
+            state,
+            event,
+            "The recorded paper facts changed. Check the current form before correcting its expiry.",
+          );
+        }
+        if (event.dueAt === currentDueAt) {
+          return reject(state, event, "The corrected expiry must differ from the expiry already recorded.");
+        }
+      }
       const isExtension = currentDueAt !== undefined && !legacyCalculatedExpiry;
       // An extension only ever moves an expiry later; the clinician types it, this only orders it
       // against what is recorded.
-      if (isExtension && event.dueAt <= currentDueAt) {
+      if (correction === undefined && isExtension && event.dueAt <= currentDueAt) {
         return reject(state, event, "An extension's new expiry must be later than the expiry already recorded.");
       }
-      const basis: "written_on_form" | "extension" = isExtension ? "extension" : "written_on_form";
+      const basis = correction
+        ? ("correction" as const)
+        : isExtension
+          ? ("extension" as const)
+          : ("written_on_form" as const);
       const historyEntry = { at: event.now, by: event.role, dueAt: event.dueAt, basis };
       const updated: Movement = {
         ...movement,
         legalForm: { ...movement.legalForm, dueAt: event.dueAt },
         legalClock: undefined,
         legalFormExpiryHistory: [...(movement.legalFormExpiryHistory ?? []), historyEntry],
+        ...(correction
+          ? {
+              legalFormExpiryCorrections: [
+                ...(movement.legalFormExpiryCorrections ?? []),
+                {
+                  at: event.now,
+                  by: event.role,
+                  formCode: movement.legalForm.code,
+                  ...(movement.formedAt === undefined ? {} : { formWrittenAt: movement.formedAt }),
+                  previousDueAt: correction.expectedDueAt,
+                  dueAt: event.dueAt,
+                  reason: correction.reason,
+                },
+              ],
+            }
+          : {}),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -149,7 +200,7 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
       if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
+        return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
       if (event.formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
         return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
@@ -254,7 +305,7 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
       if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
+        return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
       const expiryHistory =
         event.paperExpiresAt === undefined

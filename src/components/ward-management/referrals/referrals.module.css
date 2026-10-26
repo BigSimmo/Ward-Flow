@@ -2664,7 +2664,7 @@
     background: var(--scrim);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
-    z-index: 990;
+    z-index: calc(var(--z-overlay) - 1);
     animation: referralDetailFadeIn 0.2s ease-out forwards;
   }
 
@@ -2681,7 +2681,7 @@
     max-width: 100vw;
     height: 100dvh;
     max-height: 100dvh;
-    z-index: 1000;
+    z-index: var(--z-overlay);
     background: var(--surface);
     box-shadow: -0.25rem 0 1.5rem var(--scrim);
     border-left: 0.0625rem solid var(--ward-border);
@@ -5007,4 +5007,11 @@
 .v10AskActions > .matchRowTop > [data-placement-action],
 .v10AskActions > .matchRowTop > span:has(> [data-placement-action]) {
   width: 100%;
+}
+
+/* Layout sweep (REF-16): "Add a correction" is a full-size touch target on a touch screen. */
+@media (pointer: coarse) {
+  .addCorrectionBtn {
+    min-height: 44px;
+  }
 }

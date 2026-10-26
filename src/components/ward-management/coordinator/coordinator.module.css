@@ -49,8 +49,8 @@
   min-width: 0;
   min-height: 0;
   /*
-   * Task 9 Ruling 4: the horizontal `WardModeNavigation` row this used to reserve is gone — the
-   * eight mode links live in `ClinicalRail` (grid-column 1) now.
+   * The former horizontal `WardModeNavigation` row is gone. The shared shell owns navigation;
+   * this screen reserves rows only for its content and governance banner.
    *
    * Task A: down to two rows, not three. The registers used to be a third `auto` row here
    * (`ExceptionDrawer`, pinned outside `.body`'s own scroll so it was always visible regardless
@@ -65,10 +65,7 @@
 }
 
 /*
- * `ClinicalRail` (shared ward-management.module.css) now carries Ward Flow's own mode
- * navigation (Task 9 Ruling 4), so it stays visible and reachable down to 320px on this screen —
- * it no longer collapses to `display: none` here, and `.screen`'s fixed `4.5rem` rail track
- * stays reserved at every supported width rather than collapsing to one column.
+ * Navigation belongs to the shared shell. These screen styles do not hide or resize it.
  */
 
 .governanceBanner {
@@ -2731,7 +2728,7 @@
     background: var(--scrim);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
-    z-index: 940;
+    z-index: calc(var(--z-overlay) - 1);
     animation: coordinatorShortlistFadeIn 0.2s ease-out forwards;
   }
 
@@ -2750,7 +2747,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 950;
+    z-index: var(--z-overlay);
     width: 100%;
     margin: 0;
     pointer-events: none;

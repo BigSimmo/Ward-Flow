@@ -9,21 +9,26 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `database-provider` | Supabase                                    | Database used when `WARD_DATABASE_PROVIDER` is not set                                | `backend/ward-flow/config.mjs`                                     |
 | `auth-provider`     | Supabase Auth                               | Sign-in service used when `WARD_AUTH_PROVIDER` is not set                             | `backend/ward-flow/config.mjs`                                     |
-| `latest-migration`  | 012-foreign-key-indexes                     | Newest shared-workspace database migration                                            | `backend/ward-flow/migrations/`                                    |
-| `migration-count`   | 12                                          | Numbered database migrations                                                          | `backend/ward-flow/migrations/`                                    |
+| `latest-migration`  | 014-archived-records                        | Newest shared-workspace database migration                                            | `backend/ward-flow/migrations/`                                    |
+| `migration-count`   | 14                                          | Numbered database migrations                                                          | `backend/ward-flow/migrations/`                                    |
 | `ward-route-count`  | 53                                          | `page.tsx` routes under `/ward-flow`                                                  | `src/app/ward-flow/`                                               |
 | `app-route-count`   | 55                                          | Pages and route handlers: the Ward Flow routes plus sign-in and the `/mockups` digest | `src/app/ward-flow/, src/app/ward-flow-sign-in/, src/app/mockups/` |
-| `latest-decision`   | D-80                                        | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                      |
-| `next-decision`     | D-81                                        | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                      |
+| `latest-decision`   | D-81                                        | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                      |
+| `next-decision`     | D-82                                        | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                      |
 | `node-engine`       | >=24.15.0 <25                               | Supported Node.js range                                                               | `package.json`                                                     |
-| `backend-env-vars`  | 23 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
+| `backend-env-vars`  | 29 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                          |
 
 ## backend-env-vars
 
 Environment variables the shared backend reads:
 
 - `HOST`
+- `NODE_ENV`
 - `PORT`
+- `RAILWAY_GIT_COMMIT_SHA`
+- `SENTRY_DSN`
+- `SENTRY_ENVIRONMENT`
+- `SENTRY_RELEASE`
 - `WARD_ALLOWED_ORIGIN`
 - `WARD_AUTH_PROVIDER`
 - `WARD_COORDINATOR_USER_IDS`
@@ -41,6 +46,7 @@ Environment variables the shared backend reads:
 - `WARD_SUPABASE_DATABASE_URL`
 - `WARD_SUPABASE_MIGRATION_DATABASE_URL`
 - `WARD_SUPABASE_PROJECT_REF`
+- `WARD_SUPABASE_PRUNE_DATABASE_URL`
 - `WARD_SUPABASE_PUBLISHABLE_KEY`
 - `WARD_SUPABASE_URL`
 - `WARD_TRUSTED_PROXY_ADDRESSES`

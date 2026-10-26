@@ -117,12 +117,33 @@ export function hasOpenSheet() {
   return openSheets.length > 0;
 }
 
+/** The active overlay's root, including a late-mounted portal; subscribe with subscribeToSheetStack. */
+export function topSheetRoot(): HTMLElement | null {
+  return openSheets[openSheets.length - 1]?.root ?? null;
+}
+
 /**
  * The open sheets, bottom first, as handles that stay the same while each one is open. The shared
  * board uses them to remember what it held when each popup opened (audit CS-19).
  */
 export function openSheetHandles(): readonly object[] {
-  return openSheets.slice();
+  return [...openSheets, ...openForms];
+}
+
+const openForms = new Set<object>();
+
+/**
+ * Holds an inline edit form open as if it were a popup, so the shared board checks a save from it
+ * against what the form opened on (Audit 4 A4-01: the Placement panel's urgency and legal status
+ * forms overwrote a colleague's change unseen). Returns the release, safe to call more than once.
+ */
+export function holdOpenForm(): () => void {
+  const handle = {};
+  openForms.add(handle);
+  notifyStackListeners();
+  return () => {
+    if (openForms.delete(handle)) notifyStackListeners();
+  };
 }
 
 /**

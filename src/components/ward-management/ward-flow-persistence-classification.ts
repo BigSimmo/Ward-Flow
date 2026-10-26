@@ -150,6 +150,7 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
 const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "ACCEPT_IN_PRINCIPLE",
   "ACCEPT_REFERRAL",
+  "HOLD_REFERRAL_BED",
   "ACKNOWLEDGE_INBOX_ITEM",
   "ADVANCE_CLOCK",
   "BLOCK_BED_RELEASE",
@@ -158,6 +159,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CHANGE_URGENCY",
   "CLEAR_BED_RELEASE_BLOCK",
   "SEND_RELEASE_SUPPORT_NOTICE",
+  // Closing-the-loop package B (24 Oct 2026): chosen values and a time only, no typed text.
+  "RECORD_DISCHARGE_DEPENDENCY",
+  "RECORD_DISCHARGE_PLAN_CHANGE",
   "RECORD_ARRIVAL_CHECK",
   "CLEAR_MOVEMENT_BLOCKER",
   "CLEAR_MOVEMENT_URGENT_FLAG",
@@ -170,6 +174,13 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_RESTRICTIVE_PRACTICE_END",
   "RECORD_WARD_INCIDENT",
   "SET_SECLUSION_ROOM_STATUS",
+  // Closing the loop, package D (24 Oct 2026): record ids, choices from fixed lists and instants
+  // only. Nothing typed.
+  "MARK_CANCELLED_MOVE_CHECK",
+  "RECORD_ACCEPTANCE_CONDITION",
+  "MARK_ACCEPTANCE_CONDITION_MET",
+  "RECORD_RESTRICTION_REVIEW",
+  "MARK_CLOSURE_TRANSITION_ITEM",
   "COMPLETE_INBOX_ITEM",
   "CONFIRM_BED_RELEASE",
   "CONFIRM_CAPACITY",
@@ -192,6 +203,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // and instants only. Nothing typed.
   "ASSIGN_REFERRAL",
   "LOG_REFERRAL_CONTACT",
+  // Closing-the-loop package A: ids, a step from a fixed list and instants. Nothing typed.
+  "RECORD_REFERRAL_COMMITMENT",
   // Fix plan item 16 (D-76): ward ids and an instant only.
   "ASK_MORE_WARDS",
   "OPEN_DISCHARGE_RECORD",
@@ -246,7 +259,6 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // `REFER_TO_UNITS.unitIds` already has on this list.
   "RECORD_WARD_INTAKE_CONSTRAINTS",
   "REFER_TO_UNITS",
-  "RELEASE_BED",
   // Owner answer 8 (second round, 2026-09-17): `movementId`/`actingUnitId` are ids (reviewed
   // above) and the caller's own `role` — no human-typed field, the same shape `RELEASE_PULL`
   // immediately below already has.
@@ -282,6 +294,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // FD-10: an admission id and one block from TENTATIVE_DIAGNOSIS_BLOCKS, membership-checked by
   // the reducer. No typed text.
   "RECORD_WARD_DIAGNOSIS",
+  // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
+  "RECORD_HOME_SERVICE_RETURN",
+  // Closing-the-loop (package E): a directory entry id only. No typed text.
+  "RECORD_DIRECTORY_CHECK",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
@@ -458,6 +474,11 @@ type WardFlowReviewedStringOrUnknownKey =
   | "calendarDate"
   // v10 pass 2: `UNDO_AUDIT_REVIEW` names an `AuditReview.id`; the reducer finds the review or refuses.
   | "reviewId"
+  // Closing-the-loop (package E): `RECORD_HOME_SERVICE_RETURN.homeHospital` is a site code the
+  // reducer membership-checks; `RECORD_DIRECTORY_CHECK.entryId` names a mock directory entry and the
+  // reducer refuses anything but a short slug. Neither is about a person; neither is typed.
+  | "homeHospital"
+  | "entryId"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";

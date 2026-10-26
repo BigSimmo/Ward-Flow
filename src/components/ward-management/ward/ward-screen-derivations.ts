@@ -85,13 +85,13 @@ export function wardBedRoster({
   const openBedsCount = Math.max(0, unit.beds - lockedBeds);
   const isMixed = lockedBeds > 0 && openBedsCount > 0;
 
-  // Josh, 26 Sept 2026 ("go ahead with all your recommendations"): a bed reads "On Leave" only for
+  // Josh, 26 Sept 2026 ("go ahead with all your recommendations"): a bed reads "On leave" only for
   // the admission this ward's OWN leave records actually name — never whichever occupied
   // admission happened to sit first by position. `leaveAdmissionIds` is that ward-scoped set
   // (`unitLeaveBeds` is already filtered to `unit.id` above), and `otherOccupants` is every
   // occupied admission EXCEPT those — so nobody with a leave record is ever also handed an
   // ordinary "occupied" bed slot elsewhere on the same board. The leave slots below are built
-  // straight from `unitLeaveBeds` itself, one bed per record, so the number of "On Leave" beds can
+  // straight from `unitLeaveBeds` itself, one bed per record, so the number of "On leave" beds can
   // never drift from the number of leave records — there is no separate count to keep in step.
   const leaveAdmissionIds = new Set(unitLeaveBeds.map((leaveBed) => leaveBed.admissionId));
   const unitOccupantAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "occupied") ?? [];
@@ -136,14 +136,14 @@ export function wardBedRoster({
     let statusText = "Inpatient";
     if (i < states.ready) {
       status = "ready";
-      statusText = "Ready Vacant";
+      statusText = "Ready";
     } else if (isLeaveSlot) {
       status = "leave";
       // D-38: a bed held for an absence without leave is never shown as approved leave.
-      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On Leave";
+      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On leave";
     } else if (isIncomingSlot) {
       status = "incoming";
-      statusText = "Inbound";
+      statusText = "Pulled";
     } else if (isClosedSlot) {
       status = "closed";
       statusText = "Closed";
@@ -153,7 +153,7 @@ export function wardBedRoster({
     const incomingMovement = pulledSlot?.movement;
     // A pulled bed with no live movement is a seeded pull: name the pulled admission itself.
     const pulledAdmission = pulledSlot && incomingMovement === undefined ? pulledSlot.admission : undefined;
-    // The person shown "On Leave" is whoever THIS leave record names, found by its own
+    // The person shown "On leave" is whoever THIS leave record names, found by its own
     // `admissionId` — never by position. (Should the named admission ever not be among this
     // ward's occupied admissions, the slot is correctly left empty rather than borrowing someone
     // else's identity.)
@@ -274,9 +274,10 @@ export function wardBedRoster({
       legalStatusLabel,
       criteriaLedChip,
       admissionId: admission?.id,
-      stayAdmissionId:
-        admission?.id ??
-        (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
+      // Audit 24-1, B-02: the pulled admission this slot belongs to, linked from either side
+      // (`pulledBy`). Matching `movementId` alone missed a pull its movement names, so that tile had
+      // no seat and moved bed when another pulled bed ended.
+      stayAdmissionId: admission?.id ?? pulledSlot?.admission.id,
       heldFor: undefined as string | undefined,
       preparing: false,
       /** The discharged release this bed is being made ready for, set once bed numbers are known. */
@@ -332,9 +333,16 @@ export function wardBedRoster({
     ) as [string, number][],
   );
   // Audit A1-1: every stay keeps a fixed bed, so a departure or absence never renumbers others.
+  // Audit 24-1 CS2-03: a released pull's span still held its bed, so later stays keep theirs.
+  const releasedSpans = (unit.releasedPullSpans ?? []).map((span) => ({
+    ...span,
+    id: `released:${span.admissionId}`,
+    state: "released",
+    arrivedAt: null,
+  }));
   const seatedBeds = seatStays(
     unit.beds,
-    (admissions ?? []).filter((admission) => admission.unitId === unit.id),
+    [...(admissions ?? []).filter((admission) => admission.unitId === unit.id), ...releasedSpans],
     isMixed ? lockedBeds : 0,
   );
   const bedNumbers = layoutBedNumbers(

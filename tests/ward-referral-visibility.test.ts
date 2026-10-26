@@ -17,7 +17,6 @@ import {
   coordinatorWorklistReferrals,
   coordinatorWorksReferral,
   edScopedReferral,
-  edScopedReferrals,
   referralDestinationDirection,
   wardScopedReferral,
   wardScopedReferrals,
@@ -1481,9 +1480,23 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
             `the seeded community projection carries "${key}"`,
           ).toContain(key);
         }
-        const nested = ["medicalClearance", "intake"].filter((key) => keys.includes(key));
-        expect(nested, "no seeded community referral records a clearance or an intake yet").toEqual([]);
-        expect(sweep(projection).objectPaths.sort()).toEqual([...COMMUNITY_PROJECTION_OBJECT_PATHS].sort());
+        // The authored seed now records an intake for community-addressed referrals, which the
+        // projection carries (15 Oct 2026 ruling above). Hold it to the cut intake: only the
+        // allowlisted intake keys, never the arrival, ward clearance checklist or non-community needs.
+        const intake = (projection as { intake?: Record<string, unknown> }).intake;
+        if (intake !== undefined) {
+          for (const key of Object.keys(intake)) {
+            expect(ALLOWED_COMMUNITY_INTAKE_FIELDS, `the seeded community intake carries "${key}"`).toContain(key);
+          }
+          const needs = intake.needs as { kind?: string } | undefined;
+          if (needs !== undefined)
+            expect(needs.kind, "a non-community need crossed into the community view").toBe("community");
+        }
+        // Outside the intake the object nodes stay exactly the three the allowlists cover.
+        const outsideIntake = sweep(projection).objectPaths.filter(
+          (path) => path !== "intake" && !path.startsWith("intake.") && !path.startsWith("intake["),
+        );
+        expect(outsideIntake.sort()).toEqual([...COMMUNITY_PROJECTION_OBJECT_PATHS].sort());
       }
     });
 
@@ -1972,7 +1985,9 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
     });
 
     it("holds every ED-addressed referral in the shipped seed to the same field sets", () => {
-      const projections = edScopedReferrals(seededReferrals);
+      const projections = seededReferrals
+        .map((referral) => edScopedReferral(referral))
+        .filter((projection) => projection !== undefined);
       expect(
         projections.length,
         "no seeded referral is addressed to an emergency department, so this guard proved nothing. " +
@@ -1983,9 +1998,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
       const withEdArm = seededReferrals.filter((referral) =>
         referral.destinations.some((addressing) => addressing.destination.kind === "emergency_department"),
       );
-      expect(projections.length, "the plural function lost or duplicated an ED-addressed referral").toBe(
-        withEdArm.length,
-      );
+      expect(projections.length, "the projection lost or duplicated an ED-addressed referral").toBe(withEdArm.length);
 
       // POSITIVE CONTROL — at least one seeded ED referral must sit beside another destination, or
       // the destination-summary half of these field sets is never exercised against real data.

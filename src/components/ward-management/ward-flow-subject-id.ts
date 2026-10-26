@@ -52,8 +52,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "CLEAR_BED_RELEASE_BLOCK":
     case "SET_BED_PREPARATION":
     case "SEND_RELEASE_SUPPORT_NOTICE":
-      return event.releaseId;
-    case "RELEASE_BED":
+    case "RECORD_DISCHARGE_DEPENDENCY":
+    case "RECORD_DISCHARGE_PLAN_CHANGE":
       return event.releaseId;
     // Admission-scoped: an admission id is not a unit or release id, so these keep their own group.
     case "RECORD_LEAVING":
@@ -72,6 +72,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "END_COMMUNITY_TREATMENT_ORDER":
       return event.patientId;
     case "ACCEPT_REFERRAL":
+    case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "RECORD_LOCAL_BED_SOUGHT":
     // Referral-scoped with no `movementId`: the `default` branch would stamp a rejection whose
@@ -85,6 +86,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "MARK_REFERRAL_INFORMATION_MET":
     case "ASSIGN_REFERRAL":
     case "LOG_REFERRAL_CONTACT":
+    case "RECORD_REFERRAL_COMMITMENT":
     case "ASK_MORE_WARDS":
       return event.referralId;
     case "RECORD_BED_MEETING_ACTION":
@@ -94,6 +96,10 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
+    // Closing the loop, package D (24 Oct 2026): ward-scoped records. The movement-scoped three
+    // fall through to `movementId` below.
+    case "RECORD_RESTRICTION_REVIEW":
+    case "MARK_CLOSURE_TRANSITION_ITEM":
       return event.unitId;
     case "ADVANCE_CLOCK":
     case "RESET_SCENARIO":
@@ -125,6 +131,8 @@ export function subjectId(event: WardFlowEvent): string {
       return event.noticeId;
     case "SET_STEP_DOWN_CANDIDATE":
     case "RECORD_WARD_DIAGNOSIS":
+    // Closing-the-loop (package E).
+    case "RECORD_HOME_SERVICE_RETURN":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
@@ -136,6 +144,9 @@ export function subjectId(event: WardFlowEvent): string {
       return "none";
     case "RECORD_CLINICAL_CONTACT":
       return event.teamId;
+    // Closing-the-loop (package E).
+    case "RECORD_DIRECTORY_CHECK":
+      return event.entryId;
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

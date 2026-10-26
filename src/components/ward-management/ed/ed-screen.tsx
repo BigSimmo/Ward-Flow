@@ -4,7 +4,7 @@ import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 
-import { useMemo, useRef, type FormEvent } from "react";
+import { useMemo, type FormEvent } from "react";
 import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -32,11 +32,12 @@ import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast
 import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
-import { DEFAULT_DRAFT, edStepSaid, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
+import { edStepSaid, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
 import { EdPhonePanes } from "./ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "./ed-screen-raise-section";
 import { useEdInboxDecline } from "./use-ed-screen-decline";
+import { useEdReferralSave } from "./use-ed-referral-save";
 import {
   useEdBoardDrafts,
   useEdBoardView,
@@ -46,6 +47,9 @@ import {
   useEdRowPanels,
 } from "./use-ed-screen-state";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { useEdExpirySave } from "./use-ed-expiry-save";
+import { useEdRecordSave } from "./use-ed-record-save";
+import { useEdExaminationSave } from "./use-ed-examination-save";
 
 /*
  * Fix list 2.5 and 9.6 (15 Oct 2026): this screen was one 6,500 line file. It is now split into
@@ -128,9 +132,11 @@ export function EdScreen({ edId }: EdScreenProps) {
   // Declared unconditionally, before the early return below — React hooks must run in the same
   // order on every render, the same discipline `ward-screen.tsx` holds to for its own hooks.
   const referralDraft = useEdReferralDraft();
-  const { draft, setDraft, setReferralOpen, raisingFromReferralId, setRaisingFromReferralId } = referralDraft;
+  const { draft, raisingFromReferralId } = referralDraft;
   const boardDrafts = useEdBoardDrafts();
   const rowPanels = useEdRowPanels();
+  const expirySave = useEdExpirySave({ dispatch, now, dayZero, panels: rowPanels });
+  const recordSave = useEdRecordSave({ dispatch, now, panels: rowPanels });
   const { arrivalPlanOpenFor, setArrivalPlanOpenFor, transportOpenFor, closeTransportDialog, toggleBookTransport } =
     rowPanels;
   /**
@@ -142,9 +148,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
-  // A2-1 (audit 13 Oct 2026): a raised referral used to land off screen with no word. The movement
-  // ids held before the raise; the new one is announced with a toast that opens its row.
-  const raisePendingRef = useRef<Set<string> | null>(null);
+  const referralSave = useEdReferralSave(referralDraft, edId);
+  const examinationSave = useEdExaminationSave({ dispatch, movements, rejections, now, panels: rowPanels, offerStep });
   function recordEdStep(event: EdStepEvent) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
     runStep(event, {
@@ -207,7 +212,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   });
   const inboxDecline = useEdInboxDecline({ rejections, raise, offerStep });
   useEdRaiseAnnouncement({
-    raisePendingRef,
+    accepted: referralSave.accepted,
+    localBefore: referralSave.acceptedLocalBefore,
     movements,
     department,
     registryPatients,
@@ -273,7 +279,16 @@ export function EdScreen({ edId }: EdScreenProps) {
     activeHeroChip,
     arrivalPlanMovement,
   } = derived;
-  const actions = edScreenActions({ raise, now, dayZero, thisEdId, recordEdStep, panels: rowPanels });
+  const actions = edScreenActions({
+    raise,
+    now,
+    dayZero,
+    thisEdId,
+    submitExamination: examinationSave.submitExamination,
+    submitLegalFormExpiry: expirySave.submitLegalFormExpiry,
+    recordSave,
+    panels: rowPanels,
+  });
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -288,7 +303,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // T3, the same half-typed expiry `referralDraftBlockedReason`'s last check refuses.
     // The patient check (A2-1) has no field to narrow, so it is read from
     // `referralDraftBlockedReason` itself: Enter must not raise a referral for nobody.
-    const { cohort, security, sex, gender, legalStatus, urgency } = draft;
+    const { cohort, security, sex, gender, legalStatus, urgency, observation, highAcuity } = draft;
     if (
       referralDraftBlockedReason({ ...draft, patientFound: draft.patientId !== undefined }) !== undefined ||
       cohort === undefined ||
@@ -297,52 +312,54 @@ export function EdScreen({ edId }: EdScreenProps) {
       gender === undefined ||
       legalStatus === undefined ||
       urgency === undefined ||
-      draft.observation === undefined ||
-      draft.highAcuity === undefined ||
+      observation === undefined ||
+      highAcuity === undefined ||
       (draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")
     ) {
       return;
     }
-    raise("RAISE_REFERRAL", {
-      edId: thisEdId,
-      // Opus review round 2, 17 September 2026 (P2), item 6: `undefined` in the ordinary,
-      // unlinked case (this form's existing behaviour) — set only when this form was opened via
-      // the inbox row's own "Raise into a movement" button, which is also what supplied the
-      // gender prefill in `draft.gender` above.
-      referralId: raisingFromReferralId,
-      ...(draft.patientId === undefined ? {} : { patientId: draft.patientId }),
-      draft: {
-        cohort,
-        security,
-        sex,
-        // T11 (item 8): widened from the three-state local draft — `"not_recorded"` becomes
-        // `undefined` on the dispatched event, the model's own "not yet recorded" convention.
-        gender: gender === "not_recorded" ? undefined : gender,
-        // T15 (item 12): `"none"` becomes `undefined` on the dispatched event, the same widening
-        // the gender field immediately above gets.
-        tentativeDiagnosis: draft.tentativeDiagnosis === "none" ? undefined : draft.tentativeDiagnosis,
-        observation: {
-          level: draft.observation,
-          intervalMinutes: draft.observation === "intermittent" ? draft.observationIntervalMinutes : null,
-          reviewAt:
-            draft.observationReviewTime.trim() === ""
-              ? null
-              : (instantFromEstimatedTimeInputs(draft.observationReviewTime, draft.observationReviewDay, now) ?? null),
-        },
-        highAcuity: draft.highAcuity,
-        legalStatus,
-        urgency,
-        legalFormCode: draft.legalFormCode,
-        // `undefined` when the clinician typed nothing (or the guard above already refused
-        // something incomplete) — the reducer then writes no deadline at all, which is the state
-        // every ward surface already renders explicitly as absent.
-        legalFormDueAt: instantFromDateAndTimeInputs(draft.legalFormDueAtDate, draft.legalFormDueAtTime, dayZero),
-      },
-    });
-    raisePendingRef.current = new Set(movements.map((movement) => movement.id));
-    setDraft(DEFAULT_DRAFT);
-    setReferralOpen(false);
-    setRaisingFromReferralId(undefined);
+    referralSave.saveReferral(
+      () =>
+        raise("RAISE_REFERRAL", {
+          edId: thisEdId,
+          // Opus review round 2, 17 September 2026 (P2), item 6: `undefined` in the ordinary,
+          // unlinked case (this form's existing behaviour) — set only when this form was opened via
+          // the inbox row's own "Raise into a movement" button, which is also what supplied the
+          // gender prefill in `draft.gender` above.
+          referralId: raisingFromReferralId,
+          ...(draft.patientId === undefined ? {} : { patientId: draft.patientId }),
+          draft: {
+            cohort,
+            security,
+            sex,
+            // T11 (item 8): widened from the three-state local draft — `"not_recorded"` becomes
+            // `undefined` on the dispatched event, the model's own "not yet recorded" convention.
+            gender: gender === "not_recorded" ? undefined : gender,
+            // T15 (item 12): `"none"` becomes `undefined` on the dispatched event, the same widening
+            // the gender field immediately above gets.
+            tentativeDiagnosis: draft.tentativeDiagnosis === "none" ? undefined : draft.tentativeDiagnosis,
+            observation: {
+              level: observation,
+              intervalMinutes: observation === "intermittent" ? draft.observationIntervalMinutes : null,
+              reviewAt:
+                draft.observationReviewTime.trim() === ""
+                  ? null
+                  : (instantFromEstimatedTimeInputs(draft.observationReviewTime, draft.observationReviewDay, now) ??
+                    null),
+            },
+            highAcuity,
+            legalStatus,
+            urgency,
+            legalFormCode: draft.legalFormCode,
+            // `undefined` when the clinician typed nothing (or the guard above already refused
+            // something incomplete) — the reducer then writes no deadline at all, which is the state
+            // every ward surface already renders explicitly as absent.
+            legalFormDueAt: instantFromDateAndTimeInputs(draft.legalFormDueAtDate, draft.legalFormDueAtTime, dayZero),
+          },
+        }),
+      now,
+      new Set(movements.map((movement) => movement.id)),
+    );
   }
 
   const ctx: EdScreenContext = {
@@ -367,13 +384,18 @@ export function EdScreen({ edId }: EdScreenProps) {
     needsRailSlides,
     recordEdStep,
     submitReferral,
+    referralFieldsDisabled: referralSave.referralFieldsDisabled,
+    referralSaveMessage: referralSave.referralSaveMessage,
     ...referralDraft,
     ...boardDrafts,
     ...rowPanels,
     ...boardView,
     ...inboxDecline,
     ...derived,
+    ...examinationSave,
     ...actions,
+    ...expirySave,
+    ...recordSave,
   };
 
   const boardSplit = waitingSplit(patients);
@@ -437,7 +459,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               value: longestHere === undefined ? "—" : splitDuration(longestHere),
               tone: longestHere !== undefined && longestHere >= accessTarget ? "danger" : undefined,
             },
-            { id: "held", label: "Bed held", value: waitingForBed },
+            { id: "held", label: "Accepted", value: waitingForBed },
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}

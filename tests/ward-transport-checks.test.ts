@@ -11,6 +11,8 @@ import {
   legalNowTransportStatus,
   packRequirement,
   transportExceptionRecord,
+  transportAnswersBlockedReason,
+  transportAnswersMissing,
   transportExceptionText,
   transportStatusClashes,
 } from "@/components/ward-management/ward-transport-checks";
@@ -228,5 +230,37 @@ describe("every time box reads a typed clock time by the same rule", () => {
     expect(instantFromDateAndTimeInputs("2026-10-02", "0930", dayZero)).toBe(expected);
     expect(instantFromDateAndTimeInputs("2026-10-02", "930", dayZero)).toBeUndefined();
     expect(instantFromDateAndTimeInputs("2026-10-02", "24:00", dayZero)).toBeUndefined();
+  });
+});
+
+// Blocker mock-up, Josh approved 26 Oct 2026: the booking popup names the answers still missing.
+describe("transport booking answers still missing", () => {
+  const blank = {
+    provider: undefined,
+    escortRequired: undefined,
+    cadNumber: "",
+    transportLegalStatus: undefined,
+    estimatedTime: "",
+    estimatedDay: "today",
+  } as const;
+
+  it("lists every unanswered question in the popup's order, and the blocked sentence is unchanged", () => {
+    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "escort", "cad", "legalStatus", "time"]);
+    expect(transportAnswersBlockedReason(blank, NOW_ANCHOR)).toBe(
+      "Before booking, choose who is collecting the patient, answer the escort question, enter the CAD transport number, state whether the transport is voluntary or involuntary, enter the estimated time. None is filled in for you: the record has to say that this team decided.",
+    );
+  });
+
+  it("names only the blank CAD number once the rest is answered, and never a typed placeholder", () => {
+    const answered = {
+      ...blank,
+      provider: "St John WA" as never,
+      escortRequired: true,
+      transportLegalStatus: "involuntary" as never,
+      estimatedTime: "13:30",
+    };
+    expect(transportAnswersMissing(answered, NOW_ANCHOR)).toEqual(["cad"]);
+    expect(transportAnswersMissing({ ...answered, cadNumber: "TBC" }, NOW_ANCHOR)).toEqual([]);
+    expect(transportAnswersMissing({ ...answered, cadNumber: "CAD-2026-0001" }, NOW_ANCHOR)).toEqual([]);
   });
 });

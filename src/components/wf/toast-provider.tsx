@@ -1,6 +1,17 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { canRestoreFocusTo } from "./sheet-focus";
 import { OverlayPortal } from "./overlay-root";
 import overlayStyles from "./overlay.module.css";
 import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
@@ -14,7 +25,8 @@ export type Toast = {
   body?: string;
   /**
    * ms before auto-dismiss. Pass 0 to require an explicit dismiss. A toast with an `action`
-   * defaults to 0: v6 keeps actions on screen until dismissed.
+   * defaults to 0: v6 keeps actions on screen until dismissed. A warning or danger toast also
+   * defaults to 0 (Audit 24-7, CT-09), so a refusal is not lost while the person looks away.
    */
   duration?: number;
   /** One action, such as Undo. */
@@ -89,6 +101,33 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const savesOnDevice = useContext(ToastDeviceSaveContext);
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
+  const recentControls = useRef<HTMLElement[]>([]);
+  const pendingFocusReturn = useRef<HTMLElement[] | null>(null);
+
+  useEffect(() => {
+    const remember = () => {
+      const target = document.activeElement;
+      if (!(target instanceof HTMLElement) || target === document.body || target.closest('[data-testid="toast"]'))
+        return;
+      recentControls.current = [target, ...recentControls.current.filter((element) => element !== target)].slice(0, 8);
+    };
+    document.addEventListener("focusin", remember);
+    remember();
+    return () => document.removeEventListener("focusin", remember);
+  }, []);
+
+  useLayoutEffect(() => {
+    const targets = pendingFocusReturn.current;
+    pendingFocusReturn.current = null;
+    if (!targets) return;
+    // An action that deliberately focused another control owns that focus.
+    if (document.activeElement !== document.body) return;
+    for (const target of targets) {
+      if (!canRestoreFocusTo(target)) continue;
+      target.focus({ preventScroll: true });
+      if (document.activeElement === target) break;
+    }
+  }, [toasts]);
 
   // Visible Undo toasts whose window has already ended, so `onExpire` runs at most once each. An id
   // leaves the set when its toast is removed.
@@ -104,6 +143,11 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
 
   const dismiss = useCallback(
     (id: string) => {
+      const active = document.activeElement;
+      if (active?.closest('[data-testid="toast"]')) {
+        // The triggering save strip may have disappeared; keep earlier surviving controls too.
+        pendingFocusReturn.current = recentControls.current;
+      }
       const gone = toastsRef.current.find((toast) => toast.id === id);
       const next = toastsRef.current.filter((toast) => toast.id !== id);
       toastsRef.current = next;
@@ -240,7 +284,9 @@ function ToastCard({
   onUndone: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
 }) {
   // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
-  const duration = toast.undo ? 0 : (toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION));
+  // Audit 24-7 (CT-09): a warning or danger toast stays until dismissed unless its caller sets a time.
+  const lasting = Boolean(toast.action) || toast.tone === "warning" || toast.tone === "danger";
+  const duration = toast.undo ? 0 : (toast.duration ?? (lasting ? 0 : DEFAULT_DURATION));
 
   useEffect(() => {
     if (duration <= 0) return;

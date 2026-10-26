@@ -94,9 +94,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* Layout sweep SHELL-02 (25 Oct 2026): the face stays 28px on touch tablets too, matching the
+   * service pill beside it; the ::after below gives presses their 48px. */
   height: 28px;
-  /* Touch tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
-  min-height: var(--wf-tablet-tap, 0px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
   border-radius: var(--wf-r-ctl);
@@ -233,4 +233,16 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.sessionEnding {
+  composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--warn-border);
+  color: var(--ink);
+  background: var(--warn-soft);
+  font-family: var(--body);
+  font-size: 0.875rem;
+  font-weight: 600;
 }

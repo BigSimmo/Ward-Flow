@@ -303,6 +303,9 @@ describe("RELEASE_DIVERTED_BED — build plan item 29 / OA-29", () => {
     expect(after.closure?.outcome).toBe("did_not_proceed");
     expect(after.closure?.reason).toBe(DIVERSION_REASONS[0]);
     expect(after.blocker).toBe(STAGE_TRANSITION_BLOCKERS.didNotProceed);
+    // Ledger L3-06: the closed journey no longer lingers as live at any ward.
+    expect(after.acceptedUnitId).toBeUndefined();
+    expect(after.referredUnitIds).toEqual([]);
     expect(unitAfter.allocatable.value).toBe(unitBefore.allocatable.value + 1);
     expect(released.admissions.length).toBe(admissionsBefore - 1);
 

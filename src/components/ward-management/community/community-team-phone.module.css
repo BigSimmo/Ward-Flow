@@ -144,6 +144,25 @@
   justify-content: center;
 }
 
+/* R2-04 (device sweep, 24 Oct 2026): the five lists (Sent, Waiting, In bed, Back, CTOs) fit one
+   row at 390 with tighter item padding, and wrap onto a second row on a narrower phone, so the
+   chosen list is never scrolled out of sight. */
+@media (max-width: 48rem) {
+  .lists > .segmented {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+  }
+
+  .lists > .segmented > button {
+    flex: 1 0 auto;
+    gap: 4px;
+    padding-inline: 6px;
+  }
+}
+
 /* One card holding rows, hairlines between, no tint and no accent stripe. */
 .card {
   margin: 0;
@@ -173,6 +192,15 @@
   padding: 0 var(--wf-s-3) var(--wf-s-2);
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* D-80: a sent journey's own controls, under the row and outside its button. */
+.rowControls {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+.rowControls:empty {
+  display: none;
 }
 
 .attention {

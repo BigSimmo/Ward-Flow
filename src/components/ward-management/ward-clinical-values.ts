@@ -240,7 +240,7 @@ export const CLINICAL_VALUES = {
   },
   pullHold: {
     ...SIGNED_BY_JOSH,
-    name: "Pull hold on an accepting bed lasts",
+    name: "Pull time limit on an accepting bed",
     group: "Alerts and holds",
     value: PULL_HOLD_MINUTES,
     unit: "minutes",
@@ -248,14 +248,14 @@ export const CLINICAL_VALUES = {
   },
   extraTravelHold: {
     ...SIGNED_BY_JOSH_21_OCT,
-    name: "Extra-travel bed hold adds",
+    name: "Extra-travel pull time adds",
     group: "Alerts and holds",
     value: EXTRA_TRAVEL_HOLD_MINUTES,
     unit: "minutes",
   },
   bedHoldReview: {
     ...SIGNED_BY_JOSH,
-    name: "Bed hold without a confirmed dispatch flagged for review after",
+    name: "Pulled bed without a confirmed dispatch flagged for review after",
     group: "Alerts and holds",
     value: 2 * MINUTES_PER_HOUR,
     unit: "minutes",
@@ -477,6 +477,13 @@ export const CLINICAL_VALUES = {
     group: "Access and privacy",
     value: 12,
     unit: "hours",
+  },
+  sessionWarning: {
+    ...SIGNED_BY_JOSH_21_OCT,
+    name: "The shared site warns that the sign-in limit is near, before it ends, by",
+    group: "Access and privacy",
+    value: 10,
+    unit: "minutes",
   },
   stepUpWindow: {
     ...SIGNED_BY_JOSH_16_OCT,

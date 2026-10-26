@@ -5,8 +5,8 @@ import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { DAY_SHIFT_END_MINUTE } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { DAY_SHIFT_END_MINUTE, shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { cx } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
@@ -254,6 +254,7 @@ export function WardBedsMatrix({
   selectedPod,
   setSelectedPod,
   isMixed,
+  now,
 }: WardBedsMatrixProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "needs-look" | "ready" | "nobody-due">("all");
   const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
@@ -261,6 +262,8 @@ export function WardBedsMatrix({
 
   // Optional: matrix chrome still renders in isolated tests without a provider.
   const bedReleasesList = useOptionalWardFlowSelect("bedReleases")?.bedReleases ?? [];
+  // The board clock, so the handover named is the current shift's end (Audit 24-6 TC-02).
+  const boardNow = useOptionalWardFlowSelect("now")?.now ?? now;
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
 
   // Filter by pod / locked / open
@@ -448,7 +451,10 @@ export function WardBedsMatrix({
               Before handover
             </span>
             <span className={styles.shiftSubtitle}>
-              {visibleShiftItems.length} of {shiftItems.length} before handover at {formatInstant(DAY_SHIFT_END_MINUTE)}
+              {visibleShiftItems.length} of {shiftItems.length} before handover at{" "}
+              {boardNow === undefined
+                ? formatInstant(DAY_SHIFT_END_MINUTE)
+                : formatInstantWithDay(shiftEndInstant(boardNow), boardNow)}
             </span>
           </div>
 

@@ -11,9 +11,8 @@ import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle"
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
-import type { LeavingDestination } from "./ward-admissions";
+import type { Admission, LeavingDestination } from "./ward-admissions";
 import { communityScopedReferrals, communitySentView, type CommunityScopedReferral } from "./ward-referral-visibility";
-
 import {
   type Context,
   createContext,
@@ -21,6 +20,7 @@ import {
   Fragment,
   type ReactNode,
   type SetStateAction,
+  startTransition,
   use,
   useCallback,
   useContext,
@@ -73,10 +73,11 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
+import { useSliceGatedDispatch } from "./ward-flow-slice-dispatch";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -122,7 +123,7 @@ import {
  * expose state fields or recipient projections. Focus is shared UI navigation state;
  * it never enters the reducer or an event.
  */
-type WardFlowContextValue = {
+type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
@@ -278,6 +279,7 @@ const WARD_FLOW_KEY_SET = {
   refreshRequests: true,
   handoverSignOffs: true,
   repatriations: true,
+  ...closingLoop.CLOSING_LOOP_CONTEXT_KEYS,
   inboxAcknowledgements: true,
   inboxCompletions: true,
   inboxOwnership: true,
@@ -432,6 +434,7 @@ type WardFlowContainer = {
   typedTextFromFile?: boolean;
   restoredElapsed: number;
   recoveryNotice?: string;
+  recoveryNoticeQuiet?: boolean; // Unchanged reload: the notice only names the save beside a storage warning.
   /** Event log, step 1: every dispatch this session, in memory only (see `ward-event-log.ts`).
    *  Starts empty; a reset to a new world starts it again. Never saved. */
   eventLog?: readonly EventLogEntry[];
@@ -529,7 +532,8 @@ function wardFlowContainerReducer(
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
 /** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
-const fixtureWorlds = () => WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(0, scenario));
+const fixtureWorlds = (offsetMinutes = 0) =>
+  WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
 
 function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
@@ -648,19 +652,18 @@ export function WardFlowProvider({ children, initialNow, initialDayZero }: WardF
     if (initialNow !== undefined) return; // pinned: never touch the wall clock
     /*
      * ⚠️ **`react-hooks/set-state-in-effect` IS DISABLED HERE ON PURPOSE, AND THE RULE IS RIGHT
-     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE.** It fires because a synchronous `setState` in
-     * an effect body normally means state that could have been derived during render — a cascading
-     * render for nothing.
-     *
-     * **This is the one case where deriving it during render is the DEFECT.** The wall clock is a
-     * value the server and the client disagree about by construction, so reading it during render
-     * is precisely what made every ward route capable of failing hydration. The adoption has to
-     * happen after the first paint or it is not a fix at all.
-     *
-     * It costs one extra render per mount. If a future change makes the clock deterministic across
-     * server and client, delete the effect rather than the comment.
+     * ABOUT ALMOST EVERY OTHER EFFECT IN THIS TREE**: a `setState` in an effect is usually state
+     * that could be derived during render. **Here deriving it during render is the DEFECT.** Server
+     * and client disagree about the wall clock by construction, so reading it during render made
+     * every ward route able to fail hydration. Adoption must happen after the first paint.
+     * One extra render per mount. If the clock becomes deterministic, delete the effect, not this.
+     * In a transition, so code-split panels keep their server-drawn content until their code loads:
+     * an urgent update blanked them and the phone Home jumped (design re-score DR-03).
      */
-    const adopt = () => setAdopted({ mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) });
+    const adopt = () => {
+      const next = { mountedAtAbsolute: absoluteWallClockMinutes(), dayZero: demoDayZero(new Date()) };
+      startTransition(() => setAdopted(next));
+    };
     return whenStreamRevealed(adopt); // not while the streamed page is pending: React would duplicate it
   }, [initialNow]);
 
@@ -765,7 +768,6 @@ function WardFlowWorld({
     () => (sharedDayZero ? new Date(sharedDayZero) : localDayZero),
     [sharedDayZero, localDayZero],
   );
-
   // `trackWardFlowTypedTextDispatch` is a plain top-level function — pure, no closure over any
   // per-mount ref — so it can be passed directly; its own identity being stable or not is
   // irrelevant to `useReducer`, which always calls whatever function is currently passed. Pinned
@@ -787,7 +789,8 @@ function WardFlowWorld({
       };
     },
   );
-  const state = container.world;
+  // Scope changes must be visible in this render, before the adoption effect copies the new desk.
+  const state = shared.enabled && shared.snapshot ? shared.snapshot.payload.state : container.world;
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   const broadcastInstanceIdRef = useRef("");
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
@@ -804,11 +807,8 @@ function WardFlowWorld({
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
-  const dispatch = useCallback<WardCommandDispatch>(
-    (event: WardFlowEvent) => {
-      if (sharedEnabled) {
-        return dispatchShared(event);
-      }
+  const dispatchLocal = useCallback(
+    (event: WardFlowEvent): WardCommandOutcome | Promise<WardCommandOutcome> => {
       // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
@@ -846,8 +846,9 @@ function WardFlowWorld({
         ),
       };
     },
-    [dispatchContainer, sharedEnabled, dispatchShared, container.sessionAdopted],
+    [dispatchContainer, container.sessionAdopted],
   );
+  const dispatch = useSliceGatedDispatch(dispatchLocal, sharedEnabled ? dispatchShared : null, commandsRef);
   // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`). Synchronised in
   // `useLayoutEffect` (as well as reducer state transitions) so the component render body stays pure.
   useLayoutEffect(() => {
@@ -1101,12 +1102,12 @@ function WardFlowWorld({
           const restoredElapsed =
             saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
           // A saved day identical to the seed already on screen (nothing was changed before the
-          // reload) only moves the clock; the screens keep their nodes and their state.
+          // reload) only moves the clock and keeps every node. Nothing was lost: no notice unless storage fails.
           const isSameWorld =
             !current.preAdoptionEvents?.length &&
             JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
-          if (isSameWorld)
-            return { ...current, restoredElapsed, sessionAdopted: true, preAdoptionEvents: undefined, recoveryNotice };
+          const quiet = { recoveryNotice, recoveryNoticeQuiet: true, sessionAdopted: true };
+          if (isSameWorld) return { ...current, ...quiet, restoredElapsed, preAdoptionEvents: undefined };
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
@@ -1334,6 +1335,7 @@ function WardFlowWorld({
       refreshRequests: state.refreshRequests,
       handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : EMPTY_ARRAY,
       repatriations: Array.isArray(state.repatriations) ? state.repatriations : EMPTY_ARRAY,
+      ...closingLoop.closingLoopContext(state),
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
@@ -1405,7 +1407,7 @@ function WardFlowWorld({
               ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
                 ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
                 : STORAGE_UNAVAILABLE
-              : (container.recoveryNotice ?? null)
+              : (!container.recoveryNoticeQuiet && container.recoveryNotice) || null
           }
         >
           <WardDemoNotSavedContext.Provider

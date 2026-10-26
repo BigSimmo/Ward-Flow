@@ -121,7 +121,7 @@ describe("search operational projections and location filters", () => {
     expect(admission.movementId).toBeNull();
     expect(admission.patientId).toBe(movement.patientId);
     expect(movementSearchState(movement, seed.admissions).hasBedHold).toBe(true);
-    expect(movementSearchState(movement, seed.admissions).holdStatus).toBe("Bed hold active");
+    expect(movementSearchState(movement, seed.admissions).holdStatus).toBe("Bed pulled");
     expect(
       movementSearchState({ ...movement, admissionId: "AD-ARR-01" }, [{ ...admission, id: "AD-ARR-01" }]).hasBedHold,
     ).toBe(false);

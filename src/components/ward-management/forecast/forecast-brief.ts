@@ -19,8 +19,8 @@ export function forecastBrief(
   return [
     { label: "Tightest", text: tightest(tomorrow) },
     { label: "Biggest blocker", text: biggestBlocker(levers) },
-    { label: "ED risk", text: edRisk(risk, edName) },
-    { label: "Best single action", text: bestAction(levers) },
+    { label: "ED waits", text: edRisk(risk, edName) },
+    { label: "Biggest lever", text: bestAction(levers) },
   ];
 }
 

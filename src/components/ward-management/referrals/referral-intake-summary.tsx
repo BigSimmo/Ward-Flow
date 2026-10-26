@@ -3,8 +3,11 @@
 import { clearanceChecklistWords, referralNeedsWords, type ReferralIntakeDetails } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import styles from "./ward-referral-drawer.module.css";
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 
 export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetails }) {
+  const board = useOptionalWardFlowSelect("now", "dayZero");
   if (!intake) return null;
   return (
     <details className={styles.refCard}>
@@ -18,7 +21,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           <strong>Medical clearance</strong>
           {intake.medicalClearance.cleared
             ? "Cleared"
-            : `Pending · expected ${intake.medicalClearance.expectedAt?.replace("T", " ").replace("+08:00", " AWST")}`}
+            : `Pending · expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, board?.dayZero, board?.now)}`}
         </span>
         {!intake.medicalClearance.cleared && (
           <span>
@@ -70,7 +73,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           <span>
             <strong>Proposed arrival</strong>
             {intake.arrival.transport} ·{" "}
-            {intake.arrival.estimatedAt?.replace("T", " ").replace("+08:00", " AWST") || "Time not recorded"}
+            {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, board?.dayZero, board?.now)}
             {intake.arrival.reference ? ` · ${intake.arrival.reference}` : ""}
           </span>
         )}

@@ -772,3 +772,9 @@
     color: HighlightText;
   }
 }
+
+@media (max-width: 48rem) {
+  .search {
+    min-height: var(--wf-touch);
+  }
+}

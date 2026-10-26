@@ -17,7 +17,7 @@ import {
 } from "react";
 import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
 import styles from "./ed-board-controls.module.css";
-import { EdConfirmedStep } from "./ed-screen-row-menu";
+import { EdConfirmedStep, EdUnavailableNote } from "./ed-screen-row-menu";
 
 type AnchorProps = {
   open: boolean;
@@ -485,14 +485,21 @@ export function EdActionsMenu({
     { name: "Legal & referral", items: [] },
   ];
   const other: ReactNode[] = [];
+  let lastGroup: number | undefined;
   for (const child of flatten(children)) {
+    // Usability review (Josh approved 24 Oct 2026): a greyed item's visible "why" stays under that item, in its group.
+    if (isValidElement(child) && child.type === EdUnavailableNote && lastGroup !== undefined) {
+      groups[lastGroup].items.push(cloneElement(child as ReactElement<{ menuItem?: boolean }>, { menuItem: true }));
+      continue;
+    }
     if (
       isValidElement<ButtonHTMLAttributes<HTMLButtonElement> & { "data-testid"?: string; testId?: string }>(child) &&
       (child.type === "button" || child.type === EdConfirmedStep)
     ) {
       // A confirmed step (Audit 1 CS-07) is a menu item too; it carries its test id as a prop.
       const key = (child.type === EdConfirmedStep ? child.props.testId : child.props["data-testid"]) ?? "";
-      groups[/examine|outcome/.test(key) ? 0 : /handover|transport|arrival-plan/.test(key) ? 1 : 2].items.push(
+      lastGroup = /examine|outcome/.test(key) ? 0 : /handover|transport|arrival-plan/.test(key) ? 1 : 2;
+      groups[lastGroup].items.push(
         child.type === EdConfirmedStep
           ? cloneElement(child as ReactElement<{ menuItem?: boolean }>, { menuItem: true })
           : cloneElement(child, { role: "menuitem" }),
@@ -547,7 +554,10 @@ export function EdActionsMenu({
           className={styles.actionItems}
           onFocus={(event) =>
             setReason(
-              event.target instanceof HTMLButtonElement && event.target.getAttribute("aria-disabled") === "true"
+              event.target instanceof HTMLButtonElement &&
+                event.target.getAttribute("aria-disabled") === "true" &&
+                // The blocker mock-up (26 Oct 2026): a note that opens its own reason in place needs no copy below.
+                !event.target.nextElementSibling?.hasAttribute("data-unavailable-detail")
                 ? event.target.title
                 : undefined,
             )

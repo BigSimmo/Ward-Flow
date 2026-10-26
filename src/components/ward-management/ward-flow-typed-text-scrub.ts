@@ -1,5 +1,6 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { isDischargeCriterion } from "./ward-discharge-criteria";
+import { isSyntheticReferralTimelineBase } from "./ward-referral-seed-time";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isValidStoredWardFlowState, typedCriterionNotKept } from "./ward-flow-storage-validation";
@@ -136,9 +137,11 @@ function matchesRule(path: readonly string[], rule: PathRule): boolean {
 
 /**
  * Every scenario's seeded world, supplied by the caller (the provider passes its own seeds), so this
- * module imports neither the reducer nor the scenarios.
+ * module imports neither the reducer nor the scenarios. With an offset, the same worlds seeded onto a
+ * clock moved by that many minutes, through the caller's one safe door (`seedWardFlowStateAt`): this
+ * module never shifts an instant itself.
  */
-export type FixtureWorlds = () => readonly WardFlowState[];
+export type FixtureWorlds = (offsetMinutes?: number) => readonly WardFlowState[];
 
 interface FixtureText {
   /** Every seeded string with where it sits: what pass 1 keeps. */
@@ -147,7 +150,7 @@ interface FixtureText {
   strings: ReadonlySet<string>;
 }
 
-let fixtureText: { from: FixtureWorlds; text: FixtureText } | undefined;
+let fixtureText: { from: FixtureWorlds; text: FixtureText; worlds: readonly WardFlowState[] } | undefined;
 
 /** An array entry's place: its record `id` where it has one, so an insertion cannot shift it. */
 function entryPlace(entry: unknown, index: number): string {
@@ -174,11 +177,70 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
     else if (value && typeof value === "object")
       for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
   };
-  for (const world of worlds()) visit(world, []);
+  const seeded = worlds();
+  for (const world of seeded) visit(world, []);
   const text = { places, strings };
-  fixtureText = { from: worlds, text };
+  fixtureText = { from: worlds, text, worlds: seeded };
   return text;
 }
+
+type ReanchoredFixtureTarget = { value: string; base: string };
+let reanchoredText:
+  | {
+      from: FixtureWorlds;
+      scenario: string;
+      offset: number;
+      targets: ReadonlyMap<string, ReanchoredFixtureTarget>;
+    }
+  | undefined;
+
+/** Exact shifted fixture targets, admitted only with each target's own bundled provenance. */
+function reanchoredFixtureTargets(
+  state: WardFlowState,
+  worlds: FixtureWorlds,
+): ReadonlyMap<string, ReanchoredFixtureTarget> {
+  fixtureEntries(worlds);
+  const world = fixtureText?.worlds.find((candidate) => candidate.scenario === state.scenario);
+  if (!world) return NO_TARGETS;
+  let offset: number | undefined;
+  for (const referral of state.referrals) {
+    const seeded = world.referrals.find((candidate) => candidate.id === referral.id);
+    if (seeded && Number.isFinite(referral.raisedAt) && Number.isFinite(seeded.raisedAt)) {
+      offset = referral.raisedAt - seeded.raisedAt;
+      break;
+    }
+  }
+  if (offset === undefined || offset === 0) return NO_TARGETS;
+  if (reanchoredText?.from === worlds && reanchoredText.scenario === state.scenario && reanchoredText.offset === offset)
+    return reanchoredText.targets;
+  const moved = worlds(offset).find((candidate) => candidate.scenario === state.scenario);
+  if (!moved) return NO_TARGETS;
+  const targets = new Map<string, ReanchoredFixtureTarget>();
+  for (const referral of moved.referrals) {
+    for (const [group, field] of [
+      ["medicalClearance", "expectedAt"],
+      ["arrival", "estimatedAt"],
+    ] as const) {
+      const target = referral.intake?.[group] as
+        { expectedAt?: string; estimatedAt?: string; syntheticTimelineBase?: string } | undefined;
+      const value = target?.[field];
+      if (
+        typeof value !== "string" ||
+        !Number.isFinite(Date.parse(value)) ||
+        !isSyntheticReferralTimelineBase(target?.syntheticTimelineBase)
+      )
+        continue;
+      targets.set(["referrals", "#" + referral.id, "intake", group, field].join("\u0001"), {
+        value,
+        base: target.syntheticTimelineBase,
+      });
+    }
+  }
+  reanchoredText = { from: worlds, scenario: state.scenario, offset, targets };
+  return targets;
+}
+
+const NO_TARGETS: ReadonlyMap<string, ReanchoredFixtureTarget> = new Map();
 
 /**
  * Pass 1 alone: every typed field that is not fixture text becomes the placeholder. `loadedWorld`
@@ -187,16 +249,27 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
 export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds, loadedWorld = false): WardFlowState {
   const rules = loadedWorld ? [...HUMAN_ONLY_RULES, ...MIXED_RULES] : HUMAN_ONLY_RULES;
   const fixture = fixtureEntries(worlds).places;
+  const reanchored = reanchoredFixtureTargets(state, worlds);
   // Fixture text where the fixture put it ships in the bundle, and a fixed-list discharge criterion
   // is chosen, not typed.
-  const keptAsIs = (value: string, path: readonly string[], place: readonly string[]): boolean =>
-    value.trim() === "" ||
-    fixture.has(placed(place, value)) ||
-    (path.at(-1) === "criterion" && isDischargeCriterion(value));
+  const keptAsIs = (
+    value: string,
+    path: readonly string[],
+    place: readonly string[],
+    parent?: Record<string, unknown>,
+  ): boolean => {
+    const target = reanchored.get(place.join("\u0001"));
+    return (
+      value.trim() === "" ||
+      fixture.has(placed(place, value)) ||
+      (target?.value === value && target.base === parent?.syntheticTimelineBase) ||
+      (path.at(-1) === "criterion" && isDischargeCriterion(value))
+    );
+  };
   // `path` matches the field rules (`[]` for any array position); `place` finds the fixture's own text.
-  const visit = (value: unknown, path: string[], place: string[]): unknown => {
+  const visit = (value: unknown, path: string[], place: string[], parent?: Record<string, unknown>): unknown => {
     if (typeof value === "string")
-      return keptAsIs(value, path, place) || !rules.some((rule) => matchesRule(path, rule))
+      return keptAsIs(value, path, place, parent) || !rules.some((rule) => matchesRule(path, rule))
         ? value
         : TYPED_TEXT_NOT_KEPT;
     if (Array.isArray(value))
@@ -204,10 +277,16 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
     if (value && typeof value === "object") {
       // An undo step keeps copies of support notification rows, which the anchored reason rule must reach.
       const rebased = supportUndoPaths(path, value);
+      const referralCopies = referralUndoPlaces(path, value);
       return Object.fromEntries(
         Object.entries(value).map(([key, entry]) => [
           key,
-          visit(entry, rebased?.[key] ?? [...path, key], [...place, key]),
+          visit(
+            entry,
+            referralCopies?.[key] ? ["referrals", "[]"] : (rebased?.[key] ?? [...path, key]),
+            referralCopies?.[key] ?? [...place, key],
+            value as Record<string, unknown>,
+          ),
         ]),
       );
     }
@@ -234,6 +313,18 @@ function supportUndoPaths(path: readonly string[], value: object): Readonly<Reco
   return change.mode === "whole" ? SUPPORT_UNDO_LIST_PATHS : SUPPORT_UNDO_ROW_PATHS;
 }
 
+/** Decision snapshots keep the same referral identity, so only its own exact fixture text stays. */
+function referralUndoPlaces(path: readonly string[], value: object): Readonly<Record<string, string[]>> | undefined {
+  if (path.length !== 2 || path[0] !== "undoRecords" || path[1] !== "[]") return undefined;
+  const undo = value as { kind?: unknown; before?: { id?: unknown }; after?: { id?: unknown } };
+  if (undo.kind !== "referral-decision" || typeof undo.before?.id !== "string" || typeof undo.after?.id !== "string")
+    return undefined;
+  return {
+    before: ["referrals", `#${undo.before.id}`],
+    after: ["referrals", `#${undo.after.id}`],
+  };
+}
+
 /** Optional intake times and file contents: a placeholder cannot stand in for these, so they go. */
 const OPTIONAL_PATTERNED_INTAKE = [
   ["medicalClearance", "expectedAt"],
@@ -247,31 +338,38 @@ const OPTIONAL_PATTERNED_INTAKE = [
  * itself is kept. Its fixed-list facts go with it until the restore fence accepts the placeholder.
  */
 function keepHoldableIntakes(state: WardFlowState): WardFlowState {
-  const referrals = state.referrals.map((referral) => {
-    const intake = (referral as { intake?: Record<string, unknown> }).intake;
-    if (!intake || referralIntakeError(intake as unknown as ReferralIntakeDetails) === null) return referral;
-    const trimmed: Record<string, unknown> = { ...intake };
-    for (const [group, field] of OPTIONAL_PATTERNED_INTAKE) {
-      const inner = trimmed[group] as Record<string, unknown> | undefined;
-      if (inner?.[field] !== TYPED_TEXT_NOT_KEPT) continue;
-      const { [field]: _dropped, ...rest } = inner;
-      void _dropped;
-      trimmed[group] = rest;
-    }
-    if (Array.isArray(trimmed.charts))
-      trimmed.charts = trimmed.charts.map((chart: Record<string, unknown>) => {
-        if (chart.base64 !== TYPED_TEXT_NOT_KEPT) return chart;
-        const { base64: _content, ...rest } = chart;
-        void _content;
-        return rest;
-      });
-    if (referralIntakeError(trimmed as unknown as ReferralIntakeDetails) === null)
-      return { ...referral, intake: trimmed } as typeof referral;
-    const { intake: _intake, ...rest } = referral as typeof referral & { intake?: unknown };
-    void _intake;
-    return rest as typeof referral;
-  });
-  return { ...state, referrals };
+  const referrals = state.referrals.map(keepHoldableIntake);
+  const undoRecords = state.undoRecords?.map((undo) =>
+    undo.kind === "referral-decision"
+      ? { ...undo, before: keepHoldableIntake(undo.before), after: keepHoldableIntake(undo.after) }
+      : undo,
+  );
+  return { ...state, referrals, ...(undoRecords === undefined ? {} : { undoRecords }) };
+}
+
+function keepHoldableIntake<T extends { intake?: ReferralIntakeDetails }>(referral: T): T {
+  const intake = (referral as { intake?: Record<string, unknown> }).intake;
+  if (!intake || referralIntakeError(intake as unknown as ReferralIntakeDetails) === null) return referral;
+  const trimmed: Record<string, unknown> = { ...intake };
+  for (const [group, field] of OPTIONAL_PATTERNED_INTAKE) {
+    const inner = trimmed[group] as Record<string, unknown> | undefined;
+    if (inner?.[field] !== TYPED_TEXT_NOT_KEPT) continue;
+    const { [field]: _dropped, ...rest } = inner;
+    void _dropped;
+    trimmed[group] = rest;
+  }
+  if (Array.isArray(trimmed.charts))
+    trimmed.charts = trimmed.charts.map((chart: Record<string, unknown>) => {
+      if (chart.base64 !== TYPED_TEXT_NOT_KEPT) return chart;
+      const { base64: _content, ...rest } = chart;
+      void _content;
+      return rest;
+    });
+  if (referralIntakeError(trimmed as unknown as ReferralIntakeDetails) === null)
+    return { ...referral, intake: trimmed } as T;
+  const { intake: _intake, ...rest } = referral as T & { intake?: unknown };
+  void _intake;
+  return rest as T;
 }
 
 function matchesLedger(value: string, ledger: readonly string[]): boolean {

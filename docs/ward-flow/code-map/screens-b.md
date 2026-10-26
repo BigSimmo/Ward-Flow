@@ -1,5 +1,14 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Current-tree check — 24 October 2026
+
+Checked against `main` at `899b232e`. The `src/components/ward-management/governance/` folder no
+longer exists; the `/governance` route still renders `WardModeWorkspace mode="governance"`, and its
+pieces are the root `governance-*.tsx` files with `governance-third-edition.module.css`. Also gone:
+`handover/handover-third-edition.module.css` and `out-of-area/out-of-area-third-edition.module.css`.
+`handover/handover-page.tsx` is now 1,428 lines, split across `handover-*.tsx` files, so the line
+outline in the handover section is history. List the folder before trusting a file entry.
+
 ## Confirmed usability fixes — 19 October 2026
 
 Patient transport records a fresh booking with explicit provider and escort answers. Active
@@ -294,7 +303,7 @@ on 15 Oct 2026.
 **`governance/page.tsx` mounts `WardModeWorkspace mode="governance"`, which renders `GovernanceView`
 from `ward-management-modes.tsx`, which in turn renders `GovernanceWorkbench` from
 `ward-management/governance-registers` — an entirely different, unrelated component tree** (covered
-in [Frame and PsychSift](frame-and-psychsift.md) or [Routes, shell and shared UI](shell-and-shared.md),
+in [Frame and PsychSift](../archive/code-map/frame-and-psychsift.md) or [Routes, shell and shared UI](shell-and-shared.md),
 not this file). **Dispatches:** none. **Reads:** none live. **Tests:** only
 `ward-browser-build-css.test.ts`, and that test only compiles `governance.module.css` through the
 build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 15 Oct 2026.
@@ -307,8 +316,7 @@ build pipeline. The folder's `governance-screen.tsx` was removed by PR #306 on 1
 **Route:** `/handover`. **Mockup:** `handover-third-edition.html`. **Dispatches:**
 `RECORD_HANDOVER_SIGN_OFF`. **Reads:** `COMMUNITY_TEAM_PAGES`/`communityTeamById`
 (`community/community-derivations.ts`), `elapsedLabel`, `handoverSnapshot`, `isOpen`,
-`referralForMovement`, `stageCopy` (`ward-derivations.ts`), `openWorkBeforeShiftEnd` and friends
-(`ward-board-time-features.ts`). **Tests:** the dozen `ward-handover*` files plus
+`referralForMovement`, `stageCopy` (`ward-derivations.ts`). **Tests:** the dozen `ward-handover*` files plus
 `ward-advanced-features.dom.test.tsx`, `ward-community-durations-not-dates.test.ts`,
 `ward-pull-vocabulary.dom.test.tsx`,
 `ward-screen-handover-link.dom.test.tsx`, `ward-service-scope.test.ts`,

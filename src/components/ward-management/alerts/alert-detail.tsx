@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type Ref } from "react";
+import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
 
@@ -131,7 +132,7 @@ export function AlertDetail({
   const track: TrackPoint[] = [];
   if (kind === "hold") {
     if (movement?.originEdId) track.push({ at: movement.openedAt, label: "Arrived ED", shape: "wait" });
-    if (item.since !== undefined) track.push({ at: item.since, label: "Hold ended", shape: "act" });
+    if (item.since !== undefined) track.push({ at: item.since, label: "Pull ended", shape: "act" });
   } else if (kind === "transport") {
     if (movement?.transport?.acceptedAt !== undefined) {
       track.push({ at: movement.transport.acceptedAt, label: "Transport accepted", shape: "wait" });
@@ -183,7 +184,7 @@ export function AlertDetail({
             id: `${decline.unitId}-${decline.at}`,
             at: decline.at,
             short: unitName(decline.unitId).split(" ")[0] ?? decline.unitId,
-            title: `${unitName(decline.unitId)}, ${declineReasonLabels[decline.reason] ?? decline.reason}, ${formatInstantWithDay(decline.at, now)}`,
+            title: `${unitName(decline.unitId)}, ${decline.reason ? (declineReasonLabels[decline.reason] ?? decline.reason) : DECLINE_REASON_NOT_SHARED}, ${formatInstantWithDay(decline.at, now)}`,
           }))}
         />
       </section>
@@ -207,7 +208,7 @@ export function AlertDetail({
       icon={mine ? Check : UserRound}
       disabledReason={actionDisabledReason ?? (mine ? "You own this alert" : undefined)}
       reasonDisplay="tooltip"
-      aria-label={mine ? `You own ${subjectLine}` : `Take ${subjectLine}`}
+      aria-label={mine ? `Yours: ${subjectLine}` : `Take ${subjectLine}`}
       onClick={() => handlers.onTake(item)}
     >
       {mine ? "Yours" : "Take"}
@@ -223,7 +224,7 @@ export function AlertDetail({
           icon={seen ? Check : undefined}
           disabledReason={actionDisabledReason ?? (seen ? "Already acknowledged" : undefined)}
           reasonDisplay="tooltip"
-          aria-label={seen ? `Acknowledged ${subjectLine}` : `Acknowledge ${subjectLine}`}
+          aria-label={seen ? `Seen: ${subjectLine}` : `Acknowledge ${subjectLine}`}
           onClick={() => handlers.onAcknowledge(item)}
         >
           {seen ? "Seen" : "Acknowledge"}
@@ -344,7 +345,11 @@ export function AlertDetail({
                     <StatusGlyph tone="neutral" size={9} />
                     <span className={styles.declineText}>
                       <span className={styles.declineUnit}>{unitName(decline.unitId)}</span>
-                      <span className={styles.quiet}>{declineReasonLabels[decline.reason] ?? decline.reason}</span>
+                      <span className={styles.quiet}>
+                        {decline.reason
+                          ? (declineReasonLabels[decline.reason] ?? decline.reason)
+                          : DECLINE_REASON_NOT_SHARED}
+                      </span>
                     </span>
                     <span className={styles.mono}>{formatInstantWithDay(decline.at, now)}</span>
                   </li>
@@ -419,7 +424,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           )}
         </div>
@@ -469,7 +475,7 @@ export function AlertDetail({
               id: `${decline.unitId}-${decline.at}`,
               at: decline.at,
               short: unitName(decline.unitId).split(" ")[0] ?? decline.unitId,
-              title: `${unitName(decline.unitId)}, ${declineReasonLabels[decline.reason] ?? decline.reason}, ${formatInstantWithDay(decline.at, now)}`,
+              title: `${unitName(decline.unitId)}, ${decline.reason ? (declineReasonLabels[decline.reason] ?? decline.reason) : DECLINE_REASON_NOT_SHARED}, ${formatInstantWithDay(decline.at, now)}`,
             }))}
           />
         </section>
@@ -496,7 +502,11 @@ export function AlertDetail({
                 <StatusGlyph tone="neutral" size={9} />
                 <span className={styles.declineText}>
                   <span className={styles.declineUnit}>{unitName(decline.unitId)}</span>
-                  <span className={styles.quiet}>{declineReasonLabels[decline.reason] ?? decline.reason}</span>
+                  <span className={styles.quiet}>
+                    {decline.reason
+                      ? (declineReasonLabels[decline.reason] ?? decline.reason)
+                      : DECLINE_REASON_NOT_SHARED}
+                  </span>
                 </span>
                 <span className={styles.mono}>{formatInstantWithDay(decline.at, now)}</span>
               </li>
@@ -556,7 +566,8 @@ export function AlertDetail({
                 setReleaseReason("");
               }}
             >
-              Release bed
+              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+              Release bed for {subject.displayName}
             </Button>
           </div>
         )}

@@ -10,6 +10,7 @@ import {
   Badge,
   BarList,
   Button,
+  Card,
   CardBody,
   CardFoot,
   ColumnChart,
@@ -18,6 +19,7 @@ import {
   HeroChips,
   Icon,
   StackBar,
+  Spinner,
   StatusGlyph,
   TextInput,
   buttonClass,
@@ -42,14 +44,15 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   calendarDateOf,
+  formatSheetMoment,
   dayOf,
   formatInstant,
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
   type BedRelease,
@@ -65,13 +68,25 @@ import {
 import { FlushRow, Follow } from "./statistics-layout";
 import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
 
+function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
+  return (
+    <Card id={view} data-testid={`ward-statistics-${view}-loading`}>
+      <CardBody className={styles.viewLoading}>
+        <Spinner />
+        <p role="status">Loading {view} view…</p>
+      </CardBody>
+    </Card>
+  );
+}
+
 const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView), {
   ssr: false,
+  loading: () => <StatisticsViewLoading view="journey" />,
 });
 
 const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
   ssr: false,
-  loading: () => <p role="status">Loading map view…</p>,
+  loading: () => <StatisticsViewLoading view="map" />,
 });
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -87,6 +102,7 @@ import { wardReferralTally } from "./statistics-ward-referrals";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
+import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -213,7 +229,8 @@ export function StatisticsScreen({
   } = live.state;
   const now = live.now;
   const service = useServiceScope();
-  const { countsOnly } = useStatisticsCounts();
+  const { countsOnly, small } = useStatisticsCounts();
+  const isPhone = useIsPhone();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
   const sourceReferrals = referrals ?? liveReferrals;
@@ -237,9 +254,8 @@ export function StatisticsScreen({
   const availableNow = totalReadyBedsNow(units, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
-  // Audit 6 (Josh, 20 Oct 2026): "Waiting in ED" is the shared figure every other screen prints, the
-  // people physically in an ED; every open journey, in transit and ward-to-ward included, is "Still open".
-  const waitingCount = waitingInEds(sourceMovements, now).total;
+  // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
+  const waitingCount = openEdJourneys(sourceMovements, now).total;
   const stillOpenCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
@@ -327,6 +343,7 @@ export function StatisticsScreen({
   ).length;
 
   const filteredAndSortedWards = useMemo(() => {
+    if (isPhone) return [];
     let list = allPressureWards.slice();
     const q = wardSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
@@ -348,11 +365,12 @@ export function StatisticsScreen({
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
+    if (isPhone) return [];
     let list = emergencyDepts.slice();
     const q = edSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
@@ -376,7 +394,7 @@ export function StatisticsScreen({
       return a.site.localeCompare(b.site);
     });
     return list;
-  }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -403,6 +421,7 @@ export function StatisticsScreen({
 
   // Pull to arrival, banded. The same measured gaps `pullToArrival` averages.
   const arrivalBands = useMemo(() => {
+    if (isPhone) return [];
     const gaps = sourceAdmissions
       .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
       .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
@@ -413,32 +432,39 @@ export function StatisticsScreen({
       label: band.label,
       value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
     }));
-  }, [sourceAdmissions, configuration.pullHoldMinutes]);
+  }, [isPhone, sourceAdmissions, configuration.pullHoldMinutes]);
 
   const finderLists = useMemo(
-    () => ({
-      ward: units
-        .map((u) => ({
-          id: u.id,
-          name: u.name,
-          code: u.siteCode,
-          meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
-          ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
-        }))
-        .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
-      service: HEALTH_SERVICES.map((svc) => {
-        const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
-        return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
-      }),
-      team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-    }),
-    [units, sourceAdmissions, sourceBedReleases, emergencyDepts],
+    () =>
+      isPhone
+        ? { ward: [], ed: [], service: [], team: [] }
+        : {
+            ward: units
+              .map((u) => ({
+                id: u.id,
+                name: u.name,
+                code: u.siteCode,
+                meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
+                ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+              }))
+              .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
+            ed: emergencyDepts.map((d) => ({
+              id: d.id,
+              name: d.name,
+              code: d.site,
+              meta: `${d.waiting} open ED journeys`,
+            })),
+            service: HEALTH_SERVICES.map((svc) => {
+              const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
+              return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
+            }),
+            team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+          },
+    [isPhone, units, sourceAdmissions, sourceBedReleases, emergencyDepts],
   );
 
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
-  const isPhone = useIsPhone();
 
   if (isPhone) {
     return (
@@ -524,9 +550,10 @@ export function StatisticsScreen({
               ["Beds in use (occupied or pulled)", inUseCount],
               ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
-              ["Admissions ended today", dischargesCount],
-              ["Waiting in ED", waitingCount],
-              ["Still open", stillOpenCount],
+              // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
+              ["Admissions ended today", small(dischargesCount)],
+              ["Open ED journeys", small(waitingCount)],
+              ["Still open", small(stillOpenCount)],
             ],
           }}
           chips={
@@ -535,7 +562,7 @@ export function StatisticsScreen({
               <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
-                value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}
+                value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
                 label={
                   <>
                     Admissions ended today
@@ -546,9 +573,9 @@ export function StatisticsScreen({
                 }
               />
               <HeroChip
-                value={waitingCount}
+                value={small(waitingCount)}
                 // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                label={`Waiting in ED · ${stillOpenCount} still open`}
+                label="Open ED journeys"
                 onPress={() =>
                   document
                     .querySelector('[data-testid="ward-statistics-emergency-departments"]')
@@ -583,6 +610,7 @@ export function StatisticsScreen({
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
                 <StatisticsCapacityChart
+                  asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
                   units={units}
                   bedReleases={sourceBedReleases}
                   admissions={sourceAdmissions}
@@ -836,7 +864,7 @@ export function StatisticsScreen({
 
               <StatCard
                 icon={Clock}
-                title="ED waits for a bed"
+                title="Open ED journeys"
                 data-testid="ward-statistics-emergency-departments"
                 aside={
                   longestEd && longestEd.longest !== null ? (
@@ -877,7 +905,7 @@ export function StatisticsScreen({
                         <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
                         <SortTh
                           id="waiting"
-                          label="Waiting"
+                          label="Open ED journeys"
                           sort={edSortCol}
                           asc={edSortAsc}
                           onSort={handleEdSort}
@@ -1144,6 +1172,20 @@ export function StatisticsScreen({
                   admissions={sourceAdmissions}
                   movements={sourceMovements}
                 />
+              )}
+
+              {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
+              {countsOnly ? null : (
+                <>
+                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
+                  <FixedQuestionsCard
+                    movements={sourceMovements}
+                    bedReleases={sourceBedReleases}
+                    admissions={sourceAdmissions}
+                    units={units}
+                    now={now}
+                  />
+                </>
               )}
             </div>
           </div>

@@ -15,7 +15,7 @@ export function movementBedReservation(movement: Movement, referrals: readonly R
               arm.state === "accepted" &&
               arm.heldBedNumber !== undefined &&
               arm.destination.kind === "psychiatric_ward" &&
-              arm.destination.unitId === unitId,
+              (arm.acceptedUnitId ?? arm.destination.unitId) === unitId,
           );
   return { referralArm, bedNumber: movement.heldBedNumber ?? referralArm?.heldBedNumber };
 }

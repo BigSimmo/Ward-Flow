@@ -321,6 +321,27 @@ button.check[aria-pressed="true"] {
   flex: none;
 }
 
+/* Device sweep R3-18/L12/A12 (24 Oct 2026): the owner chips run off the right edge ("FSH Adult S")
+   with no sign there are more. The right edge is drawn while there is more to the right, the same
+   scroll-driven edge as the shared ward table: a border, never a fade. */
+@keyframes chipsMoreRight {
+  from,
+  97% {
+    border-right-color: var(--wf-ink-3);
+  }
+  to {
+    border-right-color: transparent;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .chipRow {
+    border-right: 2px solid transparent;
+    animation: chipsMoreRight linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 .toolbar > * {
   flex-shrink: 0;
 }
@@ -1246,6 +1267,13 @@ button.check[aria-pressed="true"] {
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* Device sweep R3-18/L12/A12 (24 Oct 2026): "First in line, not chosen yet" sits at the top of the
+   unpadded detail card; it takes the detail head's inset instead of touching the card's corner. */
+.panelCard > .confirmNote {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+
 .composerPair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1421,8 +1449,10 @@ button.check[aria-pressed="true"] {
 }
 
 /* ---------- Phone (v10), rendered only under 48rem ---------- */
+/* Device sweep R1-05/B6-17 (24 Oct 2026): the buttons wrap rather than cut their labels ("Next …", "Broa…"). */
 .phoneHeroActions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--wf-s-2);
   width: 100%;
 }
@@ -1434,6 +1464,7 @@ button.check[aria-pressed="true"] {
 
 .phoneHeroActions > :not(:last-child) {
   flex: 1 1 0;
+  min-width: fit-content;
 }
 
 /* Device audit (11 Oct 2026): the pause control carries its word, not an icon alone. */
@@ -1652,6 +1683,15 @@ button.check[aria-pressed="true"] {
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 16px var(--wf-font);
   white-space: nowrap;
+}
+
+/* Item 4: why the desktop Now list is in its order. */
+.orderNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
 }
 
 .phoneNote {

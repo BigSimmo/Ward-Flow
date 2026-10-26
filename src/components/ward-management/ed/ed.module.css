@@ -251,7 +251,7 @@
 .fullscreenBoard {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 1000 !important;
+  z-index: var(--z-overlay) !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
   width: 100vw !important;
@@ -1989,6 +1989,12 @@
 .departmentWorkspace > .panel > .ph,
 .departmentWorkspace > .panel > .tabbar {
   flex: 0 0 auto;
+}
+
+/* Layout sweep (CRIT-02): the Lists card is the workspace's only panel, so it takes the whole row
+   rather than half the page with its fifth tab cut off at the card edge. */
+.departmentWorkspace > .panel:only-child {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 1024px) {
@@ -5026,11 +5032,17 @@
   outline-offset: 2px;
 }
 
+/* A6/B6-13/L11 (device sweep, 24 Oct 2026): "Step 2, over 8 hours" was cut to "Step 2, ov…" in the
+ * narrow Wait column at every desktop width. It wraps to a second line now, and only a longer line
+ * ends in an ellipsis. */
 .a2Sub {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
 }
@@ -5152,6 +5164,17 @@
 .a2Facts .sr-only,
 .a2Facts [class*="sr-only"] {
   display: revert;
+}
+
+/* Layout sweep (REF-18): an alert is read in full, so a late arrival or an overdue ETA wraps inside
+   the patient cell rather than being cut ("Arrival late — more than 60 minutes pa…"). Doubled to
+   outrank `.a2Facts [class]:not(svg)` above. */
+.a2Facts .arrivalLate.arrivalLate,
+.a2Facts .transitBadgeOverdue.transitBadgeOverdue {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .a2Mono {
@@ -5423,4 +5446,114 @@
 .umrnNote {
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+/* Usability review, Josh approved 24 Oct 2026 ("blocker named, with the fix beside it"). A greyed row
+   action says why in visible words under it, with its one fix beside the words when the row has
+   one. Existing tokens only; the words are the shared `DisabledReason` line. */
+.unavailableNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+  min-width: 0;
+}
+
+/* The shared reason line truncates to one line; here it may wrap, so nothing is cut off. */
+.unavailableNote span[id] {
+  white-space: normal;
+}
+
+.unavailableFix {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.unavailableFix:hover {
+  border-color: var(--wf-accent);
+}
+
+/* Blocker mock-up, Josh approved 26 Oct 2026: the reason and who acts next open under the
+   missing item when the greyed action is tapped or focused. */
+.unavailableDetail {
+  flex-basis: 100%;
+  display: grid;
+  gap: 2px;
+  color: var(--wf-ink-2);
+  font: var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.unavailableDetail:empty {
+  display: none;
+}
+
+.unavailableNext {
+  color: var(--wf-ink-3);
+}
+
+.unavailableNext b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+/* The transport booking popup: the answers still missing, and the empty CAD field marked. */
+.answersLeft {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-warning);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.fieldMissing {
+  color: var(--wf-warning-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.referralField input[data-missing] {
+  border-color: var(--wf-warning);
+}
+
+/* In the person sheet's action list the words sit under the greyed row, inside the same box. */
+.phoneSheetActions > .unavailableNote {
+  padding: 0 var(--wf-s-3) var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.phoneSheetActions > .unavailableNote:last-child {
+  border-bottom: 0;
+}
+
+.phoneSheetSection .phoneSheetActions > button:has(+ .unavailableNote) {
+  border-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .phoneSheetActions .unavailableFix,
+  .answersLeft .unavailableFix {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-3);
+  }
+}
+
+/* Layout sweep (CRIT-04): in the phone patient sheet the "On the board" editors (legal form and
+   medical clearance selects, the psychiatric review pill and the clearance buttons) are full-size
+   phone controls, as the 48px action rows beside them, not 24-28px desktop ones. */
+[data-testid^="ward-ed-phone-sheet-"] :is(.thinSelect, .reviewPill, .inboxBtn) {
+  height: auto;
+  min-height: 44px;
+}
+
+[data-testid^="ward-ed-phone-sheet-"] :is(.reviewPill, .inboxBtn) {
+  font-size: var(--wf-fs-14);
 }

@@ -88,6 +88,10 @@ DO $$ BEGIN
     GRANT USAGE, SELECT ON SEQUENCE ward_flow.record_access_id_seq TO wardflow_backend;
     GRANT SELECT, INSERT, DELETE ON ward_flow.session_sign_outs TO wardflow_backend;
   END IF;
+  -- Migration 14: archived records are only added and read.
+  IF to_regclass('ward_flow.archived_records') IS NOT NULL THEN
+    GRANT SELECT, INSERT ON ward_flow.archived_records TO wardflow_backend;
+  END IF;
 END $$;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC;

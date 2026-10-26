@@ -487,3 +487,16 @@ export function categoriseTeamAdmission(
 export function elapsedSinceOrUnderADay(days: number): string {
   return Number.isFinite(days) && days > 0 ? elapsedDaysPhrase(days) : "under a day";
 }
+
+/**
+ * USC-03 (production audit, 25 Oct 2026): a community decline goes only to the referral whose
+ * decline control is open — the waiting row's (`declineOpenFor`) or the phone sheet's. Any other
+ * id is refused, so a drafted reason can never be applied to a referral nobody opened.
+ */
+export function declineTargetIsOpen(
+  referralId: string,
+  declineOpenFor: string | undefined,
+  phone: { declining: boolean; referralId: string | null },
+): boolean {
+  return referralId === declineOpenFor || (phone.declining && referralId === phone.referralId);
+}

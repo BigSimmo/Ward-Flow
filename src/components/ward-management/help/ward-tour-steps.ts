@@ -164,7 +164,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your screens",
-          `Needs you is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
+          `My list is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
         ),
         step(
           "Your daily work",
@@ -674,7 +674,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "queue",
           { sel: 'section[aria-label="Priority queue"]' },
           "Who is waiting",
-          `Patients lists everyone waiting in priority order, T1 first.${
+          `Patients lists everyone waiting, longest wait first.${
             f.referralsWaiting === undefined ? "" : ` Referrals holds the ${f.referralsWaiting} waiting for a decision.`
           } Form due lists the forms due soon.`,
         ),
@@ -796,7 +796,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "chips",
           { sel: '[aria-label="Team tools"]' },
           "Team actions",
-          "How to reach, On duty, Refer from team, Record contact, the CTO register, Catchment MDT and more.",
+          "How to reach, On duty, Refer from team, Record contact, the CTO register, Catchment counts and more.",
           "Swipe the row to see the rest.",
         ),
         step(

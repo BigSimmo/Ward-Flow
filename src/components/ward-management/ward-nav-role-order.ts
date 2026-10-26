@@ -9,9 +9,9 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
  * exist — "Movements in", "Referrals sent", "Our patients" — and the decision was that a role gets
  * the same real screens in a different order rather than links to screens nobody has built.
  *
- * 🔴 **AND IT IS ENFORCED STRUCTURALLY, NOT BY CARE.** `orderFor` sorts an existing array; it never
- * builds a new one from a hand-written list of ids. A hand-written permutation is one typo away
- * from silently dropping a destination — and a sidebar with a missing link looks exactly like a
+ * 🔴 **AND IT IS ENFORCED STRUCTURALLY, NOT BY CARE.** `wardNavRoleRank` only ranks ids; the caller
+ * sorts its existing array by that rank and never builds a new one from a hand-written list of
+ * ids. A hand-written permutation is one typo away from silently dropping a destination — and a sidebar with a missing link looks exactly like a
  * sidebar, which is why the two-way check in `ward-nav.test.ts` exists in the first place. An id
  * this file does not mention keeps its source position at the end of the list rather than
  * vanishing, so **forgetting an id costs it a good position and nothing else.**
@@ -35,7 +35,7 @@ const VIEW_ORDER: Record<WardChromeRole, readonly WardMode[]> = {
   ed: ["movements", "delays", "capacity", "command", "governance"],
   officer: WARD_MODES,
   /* No role-specific order has been drawn for these three, so they keep source order — the same
-     "keep source position" rule `orderFor` already applies to an id a list does not name. They must
+     "keep source position" rule `wardNavRoleRank` already applies to an id a list does not name. They must
      still be keys here: `VIEW_ORDER` is a total `Record` over `WardChromeRole`, so a role added to
      the union without a key here fails to compile. */
   community: [],
@@ -68,32 +68,13 @@ const BOARD_GROUP_ORDER: Record<WardChromeRole, readonly WardNavId[]> = {
   executive: [],
 };
 
-function orderFor<T extends { id: string }>(items: readonly T[], order: readonly string[]): readonly T[] {
-  if (order.length === 0) return items;
-  const rank = (id: string) => {
-    const at = order.indexOf(id);
-    return at === -1 ? order.length : at;
-  };
-  /*
-   * `toSorted` rather than `sort`: `items` is the module-level `WARD_NAV`/`WARD_VIEWS` array, and
-   * sorting it in place would permanently reorder the single source of destinations for every other
-   * reader in the process — including the two-way route check.
-   */
-  return items.toSorted((left, right) => rank(left.id) - rank(right.id));
-}
-
-export function orderRoleScreensForRole<T extends { id: WardNavId }>(items: readonly T[], role: WardChromeRole) {
-  return orderFor(items, ROLE_GROUP_ORDER[role]);
-}
-
 /**
  * The position `id` holds in its role's preferred order, or `null` when that role's list does not
- * name `id` at all — the same "keep its source position" case `orderFor` falls back to.
+ * name `id` at all, so the caller keeps that id in its source position.
  *
  * Added so the third-edition rail (`shell/ward-rail.tsx`) can reorder its own groups, which MIX
- * views, role screens and boards inside one group. `orderFor` can only sort a homogeneous list
- * against one order array; this returns the single rank a caller needs to sort a heterogeneous
- * group without knowing which of the three arrays an id belongs to (the arrays cover disjoint id
+ * views, role screens and boards inside one group. This returns the single rank a caller needs to
+ * sort a heterogeneous group without knowing which of the three arrays an id belongs to (the arrays cover disjoint id
  * spaces, so an id is named by at most one of them).
  *
  * ⚠️ **COORDINATOR RETURNS `null` FOR EVERY ID.** Its "order" in the mounted rail is the rail's own

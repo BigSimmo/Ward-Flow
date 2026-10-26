@@ -105,7 +105,7 @@ programme: a mockup defect found while building goes to Ward Mockups (owner of
 - [ ] **0.3 Back up**: `env -u MSYS2_ARG_CONV_EXCL bash ~/.claude/scripts/backup-work.sh`, then read
       the tip out of the bundle (HOW-TO-FOLD §8). Never `git bundle verify` alone.
 - [ ] **0.4 Put the owner questions of §7 to the owner in one message**, framed, not open, in the
-      fixed shape of `docs/ward-flow/how-to-write-to-the-owner.md` (detail first, then the `Summary`
+      fixed shape of `docs/ward-flow/archive/dated-notes/how-to-write-to-the-owner.md` (detail first, then the `Summary`
       block `DID / ISSUE / GAPS / NEED / RECOMMEND / NEXT`; one recommendation per question, never a
       menu). Record each answer in `docs/ward-flow/owner-decisions-2026-09-1x.md` (Ward Lead owns
       identity; nobody else numbers). Two chats asking him the same question got opposite answers on
@@ -254,7 +254,7 @@ imports only from the folded line and never edits it.
 the seeds, `ward-model.ts`, `ward-flow-reducer.ts`, any `*.module.css` outside the lane's directories,
 `design/third-edition-mockups/**`. A needed change there is a four-line message to Ward Lead, who makes it on
 the line and announces the SHA. **Before the first edit each lane writes its `.ward-session.json`
-marker at its worktree root, its row in `docs/ward-flow/assignment-register.md` ("claim before you
+marker at its worktree root, its row in `docs/ward-flow/archive/dated-notes/assignment-register.md` ("claim before you
 build"; never write _authorised_ in the status column — only the rulings table records the owner's
 word), its one row in `docs/ward-flow/control/now.md`, and a row per defect in
 `control/work-claims.md`** (claim the defect, not only the file). The content-addressed records under

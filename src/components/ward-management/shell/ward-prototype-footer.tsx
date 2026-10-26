@@ -9,6 +9,42 @@ export interface WardPrototypeFooterProps {
   className?: string;
 }
 
+const PROTOTYPE_BADGE = (
+  <span
+    className={styles.prototypeBadge}
+    data-ward-type-floor="badge"
+    title="Synthetic clinical demonstration prototype · Not connected to live EHR"
+  >
+    <span className={styles.pulseDot} aria-hidden="true" />
+    Synthetic prototype
+  </span>
+);
+const PHONE_TAIL = (
+  <span className={styles.phoneTail}>
+    <span>Invented records ·</span> <span>not for clinical use</span>
+  </span>
+);
+const AUTHORITY_PILL = (
+  <span className={styles.authorityPill} title="Ward Flow prototype · synthetic demonstration data only">
+    <svg
+      className={styles.authorityIcon}
+      viewBox="0 0 16 16"
+      width="12"
+      height="12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
+      <path d="M5.5 8l2 2 3.5-3.5" />
+    </svg>
+    <span>Ward Flow prototype · Synthetic data only</span>
+  </span>
+);
+
 export function WardPrototypeFooter({
   testId,
   note = "Western Australia Mental Health Bed Flow Prototype · All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures · Not approved for clinical use",
@@ -24,43 +60,17 @@ export function WardPrototypeFooter({
       style={style}
     >
       <div className={styles.leftGroup}>
-        <span
-          className={styles.prototypeBadge}
-          data-ward-type-floor="badge"
-          title="Synthetic clinical demonstration prototype · Not connected to live EHR"
-        >
-          <span className={styles.pulseDot} aria-hidden="true" />
-          Synthetic prototype
-        </span>
+        {PROTOTYPE_BADGE}
         {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
             kept for screen readers. Hidden above phone. */}
-        <span className={styles.phoneTail}>
-          <span>Invented records ·</span> <span>not for clinical use</span>
-        </span>
+        {PHONE_TAIL}
         <span className={styles.footerNote} data-ward-type-floor="banner">
           {note}
         </span>
       </div>
       <div className={styles.rightGroup}>
         {extra}
-        <span className={styles.authorityPill} title="Ward Flow prototype · synthetic demonstration data only">
-          <svg
-            className={styles.authorityIcon}
-            viewBox="0 0 16 16"
-            width="12"
-            height="12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
-            <path d="M5.5 8l2 2 3.5-3.5" />
-          </svg>
-          <span>Ward Flow prototype · Synthetic data only</span>
-        </span>
+        {AUTHORITY_PILL}
       </div>
     </footer>
   );

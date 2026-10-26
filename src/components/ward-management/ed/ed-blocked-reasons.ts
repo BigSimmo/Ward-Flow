@@ -200,7 +200,7 @@ export function communityReferralBlockedReason(movement: Movement): string | und
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text. The stop
     // control itself waits on an owner question (see the build plan), so this names who to
     // contact rather than a control this screen does not offer.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays held until it is released.`;
+    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
   }
   const isOnForm = !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
   if (isOnForm) {
@@ -227,7 +227,7 @@ export function edOutcomeBlockedReason(movement: Movement): string | undefined {
   if (movement.transport?.collectedAt !== undefined) {
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text — see
     // `communityReferralBlockedReason`'s own identical fix immediately above.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays held until it is released.`;
+    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
   }
   return undefined;
 }
@@ -273,6 +273,10 @@ export function handoverBlockedReason(movement: Movement, who?: string): string 
   if (!movement.transport && !noTransportNeeded && movement.stage === "pulled") {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return `${who ?? "This patient"} has no transport booked — book it first, then mark the handover ready.`;
+  }
+  // Blocker review (26 Oct 2026): already ready is not "not bed pulled", so it is named as it is.
+  if (movement.stage === "handover_ready") {
+    return `${who ?? "This patient"} is already marked handover ready.`;
   }
   if (movement.stage !== "pulled") {
     return `${who ?? "This patient"} is ${stageCopy[movement.stage].label.toLowerCase()}, not bed pulled — a handover can only be marked ready once a bed is pulled.`;
@@ -364,7 +368,7 @@ export function withdrawReferralBlockedReason(movement: Movement, who?: string):
   // P2-5 (Ward Lead audit, 2026-09-17): no internal event name — see
   // `communityReferralBlockedReason`'s identical fix above.
   if (movement.transport?.collectedAt !== undefined) {
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays held until it is released.`;
+    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
   }
   if (!movement.acceptedUnitId && movement.referredUnitIds.length === 0) {
     return `${who ?? "This patient"} holds no live referral to withdraw.`;

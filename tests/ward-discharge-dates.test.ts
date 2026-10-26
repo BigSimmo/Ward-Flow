@@ -5,12 +5,7 @@ import type { Admission } from "../src/components/ward-management/ward-admission
 import { BED_RELEASE_BLOCKERS } from "../src/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY } from "../src/components/ward-management/ward-clock";
 import { BED_RELEASE_WAITING_ON } from "../src/components/ward-management/ward-model";
-import {
-  blockedReleaseCount,
-  derivedBedReleases,
-  dischargeDateAccuracy,
-  statewideReleaseCount,
-} from "../src/components/ward-management/ward-discharge-dates";
+import { blockedReleaseCount, derivedBedReleases } from "../src/components/ward-management/ward-discharge-dates";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 /**
@@ -331,21 +326,16 @@ describe("blockedReleaseCount — the cross-cut, never a bucket subtraction", ()
   });
 });
 
-describe("statewideReleaseCount — a ward-to-ward transfer nets differently for the ward and the state", () => {
+describe("derivedBedReleases — a ward-to-ward transfer still frees the sending ward's bed", () => {
   /**
-   * Requirement 5, both halves in ONE test so neither can pass alone. Two admissions leave in the
-   * same instant: one is a genuine discharge to the community (frees a bed AND gives the state
-   * one back), the other is a transfer to another psychiatric ward (frees a bed but gives the
-   * state nothing — `LEAVING_DESTINATIONS`'s own `countsAsStatewideRelease: false`).
-   *
-   * Half 1 asserts the SENDING unit's own discharged-release count rises for BOTH admissions
-   * equally — a transfer is still a real, local bed coming free; that is precisely what makes the
-   * network figure interesting rather than a foregone conclusion. Half 2 asserts the statewide
-   * count reflects only the genuine discharge: one, not two. Constructing both departures side by
-   * side, rather than asserting the transfer's contribution is merely "not 2", is what stops this
-   * test degenerating into a search that happens to find a passing example.
+   * Two admissions leave in the same instant: one is a genuine discharge to the community, the
+   * other a transfer to another psychiatric ward (`LEAVING_DESTINATIONS`'s own
+   * `countsAsStatewideRelease: false`). Each unit's own discharged-release count rises for BOTH
+   * equally — a transfer is still a real, local bed coming free. (The statewide half of this test
+   * pinned `statewideReleaseCount`, which had no reader and was removed with Josh's approval,
+   * production audit EDR-05, 25 Oct 2026.)
    */
-  it("counts a released bed for both units, but the statewide total only for the genuine discharge", () => {
+  it("counts a released bed for both units, transfer included", () => {
     const now = DAY_ZERO + 5 * MINUTES_PER_DAY;
     const sendingUnit = "rph-adult-open";
     const otherUnit = "fsh-adult-secure";
@@ -368,69 +358,8 @@ describe("statewideReleaseCount — a ward-to-ward transfer nets differently for
     const admissions = [genuineDischarge, transferredElsewhere];
     const releases = derivedBedReleases(admissions, now);
 
-    // Half 1: each unit gets its own bed back, transfer included.
+    // Each unit gets its own bed back, transfer included.
     expect(releases.filter((r) => r.unitId === sendingUnit && r.state === "discharged")).toHaveLength(1);
     expect(releases.filter((r) => r.unitId === otherUnit && r.state === "discharged")).toHaveLength(1);
-
-    // Half 2: the network gained exactly one bed, not two.
-    expect(statewideReleaseCount(admissions, now)).toBe(1);
-  });
-});
-
-describe("dischargeDateAccuracy — null, never zero, when there is nothing to average", () => {
-  /**
-   * Requirement 6, BINDING: zero and "no data" are different claims. A `{ met: 0, moved: 0,
-   * total: 0 }` would read on a screen as "this ward has a perfect record", when the truth in
-   * every case below is that nobody has left, or nobody who left ever had a date to keep or move.
-   */
-  it("returns null for an empty admission list", () => {
-    expect(dischargeDateAccuracy([])).toBeNull();
-  });
-
-  it("returns null when nobody has left yet, however many dates are planned", () => {
-    const stillHere = anAdmission({
-      state: "occupied",
-      dischargeDateSetAt: DAY_ZERO,
-      expectedDischargeAt: DAY_ZERO + MINUTES_PER_DAY,
-    });
-    expect(dischargeDateAccuracy([stillHere])).toBeNull();
-  });
-
-  /**
-   * `dischargeDateMoves` defaults to `0` for an admission that never had a date at all — reading
-   * that bare `0` as "met" would silently count an undated departure as a successful prediction.
-   * This is the plausible-looking mistake the gate on `dischargeDateSetAt !== null` exists to
-   * prevent.
-   */
-  it("returns null for a departed admission that never had a date set, even though its moves count is zero", () => {
-    const leftWithNoDateEver = anAdmission({
-      state: "departed",
-      leftAt: DAY_ZERO,
-      dischargeDateSetAt: null,
-      dischargeDateMoves: 0,
-      leavingDestination: "discharged-to-the-community",
-    });
-    expect(dischargeDateAccuracy([leftWithNoDateEver])).toBeNull();
-  });
-
-  it("counts a departed admission whose date was never moved as met, and one that was revised as moved", () => {
-    const met = anAdmission({
-      id: "ADM-MET",
-      state: "departed",
-      leftAt: DAY_ZERO,
-      dischargeDateSetAt: DAY_ZERO - MINUTES_PER_DAY,
-      dischargeDateMoves: 0,
-      leavingDestination: "discharged-to-the-community",
-    });
-    const moved = anAdmission({
-      id: "ADM-MOVED",
-      state: "departed",
-      leftAt: DAY_ZERO,
-      dischargeDateSetAt: DAY_ZERO - MINUTES_PER_DAY,
-      dischargeDateMoves: 2,
-      leavingDestination: "left-against-advice",
-    });
-
-    expect(dischargeDateAccuracy([met, moved])).toEqual({ met: 1, moved: 1, total: 2 });
   });
 });

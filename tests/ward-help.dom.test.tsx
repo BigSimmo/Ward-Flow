@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,14 +23,20 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
+  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+}));
+
 import {
   GLOSSARY,
   SCREEN_HELP,
   filterGlossary,
   screenHelpFor,
 } from "@/components/ward-management/help/ward-help-content";
+import { DESK_GUIDES, SAVED_OR_NOT } from "@/components/ward-management/help/ward-help-guide";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
+import { WHATS_NEW } from "@/components/ward-management/help/ward-whats-new";
 import {
   TOUR_SEEN_STORAGE_KEY,
   TOUR_STEP_STORAGE_KEY,
@@ -118,6 +124,15 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
   });
 
+  it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
+    route.pathname = "/ward-flow/settings";
+    const onView = vi.fn();
+    render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
+    expect(screen.queryByTestId("ward-help-screen")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open your desk guide" }));
+    expect(onView).toHaveBeenCalledWith("desk");
+  });
+
   it("filters the glossary as you type, without saving the words", () => {
     render(<Harness initial="glossary" />);
     fireEvent.change(screen.getByTestId("ward-help-glossary-filter"), { target: { value: "St John" } });
@@ -126,11 +141,46 @@ describe("help sheet", () => {
     expect(JSON.stringify({ ...window.localStorage })).not.toContain("St John");
   });
 
+  it("shows the signed-in desk's guide: where it starts, its jobs and how to tell it saved", () => {
+    render(<Harness initial="desk" />);
+    const desk = screen.getByTestId("ward-help-desk");
+    expect(desk.textContent).toContain(DESK_GUIDES.coordinator.summary);
+    for (const item of DESK_GUIDES.coordinator.jobs) expect(desk.textContent).toContain(item.how);
+    expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
+  });
+
+  it("links each job to the screen where it is done, and closes Help on the way", () => {
+    const onClose = vi.fn();
+    render(<WardHelpSheet view="desk" onView={vi.fn()} onClose={onClose} />);
+    const links = screen.getAllByTestId("ward-help-go");
+    expect(links).toHaveLength(DESK_GUIDES.coordinator.jobs.length);
+    const decide = screen.getByRole("link", { name: "Decide a referral: go to Referrals" });
+    expect(decide.getAttribute("href")).toBe("/ward-flow/referrals");
+    fireEvent.click(decide);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives every desk a plain guide that never ranks, scores or calls an incoming bed held", () => {
+    for (const [role, guide] of Object.entries(DESK_GUIDES)) {
+      expect(guide.jobs.length, role).toBeGreaterThanOrEqual(3);
+      expect(guide.jobs.length, role).toBeLessThanOrEqual(6);
+      const words = JSON.stringify(guide).toLowerCase();
+      expect(words, role).not.toMatch(/best match|risk score|acuity|recommended ward|hold the bed|bed hold/);
+    }
+  });
+
   it("starts the tour from its own button", () => {
     const onView = vi.fn();
     render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Take the tour" }));
     expect(onView).toHaveBeenCalledWith("tour");
+  });
+
+  it("lists recent changes, newest first, under What's new", () => {
+    render(<WardHelpSheet view="new" onView={vi.fn()} onClose={vi.fn()} />);
+    const items = within(screen.getByTestId("ward-help-new")).getAllByRole("listitem");
+    expect(items).toHaveLength(WHATS_NEW.length);
+    expect(items[0]?.textContent).toContain((WHATS_NEW.at(-1) as { line: string }).line);
   });
 });
 

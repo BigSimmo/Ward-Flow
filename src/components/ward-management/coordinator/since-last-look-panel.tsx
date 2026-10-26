@@ -8,6 +8,11 @@ import { currentShiftStartInstant } from "@/components/ward-management/ward-boar
 
 import styles from "./home.module.css";
 import {
+  noteWardSessionAccount,
+  wardLeaveSaveAllowed,
+  wardLeaveSaveTicket,
+} from "@/components/ward-management/ward-browser-data";
+import {
   changesSinceInstant,
   scopedChangesSinceLastLook,
   scopeLastLookWorld,
@@ -19,6 +24,12 @@ import {
   type LastLookSnapshot,
   type LastLookWorld,
 } from "./since-last-look";
+import {
+  acceptanceWithdrawnLinks,
+  dischargeMovedLinks,
+  SinceRecordLinks,
+  type SinceRecordLink,
+} from "./since-last-look-links";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import { useOptionalWardFlowSelect, useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
@@ -86,6 +97,8 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
     changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0) +
     changes.newDelays.length +
     changes.newEscalationIds.length +
+    (changes.acceptanceWithdrawn?.length ?? 0) +
+    (changes.dischargeDatesMoved?.length ?? 0) +
     (changes.updates?.length ?? 0)
   );
 }
@@ -95,17 +108,25 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
  * screen, not the panel, so the hero can count new events while the panel itself is closed.
  */
 export function useSinceLastLook(
-  world: LastLookWorld,
+  passedWorld: LastLookWorld,
   now: Instant,
   options?: { scopeKey: string; windowMinutes?: number },
 ) {
   const scopeKey = options?.scopeKey;
   const windowMinutes = options?.windowMinutes ?? 15;
+  // Closing-the-loop (package E): "discharge date moved" reads the stays from the store when the
+  // caller's world does not carry them.
+  const storeAdmissions = useOptionalWardFlowSelect("admissions")?.admissions;
+  const world = useMemo(
+    () => (passedWorld.admissions || !storeAdmissions ? passedWorld : { ...passedWorld, admissions: storeAdmissions }),
+    [passedWorld, storeAdmissions],
+  );
   const scoped = useMemo(() => (scopeKey ? scopeLastLookWorld(world, scopeKey) : world), [world, scopeKey]);
   const thresholds = useDueSoonThresholds();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
+  noteWardSessionAccount(account);
   const storageKey = scopeKey
     ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
     : LAST_LOOK_STORAGE_KEY;
@@ -131,10 +152,17 @@ export function useSinceLastLook(
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
     if (scopeKey) return;
+    const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
-      // A cleanup from another account/world must never write that world's picture.
+      // A cleanup from another account/world must never write that world's picture, and none may
+      // write after its session ended, even one scheduled by a signed-out re-render (A4-07).
       const snapshot = latest.current;
-      if (snapshot.userId === userId && snapshot.worldGeneration === generation && snapshot.scopeKey === scopeKey)
+      if (
+        wardLeaveSaveAllowed(ticket) &&
+        snapshot.userId === userId &&
+        snapshot.worldGeneration === generation &&
+        snapshot.scopeKey === scopeKey
+      )
         writeSnapshot(snapshot, storageKey);
     };
     window.addEventListener("pagehide", saveOnLeave);
@@ -148,7 +176,7 @@ export function useSinceLastLook(
         }, 0),
       );
     };
-  }, [storageKey, userId, generation, scopeKey]);
+  }, [storageKey, userId, generation, scopeKey, account]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
@@ -165,7 +193,7 @@ export function useSinceLastLook(
 }
 
 /** One group row of the phone sheet: a glyph, a bold count line, and a quiet detail line. */
-type SinceGroup = { key: string; tone: WfTone; title: string; detail?: string };
+type SinceGroup = { key: string; tone: WfTone; title: string; detail?: string; links?: SinceRecordLink[] };
 
 /** The phone sheet's quiet line under its title: when the last look was, and how long ago. */
 export function sinceSheetDescription(changes: ChangesSinceLastLook | undefined, now: Instant): string {
@@ -196,7 +224,7 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
     });
   }
   if (changes.newMovementIds.length > 0) {
-    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new in ED` });
+    groups.push({ key: "journeys", tone: "neutral", title: `${changes.newMovementIds.length} new journeys` });
   }
   if (bedsTotal > 0) {
     groups.push({
@@ -222,6 +250,35 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
       tone: "warning",
       title: plural(changes.newEscalationIds.length, "new escalation", "new escalations"),
       detail: "No suitable bed",
+    });
+  }
+  groups.push(...closingLoopGroups(changes));
+  return groups;
+}
+
+/** Closing-the-loop (package E): acceptances withdrawn and discharge dates moved, by ward name. */
+function closingLoopGroups(changes: ChangesSinceLastLook): SinceGroup[] {
+  const groups: SinceGroup[] = [];
+  const wards = (rows: readonly { unitName?: string }[]) =>
+    [...new Set(rows.flatMap((row) => (row.unitName ? [row.unitName] : [])))].join(", ") || undefined;
+  const withdrawn = changes.acceptanceWithdrawn ?? [];
+  if (withdrawn.length > 0) {
+    groups.push({
+      key: "acceptance-withdrawn",
+      tone: "warning",
+      title: plural(withdrawn.length, "acceptance withdrawn", "acceptances withdrawn"),
+      detail: wards(withdrawn),
+      links: acceptanceWithdrawnLinks(changes),
+    });
+  }
+  const moved = changes.dischargeDatesMoved ?? [];
+  if (moved.length > 0) {
+    groups.push({
+      key: "discharge-date-moved",
+      tone: "info",
+      title: plural(moved.length, "discharge date moved", "discharge dates moved"),
+      detail: wards(moved),
+      links: dischargeMovedLinks(changes),
     });
   }
   return groups;
@@ -265,6 +322,7 @@ export function SinceLastLookSheetBody({
           <span className={styles.sinceSheetText}>
             <span className={styles.sinceSheetTitle}>{row.title}</span>
             {row.detail ? <span className={styles.sinceSheetDetail}>{row.detail}</span> : null}
+            {row.links ? <SinceRecordLinks links={row.links} label={`${row.title}: records`} /> : null}
           </span>
         </li>
       ))}

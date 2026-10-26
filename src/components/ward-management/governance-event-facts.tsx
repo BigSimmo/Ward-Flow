@@ -75,7 +75,6 @@ function RequestedBedFacts({ request, now }: { request: BedReleaseAuditRequest; 
       break;
     case "CONFIRM_BED_RELEASE":
     case "CLEAR_BED_RELEASE_BLOCK":
-    case "RELEASE_BED":
       break;
   }
   return <FactList facts={facts} />;
@@ -303,7 +302,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
           : [
               ["ED access target", `${value.edAccessTargetMinutes} min`],
               ["Parallel referral cap", `${value.parallelReferralCap}`],
-              ["Pull hold", `${value.pullHoldMinutes} min`],
+              ["Pull time limit", `${value.pullHoldMinutes} min`],
             ];
       return (
         <div className={thirdEdition.snapshotStack}>

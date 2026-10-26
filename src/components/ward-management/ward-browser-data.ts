@@ -93,11 +93,58 @@ export function clearWardFlowBrowserData(storages: readonly SweepableStorage[] =
  * each such store registers how to forget itself here (Codex review on PR #487). A store registers
  * when its module loads; one that never loaded holds nothing to forget.
  */
-const sessionEndResets = new Set<() => void>();
+const sessionEndResets = new Set<(scope: WardSessionEndScope) => void>();
+
+/** "tab": only this tab signs out (audit 24-3 SM-1), so local storage, shared with other tabs, stays. */
+export type WardSessionEndScope = "browser" | "tab";
 
 /** Register a module-level store's reset, run once each time a signed-in session ends. */
-export function onWardSessionEnd(reset: () => void): void {
+export function onWardSessionEnd(reset: (scope: WardSessionEndScope) => void): void {
   sessionEndResets.add(reset);
+}
+
+/**
+ * Audit 4 A4-07: leave-saves ("since you last looked" pictures) wait one task, and the screen
+ * re-renders signed out before it closes, so a save scheduled after the sweep wrote the picture
+ * back. Each leave-save carries a ticket taken when it was scheduled. It may write only if no
+ * session ended since (so a later sign-in never revives it) and its account context was not
+ * ended: never the ended context, and never the signed-out `null` until someone signs in again.
+ */
+let sessionEpoch = 0;
+const liveAccounts = new Set<object>();
+const endedAccounts = new WeakSet<object>();
+let signedOutSinceEnd = false;
+
+/** Leave-saving screens report their account context while rendering, before any effect runs. */
+export function noteWardSessionAccount(account: object | null): void {
+  if (account === null || endedAccounts.has(account)) return;
+  liveAccounts.add(account);
+  signedOutSinceEnd = false;
+}
+
+export type WardLeaveSaveTicket = {
+  readonly epoch: number;
+  readonly account: object | null;
+  readonly signedOut: boolean;
+};
+
+/** Take when scheduling a leave-save; check with `wardLeaveSaveAllowed` at the moment of writing. */
+export function wardLeaveSaveTicket(account: object | null): WardLeaveSaveTicket {
+  noteWardSessionAccount(account);
+  return { epoch: sessionEpoch, account, signedOut: account === null && signedOutSinceEnd };
+}
+
+export function wardLeaveSaveAllowed(ticket: WardLeaveSaveTicket): boolean {
+  if (ticket.epoch !== sessionEpoch || ticket.signedOut) return false;
+  return ticket.account === null || !endedAccounts.has(ticket.account);
+}
+
+/** Runs first, synchronously, in both session ends: every ticket and context so far is spent. */
+function fenceWardLeaveSaves(): void {
+  sessionEpoch += 1;
+  for (const account of liveAccounts) endedAccounts.add(account);
+  liveAccounts.clear();
+  signedOutSinceEnd = true;
 }
 
 /**
@@ -106,13 +153,37 @@ export function onWardSessionEnd(reset: () => void): void {
  * the storage. A failing reset never stops the others or the sweep.
  */
 export function endWardFlowBrowserSession(): void {
+  fenceWardLeaveSaves();
   clearSessionDrafts();
   for (const reset of sessionEndResets) {
     try {
-      reset();
+      reset("browser");
     } catch {
       // Keep going: the remaining stores and the storage still need clearing.
     }
   }
   clearWardFlowBrowserData();
+}
+
+/**
+ * Audit 24-3 SM-1: this tab signs out while another tab on the same sign-in stays in use. Fence
+ * the drafts, forget this tab's memory stores and sweep this tab's session storage, but leave
+ * local storage, which the other tab shares, as it is.
+ */
+export function endWardFlowTabSession(): void {
+  fenceWardLeaveSaves();
+  clearSessionDrafts();
+  for (const reset of sessionEndResets) {
+    try {
+      reset("tab");
+    } catch {
+      // Keep going: the remaining stores and the storage still need clearing.
+    }
+  }
+  if (typeof window === "undefined") return;
+  try {
+    clearWardFlowBrowserData([window.sessionStorage]);
+  } catch {
+    // Session storage blocked: nothing was saved there to clear.
+  }
 }

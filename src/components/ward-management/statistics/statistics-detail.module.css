@@ -82,9 +82,11 @@ a.secondary:hover {
   background: var(--wf-selected);
 }
 
+/* Device sweep (24 Oct 2026): 8rem pushed the People column out of the narrow community handover
+   card at 1280 px; the bar gives way first, the count never does. */
 .meterCell {
   width: 38%;
-  min-width: 8rem;
+  min-width: 5rem;
 }
 
 .legendLine {

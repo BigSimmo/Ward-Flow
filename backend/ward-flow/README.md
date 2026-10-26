@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-21 - shared build inputs and deployment watch contract checked against source; Documentation owns._
+_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -13,14 +13,15 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
 
 - **Local mode (default):** with `NEXT_PUBLIC_WARD_SHARED_ENABLED` unset or `false`, the app runs
-  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). Saving stops
-  for the rest of the session once typed free text is dispatched (D-18).
+  in the browser on synthetic state in `sessionStorage` (`ward-flow-provider.tsx`). After typed
+  text is dispatched it saves a scrubbed copy with typed values removed, and stops saving only if
+  a safe copy cannot be made (D-72, which replaced D-18's stop).
 - **Shared mode (opt in):** with `WARD_SHARED_ENABLED=true` and
   `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, the UI signs in through `use-ward-supabase-shared.ts`
   and talks to this backend's `/v1/workspace`, `/v1/workspace/commands`, `/v1/workspace/audit`
@@ -65,7 +66,7 @@ These source files do not establish a current hosted connection or deployment.
 - Provider seam: `config.mjs` (provider names, defaults and settings validation) and
   `providers.mjs` (adapters and startup).
 - HTTP: `server.mjs` (server, readiness, shutdown and the five-minute phone push sweep) and
-  `shared-http.mjs` (workspace routes).
+  `shared-http.mjs` (workspace routes). `error-report.mjs` sends optional scrubbed failure reports.
 - Domain: `engine.ts`, built to `dist/engine.mjs` by `build-engine.mjs`. `push.mjs` builds and
   sends Web Push act-now alerts.
 - Store: `postgres.mjs` (workspace store, revisions, receipts, audit and push state), `records.mjs`
@@ -124,7 +125,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->012-foreign-key-indexes<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->014-archived-records<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -162,6 +163,12 @@ These source files do not establish a current hosted connection or deployment.
     record first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
+    From 25 Oct 2026 (limits audit) the server keeps the records it last read or saved. When the
+    workspace row's revision and update time match them, no record is read; otherwise only the
+    bodies changed since are read. A save's own result is trusted only once the database shows it
+    committed. This keeps database data transfer (Supabase egress) to a small part of a board per
+    save or refresh. It relies on every record change going through a save, which gives the
+    changed record the new revision; edit records by hand only with every server stopped.
   - `011-record-access-and-sign-out.sql`: append-only patient/movement record access history,
     append-only protection for break glass rows and server-side session sign-outs. The
     `/v1/workspace/record-access` and `/v1/workspace/sign-out` routes use these capabilities;
@@ -176,7 +183,19 @@ These source files do not establish a current hosted connection or deployment.
     a second, so apply it at a quiet time rather than mid-demonstration.
     `infra/rollback-012-foreign-key-indexes.sql` takes a database back to 11. Reapply runtime
     grants after 12.
-    The backend accepts versions 5 to 12.
+  - `013-referral-record-views.sql`: the record access log also takes `referral`, so opening a
+    referral's full detail is logged as a record view (role access plan v2, D-80). No row, grant or
+    policy changes. Before 13 a referral opening is not logged.
+    `infra/rollback-013-referral-record-views.sql` takes a database back to 12, and refuses once a
+    referral opening has been logged, because the log is append-only. Reapply runtime grants after 13.
+  - `014-archived-records.sql`: closed movements, referrals and alerts older than 30 days leave the
+    live workspace for `archived_records` (Josh, 25 Oct 2026, after the stress test's size finding).
+    The backend looks every 20 saves, and on every save once the workspace passes 6 MiB, and logs
+    `ward_backend_workspace_size_warning` past 6 MiB. A record any live record still names stays
+    live. History reads the archive through `GET /v1/workspace/archive` (newest 5,000, scoped to
+    the desk as its live workspace is). `infra/rollback-014-archived-records.sql` puts the current
+    generation's archived records back first, then drops the table. Reapply runtime grants after 14.
+    The backend accepts versions 5 to 14.
 
 ## Boundaries
 
@@ -188,6 +207,9 @@ These source files do not establish a current hosted connection or deployment.
   text. HTTP, push and store failures share bounded error-name and protocol-code fields; unknown
   values fall back to `Error` without copying exception text. Logger failures cannot change the
   API result.
+- Optional Sentry error reporting (`error-report.mjs`) is off unless `SENTRY_DSN` is set. It sends
+  only the fixed failure name and those same error-name and code fields, at most once every five
+  minutes per failure kind. `SENTRY_ENVIRONMENT` and `SENTRY_RELEASE` are optional labels.
 - Configured PostgreSQL lock/query deadline failures return `503 storage_unavailable`; other
   query/code faults remain `500`. A failed migration rollback preserves the original exception
   and removes the failed connection from the pool.

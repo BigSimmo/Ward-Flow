@@ -217,8 +217,10 @@
   white-space: nowrap;
 }
 
+/* Device sweep R3-05/L17 (24 Oct 2026): the pills wrap rather than squeeze into each other. */
 .heroFilters {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
@@ -1004,18 +1006,20 @@ button.taskLabel[aria-pressed="true"] {
   width: 100%;
 }
 
-/* Footer buttons keep their whole labels. A disabled Save's reason takes the rest of the row and
-   wraps its words, dropping under Clear when the sheet is narrow. */
+/* Footer buttons keep their whole labels. A disabled Save's reason gets its own full-width line
+   above Clear and Save, so it is never squeezed into a narrow column between them (Josh's iPhone,
+   25 Oct 2026). The reason stays tied to Save by aria-describedby. */
 .sheetFoot button {
   flex-shrink: 0;
 }
 
 .sheetFoot > span:has(> button) {
-  flex: 1 1 14rem;
-  justify-content: flex-end;
+  display: contents;
 }
 
 .sheetFoot > span:has(> button) > span {
+  order: -1;
+  flex: 1 1 100%;
   white-space: normal;
 }
 
@@ -1373,10 +1377,13 @@ button.taskLabel[aria-pressed="true"] {
   grid-auto-columns: auto;
 }
 
+/* Device sweep R1-05/B6-17 (24 Oct 2026): the action keeps its whole label ("Copy for handover 6"); the shared phone hero
+ * actions row already wraps. */
 .phoneHeroAction {
   flex: 1 1 0;
   justify-content: center;
   min-width: 0;
+  min-width: fit-content;
 }
 
 .phoneViews {

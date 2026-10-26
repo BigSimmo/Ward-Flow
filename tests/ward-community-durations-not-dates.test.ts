@@ -42,7 +42,11 @@ const COMMUNITY_DIR = "src/components/ward-management/community";
  * contain none. Add an entry only for an owner-approved stamp, with the reason beside it.
  */
 const DELIBERATE_DATE_STAMPS: Readonly<Record<string, number>> = {
-  // Catchment MDT summary print (Josh approved the saved-output stamps, PR #632): the "As at"
+  // Community team list CSV (Josh approved the CSV preamble, PR #634): the generation time is
+  // stamped from the device clock with `new Date().toLocaleString`, because a directory is
+  // reference data rather than a held ward snapshot.
+  [`${COMMUNITY_DIR}/community-index.tsx`]: 2,
+  // Catchment counts print (Josh approved the saved-output stamps, PR #632): the "As at"
   // line uses formatSheetMoment, imported once and called once.
   [`${COMMUNITY_DIR}/community-screen-modals.tsx`]: 2,
 };

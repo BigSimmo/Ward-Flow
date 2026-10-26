@@ -7,11 +7,11 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow", push: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/ward-flow", push: vi.fn(), replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
-  useRouter: () => ({ push: nav.push, replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useRouter: () => ({ push: nav.push, replace: nav.replace, prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -61,6 +61,7 @@ afterEach(() => {
   vi.useRealTimers();
   nav.pathname = "/ward-flow";
   nav.push.mockReset();
+  nav.replace.mockReset();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
@@ -84,13 +85,15 @@ describe("a desk switch on its way", () => {
     expect(screen.queryByText(/^Opening the/)).toBeNull();
   });
 
-  it("ends the switch once the new home arrives, so going Back finds the page closed", () => {
+  it("ends the switch once the new home arrives, so going Back to Ward Flow's own address sends the desk home", () => {
     const view = switchToExecutive();
     nav.pathname = "/ward-flow/statistics";
     view.rerender(app(false));
     nav.pathname = "/ward-flow";
     view.rerender(app(false));
-    expect(screen.getByText("Not part of your role")).toBeInTheDocument();
+    // DR-06: Home is closed to the Executive desk, so its own home replaces the address.
+    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/statistics");
+    expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.queryByText(/^Opening the/)).toBeNull();
   });
 
@@ -104,6 +107,8 @@ describe("a desk switch on its way", () => {
 
   it("shows the closed screen if the new home has not arrived after the wait", () => {
     vi.useFakeTimers();
+    // A closed page other than Home: Home itself sends the desk on to its own home (DR-06).
+    nav.pathname = "/ward-flow/capacity";
     switchToExecutive();
     expect(screen.getByText("Opening the Executive desk")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(DESK_SWITCH_WAIT_MS));
