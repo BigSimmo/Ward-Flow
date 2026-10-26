@@ -2,10 +2,11 @@
 
 // A board row's actions: every control the row's menu offers, and the actions group the person
 // sheet shows. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Dialog, DisabledReason } from "@/components/wf";
 import { MOVEMENT_STAGES, type Movement } from "@/components/ward-management/ward-model";
+import { edShortName } from "@/components/ward-management/ward-sites";
 import { movementReferralLink, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { canSetArrivalPlan } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
@@ -78,8 +79,17 @@ export function EdConfirmedStep({
  * action says why in visible words under it, and when the fix is another action on this same row,
  * that action sits beside the words. Short words only; the full sentence stays on the button's
  * `aria-describedby` and `title`, so screen readers hear what they heard before.
+ *
+ * Blocker mock-up, Josh approved 26 Oct 2026 ("Approve, ED desk first"): `because` is the missing
+ * item in a few words, always shown. Where `why` is given, tapping or focusing the greyed action
+ * opens the full block in place: the one-line reason and who acts next, read from the record.
  */
-export type EdUnavailableLine = { because: string; fix?: { label: string; testId: string; run: () => void } };
+export type EdUnavailableLine = {
+  because: string;
+  why?: string;
+  next?: string;
+  fix?: { label: string; testId: string; run: () => void };
+};
 
 /** The visible "why" under a greyed row action, and its one fix when this row offers one. */
 export function EdUnavailableNote({
@@ -92,8 +102,39 @@ export function EdUnavailableNote({
   /** Set by the row's actions menu, as for `EdConfirmedStep`. */
   menuItem?: boolean;
 }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [open, setOpen] = useState(false);
+  const hasDetail = line.why !== undefined;
+  useEffect(() => {
+    // The greyed action is the element just before this note, in the menu and in the sheet alike.
+    const note = ref.current;
+    const blocked = note?.previousElementSibling;
+    if (!hasDetail || !note || !(blocked instanceof HTMLElement)) return;
+    const show = () => setOpen(true);
+    // Moving on to another item closes it. A tap that gives no focus (iOS) leaves it open.
+    const leave = (event: FocusEvent) => {
+      const to = event.relatedTarget;
+      if (to instanceof Node && to !== blocked && !note.contains(to)) setOpen(false);
+    };
+    blocked.addEventListener("focus", show);
+    blocked.addEventListener("click", show);
+    blocked.addEventListener("focusout", leave);
+    note.addEventListener("focusout", leave);
+    return () => {
+      blocked.removeEventListener("focus", show);
+      blocked.removeEventListener("click", show);
+      blocked.removeEventListener("focusout", leave);
+      note.removeEventListener("focusout", leave);
+    };
+  }, [hasDetail]);
   return (
-    <span className={styles.unavailableNote} data-unavailable-note="" data-testid={testId}>
+    <span
+      ref={ref}
+      className={styles.unavailableNote}
+      data-unavailable-note=""
+      data-unavailable-detail={hasDetail ? "" : undefined}
+      data-testid={testId}
+    >
       {/* The button already names the full reason to screen readers; this is the short visible copy. */}
       <span aria-hidden="true">
         <DisabledReason id={`${testId}-words`}>{line.because}</DisabledReason>
@@ -109,6 +150,20 @@ export function EdUnavailableNote({
         >
           {line.fix.label}
         </button>
+      ) : null}
+      {hasDetail ? (
+        <span role="status" className={styles.unavailableDetail} data-testid={`${testId}-detail`}>
+          {open ? (
+            <>
+              <span>{line.why}</span>
+              {line.next ? (
+                <span className={styles.unavailableNext}>
+                  Next: <b>{line.next}</b>
+                </span>
+              ) : null}
+            </>
+          ) : null}
+        </span>
       ) : null}
     </span>
   );
@@ -135,11 +190,12 @@ const COLLECTED = "Patient collected. The coordinator stops the journey";
 function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
   const { movement, examBlocked, handoverBlocked, transportBlocked, withdrawBlocked, cmhtBlocked, edOutcomeBlocked } =
     row;
-  const { toggleBookTransport, toggleExamination } = ctx;
+  const { toggleBookTransport, toggleExamination, department } = ctx;
   const collected = movement.transport?.collectedAt !== undefined;
   const ended = movement.closure ? "This movement has ended" : undefined;
+  const edName = edShortName(department);
   const logBooking = {
-    label: "Log booking",
+    label: "Log transport booking",
     testId: `ward-ed-unavailable-fix-transport-${movement.id}`,
     run: () => toggleBookTransport(movement.id),
   };
@@ -148,20 +204,33 @@ function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
     testId: `ward-ed-unavailable-fix-exam-${movement.id}`,
     run: () => toggleExamination(movement.id),
   };
-  const line = (blocked: string | undefined, because: string | undefined, fix?: EdUnavailableLine["fix"]) =>
-    blocked ? ({ because: because ?? blocked, fix } satisfies EdUnavailableLine) : undefined;
+  const line = (
+    blocked: string | undefined,
+    because: string | undefined,
+    fix?: EdUnavailableLine["fix"],
+    detail?: Pick<EdUnavailableLine, "why" | "next">,
+  ) => (blocked ? ({ because: because ?? blocked, fix, ...detail } satisfies EdUnavailableLine) : undefined);
+  // Blocker mock-up states 1 and 3 (Josh approved 26 Oct 2026): the missing item, its reason, who acts next.
+  const waitsOnTransport = movement.stage === "pulled" && !movement.transport;
+  const waitsOnExam = !ended && !collected;
   return {
     exam: line(examBlocked, "Already examined"),
     outcome: line(edOutcomeBlocked, ended ?? (collected ? COLLECTED : undefined)),
     handover: line(
       handoverBlocked,
       waitsOnWard(movement) ??
-        (movement.stage === "pulled" && !movement.transport
-          ? "Needs transport logged first"
+        (waitsOnTransport
+          ? "Transport not logged"
           : movement.stage === "handover_ready"
             ? "Already marked ready"
             : "Patient is already on the way"),
-      movement.stage === "pulled" && !movement.transport && !transportBlocked ? logBooking : undefined,
+      waitsOnTransport && !transportBlocked ? logBooking : undefined,
+      waitsOnTransport
+        ? {
+            why: "A handover is marked ready once the transport booking is logged.",
+            next: `ED nurse in charge, ${edName}`,
+          }
+        : undefined,
     ),
     transport: line(
       transportBlocked,
@@ -171,10 +240,21 @@ function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
     withdraw: line(withdrawBlocked, ended ?? (collected ? COLLECTED : "No live referral to withdraw")),
     cmht: line(
       cmhtBlocked,
-      ended ?? (collected ? COLLECTED : "Needs the examination outcome first"),
+      ended ??
+        (collected
+          ? COLLECTED
+          : movement.examination?.outcome === "further_examination_ordered"
+            ? "Further examination not recorded"
+            : "Examination outcome not recorded"),
       // Change 2 (D-77): the person sheet never offers one action twice, so where Record exam is
       // already the sheet's pinned next step, the words stand alone.
-      !ended && !collected && !examBlocked && (ctx.boardTable || row.primaryAction !== "exam") ? recordExam : undefined,
+      waitsOnExam && !examBlocked && (ctx.boardTable || row.primaryAction !== "exam") ? recordExam : undefined,
+      waitsOnExam
+        ? {
+            why: `${movement.legalForm ? `On Form ${movement.legalForm.code}` : `Recorded as ${movement.legalStatus.toLowerCase()}`}, so a community referral needs the outcome first.`,
+            next: `ED mental health clinician, ${edName}`,
+          }
+        : undefined,
     ),
   };
 }
@@ -505,8 +585,12 @@ export function renderEdRowNextGroup(
             data-testid={`ward-ed-phone-actions-${movement.id}`}
             onClickCapture={(event) => {
               const button = event.target instanceof Element ? event.target.closest("button") : null;
+              // A greyed action whose note opens its own reason in place needs no second copy below.
               setPhoneSheetReason(
-                button?.getAttribute("aria-disabled") === "true" ? button.title || undefined : undefined,
+                button?.getAttribute("aria-disabled") === "true" &&
+                  !button.nextElementSibling?.hasAttribute("data-unavailable-detail")
+                  ? button.title || undefined
+                  : undefined,
               );
             }}
           >
