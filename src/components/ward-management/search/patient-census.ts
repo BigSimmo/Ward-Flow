@@ -57,7 +57,7 @@ export const CENSUS_GROUPS: readonly { id: CensusGroup; label: string; short: st
   // ED). This group is people with no bed yet: ED waits with no accepted ward, queued referrals and
   // ward waiting lists, so it carries its own noun.
   { id: "wait", label: "No bed yet", short: "No bed yet", glyph: "wait" },
-  { id: "found", label: "Bed found", short: "Bed found", glyph: "done" },
+  { id: "found", label: "Accepted", short: "Accepted", glyph: "done" },
   { id: "move", label: "Moving", short: "Moving", glyph: "move" },
   { id: "ward", label: "On a ward", short: "On a ward", glyph: "done" },
   { id: "off", label: "Not active", short: "Not active", glyph: "off" },

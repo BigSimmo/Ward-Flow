@@ -51,12 +51,21 @@ function EdPopover({
     function position() {
       if (!element || !anchor.current) return;
       const rect = anchor.current.getBoundingClientRect();
-      const available = Math.max(window.innerHeight - 24, 160);
+      // CRIT-03: keep below the app header and let a long menu use the whole screen, so its last
+      // actions are not hidden behind a 520 px cap.
+      const header = document.querySelector('[data-testid="ward-bar"]')?.getBoundingClientRect().bottom ?? 0;
+      const floor = Math.max(12, header + 8);
+      const available = Math.max(window.innerHeight - floor - 12, 160);
       element.style.width = `${Math.min(width, window.innerWidth - 24)}px`;
-      element.style.maxHeight = `${Math.min(520, available)}px`;
-      const height = Math.min(element.scrollHeight, 520, available);
-      const top = rect.bottom + height + 8 < window.innerHeight ? rect.bottom + 6 : Math.max(12, rect.top - height - 6);
-      element.style.top = `${Math.min(top, Math.max(12, window.innerHeight - height - 12))}px`;
+      element.style.maxHeight = `${available}px`;
+      const height = Math.min(element.scrollHeight, available);
+      const top =
+        rect.bottom + 6 + height <= window.innerHeight - 12
+          ? rect.bottom + 6
+          : rect.top - 6 - height >= floor
+            ? rect.top - height - 6
+            : window.innerHeight - height - 12;
+      element.style.top = `${Math.max(floor, Math.min(top, window.innerHeight - height - 12))}px`;
       element.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - element.offsetWidth - 12))}px`;
     }
     if (typeof element.showPopover === "function") element.showPopover();

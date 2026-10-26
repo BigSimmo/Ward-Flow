@@ -29,6 +29,7 @@ import {
   WARD_RESTRICTION_LABELS,
 } from "./ward-loop-checks-view";
 import styles from "./loop-checks.module.css";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 type UnitActor = { role: "ward" | "bed_manager" | "coordinator"; actingUnitId?: string };
 
@@ -80,6 +81,9 @@ function RestrictionReviewRow({
   const review = currentRestrictionReview(unit, restriction);
   const overdue = review ? restrictionReviewOverdue(review, now) : false;
   const [editing, setEditing] = useState(false);
+  // Audit CS3-01: an open review form is checked against the board it opened on.
+  const heldScope = `restriction-review:${unit.id}:${restriction}`;
+  useHoldOpenForm(editing, heldScope);
   const [reviewer, setReviewer] = useState<RestrictionReviewerRole | "">("");
   const [afterHours, setAfterHours] = useState("");
   const baseId = useId();
@@ -94,7 +98,7 @@ function RestrictionReviewRow({
         : undefined;
 
   return (
-    <li className={styles.item} data-testid={`ward-restriction-review-${restriction}`}>
+    <li className={styles.item} data-testid={`ward-restriction-review-${restriction}`} data-held-form={heldScope}>
       <span className={styles.itemHead}>
         <strong>{WARD_RESTRICTION_LABELS[restriction]}</strong>
         {review ? (

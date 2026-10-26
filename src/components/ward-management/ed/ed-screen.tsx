@@ -63,7 +63,7 @@ import { useEdExaminationSave } from "./use-ed-examination-save";
  *   ed-screen-timeline.tsx       the department's recorded events
  *   ed-screen-actions.ts         the row panels' submit handlers
  *   ed-screen-context.ts         the one object every section reads
- *   ed-screen-raise-section.tsx  "Raise into a movement"
+ *   ed-screen-raise-section.tsx  "Ask for a bed"
  *   ed-screen-board.tsx          the board, its filters and search
  *   ed-screen-board-row.tsx      one board row, put together
  *   ed-screen-desktop.tsx        a row of the board table (wider screens)
@@ -324,7 +324,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           edId: thisEdId,
           // Opus review round 2, 17 September 2026 (P2), item 6: `undefined` in the ordinary,
           // unlinked case (this form's existing behaviour) — set only when this form was opened via
-          // the inbox row's own "Raise into a movement" button, which is also what supplied the
+          // the inbox row's own "Ask for a bed" button, which is also what supplied the
           // gender prefill in `draft.gender` above.
           referralId: raisingFromReferralId,
           ...(draft.patientId === undefined ? {} : { patientId: draft.patientId }),

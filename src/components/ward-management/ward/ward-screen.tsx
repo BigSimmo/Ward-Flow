@@ -134,6 +134,7 @@ import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placemen
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "./ward-screen-overlays";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 type WardScreenProps = {
   departurePlanning?: boolean;
@@ -270,6 +271,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
+  // Audit CS3-01: the decline and release forms are checked against the board they opened on.
+  useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `movement:${declineOpenFor}`);
+  useHoldOpenForm(releaseOpenFor !== undefined, releaseOpenFor && `movement:${releaseOpenFor}`);
   const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);

@@ -20,6 +20,7 @@ import {
   type MissCandidate,
 } from "./forecast-miss-reasons";
 import styles from "./forecast.module.css";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 function candidateHref(candidate: MissCandidate): string {
   return candidate.source.kind === "movement"
@@ -43,6 +44,10 @@ export function ForecastMissReasonControl({
   const selectId = useId();
   const [editing, setEditing] = useState(false);
   const [choice, setChoice] = useState<ForecastMissReason | "">("");
+  // Audit CS3-01: once a reason is being chosen or changed, its save is checked against the board
+  // as it was then, so another desk's reason recorded meanwhile is reported, not overwritten.
+  const heldScope = `forecast-miss:${day}`;
+  useHoldOpenForm(editing || choice !== "", heldScope);
 
   if (entry && !editing) {
     return (
@@ -64,7 +69,7 @@ export function ForecastMissReasonControl({
   }
 
   return (
-    <div className={styles.missReason}>
+    <div className={styles.missReason} data-held-form={heldScope}>
       <div className={styles.bedChange}>
         <label htmlFor={selectId}>Reason for the difference</label>
         <Select

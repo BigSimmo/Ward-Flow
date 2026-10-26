@@ -123,27 +123,89 @@ export function topSheetRoot(): HTMLElement | null {
 }
 
 /**
- * The open sheets, bottom first, as handles that stay the same while each one is open. The shared
- * board uses them to remember what it held when each popup opened (audit CS-19).
+ * The open sheets, bottom first, as handles that stay the same while each one is open, and every
+ * inline form held open. The shared board notes what it held when each one opened (audit CS-19).
  */
 export function openSheetHandles(): readonly object[] {
-  return [...openSheets, ...openForms];
+  dropDetachedForms();
+  return [...openSheets, ...openForms.keys()];
 }
 
-const openForms = new Set<object>();
+/**
+ * The handles a command asked for now is checked against: every open sheet, and each held form
+ * the command may come from (audit CS3-01). A form that names its place on the page
+ * (`data-held-form`, usually the patient's row) is left out only when the control just used sits
+ * in marked places and none of them is this form's, so a save on another patient's row is not
+ * refused for this form's sake. A control in no marked place, an unknown control or one in a popup
+ * keeps every named form in: the safe side, never a form silently dropped. A page `<form>` held
+ * because the person used it counts only for a control inside that form.
+ */
+export function commandSheetHandles(): readonly object[] {
+  dropDetachedForms();
+  // No held form, or no page to look at (a server or test runtime): every hold counts, as before.
+  if (openForms.size === 0 || typeof document === "undefined") return [...openSheets, ...openForms.keys()];
+  const origin = commandOrigin?.isConnected ? commandOrigin : null;
+  const inSheet = origin !== null && openSheets.some((sheet) => sheet.root?.contains(origin));
+  const places = new Set<string>();
+  for (let place = origin?.closest("[data-held-form]"); place; place = place.parentElement?.closest("[data-held-form]"))
+    places.add(place.getAttribute("data-held-form") ?? "");
+  const forms = [...openForms].filter(([, scope]) => {
+    if (scope instanceof Element) return origin !== null && scope.contains(origin);
+    return scope === undefined || inSheet || places.size === 0 || places.has(scope);
+  });
+  return [...openSheets, ...forms.map(([handle]) => handle)];
+}
+
+/** Each held form and its place: a `data-held-form` name, a page `<form>`, or nowhere in particular. */
+const openForms = new Map<object, string | Element | undefined>();
+/** The page `<form>` elements held because the person used them, with their handles. */
+const usedForms = new Map<Element, object>();
 
 /**
  * Holds an inline edit form open as if it were a popup, so the shared board checks a save from it
  * against what the form opened on (Audit 4 A4-01: the Placement panel's urgency and legal status
- * forms overwrote a colleague's change unseen). Returns the release, safe to call more than once.
+ * forms overwrote a colleague's change unseen). `scope` names the form's place on the page: the
+ * element (often the patient's row) marked `data-held-form={scope}`, see `commandSheetHandles`.
+ * Returns the release, safe to call more than once.
  */
-export function holdOpenForm(): () => void {
+export function holdOpenForm(scope?: string): () => void {
   const handle = {};
-  openForms.add(handle);
+  openForms.set(handle, scope);
   notifyStackListeners();
   return () => {
     if (openForms.delete(handle)) notifyStackListeners();
   };
+}
+
+/**
+ * Audit CS3-01, the safety net under the named holds: a `<form>` on the page (outside every popup)
+ * is held from the moment the person first presses or focuses something in it, so a save sent from
+ * inside it is checked against the board as it was then. Sending it lets the form go, as does it
+ * leaving the page, so the next use starts from the board the person is looking at.
+ */
+function holdUsedForm(target: EventTarget | null) {
+  const form = target instanceof Element ? target.closest("form") : null;
+  if (!form || usedForms.has(form) || openSheets.some((sheet) => sheet.root?.contains(form))) return;
+  const handle = {};
+  usedForms.set(form, handle);
+  openForms.set(handle, form);
+  notifyStackListeners();
+}
+
+function releaseUsedForm(form: Element) {
+  const handle = usedForms.get(form);
+  if (!handle) return;
+  usedForms.delete(form);
+  if (openForms.delete(handle)) notifyStackListeners();
+}
+
+/** Forgets forms that have left the page. Nothing to tell: a form going is never a new hold. */
+function dropDetachedForms() {
+  for (const [form, handle] of usedForms)
+    if (!form.isConnected) {
+      usedForms.delete(form);
+      openForms.delete(handle);
+    }
 }
 
 /**
@@ -163,14 +225,35 @@ export function holdOpenForm(): () => void {
 const PRESSABLE = 'button, a[href], summary, [role="button"], [tabindex]:not([tabindex="-1"])';
 let lastPressedControl: HTMLElement | null = null;
 
+/*
+ * Audit CS3-01: the control the person last pressed, clicked, typed in or sent a form with, which
+ * is where a command asked for now comes from. Focus alone never moves it: Safari leaves focus on
+ * an earlier field when a button is pressed, so the focused element can sit in another form.
+ */
+let commandOrigin: Element | null = null;
+
+function noteCommandOrigin(event: Event) {
+  const submitter = "submitter" in event ? (event as SubmitEvent).submitter : null;
+  commandOrigin = submitter ?? (event.target instanceof Element ? event.target : null);
+}
+
 if (typeof document !== "undefined") {
   document.addEventListener(
     "pointerdown",
     (event) => {
       lastPressedControl = event.target instanceof Element ? event.target.closest<HTMLElement>(PRESSABLE) : null;
+      noteCommandOrigin(event);
+      holdUsedForm(event.target);
     },
     true,
   );
+  // Capturing, so each is noted before the page's own handler asks for a save.
+  for (const type of ["click", "keydown", "submit"]) document.addEventListener(type, noteCommandOrigin, true);
+  document.addEventListener("focusin", (event) => holdUsedForm(event.target), true);
+  // Bubbling, so the form's own submit handler has already asked for its save.
+  document.addEventListener("submit", (event) => {
+    if (event.target instanceof Element) releaseUsedForm(event.target);
+  });
 }
 
 /** The element focus should go back to when an overlay opening now closes. */

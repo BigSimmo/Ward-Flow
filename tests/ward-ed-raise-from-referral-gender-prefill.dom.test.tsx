@@ -145,7 +145,7 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     /*
      * P2-6 (Ward Lead audit, 2026-09-17): the referral's ED addressing stays `queued` after
      * `RAISE_REFERRAL` (nothing in that case above settles it), so before this fix the inbox row
-     * stayed on screen with its "Raise into a movement" button still offered — a second click
+     * stayed on screen with its "Ask for a bed" button still offered — a second click
      * would raise a SECOND journey for the same person. It must now be hidden once any movement is
      * linked to this referral, open or closed.
      */

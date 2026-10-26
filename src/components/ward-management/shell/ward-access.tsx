@@ -906,7 +906,7 @@ const IDLE_WARNING_SECONDS = 60;
  * unlocking never widens it. It runs on every build, whatever the role access switch says. In the
  * signed-in shared workspace the lock also signs out, here and on the server, so the next person
  * needs the password to carry on; the local demo has no sign-in, so it stays a privacy screen.
- * The bed meeting TV is left running (Josh, 19 Oct 2026): it is read only, shows initials only and
+ * The bed meeting TV is left running (Josh, 19 Oct 2026): it is read only, shows names (26 Oct) and
  * is meant to stay up all day; leaving the TV page starts the clock again. With TV views switched
  * off the page is only a notice, so it locks like any other.
  */
