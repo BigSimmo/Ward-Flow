@@ -40,6 +40,7 @@ import {
   type LeavingDestination,
 } from "./ward-admissions";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
@@ -1425,7 +1426,7 @@ export function bedNumberRefusal(
   );
   if (holder) return `Bed ${bedNumber} on ${unit.name} is already taken`;
   // H-0978: a bed the ward closed (`SET_BED_CLOSED`) takes nobody until it is reopened.
-  return unit.closedBeds?.some((mark) => mark.bedNumber === bedNumber)
+  return activeClosedBeds(unit).some((mark) => mark.bedNumber === bedNumber)
     ? `Bed ${bedNumber} on ${unit.name} is closed. Reopen it first`
     : null;
 }

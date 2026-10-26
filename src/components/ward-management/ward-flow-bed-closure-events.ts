@@ -5,8 +5,8 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { findUnit, heldBedRefusal, reject, replaceUnit, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { Unit } from "./ward-model";
-import { boundedBedAvailability } from "./ward-ready-beds";
-import { seatStays } from "./ward/ward-bed-layout";
+import { activeClosedBeds, boundedBedAvailability } from "./ward-ready-beds";
+import { wardStaySeats } from "./ward/ward-bed-layout";
 
 /**
  * H-0978 / WS-15 (Josh 26 Oct 2026, "Close the exact bed"): the ward closes and reopens one exact
@@ -30,12 +30,15 @@ export type BedClosureHelpers = {
   replaceUnit: typeof replaceUnit;
 };
 
-/** The bed numbers a current stay on this ward sits in: its recorded bed, else its replayed seat. */
+/**
+ * The bed numbers a current stay on this ward sits in: its recorded bed, else its replayed seat, from
+ * the same inputs the Bed board uses (`wardStaySeats`), so a tile shown Ready is never refused here.
+ */
 function bedsWithAStay(state: WardFlowState, unit: Unit): Set<number> {
-  const stays = state.admissions.filter((admission) => admission.unitId === unit.id);
-  const seats = seatStays(unit.beds, stays, unit.lockedBeds > 0 && unit.lockedBeds < unit.beds ? unit.lockedBeds : 0);
+  const seats = wardStaySeats(unit, state.admissions);
   const taken = new Set<number>();
-  for (const stay of stays) {
+  for (const stay of state.admissions) {
+    if (stay.unitId !== unit.id) continue;
     if (!bedIsOccupied(stay)) continue;
     const bed = stay.bedNumber ?? seats.get(stay.id);
     if (bed !== undefined) taken.add(bed);
@@ -66,16 +69,23 @@ export function reduceBedClosureEvent(
       }
       if (typeof event.closed !== "boolean") return reject(state, event, "SET_BED_CLOSED must say closed or reopened");
       const marks = unit.closedBeds ?? [];
-      const isMarked = marks.some((mark) => mark.bedNumber === event.bedNumber);
+      const isMarked = activeClosedBeds(unit).some((mark) => mark.bedNumber === event.bedNumber);
 
       if (!event.closed) {
         if (event.reason !== undefined) return reject(state, event, "Reopening a bed takes no reason");
         if (!isMarked) return reject(state, event, `Bed ${event.bedNumber} on ${unit.name} is not closed`);
         decision.outcome = "accepted";
         decision.reasonCode = "none";
-        const remaining = marks.filter((mark) => mark.bedNumber !== event.bedNumber);
-        const reopened: Unit = { ...unit, closedBeds: remaining };
-        if (remaining.length === 0) delete reopened.closedBeds;
+        // The mark stays as seat history with `reopenedAt`: a stay seated while the bed was closed
+        // keeps its bed when it reopens, never moving into the reopened bed (`wardStaySeats`).
+        const reopened: Unit = {
+          ...unit,
+          closedBeds: marks.map((mark) =>
+            mark.bedNumber === event.bedNumber && mark.reopenedAt === undefined
+              ? { ...mark, reopenedAt: event.now }
+              : mark,
+          ),
+        };
         return replaceUnit(state, unit.id, reopened);
       }
 

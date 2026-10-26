@@ -1065,10 +1065,12 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [
     1.5,
     (state, random) => {
-      const marked = state.units.filter((unit) => (unit.closedBeds?.length ?? 0) > 0);
+      const stillClosed = (unit: (typeof state.units)[number]) =>
+        (unit.closedBeds ?? []).filter((mark) => mark.reopenedAt === undefined);
+      const marked = state.units.filter((unit) => stillClosed(unit).length > 0);
       if (marked.length > 0 && chance(random, 0.4)) {
         const unit = pick(random, marked)!;
-        const bedNumber = pick(random, unit.closedBeds ?? [])!.bedNumber;
+        const bedNumber = pick(random, stillClosed(unit))!.bedNumber;
         return { type: "SET_BED_CLOSED", unitId: unit.id, actingUnitId: unit.id, bedNumber, closed: false };
       }
       const unit = prefer(

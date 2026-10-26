@@ -7,6 +7,7 @@ import type { LeavingDestination } from "@/components/ward-management/ward-admis
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import styles from "./ward.module.css";
@@ -281,7 +282,7 @@ export function WardScreenBedDrawer({
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
         const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
-        const closedByNumber = (unit.closedBeds ?? []).some((mark) => mark.bedNumber === selectedBed);
+        const closedByNumber = activeClosedBeds(unit).some((mark) => mark.bedNumber === selectedBed);
         return (
           <WardBedDossierDrawer
             selectedBed={selectedBed}

@@ -270,15 +270,17 @@ export function candidateEvents(
     case "SET_BED_CLOSED":
       return [
         ...state.units.flatMap((unit) =>
-          (unit.closedBeds ?? []).map((mark) => ({
-            type,
-            role,
-            now,
-            unitId: unit.id,
-            actingUnitId: unit.id,
-            bedNumber: mark.bedNumber,
-            closed: false,
-          })),
+          (unit.closedBeds ?? [])
+            .filter((mark) => mark.reopenedAt === undefined)
+            .map((mark) => ({
+              type,
+              role,
+              now,
+              unitId: unit.id,
+              actingUnitId: unit.id,
+              bedNumber: mark.bedNumber,
+              closed: false,
+            })),
         ),
         ...[...state.units].reverse().flatMap((unit) =>
           [unit.beds, unit.beds - 1].map((bedNumber) => ({

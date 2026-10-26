@@ -5,12 +5,12 @@ import { boundedBedAvailability } from "@/components/ward-management/ward-ready-
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { seatStays } from "@/components/ward-management/ward/ward-bed-layout";
+import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 import type { Unit } from "@/components/ward-management/ward-model";
 
 /**
  * H-0978 / WS-15 (Josh 26 Oct 2026, "Close the exact bed"): `SET_BED_CLOSED` records a closed mark
- * on one exact empty bed, refuses a bed someone is in, and reopening clears the mark. A closed bed is
+ * on one exact empty bed, refuses a bed someone is in, and reopening ends the mark. A closed bed is
  * not offered, so Ready drops by one while it is closed and comes back when it reopens. Synthetic
  * seeded state only.
  */
@@ -19,8 +19,7 @@ const NOW = NOW_ANCHOR;
 /** The bed numbers a current stay sits in, as the reducer and the Bed board seat them. */
 function takenBeds(state: WardFlowState, unit: Unit): Set<number> {
   const stays = state.admissions.filter((admission) => admission.unitId === unit.id);
-  const mixed = unit.lockedBeds > 0 && unit.lockedBeds < unit.beds ? unit.lockedBeds : 0;
-  const seats = seatStays(unit.beds, stays, mixed);
+  const seats = wardStaySeats(unit, stays);
   return new Set(
     stays.flatMap((stay) => {
       const bed = bedIsOccupied(stay) ? (stay.bedNumber ?? seats.get(stay.id)) : undefined;
@@ -76,7 +75,10 @@ describe("SET_BED_CLOSED", () => {
 
     const reopened = setBedClosed(closed, unit.id, freeBed, false);
     expect(reopened.rejections).toEqual(state.rejections);
-    expect(unitOf(reopened, unit.id).closedBeds).toBeUndefined();
+    // The mark ends but stays as seat history, so nobody seated meanwhile moves into the bed.
+    expect(unitOf(reopened, unit.id).closedBeds).toEqual([
+      { bedNumber: freeBed, at: NOW, by: expect.any(String), reopenedAt: NOW },
+    ]);
     expect(readyOf(reopened, unit.id)).toBe(readyBefore);
     expect(setBedClosed(reopened, unit.id, freeBed, false).rejections.at(-1)?.reason).toMatch(/is not closed/);
   });

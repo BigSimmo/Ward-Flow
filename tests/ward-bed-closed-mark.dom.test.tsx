@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { activeClosedBeds, boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -69,7 +69,7 @@ describe("closing the exact bed from the bed drawer", () => {
     expect(screen.getByText(`Bed ${bed} closed. It is not offered until it is reopened.`)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("ward-drawer-reopen-bed"));
-    expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds).toBeUndefined();
+    expect(activeClosedBeds(flow!.units.find((unit) => unit.id === UNIT)!)).toEqual([]);
     expect(card(bed)).toHaveAttribute("data-state", "ready");
     expect(bedsIn("ready")).toHaveLength(ready.length);
   });
