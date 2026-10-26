@@ -6,7 +6,7 @@ import { patientResultTitle, type SearchResultItem } from "@/components/ward-man
 // D-83 (Josh, 26 Oct 2026; fresh audit W-9): names in full everywhere. The Discreet names on phone
 // setting (A2-20) was removed, so the shared name formatter returns the name as given. Synthetic names only.
 // `usePatientNameDisplay` returns this formatter.
-const nameFor = patientNameAsGiven;
+const nameFor: (name: string, umrn: string | undefined | null) => string = patientNameAsGiven;
 
 describe("patient names are shown in full", () => {
   it("returns the name as given, in either name form", () => {
