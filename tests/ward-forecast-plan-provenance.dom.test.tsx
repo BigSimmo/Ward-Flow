@@ -120,7 +120,10 @@ describe("current plan attribution after release date synchronization", () => {
     },
   );
 
-  it.each([null, 13 * 60])("retains release-only attribution when the admission plan is %s", async (planAt) => {
+  it.each([
+    [null, "14:00", false],
+    [13 * 60, "13:00", true],
+  ])("attributes the listed time by the admission plan when it is %s", async (planAt, listedTime, followsPlan) => {
     const unit = allUnits()[0]!;
     const stay = {
       ...wardAdmissions.find((admission) => admission.state === "occupied")!,
@@ -147,11 +150,16 @@ describe("current plan attribution after release date synchronization", () => {
     render(<BedsForecastPanel forecast={bedsForecast([unit], [flagged], [stay], [], NOW_ANCHOR)} />);
     await userEvent.click(screen.getByText("Where beds are coming from"));
     const row = within(screen.getByTestId("ward-capacity-beds-forecast-sources-this_shift")).getByText(
-      /^14:00 · Confirmed/u,
+      new RegExp(`^${listedTime} · ${followsPlan ? "Current discharge plan · " : ""}Confirmed`, "u"),
     );
-    expect(row).toHaveTextContent("said by NUM Original Unit, 09:10");
-    expect(row).not.toHaveTextContent("Current discharge plan");
-    expect(row).not.toHaveTextContent("plan date set by");
+    if (followsPlan) {
+      expect(row).toHaveTextContent("plan date set by Ward manager, 10:30");
+      expect(row).toHaveTextContent("release last reported by NUM Original Unit, 09:10");
+    } else {
+      expect(row).toHaveTextContent("said by NUM Original Unit, 09:10");
+      expect(row).not.toHaveTextContent("Current discharge plan");
+      expect(row).not.toHaveTextContent("plan date set by");
+    }
   });
 
   it("shows the new plan provenance after a real discharge-date edit without restating release confirmation", async () => {
