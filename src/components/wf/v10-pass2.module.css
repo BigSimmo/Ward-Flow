@@ -22,7 +22,8 @@
   align-items: baseline;
   gap: 6px;
   flex: 0 0 auto;
-  min-height: 32px;
+  /* KIT-06 (layout sweep, 25 Oct 2026): touch tablets get the kit's 44px touch size. */
+  min-height: max(32px, var(--wf-tablet-tap, 0px));
   padding: 5px var(--wf-s-3);
   box-sizing: border-box;
   border: 1px solid var(--wf-on-hero-line);
@@ -79,6 +80,21 @@
   .chip {
     min-height: var(--wf-touch);
     align-items: center;
+  }
+}
+
+@media (pointer: coarse) {
+  .chip {
+    align-items: center;
+  }
+}
+
+/* PT-16 (layout sweep, 25 Oct 2026): above the phone the chips wrap to a second line rather than
+   run off the edge cut mid-word. The phone row still scrolls sideways. */
+@media (min-width: 48.0625rem) {
+  .chips {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
   }
 }
 
@@ -377,11 +393,21 @@
 }
 
 .journeySeg[data-now="true"] {
+  /* REF-06 / PT-17 (layout sweep, 25 Oct 2026): the current stage always shows its own time; the
+     earlier stages take the squeeze. */
+  min-width: max-content;
   gap: 6px;
   border-color: var(--wf-info);
   border-radius: var(--wf-r-sm) var(--wf-r-pill) var(--wf-r-pill) var(--wf-r-sm);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
+}
+
+/* REF-06 / PT-17 (layout sweep, 25 Oct 2026): the current stage's label (the last one) keeps its
+   words, ending under it. */
+.journeyBar:has(> [data-now="true"]:last-child) + .journeyLabels > span:last-child {
+  min-width: max-content;
+  text-align: right;
 }
 
 .journeySeg[data-now="true"]::before {
