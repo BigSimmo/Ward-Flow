@@ -33,5 +33,10 @@
     "id": "2026-10-26-stopped-transport-wording",
     "date": "2026-10-26",
     "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
+  },
+  {
+    "id": "2026-10-26-one-transport-form",
+    "date": "2026-10-26",
+    "line": "Transport bookings use one form on every screen, with legal status filled in from Legal now."
   }
 ]
