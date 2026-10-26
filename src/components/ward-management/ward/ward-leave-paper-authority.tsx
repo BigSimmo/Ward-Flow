@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/wf";
+import { formTitleForCode } from "@/lib/form-register";
 import type { Admission } from "../ward-admissions";
 import { perthDateTimeLocal } from "../ward-clock";
 import {
@@ -15,10 +16,13 @@ import { useWardFormSave } from "../use-ward-form-save";
 import { useRouteRole } from "../ward-role-gate";
 import styles from "./ward-leave-paper-authority.module.css";
 
+/** Form titles come from the Chief Psychiatrist register, never hand-written (T5). */
+const registerLabel = (code: string) => `Form ${code} (${formTitleForCode(code) ?? code})`;
+
 const AUTHORITIES = [
   { id: "revocation", label: "Revocation of the order" },
-  { id: "5A", label: "Form 5A, community treatment order" },
-  { id: "5B", label: "Form 5B, continuation" },
+  { id: "5A", label: registerLabel("5A") },
+  { id: "5B", label: registerLabel("5B") },
 ] as const;
 
 /** Whether this stay must have its paper recorded before the drawer records it has left (WT-02). */
