@@ -17,10 +17,14 @@ export function dateOfBirthProblem(dateOfBirth: unknown, today: Date): string | 
   if (read.getUTCFullYear() !== year || read.getUTCMonth() !== month - 1 || read.getUTCDate() !== day)
     return "ADD_PATIENT date of birth is not a real calendar date";
   if (year < 1900) return "ADD_PATIENT date of birth is before 1900";
-  const perth = perthCalendarDay(today);
-  const todayIso = `${perth.year}-${String(perth.monthIndex + 1).padStart(2, "0")}-${String(perth.day).padStart(2, "0")}`;
-  if ((dateOfBirth as string) > todayIso) return "ADD_PATIENT date of birth is in the future";
+  if ((dateOfBirth as string) > perthIsoDay(today)) return "ADD_PATIENT date of birth is in the future";
   return undefined;
+}
+
+/** The Perth calendar day a moment falls on, written "YYYY-MM-DD" as a date input reads it. */
+export function perthIsoDay(moment: Date): string {
+  const perth = perthCalendarDay(moment);
+  return `${perth.year}-${String(perth.monthIndex + 1).padStart(2, "0")}-${String(perth.day).padStart(2, "0")}`;
 }
 
 /** Registration mutation; the reducer's event permission and audit wrapper remain authoritative. */
@@ -48,6 +52,8 @@ export function reducePatientRegistration(
   if (umrn === "") return reject(state, event, "ADD_PATIENT needs a UMRN");
   if (givenName === "" || familyName === "") return reject(state, event, "ADD_PATIENT needs a given and a family name");
   // The real date, read only for the upper bound: the reducer holds no calendar day of its own.
+  // TC2-10: the Add patient form also checks against the demo day, which a loaded scenario can
+  // set before the real date, so a birth date after the demo day is caught there.
   const dateProblem = dateOfBirthProblem(event.dateOfBirth, new Date());
   if (dateProblem !== undefined) return reject(state, event, dateProblem);
   // Defensive uniqueness check: Reject duplicate UMRNs to prevent split clinical records
