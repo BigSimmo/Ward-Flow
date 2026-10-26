@@ -12,6 +12,7 @@ import {
   referralQueueOrder,
 } from "@/components/ward-management/ward-referrals";
 import { allUnits, unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { wardChoiceName } from "./helpers/ward-choice-name";
 
 /**
  * Task 7 (Phase 7, "The front door"). One journey: a referral is raised at PHONE WIDTH in the
@@ -184,10 +185,10 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
   await expect(wards).toBeVisible();
   for (const unitId of referral.notOffered ?? []) {
-    await expect(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") })).toHaveCount(0);
+    await expect(wards.getByRole("checkbox", { name: wardChoiceName(unitId) })).toHaveCount(0);
   }
   for (const unitId of referral.unitIds) {
-    await tapChoice(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") }));
+    await tapChoice(wards.getByRole("checkbox", { name: wardChoiceName(unitId) }));
   }
   await sheet.getByLabel("Transport", { exact: true }).selectOption(referral.transport);
 
