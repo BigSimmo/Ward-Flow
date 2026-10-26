@@ -506,6 +506,11 @@ button.check[aria-pressed="true"] {
   cursor: pointer;
 }
 
+/* Keep the stretched hit area anchored to the row while the button is pressed. */
+.rowOpen:active {
+  transform: none;
+}
+
 .rowOpen:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
