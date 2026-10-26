@@ -17,7 +17,10 @@
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+/* The beds table needs about 970px; until the side column fits beside it (about 1650px wide) the
+   side column sits below, so Out today, Past EDD and Held up are not scrolled off (layout sweep
+   25 Oct 2026). */
+@media (max-width: 103rem) {
   .root {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -278,8 +281,15 @@
 }
 
 .occ > .mono {
+  flex: none;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
+}
+
+/* In a narrower Beds column the bar gives way, never the count. */
+.occ > .obar {
+  flex: 0 1 96px;
+  min-width: 24px;
 }
 
 /* table */
@@ -742,4 +752,31 @@
 
 .colPastEdd {
   width: 88px;
+}
+
+/* iPad landscape: a shorter bar so the whole table fits the 926px card (layout sweep 25 Oct 2026). */
+@media (max-width: 64rem) {
+  .bedsTable {
+    min-width: 926px;
+  }
+
+  .colBeds {
+    width: 126px;
+  }
+
+  /* Two-word headers take two lines rather than lose their end ('PUL…'). */
+  .bedsTable thead th {
+    white-space: normal;
+    overflow-wrap: normal;
+    letter-spacing: 0;
+  }
+
+  /* Room for the whole 'Pulled' header; 'Out today' takes two lines. */
+  .colHeld {
+    width: 72px;
+  }
+
+  .colOutToday {
+    width: 80px;
+  }
 }

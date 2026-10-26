@@ -653,10 +653,20 @@ function WardSharedWorkspaceContent({
     );
   if (!connection.signedIn || !connection.snapshot)
     return (
-      <main id="main-content" className={styles.notice} aria-label="Coordinator sign-in">
+      <main
+        id="main-content"
+        className={styles.notice}
+        aria-label="Coordinator sign-in"
+        aria-busy={connection.signedIn && connection.status === "loading"}
+      >
         <h1>Ward Flow coordinator</h1>
         <p>Shared synthetic workspace. Your coordinator account has access to all Ward Flow workflows.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
+        {connection.signedIn && connection.status === "loading" && !connection.error && (
+          <p role="status" data-testid="ward-shared-connecting">
+            Signed in. Connecting to the shared workspace. This can take up to 15 seconds.
+          </p>
+        )}
         {connection.credentials?.open ? (
           <WardCredentialFields form={connection.credentials} />
         ) : connection.signedIn && connection.status !== "not-authorised" ? (

@@ -133,7 +133,10 @@ describe("Ward command feedback", () => {
     expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
     await act(async () => control.refuse("refused"));
     expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
-    expect(screen.getByText(/Review the shared board/)).toBeInTheDocument();
+    // The refusal is said at the blocker form, which stays open with the choice, as well as in the toast.
+    expect(drawer.getByTestId("ward-blocker-error")).toHaveTextContent(/Review the shared board/);
+    expect(drawer.getByRole("button", { name: "Save blocker" })).toBeInTheDocument();
+    expect(screen.getAllByText(/Review the shared board/).length).toBeGreaterThanOrEqual(2);
   });
 
   it("waits for both departure acceptance and its Undo acceptance", async () => {
