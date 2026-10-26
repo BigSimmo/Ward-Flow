@@ -340,6 +340,9 @@ export function WeeklyReportScreen() {
               patients={patients}
               now={now}
               pullHoldMinutes={configuration.pullHoldMinutes}
+              units={units}
+              morningRollupConfirmations={state.morningRollupConfirmations}
+              morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
               week={week}
               isPhone
             />
@@ -518,6 +521,9 @@ export function WeeklyReportScreen() {
               patients={patients}
               now={now}
               pullHoldMinutes={configuration.pullHoldMinutes}
+              units={units}
+              morningRollupConfirmations={state.morningRollupConfirmations}
+              morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
               week={week}
               isPhone={false}
             />

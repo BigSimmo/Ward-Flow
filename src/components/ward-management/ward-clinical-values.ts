@@ -514,9 +514,17 @@ export const CLINICAL_VALUES = {
     unit: "days",
   },
   // ---- Observation levels (fix plan item 10, Josh, 21 Oct 2026) -----------------------------------
-  // The level names are in `OBSERVATION_LEVEL_NAMES` above. General is hourly and the staff counts
-  // (1:1 counts one, 2:1 counts two) are what the level names mean, so they are fixed in
-  // `ward-observation.ts` rather than listed here as figures to edit.
+  // The level names are in `OBSERVATION_LEVEL_NAMES` above. The staff counts (1:1 counts one, 2:1
+  // counts two) are what the level names mean, so they are fixed in `ward-observation.ts` rather
+  // than listed here as figures to edit. General's interval is listed (audit F3, Option A).
+  observationGeneral: {
+    // Synthetic until Josh approves "General observation interval: hourly" on the PR that added it.
+    status: "synthetic",
+    name: OBSERVATION_LEVEL_NAMES.general + " observation interval",
+    group: "Observation levels",
+    value: 1,
+    unit: "hours",
+  },
   observationIntermittentShort: {
     ...SIGNED_BY_JOSH_21_OCT,
     name: OBSERVATION_LEVEL_NAMES.intermittent + " observation, shorter interval",
