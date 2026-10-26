@@ -508,8 +508,8 @@ export function OfficerScreen() {
     reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
-      `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
-      "Delivery",
+      `Arrival at ward recorded for ${officerPatientName(movement)}. The receiving ward confirms the arrival.`,
+      "Arrived at ward",
     );
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
@@ -529,7 +529,7 @@ export function OfficerScreen() {
     }
     return {
       leg,
-      verb: "Delivered",
+      verb: "Arrived at ward",
       blocked: arrivedBlockedReason(movement, unitFor(movement), who),
       run: runDelivered,
     };
@@ -1206,7 +1206,7 @@ export function OfficerScreen() {
                     value={historyTab}
                     onChange={setHistoryTab}
                     items={[
-                      { id: "delivered", label: "Delivered today", count: deliveredToday.length },
+                      { id: "delivered", label: "Arrived today", count: deliveredToday.length },
                       { id: "refused", label: "Refused", count: officerRefusals.length },
                       { id: "cancelled", label: "Cancelled", count: cancelledTransports.length },
                     ]}
@@ -1408,7 +1408,7 @@ export function OfficerScreen() {
               </span>
               <span className={styles.modalTitles}>
                 <h3 id="form-verify-title" className={styles.modalTitle}>
-                  Form verification
+                  Paperwork checks (not saved)
                 </h3>
                 <span className={styles.modalSub}>
                   {formRequiredLabel(formModalJob.transport!)} · {umrnFor(formModalJob)} ·{" "}
@@ -1421,7 +1421,7 @@ export function OfficerScreen() {
                 iconOnly
                 icon={X}
                 onClick={closeFormModal}
-                aria-label="Close form verification dialog"
+                aria-label="Close paperwork checks"
               />
             </header>
             <div className={styles.modalBody}>
@@ -1433,10 +1433,10 @@ export function OfficerScreen() {
               <h4 className={styles.sectionTitle}>Transfer checks</h4>
               <div className={styles.checklist}>
                 {[
-                  "Patient identity confirmed with ED clinical liaison nurse",
-                  "Authorisation documentation intact with transfer manifest",
-                  "Personal effects manifest signed and secured in transit lockbox",
-                  "Destination receiving ward notified of vehicle dispatch departure",
+                  "Identity checked with the sending team",
+                  "Paper form seen",
+                  "Belongings with the patient",
+                  "Receiving ward told we are leaving",
                 ].map((label, idx) => {
                   const isChecked = verifiedChecks[formModalJob.id]?.[idx] ?? false;
                   return (

@@ -106,7 +106,7 @@ export function WardTelemetryRibbon({
       onFilter(filter === next && next !== "all" ? "all" : next);
     };
     return (
-      <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
+      <div className={styles.pills} role="region" aria-label="Ward capacity">
         {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
         <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
           <HeroStat
@@ -158,7 +158,7 @@ export function WardTelemetryRibbon({
   }
 
   return (
-    <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
+    <div className={styles.ribbon} role="region" aria-label="Ward capacity">
       {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
       <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
         <HeroStat

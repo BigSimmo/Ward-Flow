@@ -525,7 +525,7 @@ export function CoordinatorScreen() {
           // On Home the placement alerts act in place (Placement opens beside the list),
           // so "Find a bed" no longer sends the coordinator to another screen.
           action: IN_PLACE_KINDS.has(alertKindOf(item.id) ?? "")
-            ? { kind: "release" as const, label: alertKindOf(item.id) === "hold" ? "Release bed" : "Find a bed" }
+            ? { kind: "release" as const, label: alertKindOf(item.id) === "hold" ? "Release pulled bed" : "Find a bed" }
             : alertActionFor(item, subject),
           highlighted: false,
         };

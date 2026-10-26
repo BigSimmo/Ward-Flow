@@ -164,7 +164,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                             setActiveDrawer("pxDrawer");
                           }}
                         >
-                          Open dossier
+                          Open record
                         </button>
                       </td>
                     </tr>
@@ -178,16 +178,12 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
 
       {/* ── Active Caseload & CTO Statutory Register Table ── */}
       <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-        <section
-          className={styles.caseloadSection}
-          id="section-caseload"
-          aria-label="Catchment active caseload and statutory CTO register"
-        >
+        <section className={styles.caseloadSection} id="section-caseload" aria-label="Active caseload (synthetic)">
           <div className={styles.caseloadHead}>
             <h3 className={styles.caseloadTitle}>
-              <span id={`${baseId}-caseloadTitle`}>Catchment active caseload &amp; statutory register</span>
+              <span id={`${baseId}-caseloadTitle`}>Active caseload (synthetic)</span>
               <span id={`${baseId}-caseloadHeadBadge`} className={styles.badgePill}>
-                {caseloadRows.length} patients
+                {caseloadRows.length} {caseloadRows.length === 1 ? "patient" : "patients"}
               </span>
               <span id={`${baseId}-caseloadSectorNote`} className={styles.displayNone}>
                 {team.name}

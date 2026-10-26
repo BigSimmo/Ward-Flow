@@ -39,7 +39,7 @@ describe("ACKNOWLEDGE_INBOX_ITEM", () => {
       inboxItemId,
     });
     expect(next.rejections).toEqual([]);
-    expect(next.inboxAcknowledgements[inboxItemId]).toEqual([{ at: NOW, by: "Flow coordinator" }]);
+    expect(next.inboxAcknowledgements[inboxItemId]).toEqual([{ at: NOW, by: "Bed coordinator" }]);
   });
 
   it("never removes or hides the row it acknowledges — buildActionInbox is untouched", () => {
@@ -214,13 +214,13 @@ describe("COMPLETE_INBOX_ITEM and REOPEN_INBOX_ITEM", () => {
    * timestamps, so the pair must stay distinct.
    */
   it("derives complete/open from the last entry, so a reversal never erases the completion", () => {
-    const completedOnly: InboxCompletionEntry[] = [{ at: NOW, by: "Flow coordinator", kind: "completed" }];
+    const completedOnly: InboxCompletionEntry[] = [{ at: NOW, by: "Bed coordinator", kind: "completed" }];
     expect(inboxItemCompletionState(completedOnly)).toBe("complete");
 
     // Same instant as the completion — no ADVANCE_CLOCK between them.
     const reopenedAfter: InboxCompletionEntry[] = [
       ...completedOnly,
-      { at: NOW, by: "Flow coordinator", kind: "reopened" },
+      { at: NOW, by: "Bed coordinator", kind: "reopened" },
     ];
     expect(inboxItemCompletionState(reopenedAfter)).toBe("open");
     expect(reopenedAfter).toHaveLength(2);
@@ -230,7 +230,7 @@ describe("COMPLETE_INBOX_ITEM and REOPEN_INBOX_ITEM", () => {
 
     const completedAgain: InboxCompletionEntry[] = [
       ...reopenedAfter,
-      { at: NOW, by: "Flow coordinator", kind: "completed" },
+      { at: NOW, by: "Bed coordinator", kind: "completed" },
     ];
     expect(inboxItemCompletionState(completedAgain)).toBe("complete");
     expect(completedAgain).toHaveLength(3);

@@ -822,7 +822,7 @@ function ReadyBeds({
               </p>
               <p data-testid="ward-statistics-service-zero-ready-wards">
                 <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
-                {readyRows.length} wards without ready beds
+                {readyRows.length} {readyRows.length === 1 ? "ward" : "wards"} without ready beds
               </p>
             </SrOnly>
           </CardBody>

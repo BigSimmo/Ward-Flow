@@ -476,6 +476,9 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // never defaulted — the popup's whole reason to exist.
     await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-JOURNEY-0001");
     await page.getByTestId(`ward-ed-transport-legal-status-voluntary-${movementId}`).click();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason = page.getByTestId(`ward-ed-transport-legal-reason-${movementId}`);
+    if (await legalReason.isVisible()) await legalReason.selectOption("treating_team_confirmed");
     await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
     await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
 
@@ -546,7 +549,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "officer -> ward for admission");
 
     const wardScreenAfterArrival = page.getByTestId("ward-unit-screen");
-    // Audit round 2, A4-16 (Josh, 13 Oct 2026): the officer's Delivered ends the transport leg only;
+    // Audit round 2, A4-16 (Josh, 13 Oct 2026): the officer's Arrived at ward ends the transport leg only;
     // the receiving ward closes the movement by confirming arrival, then the Home tab is reopened.
     await openAllArrivals(page);
     await wardScreenAfterArrival.getByTestId(`ward-confirm-arrival-${movementId}`).click();

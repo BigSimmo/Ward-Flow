@@ -117,7 +117,7 @@ export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailCon
       blocked: () => collectedBlockedReason(movement, patientName),
     },
     {
-      label: "Delivered",
+      label: "Arrived at ward",
       testId: "ward-officer-arrive",
       run: () => runDelivered(movement),
       blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
@@ -272,7 +272,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     edById(movement.originEdId)?.referenceEdId,
     destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
   );
-  const stepLabels = ["Accepted", "En route", "Collected", "Delivered"] as const;
+  const stepLabels = ["Accepted", "En route", "Collected", "Arrived at ward"] as const;
   const phoneTop = (
     <>
       <dl className={styles.phGrid}>
@@ -351,7 +351,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
           {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
           {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
-          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
+          {step(3, "Arrived at ward", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
         </div>
       )}
       {nextBlocked && !isPhone ? (

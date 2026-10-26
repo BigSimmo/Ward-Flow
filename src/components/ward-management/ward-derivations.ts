@@ -226,8 +226,8 @@ export const wardServiceOrder: readonly HealthService[] = [
 ];
 
 export const roleLabels: Record<WardRole, string> = {
-  flow: "Flow coordinator",
-  ed: "ED mental health",
+  flow: "Bed coordinator",
+  ed: "ED clinician",
   ward: "Ward manager",
 };
 

@@ -869,7 +869,7 @@ export function SettingsScreen() {
               unavailableReason={configurationBlockReason}
               setting="morning-count"
               testId="setting-morning-rollup-row"
-              title="Morning count"
+              title="Morning bed numbers due"
               sub="Not a legal limit"
               subTestId="setting-morning-rollup-desc"
               value={rules.morning}
@@ -877,7 +877,7 @@ export function SettingsScreen() {
               savedDisplay={clock24(saved.morning)}
               display={clock24(rules.morning)}
               displayTestId="morning-rollup-display"
-              noun="morning rollup deadline"
+              noun="morning bed numbers due time"
               range={{
                 id: "setting-morning-rollup-slider",
                 ...MORNING_ROLLUP_TIME_RANGE_MINUTES,

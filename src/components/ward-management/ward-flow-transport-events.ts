@@ -927,8 +927,8 @@ export function reduceTransportEvent(
        * `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1.
        */
       const cancelledNote = bedIsHeld
-        ? "the bed is still held and nothing has been rebooked."
-        : "no bed is held and nothing has been rebooked.";
+        ? "the bed is still pulled and nothing has been rebooked."
+        : "no bed is pulled and nothing has been rebooked.";
       const transportNotices: Notice[] = [
         makeNotice(
           event.now,

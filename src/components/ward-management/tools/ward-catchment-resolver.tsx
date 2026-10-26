@@ -623,7 +623,7 @@ export function WardCatchmentResolver({
       </header>
 
       {/* Search Input Section */}
-      <section className={styles.searchSection} aria-label="Catchment Search">
+      <section className={styles.searchSection} aria-label="Catchment search">
         <label htmlFor={searchInputId} className={styles.searchLabel}>
           Search by Suburb or Postcode
         </label>

@@ -85,7 +85,7 @@ export function ruleDiffs(before: WardConfiguration, after: WardConfiguration): 
   if (a.ed !== b.ed) parts.push(`ED target ${a.ed / 60}h to ${b.ed / 60}h`);
   if (a.cap !== b.cap) parts.push(`Wards asked ${a.cap} to ${b.cap}`);
   if (a.hold !== b.hold) parts.push(`Pull time limit ${shortDuration(a.hold)} to ${shortDuration(b.hold)}`);
-  if (a.morning !== b.morning) parts.push(`Morning count ${clock24(a.morning)} to ${clock24(b.morning)}`);
+  if (a.morning !== b.morning) parts.push(`Morning bed numbers due ${clock24(a.morning)} to ${clock24(b.morning)}`);
   if (a.soon !== b.soon) {
     parts.push(`Early warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
   }

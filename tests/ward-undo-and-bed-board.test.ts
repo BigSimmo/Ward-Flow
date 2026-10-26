@@ -259,7 +259,7 @@ describe("a ward answers only its own referrals (B1, site review 12 Oct 2026)", 
     expect(own.rejections).toEqual(state.rejections);
     const byCoordinator = wardFlowReducer(state, accept(referralId, "coordinator"));
     expect(byCoordinator.rejections).toEqual(state.rejections);
-    expect(referralOf(byCoordinator, referralId).destinations[0]?.decidedBy).toBe("Flow coordinator");
+    expect(referralOf(byCoordinator, referralId).destinations[0]?.decidedBy).toBe("Bed coordinator");
   });
 });
 

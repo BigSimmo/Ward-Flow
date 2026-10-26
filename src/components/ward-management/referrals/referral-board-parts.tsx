@@ -789,7 +789,7 @@ export function referralTimeline(
   for (const arm of referral.destinations) {
     const where = referralDestinationLabel(arm.destination);
     if (arm.waitlistedAt !== undefined)
-      entries.push({ at: arm.waitlistedAt, tone: "neutral", text: `${where} waitlisted` });
+      entries.push({ at: arm.waitlistedAt, tone: "neutral", text: `${where} put it on the waiting list` });
     if (arm.withdrawnAt !== undefined)
       entries.push({ at: arm.withdrawnAt, tone: "closed", text: `${where} withdrawn by the referrer` });
     // Smart features ideas 3 and 4: a receipt and the ward's asks. None of them is an answer.

@@ -42,7 +42,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
     case "accepted_awaiting_bed":
       return movement.acceptedUnitId === undefined
         ? { label: "Ward answer", owner: "Receiving ward", kind: "wait" }
-        : { label: "Pull bed", owner: COORDINATOR_OWNER, kind: "pull" };
+        : { label: "Pull the bed", owner: COORDINATOR_OWNER, kind: "pull" };
     case "pulled":
       return { label: "Handover", owner: "ED team", kind: "wait" };
     case "handover_ready": {

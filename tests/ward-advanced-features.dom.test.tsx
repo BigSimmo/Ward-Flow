@@ -108,7 +108,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       // Device audit 11 Oct 2026: the arrival plan sits in the Transport sheet, opened from its row.
       fireEvent.click(screen.getByTestId("ward-patient-transport-row"));
       // Verify the Executive Pulled Bed Banner exists
-      expect(screen.getByText(/Bed Pulled & Reserved/i)).toBeDefined();
+      expect(screen.getByTestId("ward-patient-pulled-banner")).toHaveTextContent(/Bed pulled/i);
       expect(screen.getByTestId("ward-patient-update-arrival-btn")).toBeDefined();
       expect(screen.getByTestId("ward-patient-upload-forms-btn")).toBeDefined();
     });

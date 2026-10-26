@@ -75,7 +75,7 @@ describe("care journey controls use the actual guarded provider", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("recorded Flow coordinator");
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("recorded Bed coordinator");
     expect(screen.getByText("completed · appointment 1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Record appointment" }));
     expect(screen.getByText("No contact recorded for the current appointment")).toBeInTheDocument();
@@ -88,11 +88,11 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Planning status" }), { target: { value: "completed" } });
     fireEvent.click(screen.getByRole("button", { name: "Record planning item" }));
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent(
-      "crisis plan: completed · Flow coordinator",
+      "crisis plan: completed · Bed coordinator",
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Document cohort" }), { target: { value: "camhs" } });
     expect(
-      within(screen.getByRole("combobox", { name: "Document" })).queryByRole("option", { name: "physical" }),
+      within(screen.getByRole("combobox", { name: "Document" })).queryByRole("option", { name: "Physical" }),
     ).not.toBeInTheDocument();
   });
   it("shows a failed contact action without displaying completion", () => {
@@ -103,7 +103,7 @@ describe("care journey controls use the actual guarded provider", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Record responsibility and an appointment first");
-    expect(screen.getByRole("region", { name: "Care journey" })).not.toHaveTextContent("recorded Flow coordinator");
+    expect(screen.getByRole("region", { name: "Care journey" })).not.toHaveTextContent("recorded Bed coordinator");
   });
 });
 
