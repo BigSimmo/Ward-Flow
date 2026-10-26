@@ -288,9 +288,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // H-0186: the chosen tab, flow list and shift view stay in the address, so a reload opens the same
   // view. `?tab=board` from other screens' links is the same key.
   const [activeTab, chooseActiveTab] = useAddressTab("tab", WARD_TABS, departurePlanning ? "return" : "attn");
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
   const setActiveTab = useCallback<Dispatch<SetStateAction<WardTab>>>(
-    (next) => chooseActiveTab(typeof next === "function" ? next(activeTab) : next),
-    [activeTab, chooseActiveTab],
+    (next) => chooseActiveTab(typeof next === "function" ? next(activeTabRef.current) : next),
+    [chooseActiveTab],
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
   // Ward Hub (9 Oct 2026): the hero pills, the Find box and the home panels share this state.
@@ -322,7 +326,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setFlowTab(next);
       });
     },
-    [startTransition],
+    [startTransition, setFlowTab],
   );
   const selectShiftView = useCallback(
     (next: WardShiftView) => {
@@ -330,16 +334,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setShiftView(next);
       });
     },
-    [startTransition],
+    [startTransition, setShiftView],
   );
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
+  // A link from another screen asks for the board with `?tab=board`, the same key as the tab's own
+  // address state (H-0186). Followed when the request arrives, as before.
   const boardTabRequested = searchParams?.get("tab") === "board";
-  const [lastBoardTabRequest, setLastBoardTabRequest] = useState(false);
-  if (lastBoardTabRequest !== boardTabRequested) {
-    setLastBoardTabRequest(boardTabRequested);
+  useEffect(() => {
     if (boardTabRequested) setActiveTab("board");
-  }
+  }, [boardTabRequested, setActiveTab]);
   const bedParam = searchParams?.get("bed");
   const parseBed = (value: string | null | undefined) =>
     value !== null && value !== undefined && /^\d+$/.test(value) ? Number.parseInt(value, 10) : null;
@@ -655,7 +659,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("hashchange", syncTabWithHash);
     };
-  }, []);
+  }, [setActiveTab]);
 
   const prevSelectedBedRef = useRef<number | null>(selectedBed);
   const bedDrawerSteppedRef = useRef(false);
