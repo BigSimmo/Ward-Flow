@@ -291,39 +291,50 @@ export function WardScreenBedDrawer({
               handleDrawerRecordLeft(admissionId, who);
             }}
             onUpdateBlocker={
-              !pathname || routeRole === "ward"
+              // The bed manager and coordinator record blockers from this drawer too (Josh, 26 Oct
+              // 2026), each as their own role: every one of these events allows all three.
+              !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator"
                 ? (admissionId, blocker) => {
                     const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
                     const stay = admissions.find((a) => a.id === admissionId);
+                    // A ward route (or no route) keeps sending as the ward screen does.
+                    const raiseBlocker = !pathname || routeRole === "ward" ? raise : raiseAsRouteRole;
+                    // Audit 24-3 SV-1..4: the same answer keeps the blocker form open until accepted.
+                    let completion: ReturnType<WardCommandDispatch> = undefined;
                     recordFeedback(
-                      () => {
-                        if (blocker === null) {
-                          if (pendingRelease && pendingRelease.blocker !== null) {
-                            return raise("CLEAR_BED_RELEASE_BLOCK", {
+                      () =>
+                        (completion = (() => {
+                          if (blocker === null) {
+                            if (pendingRelease && pendingRelease.blocker !== null) {
+                              return raiseBlocker("CLEAR_BED_RELEASE_BLOCK", {
+                                releaseId: pendingRelease.id,
+                                actingUnitId: unitId,
+                              });
+                            }
+                            if (stay && stay.blockReason !== null) {
+                              return raiseBlocker("CLEAR_STAY_DISCHARGE_BLOCKER", {
+                                admissionId,
+                                actingUnitId: unitId,
+                              });
+                            }
+                            return { commandId: "", status: "refused", message: "No discharge blocker is recorded." };
+                          }
+                          if (pendingRelease) {
+                            return raiseBlocker("BLOCK_BED_RELEASE", {
                               releaseId: pendingRelease.id,
                               actingUnitId: unitId,
+                              blocker: blocker as BedReleaseBlocker,
                             });
                           }
-                          if (stay && stay.blockReason !== null) {
-                            return raise("CLEAR_STAY_DISCHARGE_BLOCKER", { admissionId, actingUnitId: unitId });
-                          }
-                          return { commandId: "", status: "refused", message: "No discharge blocker is recorded." };
-                        }
-                        if (pendingRelease) {
-                          return raise("BLOCK_BED_RELEASE", {
-                            releaseId: pendingRelease.id,
+                          return raiseBlocker("RECORD_STAY_DISCHARGE_BLOCKER", {
+                            admissionId,
                             actingUnitId: unitId,
                             blocker: blocker as BedReleaseBlocker,
                           });
-                        }
-                        return raise("RECORD_STAY_DISCHARGE_BLOCKER", {
-                          admissionId,
-                          actingUnitId: unitId,
-                          blocker: blocker as BedReleaseBlocker,
-                        });
-                      },
+                        })()),
                       blocker === null ? "Discharge blocker cleared." : `Discharge blocker recorded: ${blocker}`,
                     );
+                    return completion;
                   }
                 : undefined
             }
