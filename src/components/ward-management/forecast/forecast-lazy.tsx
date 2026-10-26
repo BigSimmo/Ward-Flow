@@ -3,6 +3,10 @@
 import dynamic from "next/dynamic";
 
 import { preloadWhenIdle } from "../preload-when-idle";
+// A1K-01 / DR-03 (26 Oct 2026): the server draws these cards before their code arrives, so their
+// styles load with the page. Without them the cards paint as plain text, then grow and push the
+// page down. Only the styles load early; the scripts still wait for idle.
+import "./forecast.module.css";
 
 /**
  * Phone budget (forecasting build, 23 Oct 2026): Home and ED load the forecast engine only when

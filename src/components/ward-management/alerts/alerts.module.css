@@ -404,7 +404,8 @@ button.check[aria-pressed="true"] {
 
 .row {
   display: grid;
-  grid-template-columns: 1rem minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 0.9fr) 6rem auto;
+  /* A fixed action track keeps the columns in line from row to row whatever the button says. */
+  grid-template-columns: 1rem minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 0.9fr) 6rem 9rem;
   align-items: center;
   gap: var(--wf-s-3);
   min-height: 52px;
@@ -503,6 +504,15 @@ button.check[aria-pressed="true"] {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+}
+
+/* The alert name may take two lines rather than lose its end. */
+.cell > .rowOpen,
+.cardTop .rowOpen {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
 }
 
 .rowOpen:focus-visible {
@@ -607,6 +617,11 @@ button.check[aria-pressed="true"] {
   flex: 1 1 auto;
 }
 
+.cardTop > .mono {
+  flex: none;
+  white-space: nowrap;
+}
+
 .snoozeIcon {
   flex: none;
   color: var(--wf-ink-3);
@@ -623,10 +638,27 @@ button.check[aria-pressed="true"] {
 }
 
 .cardLine .who {
+  display: flex;
   flex: 1 1 auto;
+  gap: 0.25em;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* The name gives way; the UMRN stays whole. */
+.cardLine .name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.cardLine .umrn {
+  flex: none;
+}
+
+/* The route line is plain text, so it needs a block box for its ellipsis. */
+.cardLine.quiet {
+  display: block;
 }
 
 .cardFoot {
@@ -653,7 +685,8 @@ button.check[aria-pressed="true"] {
 
 .lanes {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Lanes wrap rather than squeeze below a readable card width. */
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
   gap: var(--wf-s-3);
   padding: var(--wf-s-3);
 }
@@ -1304,7 +1337,7 @@ button.check[aria-pressed="true"] {
   }
 
   .row {
-    grid-template-columns: 1rem minmax(0, 1.6fr) minmax(0, 1fr) 6rem auto;
+    grid-template-columns: 1rem minmax(0, 1.6fr) minmax(0, 1fr) 6rem 9rem;
   }
 
   .cellWhere {

@@ -28,6 +28,7 @@ import {
 } from "../ward-support-notifications";
 
 import styles from "./support-notification-checklist.module.css";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 const OUTCOME_ITEMS: { id: SupportNotificationOutcome; label: string }[] = [
   { id: "told", label: "Told" },
@@ -102,6 +103,8 @@ export function SupportNotificationChecklist({
   const headingId = useId();
   const editingRevisionRef = useRef(0);
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
+  // Audit CS3-01: an open "who was told" form is checked against the board it opened on.
+  useHoldOpenForm(editing !== null);
   const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
   const [who, setWho] = useState("");
   const [time, setTime] = useState("");

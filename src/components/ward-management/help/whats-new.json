@@ -25,6 +25,31 @@
     "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
   },
   {
+    "id": "2026-10-26-ward-referral-privacy",
+    "date": "2026-10-26",
+    "line": "Ward referrals show permitted progress while keeping other destinations private."
+  },
+  {
+    "id": "2026-10-26-stopped-transport-wording",
+    "date": "2026-10-26",
+    "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
+  },
+  {
+    "id": "2026-10-26-agreed-wording",
+    "date": "2026-10-26",
+    "line": "Clearer words: Accepted, no bed yet, Ask for a bed and Gender mix. ED rows turn red only at the access target."
+  },
+  {
+    "id": "2026-10-26-wording-pulled-held-up",
+    "date": "2026-10-26",
+    "line": "Clearer wording: pulled beds say pulled, delayed discharges say held up, and form times say as written."
+  },
+  {
+    "id": "2026-10-26-inline-forms-changed-meanwhile",
+    "date": "2026-10-26",
+    "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
+  },
+  {
     "id": "2026-10-26-tour-skip-closes",
     "date": "2026-10-26",
     "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."

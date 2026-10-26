@@ -3173,6 +3173,9 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes([
     homeRegion: "South West",
     suburb: { kind: "named", name: "Bunbury" },
     source: "community",
+    // WS-03 (26 Oct 2026): the referring team, as every community referral sent today records it.
+    // Without it the accepted journey could not be started from Home or the ward (D-76).
+    sendingTeamName: "Bunbury Community Team",
     raisedAt: NOW_ANCHOR - 600,
     urgency: 2,
     originSiteCode: "BUN",

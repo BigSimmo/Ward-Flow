@@ -935,7 +935,10 @@
   overflow-y: auto;
 }
 
+/* Layout sweep PT-01: position: relative keeps each row's screen reader text inside this scroller,
+   so it cannot stretch the page below the footer. */
 .movementListBody {
+  position: relative;
   max-height: 56rem;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2209,12 +2212,13 @@
   }
 }
 
-/* v10 phone: the "Arrange" label sits left of the order track, outside it. */
+/* v10 phone: the "Arrange" label sits outside the order track. Layout sweep PT-14: it sits above
+   the track, so the three options share the full width and "Longest wait" is not cut. */
 @media (max-width: 48rem) {
   .orderBar.orderBar {
     position: relative;
     width: auto;
-    margin-left: 4.75rem;
+    margin-top: calc(var(--wf-lh-12, 16px) + var(--wf-s-1));
   }
 
   .orderBar.orderBar > .orderBtn {
@@ -2225,9 +2229,8 @@
   .orderBar > .orderLegend {
     display: block;
     position: absolute;
-    top: 50%;
-    left: -4.75rem;
-    transform: translateY(-50%);
+    bottom: calc(100% + var(--wf-s-1));
+    left: 0;
   }
 }
 

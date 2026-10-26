@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -35,9 +35,24 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
   const { owner, ready } = useDowntimePackAccess();
   const online = useOnlineStatus();
   const canTake = !shared?.enabled || shared.status === "ready";
+  // Audit F-05: in shared mode "last sync" is the last successful workspace read, not every clock
+  // tick while the browser says online. A dropped server with the browser still online, or a read
+  // that has not come back yet, leaves it where it was. Without a shared workspace there is no
+  // server to sync with, so the local board is in sync whenever the browser is online, as before.
+  const receivedAt = shared?.enabled ? (shared.receivedAt ?? 0) : null;
+  const notedRead = useRef<string | null>(null);
   useEffect(() => {
-    if (online && canTake) noteDowntimeSync(now, worldGeneration);
-  }, [online, canTake, now, worldGeneration]);
+    if (!online || !canTake) return;
+    if (receivedAt === null) {
+      noteDowntimeSync(now, worldGeneration);
+      return;
+    }
+    const read = `${receivedAt}:${worldGeneration}`;
+    if (receivedAt > 0 && notedRead.current !== read) {
+      notedRead.current = read;
+      noteDowntimeSync(now, worldGeneration);
+    }
+  }, [online, canTake, now, worldGeneration, receivedAt]);
   return useCallback(
     (options?: { shiftChangeAt?: Instant | null }): void => {
       if (!ready || !canTake) return;

@@ -72,7 +72,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
   RECEIVE_REFERRAL: { category: "patient", plainWording: "New referral received" },
   ACCEPT_REFERRAL: { category: "patient", plainWording: "Referral accepted by destination service" },
-  HOLD_REFERRAL_BED: { category: "both", plainWording: "Numbered bed held for accepted referral" },
+  HOLD_REFERRAL_BED: { category: "both", plainWording: "Numbered bed pulled for accepted referral" },
   DECLINE_REFERRAL: { category: "patient", plainWording: "Referral declined by destination service" },
   RECORD_REFERRER_WITHDRAWAL: { category: "patient", plainWording: "Referral withdrawn by referrer" },
   ADD_REFERRAL_CORRECTION: { category: "patient", plainWording: "Referral details corrected" },
@@ -150,9 +150,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   BOOK_TRANSPORT: { category: "patient", plainWording: "Patient transport booking requested" },
   CANCEL_TRANSPORT: { category: "patient", plainWording: "Patient transport booking cancelled" },
   STOP_TRANSPORT: { category: "patient", plainWording: "Patient transport stopped in transit" },
-  RELEASE_HELD_BED: { category: "both", plainWording: "Held bed released after stopped transport" },
+  RELEASE_HELD_BED: { category: "both", plainWording: "Pulled bed released after stopped transport" },
   RECORD_DIVERSION: { category: "patient", plainWording: "Transport diverted to alternative location" },
-  RELEASE_DIVERTED_BED: { category: "both", plainWording: "Held bed released after transport diversion" },
+  RELEASE_DIVERTED_BED: { category: "both", plainWording: "Pulled bed released after transport diversion" },
 
   // 2.7 Urgency and gender flags
   CHANGE_URGENCY: { category: "patient", plainWording: "Clinical urgency priority changed" },

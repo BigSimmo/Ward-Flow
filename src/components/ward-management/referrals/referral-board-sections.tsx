@@ -6,6 +6,8 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
 import { useMemo } from "react";
+import { useSenderPresentation } from "../ward-sender-presentation";
+import { referralPresentation } from "../ward-partial-view-presenters";
 import { Lock, Scale, Truck, Users } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -21,9 +23,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   referralPersonFactsStatingSex,
   acceptedAddressing,
-  referralDecidedAt,
   referralDestinationLabel,
-  referralState,
 } from "@/components/ward-management/ward-referrals";
 import { Button, CardHead, Count, EmptyState, StatusGlyph, TierTile, Timer, cx } from "@/components/wf";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
@@ -45,6 +45,7 @@ import {
   GENDER_REVIEW_FLAG,
   QUEUED_REFUSED_LEAD,
   decidedWaitLabel,
+  presentationDecidedAt,
   demographicLabel,
   outcomeDetail,
   outcomeLabel,
@@ -72,7 +73,8 @@ function OutcomeDetail({
   refusalsTestId: string;
   cancelledTestId: string;
 }) {
-  const detail = outcomeDetail(referral, units);
+  const sender = useSenderPresentation();
+  const detail = outcomeDetail(referral, units, sender.referralFor(referral));
   return (
     <>
       <span className={styles.outcomeDetailPrimary}>{detail.outcome}</span>
@@ -103,6 +105,7 @@ function DueTimer({ dueAt, now }: { dueAt: Instant; now: Instant }) {
 }
 
 export function QueuedSection({
+  progressUnavailable = false,
   queued,
   allReferrals = queued,
   now,
@@ -117,6 +120,7 @@ export function QueuedSection({
   searchMiss = false,
   filterMiss = false,
 }: {
+  progressUnavailable?: boolean;
   queued: Referral[];
   /** The phone's chip filter, not the search, narrowed the queue to nothing. */
   filterMiss?: boolean;
@@ -141,6 +145,7 @@ export function QueuedSection({
   );
   // A2-20: initials plus UMRN on a phone when Discreet names is on.
   const nameFor = usePatientNameDisplay();
+  const sender = useSenderPresentation();
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
       <h2 className="sr-only">
@@ -148,11 +153,13 @@ export function QueuedSection({
       </h2>
       {queued.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-queued-empty">
-          {searchMiss
-            ? filterMiss
-              ? "No queued referral matches this chip."
-              : "No queued referral matches the search."
-            : "None. No referral is currently queued."}
+          {progressUnavailable
+            ? "Referral progress unavailable."
+            : searchMiss
+              ? filterMiss
+                ? "No queued referral matches this chip."
+                : "No queued referral matches the search."
+              : "None. No referral is currently queued."}
         </p>
       ) : (
         <>
@@ -180,11 +187,12 @@ export function QueuedSection({
             <tbody>
               {queued.map((referral) => {
                 const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
-                const refusals = refusalLines(referral);
+                const summary = sender.referralFor(referral);
+                const refusals = summary === undefined ? refusalLines(referral) : [];
                 const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
-                const ready = readyUnitCount(referral, units, now);
+                const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
                 const ward = wardArm(referral)?.destination;
                 const needs = [
                   ward?.secureBedNeeded ? { icon: Lock, label: "Secure bed requested" } : undefined,
@@ -280,7 +288,10 @@ export function QueuedSection({
                     </td>
                     <td>
                       <span className={a.arms}>
-                        {armChips(referral).map(({ words, refused, titles }) => (
+                        {(summary === undefined
+                          ? armChips(referral)
+                          : [{ words: "Awaiting answer", refused: false, titles: [] }]
+                        ).map(({ words, refused, titles }) => (
                           <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
                             <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
                             {words}
@@ -311,8 +322,13 @@ export function QueuedSection({
                     </td>
                     <td>
                       {ready === undefined ? (
-                        <span className={a.none} title="No ward bed asked for">
-                          <span className="sr-only">No ward bed asked for</span>
+                        <span
+                          className={a.none}
+                          title={summary === undefined ? "No ward bed asked for" : "Destination details are restricted"}
+                        >
+                          <span className="sr-only">
+                            {summary === undefined ? "No ward bed asked for" : "Destination details are restricted"}
+                          </span>
                         </span>
                       ) : (
                         <span className={a.fit}>
@@ -329,9 +345,12 @@ export function QueuedSection({
           <ReferralQueueCards>
             {queued.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
-              const refusals = refusalLines(referral);
-              const accepted = acceptedAddressing(referral);
-              const linkedMovement = movements.find((m) => m.referralId === referral.id && !m.closure);
+              const summary = sender.referralFor(referral);
+              const refusals = summary === undefined ? refusalLines(referral) : [];
+              const accepted =
+                summary === undefined || summary?.state === "accepted" ? acceptedAddressing(referral) : undefined;
+              const linkedMovement =
+                summary === undefined ? movements.find((m) => m.referralId === referral.id && !m.closure) : undefined;
               const unitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
               const selected = referral.id === selectedId;
@@ -378,7 +397,8 @@ export function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        <b>{referral.originSiteCode}</b> to {askingForShort(referral)}
+                        <b>{referral.originSiteCode}</b> to{" "}
+                        {summary === undefined ? askingForShort(referral) : "Awaiting answer"}
                       </span>
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
@@ -489,6 +509,7 @@ export function DecidedSection({
   onResetFilters?: () => void;
 }) {
   const nameFor = usePatientNameDisplay();
+  const sender = useSenderPresentation();
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
@@ -556,7 +577,7 @@ export function DecidedSection({
                       </button>
                     </td>
                     <td>
-                      <div>{outcomeLabel(referral)}</div>
+                      <div>{outcomeLabel(referral, sender.referralFor(referral))}</div>
                       <span className={styles.decidedPatientName}>
                         <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
                       </span>
@@ -569,10 +590,10 @@ export function DecidedSection({
                         cancelledTestId={`ward-referral-board-decided-cancelled-${referral.id}`}
                       />
                     </td>
-                    <td>{decidedWaitLabel(referral)}</td>
+                    <td>{decidedWaitLabel(referral, sender.referralFor(referral))}</td>
                     <td>
-                      {referralDecidedAt(referral) !== undefined
-                        ? formatInstantWithDay(referralDecidedAt(referral)!, now)
+                      {presentationDecidedAt(referral, sender.referralFor(referral)) !== undefined
+                        ? formatInstantWithDay(presentationDecidedAt(referral, sender.referralFor(referral))!, now)
                         : "Not recorded"}
                     </td>
                   </tr>
@@ -584,8 +605,9 @@ export function DecidedSection({
           <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-decided-cards">
             {displayDecided.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, { patients, referrals: decided, movements });
-              const accepted = referralState(referral) === "accepted";
-              const decidedAt = referralDecidedAt(referral);
+              const presentation = referralPresentation(referral, sender.referralFor(referral));
+              const accepted = presentation.kind !== "unavailable" && presentation.state === "accepted";
+              const decidedAt = presentationDecidedAt(referral, sender.referralFor(referral));
               const selected = referral.id === selectedId;
               return (
                 <li
@@ -606,7 +628,7 @@ export function DecidedSection({
                     <span className={styles.v6RowMain}>
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
-                        <span className="sr-only">{outcomeLabel(referral)}, </span>
+                        <span className="sr-only">{outcomeLabel(referral, sender.referralFor(referral))}, </span>
                         <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
                         <span
                           className={styles.v6RowOutcome}
