@@ -58,5 +58,10 @@
     "id": "2026-10-26-form-not-recorded",
     "date": "2026-10-26",
     "line": "The handover and phone ED now say \"Form not recorded\" instead of \"No form\" unless the person is Voluntary, and a patient's expected out day says \"Not recorded\" when no date is set."
+  },
+  {
+    "id": "2026-10-26-hospital-feed-names",
+    "date": "2026-10-26",
+    "line": "The practice hospital feed in Tools now names each person with their record number and bed, and a confirmed message can be undone."
   }
 ]
