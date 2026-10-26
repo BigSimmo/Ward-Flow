@@ -1476,3 +1476,28 @@ describe("shared workspace traffic", () => {
     client.dispose();
   });
 });
+
+describe("H-0731: the TV board names itself on workspace reads", () => {
+  it("sends x-ward-screen: tv only from the bed meeting TV board, and only on reads", async () => {
+    const seen: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (_url, init) => {
+        seen.push(new Headers(init?.headers).get("x-ward-screen"));
+        return Response.json({ snapshot: snapshot(1), workingAs: "bootstrap" });
+      },
+    });
+    try {
+      vi.stubGlobal("location", { pathname: "/ward-flow/bed-meeting" });
+      await client.refresh();
+      vi.stubGlobal("location", { pathname: "/ward-flow/ward" });
+      await client.refresh();
+    } finally {
+      vi.unstubAllGlobals();
+      client.dispose();
+    }
+    expect(seen).toEqual(["tv", null]);
+  });
+});

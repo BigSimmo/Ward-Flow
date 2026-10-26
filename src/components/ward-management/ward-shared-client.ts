@@ -837,6 +837,10 @@ export class SharedWorkspaceClient {
           authorization: `Bearer ${token}`,
           ...(body ? { "content-type": "application/json" } : {}),
           ...(as ? { "x-ward-working-as": as } : {}),
+          // The server logs a whole read from the bed meeting TV board as "tv" (H-0731).
+          ...(workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting")
+            ? { "x-ward-screen": "tv" }
+            : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal, roleSignal]),
