@@ -20,7 +20,8 @@ export function ForecastNetworkExtras({ now }: { now: Instant }) {
   const model = useForecastModel(now);
   const change = useForecastChange(model, now, { remember: true });
   const { tomorrow, byDays, levers, blockers, notCounted } = model;
-  const threeDay = byDays.find((entry) => entry.hours === 72);
+  // The third window, when there is one, runs over a weekend or holiday (`forecastHorizonDays`).
+  const threeDay = byDays.length > 2 ? byDays[byDays.length - 1] : undefined;
   const stayShort = tomorrow.kinds.filter((kind) => kind.high < 0);
 
   return (
