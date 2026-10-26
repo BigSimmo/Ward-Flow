@@ -59,7 +59,7 @@ export function RecordViewsTable({
   return (
     <div className={thirdEdition.tableScroll} role="region" aria-label="Record views" tabIndex={0}>
       {rows.length === 0 ? (
-        <p className={thirdEdition.emptyCell}>No record views are logged in the last {RECORD_VIEW_DAYS} days.</p>
+        <p className={thirdEdition.emptyCell}>No record views in the last {RECORD_VIEW_DAYS} days.</p>
       ) : (
         <table className={cx(tableClasses.table, thirdEdition.viewTable)} data-testid="ward-record-views">
           <caption className={thirdEdition.srOnly}>
