@@ -2,9 +2,9 @@
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
+import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
@@ -55,7 +55,6 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 
 import { PACK_SLOTS, packCount, packForm, packNeedsForms, packOutstanding, packRequired } from "./officer-forms-pack";
 import styles from "./officer.module.css";
@@ -117,58 +116,6 @@ export { isOfficerJob };
  * Send to officer are Preview: `BOOK_TRANSPORT` is the sending team's event, and no event sends a
  * forms pack yet.
  */
-/** Keep command lifetime and pending state inside the event-handling hook. */
-function useTransportCommandFeedback() {
-  const [toastMessage, setToastMessage] = useState<{
-    message: string;
-    undoMovementId?: string;
-    warning?: boolean;
-    isCurrent?: () => boolean;
-    canUndo?: () => boolean;
-  } | null>(null);
-  const pendingSteps = useRef(new Set<string>());
-  // A shared command can finish after several renders. Its own outcome is authoritative.
-  const reportOutcome = useCallback(
-    async (
-      movementId: string,
-      record: () => ReturnType<WardCommandDispatch>,
-      success: string,
-      action: string,
-      offerUndo = true,
-    ): Promise<boolean> => {
-      if (pendingSteps.current.has(movementId)) return false;
-      pendingSteps.current.add(movementId);
-      setToastMessage({ message: `${action} pending confirmation.`, warning: true });
-      try {
-        const outcome = await record();
-        if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
-          setToastMessage({
-            message: success,
-            isCurrent: outcome.isCurrent,
-            canUndo: outcome.canUndo,
-            ...(offerUndo ? { undoMovementId: movementId } : {}),
-          });
-          return true;
-        }
-        setToastMessage({
-          message: outcome?.message ?? `${action} was not confirmed. If it is not on the board, record it again.`,
-          warning: true,
-        });
-      } catch {
-        setToastMessage({
-          message: `${action} was not confirmed. If it is not on the board, record it again.`,
-          warning: true,
-        });
-      } finally {
-        pendingSteps.current.delete(movementId);
-      }
-      return false;
-    },
-    [],
-  );
-  return { toastMessage, setToastMessage, reportOutcome };
-}
-
 export function OfficerScreen() {
   const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
     "movements",
@@ -444,17 +391,6 @@ export function OfficerScreen() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [formModalJob, selectedId]);
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(
-      () => {
-        setToastMessage(null);
-      },
-      "undoMovementId" in toastMessage && toastMessage.undoMovementId ? UNDO_TOAST_MS : 3500,
-    );
-    return () => clearTimeout(timer);
-  }, [toastMessage, setToastMessage]);
 
   const showToast = (msg: string) => {
     setToastMessage({ message: msg });
@@ -1491,6 +1427,16 @@ export function OfficerScreen() {
               onClick={() => undoTransportStep(toastUndoFor)}
             >
               Undo
+            </button>
+          ) : null}
+          {toastMessage?.warning ? (
+            <button
+              type="button"
+              className={styles.toastUndo}
+              data-testid="ward-officer-toast-close"
+              onClick={() => setToastMessage(null)}
+            >
+              Close
             </button>
           ) : null}
         </div>
