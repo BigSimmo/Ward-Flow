@@ -305,8 +305,7 @@ export function OutOfAreaPhone({
         // H-0887: the page heading names the page, not only the count.
         title={
           <>
-            <SrOnly>Out of area:</SrOnly>{" "}
-            {totalAway} away from home
+            <SrOnly>Out of area:</SrOnly> {totalAway} away from home
           </>
         }
         sub={since}

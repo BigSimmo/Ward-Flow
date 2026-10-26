@@ -796,8 +796,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           // H-0887: the page heading names the page, not only the count.
           title={
             <>
-              <SrOnly>Out of area:</SrOnly>{" "}
-              {entries.length} away from home
+              <SrOnly>Out of area:</SrOnly> {entries.length} away from home
             </>
           }
           aside={

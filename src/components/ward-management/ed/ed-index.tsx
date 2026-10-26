@@ -369,8 +369,7 @@ export function EdIndex() {
           level={1}
           title={
             <>
-              <SrOnly>All EDs,</SrOnly>{" "}
-              {waiting} waiting in {withWaiting.length} EDs
+              <SrOnly>All EDs,</SrOnly> {waiting} waiting in {withWaiting.length} EDs
             </>
           }
           titleMeta={
