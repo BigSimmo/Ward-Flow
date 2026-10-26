@@ -553,9 +553,10 @@ export function createWorkspaceStore(
   /**
    * From migration 14, moves this world's closed records older than 30 days into the archive table
    * (`engine.archiveClosed`), in the save's own transaction, and returns the smaller world. Each row
-   * is written before the record leaves the workspace, so nothing is lost if the save fails.
+   * is written before the record leaves the workspace, so nothing is lost if the save fails. The
+   * move has its own audit row naming each record moved, under the save that triggered it (GV-27).
    */
-  async function archiveOld(client, world, revision, at) {
+  async function archiveOld(client, world, revision, at, view, actorId) {
     const { world: kept, archived } = engine.archiveClosed(world, at);
     if (!archived.length) return world;
     await client.query(
@@ -575,6 +576,15 @@ export function createWorkspaceStore(
         ),
       ],
     );
+    await audit(client, view, actorId, {
+      action: "ARCHIVE_CLOSED_RECORDS",
+      outcome: "accepted",
+      priorRevision: revision,
+      revision,
+      changes: {
+        archived: archived.map((record) => ({ collection: record.collection, recordId: record.id })),
+      },
+    });
     return kept;
   }
   /**
@@ -2271,7 +2281,7 @@ export function createWorkspaceStore(
               (row.revision % ARCHIVE_EVERY_REVISIONS === 0 || JSON.stringify(row.payload).length > WARN_WORLD_BYTES) &&
               (await schemaVersion()) >= ARCHIVE_MIGRATION
             )
-              row.payload = await archiveOld(client, row.payload, row.revision, at);
+              row.payload = await archiveOld(client, row.payload, row.revision, at, view, actorId);
             await saveWorld(client, row, row.payload, row.revision, at);
             if (push) {
               // Phone push must never cost the coordinator their change: an evaluation error rolls

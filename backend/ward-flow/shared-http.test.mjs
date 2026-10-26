@@ -927,3 +927,19 @@ test("turning phone alerts off never counts as working the role (fresh audit X-2
   await handler(request());
   assert.deepEqual(seen, [false, undefined]);
 });
+
+test("archived records sent to a desk are logged as a list read, and an empty archive is not (GV-27)", async () => {
+  const logged = [];
+  let records = [{ collection: "movements", body: { id: "MV-SYN-1" } }];
+  const { handler } = setup(coordinator, "prototype", {
+    archive: async () => ({ archived: records.length, records }),
+    logList: async (view, surface) => {
+      logged.push(surface);
+      return true;
+    },
+  });
+  assert.equal((await handler(request("/archive"))).status, 200);
+  records = [];
+  assert.equal((await handler(request("/archive?since=7"))).status, 200);
+  assert.deepEqual(logged, ["list"]);
+});

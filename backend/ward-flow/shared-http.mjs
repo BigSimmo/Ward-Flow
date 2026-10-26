@@ -418,7 +418,11 @@ export function createSharedHandler({
         // Audit PS-01: a desk that holds the archive names the revision it holds, and is sent only
         // what was archived after it. Anything else reads the whole archive.
         const since = new URL(request.url).searchParams.get("since");
-        return reply(200, await store.archive(view, since && /^\d{1,15}$/.test(since) ? Number(since) : undefined));
+        const archive = await store.archive(view, since && /^\d{1,15}$/.test(since) ? Number(since) : undefined);
+        // GV-27: archived records sent to a desk are logged as a list read, as the live list is
+        // (H-0731), before they go. A failed log write fails the read.
+        if (archive?.records?.length && store.logList) await store.logList(view, "list");
+        return reply(200, archive);
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
