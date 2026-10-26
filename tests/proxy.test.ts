@@ -145,14 +145,9 @@ describe("developer-area header (x-developer-area)", () => {
     expect(response.headers.get("content-security-policy")).toBeTruthy();
   });
 
-  it("sets the trusted offline marker only for Ward Flow and strips a spoofed copy elsewhere", async () => {
+  it("forwards no Ward Flow offline marker, which nothing reads (CQ-14)", async () => {
     const wardResponse = await proxy(requestFor("/ward-flow/capacity"));
-    expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBe("1");
-
-    const clinicalRequest = requestFor("/documents/some-id");
-    clinicalRequest.headers.set("x-ward-flow-offline", "1");
-    const clinicalResponse = await proxy(clinicalRequest);
-    expect(clinicalResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBeNull();
+    expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBeNull();
   });
 
   // #L69: the case above only exercises one gated prefix directly, so a
@@ -177,6 +172,24 @@ describe("static compatibility redirects", () => {
       expect(response.status, path).toBe(307);
       const location = new URL(response.headers.get("location")!);
       expect(location.pathname, path).toBe("/ward-flow");
+    }
+  });
+
+  it("forwards the other alias addresses before the app loads (A33), keeping the query", async () => {
+    const aliases: [string, string][] = [
+      ["/ward-flow/command", "/ward-flow"],
+      ["/ward-flow/queue", "/ward-flow/waiting"],
+      ["/ward-flow/escalation", "/ward-flow/waiting"],
+      ["/ward-flow/exceptions", "/ward-flow/waiting"],
+      ["/ward-flow/delays", "/ward-flow/waiting"],
+      ["/ward-flow/statistics/overview", "/ward-flow/statistics"],
+    ];
+    for (const [path, target] of aliases) {
+      const response = await proxy(requestFor(`${path}?site=rph`));
+      expect(response.status, path).toBe(307);
+      const location = new URL(response.headers.get("location")!);
+      expect(location.pathname, path).toBe(target);
+      expect(location.search, path).toBe("?site=rph");
     }
   });
 });

@@ -17,7 +17,7 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   prior_decline: "Prior decline",
   security: "Security level",
   gender_designation: "Gender designation",
-  sex_mix: "Sex mix",
+  sex_mix: "Gender mix",
   specialling: "Specialling capacity",
 };
 

@@ -16,6 +16,7 @@ import {
   type ObservationLevel,
 } from "@/components/ward-management/ward-observation";
 import styles from "./ward-bed-dossier-drawer.module.css";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 /** "Constant within sight (1:1)" for the picker; General and Intermittent show their name alone. */
 function levelOptionLabel(level: ObservationLevel): string {
@@ -63,6 +64,8 @@ export function WardObservationControl({
   showCurrent?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // Audit CS3-01: an open observation form is checked against the board it opened on.
+  useHoldOpenForm(open);
   const [level, setLevel] = useState<ObservationLevel>(observation.level);
   const [interval, setIntervalMinutes] = useState<number>(
     observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],

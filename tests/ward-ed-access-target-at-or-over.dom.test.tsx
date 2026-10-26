@@ -28,6 +28,15 @@ describe("the ED board marks a wait that reaches the access target, not only one
     expect(edWaitTone(urgency, target + 1, target)).toBe("danger");
   });
 
+  it("A1 (26 Oct 2026): a tier-overdue wait under the access target is amber, not red", () => {
+    const urgency = 1;
+    const { overdue } = queueWaitThresholds(urgency);
+    const target = overdue * 4;
+    expect(edWaitTone(urgency, overdue, target)).toBe("warning");
+    expect(edWaitTone(urgency, target - 1, target)).toBe("warning");
+    expect(edWaitTone(urgency, target, target)).toBe("danger");
+  });
+
   it("the row's access-target marker turns on at the exact target minute and reads 'at target'", () => {
     let current!: ReturnType<typeof useWardFlow>;
     function Harness({ edId }: { edId: string }) {

@@ -572,7 +572,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   },
   { term: "ETA", meaning: "Estimated time of arrival, as quoted by the transport provider or the ward." },
   { term: "MDT", meaning: "Multidisciplinary team, such as the catchment MDT a community team holds." },
-  { term: "MHA", meaning: "The Mental Health Act 2014 (WA)." },
+  { term: "MHA", meaning: "The Mental Health Act, the WA law the legal forms are named from." },
   { term: "ED", meaning: "Emergency department." },
   { term: "EDD", meaning: "Expected date of discharge." },
   { term: "UMRN", meaning: "Unit medical record number. Ward Flow uses invented ones only." },

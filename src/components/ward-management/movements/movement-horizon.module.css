@@ -902,6 +902,35 @@
   }
 }
 
+/* Layout sweep PT-20 (iPad): the chart takes the full width with Corridors stacked below it, so no
+   bar is cut under the rail, and each column head puts the day word under its time. */
+@media (min-width: 761px) and (max-width: 68.75rem) {
+  .diagSplit {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: clamp(24.5rem, 57dvh, 36rem) 14rem;
+    height: auto;
+  }
+
+  .fullscreen .diagSplit {
+    grid-template-rows: minmax(0, 1fr) 14rem;
+  }
+
+  .corridorRail {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+@media (max-width: 68.75rem) {
+  .tickTime {
+    flex-direction: column;
+  }
+
+  .tickDay {
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 480px) {
   .horizonContainer {
     --horizon-ward-width: 160px;

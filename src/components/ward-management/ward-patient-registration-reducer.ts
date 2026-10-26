@@ -1,6 +1,6 @@
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { WardFlowEvent } from "./ward-flow-events";
-import { GENDERS, type Patient } from "./ward-patients";
+import { GENDERS, sameRecordNumber, type Patient } from "./ward-patients";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import { perthCalendarDay } from "./ward-clock";
 
@@ -51,7 +51,7 @@ export function reducePatientRegistration(
   const dateProblem = dateOfBirthProblem(event.dateOfBirth, new Date());
   if (dateProblem !== undefined) return reject(state, event, dateProblem);
   // Defensive uniqueness check: Reject duplicate UMRNs to prevent split clinical records
-  const existingPatient = state.patients.find((p) => p.umrn.trim().toLowerCase() === umrn.toLowerCase());
+  const existingPatient = state.patients.find((p) => sameRecordNumber(p.umrn, umrn));
   if (existingPatient) {
     return reject(state, event, `ADD_PATIENT UMRN collision: ${umrn} already belongs to patient ${existingPatient.id}`);
   }

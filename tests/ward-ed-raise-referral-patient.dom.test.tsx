@@ -33,7 +33,7 @@ afterEach(cleanup);
  *
  * Round 2 (option B, 13 Oct 2026): ED "Raise referral" now opens the shared referral slide-out
  * (its no-patient start is covered in `ward-referral-no-default-patient.dom.test.tsx`). The inline
- * form survives only as "Raise into a movement" from the ED inbox, so these cases prove the same
+ * form survives only as "Ask for a bed" from the ED inbox, so these cases prove the same
  * person requirement there. An inbox referral with no person on it opens as "Not yet identified";
  * clearing that is the "nobody named yet" state.
  */

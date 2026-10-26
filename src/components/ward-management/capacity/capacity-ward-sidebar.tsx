@@ -187,7 +187,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
                 <dd>{freeingCellText(row.freeing)}</dd>
               </div>
               <div>
-                <dt>Sex mix</dt>
+                <dt>Gender mix</dt>
                 <dd>
                   Female {row.unit.sexMix.Female} · Male {row.unit.sexMix.Male}
                 </dd>
@@ -224,7 +224,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
               </p>
             ) : null}
             {row.bedRecordsMidUpdate ? (
-              <p className={styles.sidebarWarning}>Bed records are mid-update. Sex mix may not be settled.</p>
+              <p className={styles.sidebarWarning}>Bed records are mid-update. Gender mix may not be settled.</p>
             ) : null}
             <section className={styles.confirmationSection}>
               <h3>Confirmed beds</h3>

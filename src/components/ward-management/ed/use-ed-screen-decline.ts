@@ -7,6 +7,7 @@ import type { WardFlowContextValue } from "@/components/ward-management/ward-flo
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { ReferralDeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import type { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 export function useEdInboxDecline({
   rejections,
@@ -33,6 +34,8 @@ export function useEdInboxDecline({
    */
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<ReferralDeclineReason | undefined>(undefined);
+  // Audit CS3-01: the inbox decline form is checked against the board it opened on.
+  useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `referral:${declineOpenFor}`);
   /*
    * ⚠️ **NO PATH FROM THIS SCREEN CAN CURRENTLY PRODUCE A REFUSAL. THIS BRANCH IS WRITTEN AGAINST A
    * FUTURE DISPATCHER, NOT A LIVE ONE — do not read it as covering something that happens today.**

@@ -434,7 +434,7 @@ export function HandoverPrintSheet({
                   Updated
                 </th>
                 <th scope="col" className={styles.colHeld}>
-                  Held
+                  Pulled
                 </th>
                 <th scope="col" className={styles.colNarrow}>
                   Past EDD

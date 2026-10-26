@@ -165,10 +165,57 @@
   white-space: nowrap;
 }
 
-/* Forms register: the shared wf table (`tableClasses`); only the cell contents are styled here. */
-.wrap {
+/* Forms register: the shared wf table (`tableClasses`); only the cell contents are styled here.
+   Layout sweep PT-03: `td.wrap` outranks the shared `.table td` (nowrap, ellipsis), so the paper
+   expiry and time left wrap under the status instead of collapsing to "P…". */
+.wrap,
+td.wrap {
   white-space: normal;
   overflow: visible;
+  text-overflow: clip;
+}
+
+.wrap .cellSub {
+  display: block;
+}
+
+/* Layout sweep PT-07: on a phone the Legal forms head puts the legal status under the title, and
+   both wrap rather than being cut. */
+@media (max-width: 48rem) {
+  .legalHead > div:has(> h2) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .legalHead > div:has(> h2) > * {
+    white-space: normal;
+    overflow: visible;
+  }
+
+  /* "Documents" is never broken mid-word beside its count and button: the count and
+     Record document details move to their own line, at the right, when the head is short of room. */
+  .docsHead {
+    flex-wrap: wrap;
+  }
+
+  .docsHead h2 {
+    overflow-wrap: normal;
+  }
+
+  .docsHead > div:last-child {
+    margin-left: auto;
+  }
+}
+
+/* The Form column sizes to its chip, so "Form 4A" is never cut at 360 px (layout sweep PT-03
+   leftover). The shared table gives every cell an equal share and an ellipsis. */
+table th.formCol,
+table td.formCol {
+  width: 1%;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .form {

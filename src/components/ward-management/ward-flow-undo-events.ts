@@ -146,7 +146,7 @@ export function reduceUndoEvent(
           admission.state !== "pulled" ||
           linkedMovement.heldBedNumber !== record.afterBed)
       )
-        return reject(state, event, "The bed journey has changed, so the held-bed move cannot be undone");
+        return reject(state, event, "The bed journey has changed, so the pulled-bed move cannot be undone");
       const linkedReferral =
         record.beforeReferralBed === undefined
           ? undefined
@@ -169,7 +169,7 @@ export function reduceUndoEvent(
           !acceptedArmIndexes.includes(referralArmIndex) ||
           linkedArm?.heldBedNumber !== record.afterBed)
       )
-        return reject(state, event, "The accepted referral arm has changed, so the held-bed move cannot be undone");
+        return reject(state, event, "The accepted referral arm has changed, so the pulled-bed move cannot be undone");
       // Older pulled stays can be unnumbered while their journey or referral holds a number.
       // Validate every number restored by Undo, including those absent from the admission.
       const restoredBeds = new Set(
