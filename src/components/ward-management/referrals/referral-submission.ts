@@ -107,6 +107,13 @@ export function clearanceChecklistWords(checklist: ClearanceChecklist): string {
     .join(", ");
 }
 
+/**
+ * A27 (Josh, 26 Oct 2026): the two required charts may be marked "to follow" when they are not to
+ * hand at send time. The referral then says so plainly. Nothing is chased or timed automatically.
+ */
+const FOLLOWABLE_CHART_KINDS = ["medication", "observation"] as const;
+export type FollowableChartKind = (typeof FOLLOWABLE_CHART_KINDS)[number];
+
 export type ReferralContact = { name: string; email: string; phone: string; role: string; location: string };
 
 export type ReferralIntakeDetails = {
@@ -124,6 +131,8 @@ export type ReferralIntakeDetails = {
   };
   triageAndRampCompleted: boolean;
   charts: ReferralChart[];
+  /** Required charts the referrer marked to follow instead of attaching (A27). Absent when none. */
+  chartsToFollow?: FollowableChartKind[];
   additionalDocuments: boolean;
   referrer: ReferralContact;
   arrival?: { transport: string; reference: string; estimatedAt?: string; syntheticTimelineBase?: string };
@@ -206,6 +215,7 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       "medicalClearance",
       "triageAndRampCompleted",
       "charts",
+      "chartsToFollow",
       "additionalDocuments",
       "referrer",
       "arrival",
@@ -273,11 +283,20 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
   }
   if (new Set(intake.charts.map((chart) => chart.kind)).size !== intake.charts.length)
     return "Attach one file per document row.";
+  const toFollow = intake.chartsToFollow;
   if (
-    !intake.charts.some((chart) => chart.kind === "medication") ||
-    !intake.charts.some((chart) => chart.kind === "observation")
+    toFollow !== undefined &&
+    (!Array.isArray(toFollow) ||
+      toFollow.length === 0 ||
+      toFollow.some((kind) => !FOLLOWABLE_CHART_KINDS.includes(kind)) ||
+      new Set(toFollow).size !== toFollow.length ||
+      toFollow.some((kind) => intake.charts.some((chart) => chart.kind === kind)))
   )
-    return "Attach the medication and observation charts.";
+    return "Mark a chart to follow only when it is not attached.";
+  const ready = (kind: FollowableChartKind) =>
+    intake.charts.some((chart) => chart.kind === kind) || (toFollow?.includes(kind) ?? false);
+  if (!ready("medication") || !ready("observation"))
+    return "Attach the medication and observation charts, or mark them to follow.";
   if (intake.additionalDocuments && !intake.charts.some((chart) => chart.kind === "other"))
     return "Attach the additional document or choose No.";
   if (!intake.additionalDocuments && intake.charts.some((chart) => chart.kind === "other"))

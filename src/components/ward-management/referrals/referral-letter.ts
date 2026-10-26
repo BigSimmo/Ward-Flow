@@ -6,6 +6,7 @@
  */
 
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
+import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 
 export type ReferralTextInput = {
   /** "a ward", "a community team" or "an emergency department". */
@@ -30,6 +31,9 @@ export type ReferralTextInput = {
   readonly clearanceChecklist?: string;
   /** What the receiving team or ED asked to know, one phrase each. */
   readonly needs?: readonly string[];
+  /** Document kinds only: file contents and names never enter handover text. */
+  readonly chartKinds?: readonly ReferralChart["kind"][];
+  readonly chartsToFollow?: readonly FollowableChartKind[];
   readonly referrer: { readonly name: string; readonly role: string; readonly phone: string };
 };
 
@@ -42,9 +46,21 @@ function value(text: string): string {
   return text.trim() || NOT_RECORDED;
 }
 
+function chartStatusText(input: ReferralTextInput): string {
+  const attached = input.chartKinds ?? [];
+  const labels = { medication: "Medication chart", observation: "Observation chart", other: "Additional document" };
+  return [
+    ...attached.map((kind) => `${labels[kind]} attached`),
+    ...(input.chartsToFollow ?? [])
+      .filter((kind) => !attached.includes(kind))
+      .map((kind) => `${labels[kind]} to follow, not attached yet`),
+  ].join("; ");
+}
+
 /** The letter, headed by the time it was drafted (AWST clock face). */
 export function referralLetterText(input: ReferralTextInput, draftedAt: string): string {
   const referrer = [input.referrer.name, input.referrer.role, input.referrer.phone].map((part) => part.trim());
+  const charts = chartStatusText(input);
   return [
     `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} AWST.`,
     `Mental health referral to ${input.destinationPhrase}`,
@@ -65,6 +81,7 @@ export function referralLetterText(input: ReferralTextInput, draftedAt: string):
     `Medical clearance: ${value(input.clearance)}`,
     ...(input.clearanceChecklist?.trim() ? [`Clearance checklist: ${input.clearanceChecklist.trim()}`] : []),
     ...(input.needs?.length ? [`Needs: ${input.needs.join(", ")}`] : []),
+    ...(charts ? [`Documents: ${charts}`] : []),
     "",
     "HISTORY",
     value(input.history),
@@ -79,12 +96,14 @@ export function referralIsbarText(
   sent: { readonly referralId: string; readonly sentAt: string; readonly decisionDue?: string },
 ): string {
   const to = input.recipients.length ? input.recipients.join(" and ") : NOT_RECORDED;
+  const charts = chartStatusText(input);
   return [
     SYNTHETIC_COPY_LINE,
     `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. Referral sent ${sent.sentAt} to ${to}.`,
     `S: ${value(input.urgency)}. ${value(input.legalStatus)}.`,
     `B: ${value(input.history)}`,
-    `A: Risks ${input.risks.length ? input.risks.join(", ").toLowerCase() : "none selected"}. Medical clearance ${value(input.clearance).toLowerCase()}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim().toLowerCase()})` : ""}.`,
+    // Walk-through WT-40: the risk and clearance words keep their case ("ECG done", not "ecg done").
+    `A: Risks: ${input.risks.length ? input.risks.join(", ") : "None selected"}. Medical clearance: ${value(input.clearance)}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim()})` : ""}.${charts ? ` Documents: ${charts}.` : ""}`,
     `R: ${value(input.reason)}.${input.needs?.length ? ` ${input.needs.join(", ")}.` : ""}${sent.decisionDue ? ` Decision due ${sent.decisionDue}.` : ""}`,
   ].join("\n");
 }

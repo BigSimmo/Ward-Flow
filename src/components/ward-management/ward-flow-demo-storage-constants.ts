@@ -15,6 +15,14 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
  */
 export const RESTORED_NOTICE_PREFIX = "Restored the last successful save from";
 
+/**
+ * CS3-17 (26 Oct 2026): added to the restore notice when the save that loaded differs from the
+ * first screen and someone had already clicked or typed. Loading it redraws every screen, so a
+ * panel opened in those first moments closes. The notice says so and stays until it is closed.
+ */
+export const OPEN_ITEMS_CLOSED_NOTICE =
+  "Anything you had open was closed when the save loaded. Open it again to carry on.";
+
 export const STORAGE_UNAVAILABLE =
   "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
 

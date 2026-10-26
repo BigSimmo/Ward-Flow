@@ -16,6 +16,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { kindRangeWord } from "./forecast-by-kind";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { referralsByHour } from "./forecast-history";
@@ -56,6 +58,9 @@ export function ForecastTrackRecordCard({
   const role = useRouteRole();
   const { entries: reasonEntries, record: recordReason } = useForecastMissReasons();
   const latestReasons = useMemo(() => latestMissReasons(reasonEntries), [reasonEntries]);
+  const patientOf = usePatientOf();
+  const describeAdmission = (admission: Admission) =>
+    `${patientOf(admission).displayName}, ${wardLabel(admission.unitId, units.find((unit) => unit.id === admission.unitId)?.name)}`;
   const missSummary = useMemo(() => missReasonSummary(record.days, reasonEntries), [record.days, reasonEntries]);
   const held = useMemo(() => dischargeDatesHeldByWard(units, admissions, now), [units, admissions, now]);
   const hours = useMemo(
@@ -84,7 +89,8 @@ export function ForecastTrackRecordCard({
           <>
             <p className={styles.caption}>
               {record.inRange} of {record.days.length} {record.days.length === 1 ? "day" : "days"} landed inside the
-              forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
+              forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}. Snapshots
+              are taken at the first view of each day.
             </p>
             <p className={styles.caption} data-testid="ward-statistics-forecast-reasons">
               {missSummary.missed === 0
@@ -113,7 +119,7 @@ export function ForecastTrackRecordCard({
                       now={now}
                       day={day.day}
                       entry={latestReasons.get(day.day)}
-                      candidates={missCandidates(day, movements, admissions)}
+                      candidates={missCandidates(day, movements, admissions, describeAdmission)}
                       onRecord={(reason) => recordReason({ day: day.day, reason, by: role, at: now })}
                     />
                   )}

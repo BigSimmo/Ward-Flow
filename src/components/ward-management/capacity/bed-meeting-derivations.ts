@@ -3,7 +3,7 @@ import { delayGroups, type DelayCause } from "@/components/ward-management/delay
 import { edOpenSummaries, elapsedOpenMinutes } from "@/components/ward-management/ed/ed-home-derivations";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
-import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type {
   BedRelease,
@@ -195,7 +195,13 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     heldUp: groups.blocked.length,
     confirmed: groups.confirmed.length,
     expected: groups.expected.length,
-    dischargedToday: groups["discharged-today"].length,
+    // NA3-04 (audit 26 Oct 2026): "discharged today" is the Perth calendar day, as Statistics and
+    // Tools count it (left the ward on today's date). The board's discharged group is a rolling 24
+    // hours of releases, so the printed sheet read 4 where those screens read 2.
+    dischargedToday: admissions.filter(
+      (admission) =>
+        scopedUnitIds.has(admission.unitId) && admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now),
+    ).length,
     beyondToday: groups.excludedBeyondToday,
     rows: dischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
     moreRows: Math.max(0, dischargeRows.length - BED_MEETING_ROW_LIMIT),

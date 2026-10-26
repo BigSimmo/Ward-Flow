@@ -306,3 +306,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* #794: greyed decision controls for a desk that does not answer this destination. */
+.decidedBy {
+  display: contents;
+}

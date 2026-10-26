@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
@@ -15,6 +16,9 @@ import { boardBedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from 
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
+
+/** Shown in place of the pick control when a bed manager looks at the board. */
+const BED_MANAGER_CANNOT_PLACE = "The ward or the coordinator places a patient";
 
 /** One referral waiting for this ward's answer that the board can place in a bed. */
 export type WaitingReferral = {
@@ -275,9 +279,12 @@ export function WardBedBoard({
       (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0)),
   );
 
+  // #820: placing stays with the ward and the coordinator, so a bed manager sees who waits but cannot pick.
+  const bedManagerReason = useEffectiveWardAccess().role === "bed_manager" ? BED_MANAGER_CANNOT_PLACE : undefined;
   const waitChips = (
     <>
-      {waiting.map((referral) => {
+      {waiting.map((waitingReferral) => {
+        const referral = bedManagerReason ? { ...waitingReferral, blockedReason: bedManagerReason } : waitingReferral;
         const isMovement = referral.kind === "movement";
         const on =
           (picked?.kind === "referral" && !isMovement && picked.referralId === referral.id) ||

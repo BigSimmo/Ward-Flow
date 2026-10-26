@@ -171,7 +171,7 @@ export function ReferralPatientStep({
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, familyName: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, familyName: value }))}
                   />
                 </Field>
                 <Field label="Given name" htmlFor={`${sectionId}-np-given`} required>
@@ -185,7 +185,7 @@ export function ReferralPatientStep({
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, givenName: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, givenName: value }))}
                   />
                 </Field>
                 <Field label="Date of birth" htmlFor={`${sectionId}-np-dob`} required>
@@ -194,7 +194,7 @@ export function ReferralPatientStep({
                     type="date"
                     className={styles.fieldInput}
                     value={newPatient.dateOfBirth}
-                    onChange={(e) => setNewPatient((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, dateOfBirth: value }))}
                   />
                 </Field>
                 <Field label="UMRN" htmlFor={`${sectionId}-np-umrn`} required>
@@ -208,7 +208,7 @@ export function ReferralPatientStep({
                     autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, umrn: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
                   />
                 </Field>
                 <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
@@ -217,7 +217,9 @@ export function ReferralPatientStep({
                       id={`${sectionId}-np-gender`}
                       className={styles.fieldSelect}
                       value={newPatient.gender}
-                      onChange={(e) => setNewPatient((p) => ({ ...p, gender: e.target.value as Gender | "" }))}
+                      onChange={({ target: { value } }) =>
+                        setNewPatient((p) => ({ ...p, gender: value as Gender | "" }))
+                      }
                     >
                       <option value="">Not recorded</option>
                       {GENDERS.map((gender) => (
@@ -236,7 +238,7 @@ export function ReferralPatientStep({
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="words"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, suburb: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, suburb: value }))}
                   />
                 </Field>
               </div>

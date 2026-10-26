@@ -78,7 +78,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           </span>
         )}
       </div>
-      <ReferralDocumentLinks charts={intake.charts} />
+      <ReferralDocumentLinks charts={intake.charts} toFollow={intake.chartsToFollow} />
     </details>
   );
 }

@@ -467,9 +467,10 @@ describe("ward-morning-rollup", () => {
       availableNow: "Ready",
       confirmedToday: "Confirmed today and tomorrow",
       expectedToday: "Expected today and tomorrow",
-      // "Discharges held up", not "Blocked releases" — owner ruling 2026-09-06. The label changed;
-      // the field name and the one-label-per-figure rule this pins did not.
-      blockedToday: "Discharges held up",
+      // "Discharges held up", not "Blocked releases" — owner ruling 2026-09-06; then "Releases held
+      // up, today and tomorrow" (decision 15, 26 Oct 2026), because "Discharges held up" is the
+      // patient count. The label changed; the field name and the one-label-per-figure rule did not.
+      blockedToday: "Releases held up, today and tomorrow",
       // "Closed", not "Held" — 2026-09-01 ruling 5. "Held" now means only a bed kept for a patient
       // on leave; the empty bed a ward is not offering is Closed.
       held: "Closed",

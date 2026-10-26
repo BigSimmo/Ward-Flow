@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReferralChart } from "./referral-submission";
+import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
-function documentLabel(kind: ReferralChart["kind"]) {
+export function documentLabel(kind: ReferralChart["kind"]) {
   return kind === "medication"
     ? "Medication chart"
     : kind === "observation"
@@ -11,7 +11,19 @@ function documentLabel(kind: ReferralChart["kind"]) {
       : "Additional document";
 }
 
-export function ReferralDocumentLinks({ charts }: { charts: ReferralChart[] }) {
+/** "2 attached" or "1 attached, 1 to follow" (A27). */
+export function chartsCountText(attached: number, toFollow: number): string {
+  return toFollow ? `${attached} attached, ${toFollow} to follow` : `${attached} attached`;
+}
+
+export function ReferralDocumentLinks({
+  charts,
+  toFollow = [],
+}: {
+  charts: ReferralChart[];
+  /** A27: required charts the referrer marked to follow. */
+  toFollow?: readonly FollowableChartKind[];
+}) {
   return (
     <ul className={styles.documentLinks}>
       {charts.map((chart) => (
@@ -26,6 +38,11 @@ export function ReferralDocumentLinks({ charts }: { charts: ReferralChart[] }) {
               {documentLabel(chart.kind)} · {chart.name}
             </a>
           )}
+        </li>
+      ))}
+      {toFollow.map((kind) => (
+        <li key={`${kind}-to-follow`}>
+          <span>{documentLabel(kind)} · to follow, not attached yet</span>
         </li>
       ))}
     </ul>

@@ -323,10 +323,10 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
             ? (movement.legalForm?.code ?? "")
             : (formOverrides[movement.id] ?? "")
         }
-        onChange={(event) => {
+        onChange={({ target: { value } }) => {
           setFormOverrides((current) => ({
             ...current,
-            [movement.id]: event.target.value || null,
+            [movement.id]: value || null,
           }));
           announceToWardShell("Form draft changed on this screen only. The recorded legal form is unchanged.");
         }}
@@ -365,10 +365,10 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
                 : "no"
             : (clearanceOverrides[movement.id] ?? "")
         }
-        onChange={(event) => {
+        onChange={({ target: { value } }) => {
           setClearanceOverrides((current) => ({
             ...current,
-            [movement.id]: event.target.value === "yes" ? "yes" : event.target.value === "no" ? "no" : null,
+            [movement.id]: value === "yes" ? "yes" : value === "no" ? "no" : null,
           }));
           announceToWardShell(
             "Clearance draft changed on this screen only. The recorded medical clearance is unchanged.",
