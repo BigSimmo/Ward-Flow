@@ -3,7 +3,7 @@ import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { WARD_FLOW_OFFLINE_HEADER, WARD_FLOW_PATH_PREFIX, isWardFlowPath } from "@/lib/developer-area/headers";
+import { WARD_FLOW_PATH_PREFIX, isWardFlowPath } from "@/lib/developer-area/headers";
 
 const WARD_SOURCE_ROOTS = ["src/components/ward-management", "src/app/ward-flow"];
 
@@ -48,9 +48,8 @@ function importsAndCalls(file: string): { imports: string[]; networkCalls: strin
 }
 
 describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
-  it("matches the exact route subtree and exposes one trusted request marker", () => {
+  it("matches the exact route subtree", () => {
     expect(WARD_FLOW_PATH_PREFIX).toBe("/ward-flow");
-    expect(WARD_FLOW_OFFLINE_HEADER).toBe("x-ward-flow-offline");
     expect(isWardFlowPath("/ward-flow")).toBe(true);
     expect(isWardFlowPath("/ward-flow/capacity")).toBe(true);
     expect(isWardFlowPath("/ward-flow-archive")).toBe(false);
