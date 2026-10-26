@@ -78,5 +78,10 @@
     "id": "2026-10-26-forecast-long-weekend",
     "date": "2026-10-26",
     "line": "Before a long weekend, the forecast's weekend or holiday figure now runs to the first working day after it, not just the third day."
+  },
+  {
+    "id": "2026-10-26-ed-accept-double-tap",
+    "date": "2026-10-26",
+    "line": "A quick double tap on Accept presentation no longer confirms the acceptance as well. Confirm acceptance needs its own tap."
   }
 ]
