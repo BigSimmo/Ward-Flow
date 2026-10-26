@@ -545,7 +545,7 @@ describe("WITHDRAW_ACCEPTANCE releases a held bed in one act (Q16)", () => {
     expect(movementIn(after, REPULL_MOVEMENT).acceptedUnitId).toBe(REPULL_UNIT);
   });
 
-  it("refuses, recording no release, when the held bed matches no releasable reservation", () => {
+  it("refuses, recording no release, when the pulled bed matches no releasable reservation", () => {
     const pulled = pulledWithRoom();
     const admissionId = movementIn(pulled, REPULL_MOVEMENT).admissionId;
     const mismatched: WardFlowState = {
