@@ -187,7 +187,7 @@ export function createSharedHandler({
       }
       return error instanceof verifierUnavailable
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
-        : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
+        : reply(401, { code: "auth-denied", error: "Sign in with the authorised account" }, "auth_denied");
     }
     // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). It counts from
     // the token's first sign-in factor, which a refresh or a later factor never moves, so the person
