@@ -77,13 +77,15 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
     expect(screen.getByTestId("live-bed-count")).toHaveTextContent("0");
     fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));
-    expect(screen.getByLabelText("Clinical escort required?")).toHaveValue("");
-    fireEvent.change(screen.getByLabelText("Transport provider"), { target: { value: "Ambulance service" } });
-    fireEvent.change(screen.getByLabelText("CAD number"), { target: { value: "CAD-SYNTHETIC-42" } });
-    fireEvent.change(screen.getByLabelText("Quoted ETA (minutes from now)"), { target: { value: "45" } });
-    fireEvent.change(screen.getByLabelText("Transport legal status"), { target: { value: "involuntary" } });
-    fireEvent.change(screen.getByLabelText("Clinical escort required?"), { target: { value: "yes" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save booking" }));
+    // A34: the one transport booking form. Escort opens unanswered.
+    expect(screen.getByRole("radio", { name: "Escort required" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "No escort required" })).not.toBeChecked();
+    fireEvent.change(screen.getByLabelText(/^Who is collecting /), { target: { value: "Ambulance service" } });
+    fireEvent.change(screen.getByLabelText("CAD transport number"), { target: { value: "CAD-SYNTHETIC-42" } });
+    fireEvent.click(within(screen.getByRole("group", { name: "Quick times" })).getByRole("button", { name: "+30m" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Involuntary" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Escort required" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save transport booking" }));
     expect(screen.getByTestId("live-cad")).toHaveTextContent("CAD-SYNTHETIC-42");
     fireEvent.click(screen.getByRole("button", { name: "Mark handover ready · sending team" }));
     expect(screen.getByRole("button", { name: "Mark moving · patient collected" })).toHaveAttribute(

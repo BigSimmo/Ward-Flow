@@ -856,6 +856,9 @@ test.describe("@mockup Emergency department screen", () => {
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-016").fill("CAD-ROLES-0016");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-016").check();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason016 = page.getByTestId("ward-ed-transport-legal-reason-WF-016");
+    if (await legalReason016.isVisible()) await legalReason016.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-016").fill("14:30");
     await page.getByTestId("ward-ed-book-transport-confirm-WF-016").click();
 
@@ -1365,6 +1368,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-315").fill("CAD-ROLES-0315");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-315").check();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason315 = page.getByTestId("ward-ed-transport-legal-reason-WF-315");
+    if (await legalReason315.isVisible()) await legalReason315.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-315").fill("14:30");
     await page.getByTestId("ward-ed-book-transport-confirm-WF-315").click();
     // Proves the booking actually landed rather than just asserting the clicks happened: before

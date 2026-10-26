@@ -1,0 +1,156 @@
+/* The one transport booking form (A34). Tokens only, so it reads the same in every popup and sheet. */
+
+.form {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.question {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--wf-s-1);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.choice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-self: start;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-track);
+  background: var(--wf-surface-2);
+}
+
+.choiceItem {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-seg-item);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+/* The native radio stays visible: a clear tick for each answer, and a real target for every pointer. */
+.choiceItem input {
+  width: 16px;
+  height: 16px;
+  margin: 0 var(--wf-s-2) 0 0;
+  accent-color: var(--wf-accent);
+}
+
+.choiceItem:hover {
+  color: var(--wf-ink-1);
+}
+
+.choiceItem:has(input:checked) {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+
+.choiceItem:has(input:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.question:disabled .choiceItem {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.timeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-3);
+}
+
+.timeRow > :first-child {
+  flex: 1 1 10rem;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  margin-top: calc(var(--wf-s-2) * -1);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.warn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.leftFix {
+  min-height: 32px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.leftFix:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.error {
+  margin: 0;
+  color: var(--wf-danger-ink);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
