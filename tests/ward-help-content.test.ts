@@ -15,6 +15,7 @@ describe("screen help", () => {
     expect(screenHelpFor("/ward-flow/people/new", entries)?.id).toBe("add-patient");
     expect(screenHelpFor("/ward-flow/ed/e1", entries)?.id).toBe("ed-board");
     expect(screenHelpFor("/ward-flow/legal-forms", entries)?.id).toBe("legal-forms");
+    expect(screenHelpFor("/ward-flow/community/t1", entries)?.id).toBe("community-team");
     expect(screenHelpFor("/ward-flow/constellation", entries)).toBeUndefined();
   });
 
@@ -23,6 +24,8 @@ describe("screen help", () => {
     expect(screenHelpFor("/ward-flow/ward/u1", entries, "ward")?.title).toBe("My ward");
     expect(screenHelpFor("/ward-flow/wards", entries, "ward")?.title).toBe("All wards");
     expect(screenHelpFor("/ward-flow/ed/e1", entries, "ed")?.title).toBe("My ED board");
+    expect(screenHelpFor("/ward-flow/community/t1", entries, "community")?.title).toBe("My team");
+    expect(screenHelpFor("/ward-flow/community", entries, "community")?.title).toBe("Community");
   });
 
   it("answers each task on the screen where it is done", () => {

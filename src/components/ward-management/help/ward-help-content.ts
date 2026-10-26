@@ -332,6 +332,18 @@ const PAGE_HELP: readonly PageHelp[] = [
     ],
   },
   {
+    id: "community-team",
+    path: /^\/ward-flow\/community\/[^/]+$/u,
+    menuId: "community",
+    title: "Community team",
+    purpose: "One community team's referrals and patients, from a referral sent to their return to the team.",
+    actions: [
+      "Sent and Waiting answer show this team's referrals and where each one is up to.",
+      "In a bed, Expected back and Caseload and CTOs follow the team's patients.",
+      "New referral in the header starts a referral. How to reach this team stays beside every list.",
+    ],
+  },
+  {
     id: "settings",
     path: /^\/ward-flow\/settings$/u,
     title: "Settings",
@@ -370,7 +382,7 @@ const PAGE_HELP: readonly PageHelp[] = [
 const OWNS_SUB_PAGES: ReadonlySet<string> = new Set(["statistics"]);
 
 /** Desk menu entries that open the desk's own place, not the list page that shares their id. */
-const OWN_PLACE_MENUS: ReadonlySet<string> = new Set(["wards", "ed"]);
+const OWN_PLACE_MENUS: ReadonlySet<string> = new Set(["wards", "ed", "community"]);
 
 type ShownHelp = ScreenHelp & { id: string };
 
