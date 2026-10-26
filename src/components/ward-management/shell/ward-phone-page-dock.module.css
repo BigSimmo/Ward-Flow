@@ -84,3 +84,19 @@
 .rise {
   composes: foot from "./ward-phone-menu.module.css";
 }
+
+/* A desk with nothing to start (executive, access admin) has no +, so the bar's top edge runs
+   straight across instead of rising round an empty hump (Help thread, 26 Oct 2026). */
+.rise[data-wf-create="none"]::before,
+.rise[data-wf-create="none"]::after {
+  -webkit-mask: none;
+  mask: none;
+}
+
+.rise[data-wf-create="none"]::before {
+  inset: -1px 0 0;
+}
+
+.rise[data-wf-create="none"]::after {
+  inset: 0;
+}
