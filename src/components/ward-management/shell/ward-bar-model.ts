@@ -2,6 +2,7 @@
 // panel ids, Activity and Service tables, history and referral helpers, and the route title.
 import type { WfTone } from "@/components/wf";
 import type { Unit, HealthService } from "@/components/ward-management/ward-model";
+import type { WardAccessScope } from "@/components/ward-management/ward-role-access";
 import {
   WARD_ADD_PERSON_HREF,
   WARD_ALERTS_HREF,
@@ -14,7 +15,7 @@ import {
   resolveWardPrimaryAction,
 } from "@/components/ward-management/ward-nav";
 import { wardPlaceIdFor, type WardPlace } from "@/components/ward-management/ward-place";
-import { edById, edShortName } from "@/components/ward-management/ward-sites";
+import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   edHealthService,
   SERVICE_SCOPED_SCREENS,
@@ -278,6 +279,45 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
 
 /** Fixed jurisdiction resolution for place-specific views: the service a ward or ED route sits in. */
 export function fixedServiceFor(
+  pathname: string,
+  place: WardPlace | undefined,
+  units: readonly Unit[],
+  scope?: WardAccessScope,
+): HealthService | undefined {
+  return placeServiceFor(pathname, place, units) ?? (scope ? scopeServiceFor(scope, units) : undefined);
+}
+
+/**
+ * #838 (multi-account test, 26 Oct 2026): a desk narrower than a service read "Statewide" on every
+ * page off its own ward route. Its header now names the one service its scope sits in. A ward desk
+ * across two services, a team desk and a desk with no service stay on the selector, as before.
+ */
+function scopeServiceFor(scope: WardAccessScope, units: readonly Unit[]): HealthService | undefined {
+  switch (scope.kind) {
+    case "service":
+      return scope.service;
+    case "jobs":
+      return scope.service;
+    case "site":
+      return siteByCode(scope.siteCode)?.service;
+    case "ed":
+      return edHealthService(scope.edId);
+    case "ward": {
+      const services = new Set(
+        scope.unitIds.map((unitId) => {
+          const unit = units.find((candidate) => candidate.id === unitId);
+          return unit ? unitHealthService(unit) : undefined;
+        }),
+      );
+      const [only] = services;
+      return services.size === 1 ? only : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+function placeServiceFor(
   pathname: string,
   place: WardPlace | undefined,
   units: readonly Unit[],

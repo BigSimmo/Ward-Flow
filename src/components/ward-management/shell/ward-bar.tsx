@@ -85,6 +85,7 @@ import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
+import { useEffectiveWardAccess } from "./ward-access-store";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
@@ -1063,10 +1064,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
   // Fixed jurisdiction resolution for place-specific views
-  const fixedService = useMemo<HealthService | undefined>(
-    () => fixedServiceFor(pathname, place, units),
-    [pathname, place, units],
-  );
+  const { scope } = useEffectiveWardAccess();
+  const fixedService = useMemo(() => fixedServiceFor(pathname, place, units, scope), [pathname, place, units, scope]);
 
   const isFixedJurisdiction = fixedService !== undefined;
   const activeService = isFixedJurisdiction ? fixedService : service;
