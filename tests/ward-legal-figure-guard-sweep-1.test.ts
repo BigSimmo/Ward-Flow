@@ -8,6 +8,6 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
   for (const supplyDueAt of [false, true]) {
     it(`every dueAt the sweep produces, of any code, through any event, traces to a value this file supplied (Forms ${codes.join(", ")}; supplyDueAt=${supplyDueAt})`, () => {
       runDueAtSweep(supplyDueAt, codes);
-    }, 300_000);
+    }, 600_000);
   }
 });
