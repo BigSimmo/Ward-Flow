@@ -603,6 +603,14 @@ export function createSharedHandler({
         return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
+      // H-0291: the save would take the workspace past its size limit. It rolled back, so this
+      // change is definitely not saved, and retrying the same change cannot succeed.
+      if (error?.message === "Workspace too large")
+        return reply(
+          413,
+          { code: "workspace-full", error: "The shared workspace is full, so this change was not saved." },
+          "workspace_full",
+        );
       const storage = storageFailure(error);
       note.failure = errorFields(error);
       return storage

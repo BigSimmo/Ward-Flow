@@ -872,7 +872,8 @@ test("a bootstrap coordinator past its end date has no role (H-0057)", async () 
       origin: "https://ward-flow-production.up.railway.app",
     },
     sharedStore: {
-      viewer: async (actorId, { bootstrap }) => (bootstrap ? bootstrapViewer(actorId, { bootstrap }) : { status: "none" }),
+      viewer: async (actorId, { bootstrap }) =>
+        bootstrap ? bootstrapViewer(actorId, { bootstrap }) : { status: "none" },
       read: async () => ({ revision: 1, dataMode: "prototype" }),
       sessionLimitMinutes: 720,
     },
@@ -883,4 +884,16 @@ test("a bootstrap coordinator past its end date has no role (H-0057)", async () 
     log: () => {},
   });
   assert.equal((await handler(request())).status, 403);
+});
+
+test("a save past the workspace size limit is refused as full, never as a server fault (H-0291)", async () => {
+  const { handler, logs } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw new Error("Workspace too large");
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).code, "workspace-full");
+  assert.equal(logs.at(-1).outcome, "workspace_full");
 });
