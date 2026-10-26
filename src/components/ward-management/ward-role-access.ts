@@ -446,6 +446,8 @@ export type PlaceLookup = {
   edSiteCode(edId: string): string | undefined;
   edService(edId: string): HealthService | undefined;
   teamSlug(teamName: string): string;
+  /** The health service a community team page belongs to, by its slug (H-0113). `undefined` when unknown. */
+  teamService?(teamSlug: string): HealthService | undefined;
   /** A site's health service, from the registry: an ED-only site has no ward to read it from. */
   siteService?(siteCode: string): HealthService | undefined;
 };
@@ -520,7 +522,9 @@ export function screenDecision(
     const own =
       scope.kind === "team"
         ? places.teamSlug(scope.teamName) === address.teamSlug
-        : scope.kind === "statewide" || scope.kind === "service";
+        : scope.kind === "statewide" ||
+          // H-0113: a service desk opens only its own service's teams. An unknown service stays closed.
+          (scope.kind === "service" && places.teamService?.(address.teamSlug) === scope.service);
     if (!own) return { open: false, why: "place" };
   }
   return { open: true, grant };
