@@ -610,7 +610,7 @@ export function DischargeReleaseDetail({
             {
               label: "Release stage recorded",
               state: detailRelease.state === "expected" ? "pending" : "complete",
-              detail: `${detailRelease.state} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
+              detail: `${detailRelease.state.charAt(0).toUpperCase()}${detailRelease.state.slice(1)} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
             },
             // A4-23 (audit round 2): the phone shows the blocker panes together, so
             // the blocker is said once, in its own box below, not again as a milestone.

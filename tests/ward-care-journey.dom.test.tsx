@@ -92,7 +92,7 @@ describe("care journey controls use the actual guarded provider", () => {
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Document cohort" }), { target: { value: "camhs" } });
     expect(
-      within(screen.getByRole("combobox", { name: "Document" })).queryByRole("option", { name: "physical" }),
+      within(screen.getByRole("combobox", { name: "Document" })).queryByRole("option", { name: "Physical" }),
     ).not.toBeInTheDocument();
   });
   it("shows a failed contact action without displaying completion", () => {
