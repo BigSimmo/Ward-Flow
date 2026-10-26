@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { commandScopeRefusal } from "@/components/ward-management/ward-access-state";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { TRANSPORT_PROVIDERS, type Movement, type Referral } from "@/components/ward-management/ward-model";
 import { observationAt, type Observation } from "@/components/ward-management/ward-observation";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -209,11 +212,16 @@ describe("BOOK_TRANSPORT booker checks (items 8 and 9)", () => {
     expect(after.rejections).toEqual([]);
   });
 
-  it("refuses a community team on a journey with no sending team recorded", () => {
+  it("leaves a journey with no sending team on record to the server, which refuses the team", () => {
     const state = seed();
     const movement = pulled(state);
-    const after = book(state, movement.id, { role: "community", actingPlaceId: COMMUNITY_TEAM_PAGES[0]!.id });
-    expect(after.rejections.at(-1)?.reason).toContain("is not the referral origin team");
+    const team = COMMUNITY_TEAM_PAGES[0]!;
+    const access: WardAccess = { role: "community", scope: { kind: "team", teamName: team.name } };
+    const command = { type: "BOOK_TRANSPORT", role: "community", movementId: movement.id, actingPlaceId: team.id };
+    const places = wardPlaceLookup(state.units);
+    expect(commandScopeRefusal(state, access, command, { now: NOW_ANCHOR, places })).toMatch(
+      /outside your role's place/,
+    );
   });
 
   it("refuses every ward, not only the destination, when the journey did not start on a ward", () => {

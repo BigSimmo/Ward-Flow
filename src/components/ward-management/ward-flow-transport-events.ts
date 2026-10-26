@@ -701,14 +701,16 @@ export function reduceTransportEvent(
           `BOOK_TRANSPORT actingPlaceId ${event.actingPlaceId} does not name a real community team`,
         );
       }
-      // Only the team that sent the journey books its transport, matched by name or slug as
-      // WITHDRAW_REFERRAL matches the sending team.
+      // A journey another team sent is that team's to book, matched by name or slug as
+      // WITHDRAW_REFERRAL matches the sending team. One with no sending team on record is left to
+      // the server's scope check, which shows a team only the journeys it sent.
       if (event.role === "community" && event.actingPlaceId !== undefined) {
         const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
         const sendingTeamName = referral?.sendingTeamName;
         if (
-          sendingTeamName === undefined ||
-          (event.actingPlaceId !== sendingTeamName && event.actingPlaceId !== communityTeamSlug(sendingTeamName))
+          sendingTeamName !== undefined &&
+          event.actingPlaceId !== sendingTeamName &&
+          event.actingPlaceId !== communityTeamSlug(sendingTeamName)
         ) {
           return reject(
             state,
