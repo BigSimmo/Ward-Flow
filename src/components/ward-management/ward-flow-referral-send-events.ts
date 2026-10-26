@@ -614,7 +614,7 @@ export function reduceReferralSendEvent(
             "transport_cancelled_officer",
             { role: "officer" },
             { movementId: movement.id },
-            `Transport for ${movement.id} was cancelled (referred to a community team instead); no bed is held and nothing has been rebooked.`,
+            `Transport for ${movement.id} was cancelled (referred to a community team instead); no bed is pulled and nothing has been rebooked.`,
           ),
         );
       }
