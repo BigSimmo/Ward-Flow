@@ -335,8 +335,6 @@ export function WardBedBoard({
               <StatusGlyph tone={referral.waitedMinutes >= 240 ? "warning" : "neutral"} size={10} />
               <span className={styles.chipName}>{nameFor(referral.name, referral.umrn)}</span>
               <span className={styles.chipMeta}>
-                {/* #819: a referral sent to this ward shows its number, as Search finds it. */}
-                {isMovement ? "" : `${referral.id} · `}
                 {referral.accepted ? "Accepted · hold or reassign · " : ""}
                 {referral.sex} · {durMinutes(referral.waitedMinutes)}
               </span>

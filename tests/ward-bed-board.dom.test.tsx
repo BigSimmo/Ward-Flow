@@ -162,38 +162,6 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     expect(cellText(to)).toMatch(/, ready$/);
     expect(document.querySelector("[data-testid^='ward-board-pick-']")).not.toBeNull();
   });
-
-  it("shows a waiting referral's number on its chip, as Search finds it (#819)", () => {
-    renderBoard([
-      {
-        type: "RECEIVE_REFERRAL",
-        role: "community",
-        now: NOW_ANCHOR,
-        ageBand: "Adult",
-        destinations: [
-          {
-            kind: "psychiatric_ward",
-            unitId: UNIT,
-            sex: "Female",
-            gender: "Female",
-            secureBedNeeded: false,
-            involuntaryBedNeeded: false,
-            highAcuityNursingNeeded: false,
-          },
-        ],
-        homeRegion: "Perth Metropolitan",
-        suburb: { kind: "named", name: "Armadale" },
-        source: "community",
-        urgency: 2,
-        originSiteCode: "SCGH",
-        transportNeeded: false,
-        ...FIXTURE_HISTORY,
-      } as WardFlowEvent,
-    ]);
-    const chips = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-pick-RF-']")];
-    expect(chips.length, "no referral is waiting on the board, so this proves nothing").toBeGreaterThan(0);
-    for (const chip of chips) expect(chip).toHaveTextContent(chip.dataset.testid!.replace("ward-board-pick-", ""));
-  });
 });
 
 describe("Bed board layout and fit rules", () => {
