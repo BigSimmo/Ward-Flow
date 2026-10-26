@@ -841,7 +841,7 @@ export function remainingSpeciallingCapacity(unit: Unit, admissions: readonly Ad
 
 /**
  * Staff this ward is committing to constant observation: every bed it holds (pulled or occupied, as
- * edIsOccupied says), so the ward screen's figure and the placement check count the same beds.
+ * `bedIsOccupied` says), so the ward screen's figure and the placement check count the same beds.
  * Audit F1, Josh approved 26 Oct 2026: a pulled patient takes the staff from the pull onward.
  */
 export function observationStaffOnWard(unitId: string, admissions: readonly Admission[]): number {
