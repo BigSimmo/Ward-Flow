@@ -40,6 +40,8 @@ const SIZE_WARNING_EVERY_MS = 600_000;
 export const ARCHIVE_EVERY_REVISIONS = 20;
 /** The newest archived records one desk reads for History. */
 export const ARCHIVE_READ_LIMIT = 5000;
+/** The archive reply's record hashes are 48 bits, summed modulo this so the sum stays exact. */
+export const ARCHIVE_SUM_MODULUS = 2 ** 48;
 const RECORD_COLUMNS = "collection, record_id, kind, ordinal, revision, body";
 /**
  * A copy of `value` with object keys in PostgreSQL's jsonb order (shorter keys first, then by
@@ -549,6 +551,56 @@ export function createWorkspaceStore(
       forgetVersionOnMissing(error);
       return undefined;
     }
+  }
+  /**
+   * History's archive rows held in this process (audit PS-01): the newest `ARCHIVE_READ_LIMIT` of
+   * one world generation, newest closed first, with how many there are and the newest revision
+   * read. Rows are written once and never changed, and saves archive under the workspace lock in
+   * revision order, so each read asks the database only for rows archived after `through`.
+   * @type {{ generation: number, through: number, total: number, rows: Array<{ collection: string, id: string, closedAt: number, body: any, archivedRevision: number }> } | null}
+   */
+  let archiveHeld = null;
+  /** @type {Promise<unknown>} One refresh at a time, so two reads never count the same rows twice. */
+  let archiveRefresh = Promise.resolve();
+  const archiveOrder = (a, b) =>
+    b.closedAt - a.closedAt ||
+    (a.collection < b.collection ? -1 : a.collection > b.collection ? 1 : 0) ||
+    (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  function heldArchive(generation) {
+    const refresh = archiveRefresh.then(async () => {
+      if (archiveHeld?.generation !== generation) archiveHeld = { generation, through: 0, total: 0, rows: [] };
+      const held = archiveHeld;
+      const { rows } = await pool
+        .query(
+          'SELECT collection, record_id, closed_at, body, archived_revision, count(*) OVER ()::integer AS archived, max(archived_revision) OVER () AS through FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 AND archived_revision > $3 ORDER BY closed_at DESC, collection COLLATE "C", record_id COLLATE "C" LIMIT $4',
+          [workspaceId, generation, held.through, ARCHIVE_READ_LIMIT],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          if (archiveHeld === held) archiveHeld = null;
+          throw error;
+        });
+      if (!rows.length || archiveHeld !== held) return held;
+      const fresh = rows.map((row) => ({
+        collection: row.collection,
+        id: row.record_id,
+        closedAt: row.closed_at,
+        body: row.body,
+        archivedRevision: Number(row.archived_revision) || 0,
+      }));
+      const keys = new Set(fresh.map((row) => `${row.collection}\0${row.id}`));
+      archiveHeld = {
+        generation,
+        through: Math.max(held.through, Number(rows[0].through) || 0),
+        total: held.total + (rows[0].archived ?? rows.length),
+        rows: [...held.rows.filter((row) => !keys.has(`${row.collection}\0${row.id}`)), ...fresh]
+          .sort(archiveOrder)
+          .slice(0, ARCHIVE_READ_LIMIT),
+      };
+      return archiveHeld;
+    });
+    archiveRefresh = refresh.catch(() => {});
+    return refresh;
   }
   async function writeRecords(client, plan, at) {
     if (plan.deletes.length)
@@ -1362,32 +1414,70 @@ export function createWorkspaceStore(
     /**
      * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world
      * generation, newest closed first, narrowed by the desk's place exactly as its live workspace is
-     * (`engine.scopeArchive`). Before 14 there is no archive and the list is empty.
+     * (`engine.scopeArchive`). Before 14 there is no archive and the list is empty. With `since`,
+     * only the records archived after that revision are sent (audit PS-01).
+     * @param {any} view
+     * @param {number} [since]
+     * @returns {Promise<{ archived: number, records: any[], through?: number, sum?: string, since?: number, floor?: Array<number | string>, revision?: number, partialView?: { revision: number, accessContext: string, view: any } }>}
      */
-    async archive(view) {
-      if ((await schemaVersion()) < ARCHIVE_MIGRATION) return { archived: 0, records: [] };
+    async archive(view, since) {
+      if ((await schemaVersion()) < ARCHIVE_MIGRATION) {
+        archiveHeld = null;
+        return { archived: 0, records: [] };
+      }
       const at = clock();
       const stored = await readWorld(pool);
       if (!stored || !engine.validWorld(stored.payload)) return { archived: 0, records: [] };
-      const { rows } = await pool
-        .query(
-          "SELECT collection, record_id, closed_at, body, count(*) OVER ()::integer AS archived FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 ORDER BY closed_at DESC, collection, record_id LIMIT $3",
-          [workspaceId, stored.payload.state.worldGeneration, ARCHIVE_READ_LIMIT],
-        )
-        .catch((error) => {
-          forgetVersionOnMissing(error);
-          throw error;
-        });
-      const records = rows.map((row) => ({
-        collection: row.collection,
-        id: row.record_id,
-        closedAt: row.closed_at,
-        body: row.body,
-      }));
+      const held = await heldArchive(stored.payload.state.worldGeneration);
+      const records = held.rows;
       const shown = view ? engine.scopeArchive(stored.payload, records, view.access, at, view.grants) : records;
+      // Audit PS-01: each record carries a short hash of the copy this desk is shown, and the reply
+      // the sum of them all. A desk that already holds the archive names the revision it holds
+      // (`since`) and is sent only the records archived after it; it keeps the rest, drops what
+      // falls below `floor`, and checks the sum. Any mismatch (its place, a break glass record or a
+      // masking rule changed) and it reads the whole archive again, so it never keeps a stale copy.
+      let sum = 0;
+      const hashed = shown.map((record) => {
+        const hash = createHash("sha256")
+          .update(`${record.collection}\0${record.id}\0${JSON.stringify(record.body)}`)
+          .digest("hex")
+          .slice(0, 12);
+        sum = (sum + Number.parseInt(hash, 16)) % ARCHIVE_SUM_MODULUS;
+        return { record, hash };
+      });
+      const partial = Number.isSafeInteger(since) && since >= 0 && since <= held.through;
+      const last = held.total > records.length ? records.at(-1) : undefined;
+      // The sender progress for the archived records shown, worked out here from the full stored
+      // records (never from the masked copies sent below) and bound to this desk's access view and
+      // the revision it was worked out at, as the live snapshot's is. Ward and bed manager desks only.
+      const context = accessContext(at, view);
+      const senderView =
+        typeof context.accessContext === "string" &&
+        (view?.access?.role === "ward" || view?.access?.role === "bed_manager");
       return {
-        archived: rows[0]?.archived ?? 0,
-        records: shown.map((record) => ({ collection: record.collection, body: record.body })),
+        archived: held.total,
+        through: held.through,
+        sum: sum.toString(16).padStart(12, "0"),
+        ...(partial ? { since } : {}),
+        ...(last ? { floor: [last.closedAt, last.collection, last.id] } : {}),
+        records: hashed
+          .filter(({ record }) => !partial || record.archivedRevision > since)
+          .map(({ record, hash }) => ({
+            collection: record.collection,
+            body: record.body,
+            closedAt: record.closedAt,
+            hash,
+          })),
+        ...(senderView
+          ? {
+              revision: Number(stored.revision),
+              partialView: {
+                revision: Number(stored.revision),
+                accessContext: context.accessContext,
+                view: engine.archivePartialViewForWorld(stored.payload, records, view.access, at, view.grants),
+              },
+            }
+          : {}),
       };
     },
     /**
