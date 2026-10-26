@@ -96,10 +96,9 @@
     "test:backend:coverage": "npm --prefix backend/ward-flow run build:engine && npm --prefix backend/ward-flow run test:coverage"
   },
   "dependencies": {
-    "@next/env": "16.4.2",
     "@sentry/core": "^11.8.0",
     "lucide-react": "^1.56.0",
-    "next": "^16.4.0",
+    "next": "16.4.2",
     "postcss": "^8.5.26",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -124,6 +123,7 @@
     "@axe-core/playwright": "~4.13.0",
     "@babel/parser": "^8.0.7",
     "@next/bundle-analyzer": "^16.4.0",
+    "@next/env": "16.4.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -140,7 +140,7 @@
     "knip": "^6.41.0",
     "parse5": "8.0.1",
     "playwright": "^1.64.0",
-    "playwright-core": "^1.62.1",
+    "playwright-core": "1.64.1",
     "prettier": "^3.9.10",
     "sharp": "0.35.5",
     "tailwindcss": "^4.3.1",
