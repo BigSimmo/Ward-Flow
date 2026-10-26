@@ -283,8 +283,14 @@ export function fixedServiceFor(
   place: WardPlace | undefined,
   units: readonly Unit[],
   scope?: WardAccessScope,
+  chosen: HealthService | null = null,
 ): HealthService | undefined {
-  return placeServiceFor(pathname, place, units) ?? (scope ? scopeServiceFor(scope, units) : undefined);
+  const placeService = placeServiceFor(pathname, place, units);
+  if (placeService !== undefined || !scope) return placeService;
+  const scopeService = scopeServiceFor(scope, units);
+  // A service still chosen from an earlier desk keeps filtering the screens, so the badge keeps
+  // showing it, unlocked, rather than naming a service the lists are not filtered to.
+  return chosen === null || chosen === scopeService ? scopeService : undefined;
 }
 
 /**

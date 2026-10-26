@@ -1065,7 +1065,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   // Fixed jurisdiction resolution for place-specific views
   const { scope } = useEffectiveWardAccess();
-  const fixedService = useMemo(() => fixedServiceFor(pathname, place, units, scope), [pathname, place, units, scope]);
+  const fixedService = fixedServiceFor(pathname, place, units, scope, service);
 
   const isFixedJurisdiction = fixedService !== undefined;
   const activeService = isFixedJurisdiction ? fixedService : service;
