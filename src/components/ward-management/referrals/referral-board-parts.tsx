@@ -526,6 +526,8 @@ export const REFERRAL_SHORTCUTS: readonly (readonly [string, string])[] = [
   ["K", "Previous referral"],
   ["1 2 3", "Place, Patient or Timeline"],
   ["O", "Next overdue referral"],
+  ["A", "Accept (at the chosen ward)"],
+  ["D", "Decline (choose a reason)"],
   ["S", "Referral summary"],
   ["M", "Bed meeting list"],
   ["Esc", "Close the referral"],

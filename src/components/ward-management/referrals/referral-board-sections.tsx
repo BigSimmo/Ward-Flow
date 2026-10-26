@@ -242,7 +242,12 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span> ·{" "}
+                          {/* #819: the referral number, as Search finds it, on every queue row. */}
+                          <span className={a.mono} data-testid={`ward-referral-board-number-${referral.id}`}>
+                            {referral.id}
+                          </span>{" "}
+                          · {demographicLabel(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag
@@ -397,7 +402,10 @@ export function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        <b>{referral.originSiteCode}</b> to{" "}
+                        <span className={a.mono} data-testid={`ward-referral-board-card-number-${referral.id}`}>
+                          {referral.id}
+                        </span>{" "}
+                        · <b>{referral.originSiteCode}</b> to{" "}
                         {summary === undefined ? askingForShort(referral) : "Awaiting answer"}
                       </span>
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}

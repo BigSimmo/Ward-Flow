@@ -25,6 +25,7 @@ import {
   type MeetingRow,
 } from "./referral-board-parts";
 import styles from "./referral-board.module.css";
+import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 function meetingText(rows: MeetingRow[], now: Instant): string {
@@ -167,6 +168,13 @@ export function BedMeetingSheet({
 
 /* ─── Selected referral: alerts, decision clock and ISBAR summary ───────────────────────────── */
 
+/** The referrer's Patient story on one line, less the "Not yet identified, …" line the drawer puts first. */
+function patientStory(referral: Referral): string {
+  const lines = referral.history.split("\n");
+  const body = lines[0]?.trim().startsWith(UNIDENTIFIED_REFERRAL_PREFIX) ? lines.slice(1) : lines;
+  return body.join(" ").replace(/\s+/g, " ").trim();
+}
+
 /** What the current record holds, apart from what the referral letter said when it was sent. */
 export type IsbarRecorded = {
   legalStatus?: string;
@@ -177,6 +185,9 @@ export type IsbarRecorded = {
  * Audit CS3-02: the letter's legal status and clearance were shown as if they were the record. The
  * summary now gives the recorded legal status and clearance, or "not recorded", and names what came
  * from the letter as the letter's.
+ *
+ * #836: Background reads both fields the referral form's Clinical presentation card writes (Reason
+ * for referral and Patient story), and a blank one is named, so "not recorded" says which field.
  */
 export function isbarText(
   referral: Referral,
@@ -189,19 +200,27 @@ export function isbarText(
   const intake = referral.intake;
   const { waited, due } = waitWords(referral, now);
   const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
-  const reason = intake?.reasonForReferral?.trim();
+  const reason = intake?.reasonForReferral?.replace(/\s+/g, " ").trim();
+  const story = patientStory(referral);
   const letterLegal = intake?.legalStatus?.trim();
   const legal = recorded.legalStatus?.trim();
   const clearance = recorded.clearance;
   const clearanceWords = clearance
     ? `${clearance.cleared ? "cleared" : "not cleared"}, recorded ${formatInstantWithDay(clearance.at, now)}`
     : "not recorded";
-  const flags = intake?.riskFlags.join(", ");
+  const background = [
+    reason ? `On the referral letter, ${reason.replace(/\.$/, "")}.` : "Reason for referral not recorded.",
+    story ? `Patient story: ${story.replace(/\.$/, "")}.` : "Patient story not recorded.",
+    `Legal status ${legal || "not recorded"}${letterLegal ? ` (on the referral letter: ${letterLegal})` : ""}.`,
+  ].join(" ");
+  const flags = intake
+    ? intake.riskFlags.join(", ") || "none selected"
+    : "not recorded (raised before the referral form)";
   return [
     `Identify: ${name}, ${umrn}, ${demographics}.`,
     `Situation: tier ${referral.urgency} referral from ${site} (${REFERRAL_SOURCE_WORDS[referral.source]}), waiting ${waited}, ${due}. Asking for ${askingForShort(referral)}.`,
-    `Background: ${reason ? `On the referral letter, ${reason}` : "Reason not recorded"}. Legal status ${legal || "not recorded"}${letterLegal ? ` (on the referral letter: ${letterLegal})` : ""}.`,
-    `Assessment: risk flags on the referral letter ${flags || "not recorded"}. Medical clearance ${clearanceWords}.`,
+    `Background: ${background}`,
+    `Assessment: risk flags on the referral letter ${flags}. Medical clearance ${clearanceWords}.`,
     `Recommendation: ${needWords(referral).join(", ") || "no bed needs recorded"}.`,
   ].join("\n");
 }

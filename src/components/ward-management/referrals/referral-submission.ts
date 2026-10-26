@@ -168,6 +168,16 @@ function joinAnd(items: string[]): string {
   return items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 }
 
+const CONTACT_MISSING_PREFIX = "Enter your ";
+
+/**
+ * #823: true for the Send refusal that lists missing contact fields. The footer stops repeating it
+ * once those fields are filled, so the warning clears as soon as the contact details are valid.
+ */
+export function isMissingContactMessage(message: string): boolean {
+  return message.startsWith(CONTACT_MISSING_PREFIX);
+}
+
 /**
  * L6 (review 12 Oct 2026): the message names exactly what is still missing, in the form's order,
  * so the send footer and the field errors agree ("Enter your email", never "Enter your name, role
@@ -175,7 +185,7 @@ function joinAnd(items: string[]): string {
  */
 export function referralContactError(contact: ReferralContact): string | null {
   if (!onlyFields(contact, ["name", "email", "phone", "role", "location"]))
-    return "Enter your name, email, phone number, role and location or service.";
+    return `${CONTACT_MISSING_PREFIX}name, email, phone number, role and location or service.`;
   const text = (value: unknown) => (typeof value === "string" ? value : "");
   const missing: string[] = [];
   if (!text(contact.name).trim()) missing.push("name");
@@ -184,7 +194,7 @@ export function referralContactError(contact: ReferralContact): string | null {
     missing.push("phone number");
   if (!text(contact.role).trim()) missing.push("role");
   if (!text(contact.location).trim()) missing.push("location or service");
-  if (missing.length) return `Enter your ${joinAnd(missing)}.`;
+  if (missing.length) return `${CONTACT_MISSING_PREFIX}${joinAnd(missing)}.`;
   if ([contact.name, contact.role, contact.location].some((v) => v.length > 200))
     return "Shorten your name, role or location to 200 characters.";
   if (contact.email.length > 254) return "Shorten your email to 254 characters.";
