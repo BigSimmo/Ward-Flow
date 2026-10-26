@@ -105,11 +105,16 @@
   min-width: 0;
 }
 
+/* Layout sweep (REF-08): the ward name is what is being chosen, so it takes a second line rather
+   than cutting "Great Southern Acute Psyc…"; the row's height already allows it. */
 .nm {
+  display: -webkit-box;
   overflow: hidden;
   font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* Device sweep D6: a ward's reason ("…no locked beds (All occupied)") takes a second line before
