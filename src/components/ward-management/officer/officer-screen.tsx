@@ -319,11 +319,9 @@ export function OfficerScreen() {
   const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
-  // Audit CS3-01: the diversion form is checked against the board as it was when it opened.
-  useHoldOpenForm(diversionOpen);
+  useHoldOpenForm(diversionOpen); // Audit CS3-01: the diversion form is held from opening.
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
-
   const toggleCheck = (movementId: string, index: number) => {
     setVerifiedChecks((prev) => {
       const currentList = prev[movementId] ?? [false, false, false, false];
@@ -335,7 +333,6 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
   const resetDiversion = () => {
     setDiversionOpen(false);
     setDiversionReason(undefined);

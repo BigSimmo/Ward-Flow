@@ -138,9 +138,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
   const [numConsulted, setNumConsulted] = useState(false);
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
-  // Audit CS3-01: the decline form is checked against the board as it was when it opened, not
-  // only from its first touch. The view answers one referral at a time, so the hold is unscoped.
-  useHoldOpenForm(declineOpenFor !== undefined);
+  useHoldOpenForm(declineOpenFor !== undefined); // Audit CS3-01: held from opening; one referral at a time.
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
   const [declineNudge, setDeclineNudge] = useState(false);
   const declinePendingRef = useRef(false);
@@ -184,9 +182,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       ? newestRejection
       : undefined;
 
-  function triggerToast(message: string) {
-    setToastMessage({ message });
-  }
+  const triggerToast = (message: string) => setToastMessage({ message });
 
   useEffect(() => {
     if (!toastMessage) return;
