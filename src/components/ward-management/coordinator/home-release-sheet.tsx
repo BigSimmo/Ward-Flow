@@ -19,15 +19,23 @@ import { Button, Field, Select, Sheet } from "@/components/wf";
  * movement page use, and the reason-gated release naming its patient (CT-19). It raises the same
  * `RELEASE_PULL` event, only from the button press, and the engine still refuses a release that
  * has an active transport job.
+ *
+ * The parent keeps this mounted with no entry once the sheet closes, because the step's outcome
+ * (released, or refused with the engine's reason) is said by `useUndoableStep` after the press.
  */
-export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry; onClose: () => void }) {
+export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry | undefined; onClose: () => void }) {
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
   const [reason, setReason] = useState<ReleasePullReason | "">("");
   const { run } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
+  if (!entry) return null;
   const { item, subject } = entry;
   const movementId = item.movementId;
+  const close = () => {
+    setReason("");
+    onClose();
+  };
   const disabledReason =
     access.role !== "coordinator"
       ? "Only the coordinator can release a pulled bed here."
@@ -35,7 +43,7 @@ export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry; onClos
         ? "Choose a reason first"
         : undefined;
   return (
-    <Sheet open onClose={onClose} title="Release bed" mobilePlacement="bottom" testId="home-release-sheet">
+    <Sheet open onClose={close} title="Release bed" mobilePlacement="bottom" testId="home-release-sheet">
       <p>
         {item.title}. {item.detail}
       </p>
@@ -62,7 +70,7 @@ export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry; onClos
             { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason },
             { success: `Bed released for ${subject.displayName}.` },
           );
-          onClose();
+          close();
         }}
       >
         {/* CT-19: the reason-gated release names its patient at the point of commit. */}

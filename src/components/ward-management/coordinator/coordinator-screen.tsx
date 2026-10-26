@@ -229,6 +229,8 @@ export function CoordinatorScreen() {
   const [homeView, setHomeView] = useState<"needs" | "queue">("needs");
   const [selectedAlertId, setSelectedAlertId] = useState<string | undefined>(undefined);
   const [releaseAlertId, setReleaseAlertId] = useState<string | undefined>(undefined);
+  // Kept mounted after the first release, so its outcome toast survives the sheet closing.
+  const [releaseSheetUsed, setReleaseSheetUsed] = useState(false);
   // Act now and Referrals to decide in the hero narrow My list to that group.
   const [needsFocus, setNeedsFocus] = useState<"all" | "act" | "decide">("all");
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
@@ -549,6 +551,7 @@ export function CoordinatorScreen() {
       // H-0977: an expired bed pull releases in place, in one sheet with its reason.
       if (alertKindOf(entry.item.id) === "hold" && entry.movement) {
         setReleaseAlertId(entry.item.id);
+        setReleaseSheetUsed(true);
         return;
       }
       setSelectedAlertId(entry.item.id);
@@ -1092,7 +1095,9 @@ export function CoordinatorScreen() {
               <ChosenAlertCard entry={chosenAlert} now={now} />
             </Sheet>
           ) : null}
-          {releaseAlert ? <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} /> : null}
+          {releaseSheetUsed ? (
+            <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} />
+          ) : null}
           {isPhone && phoneSheet?.kind === "since" ? (
             <Sheet
               open

@@ -66,5 +66,7 @@ describe("Home Release bed releases in place", () => {
     expect(released[0]).toMatchObject({ accepted: true, role: "coordinator" });
     const movement = latest!.movements.find((candidate) => candidate.id === released[0]!.movementId);
     expect(movement?.stage).not.toBe("pulled");
+    // Codex review on #864: the outcome is still said after the sheet closes.
+    expect(await screen.findByText(/^Bed released for /)).toBeInTheDocument();
   });
 });
