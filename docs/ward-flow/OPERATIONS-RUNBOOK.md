@@ -137,15 +137,19 @@ What the repo knows, from [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#back
 
 Tested so far: one **local** `pg_dump` and `pg_restore` drill on 18 October 2026 against a
 throwaway PostgreSQL server with synthetic data. It did not touch Supabase. Its migration row
-count has an unresolved discrepancy. **No hosted backup has been observed and no hosted restore
-has been tested.** The owner has not set a data-loss window (RPO) or recovery time (RTO).
+count has an unresolved discrepancy. On 26 October 2026 a read-only `pg_dump -Fc` of the hosted
+`ward_flow` data was restored into a local copy and passed (sign-in over HTTP not tested; see
+[RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-pg_dump-restore-drill-26-october-2026-second-run)).
+**No Supabase backup has been observed and no Supabase restore has been tested.** The owner has not set a data-loss window (RPO) or recovery time (RTO).
 
 ## Backup-restore drill
 
-**Run once, 26 October 2026, and failed** (record in
+**Run twice on 26 October 2026.** The first run failed (record in
 [RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-copy-restore-drill-26-october-2026)): the
 data came back complete, but the copy had been made by a script that copies tables and rows through
-Supabase's management service, so the audit locks were lost. **Only a `pg_dump -Fc` counts as a
+Supabase's management service, so the audit locks were lost. The second run, with `pg_dump -Fc`,
+passed every check except a sign-in through the restored backend, which it did not test (record in
+[RETENTION-AND-BACKUP.md](RETENTION-AND-BACKUP.md#hosted-pg_dump-restore-drill-26-october-2026-second-run)). **Only a `pg_dump -Fc` counts as a
 backup for this drill.** Running it touches the hosted Supabase project and needs Josh's explicit
 yes first. Steps that create a new Supabase project are billable and need spending approval too.
 
@@ -175,7 +179,12 @@ It never writes to the live database.
    grants.
 5. Start a throwaway local PostgreSQL that matches the live major version (17 as of October 2026).
    Loopback only, or no network at all.
-6. Restore with `pg_restore --exit-on-error` into an empty database.
+6. Roles are not in a `ward_flow` dump. Create the `wardflow_backend` login role first (`NOINHERIT`,
+   or the backend refuses to start), then restore with `pg_restore --exit-on-error` into an empty
+   database. Afterwards run `backend/ward-flow/infra/postgres-runtime-role.sql` (or
+   `supabase-runtime-role.sql` on Supabase) as administrator to put back the grants and timeouts,
+   and set the role's password privately. A local target also needs TLS, because the backend
+   insists on a verified encrypted connection; a throwaway local certificate is enough.
 7. Run the backend locally with the `postgres` adapter against the restored copy, as described in
    [operations-readiness.md](operations-readiness.md#backup-and-recovery-acceptance) step 5.
 
