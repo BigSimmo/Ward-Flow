@@ -127,26 +127,16 @@ describe("WS-01: sex and gender carried into the referral", () => {
   const journey = { sex: "Female", gender: "Female" } as Pick<Movement, "sex" | "gender">;
 
   it("prefers the patient record, then the person's journey on the ED board", () => {
-    expect(recordedSexAndGender({ id: "PT-1", sex: "Male", gender: "Male" }, journey, [])).toEqual({
-      sex: "Male",
-      gender: "Male",
-    });
-    expect(recordedSexAndGender({ id: "PT-1" }, journey, [])).toEqual({ sex: "Female", gender: "Female" });
-  });
-
-  it("finds the person's open journey when the drawer was opened from the patient", () => {
-    const movements = [
-      { patientId: "PT-1", sex: "Male", gender: "Male", closure: { outcome: "x" }, openedAt: 300 },
-      { patientId: "PT-1", sex: "Female", gender: "Female", closure: undefined, openedAt: 100 },
-    ] as unknown as Movement[];
-    expect(recordedSexAndGender({ id: "PT-1" }, undefined, movements)).toEqual({ sex: "Female", gender: "Female" });
+    expect(recordedSexAndGender({ sex: "Male", gender: "Male" }, journey)).toEqual({ sex: "Male", gender: "Male" });
+    expect(recordedSexAndGender({}, journey)).toEqual({ sex: "Female", gender: "Female" });
   });
 
   it("leaves gender unanswered and sex not recorded when nothing is recorded", () => {
-    expect(recordedSexAndGender(undefined, undefined, [])).toEqual({ sex: "Not recorded", gender: "" });
-    expect(
-      recordedSexAndGender({ id: "PT-1", sex: "Not recorded" }, { sex: "Not recorded", gender: undefined }, []),
-    ).toEqual({ sex: "Not recorded", gender: "" });
+    expect(recordedSexAndGender(undefined, undefined)).toEqual({ sex: "Not recorded", gender: "" });
+    expect(recordedSexAndGender({ sex: "Not recorded" }, { sex: "Not recorded", gender: undefined })).toEqual({
+      sex: "Not recorded",
+      gender: "",
+    });
   });
 
   it('sends "Not yet recorded" and unanswered as no gender', () => {

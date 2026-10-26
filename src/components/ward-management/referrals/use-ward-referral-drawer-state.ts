@@ -372,7 +372,7 @@ export function useWardReferralDrawerState({
   );
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? deskSendingTeam ?? "");
   // WS-01 (workflow speed audit, 26 Oct 2026): from the record, else the journey the ED board shows.
-  const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement, movements));
+  const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement));
   const [referralSex, setReferralSex] = useState<RecordedSex>(kept?.referralSex ?? known.sex);
   const [referralGender, setReferralGender] = useState<ReferralGenderAnswer>(kept?.referralGender ?? known.gender);
   const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
@@ -653,7 +653,7 @@ export function useWardReferralDrawerState({
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
-    const identity = recordedSexAndGender(record, matchedMovement, movements);
+    const identity = recordedSexAndGender(record, matchedMovement);
     setReferralSex(identity.sex);
     setReferralGender(identity.gender);
     setHighAcuity(false);

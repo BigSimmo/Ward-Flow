@@ -157,21 +157,14 @@ export { GENDER_UNANSWERED, REFERRAL_GENDER_NOT_RECORDED, referralGenderOf, type
 /**
  * WS-01: the person's recorded sex and gender identity, for the drawer to start from. The patient
  * record comes first; where it has none, the person's open journey (the ED board row a referral is
- * written from) is used, because that is what the board already shows. Nothing is guessed: with
- * neither recorded, sex reads "Not recorded" and gender stays unanswered for the referrer.
+ * written from, which `patientKeyFor` opens the drawer on) is used, because that is what the board
+ * already shows. Nothing is guessed: with neither recorded, sex reads "Not recorded" and gender
+ * stays unanswered for the referrer.
  */
 export function recordedSexAndGender(
-  record: Pick<Patient, "id" | "sex" | "gender"> | undefined,
-  movement: Pick<Movement, "sex" | "gender"> | undefined,
-  movements: readonly Pick<Movement, "patientId" | "sex" | "gender" | "closure" | "openedAt">[],
+  record: Pick<Patient, "sex" | "gender"> | undefined,
+  journey: Pick<Movement, "sex" | "gender"> | undefined,
 ): { sex: RecordedSex; gender: ReferralGender | "" } {
-  const journey =
-    movement ??
-    (record
-      ? movements
-          .filter((candidate) => candidate.patientId === record.id && candidate.closure === undefined)
-          .sort((a, b) => b.openedAt - a.openedAt)[0]
-      : undefined);
   const recordSex = RECORDED_SEXES.find((sex) => sex === record?.sex && sex !== "Not recorded");
   const journeySex = journey?.sex === "Not recorded" ? undefined : journey?.sex;
   return {
