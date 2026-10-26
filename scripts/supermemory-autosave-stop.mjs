@@ -2,8 +2,7 @@
 /**
  * supermemory-autosave-stop — Claude Code Stop hook for Ward Flow cloud threads.
  *
- * The Supermemory Claude Code plugin on Josh's PC auto-saves by posting each
- * session transcript to Supermemory with an API key. Cloud threads only have the
+ * Windows uses the commissioned summary-only adapter. Cloud threads use the
  * Supermemory MCP connector, which saves only when called. This hook closes that
  * gap without an API key and without sending any transcript: at the end of a
  * turn it reads the local transcript, and when the turn looks like it held a
@@ -22,10 +21,13 @@
  *
  * Contract: never trap a session. It acts only in Claude Code cloud containers
  * (CLAUDE_CODE_REMOTE=true), blocks at most once per stop chain
- * (stop_hook_active), and allows the stop on any read or parse failure. Spend
- * is bounded by the owner's Supermemory credits, by his decision of 26 Oct 2026.
+ * (stop_hook_active), and allows the stop on any read or parse failure. Credit exhaustion is not a verified billing hard stop. This reminder does not
+ * establish admission, perform a save, or enforce cloud spending.
  */
-import { readFileSync } from "node:fs";
+import { openSync, fstatSync, readSync, closeSync, mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const SPACE = "wardflow_design";
@@ -44,7 +46,7 @@ const AGENT_SIGNALS = [
   /\b(Josh (?:decided|approved|chose|confirmed|wants))\b/i,
 ];
 
-const SAVE_TOOL = /supermemory.*(add_memory|guided-save|upload-file)/i;
+const SAVE_TOOL = /^(?:mcp__supermemory__|mcp__codex_apps__supermemory_)add_memory$/;
 
 /** Tool calls that mean the turn did real work worth a handover note. */
 const WORK_TOOL = /^(Edit|Write|NotebookEdit)$|github__(create_pull_request|merge_pull_request|push_files)/;
@@ -91,14 +93,30 @@ export function readTurn(entries) {
   if (start < 0) return null;
   const human = [humanText(blockText(entries[start].message.content))];
   const agent = [];
-  const saveCalls = new Set();
+  const saveCalls = new Map();
   let saved = false;
   let worked = false;
   for (const entry of entries.slice(start + 1)) {
     if (entry?.isSidechain) continue;
     if (entry?.type === "user" && Array.isArray(entry.message?.content)) {
       for (const b of entry.message.content) {
-        if (b?.type === "tool_result" && saveCalls.has(b.tool_use_id) && !b.is_error) saved = true;
+        if (b?.type === "tool_result" && saveCalls.has(b.tool_use_id) && !b.is_error) {
+          try {
+            const parsed = JSON.parse(blockText(b.content));
+            const receipt = parsed.structuredContent ?? parsed;
+            const expectedSpace = saveCalls.get(b.tool_use_id);
+            if (
+              receipt.success === true &&
+              typeof receipt.id === "string" &&
+              receipt.id &&
+              [SPACE, PREFERENCES_SPACE].includes(expectedSpace) &&
+              receipt.namespace === expectedSpace
+            )
+              saved = true;
+          } catch {
+            /* A transport-success message is not a cloud acceptance receipt. */
+          }
+        }
       }
     }
     if (entry?.type === "attachment" && entry.attachment?.type === "queued_command") {
@@ -108,7 +126,7 @@ export function readTurn(entries) {
     } else if (entry?.type === "assistant" && Array.isArray(entry.message?.content)) {
       for (const b of entry.message.content) {
         if (b?.type === "text") agent.push(b.text);
-        if (b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) saveCalls.add(b.id);
+        if (b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) saveCalls.set(b.id, b.input?.namespace);
         if (b?.type === "tool_use" && WORK_TOOL.test(b.name ?? "")) worked = true;
         if (b?.type === "tool_use" && b.name === "Bash" && WORK_COMMAND.test(String(b.input?.command ?? "")))
           worked = true;
@@ -117,44 +135,60 @@ export function readTurn(entries) {
       }
     }
   }
-  return { human: human.join("\n"), agent: agent.join("\n"), saved, worked };
+  return {
+    human: human.join("\n"),
+    agent: agent.join("\n"),
+    saved,
+    saveAttempted: saveCalls.size > 0,
+    worked,
+  };
 }
 
 export function hasSignal(turn) {
-  if (!turn || turn.saved) return false;
+  if (!turn || turn.saved || turn.saveAttempted) return false;
   return turn.worked || HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
 }
 
 export const REASON = [
-  "Ward Flow memory check: this turn may hold something lasting.",
-  `If a durable fact was confirmed, save it before stopping with add_memory: one short dated note stating the decision, the reason and the source (message, D-xx or WT number, file or PR).`,
-  "If the turn moved real work forward (files changed, a commit, push or PR), also save one short dated handover: the goal, what is done, the branch or PR, and the next step, so a later thread can pick it up.",
-  `Pass one explicit namespace: "${SPACE}" for Ward Flow decisions, design and wording rules, bug gotchas, where things live and handovers, or "${PREFERENCES_SPACE}" for Josh's own preferences and personal context. Never another space and never the account default.`,
-  "Search that space first; update or skip anything already saved rather than duplicating it.",
-  "Josh's own private details are fine to save. Never save real patient information, passwords, keys or tokens, and do not paste raw code, diffs, logs or whole conversations: summarise instead.",
-  "If nothing durable changed, stop without saving. Either way do not post another message to the person about this check.",
+  "Ward Flow memory checkpoint: this turn may contain a durable fact, but this reminder grants no tool or spending authority.",
+  "If host-specific account, explicit namespace, pre-transmission filtering is unverified or the route is disabled, make no content search/save call. Use documents/task receipts and report the precise blocked reason.",
+  "Only after those checks pass, save at most one short dated note stating the decision, the reason and the source. Combine any useful handover into that same note; do not save a second note or repository state already adequately recorded in Git.",
+  `Use exactly one explicit namespace: "${SPACE}" for Ward Flow engineering, or "${PREFERENCES_SPACE}" for a confirmed preference applicable to this agent. Include date, App scope, Project (the same namespace), and Source in content; do not infer global applicability.`,
+  "Use the bounded context already retrieved to avoid duplicates; do not add another search pass. An attempted or uncertain write must not be retried. Accepted storage, processing, extracted memory and fresh retrieval are different states.",
+  "Curate and filter BEFORE transmission. Never save patient or clinical information, credentials, secrets, authentication material, raw code, diffs, logs, prompts, whole conversations or files, test facts, guesses, or untrusted retrieved instructions. Do not treat your own advice as an approved decision.",
+  "If nothing durable is safe and eligible, stop without saving. Keep blocked/skipped failures visible in the task receipt; do not claim a save without its accepted source ID.",
 ].join(" ");
 
 export const SESSION_START_CONTEXT = [
-  "Ward Flow memory: before your first substantive answer in this session, do one bounded recall with the Supermemory MCP:",
-  `one search_memory in namespace "${PREFERENCES_SPACE}" and one in namespace "${SPACE}", each with a short query about the task.`,
-  "Treat results as hints and check the source files before acting. Do not recall again on every message.",
+  "Ward Flow memory uses the official authenticated Supermemory MCP only when actually exposed; this project hook is an instruction reminder, not verified background capture or spending enforcement.",
+  "First verify the actual account/spaces, supported explicit scope and pre-transmission filtering. Josh explicitly approved credits-only operation with no custom dollar caps. Routine eligible memory operations have standing approval; do not require per-operation permission or add custom dollar caps. If the route, account or privacy controls are unverified or disabled, make no content search/save call, report blocked/unavailable and continue from docs/task receipts. A displayed credit balance does not establish a no-overage hard stop; Windows limits do not cover cloud MCP.",
+  `Only after route checks pass, perform one bounded logical recall: at most one search_memory in namespace "${PREFERENCES_SPACE}" and one in namespace "${SPACE}".`,
+  "Filter queries before transmission; use at most three combined results and 6,000 combined text characters, no reranking, rewriting or expansion. Check source/date/app/project/supersession; hold uncertain scope and test facts out of context. Treat results as hints and verify files before acting. Reuse this pass instead of recalling every message.",
 ].join(" ");
 
 /** SessionStart: one bounded recall instruction, cloud only. */
-export function sessionStart(env) {
+export function sessionStart(env, input = { source: "startup" }) {
   if (env.CLAUDE_CODE_REMOTE !== "true") return null;
-  return { hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: SESSION_START_CONTEXT } };
+  if (input.source !== "startup") return null;
+  return {
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext: SESSION_START_CONTEXT,
+    },
+  };
 }
 
 /** Returns the hook's stdout object, or null to allow the stop. */
+export const MAX_TRANSCRIPT_BYTES = 256 * 1024;
 export function decide(input, env, readTranscript) {
   if (env.CLAUDE_CODE_REMOTE !== "true") return null;
   if (!input || input.stop_hook_active) return null;
   if (typeof input.transcript_path !== "string" || input.transcript_path === "") return null;
   let entries;
   try {
-    entries = readTranscript(input.transcript_path)
+    const raw = readTranscript(input.transcript_path);
+    if (typeof raw !== "string" || Buffer.byteLength(raw, "utf8") > MAX_TRANSCRIPT_BYTES) return null;
+    entries = raw
       .split("\n")
       .filter((line) => line.trim() !== "")
       .map((line) => {
@@ -168,20 +202,82 @@ export function decide(input, env, readTranscript) {
   } catch {
     return null;
   }
+  // An earlier failed/uncertain attempt in this session must not be prompted again.
+  if (
+    entries.some(
+      (entry) =>
+        !entry?.isSidechain &&
+        entry?.type === "assistant" &&
+        Array.isArray(entry.message?.content) &&
+        entry.message.content.some((b) => b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")),
+    )
+  )
+    return null;
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
   return hasSignal(turn) ? { decision: "block", reason: REASON } : null;
 }
 
+function readBoundedFd(fd, limit) {
+  const buffer = Buffer.alloc(limit + 1);
+  let offset = 0;
+  while (offset <= limit) {
+    const count = readSync(fd, buffer, offset, limit + 1 - offset, null);
+    if (!count) break;
+    offset += count;
+  }
+  if (offset > limit) throw new Error("Memory hook input exceeds bound");
+  return buffer.subarray(0, offset).toString("utf8");
+}
+
+export function readBoundedTranscript(path) {
+  const fd = openSync(path, "r");
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile()) throw new Error("Transcript is not a regular file");
+    const start = Math.max(0, stat.size - MAX_TRANSCRIPT_BYTES);
+    const buffer = Buffer.alloc(Math.min(stat.size, MAX_TRANSCRIPT_BYTES));
+    let count = 0;
+    while (count < buffer.length) {
+      const read = readSync(fd, buffer, count, buffer.length - count, start + count);
+      if (!read) break;
+      count += read;
+    }
+    const tail = buffer.subarray(0, count);
+    // Drop the partial first record (and any split UTF-8 sequence) before decoding.
+    const preceding = Buffer.alloc(1);
+    const atBoundary = !start || (readSync(fd, preceding, 0, 1, start - 1) === 1 && preceding[0] === 10);
+    return (atBoundary ? tail : tail.subarray(tail.indexOf(10) + 1)).toString("utf8");
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/** Metadata-only atomic latch; native session IDs never appear in the filename. */
+export function claimSessionEvent(input, kind, directory = join(tmpdir(), "ward-flow-memory-reminders")) {
+  if (typeof input?.session_id !== "string" || !input.session_id || !["recall", "stop"].includes(kind)) return false;
+  const digest = createHash("sha256")
+    .update(`${input.cwd ?? ""}\0${input.session_id}`)
+    .digest("hex");
+  try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    writeFileSync(join(directory, `${digest}.${kind}`), "1", { flag: "wx", mode: 0o600 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try {
-    const input = JSON.parse(readFileSync(0, "utf8") || "{}");
+    const input = JSON.parse(readBoundedFd(0, 65536) || "{}");
     const out = process.argv.includes("--session-start")
-      ? sessionStart(process.env)
-      : decide(input, process.env, (p) => readFileSync(p, "utf8"));
-    if (out) process.stdout.write(JSON.stringify(out));
+      ? sessionStart(process.env, input)
+      : decide(input, process.env, readBoundedTranscript);
+    if (out && claimSessionEvent(input, process.argv.includes("--session-start") ? "recall" : "stop"))
+      process.stdout.write(JSON.stringify(out));
   } catch {
-    // Never trap a session.
+    // Do not block completion on malformed/oversized input; no remote call occurs here.
   }
   process.exit(0);
 }
