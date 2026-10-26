@@ -13,7 +13,8 @@ import { SharedWorkspaceClient, type SharedView } from "../src/components/ward-m
 
 // The backend's plain JavaScript store, loaded by URL so the root type check does not take in the
 // backend's own (separately checked) source.
-const backend = (file: string) => import(/* @vite-ignore */ new URL(`../backend/ward-flow/${file}`, import.meta.url).href);
+const backend = (file: string) =>
+  import(/* @vite-ignore */ new URL(`../backend/ward-flow/${file}`, import.meta.url).href);
 const { LATEST_MIGRATION } = await backend("migrations.mjs");
 const { createWorkspaceStore } = await backend("postgres.mjs");
 const { planSave } = await backend("records.mjs");
