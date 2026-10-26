@@ -144,7 +144,7 @@ export function commandSheetHandles(): readonly object[] {
   dropDetachedForms();
   // No held form, or no page to look at (a server or test runtime): every hold counts, as before.
   if (openForms.size === 0 || typeof document === "undefined") return [...openSheets, ...openForms.keys()];
-  const origin = overlayOpener();
+  const origin = commandOrigin?.isConnected ? commandOrigin : null;
   const inSheet = origin !== null && openSheets.some((sheet) => sheet.root?.contains(origin));
   const places = new Set<string>();
   for (let place = origin?.closest("[data-held-form]"); place; place = place.parentElement?.closest("[data-held-form]"))
@@ -225,15 +225,30 @@ function dropDetachedForms() {
 const PRESSABLE = 'button, a[href], summary, [role="button"], [tabindex]:not([tabindex="-1"])';
 let lastPressedControl: HTMLElement | null = null;
 
+/*
+ * Audit CS3-01: the control the person last pressed, clicked, typed in or sent a form with, which
+ * is where a command asked for now comes from. Focus alone never moves it: Safari leaves focus on
+ * an earlier field when a button is pressed, so the focused element can sit in another form.
+ */
+let commandOrigin: Element | null = null;
+
+function noteCommandOrigin(event: Event) {
+  const submitter = "submitter" in event ? (event as SubmitEvent).submitter : null;
+  commandOrigin = submitter ?? (event.target instanceof Element ? event.target : null);
+}
+
 if (typeof document !== "undefined") {
   document.addEventListener(
     "pointerdown",
     (event) => {
       lastPressedControl = event.target instanceof Element ? event.target.closest<HTMLElement>(PRESSABLE) : null;
+      noteCommandOrigin(event);
       holdUsedForm(event.target);
     },
     true,
   );
+  // Capturing, so each is noted before the page's own handler asks for a save.
+  for (const type of ["click", "keydown", "submit"]) document.addEventListener(type, noteCommandOrigin, true);
   document.addEventListener("focusin", (event) => holdUsedForm(event.target), true);
   // Bubbling, so the form's own submit handler has already asked for its save.
   document.addEventListener("submit", (event) => {
