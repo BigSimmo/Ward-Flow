@@ -23,6 +23,8 @@ import { reduceTransportEvent } from "./ward-flow-transport-events";
 import { reduceUndoEvent } from "./ward-flow-undo-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
+// A local command can seed a demonstration scenario, so its networks load with the slices.
+import "./ward-scenario-networks";
 
 const slices = {
   reduceArrivalCheckEvent,

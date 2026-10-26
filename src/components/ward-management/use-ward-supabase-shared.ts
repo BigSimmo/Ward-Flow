@@ -112,30 +112,20 @@ const workingAs = {
     }
   },
 };
-// H-0305: a browser that blocks storage throws on any sessionStorage access. Reads then find
-// nothing and writes are skipped, so sign-in still starts and the session lives in memory.
+// H-0305: a browser that blocks storage throws on reaching window.sessionStorage at all. Then
+// reads find nothing and writes are skipped, so sign-in still starts and the session lives in
+// memory. A failing call on storage that exists still throws, so its caller can say so.
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
 const tabStorage = {
-  getItem: (key: string): string | null => {
-    try {
-      return window.sessionStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (key: string, value: string) => {
-    try {
-      window.sessionStorage.setItem(key, value);
-    } catch {
-      // Storage refused: nothing is kept for a reload.
-    }
-  },
-  removeItem: (key: string) => {
-    try {
-      window.sessionStorage.removeItem(key);
-    } catch {
-      // Storage refused: there is nothing to remove.
-    }
-  },
+  getItem: (key: string): string | null => sessionStore()?.getItem(key) ?? null,
+  setItem: (key: string, value: string) => sessionStore()?.setItem(key, value),
+  removeItem: (key: string) => sessionStore()?.removeItem(key),
 };
 // The next account at this tab picks its own role, even after an expiry rather than a sign-out.
 onWardSessionEnd(() => {
@@ -337,6 +327,21 @@ export function useWardSupabaseShared(
           ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
         if (base.username || base.password || (base.protocol !== "https:" && !loopback))
           throw new Error("Missing shared configuration");
+        // #805: a tab holding a saved sign-in connects next, so fetch the shared client and its
+        // state checks while the sign-in is verified, not one after another once it is. A visitor
+        // with no saved sign-in loads nothing extra.
+        let savedSignIn = recovery !== null;
+        try {
+          savedSignIn ||= !!window.sessionStorage.getItem(WARD_AUTH_STORAGE_KEY);
+        } catch {
+          // Storage unavailable: the client loads at connect, as before.
+        }
+        if (savedSignIn)
+          void Promise.all([
+            import("./ward-shared-client"),
+            import("./ward-shared-state-validation"),
+            import("./ward-partial-view-contract"),
+          ]).catch(() => {});
         const created = await createAuthRef.current();
         if (closed) {
           created.dispose();

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
+import { loadScenarioNetworks } from "./ward-scenario-network-registry";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
@@ -73,7 +74,10 @@ let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 
 /** Loads the restore module once; afterwards a mount reads its save in the same render as before. */
 export function loadDemoRestore(): Promise<typeof import("./ward-flow-demo-restore")> {
-  return import("./ward-flow-demo-restore").then((module) => (demoRestore = module));
+  // A saved day may be a demonstration scenario, whose wards its check reads.
+  return Promise.all([import("./ward-flow-demo-restore"), loadScenarioNetworks()]).then(
+    ([module]) => (demoRestore = module),
+  );
 }
 
 /** `tryReadDemoState`, loaded on first use. A failed load counts as unavailable storage, so the save
@@ -93,7 +97,10 @@ let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
  * (`ward-flow-typed-text-ledger.ts`), which the first screen does not need.
  */
 export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
-  return import("./ward-flow-typed-text-scrub").then((module) => (typedTextScrub = module));
+  // The copy compares against every scenario's seed (`fixtureWorlds`), so it needs their networks.
+  return Promise.all([import("./ward-flow-typed-text-scrub"), loadScenarioNetworks()]).then(
+    ([module]) => (typedTextScrub = module),
+  );
 }
 
 type TypedTextHeld = {
@@ -158,8 +165,8 @@ export function buildScenarioFileLater(state: WardFlowState, now: Instant): Prom
 }
 
 export function readScenarioFileLater(text: string): Promise<ScenarioFileRead> {
-  return import("./ward-flow-scenario-file").then(
-    ({ readScenarioFile }) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
+  return Promise.all([import("./ward-flow-scenario-file"), loadScenarioNetworks()]).then(
+    ([{ readScenarioFile }]) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }

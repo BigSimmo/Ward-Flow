@@ -218,7 +218,9 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
           referrals: input.referrals,
           supportNotifications: input.supportNotifications,
           plannedAdmissions: input.plannedAdmissions,
-          leaveBeds: [...input.leaveBeds],
+          // The held list itself, not a copy: a fresh array missed the shared task-list memo on
+          // every call and evicted the other callers' answers (production audit PERF-02).
+          leaveBeds: input.leaveBeds,
         },
         input.now,
       ).length,
