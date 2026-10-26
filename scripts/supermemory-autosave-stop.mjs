@@ -22,17 +22,14 @@
  *
  * Contract: never trap a session. It acts only in Claude Code cloud containers
  * (CLAUDE_CODE_REMOTE=true), blocks at most once per stop chain
- * (stop_hook_active), stops asking after SESSION_SAVE_CAP successful saves in a
- * session because cloud MCP use has no budget meter of its own, and allows the
- * stop on any read or parse failure.
+ * (stop_hook_active), and allows the stop on any read or parse failure. Spend
+ * is bounded by the owner's Supermemory credits, by his decision of 26 Oct 2026.
  */
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const SPACE = "wardflow_design";
 export const PREFERENCES_SPACE = "josh_preferences";
-/** Saves per session after which the hook stops asking; cloud MCP use has no budget meter yet. */
-export const SESSION_SAVE_CAP = 3;
 
 const HUMAN_SIGNALS = [
   /\b(decid\w*|decision|approv\w*|agreed?|confirm\w*)\b/i,
@@ -115,20 +112,6 @@ export function readTurn(entries) {
   return { human: human.join("\n"), agent: agent.join("\n"), saved };
 }
 
-/** Successful Supermemory saves anywhere in the session, so the hook can stop asking at the cap. */
-export function countSessionSaves(entries) {
-  const calls = new Set();
-  let count = 0;
-  for (const entry of entries) {
-    if (entry?.isSidechain || !Array.isArray(entry?.message?.content)) continue;
-    for (const b of entry.message.content) {
-      if (entry.type === "assistant" && b?.type === "tool_use" && SAVE_TOOL.test(b.name ?? "")) calls.add(b.id);
-      if (entry.type === "user" && b?.type === "tool_result" && calls.has(b.tool_use_id) && !b.is_error) count += 1;
-    }
-  }
-  return count;
-}
-
 export function hasSignal(turn) {
   if (!turn || turn.saved) return false;
   return HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
@@ -176,7 +159,6 @@ export function decide(input, env, readTranscript) {
   } catch {
     return null;
   }
-  if (countSessionSaves(entries) >= SESSION_SAVE_CAP) return null;
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
   return hasSignal(turn) ? { decision: "block", reason: REASON } : null;

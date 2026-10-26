@@ -4,7 +4,6 @@ import {
   humanText,
   PREFERENCES_SPACE,
   REASON,
-  SESSION_SAVE_CAP,
   sessionStart,
   SPACE,
 } from "../scripts/supermemory-autosave-stop.mjs";
@@ -70,14 +69,6 @@ describe("supermemory autosave stop hook", () => {
     const decision = wake("we decided to keep Railway");
     expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory"), toolResult(true)])).not.toBeNull();
     expect(run([prompt(decision), toolUse("mcp__supermemory__add_memory")])).not.toBeNull();
-  });
-
-  it("stops asking once the session reached its save cap", () => {
-    const earlier = Array.from({ length: SESSION_SAVE_CAP }, (_, i) => [
-      toolUse("mcp__supermemory__add_memory", `s${i}`),
-      toolResult(false, `s${i}`),
-    ]).flat();
-    expect(run([prompt(wake("ok")), ...earlier, prompt(wake("we decided to keep Railway"))])).toBeNull();
   });
 
   it("asks for one bounded recall at session start, cloud only", () => {
