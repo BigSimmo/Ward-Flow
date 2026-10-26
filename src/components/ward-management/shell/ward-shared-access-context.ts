@@ -17,6 +17,7 @@ export type SharedAccessApi = Pick<
   | "listRecordViews"
   | "grantAccess"
   | "revokeAccess"
+  | "approveAccess"
   | "giveCover"
   | "decideRequest"
   | "breakGlass"

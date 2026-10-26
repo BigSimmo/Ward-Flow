@@ -158,11 +158,11 @@ describe("the Access tab", () => {
     expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("active");
   });
 
-  it("shows a role an older backend still holds back as inactive, never Active", () => {
+  it("shows a role waiting for a second approver as waiting, never Active (D-80 item 17)", () => {
     const membership = sharedMembership(sharedRow(false), NOW_ANCHOR);
     expect(membership).not.toBeNull();
     expect(membership!.approvedBy).toBeNull();
-    expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("inactive");
+    expect(membershipStatus(membership!, NOW_ANCHOR)).toBe("awaiting");
     expect(membershipStatus(sharedMembership(sharedRow(false, "cover"), NOW_ANCHOR)!, NOW_ANCHOR)).toBe("active");
   });
 
@@ -233,6 +233,7 @@ describe("the Access tab", () => {
       listRecordViews: vi.fn(async () => []),
       grantAccess: vi.fn(async () => grants.shift() ?? null),
       revokeAccess: vi.fn(async () => null),
+      approveAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
       breakGlass: vi.fn(async () => null),
@@ -262,6 +263,54 @@ describe("the Access tab", () => {
     expect(api.listAccess).toHaveBeenCalledTimes(2);
   });
 
+  it("offers Approve on a role waiting for a second access admin, and sends it (D-80 item 17)", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const api: SharedAccessApi = {
+      listAccess: vi.fn(async () => ({
+        memberships: [
+          {
+            id: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d",
+            actorId: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            role: "admin",
+            scope: { kind: "statewide" },
+            kind: "role" as const,
+            grantedBy: "7d6c5b4a-3928-4170-8f6e-5d4c3b2a1908",
+            approved: false,
+            approvedBy: null,
+            minutes: { granted: -60, expires: 1440, lastUsed: null },
+          },
+        ],
+        requests: [],
+      })),
+      listCovers: vi.fn(async () => []),
+      listRecordViews: vi.fn(async () => []),
+      grantAccess: vi.fn(async () => null),
+      revokeAccess: vi.fn(async () => null),
+      approveAccess: vi.fn(async () => null),
+      giveCover: vi.fn(async () => null),
+      decideRequest: vi.fn(async () => null),
+      breakGlass: vi.fn(async () => null),
+    };
+    sharedSettings(
+      api,
+      vi.fn(async () => {}),
+    );
+    const row = await screen.findByTestId("ward-access-role-row");
+    expect(row).toHaveTextContent("Waiting for a second access admin to approve");
+    await act(async () => {
+      fireEvent.click(within(row).getByRole("button", { name: "Approve" }));
+    });
+    const confirm = screen.queryByRole("button", { name: /^(Confirm|Approve role|Yes)/ });
+    if (confirm)
+      await act(async () => {
+        fireEvent.click(confirm);
+      });
+    expect(api.approveAccess).toHaveBeenCalledWith("3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d");
+  });
+
   it("makes no change when the password dialog is cancelled while the sign-in is still running", async () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
@@ -273,6 +322,7 @@ describe("the Access tab", () => {
       listRecordViews: vi.fn(async () => []),
       grantAccess: vi.fn(async () => "step-up" as const),
       revokeAccess: vi.fn(async () => null),
+      approveAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
       breakGlass: vi.fn(async () => null),
@@ -352,9 +402,19 @@ describe("the Access tab", () => {
           surface: "patient",
           minutes: -3,
         },
+        {
+          id: 5,
+          actor_id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+          actor_role: "ed",
+          actor_scope: { kind: "ed", edId: "fsh-ed" },
+          patient_id: "*",
+          surface: "tv",
+          minutes: -2,
+        },
       ]),
       grantAccess: vi.fn(async () => null),
       revokeAccess: vi.fn(async () => null),
+      approveAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
       breakGlass: vi.fn(async () => null),
@@ -365,12 +425,15 @@ describe("the Access tab", () => {
     );
     const log = screen.getByTestId("ward-access-log");
     const rows = await within(log).findAllByTestId("ward-access-log-row");
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent("PT-1001, Referral detail");
     expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED mental health clinician");
     expect(rows[0]).toHaveTextContent("2 hours ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
     expect(rows[1]).toHaveTextContent("You, Flow coordinator, Statewide. 3 minutes ago.");
+    // H-0731: a read the server logged itself names no record.
+    expect(rows[2]).toHaveTextContent("TV board sent to this desk");
+    expect(rows[2]).not.toHaveTextContent("*");
     expect(log).not.toHaveTextContent("Demo only");
     expect(api.listRecordViews).toHaveBeenCalledTimes(1);
   });
@@ -388,6 +451,7 @@ describe("the Access tab", () => {
       }),
       grantAccess: vi.fn(async () => null),
       revokeAccess: vi.fn(async () => null),
+      approveAccess: vi.fn(async () => null),
       giveCover: vi.fn(async () => null),
       decideRequest: vi.fn(async () => null),
       breakGlass: vi.fn(async () => null),

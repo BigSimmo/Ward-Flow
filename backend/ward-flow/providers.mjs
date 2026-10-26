@@ -56,6 +56,7 @@ export async function createBackend(config, dependencies = {}) {
         engine,
         push: await createPush(config),
         demoEvents: config.sharedDemoEvents === true,
+        secondApprover: config.secondApprover === true,
       });
     }
     return { config, authenticate, sharedStore, pool };

@@ -101,6 +101,9 @@ export function readConfig(env = process.env, dependencies = {}) {
     dataMode,
     coordinatorIds,
     coordinatorUntil,
+    // D-80 item 17: "true" makes admin and statewide coordinator grants wait for a second access
+    // admin's approval. Off by default, as D-66 decided for the prototype.
+    secondApprover: env.WARD_SECOND_APPROVER === "true",
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
     postgres,
     // Sign-in settings sit under the provider's own name, for example `config.supabase`.

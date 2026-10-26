@@ -1075,10 +1075,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-011-record-access-and-sign-out.sql"), /not at migration 11/);
       await assert.rejects(rollBack("./infra/rollback-012-foreign-key-indexes.sql"), /not at migration 12/);
       await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 14);
+      await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 15);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-015-list-and-tv-views.sql", 14],
         ["./infra/rollback-014-archived-records.sql", 13],
         ["./infra/rollback-013-referral-record-views.sql", 12],
         ["./infra/rollback-012-foreign-key-indexes.sql", 11],
@@ -1314,7 +1316,13 @@ test(
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
-    const pool = new Pool({ connectionString: url, max: 4 });
+    // Its own database: the rollbacks below refuse once any test has logged a list read (015).
+    const owner = new Pool({ connectionString: url, max: 1 });
+    const database = `wardflow_roles_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    await owner.query(`CREATE DATABASE ${database}`);
+    const pool = new Pool({ connectionString: target.href, max: 4 });
     let at = new Date("2026-10-07T10:00:00Z");
     const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => at });
     const [lead, second, nurse, admin, coordinator] = Array.from({ length: 5 }, () => randomUUID());
@@ -1514,6 +1522,9 @@ test(
       try {
         await client.query("BEGIN");
         await client.query(
+          await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
+        );
+        await client.query(
           await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
         );
         await client.query(
@@ -1541,6 +1552,8 @@ test(
       }
     } finally {
       await pool.end();
+      await dropTestDatabase(owner, database);
+      await owner.end();
     }
   },
 );
@@ -2885,43 +2898,118 @@ test(
   },
 );
 
-test("real PostgreSQL: whole-list and TV reads are logged once per window per desk (H-0731)", { skip: !url }, async () => {
-  const engine = await import("./dist/engine.mjs");
-  const pool = new Pool({ connectionString: url, max: 4 });
-  const workspaceId = randomUUID();
-  let at = new Date("2026-10-20T10:00:00Z");
-  const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
-  const view = {
-    version: LATEST_MIGRATION,
-    actorId: randomUUID(),
-    membershipId: null,
-    access: { role: "coordinator", scope: { kind: "statewide" } },
-    grants: [],
-  };
-  try {
-    await migrate(pool);
-    await store.ready();
-    // As in the shared API, the workspace is read before its sending is logged.
-    await store.read(view.actorId);
-    assert.equal(await store.logList(view, "list"), true);
-    assert.equal(await store.logList(view, "list"), false, "a repeat inside 15 minutes adds nothing");
-    assert.equal(await store.logList(view, "tv"), true, "the TV board is its own screen");
-    assert.equal(await store.logList(view, "patient"), false, "only list and tv are list reads");
-    assert.equal(await store.logList({ ...view, version: 14 }, "list"), false, "before 15 nothing is kept");
-    at = new Date("2026-10-20T10:15:01Z");
-    assert.equal(await store.logList(view, "list"), true);
-    const { rows } = await pool.query(
-      "SELECT patient_id, surface FROM ward_flow.record_access WHERE workspace_id=$1 ORDER BY id",
-      [workspaceId],
-    );
-    assert.deepEqual(rows, [
-      { patient_id: "*", surface: "list" },
-      { patient_id: "*", surface: "tv" },
-      { patient_id: "*", surface: "list" },
-    ]);
-    // The access log reads them back like any other opening.
-    assert.equal((await store.recordViews(view)).filter((row) => row.patient_id === "*").length, 3);
-  } finally {
-    await pool.end();
-  }
-});
+test(
+  "real PostgreSQL: whole-list and TV reads are logged once per window per desk (H-0731)",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    // Its own database: a logged list read makes rollback 015 refuse, which other tests run.
+    const admin = new Pool({ connectionString: url, max: 1 });
+    const database = `wardflow_list_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    await admin.query(`CREATE DATABASE ${database}`);
+    const pool = new Pool({ connectionString: target.href, max: 4 });
+    const workspaceId = randomUUID();
+    let at = new Date("2026-10-20T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+    const view = {
+      version: LATEST_MIGRATION,
+      actorId: randomUUID(),
+      membershipId: null,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    };
+    try {
+      await migrate(pool);
+      await store.ready();
+      // As in the shared API, the workspace is read before its sending is logged.
+      await store.read(view.actorId);
+      assert.equal(await store.logList(view, "list"), true);
+      assert.equal(await store.logList(view, "list"), false, "a repeat inside 15 minutes adds nothing");
+      assert.equal(await store.logList(view, "tv"), true, "the TV board is its own screen");
+      assert.equal(await store.logList(view, "patient"), false, "only list and tv are list reads");
+      assert.equal(await store.logList({ ...view, version: 14 }, "list"), false, "before 15 nothing is kept");
+      at = new Date("2026-10-20T10:15:01Z");
+      assert.equal(await store.logList(view, "list"), true);
+      const { rows } = await pool.query(
+        "SELECT patient_id, surface FROM ward_flow.record_access WHERE workspace_id=$1 ORDER BY id",
+        [workspaceId],
+      );
+      assert.deepEqual(rows, [
+        { patient_id: "*", surface: "list" },
+        { patient_id: "*", surface: "tv" },
+        { patient_id: "*", surface: "list" },
+      ]);
+      // The access log reads them back like any other opening.
+      assert.equal((await store.recordViews(view)).filter((row) => row.patient_id === "*").length, 3);
+    } finally {
+      await pool.end();
+      await dropTestDatabase(admin, database);
+      await admin.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: with the pilot switch on, admin grants wait for a second approver (D-80 item 17)",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 2 });
+    const workspaceId = randomUUID();
+    const at = new Date("2026-10-20T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at), secondApprover: true });
+    const [lead, deputy, admin, nurse] = Array.from({ length: 4 }, () => randomUUID());
+    const expiresAt = new Date("2027-01-01T00:00:00Z");
+    try {
+      await migrate(pool);
+      const leadView = await store.viewer(lead, { bootstrap: true });
+      const world = await store.read(lead, leadView);
+      const granted = await store.grantAccess(leadView, {
+        actorId: admin,
+        role: "admin",
+        scope: { kind: "statewide" },
+        expiresAt,
+      });
+      assert.equal(granted.status, 200);
+      assert.equal(granted.body.membership.approved, false);
+      assert.equal((await store.viewer(admin)).status, "none", "an unapproved admin grant does not work yet");
+      const membershipId = granted.body.membership.id;
+      const own = await store.approveAccess(leadView, membershipId);
+      assert.equal(own.status, 422);
+      assert.match(own.body.error, /second access admin/);
+      const deputyView = await store.viewer(deputy, { bootstrap: true });
+      const approved = await store.approveAccess(deputyView, membershipId);
+      assert.equal(approved.status, 200);
+      assert.equal(approved.body.membership.approved, true);
+      assert.equal(approved.body.membership.approvedBy, deputy);
+      assert.equal((await store.viewer(admin)).access.role, "admin");
+      assert.equal((await store.approveAccess(deputyView, membershipId)).status, 422, "approved once only");
+      // A ward role still works at once.
+      const stay = world.payload.state.admissions.find((row) => row.patientId !== null && row.leftAt === null);
+      const ward = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: { kind: "ward", unitIds: [stay.unitId] },
+        expiresAt,
+      });
+      assert.equal(ward.body.membership.approved, true);
+      assert.equal((await store.viewer(nurse)).access.role, "ward");
+      // With the switch off (D-66), the same grant works at once and there is nothing to approve.
+      const prototype = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+      const other = randomUUID();
+      const plain = await prototype.grantAccess(leadView, {
+        actorId: other,
+        role: "admin",
+        scope: { kind: "statewide" },
+        expiresAt,
+      });
+      assert.equal(plain.body.membership.approved, true);
+      assert.equal((await prototype.viewer(other)).access.role, "admin");
+      assert.equal((await prototype.approveAccess(deputyView, plain.body.membership.id)).status, 422);
+    } finally {
+      await pool.end();
+    }
+  },
+);

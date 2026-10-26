@@ -62,6 +62,11 @@ export type AccessMembership = {
    * as not yet usable. The website then shows it as inactive instead of falsely "Active".
    */
   readonly blockedByOlderServer?: boolean;
+  /**
+   * D-80 item 17, with the pilot's second approver switched on: an admin or statewide coordinator
+   * role that does not work until a second access admin approves it.
+   */
+  readonly awaitingApproval?: boolean;
   /** The last time the person worked as this role, or `null` if never. */
   readonly lastUsedAt: Instant | null;
   readonly revokedAt: Instant | null;
@@ -185,7 +190,7 @@ export function revokeRefusal(input: {
   return null;
 }
 
-export type MembershipStatus = "active" | "inactive" | "unused" | "ended";
+export type MembershipStatus = "active" | "awaiting" | "inactive" | "unused" | "ended";
 
 /**
  * Where a role stands now. "Inactive" is a role an older shared backend still holds back for an
@@ -195,6 +200,7 @@ export type MembershipStatus = "active" | "inactive" | "unused" | "ended";
 export function membershipStatus(membership: AccessMembership, now: Instant): MembershipStatus {
   if (membership.revokedAt !== null || membership.expiresAt <= now) return "ended";
   if (membership.blockedByOlderServer) return "inactive";
+  if (membership.awaitingApproval) return "awaiting";
   if (membership.kind === "role" && (membership.lastUsedAt ?? membership.grantedAt) <= now - ACCESS_UNUSED_MINUTES)
     return "unused";
   return "active";
