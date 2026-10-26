@@ -125,7 +125,7 @@ export function WardHelpSheet({
           </button>
         </div>
         <p className={styles.note}>
-          The tour starts by itself only once on this device. Open it again here or in Settings.
+          The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
         </p>
       </section>
 
