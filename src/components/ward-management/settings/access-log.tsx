@@ -142,8 +142,7 @@ export function AccessLog() {
               <li key={opening.id} className={styles.row} data-testid="ward-access-log-row">
                 <span className={styles.who}>
                   <span className={styles.name}>
-                    {SENT_WHOLE[opening.surface] ??
-                      `${opening.recordId}, ${OPENED_ON[opening.surface] ?? "Record"}`}
+                    {SENT_WHOLE[opening.surface] ?? `${opening.recordId}, ${OPENED_ON[opening.surface] ?? "Record"}`}
                   </span>
                   <span className={styles.meta}>
                     {label(opening.actorId)}
