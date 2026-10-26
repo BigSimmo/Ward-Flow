@@ -67,7 +67,7 @@ export function WardBoardDetailPanel({
   dialogTriggerRef: RefObject<HTMLElement | null>;
   dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => void;
   emptyTileCount: number;
-  leavingDestination: LeavingDestination;
+  leavingDestination: LeavingDestination | "";
   movements: Movement[];
   nameFor: (admissionId: string | undefined) => string;
   now: Instant;
@@ -91,7 +91,7 @@ export function WardBoardDetailPanel({
   setDateEdit: Dispatch<
     SetStateAction<{ admissionId: string; time: string; day: "recorded" | "today" | "tomorrow" } | null>
   >;
-  setLeavingDestination: Dispatch<SetStateAction<LeavingDestination>>;
+  setLeavingDestination: (destination: LeavingDestination) => void;
   setPendingConfirm: Dispatch<
     SetStateAction<{ kind: "leaving" | "away_at_ed"; who: string; item?: ShiftTileItem; admissionId?: string } | null>
   >;
@@ -170,28 +170,17 @@ export function WardBoardDetailPanel({
                 )}
                 {selectedTile.kind === "occupied" && (
                   <div className={styles.leaving} data-testid="ward-board-record-leaving">
-                    <label className={styles.leavingLabel} htmlFor="ward-board-leaving-destination">
-                      Where are they going?
-                    </label>
-                    <select
+                    <LeavingDestinationField
                       id="ward-board-leaving-destination"
-                      className={styles.leavingSelect}
-                      data-testid="ward-board-leaving-destination"
                       value={leavingDestination}
-                      onChange={(changed) => setLeavingDestination(changed.target.value as LeavingDestination)}
-                    >
-                      {LEAVING_DESTINATIONS.map((destination) => (
-                        <option key={destination.id} value={destination.id}>
-                          {destination.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setLeavingDestination}
+                    />
                     <button
                       type="button"
                       className={styles.leavingButton}
                       data-testid="ward-board-record-leaving-submit"
                       onClick={(e) => {
-                        const executeLeaving = () => {
+                        const executeLeaving = (leavingDestination: LeavingDestination) => {
                           recordDepartureAndReport(
                             () =>
                               recordWardDeparture
@@ -207,8 +196,9 @@ export function WardBoardDetailPanel({
                           closeDetail();
                         };
 
-                        if (!requireConfirmation) {
-                          executeLeaving();
+                        // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
+                        if (!requireConfirmation && leavingDestination !== "") {
+                          executeLeaving(leavingDestination);
                           return;
                         }
 
@@ -501,5 +491,44 @@ export function WardBoardDetailPanel({
         </>
       )}
     </aside>
+  );
+}
+
+/**
+ * Where a person went when they left the ward (audit CS3-07): starts blank, with no default, so a
+ * departure is never recorded to a destination nobody chose.
+ */
+export function LeavingDestinationField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: LeavingDestination | "";
+  onChange: (destination: LeavingDestination) => void;
+}) {
+  return (
+    <>
+      <label className={styles.leavingLabel} htmlFor={id}>
+        Where are they going?
+      </label>
+      <select
+        id={id}
+        className={styles.leavingSelect}
+        data-testid={id}
+        value={value}
+        required
+        onChange={(changed) => onChange(changed.target.value as LeavingDestination)}
+      >
+        <option value="" disabled>
+          Choose where they are going
+        </option>
+        {LEAVING_DESTINATIONS.map((destination) => (
+          <option key={destination.id} value={destination.id}>
+            {destination.label}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }

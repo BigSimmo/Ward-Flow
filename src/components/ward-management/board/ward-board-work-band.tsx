@@ -9,6 +9,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import styles from "./board.module.css";
 import { type ShiftTileItem } from "./ward-board-model";
+import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -46,7 +47,7 @@ export function WardBoardWorkBand({
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
   setSelectedKey: Dispatch<SetStateAction<string | null>>;
   setShiftExpanded: Dispatch<SetStateAction<boolean>>;
-  setToastMessage: Dispatch<SetStateAction<string | null>>;
+  setToastMessage: Dispatch<SetStateAction<ActionToast | null>>;
   shiftDigest: string;
   shiftExpanded: boolean;
   shiftTiles: ShiftTileItem[];
@@ -244,7 +245,7 @@ export function WardBoardWorkBand({
                     const who = blockerDialogItem.who || nameFor(blockerDialogItem.selectableKey);
                     if (!ownRelease) {
                       const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
-                      setToastMessage(msg);
+                      setToastMessage({ warning: msg });
                       announceToWardShell(
                         "No discharge is recorded for this patient, so there is nothing to hold up. Nothing was changed.",
                       );

@@ -31,6 +31,14 @@ export function classifyLegalStatus(status: LegalStatus | string | undefined): L
 }
 
 /**
+ * The words for a stay with no legal form (CS-14, audit CS3-04): "No form" only when the status is
+ * a recorded Voluntary. For anyone else a form is simply not recorded, which is not the same thing.
+ */
+export function noFormWords(status: LegalStatus | string | undefined): "No form" | "Form not recorded" {
+  return classifyLegalStatus(status) === "voluntary" ? "No form" : "Form not recorded";
+}
+
+/**
  * Whether a status is detained or involuntary, for the discharge guards. Deliberately excludes a
  * referral and unknown text, so it never widens a hard refusal beyond what is recorded.
  */

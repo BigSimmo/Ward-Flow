@@ -88,7 +88,11 @@ describe("Audit 1 (CS-15): a decision names the person and does not open the nex
     expect(accept, "the first in queue can be accepted").not.toBeNull();
     fireEvent.click(accept!);
     const confirm = screen.queryByRole("button", { name: /^Confirm accept/ });
+    // Audit CS3-08: a confirm tap within 600 ms of opening is a double tap and is ignored.
+    const later = Date.now() + 1_000;
+    const clock = vi.spyOn(Date, "now").mockReturnValue(later);
     if (confirm) fireEvent.click(confirm);
+    clock.mockRestore();
 
     expect(queueIds()).not.toContain(first);
     expect(screen.getByTestId(`ward-referral-inspector-priority-${first}`)).toBeInTheDocument();

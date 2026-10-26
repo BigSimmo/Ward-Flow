@@ -132,12 +132,21 @@ describe("Builder 2 - Whiteboard shift actions toast feedback", () => {
     });
     if (shiftActionBtns.length > 0) {
       fireEvent.click(shiftActionBtns[0]);
+      // Audit CS3-07: a departure first asks where they went.
+      const destination = screen.queryByTestId("ward-board-confirm-destination");
+      if (destination) {
+        fireEvent.change(destination, { target: { value: "discharged-to-the-community" } });
+        fireEvent.click(screen.getByTestId("ward-board-confirm-proceed"));
+      }
       const toast = screen.getByTestId("ward-board-toast");
       expect(toast).toBeInTheDocument();
       expect(toast).toHaveAttribute("role", "status");
     } else {
       const departureSubmit = screen.queryByTestId("ward-board-record-leaving-submit");
       if (departureSubmit) {
+        fireEvent.change(screen.getByTestId("ward-board-leaving-destination"), {
+          target: { value: "discharged-to-the-community" },
+        });
         fireEvent.click(departureSubmit);
         const toast = screen.getByTestId("ward-board-toast");
         expect(toast).toBeInTheDocument();

@@ -52,7 +52,11 @@ export type WardShiftSummary = {
   bedsPulled: number;
   /** Discharges confirmed (`dischargeConfirmedAt`). */
   dischargesConfirmed: number;
-  /** Admissions whose expected discharge date was changed (`dischargeDateSetAt`). */
+  /**
+   * Admissions whose expected discharge date was last changed in the shift (`dischargeDateSetAt`).
+   * Only the latest change is kept, so a date changed in this shift and again later counts in the
+   * later shift only (audit TC2-12).
+   */
   datesMoved: number;
   /** Observation level changes recorded. */
   observationChanges: number;
