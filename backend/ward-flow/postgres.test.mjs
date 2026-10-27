@@ -1323,7 +1323,8 @@ test(
     // Its own database: the rollbacks below refuse once any test has logged a list read (015).
     const owner = new Pool({ connectionString: url, max: 1 });
     const database = `wardflow_roles_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    // Set whenever this test runs: `skip: !url` above.
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     await owner.query(`CREATE DATABASE ${database}`);
     const pool = new Pool({ connectionString: target.href, max: 4 });
@@ -2968,7 +2969,8 @@ test(
     // Its own database: a logged list read makes rollback 015 refuse, which other tests run.
     const admin = new Pool({ connectionString: url, max: 1 });
     const database = `wardflow_list_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    // Set whenever this test runs: `skip: !url` above.
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     await admin.query(`CREATE DATABASE ${database}`);
     const pool = new Pool({ connectionString: target.href, max: 4 });

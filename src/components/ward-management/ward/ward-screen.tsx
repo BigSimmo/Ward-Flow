@@ -589,10 +589,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         toast.push({ tone: "info", title: check.success });
         return;
       }
+      // H-0246: every kind sends its record's sequence, so an older toast cannot undo a newer change.
       const recordSeq =
         undo.kind === "movement"
           ? wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId)
-          : undefined;
+          : undo.kind === "stay"
+            ? wardCommandUndoSeq(check.outcome, "UNDO_PLACE_IN_BED", undo.admissionId)
+            : wardCommandUndoSeq(check.outcome, "UNDO_REFERRAL_DECISION", undo.referralId);
       const undoLimit =
         roleLimitReason(routeRole, boardUndoEvent(undo, nowRef.current).type) ??
         (check.outcome && undo.kind === "movement" && recordSeq === undefined
@@ -618,6 +621,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           role: "ward",
                           now: at,
                           admissionId: undo.admissionId,
+                          ...(recordSeq === undefined ? {} : { recordSeq }),
                           actingUnitId: undo.unitId,
                         });
                       else if (undo.kind === "movement")
@@ -635,6 +639,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                           role: "ward",
                           now: at,
                           referralId: undo.referralId,
+                          ...(recordSeq === undefined ? {} : { recordSeq }),
                           actingUnitId: undo.unitId,
                         });
                     },

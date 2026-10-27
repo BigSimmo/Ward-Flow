@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { UndoStepType } from "../ward-undo";
+import type { CommandUndoType } from "../ward-command-metadata";
 import { useOptionalToast } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
@@ -91,7 +91,7 @@ let commandOrigin: { key: string; row: Element } | null = null;
 /** Generic Undo must name the record created by this command, including scoped receipts. */
 export function wardCommandUndoSeq(
   outcome: WardCommandOutcome | undefined,
-  undoType: UndoStepType,
+  undoType: CommandUndoType,
   subjectId: string,
 ): number | undefined {
   const step = outcome?.undoStep;
