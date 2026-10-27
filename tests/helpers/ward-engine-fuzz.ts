@@ -1969,7 +1969,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       ),
     ),
   ],
-  [1, inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")],
+  [
+    1,
+    (state, random) => {
+      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")(state, random)!;
+      // P019: a row someone holds is released instead. No extra draw, so the seeded runs keep their shape.
+      const latest = state.inboxOwnership[String(event.inboxItemId)]?.at(-1);
+      return latest && latest.kind !== "released" ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
+    },
+  ],
   [
     1,
     (state, random) => ({
