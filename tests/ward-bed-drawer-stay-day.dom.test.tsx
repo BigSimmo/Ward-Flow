@@ -16,6 +16,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import whatsNew from "@/components/ward-management/help/whats-new.json";
 import { WF_PHONE_QUERY } from "@/components/wf";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -83,5 +84,13 @@ describe("bed drawer stay day (audit P102)", () => {
   it("calls the day of arrival Day 1, not Day 0", () => {
     show(false, 0);
     expect(screen.getAllByTitle("Day 1").length).toBeGreaterThan(0);
+  });
+});
+
+describe("What's new (P102)", () => {
+  it("tells people the Stay tile now shows the day of the stay", () => {
+    expect(whatsNew.map((entry) => entry.line)).toContain(
+      'Bed drawer: the Stay tile now shows the day of the stay, for example "Day 37".',
+    );
   });
 });
