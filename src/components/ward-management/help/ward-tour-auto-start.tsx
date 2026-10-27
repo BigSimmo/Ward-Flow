@@ -1,10 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { Button } from "@/components/wf/button";
 
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
+import styles from "./ward-tour-offer.module.css";
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 // Heard by the what's new note (`ward-whats-new.tsx`), written out so neither loads the other: the
@@ -59,12 +62,13 @@ function markTourAutoDone(role: WardTourRole): boolean {
 const TOUR_SETTLE_MS = 500;
 
 /**
- * Starts each desk's tour once per device: the first time that signed-in desk reaches its own home
- * screen. Mounted only while role access is on (a desk is signed in), so the shared demo never pops
- * it up. The desk is marked the moment its tour starts, so a reload or a role that settles late
- * never starts it again; a switch to another desk whose tour has not started yet does start that
- * desk's. After that, Help (with its "New" marker for a desk whose tour is unseen) and Settings are
- * the way in.
+ * Offers each desk's tour once per device: the first time that signed-in desk reaches its own home
+ * screen. P188 (Josh, 27 Oct 2026): the tour is offered, not forced. A small card asks first; "Start
+ * the tour" starts it and "Not now" closes the card. Mounted only while role access is on (a desk is
+ * signed in), so the shared demo never shows it. The desk is marked the moment the card shows, so a
+ * reload or a role that settles late never shows it again; a switch to another desk whose tour has
+ * not been offered yet does offer that desk's. After that, Help (with its "New" marker for a desk
+ * whose tour is unseen) and Settings are the way in.
  */
 export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const role = useTourRole();
@@ -72,16 +76,37 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const { home, deskHome } = useTourFacts(role);
   const pathname = usePathname() ?? "";
   const started = useRef<WardTourRole | null>(null);
+  const [offered, setOffered] = useState(false);
   useEffect(() => {
     if (started.current === role || seen || !home || (pathname !== home && pathname !== deskHome)) return;
     const timer = window.setTimeout(() => {
       started.current = role;
       if (readTourAutoDone(role) || !markTourAutoDone(role)) return;
-      // A first visit gets the tour, not the what's new note as well.
+      // A first visit gets the tour offer, not the what's new note as well.
       window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
-      onStart();
+      setOffered(true);
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);
-  }, [deskHome, home, onStart, pathname, role, seen]);
-  return null;
+  }, [deskHome, home, pathname, role, seen]);
+  if (!offered) return null;
+  return (
+    <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
+      <p className={styles.text}>Want a quick tour? It takes about 2 minutes.</p>
+      <div className={styles.actions}>
+        <Button
+          variant="pri"
+          size="sm"
+          onClick={() => {
+            setOffered(false);
+            onStart();
+          }}
+        >
+          Start the tour
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setOffered(false)}>
+          Not now
+        </Button>
+      </div>
+    </section>
+  );
 }
