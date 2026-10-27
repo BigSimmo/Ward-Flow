@@ -71,6 +71,7 @@ function modalTree(kind: ModalKind, movement: Movement, dispatch: WardCommandDis
 
 function fillModal(kind: ModalKind) {
   if (kind === "arrival") {
+    fireEvent.change(screen.getByLabelText("Arrival Mode"), { target: { value: "hospital_transfer" } });
     fireEvent.change(screen.getByLabelText(/Transport CAD/), { target: { value: "SYNTHETIC-TRACKING" } });
   } else {
     fireEvent.change(screen.getByLabelText("Select a file to record its details"), {

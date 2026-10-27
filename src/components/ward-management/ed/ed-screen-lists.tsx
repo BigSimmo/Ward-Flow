@@ -100,7 +100,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-review-tab"
-            aria-label={`Awaiting Review, ${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} patients`}
+            aria-label={`Awaiting review, ${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} ${awaitingReviewPatients.length === 1 ? "patient" : "patients"}`}
             aria-selected={departmentListTab === "review"}
             aria-controls="ward-ed-review-panel"
             tabIndex={departmentListTab === "review" ? 0 : -1}
@@ -182,7 +182,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           id="ward-ed-review-panel"
           role="tabpanel"
           aria-labelledby="ward-ed-review-tab"
-          aria-label="Awaiting Review"
+          aria-label="Awaiting review"
           hidden={departmentListTab !== "review"}
           className={styles.lstWrap}
           tabIndex={0}
@@ -249,7 +249,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           id="ward-ed-cleared-panel"
           role="tabpanel"
           aria-labelledby="ward-ed-cleared-tab"
-          aria-label="Medical Clearance"
+          aria-label="Medical clearance"
           hidden={departmentListTab !== "cleared"}
           className={styles.lstWrap}
           tabIndex={0}

@@ -126,8 +126,8 @@ describe("the urgent flag is visible on the row it moved", () => {
       />,
     );
     const detail = screen.getByTestId(`ward-queue-flag-detail-${withProvenance.id}`);
-    // "Flow coordinator" (the LABEL), never the bare "coordinator" role string.
-    expect(detail).toHaveTextContent(/^Flagged urgent by Flow coordinator at/);
+    // "Bed coordinator" (the LABEL), never the bare "coordinator" role string.
+    expect(detail).toHaveTextContent(/^Flagged urgent by Bed coordinator at/);
     expect(detail, "the reason label must be named too, not just who and when").toHaveTextContent(
       "Cannot safely prevent leaving",
     );

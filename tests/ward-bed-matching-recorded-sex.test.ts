@@ -114,7 +114,7 @@ function movement(person: Person, genderPlacements?: GenderPlacement[], override
     urgencyChanges: [],
     overrides: [],
     stage: "destination_review",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [],
     declines: [],
     blocker: "No blocker",

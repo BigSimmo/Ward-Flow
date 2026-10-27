@@ -245,7 +245,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           title={
             population === "records"
               ? `${openCount} admission ${openCount === 1 ? "record" : "records"} open`
-              : `${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`
+              : // WT-17: open is every release not yet gone, by tomorrow and later, as on the ward.
+                `${openCount + releaseGroups.excludedBeyondToday} ${openCount + releaseGroups.excludedBeyondToday === 1 ? "discharge" : "discharges"} open · ${openCount + releaseGroups.excludedBeyondToday - releaseGroups.openLater} by tomorrow · ${releaseGroups.openLater} later`
           }
           titleMeta={
             <span className={pageStyles.bedDaysPast} data-testid="ward-discharge-bed-days-past">
@@ -463,7 +464,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 {population === "records" && guarded.status === "denied"
                   ? "Unavailable"
                   : population === "releases" && status === "all" && shown === total && counts.departed > 0
-                    ? `${shown - counts.departed} open · ${counts.departed} discharged`
+                    ? `${shown - counts.departed} listed · ${counts.departed} discharged`
                     : `${shown} shown`}
               </span>
             </header>
@@ -521,6 +522,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         return (
                           <tr
                             key={record.id}
+                            /* Return to your place: Back focuses the row that was opened. */
+                            data-record-key={record.id}
                             data-selected={isSelected}
                             data-highlighted={recordLit(record) || undefined}
                             data-dim={dimmed(recordLit(record))}

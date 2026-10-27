@@ -19,6 +19,7 @@ import { communityTeamOptions } from "./referral-destination-options";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
+import { chartsCountText } from "./referral-document-links";
 import { ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
@@ -30,6 +31,7 @@ import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-field
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import {
   HOME_REGIONS,
+  TRAVEL_MODES,
   type Cohort,
   type Referral,
   type Unit,
@@ -358,10 +360,14 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                             ? null
                             : " · Catchment not confirmed"}
                         <span className={styles.wardMetaMore}>
-                          {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                          <span className={styles.mono}>
-                            {unit.siteCode ? `${unit.siteCode} · ${unit.unitId}` : unit.unitId}
-                          </span>
+                          {unit.healthService ? ` · ${unit.healthService}` : ""}
+                          {/* Walk-through WT-27: the site code only, never the internal ward id. */}
+                          {unit.siteCode ? (
+                            <>
+                              {" · "}
+                              <span className={styles.mono}>{unit.siteCode}</span>
+                            </>
+                          ) : null}
                         </span>
                       </span>
                     </span>
@@ -520,7 +526,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <>
                 <div>
                   <dt>Documents</dt>
-                  <dd>{documentation.charts.length} attached</dd>
+                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
                 </div>
                 <div>
                   <dt>Clearance</dt>
@@ -556,10 +562,13 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     value={transport}
                     onChange={(e) => setTransport(e.target.value)}
                   >
-                    <option value="mht">Mental Health Transport</option>
-                    <option value="rfds">RFDS aeromedical escort</option>
-                    <option value="stjohn">St John Ambulance escort</option>
-                    <option value="carer">Patient or carer accompanied</option>
+                    {/* WT-13: opens blank; nothing is chosen for the person. */}
+                    <option value="">Not chosen</option>
+                    {TRAVEL_MODES.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
                   </select>
                 </SelectBox>
               </Field>

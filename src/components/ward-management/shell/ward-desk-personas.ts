@@ -42,3 +42,12 @@ export const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
     greeting: CHROME_ROLE_LABELS.executive,
   },
 };
+
+/** An access admin gives roles and sees no patients, so it has no clinical persona (#790). */
+export const ACCESS_ADMIN_PERSONA: DeskPersona = {
+  id: "admin",
+  name: "Access admin",
+  initials: "AA",
+  role: "Demo desk",
+  greeting: "Access admin",
+};

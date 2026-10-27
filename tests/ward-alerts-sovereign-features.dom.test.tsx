@@ -31,7 +31,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "Snoozed" })).toHaveTextContent("None now");
 
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/ }));
-    expect(screen.getByRole("region", { name: "Flow coordinator" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Bed coordinator" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     const panel = selectedPanel();
     fireEvent.click(within(panel).getByRole("button", { name: /^Acknowledge / }));
     expect(within(panel).getByRole("button", { name: /^Seen: / })).toHaveTextContent("Seen");
-    expect(within(panel).getByText(/Seen by Flow coordinator/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Seen by Bed coordinator/)).toBeInTheDocument();
   });
 
   it.each([

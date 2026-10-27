@@ -206,6 +206,13 @@ describe("signOutConflicts (clash guard)", () => {
     ]);
   });
 
+  it("releases the whole branch when a RELEASED line says files=ALL (H-0268)", () => {
+    const claim = "- 2026-09-27 | Other | ward/other | D:/w/other | AGENTS.md, docs/a.md";
+    const everything = "RELEASED 2026-09-27 | Other | ward/other | files=ALL | handed back";
+    const log = ["Open sign-outs only", claim, everything].join("\n");
+    expect(signOutConflicts(["AGENTS.md", "docs/a.md"], log, "ward/mine", "D:/w/mine")).toEqual([]);
+  });
+
   it("reuses a scoped approval already recorded in an older owner description", () => {
     const log = [
       "Open sign-outs only",
@@ -510,6 +517,7 @@ describe("the hook script end to end", () => {
     expect(passed.stderr).toContain("admission ok");
   });
 
+  // Skipped on Windows: the default sign-out log is fixed at D:/Repos/ward-flow-logs, so HOME cannot redirect it.
   it.skipIf(process.platform === "win32")("blocks when the default log is absent off Windows", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });

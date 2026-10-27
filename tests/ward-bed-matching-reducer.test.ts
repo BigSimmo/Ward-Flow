@@ -112,7 +112,7 @@ function awaitingBed(person: Person): Movement {
     overrides: [],
     stage: "accepted_awaiting_bed",
     acceptedUnitId: MX_F_ID,
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [],
     declines: [],
     blocker: "No blocker",

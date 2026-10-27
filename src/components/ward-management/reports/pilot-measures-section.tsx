@@ -75,7 +75,8 @@ function Card({
           flush
           facts={figures.map((figure) => ({
             id: figure.id,
-            label: figure.note ? `${figure.label} (${figure.note})` : figure.label,
+            label: figure.label,
+            note: figure.note,
             value: figure.value,
             testId: figure.testId,
           }))}
@@ -328,7 +329,8 @@ export function PilotMeasuresSection({
             label="Where the time goes"
             facts={stepRows.map((row) => ({
               id: row.id,
-              label: `${row.label} (${row.note})`,
+              label: row.label,
+              note: row.note,
               value: row.typical,
             }))}
           />

@@ -50,6 +50,9 @@ import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { officialForms } from "@/lib/form-register";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed-strip";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -65,260 +68,83 @@ import styles from "./ward-index.module.css";
  * confirmation age from the ward's own allocatable figure.
  */
 
-interface WardMetadata {
-  num: string;
-  ext: string;
-  vocera: string;
-  criteria: string;
-  mhaForms: string;
-  security: string;
-  securityTone: "danger" | "warn" | "good" | "accent" | "gilt";
-}
-
-const WARD_METADATA: Record<string, WardMetadata> = {
-  // 22 Authentic Inpatient Units in allUnits()
-  "rph-adult-secure": {
-    num: "Brian O'Connor",
-    ext: "2105",
-    vocera: "#NUM-21",
-    criteria: "Inner-city high-acuity crisis assessment, severe behavioural disturbance, and complex dual diagnosis.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "rph-older-adult": {
-    num: "Andrew Scott",
-    ext: "3825",
-    vocera: "#NUM-39",
-    criteria:
-      "Specialised psychogeriatric inpatient unit for acute organic and functional psychiatric disorders in older adults.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "scgh-adult-open": {
-    num: "David Stirling",
-    ext: "3490",
-    vocera: "#NUM-34",
-    criteria: "General acute psychiatric admissions for NMHS catchment with co-morbid acute medical complexity.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "scgh-older-adult": {
-    num: "Helen Zhang",
-    ext: "2930",
-    vocera: "#NUM-29",
-    criteria: "Sub-acute geriatric mental health rehabilitation and severe BPSD management for older adults.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "fsh-adult-secure": {
-    num: "Jason Miller",
-    ext: "5182",
-    vocera: "#NUM-51",
-    criteria: "High-dependency acute assessment and psychiatric intensive care for southern metropolitan corridor.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "fsh-older-adult": {
-    num: "Simon Ross",
-    ext: "4118",
-    vocera: "#NUM-42",
-    criteria: "Specialised psychogeriatric assessment and dementia-related behavioural support for Rockingham-Kwinana.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "arm-adult-open": {
-    num: "Patricia Wright",
-    ext: "3820",
-    vocera: "#NUM-38",
-    criteria: "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "sjgm-adult-open": {
-    num: "Emma Wilson",
-    ext: "7308",
-    vocera: "#NUM-73",
-    criteria: "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "rgh-adult-secure": {
-    num: "Jessica Howard",
-    ext: "6100",
-    vocera: "#NUM-61",
-    criteria: "South-west metropolitan acute mental health admissions and emergency liaison transfers.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "fre-adult-open": {
-    num: "Fiona Campbell",
-    ext: "4112",
-    vocera: "#NUM-41",
-    criteria: "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "fre-older-adult": {
-    num: "Graeme Bell",
-    ext: "6140",
-    vocera: "#NUM-62",
-    criteria: "Older adult acute psychogeriatric intake and behavioural management for Fremantle catchment.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "bty-adult-secure": {
-    num: "Liam Foster",
-    ext: "3150",
-    vocera: "#NUM-35",
-    criteria: "Secure high-dependency containment, crisis stabilisation, and psychiatric intensive nursing.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "bty-older-adult": {
-    num: "Gary Davies",
-    ext: "7314",
-    vocera: "#NUM-74",
-    criteria:
-      "Older adult assessment, diagnostic workup, and community transition planning for Eastern Hills catchment.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "bty-youth": {
-    num: "Timothy Lee",
-    ext: "1902",
-    vocera: "#NUM-19",
-    criteria: "Specialised youth early psychosis intervention and recovery program for young adults aged 16–24.",
-    mhaForms: "Form 1A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "gry-adult-secure": {
-    num: "Clare Douglas",
-    ext: "4102",
-    vocera: "#NUM-41",
-    criteria:
-      "Adults 18–64 under Form 1A/Form 6A requiring intensive psychiatric containment and high-dependency nursing.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "gry-older-adult": {
-    num: "Marcus Vance",
-    ext: "2190",
-    vocera: "#NUM-21",
-    criteria:
-      "Older adults 65+ experiencing acute neuropsychiatric decompensation, behavioural BPSD, or late-onset psychosis.",
-    mhaForms: "Form 1A, Form 2, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "alb-adult-open": {
-    num: "Karen Hughes",
-    ext: "2224",
-    vocera: "#NUM-22",
-    criteria: "Regional adult psychiatric unit for Great Southern region with telemetry link to Perth State Bed Desk.",
-    mhaForms: "Form 1A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "bun-adult-open": {
-    num: "Stephen Clarke",
-    ext: "9014",
-    vocera: "#NUM-90",
-    criteria: "Regional high-dependency acute psychiatric intake and assessment for South West WA.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "brm-adult-secure": {
-    num: "Bradley King",
-    ext: "8420",
-    vocera: "#NUM-84",
-    criteria: "Kimberley regional acute culturally-grounded mental health inpatient unit with RFDS coordination.",
-    mhaForms: "Form 4A, Form 6A, CLMA Remand",
-    security: "All locked",
-    securityTone: "danger",
-  },
-  "ger-adult-open": {
-    num: "Rachel Adams",
-    ext: "3140",
-    vocera: "#NUM-31",
-    criteria: "Midwest regional acute psychiatric intake, stabilisation, and crisis admissions.",
-    mhaForms: "Form 1A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "sjgs-adult-open": {
-    num: "Julian Croft",
-    ext: "3310",
-    vocera: "#NUM-33",
-    criteria:
-      "Private adult voluntary inpatient stabilisation, mood disorder therapies, and anxiety treatment programs.",
-    mhaForms: "Voluntary Admissions, Form 1A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "sjgs-adult-secure": {
-    num: "Sophie Turner",
-    ext: "9901",
-    vocera: "#NUM-99",
-    criteria: "Private secure high-dependency crisis stabilisation and psychiatric care.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
+/**
+ * What each ward admits, as a plain description. It carries no legal claim: the forms a ward holds
+ * are read from the unit itself (`wardFormsHeld`), never typed here. The table once also carried a
+ * nurse unit manager's name, extension and paging handle for every ward and a made-up fallback for
+ * unknown wards; those were invented and are gone. A ward missing from this table shows no
+ * description rather than a substituted one.
+ */
+const WARD_ADMITS: Readonly<Record<string, string>> = {
+  "rph-adult-secure":
+    "Inner-city high-acuity crisis assessment, severe behavioural disturbance, and complex dual diagnosis.",
+  "rph-older-adult":
+    "Specialised psychogeriatric inpatient unit for acute organic and functional psychiatric disorders in older adults.",
+  "scgh-adult-open": "General acute psychiatric admissions for NMHS catchment with co-morbid acute medical complexity.",
+  "scgh-older-adult": "Sub-acute geriatric mental health rehabilitation and severe BPSD management for older adults.",
+  "fsh-adult-secure":
+    "High-dependency acute assessment and psychiatric intensive care for southern metropolitan corridor.",
+  "fsh-older-adult":
+    "Specialised psychogeriatric assessment and dementia-related behavioural support for Rockingham-Kwinana.",
+  "arm-adult-open":
+    "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
+  "sjgm-adult-open":
+    "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
+  "rgh-adult-secure": "South-west metropolitan acute mental health admissions and emergency liaison transfers.",
+  "fre-adult-open":
+    "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
+  "fre-older-adult": "Older adult acute psychogeriatric intake and behavioural management for Fremantle catchment.",
+  "bty-adult-secure": "Secure high-dependency containment, crisis stabilisation, and psychiatric intensive nursing.",
+  "bty-older-adult":
+    "Older adult assessment, diagnostic workup, and community transition planning for Eastern Hills catchment.",
+  "bty-youth": "Specialised youth early psychosis intervention and recovery program for young adults aged 16–24.",
+  "gry-adult-secure": "Adults 18–64 requiring intensive psychiatric containment and high-dependency nursing.",
+  "gry-older-adult":
+    "Older adults 65+ experiencing acute neuropsychiatric decompensation, behavioural BPSD, or late-onset psychosis.",
+  "alb-adult-open":
+    "Regional adult psychiatric unit for Great Southern region with telemetry link to Perth State Bed Desk.",
+  "bun-adult-open": "Regional high-dependency acute psychiatric intake and assessment for South West WA.",
+  "brm-adult-secure":
+    "Kimberley regional acute culturally-grounded mental health inpatient unit with RFDS coordination.",
+  "ger-adult-open": "Midwest regional acute psychiatric intake, stabilisation, and crisis admissions.",
+  "sjgs-adult-open":
+    "Private adult voluntary inpatient stabilisation, mood disorder therapies, and anxiety treatment programs.",
+  "sjgs-adult-secure": "Private secure high-dependency crisis stabilisation and psychiatric care.",
   // Legacy aliases for backward compatibility with mockups
-  "armadale-adult": {
-    num: "Patricia Wright",
-    ext: "3820",
-    vocera: "#NUM-38",
-    criteria: "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "midland-adult": {
-    num: "Emma Wilson",
-    ext: "7308",
-    vocera: "#NUM-73",
-    criteria: "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "fremantle-adult-open": {
-    num: "Fiona Campbell",
-    ext: "4112",
-    vocera: "#NUM-41",
-    criteria: "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All open",
-    securityTone: "good",
-  },
-  "graylands-dorrington": {
-    num: "Clare Douglas",
-    ext: "4102",
-    vocera: "#NUM-41",
-    criteria:
-      "Adults 18–64 under Form 1A/Form 6A requiring intensive psychiatric containment and high-dependency nursing.",
-    mhaForms: "Form 1A, Form 3A, Form 6A",
-    security: "All locked",
-    securityTone: "danger",
-  },
+  "armadale-adult":
+    "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
+  "midland-adult": "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
+  "fremantle-adult-open":
+    "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
+  "graylands-dorrington": "Adults 18–64 requiring intensive psychiatric containment and high-dependency nursing.",
 };
+
+export const VOLUNTARY_ONLY_LABEL = "Voluntary only";
+export const CLMA_LABEL = "CLMA";
+
+const COMMUNITY_ORDER_CODES = new Set(
+  officialForms.filter((form) => form.category === "Community treatment orders").map((form) => form.code),
+);
+
+/**
+ * The legal forms a ward holds, read from the unit rather than typed per ward.
+ *
+ * - A unit that is not authorised under the Mental Health Act holds voluntary patients only, so it
+ *   lists no involuntary form at all.
+ * - An authorised unit lists the codes the intake picker offers (`SELECTABLE_LEGAL_FORMS`), less
+ *   any community treatment order: Form 5A is an order for treatment in the community, never an
+ *   inpatient authority (`tests/ward-register-inpatient-form-codes.test.ts`).
+ * - CLMA is listed only on an authorised forensic unit.
+ *
+ * The model records no finer per-unit authority, so every authorised unit shows the same codes.
+ */
+export function wardFormsHeld(unit: Pick<Unit, "authorised" | "forensic">): string[] {
+  if (!unit.authorised) return [VOLUNTARY_ONLY_LABEL];
+  const forms = SELECTABLE_LEGAL_FORMS.filter((form) => !COMMUNITY_ORDER_CODES.has(form.code)).map(
+    (form) => `Form ${form.code}`,
+  );
+  return unit.forensic ? [...forms, CLMA_LABEL] : forms;
+}
 
 type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "has-ready" | "full" | "stale";
@@ -358,7 +184,8 @@ function SecurityLabel({ unit }: { unit: Unit }) {
   );
 }
 
-const NEAR_FULL = 0.95;
+/** Near full: the signed occupancy surge band (95%), as a fraction. */
+const NEAR_FULL = CLINICAL_VALUES.occupancySurge.value / 100;
 /* The one alert line (device audit, 11 Oct 2026): the rail's Bed alerts threshold, as on Home and
    Capacity. It was 90% here, so All wards drew a "90% line" against everyone else's 85%. */
 const SERVICE_LINE = BED_ALERT_THRESHOLD_PERCENT / 100;
@@ -1051,8 +878,6 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
 
 function WardProfile({ row }: { row: WardRow }) {
   const { unit } = row;
-  const meta = wardMetaFor(unit);
-  const forms = meta.mhaForms.split(",").map((form) => form.trim());
   return (
     <Popover
       label={`${unit.name} profile`}
@@ -1064,26 +889,24 @@ function WardProfile({ row }: { row: WardRow }) {
         </button>
       )}
     >
-      {(close) => <WardProfileBody row={row} meta={meta} forms={forms} close={close} />}
+      {(close) => <WardProfileBody row={row} close={close} />}
     </Popover>
   );
 }
 
 function WardProfileBody({
   row,
-  meta,
-  forms,
   close,
   inSheet = false,
 }: {
   row: WardRow;
-  meta: WardMetadata;
-  forms: string[];
   close?: (options?: { restoreFocus?: boolean }) => void;
   /** In the phone sheet, whose footer already holds Enter ward. */
   inSheet?: boolean;
 }) {
   const { unit } = row;
+  const admits = WARD_ADMITS[unit.id];
+  const forms = wardFormsHeld(unit);
   return (
     <div className={styles.profileBody}>
       <div className={styles.profileHead}>
@@ -1123,8 +946,12 @@ function WardProfileBody({
             <dd>{row.pendingPreparation} of the ready beds</dd>
           </>
         ) : null}
-        <dt>Admits</dt>
-        <dd>{meta.criteria}</dd>
+        {admits ? (
+          <>
+            <dt>Admits</dt>
+            <dd>{admits}</dd>
+          </>
+        ) : null}
         <dt>Forms held</dt>
         <dd className={styles.formChips}>
           {forms.map((form) => (
@@ -1136,14 +963,8 @@ function WardProfileBody({
         <dt>Catchment</dt>
         <dd>{row.service ?? "Not placed"}</dd>
       </dl>
-      <div className={styles.profileFoot}>
-        <span className={styles.numOnShift}>
-          <span className={styles.profileTitleSm}>NUM on shift</span>
-          <span className={styles.mono} title={`${meta.num}, ext ${meta.ext}`}>
-            ext {meta.ext} · {meta.num}
-          </span>
-        </span>
-        {inSheet ? null : (
+      {inSheet ? null : (
+        <div className={styles.profileFoot}>
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
             href={`/ward-flow/board/${unit.id}`}
@@ -1151,8 +972,6 @@ function WardProfileBody({
           >
             Stays and discharges
           </Link>
-        )}
-        {inSheet ? null : (
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
             href={`/ward-flow/ward/${unit.id}`}
@@ -1160,23 +979,9 @@ function WardProfileBody({
           >
             Enter ward
           </Link>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-function wardMetaFor(unit: Unit): WardMetadata {
-  return (
-    WARD_METADATA[unit.id] ?? {
-      num: "Shift coordinator",
-      ext: "2000",
-      vocera: "#NUM-01",
-      criteria: "Adult acute clinical assessment.",
-      mhaForms: "Form 1A, Form 3A, Form 6A",
-      security: unitHasLockedBeds(unit) ? "Locked Unit" : "Open Inpatient Care",
-      securityTone: unitHasLockedBeds(unit) ? "danger" : "good",
-    }
   );
 }
 
@@ -1283,8 +1088,6 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
   // still renders where no app router is mounted (unit tests).
   const router = useRouter();
   if (!row) return null;
-  const meta = wardMetaFor(row.unit);
-  const forms = meta.mhaForms.split(",").map((form) => form.trim());
   return (
     <PhoneSheet
       open
@@ -1322,7 +1125,7 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       <p className={styles.phoneSheetConfirmed}>
         <Confirmed row={row} now={now} />
       </p>
-      <WardProfileBody row={row} meta={meta} forms={forms} inSheet />
+      <WardProfileBody row={row} inSheet />
     </PhoneSheet>
   );
 }

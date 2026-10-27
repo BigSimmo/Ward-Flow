@@ -21,7 +21,7 @@ export function useEdInboxDecline({
   /*
    * THE INBOX DECLINE, wired 2026-09-01. `EVENT_ROLE.DECLINE_REFERRAL` gained `"ed"`, so this
    * screen may answer a referral addressed to it as itself and the reducer records
-   * `decidedBy: "ED mental health"` — the correct team, not a ward standing in for one.
+   * `decidedBy: "ED clinician"` — the correct team, not a ward standing in for one.
    *
    * ⚠️ **ONE `openFor` id AND ONE DRAFT, never a keyed map** — the same shape the four controls in
    * the patients section below already use. Only one panel is open at a time, so one draft can

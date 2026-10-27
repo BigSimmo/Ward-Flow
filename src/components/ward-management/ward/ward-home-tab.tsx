@@ -22,6 +22,7 @@ import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/wa
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
+  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
   restrictionNotice,
   stageCopy,
@@ -404,7 +405,7 @@ export function WardHomeTab({
       timeLabel: formatInstant(unit.allocatable.confirmedAt),
       title: "Capacity confirmed",
       detail: `${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`,
-      status: "Verified",
+      status: "Confirmed by ward",
     });
   }
   logRows.push(...pendingDepartureLogRows(pendingBedReleases, admissions, now));
@@ -834,7 +835,7 @@ export function WardHomeTab({
   if (heldUp.length > 0) {
     actNow.push({
       key: "held",
-      title: "Discharges held up",
+      title: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),

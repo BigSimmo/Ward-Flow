@@ -8,6 +8,7 @@ import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { totalReadyBedsNow } from "../ward-bed-states";
 import { CAPACITY_FIGURE_LABELS } from "../ward-morning-rollup";
+import { confirmedHeldUpNote } from "../capacity/capacity-derivations";
 import { occupancyPercent, occupiedBeds } from "../statistics/statistics-occupancy";
 import { dayOf, formatInstant, minutesUntil, splitDuration, type Instant } from "../ward-clock";
 import type { Movement } from "../ward-model";
@@ -129,7 +130,16 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
         {
           label: CAPACITY_FIGURE_LABELS.confirmedToday,
           value: String(capacity.reduce((sum, value) => sum + value.confirmedToday, 0)),
-          sub: "Not yet complete",
+          // NA3-06 (decision 16, 26 Oct 2026): name the overlap with held up, as Capacity does.
+          sub: [
+            "Not yet complete",
+            confirmedHeldUpNote(
+              0,
+              capacity.reduce((sum, value) => sum + value.confirmedHeldUpToday, 0),
+            ),
+          ]
+            .filter(Boolean)
+            .join(" "),
         },
         {
           label: CAPACITY_FIGURE_LABELS.expectedToday,
@@ -137,9 +147,11 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
           sub: "Unconfirmed",
         },
         {
-          label: "Blocked today",
+          // Decision 15 (26 Oct 2026): the release count's one name. "Blocked today" also covered
+          // tomorrow, and "Blocked" is not the owner's word for a delay.
+          label: CAPACITY_FIGURE_LABELS.blockedToday,
           value: String(capacity.reduce((sum, value) => sum + value.blockedToday, 0)),
-          sub: "Discharge blockers",
+          sub: "Part of confirmed and expected",
         },
       ],
     },

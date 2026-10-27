@@ -2,7 +2,7 @@
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,
@@ -214,9 +214,14 @@ export function wardBedRoster({
       recordLegalStatus === undefined || recordLegalStatus === linkedMovement?.legalStatus
         ? linkedMovement?.legalForm
         : undefined;
-    const legalStatusLabel = patientLegalForm
-      ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
-      : patientLegalStatus;
+    // WT-03 (walk-through, 26 Oct 2026): a form the examination or arrival moved on from is not the
+    // stay's authority, so the card names the form still to record, as the person page does.
+    const progression = patientLegalForm ? formProgression(linkedMovement) : undefined;
+    const legalStatusLabel = progression
+      ? `Form ${progression.nextCode} not recorded (Form ${progression.endedCode} ended ${progression.endedWhen})`
+      : patientLegalForm
+        ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
+        : patientLegalStatus;
 
     const stayBandObj = admission && stayDays !== null ? stayBand(admission, now) : null;
     const isPastDate = admission ? isPastExpectedDischarge(admission, now) : false;
@@ -231,9 +236,9 @@ export function wardBedRoster({
     const tentDiag = admission?.tentativeDiagnosis
       ? (tentativeDiagnosisPhrase(admission.tentativeDiagnosis) ?? undefined)
       : undefined;
-    const patientAge = patientInfo?.patient
-      ? patientAgeYears(patientInfo.patient, dayZero ? calendarDateOf(now, dayZero) : new Date())
-      : null;
+    // TC-07 (H-0776): the age is read on the board's own day. `dayZero` is always passed, so there is
+    // no real-date fallback here: a demo jumped past a birthday shows the age on the demo day.
+    const patientAge = patientInfo?.patient ? patientAgeYears(patientInfo.patient, calendarDateOf(now, dayZero)) : null;
     const patientSex = patientInfo?.patient?.sex ?? patientInfo?.genderOrSex ?? null;
     const patientHomeRegion = admission?.homeRegion ?? null;
 

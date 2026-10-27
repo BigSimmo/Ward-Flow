@@ -11,7 +11,7 @@
 // says what this is: the earliest release on record, not a bed for this person.
 import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import { type Admission } from "@/components/ward-management/ward-admissions";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, MINUTES_PER_DAY, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -19,6 +19,12 @@ import { bedKindOfBed, bedKindOfNeed, isWaitingForBed } from "./forecast-by-kind
 import { forecastReleaseAt } from "./forecast-release-date";
 
 type EdAccessRelease = { unitId: string; unitName: string; at: Instant; blocker: BedReleaseBlocker | null };
+
+/** "24 hour" for a whole-hour target, else "20h 30m": the access target as Settings states it. The card and
+ * the brief both read it (H-0361), so a 4h 30m target is never rounded to whole hours. */
+export function targetText(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60} hour` : splitDuration(minutes);
+}
 
 export type EdAccessRiskRow = {
   movementId: string;

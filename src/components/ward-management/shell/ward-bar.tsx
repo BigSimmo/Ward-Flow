@@ -53,11 +53,7 @@ import {
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import {
-  CHROME_ROLE_LABELS,
-  noticeIsForWardChrome,
-  wardTasksAreActionableForRole,
-} from "@/components/ward-management/ward-chrome-role";
+import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
 // Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
 // crashing the page (offline Tools crash, 22 Oct 2026).
@@ -81,10 +77,12 @@ import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
+import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
+import { useEffectiveWardAccess } from "./ward-access-store";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
@@ -341,6 +339,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   useEffect(() => replayEarlyHeaderTap(), []);
 
   const { role, shellRole, placeId } = useWardNavCounts();
+  const deskRoleLabel = useDeskRoleLabel(role);
   // One Alerts queue (Josh, 16 Oct 2026): the Tasks button is the Alerts button. On the Alerts
   // screen it does not open a second copy of the list; it takes the person to the queue.
   // Only for the desk whose list it is (the bed coordinator, as the task gate below) and whose role
@@ -1062,11 +1061,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const publishedChecks = checksPublication.published ? checksPublication.checks : [];
   const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
-  // Fixed jurisdiction resolution for place-specific views
-  const fixedService = useMemo<HealthService | undefined>(
-    () => fixedServiceFor(pathname, place, units),
-    [pathname, place, units],
-  );
+  // The route's place, else the desk's own place (#838): a ward desk never reads "Statewide".
+  const { scope } = useEffectiveWardAccess();
+  const fixedService = useMemo(() => fixedServiceFor(pathname, place, units, scope), [pathname, place, units, scope]);
 
   const isFixedJurisdiction = fixedService !== undefined;
   const activeService = isFixedJurisdiction ? fixedService : service;
@@ -1431,7 +1428,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       >
         <WardToolsSheet
           isPhone={isPhone}
-          roleLabel={CHROME_ROLE_LABELS[role]}
+          roleLabel={deskRoleLabel}
           onNavigate={() => closePopover("tools", false)}
           onNewReferral={(destination = "ward") =>
             openReferral(

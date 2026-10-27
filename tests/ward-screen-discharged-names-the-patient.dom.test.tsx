@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -73,11 +73,33 @@ function renderWard(release: NonNullable<typeof VOLUNTARY_RELEASE>) {
   );
 }
 
-function openAndChoose(admissionId: string, destination: string) {
+function openAndPick(admissionId: string, destination: string) {
   const card = document.querySelector(`[data-admission-id="${admissionId}"]`);
   expect(card, "the occupied stay is on a bed card").not.toBeNull();
   fireEvent.click(card as HTMLElement);
   fireEvent.change(screen.getByLabelText(/Where are they going/i), { target: { value: destination } });
+}
+
+/** The Perth wall clock `minutes` before the provider's now, as a datetime-local field takes it. */
+function perthLocalBefore(dayZero: Date, minutes: number): string {
+  const at = new Date(dayZero.getTime() + (NOW_ANCHOR - minutes) * 60_000);
+  const part = (type: string) =>
+    new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Perth",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(at)
+      .find((candidate) => candidate.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
+}
+
+function openAndChoose(admissionId: string, destination: string) {
+  openAndPick(admissionId, destination);
   fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
   fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
 }
@@ -186,27 +208,107 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(document.querySelector(`[data-admission-id="${release.admissionId}"]`)).toBeNull();
   });
 
-  it("refuses an involuntary patient to the community, says why by name, and changes nothing", () => {
+  it("asks for the paper before an involuntary patient leaves for the community, and changes nothing (WT-02)", () => {
     const release = INVOLUNTARY_RELEASE!;
     renderWard(release);
     const name = screen.getByTestId("named-name").textContent ?? "";
-    const patientId = wardAdmissions.find((admission) => admission.id === release.admissionId)?.patientId ?? "";
     const othersBefore = screen.getByTestId("others").textContent;
 
-    openAndChoose(release.admissionId, "discharged-to-the-community");
+    openAndPick(release.admissionId, "discharged-to-the-community");
 
-    expect(screen.getByTestId("rejections")).toHaveTextContent("1");
-    const reason = screen.getByTestId("last-rejection").textContent ?? "";
-    expect(reason).toMatch(/involuntary/iu);
-    expect(reason, "the protected engine refusal does not expose identifiers").not.toContain(patientId);
-    // Josh, 26 Sept 2026: the message on screen names the person, as the success message does.
-    const shown = `${name}: ${reason.replace(/\.$/u, "")}`;
-    expect(screen.getByText(`Not recorded: ${shown}. Nothing was changed.`)).toBeInTheDocument();
+    // Walk-through WT-02 (26 Oct 2026): the engine's refusal used to be the only answer, under a
+    // green tick. The drawer now says what is needed, by name, before anything is sent.
+    expect(screen.getByTestId("ward-drawer-leave-paper")).toHaveTextContent(
+      `${name} is recorded as involuntary. Record the revocation, Form 5A or Form 5B from the paper`,
+    );
+    expect(screen.getByRole("button", { name: /Record that they have left/i })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: "Record departure" })).toBeNull();
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
     expect(screen.getByTestId("others").textContent).toBe(othersBefore);
     expect(
       document.querySelector(`[data-admission-id="${release.admissionId}"]`),
       "the stay is still on the ward",
     ).not.toBeNull();
+  });
+
+  it("records a revocation from the bed drawer, then lets the ward record that they have left (WT-02)", () => {
+    const release = INVOLUNTARY_RELEASE!;
+    function DayZero() {
+      return (
+        <span hidden data-testid="day-zero">
+          {useWardFlow().dayZero.toISOString()}
+        </span>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DayZero />
+        <WardProbe unitId={release.unitId} admissionId={release.admissionId} />
+        <WardScreen unitId={release.unitId} />
+      </WardFlowProvider>,
+    );
+    const dayZero = new Date(screen.getByTestId("day-zero").textContent!);
+    openAndPick(release.admissionId, "discharged-to-the-community");
+    const gate = screen.getByTestId("ward-drawer-leave-paper");
+    fireEvent.click(within(gate).getByRole("button", { name: "Record the paper" }));
+    const form = screen.getByTestId("ward-drawer-leave-paper");
+    fireEvent.click(within(form).getByLabelText("Revocation of the order"));
+    fireEvent.change(within(form).getByLabelText("Date and time written on it"), {
+      target: { value: perthLocalBefore(dayZero, 5) },
+    });
+    fireEvent.click(within(form).getByLabelText(/I have checked the paper/u));
+    fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
+
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    expect(screen.queryByTestId("ward-drawer-leave-paper")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    expect(screen.getByTestId("named-state")).toHaveTextContent("departed|discharged-to-the-community");
+  });
+
+  it("offers only the revocation when an involuntary patient is leaving against advice (WT-02)", () => {
+    const release = INVOLUNTARY_RELEASE!;
+    function DayZero() {
+      return (
+        <span hidden data-testid="day-zero">
+          {useWardFlow().dayZero.toISOString()}
+        </span>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DayZero />
+        <WardProbe unitId={release.unitId} admissionId={release.admissionId} />
+        <WardScreen unitId={release.unitId} />
+      </WardFlowProvider>,
+    );
+    const dayZero = new Date(screen.getByTestId("day-zero").textContent!);
+    openAndPick(release.admissionId, "left-against-advice");
+    fireEvent.click(
+      within(screen.getByTestId("ward-drawer-leave-paper")).getByRole("button", { name: "Record the paper" }),
+    );
+    const form = screen.getByTestId("ward-drawer-leave-paper");
+    expect(
+      within(form)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["revocation"]);
+    fireEvent.click(within(form).getByLabelText("Revocation of the order"));
+    fireEvent.change(within(form).getByLabelText("Date and time written on it"), {
+      target: { value: perthLocalBefore(dayZero, 5) },
+    });
+    fireEvent.click(within(form).getByLabelText(/I have checked the paper/u));
+    fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
+
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+    expect(screen.getByTestId("rejections")).toHaveTextContent("0");
+    expect(screen.getByTestId("named-state")).toHaveTextContent("departed|left-against-advice");
   });
 });

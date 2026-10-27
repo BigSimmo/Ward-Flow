@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { includeGroupCsrf, releaseGateCases, sharedModeCases } from "../scripts/ward-flow/browser-run-contract.mjs";
+import {
+  includeGroupCsrf,
+  RELEASE_GATE_PROJECTS,
+  releaseGateCases,
+  releaseGateProjectFor,
+  sharedModeCases,
+} from "../scripts/ward-flow/browser-run-contract.mjs";
 
 describe("complete release gate and shared-build browser selection", () => {
   it("requires all six operational journeys on both device projects only for the full preset", () => {
@@ -21,6 +27,22 @@ describe("complete release gate and shared-build browser selection", () => {
       const source = readFileSync(`tests/${entry.file}`, "utf8");
       expect(source, entry.title).toContain(JSON.stringify(entry.title));
     }
+  });
+
+  it("narrows one CI leg to one device project only by name, still requiring all six journeys there", () => {
+    expect(releaseGateProjectFor(undefined)).toBeNull();
+    expect(releaseGateProjectFor("")).toBeNull();
+    expect(releaseGateProjectFor(" release-gate-phone ")).toBe("release-gate-phone");
+    expect(() => releaseGateProjectFor("release-gate-tablet")).toThrow(/WARD_RELEASE_GATE_PROJECT/);
+    expect(RELEASE_GATE_PROJECTS).toEqual(["release-gate-desktop", "release-gate-phone"]);
+    for (const project of RELEASE_GATE_PROJECTS) {
+      const leg = releaseGateCases(true, project);
+      expect(leg).toHaveLength(6);
+      expect(new Set(leg.map((entry) => entry.project))).toEqual(new Set([project]));
+      expect(leg).toEqual(releaseGateCases(true).filter((entry) => entry.project === project));
+    }
+    expect(releaseGateCases(false, "release-gate-phone")).toEqual([]);
+    expect(() => releaseGateCases(true, "chromium")).toThrow(/WARD_RELEASE_GATE_PROJECT/);
   });
 
   it("requires all six production shared-mode journeys", () => {

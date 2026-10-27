@@ -106,11 +106,14 @@ describe("count labels say what they count", () => {
     expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
   });
 
-  it("Over 8h counts 8 hours or more, past 24 hours included", () => {
+  // NA3-03 (audit 26 Oct 2026): and only people still in an ED, as Waiting counts them.
+  it("Over 8h counts 8 hours or more in an ED, past 24 hours included", () => {
     const at = NOW_ANCHOR + 13 * 60 + 15;
     const over = heroHighlights(at, LONG_WAIT_MINUTES).find((highlight) => highlight.id === "over")!;
     const open = state.movements.filter(isOpen);
-    const expected = open.filter((movement) => at - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
+    const expected = open.filter(
+      (movement) => isWaitingInEd(movement) && at - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+    ).length;
     expect(open.some((movement) => at - movement.openedAt >= LONG_WAIT_MINUTES)).toBe(true);
     expect(open.filter(over.test).length).toBe(expected);
   });

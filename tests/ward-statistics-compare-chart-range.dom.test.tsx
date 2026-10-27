@@ -22,7 +22,7 @@ import * as statistics from "@/components/ward-management/ward-statistics";
  */
 function chartFigure(): HTMLElement {
   // The bar list names itself in a visually hidden figcaption.
-  return screen.getByText("Ward average length of stay bar chart").closest("figure")!;
+  return screen.getByText("Ward average stay bar chart").closest("figure")!;
 }
 
 function chartItems(chart: HTMLElement): string[] {

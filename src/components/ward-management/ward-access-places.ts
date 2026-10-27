@@ -3,12 +3,30 @@
  * synthetic site registry. Kept apart so `ward-role-access.ts` and `ward-access-scope.ts` stay free
  * of the registry and run unchanged on the server.
  */
-import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
-import type { Unit } from "@/components/ward-management/ward-model";
+import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import {
+  mapClinicToServiceAndHospital,
+  type HealthServiceCode,
+} from "@/components/ward-management/tools/ward-catchment-resolver";
+import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import type { AccessPlaces } from "@/components/ward-management/ward-access-admin";
 import type { PlaceLookup } from "@/components/ward-management/ward-role-access";
 import { edHealthService, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+
+/** The catchment mapping's service code as the access scope names it. */
+const SERVICE_FOR_CODE: Record<HealthServiceCode, HealthService> = {
+  NMHS: "North Metro",
+  SMHS: "South Metro",
+  EMHS: "East Metro",
+  WACHS: "WACHS",
+};
+
+/** A team page's health service, read the way the Community index groups teams. Unknown team: none. */
+function teamService(teamSlug: string): HealthService | undefined {
+  const team = communityTeamById(teamSlug);
+  return team ? SERVICE_FOR_CODE[mapClinicToServiceAndHospital(team.name).code] : undefined;
+}
 
 export function wardPlaceLookup(units: readonly Unit[]): PlaceLookup {
   const byId = new Map(units.map((unit) => [unit.id, unit]));
@@ -21,6 +39,7 @@ export function wardPlaceLookup(units: readonly Unit[]): PlaceLookup {
     edSiteCode: (edId) => edById(edId)?.siteCode,
     edService: (edId) => edHealthService(edId),
     teamSlug: (teamName) => communityTeamSlug(teamName),
+    teamService,
     siteService: (siteCode) => siteByCode(siteCode)?.service,
   };
 }

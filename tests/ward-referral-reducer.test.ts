@@ -406,7 +406,7 @@ describe("ACCEPT_REFERRAL", () => {
     // comment says "a role, never a person", so the exact value is asserted, not merely its
     // presence. NOT coordinator-only since FD-25: the value follows the ACTING role, which the
     // ward-accepts test below is what actually proves.
-    expect(decided.destinations[0].decidedBy).toBe("Flow coordinator");
+    expect(decided.destinations[0].decidedBy).toBe("Bed coordinator");
     expect(decided.destinations[0].declineReason).toBeUndefined();
 
     // Spec D14, asserted explicitly rather than left implicit: acceptance never creates a
@@ -418,7 +418,7 @@ describe("ACCEPT_REFERRAL", () => {
 
   /**
    * FD-25 widened ACCEPT_REFERRAL to `["ward", "coordinator"]` while the reducer still wrote
-   * `decidedBy: "Flow coordinator"` as a LITERAL. A ward accepting would have been recorded as the
+   * `decidedBy: "Bed coordinator"` as a LITERAL. A ward accepting would have been recorded as the
    * coordinator having decided -- a false entry in the only field that names who answered, and
    * exactly the fact the override register exists to make accountable.
    *
@@ -455,7 +455,7 @@ describe("ACCEPT_REFERRAL", () => {
       referralId: created.id,
       unitId: "scgh-adult-open",
     });
-    expect(ward(byCoordinator, created.id).decidedBy).toBe("Flow coordinator");
+    expect(ward(byCoordinator, created.id).decidedBy).toBe("Bed coordinator");
   });
 
   it("refuses (visibly) a role that is neither ward nor coordinator, rather than silently doing nothing", () => {
@@ -776,7 +776,7 @@ describe("DECLINE_REFERRAL", () => {
     expect(decided.destinations[0].declineReason).toBe("no_suitable_bed");
     expect(decided.destinations[0].decidedAt).toBe(NOW);
     // H4 fix — same reasoning as ACCEPT_REFERRAL's own test above.
-    expect(decided.destinations[0].decidedBy).toBe("Flow coordinator");
+    expect(decided.destinations[0].decidedBy).toBe("Bed coordinator");
     expect(decided.destinations[0].acceptedUnitId).toBeUndefined();
   });
 

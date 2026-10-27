@@ -90,6 +90,7 @@ describe("bounded required Chromium setup", () => {
     expect(budgets).toEqual([120_000, 120_000, 120_000]);
     expect(clock).toBe(360_000);
   });
+  // Skipped on Windows: runBounded wraps the command in GNU coreutils `timeout`, which Windows does not provide.
   it.skipIf(process.platform === "win32")("terminates a deliberately stalled local command within its budget", () => {
     const started = Date.now();
     const result = runBounded(process.execPath, ["-e", "setInterval(() => {}, 1000)"], 100);

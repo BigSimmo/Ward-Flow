@@ -4,6 +4,7 @@
 import {
   type ModelClaim,
   WARD_MODEL,
+  WARD_MODEL_BED_RELEASE,
   WARD_MODEL_MOVEMENT_PARTS,
   WARD_ADMISSIONS,
   WARD_REDUCER,
@@ -49,7 +50,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-readiness-timing-absent"',
     claim: "Bed readiness is held on `BedRelease.preparing`, and it is a boolean.",
-    sourceFile: WARD_MODEL,
+    sourceFile: WARD_MODEL_BED_RELEASE,
     evidence: "preparing: boolean;",
     falsifiedBy: PREPARING_STOPS_BEING_A_BOOLEAN,
   },
@@ -95,7 +96,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
       "instant per act; after departure it holds the departure time and preparation keeps it. " +
       "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
       "admission in `stayBlockClearances` when no release is linked.",
-    sourceFile: WARD_MODEL,
+    sourceFile: WARD_MODEL_BED_RELEASE,
     evidence: BED_RELEASE_BODY,
     falsifiedBy: {
       change:

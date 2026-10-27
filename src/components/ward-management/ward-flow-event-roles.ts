@@ -526,7 +526,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
+  // WT-03 (Josh, 26 Oct 2026): the ward records the next form for a person admitted to its bed.
+  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

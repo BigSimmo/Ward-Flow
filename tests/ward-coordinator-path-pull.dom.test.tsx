@@ -63,7 +63,7 @@ describe("Pull the bed in one step", () => {
     current = undefined;
   });
 
-  it("asks only what is not recorded, starts the journey, then pulls the bed at the ward that accepted on Confirm pull", async () => {
+  it("asks only what is not recorded, then one tap starts the journey and pulls the bed at the ward that accepted", async () => {
     const { referral, unitId } = renderWithAcceptedReferral();
     const form = screen.getByTestId(`ward-pull-accepted-${referral.id}`);
     expect(form).toBeInTheDocument();
@@ -77,16 +77,7 @@ describe("Pull the bed in one step", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
     });
-    // The first tap starts the journey. The bed is kept only on a second tap, never by an effect.
-    const started = current!.movements.find((movement) => movement.referralId === referral.id);
-    expect(started?.stage).toBe("accepted_awaiting_bed");
-    const confirm = screen.getByTestId("ward-pull-accepted-confirm");
-    expect(confirm).toHaveTextContent("Confirm pull");
-    expect(confirm).not.toHaveAttribute("aria-disabled");
-    expect(screen.getByTestId("ward-pull-accepted-legal-status")).toBeDisabled();
-    await act(async () => {
-      fireEvent.click(confirm);
-    });
+    // WT-08: one tap starts the journey and keeps the bed. There is no second Confirm pull step.
     const journey = current!.movements.find((movement) => movement.referralId === referral.id);
     expect(screen.getByTestId("ward-pull-accepted-status")).toBeEmptyDOMElement();
     expect(current!.rejections.map((rejection) => rejection.reason)).toEqual([]);

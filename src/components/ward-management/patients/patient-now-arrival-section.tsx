@@ -15,6 +15,7 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import type { Dispatch, SetStateAction } from "react";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
 import type { PatientMode } from "./patient-mode";
 
 /** The values and handlers `PatientNowScreen` passes to its arrival-plan section. */
@@ -60,16 +61,18 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
           <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
             <div className={styles.pulledBannerHeader}>
               <div className={styles.pulledBadgeCluster}>
-                <span className={styles.pulledStatusBadge}>Bed Pulled &amp; Reserved</span>
+                <span className={styles.pulledStatusBadge}>Bed pulled</span>
                 <span className={styles.pulledWardTarget}>
-                  Accepting Ward: <strong>{acceptingWardName}</strong>
+                  Accepting ward: <strong>{acceptingWardName}</strong>
                 </span>
               </div>
               {hasArrivalPlan ? (
                 <span className={styles.pulledClockBadge}>
                   <Clock size={14} aria-hidden="true" />
                   <span>
-                    ETA: {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now + 120, now)} AWST
+                    {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
+                      ? `ETA: ${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST`
+                      : "ETA not recorded"}
                   </span>
                 </span>
               ) : null}
@@ -94,10 +97,12 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
               >
                 <AlertCircle size={18} className={styles.overdueIcon} aria-hidden="true" />
                 <div>
-                  <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
+                  <strong>Arrival overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
                   estimated arrival time (
-                  {formatInstantWithDay(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now, now)} AWST).
-                  Notification is not recorded here.
+                  {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
+                    ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST`
+                    : "not recorded"}
+                  ). Notification is not recorded here.
                 </div>
               </div>
             )}
@@ -171,7 +176,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                     <div key={form.id} className={styles.pulledFormChip}>
                       <span className={styles.formChipName}>{form.formName}</span>
                       <span className={styles.pulledFormChipMeta}>
-                        {form.fileName} · {clock(form.uploadedAt)} ({form.uploadedBy})
+                        {uploadedFileLabel(form)} · {clock(form.uploadedAt)} ({form.uploadedBy})
                       </span>
                     </div>
                   ))}

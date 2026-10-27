@@ -25,12 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]) {
-  const expected = Array.from({ length: 14 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 14 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
+  const expected = Array.from({ length: 15 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 15 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 14);
+    assert.equal(db.current(), 15);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -46,7 +46,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]) {
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 15, "5"]) {
+  for (const version of [0, 16, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -184,6 +184,21 @@ test("migration 13 only widens the record view screens, and its rollback keeps l
   assert.match(undo, /WHERE surface = 'referral'/);
   assert.match(undo, /CHECK \(surface IN \('patient', 'movement'\)\)/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 13;/);
+});
+
+test("migration 15 only widens the record view screens, and its rollback keeps logged list reads", async () => {
+  const sql = await readFile(new URL("./migrations/015-list-and-tv-views.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8");
+  const statements = sql.split("\n").filter((line) => line.trim() && !line.startsWith("--"));
+  assert.deepEqual(statements, [
+    "ALTER TABLE ward_flow.record_access DROP CONSTRAINT record_access_surface_check;",
+    "ALTER TABLE ward_flow.record_access ADD CONSTRAINT record_access_surface_check CHECK (surface IN ('patient', 'movement', 'referral', 'list', 'tv'));",
+    "INSERT INTO ward_flow.migrations(version) VALUES(15);",
+  ]);
+  assert.match(undo, /IS DISTINCT FROM 15/);
+  assert.match(undo, /WHERE surface IN \('list', 'tv'\)/);
+  assert.match(undo, /CHECK \(surface IN \('patient', 'movement', 'referral'\)\)/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 15;/);
 });
 
 test("migration 14 adds the archive table only, and its rollback puts the archived records back first", async () => {

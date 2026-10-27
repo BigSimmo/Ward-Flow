@@ -172,7 +172,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: dueP,
       time: formatInstantWithDay(now + due, now),
-      text: `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
+      text: `Form ${row.movement.legalForm.code} due as written, ${splitDuration(due)} left`,
       tone: dueTone(due, thresholds) ?? "warning",
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.

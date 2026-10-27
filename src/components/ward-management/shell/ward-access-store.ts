@@ -30,7 +30,7 @@ import {
 import type { BreakGlassGrant } from "@/components/ward-management/ward-access-scope";
 import { withCover } from "@/components/ward-management/ward-access-shell-rules";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
 
@@ -79,6 +79,8 @@ type Snapshot = {
   readonly covers: readonly CoverRecord[];
   /** The page a desk switch is leaving while the new desk's home loads (`markDeskSwitch`). */
   readonly switchFrom?: string;
+  /** The page an account's sign-in landed on, while it is still showing (`markSignInLanding`). */
+  readonly signInLanding?: string;
 };
 
 const EMPTY: Snapshot = {
@@ -253,6 +255,12 @@ export function useAccessShellRole(fallback: WardChromeRole): WardChromeRole {
   return access.role === "coordinator" ? fallback : chromeRoleForAccess(access);
 }
 
+/** The desk's name in the menus. The access admin borrows the executive chrome but is named for itself. */
+export function useDeskRoleLabel(role: WardChromeRole): string {
+  const access = useEffectiveWardAccess();
+  return access.role === "admin" ? ACCESS_ROLE_LABELS.admin : CHROME_ROLE_LABELS[role];
+}
+
 /**
  * Take a desk. A new person at the desk loses the last person's grants and session keys. In the
  * shared workspace (`fromServer`) the server's access already carries any cover, so the local
@@ -280,6 +288,16 @@ export function setWardAccess(access: WardAccess, { fromServer = false }: { from
  */
 export function markDeskSwitch(leaving?: string): void {
   emit({ ...snapshot, switchFrom: leaving });
+}
+
+/**
+ * #804, #797: a sign-in lands on whatever page the tab last showed, often another account's. When the
+ * server's desk arrives there, the page is marked, so a page closed to the new desk opens that desk's
+ * home instead of reading "Not part of your role". Cleared once the person moves on.
+ */
+export function markSignInLanding(path?: string): void {
+  if (snapshot.signInLanding === path) return;
+  emit({ ...snapshot, signInLanding: path });
 }
 
 /** The coordinator previews another role, read only, and can return in one tap (feature 4). */
@@ -386,6 +404,23 @@ export function breakGlass(input: {
   };
   emit({ ...snapshot, records: [...snapshot.records, record] });
   return record;
+}
+
+/**
+ * D-80 item 14: this tab's openings in the shape of the coordinator's review list, which also holds
+ * the server's openings and the demo's synthetic ones. Local demo only; never stored.
+ */
+export function breakGlassOpeningsForReview(records: readonly BreakGlassRecord[]) {
+  return records.map((record) => ({
+    key: `local-${record.id}-${Math.max(0, Math.round(record.openedAt))}`,
+    at: record.openedAt,
+    until: record.until,
+    record: record.patientId,
+    reason: record.reason,
+    desk: record.role,
+    place: record.placeLabel,
+    ...(record.otherText ? { otherText: record.otherText } : {}),
+  }));
 }
 
 /** The desk as it stands, outside React (tests and one-off reads). */

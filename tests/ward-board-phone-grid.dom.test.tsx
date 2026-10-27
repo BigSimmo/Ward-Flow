@@ -80,6 +80,21 @@ describe("phone bed grid", () => {
     expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
   });
 
+  it("opens a person's bed tall and an empty bed's two lines at their own height (WARD-16)", () => {
+    stubPhone(true);
+    renderBoard();
+    const heights = new Set<string | null>();
+    for (const tile of within(screen.getByTestId("ward-board-beds")).getAllByRole("button")) {
+      fireEvent.click(tile);
+      const sheet = screen.getByTestId("ward-board-detail-sheet");
+      const named = tile.querySelector('[data-testid$="-name"]') !== null;
+      if (named) expect(sheet).toHaveAttribute("data-height", "tall");
+      heights.add(sheet.getAttribute("data-height"));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Close bed record" }));
+    }
+    expect(heights).toEqual(new Set(["tall", "content"]));
+  });
+
   it("leaves the sheet open when Escape only dismisses a select inside it", () => {
     stubPhone(true);
     renderBoard();

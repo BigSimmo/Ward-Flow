@@ -10,7 +10,12 @@ import type {
 } from "@/components/ward-management/ward-change-reasons";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { LegalStatus, MovementStage, UrgencyLevel } from "@/components/ward-management/ward-model-vocabulary";
+import {
+  TRAVEL_MODES,
+  type LegalStatus,
+  type MovementStage,
+  type UrgencyLevel,
+} from "@/components/ward-management/ward-model-vocabulary";
 
 /**
  * A COORDINATOR OVERRIDE, kept rather than shown and discarded.
@@ -145,12 +150,14 @@ export type UrgencyChange = {
  * Two faults in one field. The screen stated who was collecting a patient and **nobody chose it**;
  * and a demonstration asserted an operational fact about a real body that has agreed to nothing.
  *
- * These three are PLACEHOLDERS in the `CM-8` sense — findable in one place, never presented as the
- * real set, and replaced wholesale on the day somebody supplies the actual providers. They are the
- * three the transport design names and no more: "and so on" in a spec is an invitation to invent,
- * and inventing a fourth provider is the same act as writing a real one in.
+ * WT-13 (Josh, 26 Oct 2026): the booking now offers the one travel list every screen shares,
+ * `TRAVEL_MODES`, which Josh chose by name. They are choices a booker makes, never seed data: no demo
+ * record says a named service accepted or collected anyone (`TR-D2` above still holds).
+ * `"Ambulance service"` is the old first choice. It is no longer offered, but a booking saved with it
+ * still loads and reads as written.
  */
-export const TRANSPORT_PROVIDERS = ["Ambulance service", "Patient transport service", "Ward escort"] as const;
+export const BOOKABLE_TRANSPORT_PROVIDERS = TRAVEL_MODES;
+export const TRANSPORT_PROVIDERS = [...TRAVEL_MODES, "Ambulance service"] as const;
 export type TransportProvider = (typeof TRANSPORT_PROVIDERS)[number];
 
 /**

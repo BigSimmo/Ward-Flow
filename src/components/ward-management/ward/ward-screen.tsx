@@ -7,7 +7,9 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  type Dispatch,
   type FormEvent,
+  type SetStateAction,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -17,6 +19,7 @@ import {
   useTransition,
 } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -51,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
+  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
   isOpen,
   isStoppedTransportAwaitingRelease,
@@ -88,16 +92,8 @@ import { roleLimitReason } from "@/components/ward-management/ward-role-permissi
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  buttonClass,
-  CheckingFoot,
-  durMinutes,
-  Menu,
-  StatusGlyph,
-  useIsPhone,
-  useOptionalToast,
-} from "@/components/wf";
-import { actionToastText, isWarningToast, type ActionToast } from "@/components/ward-management/ward-action-toast";
+import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -158,6 +154,11 @@ type WardScreenProps = {
  * render an explicit empty state. Command feedback waits for that command's confirmed outcome;
  * counters and patient lists continue to come from authoritative state.
  */
+
+type WardTab = "attn" | "board" | "coming" | "out" | "beds" | "return";
+const WARD_TABS: readonly WardTab[] = ["attn", "board", "coming", "out", "beds", "return"];
+const WARD_FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "discharges"];
+const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log", "stay"];
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
@@ -288,8 +289,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const dischargeCheckRef = useRef<WardDischargeCheck | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
-    departurePlanning ? "return" : "attn",
+  // H-0186: the chosen tab, flow list and shift view stay in the address, so a reload opens the same
+  // view. `?tab=board` from other screens' links is the same key.
+  const [activeTab, chooseActiveTab] = useAddressTab("tab", WARD_TABS, departurePlanning ? "return" : "attn");
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+  const setActiveTab = useCallback<Dispatch<SetStateAction<WardTab>>>(
+    (next) => chooseActiveTab(typeof next === "function" ? next(activeTabRef.current) : next),
+    [chooseActiveTab],
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
   // Ward Hub (9 Oct 2026): the hero pills, the Find box and the home panels share this state.
@@ -297,8 +306,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [bedFilter, setBedFilter] = useState<WardBedFilter>("all");
   const [bedQuery, setBedQuery] = useState("");
   const deferredBedQuery = useDeferredValue(bedQuery);
-  const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
-  const [shiftView, setShiftView] = useState<WardShiftView>("todo");
+  const [flowTab, setFlowTab] = useAddressTab<WardFlowTab>("flow", WARD_FLOW_TABS, "referrals");
+  const [shiftView, setShiftView] = useAddressTab<WardShiftView>("shift", WARD_SHIFT_VIEWS, "todo");
   const selectActiveTab = useCallback(
     (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => {
       startTransition(() => {
@@ -321,7 +330,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setFlowTab(next);
       });
     },
-    [startTransition],
+    [startTransition, setFlowTab],
   );
   const selectShiftView = useCallback(
     (next: WardShiftView) => {
@@ -329,16 +338,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setShiftView(next);
       });
     },
-    [startTransition],
+    [startTransition, setShiftView],
   );
   const router = useOptionalRouter();
   const searchParams = useOptionalSearchParams();
+  // A link from another screen asks for the board with `?tab=board`, the same key as the tab's own
+  // address state (H-0186). Followed when the request arrives, as before.
   const boardTabRequested = searchParams?.get("tab") === "board";
-  const [lastBoardTabRequest, setLastBoardTabRequest] = useState(false);
-  if (lastBoardTabRequest !== boardTabRequested) {
-    setLastBoardTabRequest(boardTabRequested);
+  useEffect(() => {
     if (boardTabRequested) setActiveTab("board");
-  }
+  }, [boardTabRequested, setActiveTab]);
   const bedParam = searchParams?.get("bed");
   const parseBed = (value: string | null | undefined) =>
     value !== null && value !== undefined && /^\d+$/.test(value) ? Number.parseInt(value, 10) : null;
@@ -450,7 +459,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       window.history.replaceState(state, "", url.toString());
     }
   }, [selectedBed, refusedBedParam]);
-  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
+  const [toastMessage, setToastMessage] = useWardPageToast();
   // Walk-through WT-10: a refusal or a step that did not go through shows as a warning.
   const warnToast = (text: string) => setToastMessage({ warning: text });
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -658,7 +667,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("hashchange", syncTabWithHash);
     };
-  }, []);
+  }, [setActiveTab]);
 
   const prevSelectedBedRef = useRef<number | null>(selectedBed);
   const bedDrawerSteppedRef = useRef(false);
@@ -1102,7 +1111,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) =>
         setToastMessage(
           wardCommandFailure(outcome) ??
-            `${morningRollupTimeLabel} Morning Bed Rollup confirmed: ${releasesCountedToday.length} discharges planned today.`,
+            `Morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
         ),
     );
   }
@@ -1349,7 +1358,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {
           prior: rejections.length,
           bed: bedNumber,
-          success: `Held bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+          success: `Pulled bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
         },
       );
     } else {
@@ -1641,7 +1650,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity & ${morningRollupTimeLabel} morning roll-up confirmed (${releasesCountedToday.length} discharges planned today).`,
+            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();
@@ -1657,7 +1666,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }),
           (rollupOutcome) => {
             const rollupFailure = wardCommandFailure(rollupOutcome);
-            if (rollupFailure) warnToast(`Capacity saved. Morning roll-up is not confirmed. ${rollupFailure}`);
+            if (rollupFailure) warnToast(`Capacity saved. Morning bed numbers are not confirmed. ${rollupFailure}`);
             else confirmed();
           },
         );
@@ -1700,7 +1709,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 handleConfirmBedsAndMorningRollup();
               }}
             >
-              Confirm beds &amp; morning roll-up ({morningRollupTimeLabel})
+              Confirm beds and morning bed numbers ({morningRollupTimeLabel})
             </button>
           ) : null}
           <button
@@ -1812,7 +1821,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   // L2 (site review, 12 Oct 2026): only the discharges the ward figures count for today, from the
-  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Discharges held up). A
+  // same `releaseBand` window as `capacityBreakdown` (Confirmed, Expected, Releases held up). A
   // release dated beyond today is not a decision for this shift, so it no longer inflates the
   // Decisions badge past the ward's own expected discharges.
   const departureDecisions = pendingBedReleases
@@ -2039,7 +2048,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
           {
             id: "held",
-            label: "Discharges held up",
+            label: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
             value: blockedReleases.length,
             tone: blockedReleases.length > 0 ? "danger" : undefined,
           },
@@ -2057,8 +2066,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   );
   const wardHeroFootAside = (
     <span>
-      {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"} {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-      {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+      {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
+      {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
+      {formatInstant(unit.allocatable.confirmedAt)} · {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
     </span>
   );
 
@@ -2205,6 +2215,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </li>
   );
 
+  // The service sentence and the referral inbox open the page on desktop. On a phone they sit
+  // under the hero and the view tabs, so the dark hero still joins the header.
+  const wardLead = (
+    <>
+      {service !== null && unitHealthService(unit) !== undefined ? (
+        <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
+          {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+        </p>
+      ) : null}
+
+      <WardReferralInbox unitId={unit.id} />
+    </>
+  );
+
   return (
     <div
       className={styles.screen}
@@ -2220,13 +2244,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
          *  hidden", S4) and is never itself narrowed by the chosen service — this states how the
          *  choice relates to it rather than changing anything below. `ownService` unresolved (no
          *  real seeded unit today) renders nothing rather than a sentence naming an unknown. */}
-        {service !== null && unitHealthService(unit) !== undefined ? (
-          <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-            {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
-          </p>
-        ) : null}
-
-        <WardReferralInbox unitId={unit.id} />
+        {isPhone ? null : wardLead}
         {phoneCardOpen ? null : (
           <WardScreenTopBar
             unit={unit}
@@ -2291,6 +2309,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             </ul>
           </nav>
         ) : null}
+        {isPhone ? wardLead : null}
 
         {(() => {
           // Top 25 item 1: shown only once the confirm was accepted, named by bed, never by person.
@@ -2513,17 +2532,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         ) : null}
 
-        {/* Action Toast (Owner Rule D4) */}
-        <div
-          className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`}
-          role="status"
-          aria-live="polite"
-          data-testid="ward-action-toast"
-          data-tone={isWarningToast(toastMessage) ? "warning" : undefined}
-        >
-          <StatusGlyph tone={isWarningToast(toastMessage) ? "warning" : "success"} size={10} />
-          <span>{toastMessage === null ? null : actionToastText(toastMessage)}</span>
-        </div>
+        <WardPageActionToast toast={toastMessage} onClose={() => setToastMessage(null)} />
         <WardPrototypeFooter
           testId="ward-unit-governance"
           note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}

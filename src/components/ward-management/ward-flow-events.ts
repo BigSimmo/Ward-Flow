@@ -9,7 +9,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
+import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -198,6 +198,8 @@ export type WardFlowEvent =
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */
       acceptedUnitId?: string;
+      /** WT-08: also pull the accepted ward's bed in the same tap. A refused pull starts nothing. */
+      pullBed?: boolean;
       actingUnitId?: string;
       /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.
@@ -2234,7 +2236,10 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       formName: string;
-      fileName: string;
+      /** The kind of file (H-0049). The file's name is never sent. */
+      fileType?: UploadedFileType;
+      /** Legacy events recorded before 26 Oct 2026 carry the file's name. It is read for its type and dropped. */
+      fileName?: string;
       sizeBytes?: number;
     }
   | {

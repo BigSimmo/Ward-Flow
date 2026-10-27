@@ -37,7 +37,7 @@ const DETAIL_TABS = [
   ["milestones", "Milestones"],
   ["barriers", "Barriers"],
   ["transport", "Transport"],
-  ["dossier", "Dossier"],
+  ["dossier", "Record"],
 ] as const;
 
 function tabPanelProps(
@@ -610,7 +610,7 @@ export function DischargeReleaseDetail({
             {
               label: "Release stage recorded",
               state: detailRelease.state === "expected" ? "pending" : "complete",
-              detail: `${detailRelease.state} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
+              detail: `${detailRelease.state.charAt(0).toUpperCase()}${detailRelease.state.slice(1)} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
             },
             // A4-23 (audit round 2): the phone shows the blocker panes together, so
             // the blocker is said once, in its own box below, not again as a milestone.
@@ -694,7 +694,7 @@ export function DischargeReleaseDetail({
           aria-expanded={phoneReleaseMore}
           onClick={() => setPhoneReleaseMore((open) => !open)}
         >
-          {phoneReleaseMore ? "Hide transport and dossier" : "Show transport and dossier"}
+          {phoneReleaseMore ? "Hide transport and record" : "Show transport and record"}
         </button>
       ) : null}
       <div {...releasePanelProps("transport")} className={releasePaneClass("transport")}>

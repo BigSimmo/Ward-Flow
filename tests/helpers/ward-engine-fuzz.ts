@@ -1590,7 +1590,7 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     0.5,
     movementEvent("UPLOAD_PATIENT_FORM", undefined, (_state, random) => ({
       formName: "Synthetic form",
-      fileName: "synthetic-form.pdf",
+      fileType: "PDF",
       sizeBytes: chance(random, 0.95) ? int(random, 1, 50_000) : 0,
     })),
   ],

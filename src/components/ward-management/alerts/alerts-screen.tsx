@@ -20,6 +20,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
@@ -140,7 +141,13 @@ export function AlertsScreen() {
 function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
-  const actionDisabledReason = access.role === "coordinator" ? undefined : "Only the coordinator can change alerts.";
+  const coordDesk = access.role === "coordinator";
+  const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
+  // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
+  const broadcastDisabledReason =
+    access.role === "coordinator" || access.role === "bed_manager"
+      ? undefined
+      : "Only the coordinator or a bed manager can broadcast.";
 
   const state = useWardFlowSelect(
     "movements",
@@ -417,14 +424,16 @@ function AlertsWorkspace() {
         admission,
         item.personId,
       );
-      const owner = effectiveOwner(item, inboxOwnership[item.id]);
+      const recorded = effectiveOwner(item, inboxOwnership[item.id]);
+      // #801: only the coordinator takes alerts, so other desks see its rows by its desk name, never "You".
+      const owner = recorded === COORDINATOR && !coordDesk ? CHROME_ROLE_LABELS.coordinator : recorded;
       return {
         item,
         movement,
         subject,
         group: alertGroupOf(item),
         owner,
-        mine: owner === COORDINATOR,
+        mine: coordDesk && recorded === COORDINATOR,
         raised: raisedAt(item, movement),
         seen: inboxAcknowledgements[item.id]?.at(-1),
         ownedSince: currentInboxOwner(inboxOwnership[item.id], item.since)?.at,
@@ -432,7 +441,7 @@ function AlertsWorkspace() {
         action: alertActionFor(item, subject),
       };
     },
-    [movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now],
+    [movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now, coordDesk],
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
@@ -1014,7 +1023,7 @@ function AlertsWorkspace() {
       owner,
       list,
       <GroupHead
-        label={ownerShort(owner) === "You" ? `You, ${owner}` : owner}
+        label={ownerShort(owner, coordDesk) === "You" ? `You, ${owner}` : owner}
         count={list.length}
         aside={`${actCount} act now`}
       />,
@@ -1167,6 +1176,7 @@ function AlertsWorkspace() {
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}
           openComposer={openComposer}
+          broadcastDisabledReason={broadcastDisabledReason}
           activeBroadcast={activeBroadcast}
           setTab={setTab}
           directiveTone={directiveTone}
@@ -1271,7 +1281,7 @@ function AlertsWorkspace() {
                           onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
                           count={allEntries.filter((entry) => entry.owner === owner).length}
                         >
-                          {ownerShort(owner)}
+                          {ownerShort(owner, coordDesk)}
                         </FilterChip>
                       ))}
                     </div>
@@ -1299,7 +1309,7 @@ function AlertsWorkspace() {
                         <div className={styles.phoneChips} role="group" aria-label="Highlight by owner">
                           {/* Yours is a hero figure on phone, so the chips are the other owners. */}
                           {owners
-                            .filter((owner) => ownerShort(owner) !== "You")
+                            .filter((owner) => ownerShort(owner, coordDesk) !== "You")
                             .map((owner) => (
                               <FilterChip
                                 key={owner}
@@ -1312,7 +1322,7 @@ function AlertsWorkspace() {
                                 <b className={styles.mono}>
                                   {allEntries.filter((entry) => entry.owner === owner).length}
                                 </b>
-                                {ownerShort(owner)}
+                                {ownerShort(owner, coordDesk)}
                               </FilterChip>
                             ))}
                         </div>

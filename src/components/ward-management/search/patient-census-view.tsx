@@ -209,7 +209,7 @@ export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]
   const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
   const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
   return (
-    <button type="button" className={styles.flow} onClick={onOpen} title="Opens History">
+    <button type="button" className={styles.flow} onClick={onOpen} title="Opens history">
       <span className={styles.flowLead}>Today</span>
       <span className={styles.flowPart}>
         <StatusGlyph tone="success" size={9} />
@@ -1192,6 +1192,9 @@ export function PhoneCensus(props: PhoneCensusProps) {
                           aria-expanded={props.expandedKey === row.key}
                           aria-haspopup="dialog"
                           data-testid={rowTestId(row)}
+                          /* Return to your place: Back focuses the row that was opened. The table
+                             row above carries the same `data-id` at wider widths. */
+                          data-id={row.key}
                           onClick={() => props.onExpand(row)}
                         >
                           <span className={styles.phoneTier}>

@@ -235,7 +235,7 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
 
       fireEvent.click(trigger);
 
-      const dialog = screen.getByRole("dialog", { name: /Verification/i });
+      const dialog = screen.getByRole("dialog", { name: /Paperwork checks/i });
       expect(dialog).toBeInTheDocument();
 
       // Initial focus inside modal
@@ -268,10 +268,10 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       }
 
       // Close modal
-      const closeBtn = within(dialog).getByRole("button", { name: /Close form verification dialog/i });
+      const closeBtn = within(dialog).getByRole("button", { name: /Close paperwork checks/i });
       fireEvent.click(closeBtn);
 
-      expect(screen.queryByRole("dialog", { name: /Verification/i })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: /Paperwork checks/i })).toBeNull();
       expect(document.activeElement).toBe(trigger);
     });
 
@@ -287,11 +287,11 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       trigger.focus();
       fireEvent.click(trigger);
 
-      expect(screen.getByRole("dialog", { name: /Verification/i })).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: /Paperwork checks/i })).toBeInTheDocument();
 
       fireEvent.keyDown(window, { key: "Escape" });
 
-      expect(screen.queryByRole("dialog", { name: /Verification/i })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: /Paperwork checks/i })).toBeNull();
       expect(document.activeElement).toBe(trigger);
     });
   });
