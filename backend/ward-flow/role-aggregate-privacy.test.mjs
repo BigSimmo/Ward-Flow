@@ -3,6 +3,7 @@ import test from "node:test";
 
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { withoutRecordDetail } from "./record-detail.mjs";
 
 const at = new Date("2026-10-25T04:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -100,7 +101,7 @@ test("snapshot factory adds a lifetime-bound sender sibling without changing its
       visibleUntil: null,
     },
   );
-  assert.deepEqual(snapshot.payload, engine.scopeWorld(world, access, at));
+  assert.deepEqual(snapshot.payload, withoutRecordDetail(engine.scopeWorld(world, access, at)));
   assert.equal(engine.validWorld(snapshot.payload), true);
   assert.equal(Object.hasOwn(snapshot.payload, "partialView"), false);
   assert.equal(Object.hasOwn(snapshot.payload.state, "partialView"), false);
@@ -119,7 +120,7 @@ test("a sender snapshot keeps the access expiry and the sender sibling together 
   assert.equal(Object.hasOwn(snapshot.partialView, "accessUntil"), false);
   assert.equal(Object.hasOwn(snapshot.partialView.view, "accessUntil"), false);
   assert.equal(JSON.stringify(snapshot.partialView).includes("rph-adult-secure"), false);
-  assert.deepEqual(snapshot.payload, engine.scopeWorld(world, access, at));
+  assert.deepEqual(snapshot.payload, withoutRecordDetail(engine.scopeWorld(world, access, at)));
 });
 
 test("engine summary uses the full world for queued and accepted destination progress without mutation", () => {

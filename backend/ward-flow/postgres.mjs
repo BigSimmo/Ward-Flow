@@ -21,6 +21,7 @@ import {
 } from "./config.mjs";
 import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
+import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -249,7 +250,8 @@ export function createWorkspaceStore(
   function scopedParts(row, at, view, senderView, stamp) {
     const build = () => ({
       partial: senderView ? engine.partialViewForWorld(row.payload, view.access, at, view.grants) : undefined,
-      payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
+      // H-0731: no desk is sent the detail no list shows; `logView` sends it for one opened record.
+      payload: withoutRecordDetail(view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload),
     });
     if (typeof stamp !== "string") return build();
     const now = engine.worldNow(row.payload, at);
@@ -2063,6 +2065,10 @@ export function createWorkspaceStore(
      * cannot write openings of records it never had, and one account logs at most
      * VIEW_RATE_LIMIT a minute. The table refuses every change and removal (migration 11), which
      * is why nothing goes in unchecked. Before 11 nothing is kept.
+     *
+     * H-0731: the reply then carries that patient's detail (`record-detail.mjs`), which no board
+     * holds, so a desk is only sent it for an opening the server has logged, now or in the last
+     * minute. Nothing is sent when the opening could not be logged.
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
@@ -2084,7 +2090,7 @@ export function createWorkspaceStore(
           forgetVersionOnMissing(error);
           throw error;
         });
-      if (recent[0]?.repeated || recent[0]?.limited) return { status: 200, body: { logged: false } };
+      if (recent[0]?.limited && !recent[0]?.repeated) return { status: 200, body: { logged: false } };
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
       const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
@@ -2097,6 +2103,16 @@ export function createWorkspaceStore(
               state.movements.some((movement) => movement.patientId === patientId)
             : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
+      // A movement page names its journey; the detail is its patient's.
+      const opened = state.patients.some((patient) => patient.id === patientId)
+        ? patientId
+        : state.movements.find((movement) => movement.id === patientId)?.patientId;
+      const patient = state.patients.find((candidate) => candidate.id === opened);
+      const sent = (logged) => ({
+        status: 200,
+        body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
+      });
+      if (recent[0]?.repeated) return sent(false);
       return transaction(async (client, loggedAt) => {
         // Serialize each account's check and insert. A separate lock statement gives the
         // following INSERT a fresh snapshot after an earlier opening commits.
@@ -2125,7 +2141,13 @@ export function createWorkspaceStore(
             forgetVersionOnMissing(error);
             throw error;
           });
-        return { status: 200, body: { logged: rowCount > 0 } };
+        // A repeat that committed meanwhile was logged within the minute too; the rate limit was not.
+        if (rowCount > 0) return sent(true);
+        const { rows: again } = await client.query(
+          "SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5",
+          [workspaceId, view.actorId, patientId, surface, new Date(loggedAt.getTime() - VIEW_REPEAT_MS)],
+        );
+        return again.length ? sent(false) : { status: 200, body: { logged: false } };
       });
     },
     /**

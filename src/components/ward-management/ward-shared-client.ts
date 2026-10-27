@@ -18,6 +18,7 @@ import {
 } from "./ward-shared-archive-delta";
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import { RecordDetailHold } from "./ward-shared-record-detail";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -502,10 +503,12 @@ export class SharedWorkspaceClient {
   private archiveEpoch = 0;
   /** The last snapshot's payload as the server sent it, before archived records were put back. */
   private rawPayload: SharedSnapshot["payload"] | null = null;
+  private recordDetail = new RecordDetailHold();
   private withArchive(
     payload: SharedSnapshot["payload"],
     accessContext: SharedSnapshot["accessContext"],
   ): SharedSnapshot["payload"] {
+    payload = this.recordDetail.apply(payload, accessContext);
     const archive = this.archive;
     if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
       return payload;
@@ -1302,15 +1305,20 @@ export class SharedWorkspaceClient {
     return value?.revoked === true;
   }
   /**
-   * Readiness review item 9: tells the server this desk opened a patient's record, on the patient
-   * or movement page or in a referral's full detail (D-80). The server keeps it in a log nobody can change. Best effort: a failure never
-   * stops the page, and the server ignores a repeat within a minute.
+   * Readiness review item 9: tells the server this desk opened a patient's record (patient, movement or referral page, D-80), for a
+   * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
    */
-  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<void> {
+  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
+    const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
     try {
-      await this.request("/v1/workspace/record-access", { patientId, surface });
+      const { response, value } = await this.request("/v1/workspace/record-access", { patientId, surface });
+      const held = this.view.snapshot;
+      if (!held || !this.rawPayload || !this.recordDetail.take(response.ok ? value : null, asked)) return false;
+      const payload = this.withArchive(this.rawPayload, held.accessContext);
+      this.publish({ snapshot: { ...held, payload: reuseUnchangedPayload(held.payload, payload) } });
+      return true;
     } catch {
-      // Logged on the next opening; the page itself is unaffected.
+      return false; // Logged on the next opening; the page itself is unaffected.
     }
   }
   /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */

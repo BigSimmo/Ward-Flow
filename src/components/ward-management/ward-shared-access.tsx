@@ -106,7 +106,7 @@ export type WardSharedConnection = SharedView & {
   /** The step-up sign-in with the account's own password. */
   reauthenticate?: (password: string) => Promise<void>;
   /** Tells the server this desk opened a patient's record. Best effort; nothing when not connected. */
-  logRecordView?: (patientId: string, surface: RecordViewSurface) => void;
+  logRecordView?: (patientId: string, surface: RecordViewSurface) => Promise<boolean> | void;
 };
 
 /**
@@ -221,9 +221,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
     enabled,
     pushApi,
     accessApi,
-    logRecordView: (patientId, surface) => {
-      void supabase.client.current?.logRecordView(patientId, surface);
-    },
+    logRecordView: (patientId, surface) => supabase.client.current?.logRecordView(patientId, surface),
     dispatch: (event) =>
       supabase.client.current?.dispatchConfirmed(event) ??
       Promise.resolve({
