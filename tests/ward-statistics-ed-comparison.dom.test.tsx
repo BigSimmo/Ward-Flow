@@ -13,9 +13,11 @@ vi.mock("next/link", () => ({
 
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
 import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
-import * as statisticsHero from "@/components/ward-management/statistics/statistics-hero";
 import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -67,6 +69,33 @@ function renderEd(movements: Movement[]) {
   return screen.getByTestId("ward-stat-ed-comparison");
 }
 
+/** Explicit released executive fixture: no operational provider is mounted for these cases. */
+function renderExecutiveEd(children: ReactNode, movements: Movement[]) {
+  const state = { ...SEED, movements };
+  const data = projectExecutiveReportingFoundation(
+    state,
+    { role: "executive", scope: { kind: "statewide" } },
+    {
+      now: NOW_ANCHOR,
+      dayZero: "2026-10-24T00:00:00.000Z",
+      startedAt: "2026-10-24T00:00:00.000Z",
+      places: wardPlaceLookup(state.units),
+    },
+  );
+  const binding = { actorId: "synthetic-ed-comparison", accessContext: "b".repeat(64), epoch: 0, revision: 1 };
+  render(
+    <ExecutiveStatisticsProvider
+      binding={binding}
+      snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+      now={150}
+      controls={{ executive: true, paused: false, togglePause: null }}
+    >
+      {children}
+    </ExecutiveStatisticsProvider>,
+  );
+  return data;
+}
+
 describe("comparison across departments", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -82,17 +111,25 @@ describe("comparison across departments", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "executive", scope: { kind: "statewide" } });
     });
-    renderEd(
+    const report = renderExecutiveEd(
+      <StatisticsEdScreen edId={DEPARTMENTS[0]!.id} />,
       Array.from({ length: 10 }, (_, index) =>
         specimen({
           id: `WF-population-${index}`,
+          openedAt: NOW_ANCHOR - 180,
           originEdId: DEPARTMENTS[0]!.id,
           leftDepartmentAt: undefined,
-          ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
+          ...(index === 9 ? { stage: "moving", leftDepartmentAt: NOW_ANCHOR - 15 } : {}),
         }),
       ),
     );
-    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("10");
+    // The complete report also protects this total. Never recreate the old exact ten
+    // from operational fixture rows when the shared release withheld it.
+    expect(report.emergencyDepartments.find((ed) => ed.id === DEPARTMENTS[0]!.id)?.onTheList).toEqual({
+      kind: "withheld",
+    });
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("not shown");
+    expect(screen.getByTestId("ward-stat-ed-on-the-list")).not.toHaveTextContent("10");
     expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent(
       "not shown still in ED · fewer than 5 in transit",
     );
@@ -112,7 +149,8 @@ describe("comparison across departments", () => {
         reader.onload = () => resolve(String(reader.result));
         reader.readAsText(exported!);
       });
-      expect(csv).toContain('"Open ED journeys","10"');
+      expect(csv).toContain('"Open ED journeys","not shown"');
+      expect(csv).not.toContain('"Open ED journeys","10"');
       expect(csv).toContain('"Still in ED","not shown"');
       expect(csv).toContain('"In transit or recorded departure","fewer than 5"');
     } finally {
@@ -126,28 +164,17 @@ describe("comparison across departments", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "executive", scope: { kind: "statewide" } });
     });
-    const originalLive = statisticsHero.useStatisticsLive;
-    vi.spyOn(statisticsHero, "useStatisticsLive").mockImplementation(() => {
-      const live = originalLive();
-      return {
-        ...live,
-        state: {
-          ...live.state,
-          movements: Array.from({ length: 10 }, (_, index) =>
-            specimen({
-              id: `WF-network-population-${index}`,
-              originEdId: DEPARTMENTS[0]!.id,
-              leftDepartmentAt: undefined,
-              ...(index === 9 ? { stage: "moving", leftDepartmentAt: 100 } : {}),
-            }),
-          ),
-        },
-      };
-    });
-    render(
-      <WardFlowProvider>
-        <StatisticsEdsIndexScreen />
-      </WardFlowProvider>,
+    renderExecutiveEd(
+      <StatisticsEdsIndexScreen />,
+      Array.from({ length: 10 }, (_, index) =>
+        specimen({
+          id: `WF-network-population-${index}`,
+          originEdId: DEPARTMENTS[0]!.id,
+          openedAt: NOW_ANCHOR - 180,
+          leftDepartmentAt: undefined,
+          ...(index === 9 ? { stage: "moving", leftDepartmentAt: NOW_ANCHOR - 15 } : {}),
+        }),
+      ),
     );
     expect(screen.getByTestId("ward-statistics-eds-population")).toHaveTextContent(
       "not shown still in ED · fewer than 5 in transit",
@@ -156,6 +183,12 @@ describe("comparison across departments", () => {
     expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
     expect(bands).toHaveTextContent("Open ED journeys");
     expect(bands).toHaveTextContent("The bands do not overlap: they add up to all open ED journeys.");
+    expect(screen.queryByTestId("ward-statistics-eds-swarm")).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByText(
+        "Counts only on this desk, so people are not listed.",
+      ),
+    ).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByRole("heading", {
         name: "Open ED journeys, by ED",
