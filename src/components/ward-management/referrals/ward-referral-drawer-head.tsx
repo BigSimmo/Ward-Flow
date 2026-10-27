@@ -3,7 +3,7 @@
 import { ChevronRight, Eye, Inbox, Send, X } from "lucide-react";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./ward-referral-drawer.module.css";
-import { StatusGlyph } from "@/components/wf";
+import { Select, StatusGlyph } from "@/components/wf";
 import { DESTINATIONS, sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -305,8 +305,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
           <span className={styles.inboxPickerLabel}>Ward</span>
           {/* Phone (Josh, 20 Oct 2026): a dropdown, as nine ward names do not fit one row. */}
           {isPhone ? (
-            <select
-              className={styles.fieldSelect}
+            <Select
               aria-label="Recipient ward"
               value={inboxWard?.unit.unitId}
               onChange={(event) => setInboxUnitId(event.target.value)}
@@ -316,7 +315,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
                   {ward.unit.name} · {ward.toDecide} to decide
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <div className={styles.headTabs} role="group" aria-label="Recipient ward">
               {inboxWards.map((ward) => (
