@@ -118,8 +118,11 @@ a.secondary:hover {
   border-top: 0;
 }
 
+/* A1K-06 (WCAG 2.5.8): at least 24 px tall, like the row links beside it. */
 .crossName {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 1.5rem;
   color: var(--wf-ink-1);
   font-weight: 500;
   text-decoration: none;
