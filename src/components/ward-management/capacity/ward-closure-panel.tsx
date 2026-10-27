@@ -7,10 +7,13 @@ import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/co
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useUndoableStep } from "../use-undoable-step";
 import type { Unit } from "../ward-model";
+import { sessionDraftKey } from "../ward-session-drafts";
 import {
+  WARD_CLOSURE_REASON_IDS,
   WARD_CLOSURE_REASONS,
   WARD_REOPEN_AFTER_HOURS,
   wardClosureReasonLabel,
@@ -42,6 +45,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   const [reopenAfter, setReopenAfter] = useState("");
   // DR-07 (design re-score, 24 Oct 2026): closing a ward asks once before it is recorded.
   const [confirming, setConfirming] = useState(false);
+  // B2a P021 (27 Oct 2026): reopening asks once too.
+  const [confirmingReopen, setConfirmingReopen] = useState(false);
   const reasonId = useId();
   const mayAct = actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === unit.id);
   const refusal = mayAct ? undefined : "Only this ward or the coordinator can close or reopen it.";
@@ -52,6 +57,42 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   // The live clock stamps the step; `now` may be a paused page clock, kept for display only.
   const at = useWardFlowClock();
   const { run } = useUndoableStep({ dispatch, rejections, now: at, routeRole: role });
+  // B2a P086: the chosen (never typed) reason and time are kept in the session draft store.
+  const world = useWardFlowSelect("scenario", "worldGeneration");
+  const [storageKey] = useState(() =>
+    sessionDraftKey(`${world.scenario}/${world.worldGeneration}`, "ward-closure", unit.id),
+  );
+  const { clearDraft } = useDirtyStateGuard({
+    storageKey,
+    isDirty: !unit.isClosed && (reason !== "" || reopenAfter !== ""),
+    value: JSON.stringify({ reason, reopenAfter }),
+    onRestore: (raw) => {
+      try {
+        const restored: unknown = JSON.parse(raw);
+        if (!restored || typeof restored !== "object" || !("reason" in restored) || !("reopenAfter" in restored))
+          return false;
+        const { reason: r, reopenAfter: h } = restored;
+        if (typeof r !== "string" || (r !== "" && !WARD_CLOSURE_REASON_IDS.includes(r))) return false;
+        if (typeof h !== "string" || (h !== "" && !WARD_REOPEN_AFTER_HOURS.some((hours) => String(hours) === h)))
+          return false;
+        setReason(r as WardClosureReason | "");
+        setReopenAfter(h);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  });
+  // B2a P001: the inputs clear only once the ward is seen closed, so a refused close keeps them.
+  const [seenClosed, setSeenClosed] = useState(unit.isClosed);
+  if (seenClosed !== unit.isClosed) {
+    setSeenClosed(unit.isClosed);
+    if (unit.isClosed) {
+      setReason("");
+      setReopenAfter("");
+      clearDraft();
+    }
+  }
 
   if (!unit.isClosed) {
     const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
@@ -134,8 +175,6 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
                 },
                 { success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.` },
               );
-              setReason("");
-              setReopenAfter("");
             },
           }}
           data-testid="ward-closure-confirm"
@@ -172,22 +211,39 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         aria-describedby={refusal ? `${reasonId}-reopen` : undefined}
         onClick={() => {
           if (refusal) return;
-          run(
-            {
-              type: "REOPEN_WARD_TO_ADMISSIONS",
-              role,
-              now: at,
-              unitId: unit.id,
-              ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-            },
-            { success: `${unit.name} reopened to admissions.` },
-          );
+          setConfirmingReopen(true);
         }}
         data-testid="ward-closure-reopen"
       >
         Reopen {unit.name} to admissions
       </Button>
       {refusal ? <DisabledReason id={`${reasonId}-reopen`}>{refusal}</DisabledReason> : null}
+      <Dialog
+        open={confirmingReopen}
+        onClose={() => setConfirmingReopen(false)}
+        size="sm"
+        title={`Reopen ${unit.name} to admissions?`}
+        description={`${unit.name} is offered for new patients again straight away.`}
+        secondary={[{ label: "Cancel", onAction: () => setConfirmingReopen(false) }]}
+        primary={{
+          label: `Reopen ${unit.name}`,
+          onAction: () => {
+            setConfirmingReopen(false);
+            if (refusal) return;
+            run(
+              {
+                type: "REOPEN_WARD_TO_ADMISSIONS",
+                role,
+                now: at,
+                unitId: unit.id,
+                ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+              },
+              { success: `${unit.name} reopened to admissions.` },
+            );
+          },
+        }}
+        data-testid="ward-closure-reopen-confirm"
+      />
     </section>
   );
 }
