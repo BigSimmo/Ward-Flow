@@ -1,3 +1,4 @@
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -8,6 +9,11 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+
+const flags = vi.hoisted(() => ({ helpAsk: false }));
+vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({
+  useWardFeatureFlag: (name: string) => (name === "help-ask" ? flags.helpAsk : false),
 }));
 
 import { WardHelpSearch } from "@/components/ward-management/help/ward-help-search";
@@ -47,6 +53,30 @@ describe("WardHelpSearch", () => {
     fireEvent.keyDown(input, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(screen.getByTestId("ward-help-search-field"));
+  });
+
+  it("joins the shared modal stack while open", () => {
+    openSearch();
+    expect(hasOpenSheet()).toBe(true);
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    expect(hasOpenSheet()).toBe(false);
+  });
+
+  it("renders the box outside the Help sheet so it stays centred", () => {
+    openSearch();
+    expect(screen.getByTestId("ward-help-search").parentElement?.parentElement).toBe(document.body);
+  });
+
+  it("offers Show me only when the help-ask flag is on", () => {
+    for (const on of [false, true]) {
+      flags.helpAsk = on;
+      const { unmount } = render(<WardHelpSearch role="coordinator" home="/ward-flow" />);
+      fireEvent.click(screen.getByTestId("ward-help-search-field"));
+      fireEvent.change(screen.getByRole("combobox"), { target: { value: "pull the bed" } });
+      expect(screen.queryAllByText("Show me").length > 0).toBe(on);
+      unmount();
+    }
+    flags.helpAsk = false;
   });
 
   it("never writes typed words to storage", () => {

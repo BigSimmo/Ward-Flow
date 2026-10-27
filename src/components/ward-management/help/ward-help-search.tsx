@@ -2,9 +2,12 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
 import { howToHref } from "./ward-help-ask";
 import { showWardHowTo } from "./ward-help-events";
@@ -35,6 +38,8 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  */
 export function WardHelpSearch({ role, home }: { role: WardTourRole; home: string | undefined }) {
   const id = useId();
+  // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
+  const showMeOn = useWardFeatureFlag("help-ask");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -50,9 +55,16 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
           ? suggested(role)
           : [];
 
+  const layer = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (open) input.current?.focus();
-  }, [open]);
+    if (!open) return;
+    // Join the shared modal stack so the Help sheet behind stops handling Escape and Tab.
+    const layerId = `ward-help-search-${id}`;
+    pushSheet(layerId, layer.current);
+    input.current?.focus();
+    return () => popSheet(layerId);
+  }, [open, id]);
 
   function close() {
     setOpen(false);
@@ -63,7 +75,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
 
   function act(result: HelpSearchResult) {
     const mine = !result.desks || result.desks.includes(role);
-    if (result.howToId && mine) {
+    if (showMeOn && result.howToId && mine) {
       close();
       showWardHowTo(result.howToId);
       return;
@@ -108,7 +120,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
-        {result.howToId && mine ? (
+        {showMeOn && result.howToId && mine ? (
           <button type="button" tabIndex={-1} className={styles.action} onClick={() => act(result)}>
             Show me
           </button>
@@ -151,63 +163,66 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
         <Search size={16} aria-hidden="true" />
         <span>Search Help: guides, screens, words, shortcuts…</span>
       </button>
-      {open ? (
-        <div className={styles.backdrop}>
-          <button type="button" aria-label="Close" tabIndex={-1} className={styles.scrim} onClick={close} />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Search Help"
-            className={styles.box}
-            data-testid="ward-help-search"
-          >
-            <div className={styles.inputRow}>
-              <Search size={18} aria-hidden="true" />
-              <input
-                ref={input}
-                type="search"
-                role="combobox"
-                aria-expanded={rows.length > 0}
-                aria-controls={`${id}-list`}
-                aria-activedescendant={rows.length ? `${id}-${active}` : undefined}
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div ref={layer} className={styles.backdrop}>
+              <button type="button" aria-label="Close" tabIndex={-1} className={styles.scrim} onClick={close} />
+              <div
+                role="dialog"
+                aria-modal="true"
                 aria-label="Search Help"
-                placeholder="Search Help: guides, screens, words, shortcuts…"
-                autoComplete="off"
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setActive(0);
-                }}
-                onKeyDown={onKey}
-                className={styles.input}
-              />
-            </div>
-            {answer.kind === "clinical" ? (
-              <div className={styles.notice} role="status" data-testid="ward-help-search-clinical">
-                <strong>This is a clinical question.</strong>
-                <p>{CLINICAL_REPLY}</p>
-              </div>
-            ) : (
-              <>
-                {answer.kind === "empty" ? <p className={styles.group}>Suggested for {roleLabel(role)}</p> : null}
-                {answer.kind === "none" ? (
-                  <div className={styles.notice} role="status" data-testid="ward-help-search-none">
-                    <strong>No Help topics match &ldquo;{query.trim()}&rdquo;.</strong>
-                    <p>Check the spelling, or try one of these closest topics.</p>
+                className={styles.box}
+                data-testid="ward-help-search"
+              >
+                <div className={styles.inputRow}>
+                  <Search size={18} aria-hidden="true" />
+                  <input
+                    ref={input}
+                    type="search"
+                    role="combobox"
+                    aria-expanded={rows.length > 0}
+                    aria-controls={`${id}-list`}
+                    aria-activedescendant={rows.length ? `${id}-${active}` : undefined}
+                    aria-label="Search Help"
+                    placeholder="Search Help: guides, screens, words, shortcuts…"
+                    autoComplete="off"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setActive(0);
+                    }}
+                    onKeyDown={onKey}
+                    className={styles.input}
+                  />
+                </div>
+                {answer.kind === "clinical" ? (
+                  <div className={styles.notice} role="status" data-testid="ward-help-search-clinical">
+                    <strong>This is a clinical question.</strong>
+                    <p>{CLINICAL_REPLY}</p>
                   </div>
-                ) : null}
-                <ul id={`${id}-list`} role="listbox" aria-label="Search Help" className={styles.list}>
-                  {answer.kind === "empty" ? rows.map(row) : groups(rows)}
-                </ul>
-              </>
-            )}
-            <p className={styles.footer}>
-              <span>↑ ↓ Move · Enter Open · Esc Close</span>
-              <span>Searches on this device only · nothing typed is saved</span>
-            </p>
-          </div>
-        </div>
-      ) : null}
+                ) : (
+                  <>
+                    {answer.kind === "empty" ? <p className={styles.group}>Suggested for {roleLabel(role)}</p> : null}
+                    {answer.kind === "none" ? (
+                      <div className={styles.notice} role="status" data-testid="ward-help-search-none">
+                        <strong>No Help topics match &ldquo;{query.trim()}&rdquo;.</strong>
+                        <p>Check the spelling, or try one of these closest topics.</p>
+                      </div>
+                    ) : null}
+                    <ul id={`${id}-list`} role="listbox" aria-label="Search Help" className={styles.list}>
+                      {answer.kind === "empty" ? rows.map(row) : groups(rows)}
+                    </ul>
+                  </>
+                )}
+                <p className={styles.footer}>
+                  <span>↑ ↓ Move · Enter Open · Esc Close</span>
+                  <span>Searches on this device only · nothing typed is saved</span>
+                </p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
