@@ -17,15 +17,13 @@ describe("browser targets (P147)", () => {
 
   it("targets exactly the ward browsers: Safari, Edge and Chrome", () => {
     const list = (pkg.browserslist as string[] | undefined) ?? [];
-    const families = new Set(
-      list.map((query) => /^last \d+ (\w+) versions$/i.exec(query)?.[1]?.toLowerCase() ?? query),
-    );
+    const families = new Set(list.map((query) => /^last 2 (\w+) versions$/i.exec(query)?.[1]?.toLowerCase() ?? query));
     expect([...families].sort()).toEqual(["chrome", "edge", "safari"]);
   });
 
   it("tracks current versions rather than a frozen floor", () => {
     const list = (pkg.browserslist as string[] | undefined) ?? [];
     for (const family of ["chrome", "edge", "safari"])
-      expect(list).toContainEqual(expect.stringMatching(new RegExp(`^last \\d+ ${family} versions$`, "i")));
+      expect(list.map((query) => query.toLowerCase())).toContain(`last 2 ${family} versions`);
   });
 });
