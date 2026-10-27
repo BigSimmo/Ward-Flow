@@ -1,4 +1,4 @@
-import { anySignal, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
+import { anySignal, onDeviceClock, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -825,7 +825,7 @@ export class SharedWorkspaceClient {
         ]),
       });
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
-      const value = await response.json().catch(() => null);
+      const value = onDeviceClock(await response.json().catch(() => null), Date.now());
       current();
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
@@ -1409,7 +1409,7 @@ export class SharedWorkspaceClient {
       actorId: input.actorId,
       role: input.role,
       scope: input.scope,
-      expiresAt: new Date(Date.now() + input.expiresInMinutes * 60_000).toISOString(),
+      expiresInMinutes: input.expiresInMinutes,
     });
   }
   /** Removes a role, or ends cover early (its giver may too). */
@@ -1423,7 +1423,7 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/decide", {
       requestId,
       decision,
-      expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
+      expiresInMinutes,
     });
   }
   /**

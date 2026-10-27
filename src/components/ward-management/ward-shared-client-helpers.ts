@@ -1,5 +1,7 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 
+export { onDeviceClock } from "./ward-shared-clock";
+
 /**
  * H-0304: `AbortSignal.any` is missing from older Safari (before 17.4), where it threw and every
  * shared request failed. This uses it when present, otherwise one controller that follows the
