@@ -1660,17 +1660,17 @@ describe("Task 5 — referral board ordering (referralQueueOrder, recentlyDecide
    * Decision D-32: urgency only breaks a tie. At an equal wait the more urgent tier goes first,
    * whichever order the two arrive in.
    */
-  it("breaks a tie at equal wait by urgency, most urgent first", () => {
+  it("breaks a tie at equal wait by id, not urgency (H-0330)", () => {
     const raisedAt = NOW_ANCHOR - 60;
-    const routine: Referral = { ...referrals[0], id: "RF-SYNTH-ROUTINE", urgency: 3, raisedAt };
-    const urgent: Referral = { ...referrals[0], id: "RF-SYNTH-URGENT", urgency: 1, raisedAt };
+    const routine: Referral = { ...referrals[0], id: "RF-SYNTH-A-ROUTINE", urgency: 3, raisedAt };
+    const urgent: Referral = { ...referrals[0], id: "RF-SYNTH-B-URGENT", urgency: 1, raisedAt };
     expect(referralQueueOrder([routine, urgent]).map((referral) => referral.id)).toEqual([
-      "RF-SYNTH-URGENT",
-      "RF-SYNTH-ROUTINE",
+      "RF-SYNTH-A-ROUTINE",
+      "RF-SYNTH-B-URGENT",
     ]);
     expect(referralQueueOrder([urgent, routine]).map((referral) => referral.id)).toEqual([
-      "RF-SYNTH-URGENT",
-      "RF-SYNTH-ROUTINE",
+      "RF-SYNTH-A-ROUTINE",
+      "RF-SYNTH-B-URGENT",
     ]);
   });
 

@@ -528,6 +528,7 @@ export function AddPatientForm() {
         givenName: answered.givenName,
         familyName: answered.familyName,
         dateOfBirth: answered.dateOfBirth,
+        demoToday,
         ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
       });
       const settle = (outcome: WardCommandOutcome | void) => {

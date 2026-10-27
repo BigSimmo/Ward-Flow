@@ -713,6 +713,7 @@ export function useWardReferralDrawerState({
     generation: worldGeneration,
     dispatch,
     now,
+    dayZero,
     role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
     registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
     requiresRegistrationScope: access.scope.kind === "ward",
