@@ -20,10 +20,13 @@ export function ForecastAlertsGroup({
   now,
   className,
   head,
+  readOnly = false,
 }: {
   now: Instant;
   className?: string;
   head: (count: number) => ReactNode;
+  /** A bed manager's view: the coordinator's lines, and no link to an ED screen they cannot open. */
+  readOnly?: boolean;
 }) {
   const alerts = useForecastAlerts(now);
   if (alerts.length === 0) return null;
@@ -32,10 +35,14 @@ export function ForecastAlertsGroup({
       {head(alerts.length)}
       <ul className={styles.alertList}>
         {alerts.map((alert) => (
-          <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} />
+          <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} readOnly={readOnly} />
         ))}
       </ul>
-      <p className={styles.alertCaption}>Forecast alerts are counts against your lines in Settings, Forecast alerts.</p>
+      <p className={styles.alertCaption}>
+        {readOnly
+          ? "Forecast alerts are counts against the coordinator's lines in Settings, Forecast alerts."
+          : "Forecast alerts are counts against your lines in Settings, Forecast alerts."}
+      </p>
     </section>
   );
 }
@@ -51,16 +58,18 @@ function bedsWord(count: number): string {
   return `${count} ${count === 1 ? "bed" : "beds"}`;
 }
 
-function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }) {
-  const row = (title: string, body: string, href: string, action: string) => (
+function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now: Instant; readOnly: boolean }) {
+  const row = (title: string, body: string, href: string | null, action: string) => (
     <li className={styles.alertRow} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
       <span>
         <span className={styles.alertTitle}>{title}</span>
         <span className={styles.sub}>{body}</span>
       </span>
-      <Link href={href} className={buttonClass({ variant: "sec", size: "sm" })}>
-        {action}
-      </Link>
+      {href === null ? null : (
+        <Link href={href} className={buttonClass({ variant: "sec", size: "sm" })}>
+          {action}
+        </Link>
+      )}
     </li>
   );
   switch (alert.kind) {
@@ -77,7 +86,7 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
         `${alert.people} ${alert.people === 1 ? "person passes" : "people pass"} the access target before a suitable bed is due, first in ${splitDuration(alert.firstMinutesLeft)}.${
           alert.alreadyOver > 0 ? ` ${alert.alreadyOver} already past it.` : ""
         } Alert set at ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} ${alert.threshold === 60 ? "hour" : "hours"}` : splitDuration(alert.threshold)} before the target (Settings).`,
-        edHref(alert.edId),
+        readOnly ? null : edHref(alert.edId),
         "See who",
       );
     case "forecast_worse":

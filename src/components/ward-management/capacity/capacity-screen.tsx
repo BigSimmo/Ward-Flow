@@ -572,21 +572,25 @@ export function CapacityScreen() {
   const railAside = (
     <aside className={styles.secondary} aria-label="Network summary and ward detail">
       {selectedRow ? (
-        <CapacityWardSidebar
-          key={`${worldGeneration}:${recordActorKey}:${selectedRow.unit.id}`}
-          row={selectedRow}
-          now={now}
-          onBack={clearWard}
-        />
+        <>
+          <CapacityWardSidebar
+            key={`${worldGeneration}:${recordActorKey}:${selectedRow.unit.id}`}
+            row={selectedRow}
+            now={now}
+            onBack={clearWard}
+          />
+          {/* Forecast integration (Josh, 27 Oct 2026): tomorrow stays on screen while a ward is open. */}
+          <BedsForecastPanel forecast={forecast} anchored={!isPhone} />
+        </>
       ) : (
         <>
           <div className={styles.networkHeaderRow}>
             <h2 ref={networkHeading} tabIndex={-1} className={styles.networkHeading}>
-              Network
+              Network and tomorrow
             </h2>
             <span className={styles.networkHeaderTime}>as at {formatInstantWithDay(now, now)}</span>
           </div>
-          <BedsForecastPanel forecast={forecast} />
+          <BedsForecastPanel forecast={forecast} anchored={!isPhone} />
           {isPhone ? null : <ForecastNetworkExtras now={now} />}
           {isPhone ? null : <ShiftConfirmationsCard units={scopedUnits} now={now} />}
           <CapacityTabs

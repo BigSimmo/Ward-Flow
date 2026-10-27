@@ -37,7 +37,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { asAtStamp } from "./ward-daily-sheet";
-import { StrandedPrompts } from "./stranded-prompts";
+import { StrandedPrompts, WardForecastShare } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
@@ -1245,6 +1245,7 @@ export function WardBoard({
           onOpen={setSelectedKey}
           bedReleases={liveBedReleases}
         />
+        <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={setSelectedKey} />
 
         {/*
          * NEEDS A LOOK THIS SHIFT — the owner asked for the board's exceptions condensed into one
