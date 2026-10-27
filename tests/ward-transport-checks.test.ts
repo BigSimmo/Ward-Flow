@@ -13,6 +13,7 @@ import {
   transportExceptionRecord,
   transportAnswersBlockedReason,
   transportAnswersMissing,
+  transportCadToFollow,
   transportExceptionText,
   transportStatusClashes,
 } from "@/components/ward-management/ward-transport-checks";
@@ -244,23 +245,26 @@ describe("transport booking answers still missing", () => {
     estimatedDay: "today",
   } as const;
 
-  it("lists every unanswered question in the popup's order, and the blocked sentence is unchanged", () => {
-    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "cad", "time", "escort", "legalStatus"]);
+  it("lists every unanswered question in the popup's order, and the CAD number is not one of them", () => {
+    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "time", "escort", "legalStatus"]);
     expect(transportAnswersBlockedReason(blank, NOW_ANCHOR)).toBe(
-      "Before booking, choose who is collecting the patient, enter the CAD transport number, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
+      "Before booking, choose who is collecting the patient, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
   });
 
-  it("names only the blank CAD number once the rest is answered, and never a typed placeholder", () => {
+  it("books a blank CAD number as CAD to follow, and still refuses a typed placeholder", () => {
     const answered = {
       ...blank,
-      provider: "St John WA" as never,
+      provider: "Ambulance (St John)" as never,
       escortRequired: true,
       transportLegalStatus: "involuntary" as never,
       estimatedTime: "13:30",
     };
-    expect(transportAnswersMissing(answered, NOW_ANCHOR)).toEqual(["cad"]);
-    expect(transportAnswersMissing({ ...answered, cadNumber: "TBC" }, NOW_ANCHOR)).toEqual([]);
-    expect(transportAnswersMissing({ ...answered, cadNumber: "CAD-2026-0001" }, NOW_ANCHOR)).toEqual([]);
+    expect(transportAnswersMissing(answered, NOW_ANCHOR)).toEqual([]);
+    expect(transportAnswersBlockedReason(answered, NOW_ANCHOR)).toBeUndefined();
+    expect(transportCadToFollow(answered)).toBe(true);
+    expect(transportCadToFollow({ ...answered, provider: "Ward escort" as never })).toBe(false);
+    expect(transportCadToFollow({ ...answered, cadNumber: "CAD-2026-0001" })).toBe(false);
+    expect(transportAnswersBlockedReason({ ...answered, cadNumber: "TBC" }, NOW_ANCHOR)).toMatch(/placeholder/);
   });
 });

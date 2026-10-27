@@ -191,3 +191,20 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     expect(within(drawer).queryByText(/not wired/iu)).toBeNull();
   });
 });
+
+// Finding 261 (Josh, 27 Oct 2026): the words sit beside the icon inside the one button.
+describe("ward role switcher with its words", () => {
+  it("shows 'Change view' inside the button, keeps the accessible name, and opens the drawer from the words", () => {
+    route.pathname = WARD_ROUTE;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRoleSwitcher withWords />
+      </WardFlowProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Change view" });
+    expect(trigger).toHaveTextContent("Change view");
+    expect(trigger).toHaveAttribute("data-words", "true");
+    fireEvent.click(within(trigger).getByText("Change view"));
+    expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
+  });
+});

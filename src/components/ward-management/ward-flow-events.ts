@@ -13,6 +13,7 @@ import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
+import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -469,14 +470,8 @@ export type WardFlowEvent =
     }
   | { type: "TRANSPORT_ACCEPTED"; role: WardFlowRole; now: Instant; movementId: string }
   | { type: "TRANSPORT_EN_ROUTE"; role: WardFlowRole; now: Instant; movementId: string }
-  | {
-      type: "PATIENT_COLLECTED";
-      role: WardFlowRole;
-      now: Instant;
-      movementId: string;
-      /** Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance), and why. */
-      exception?: TransportExceptionInput;
-    }
+  | PatientCollectedEvent
+  | RecordTransportCadEvent
   | {
       type: "PATIENT_ARRIVED";
       role: WardFlowRole;
@@ -664,6 +659,7 @@ export type WardFlowEvent =
       gender?: Gender;
       sex?: string;
       suburb?: string;
+      aboriginalOrTorresStraitIslanderStatus?: string; // Finding 51: from the listed answers
     }
   | {
       type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY";
@@ -857,7 +853,7 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       urgency: 1 | 2 | 3;
-      reason: UrgencyChangeReason;
+      reason?: UrgencyChangeReason; // Finding 15: recorded as `not_given` when absent
     }
   | {
       /**
@@ -997,7 +993,7 @@ export type WardFlowEvent =
        * never derived, and REQUIRED so there is no value to omit — the same discipline
        * `escortRequired` above already holds to. See each field's own doc comment on `TransportJob`
        * (`ward-model.ts`) for what it means and why it is optional THERE despite being required
-       * HERE.
+       * HERE. Blank is "CAD to follow" (27 Oct 2026); a typed placeholder is still refused.
        */
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;

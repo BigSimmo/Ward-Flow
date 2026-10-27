@@ -386,8 +386,6 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await overrideToggle.click();
     await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
-    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
-    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
     await shortlist.getByRole("button", { name: "Record override" }).click();
     await expect(shortlist).toContainText(`Parallel referral:`);
     await expectNoReloadSince(page, "referring to a ward");

@@ -133,9 +133,13 @@ describe("device copy of a session holding typed text", () => {
     const changed = structuredClone(before);
     const intake = changed.referrals.find((referral) => referral.id === event.referralId)!.intake!;
     const email = "typed-undo-contact-4bd1@example.invalid";
+    // Finding 44 (Josh, 27 Oct 2026): the email is no longer pattern checked, so the placeholder can
+    // stand in for it. The referrer's phone still is, so a typed phone makes the intake unholdable.
+    const phone = "Synthetic typed phone 4bd1";
     const chartText = "Synthetic uploaded chart marker-undo-4bd1";
     const chartBytes = Buffer.from(chartText);
     intake.referrer.email = email;
+    intake.referrer.phone = phone;
     intake.charts[0] = { ...intake.charts[0], sizeBytes: chartBytes.length, base64: chartBytes.toString("base64") };
     const next = wardFlowReducer(changed, event);
     expect(next.rejections).toEqual([]);
@@ -146,7 +150,7 @@ describe("device copy of a session holding typed text", () => {
     expect(copy!.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
     expect(decision.before.intake).toBeUndefined();
     expect(decision.after.intake).toBeUndefined();
-    for (const marker of [email, chartText, chartBytes.toString("base64"), ...fixture.markers])
+    for (const marker of [email, phone, chartText, chartBytes.toString("base64"), ...fixture.markers])
       expect(stored(copy)).not.toContain(marker);
     expect(isValidStoredWardFlowState(copy)).toBe(true);
     const undone = wardFlowReducer(copy!, {
@@ -157,6 +161,23 @@ describe("device copy of a session holding typed text", () => {
     });
     expect(undone.rejections).toEqual([]);
     expect(undone.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
+  });
+
+  it("keeps an intake whose only typed contact is the email, with the placeholder in its place", () => {
+    // Finding 44 (Josh, 27 Oct 2026): the referrer email never blocks, so it is not pattern checked.
+    const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.label === "ACCEPT_REFERRAL with reassessmentNote")!;
+    const { before, event } = fixture.build(seedWardFlowState());
+    if (event.type !== "ACCEPT_REFERRAL") throw new Error("Expected a referral acceptance fixture");
+    const changed = structuredClone(before);
+    const email = "typed-kept-contact-4bd2@example.invalid";
+    changed.referrals.find((referral) => referral.id === event.referralId)!.intake!.referrer.email = email;
+    const next = wardFlowReducer(changed, event);
+    const copy = redactTypedTextForDevice(next, typedTextOf(event) ?? [], worlds, true);
+    expect(copy).not.toBeNull();
+    const kept = copy!.referrals.find((referral) => referral.id === event.referralId)!.intake;
+    expect(kept?.referrer.email).toBe(TYPED_TEXT_NOT_KEPT);
+    expect(stored(copy)).not.toContain(email);
+    expect(isValidStoredWardFlowState(copy)).toBe(true);
   });
 
   it("does not keep another referral's seeded text in a decision snapshot", () => {

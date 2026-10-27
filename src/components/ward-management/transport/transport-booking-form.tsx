@@ -18,6 +18,8 @@
  * - A ward escort or a family member has no dispatch service, so no CAD number is asked for
  *   (form friction audit, 27 Oct 2026). Questions follow the call: who, CAD, when, then escort and
  *   legal status.
+ * - CAD to follow (Josh, 27 Oct 2026): a dispatched service books with the CAD box blank. The form
+ *   warns, and the job shows "CAD to follow" until the number is added. A placeholder is refused.
  * - A quoted time after the bed hold ends is warned, never blocked (audit A4-2).
  * - Deliberately not a `<form>`: Enter inside a field must not submit a half-answered booking.
  * - The host keeps the answers until its save is accepted, and passes `pending` and `error` back.
@@ -35,7 +37,7 @@ import {
   legalNowTransportStatus,
   transportAnswersBlockedReason,
   transportAnswersMissing,
-  transportNeedsCad,
+  transportCadToFollow,
   transportStatusClashes,
   type TransportAnswer,
   type TransportBookingAnswers,
@@ -84,6 +86,7 @@ export type TransportBookingPart =
   | "escort"
   | "cad"
   | "cad-problem"
+  | "cad-to-follow"
   | "legal"
   | "legal-reason"
   | "time"
@@ -107,6 +110,7 @@ const DEFAULT_PART_NAMES: Record<TransportBookingPart, string> = {
   escort: "transport-escort",
   cad: "transport-cad",
   "cad-problem": "transport-cad-problem",
+  "cad-to-follow": "transport-cad-to-follow",
   legal: "transport-legal",
   "legal-reason": "transport-legal-reason",
   time: "transport-estimated-time",
@@ -128,7 +132,6 @@ export function transportBookingTestId(ids: TransportBookingTestIds, part: Trans
 const ANSWER_PARTS: Record<TransportAnswer, [name: string, part: TransportBookingPart]> = {
   provider: ["provider", "provider"],
   escort: ["escort answer", "escort"],
-  cad: ["CAD number", "cad"],
   legalStatus: ["legal status", "legal"],
   time: ["estimated time", "time"],
 };
@@ -201,11 +204,10 @@ export function transportBookingSubmission(
 ): TransportBookingSubmission | undefined {
   const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = answers;
   const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
-  const needsCad = transportNeedsCad(answers);
   if (
     provider === undefined ||
     escortRequired === undefined ||
-    ((needsCad || cadNumber.trim().length > 0) && cadNumberProblem(cadNumber) !== undefined) ||
+    (cadNumber.trim().length > 0 && cadNumberProblem(cadNumber) !== undefined) ||
     transportLegalStatus === undefined ||
     estimatedAt === undefined
   )
@@ -327,7 +329,8 @@ export function TransportBookingForm({
         </Select>
       </Field>
 
-      {/* A ward escort or family has no dispatch call, so the box stays but never blocks Save. */}
+      {/* The box never blocks Save: a ward escort or family has no dispatch call, and a dispatched
+          service may give its number later (CAD to follow, Josh, 27 Oct 2026). */}
       <Field
         label="CAD transport number"
         id={did("cad")}
@@ -336,7 +339,6 @@ export function TransportBookingForm({
       >
         <TextInput
           data-testid={tid("cad")}
-          data-missing={missing.includes("cad") ? "" : undefined}
           className={styles.mono}
           autoComplete="off"
           placeholder="CAD number"
@@ -345,6 +347,12 @@ export function TransportBookingForm({
           onChange={(event) => set({ cadNumber: event.target.value })}
         />
       </Field>
+      {transportCadToFollow(answers) ? (
+        <p className={styles.warn} data-testid={tid("cad-to-follow")}>
+          <StatusGlyph tone="warning" size={9} />
+          No CAD number yet. The job will show CAD to follow until it is added.
+        </p>
+      ) : null}
 
       <div className={styles.timeRow}>
         <div className={styles.timeCol}>

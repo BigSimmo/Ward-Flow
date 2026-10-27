@@ -22,13 +22,19 @@ export const DISCHARGE_CRITERIA = [
   "Family, carer or support person told",
   "Transport home arranged",
   // D-63: from MP 0181/24 Safety Planning, and the WACHS guideline's observations on the day of discharge.
-  // A tick always falls inside the validity window (a review clears every tick), so "the last 24
-  // hours" stays true while the criteria are live. Change the wording if the validity changes.
+  // A tick always falls inside the validity window (a review clears this tick, finding 72), so "the
+  // last 24 hours" stays true while the criteria are live. Change the wording if the validity changes.
   "Safety plan reviewed with the patient",
   "Observations done and reviewed in the last 24 hours",
 ] as const;
 
 export type DischargeCriterion = (typeof DISCHARGE_CRITERIA)[number];
+
+/** Criteria true only since the latest review, so a review restarts their tick (finding 72). */
+const REVIEW_BOUND_CRITERIA: readonly DischargeCriterion[] = [
+  "Mental state unchanged since the psychiatrist's last review",
+  "Observations done and reviewed in the last 24 hours",
+];
 
 /** D-65: input bounds for typed patient specific criteria (WACHS form MR28 Part B), not clinical values. */
 export const PATIENT_SPECIFIC_CRITERIA_MAX = 3;
@@ -328,12 +334,19 @@ export function nextDischargeCriteria(
   }
 
   const metBefore = new Map(items.map((item) => [item.criterion, item.metAt]));
+  // Finding 72 (Josh, 27 Oct 2026): changing the list keeps the tick on every criterion that stays
+  // on it. A lapsed list starts again, and so do the two criteria worded against the review itself
+  // or the last 24 hours, so a kept tick never makes either untrue.
+  const lapsed =
+    current !== null && current !== undefined && now >= current.setAt + CLINICAL_VALUES.dischargeCriteriaValidity.value;
+  const keptOnReview = (criterion: string) =>
+    lapsed || REVIEW_BOUND_CRITERIA.some((bound) => bound === criterion) ? null : (metBefore.get(criterion) ?? null);
   return {
     record: {
       setAt: change.setByTreatingPsychiatrist || !current ? now : current.setAt,
       items: chosen.map((criterion): DischargeCriteriaItem => {
         const metAt = change.setByTreatingPsychiatrist
-          ? null
+          ? keptOnReview(criterion)
           : met.includes(criterion)
             ? (metBefore.get(criterion) ?? now)
             : null;

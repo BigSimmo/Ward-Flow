@@ -48,8 +48,9 @@ describe("transport without a dispatch service", () => {
     expect(next.movements.find((movement) => movement.id === "WF-004")!.transport!.cadNumber).toBeUndefined();
   });
 
-  it("still refuses a dispatched service with no CAD number, or a placeholder from anyone", () => {
-    expect(book("Ambulance (St John)", "").rejections[0]?.reason).toContain("cadNumber must be answered");
+  it("books a dispatched service with CAD to follow, and still refuses a placeholder from anyone", () => {
+    // CAD to follow (Josh, 27 Oct 2026): `tests/ward-transport-cad-to-follow.test.ts`.
+    expect(book("Ambulance (St John)", "").rejections).toEqual([]);
     expect(book("Family or carer", "TBC").rejections[0]?.reason).toContain("cadNumber refused");
   });
 });

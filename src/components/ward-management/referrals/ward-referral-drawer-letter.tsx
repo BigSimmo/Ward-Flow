@@ -12,7 +12,7 @@ import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 import { referralIsbarText, referralLetterText } from "./referral-letter";
 import { StatusGlyph } from "@/components/wf";
 import { countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
-import { transportLabel } from "./referral-submission";
+import { referralCatchmentWords, referrerContactWords, transportLabel } from "./referral-submission";
 import { CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -166,7 +166,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 <dl className={styles.factGrid} data-columns="2">
                   <div>
                     <dt>Catchment</dt>
-                    <dd>{sentDetails.catchment.teamName} · confirmed</dd>
+                    <dd>{referralCatchmentWords(sentDetails.catchment)}</dd>
                   </div>
                   <div>
                     <dt>Medical clearance</dt>
@@ -184,9 +184,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                   </div>
                   <div>
                     <dt>Contact</dt>
-                    <dd>
-                      {sentDetails.referrer.phone} · {sentDetails.referrer.email}
-                    </dd>
+                    <dd>{referrerContactWords(sentDetails.referrer)}</dd>
                   </div>
                   <div>
                     <dt>Location or service</dt>

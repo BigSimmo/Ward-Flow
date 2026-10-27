@@ -276,10 +276,7 @@ export function WardToolsSheet({
           <span>Viewing as</span>
           <strong>{roleLabel}</strong>
         </span>
-        <span className={styles.changeView}>
-          Change view
-          <WardRoleSwitcher />
-        </span>
+        <WardRoleSwitcher withWords />
       </div>
 
       {/* Change 8 (D-77, 21 Oct 2026): on a desktop Tools keeps working tools only. New referral,

@@ -69,8 +69,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * who reads the expiry off it. `coordinator` joins it here — unlike that event, this one is also
    * how a regional EXTENSION gets recorded, and item 5's own wording ("the clinician records the
    * extension") does not name the department alone the way Ruling 1 named `ed` for receipt.
+   * #219 (Josh, 27 Oct 2026): `ward` joins for the form it records under WT-03, with the same
+   * admitted-to-its-own-bed check as `RECORD_LEGAL_FORM_WRITTEN`.
    */
-  RECORD_LEGAL_FORM_EXPIRY: ["ed", "coordinator"],
+  RECORD_LEGAL_FORM_EXPIRY: ["ed", "coordinator", "ward"],
   // Opus review round 2, 17 September 2026 (P2). `ed` and `coordinator`, named explicitly in the
   // brief this event answers — both are places a gender_designation refusal is actually seen (the
   // ED intake screen and the coordinator's movement drawer), and both are roles that already
@@ -179,6 +181,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * ruling did not ask for the receiving ward to have this power at all).
    */
   STOP_TRANSPORT: ["coordinator", "ed"],
+  // CAD to follow (Josh, 27 Oct 2026): whoever may book adds the number later, and the transport
+  // officer, who often hears it first from the provider. A ward only for a journey it sent.
+  RECORD_TRANSPORT_CAD: ["ed", "ward", "community", "coordinator", "officer"],
   // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.
   RELEASE_HELD_BED: ["coordinator", "ward", "ed"],
   // Build plan item 29 (T4a) / R2-7: the transport officer or the coordinator.

@@ -12,6 +12,14 @@
 export const URGENCY_CHANGE_REASONS = ["reassessed", "new_information", "correcting_an_error"] as const;
 export type UrgencyChangeReason = (typeof URGENCY_CHANGE_REASONS)[number];
 
+/**
+ * Finding 15 (Josh, 27 Oct 2026): an urgency change no longer needs a reason. When none is chosen
+ * the change is recorded with this marker, so the history still says a reason was not given. It is
+ * never offered as a choice. A legal status change still needs its reason.
+ */
+export const URGENCY_REASON_NOT_GIVEN = "not_given" as const;
+export type RecordedUrgencyChangeReason = UrgencyChangeReason | typeof URGENCY_REASON_NOT_GIVEN;
+
 export const LEGAL_STATUS_CHANGE_REASONS = ["recorded_by_treating_team", "correcting_an_error"] as const;
 export type LegalStatusChangeReason = (typeof LEGAL_STATUS_CHANGE_REASONS)[number];
 
@@ -76,8 +84,13 @@ export const STOP_TRANSPORT_REASONS = [
   "The examination was revoked",
   "The referral was withdrawn",
   "The receiving ward can no longer take the patient",
+  // #154 (Josh, 27 Oct 2026). `STOP_TRANSPORT` tells a sending ward to record the absence.
+  "Absconded in transit, whereabouts unknown",
 ] as const;
 export type StopTransportReason = (typeof STOP_TRANSPORT_REASONS)[number];
+
+/** The stop reason for a patient who absconded on the way, which prompts an absent without leave record. */
+export const ABSCONDED_IN_TRANSIT: StopTransportReason = "Absconded in transit, whereabouts unknown";
 
 /**
  * Build plan item 31 (T3, 2026-09-17): once `STOP_TRANSPORT` stops a journey already under way,
@@ -639,7 +652,7 @@ export const URGENT_MARK_REASONS = [
 export type UrgentMarkReason = (typeof URGENT_MARK_REASONS)[number];
 
 export const changeReasonLabels: Record<
-  UrgencyChangeReason | LegalStatusChangeReason | ReleasePullReason | CancelTransportReason | UrgentMarkReason,
+  RecordedUrgencyChangeReason | LegalStatusChangeReason | ReleasePullReason | CancelTransportReason | UrgentMarkReason,
   string
 > = {
   // Placeholder labels for the placeholder list above — replaced together, never separately.
@@ -656,6 +669,7 @@ export const changeReasonLabels: Record<
   reassessed: "Reassessed",
   new_information: "New information",
   correcting_an_error: "Correcting an error",
+  not_given: "No reason given",
   recorded_by_treating_team: "Recorded by treating team",
   // These three labels deliberately avoid the word "patient" even though the underlying reason
   // VALUE (fixed by the product brief, never renamed) carries it — `tests/ward-change-reasons.test.ts`

@@ -251,6 +251,8 @@ function TransportForm({ save }: { save: () => void }) {
     displayProvider: "Not recorded",
     displayName: "Synthetic patient",
     gate,
+    routeRole: "officer",
+    transportActingUnitId: undefined,
     isTransportBooked: false,
     liveMovement,
     mode: "held",
