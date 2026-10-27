@@ -150,6 +150,61 @@ describe("a link to the referral route opens the slide-out in place", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("puts the referral route in the address bar on an in-app click, and Back restores the page (P150)", async () => {
+    window.history.replaceState(null, "", "/ward-flow/patients");
+    renderBarWith(<a href="/ward-flow/referrals/new?refer=community">Refer</a>);
+
+    fireEvent.click(screen.getByRole("link", { name: "Refer" }));
+    await screen.findByTestId("ward-bar-referral-sheet");
+    expect(window.location.pathname + window.location.search).toBe("/ward-flow/referrals/new?refer=community");
+    expect(window.history.state?.wardDrawer).toBe("referral");
+
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {
+      window.history.replaceState(null, "", "/ward-flow/patients");
+      fireEvent.popState(window, { state: null });
+    });
+    try {
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull());
+      expect(back).toHaveBeenCalledTimes(1);
+      expect(window.location.pathname).toBe("/ward-flow/patients");
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      back.mockRestore();
+    }
+  });
+
+  it("opens the slide-out again when Forward returns to its route after Back (P150)", async () => {
+    window.history.replaceState(null, "", "/ward-flow/patients");
+    const tree = () => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardLiveRegion />
+        <WardBar primaryAction={{ kind: "none" }} />
+        <a href="/ward-flow/referrals/new?refer=community">Refer</a>
+      </WardFlowProvider>
+    );
+    const view = render(tree());
+    fireEvent.click(screen.getByRole("link", { name: "Refer" }));
+    await screen.findByTestId("ward-bar-referral-sheet");
+
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {
+      window.history.replaceState(null, "", "/ward-flow/patients");
+      fireEvent.popState(window, { state: null });
+    });
+    try {
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull());
+    } finally {
+      back.mockRestore();
+    }
+
+    // Forward: the address bar and the router's path are back on the slide-out route.
+    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=community");
+    route.pathname = "/ward-flow/referrals/new";
+    view.rerender(tree());
+    expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
+  });
+
   it("leaves a modified click (new tab) and every other link alone", () => {
     renderBarWith(
       <>

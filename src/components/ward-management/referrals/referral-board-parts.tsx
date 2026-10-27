@@ -367,7 +367,7 @@ export function BedsReady({ summary, compact = false }: { summary: BedsReadySumm
   return (
     <div className={cx(styles.beds, compact && styles.bedsCompact)} data-testid="ward-referral-beds-ready">
       <div className={styles.bandHead}>
-        <span className={styles.bandEyebrow}>Beds ready statewide</span>
+        <span className={styles.bandEyebrow}>Beds ready statewide (your desk&apos;s admissions): {summary.total}</span>
         {summary.preparing > 0 ? (
           <span className={styles.bandKey} data-testid="ward-referral-beds-preparing">
             <span className={styles.mono}>{summary.preparing}</span> still being made ready
@@ -380,15 +380,20 @@ export function BedsReady({ summary, compact = false }: { summary: BedsReadySumm
         ) : null}
       </div>
       <div className={styles.bedCells}>
+        {/* P101 (audit 27 Oct 2026): the cohort cells add up to the total; locked is a part of them. */}
         {summary.cells.map((cell) => (
           <Link
             key={cell.label}
             href={REFERRAL_BEDS_HREF}
-            className={styles.bedCell}
-            aria-label={`${cell.value} ${cell.label.toLowerCase()} beds ready. Open Places`}
+            className={cx(styles.bedCell, cell.label === "Locked" && styles.bedCellPart)}
+            aria-label={
+              cell.label === "Locked"
+                ? `${cell.value} of these beds are locked`
+                : `${cell.value} ${cell.label.toLowerCase()} beds ready. Open Places`
+            }
           >
-            <b>{cell.value}</b>
-            <span>{cell.label}</span>
+            {cell.label === "Locked" ? <span>of which </span> : null}
+            <b>{cell.value}</b> <span>{cell.label === "Locked" ? "locked" : cell.label}</span>
           </Link>
         ))}
       </div>

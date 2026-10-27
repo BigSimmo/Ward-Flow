@@ -2022,6 +2022,11 @@ button.gLaneL:hover {
     display: block !important;
   }
 
+  /* The Legal column's form chips are tooltip buttons; keep their text on paper. */
+  .legalChip {
+    display: inline-flex !important;
+  }
+
   .side {
     position: static;
   }
@@ -2057,7 +2062,8 @@ button.gLaneL:hover {
 
 /* ---------- phone hero (v10 Delays): three figures, no Checking foot ---------- */
 @media (max-width: 48rem) {
-  .stats > :nth-child(n + 4) {
+  /* The in-transit note (P098) sits between the figures, so counting children would hide Form due. */
+  .stats > .footNote {
     display: none;
   }
 
@@ -2754,6 +2760,13 @@ button.gLaneL:hover {
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
+}
+
+/* P197: the chip is a button so a keyboard or a tap can open its tip; it keeps the chip's look. */
+button.legalChip {
+  font-family: inherit;
+  line-height: inherit;
+  cursor: help;
 }
 
 .legalLeft {

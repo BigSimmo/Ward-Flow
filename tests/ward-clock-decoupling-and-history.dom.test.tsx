@@ -71,10 +71,10 @@ describe("Issue 2: coherent clock across board and event consumers", () => {
     expect(screen.getByTestId("clock-consumer")).toHaveTextContent("642");
     expect(screen.getByTestId("flow-consumer")).toHaveTextContent("642");
 
-    // Advance by 30 seconds
+    // Advance to the next whole minute (P166: the clock ticks once a minute)
     vi.mocked(absoluteWallClockMinutes).mockImplementation(() => mountAbsolute + 1);
     act(() => {
-      vi.advanceTimersByTime(30_000);
+      vi.advanceTimersByTime(60_000);
     });
 
     expect(screen.getByTestId("flow-consumer")).toHaveTextContent("643");

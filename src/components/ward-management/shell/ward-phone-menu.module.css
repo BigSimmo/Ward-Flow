@@ -109,11 +109,26 @@
 }
 
 /* ── body: search, then sections of rows ───────────────────────────────────────────────── */
+/* P108 (Josh, 27 Oct 2026, option A): a soft fade at the bottom edge while more of the list is
+ * below, no text. The fade is fixed to the scroller's bottom (scroll); a patch of the sheet's own
+ * surface rides at the end of the content (local) and covers it once the end is reached. */
 .body {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 14px 16px 44px;
+  background-color: var(--wf-surface-2);
+  background-image:
+    linear-gradient(var(--wf-surface-2), var(--wf-surface-2)),
+    linear-gradient(to top, color-mix(in srgb, var(--wf-ink-1) 16%, transparent), transparent);
+  background-repeat: no-repeat;
+  background-position:
+    bottom center,
+    bottom center;
+  background-size:
+    100% 32px,
+    100% 32px;
+  background-attachment: local, scroll;
 }
 
 .search {

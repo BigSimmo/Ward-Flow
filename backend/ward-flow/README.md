@@ -159,8 +159,8 @@ These source files do not establish a current hosted connection or deployment.
     revision at which its content last changed. Existing workspaces are moved across in the same
     transaction, so either every record moves or nothing changes. A save writes only the rows it
     changed. A save sent against an older revision still applies when nobody else has changed a
-    record it changes or names since then; otherwise it is refused (409, "Someone else changed this
-    record first"). Before 10, any change refuses every save made against an older revision.
+    record it changes or names since then; otherwise it is refused (409, "Another desk changed this
+    {record type} first"). Before 10, any change refuses every save made against an older revision.
     `infra/rollback-010-workspace-records.sql` puts every record back in the workspace row and takes
     a database back to 9. Deploy the backend first: one that only knows 9 refuses a database at 10.
     From 25 Oct 2026 (limits audit) the server keeps the records it last read or saved. When the

@@ -308,8 +308,46 @@ export function coveredRecords({ core, before, after, event, visible = null }) {
  * never reaches past `priorRevision`, and never applies to a field kept whole.
  * @param {{ stored: StoredRow[], core: any, before: any, after: any, event: unknown, expectedRevision: number, priorRevision: number, seen?: Record<string, number> | null }} options
  */
-export function conflicts({ stored, core, before, after, event, expectedRevision, priorRevision, seen = null }) {
-  if (expectedRevision >= priorRevision) return false;
+export function conflicts(options) {
+  return conflictingCollection(options) !== null;
+}
+
+/** P058: the words a conflict may name for the record it clashed on; anything else is a "record". */
+const RECORD_TYPES = {
+  movements: "movement",
+  referrals: "referral",
+  broadcastAlerts: "alert",
+  dischargeRevisions: "discharge",
+  patients: "stay",
+  admissions: "stay",
+  plannedAdmissions: "stay",
+  bedReleases: "bed",
+  leaveBeds: "bed",
+};
+/** @param {string | null} collection */
+export const conflictRecordType = (collection) => (collection && RECORD_TYPES[collection]) || "record";
+
+/** The 409 sentence for a clash: the record type and the desk only, never a patient or record id. */
+export const staleReason = (collection) =>
+  `Another desk changed this ${conflictRecordType(collection)} first. Review the latest board before trying again.`;
+
+/**
+ * As `conflicts`, but names the collection of the first record that clashed: "" for a clash on a
+ * field kept whole, `null` for no clash.
+ * @param {{ stored: StoredRow[], core: any, before: any, after: any, event: unknown, expectedRevision: number, priorRevision: number, seen?: Record<string, number> | null }} options
+ * @returns {string | null}
+ */
+export function conflictingCollection({
+  stored,
+  core,
+  before,
+  after,
+  event,
+  expectedRevision,
+  priorRevision,
+  seen = null,
+}) {
+  if (expectedRevision >= priorRevision) return null;
   const revisions = new Map([...storedParts(stored)].map(([key, row]) => [key, Number(row.revision)]));
   const whole = wholeFields(core);
   const revisionOf = (key, part) => (whole.has(part.collection) ? priorRevision : (revisions.get(key) ?? 0));
@@ -320,15 +358,15 @@ export function conflicts({ stored, core, before, after, event, expectedRevision
       : expectedRevision;
   };
   for (const [key, part] of commandRecords(before, after, event))
-    if (revisionOf(key, part) > checkedFrom(key, part)) return true;
+    if (revisionOf(key, part) > checkedFrom(key, part)) return part.collection;
   const scalarRevision = (field) => Number(core[REVISIONS]?.[field] ?? priorRevision);
-  if (scalarRevision("worldGeneration") > expectedRevision) return true;
+  if (scalarRevision("worldGeneration") > expectedRevision) return "";
   for (const field of scalarFields(core))
     if (
       !field.endsWith("Sequence") &&
       !same(before.state[field], after.state[field]) &&
       scalarRevision(field) > expectedRevision
     )
-      return true;
-  return false;
+      return field;
+  return null;
 }

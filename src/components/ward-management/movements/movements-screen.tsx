@@ -13,6 +13,7 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { WardGroupHeading, WardRecordList } from "@/components/ward-management/ward-record-row";
+import { isTierOneOpen } from "@/components/ward-management/ward-shared-figures";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
@@ -375,7 +376,7 @@ export function MovementsScreen() {
     () => new Set(corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId]))).size,
     [corridors],
   );
-  const tierOneOpen = openMovements.filter((movement) => movement.urgency === 1);
+  const tierOneOpen = openMovements.filter(isTierOneOpen);
   const attentionCore = byLongestWait(tierOneOpen, now, thresholds).slice(0, 3);
   /**
    * R2 item 3 (P2): flagged-urgent (or otherwise urgent per the widened service-safety definition)
@@ -909,7 +910,7 @@ export function MovementsScreen() {
               <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
               {attentionCore.length > 0 ? (
                 <span className={styles.needsYouMeta}>
-                  {attentionCore.length} of {tierOneOpen.length} Tier 1
+                  {attentionCore.length} of {tierOneOpen.length} Tier 1 open journeys
                 </span>
               ) : null}
               {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}

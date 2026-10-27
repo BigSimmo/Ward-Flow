@@ -44,7 +44,7 @@ const QUESTIONS: readonly QuestionDefinition[] = [
     id: "wait",
     heading: "No bed yet",
     phrases: /^(?:no bed(?: yet)?|unplaced|waiting for (?:a )?beds?|without (?:a )?bed|need(?:s|ing)? (?:a )?bed)$/,
-    test: (row) => row.group === "wait",
+    test: (row) => row.group === "ask" || row.group === "wait",
   },
   {
     id: "found",

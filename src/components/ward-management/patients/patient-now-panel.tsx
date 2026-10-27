@@ -56,7 +56,7 @@ export type PatientNowPanelProps = {
   phoneMovement: boolean;
   phoneStatusFoot: string | undefined;
   record: PatientNowRecord;
-  recordLeave: (expectedReturn: number, kind: LeaveKind) => void;
+  recordLeave: (expectedReturn: number, kind: LeaveKind, psychiatristAuthorised?: boolean) => void;
   recordReturn: () => void;
   resolved: ResolvedPatientNow;
   saveDischarge: (expectedDischargeAt: number) => void;

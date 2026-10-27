@@ -75,7 +75,8 @@ export function PatientWardChangeCard({
   dayZero: Date;
   form: WardChangeForm;
   onFormChange: (form: WardChangeForm) => void;
-  onRecordLeave: (expectedReturn: Instant, kind: LeaveKind) => void;
+  /** `psychiatristAuthorised` is the tick's answer, given only when the person is on an order (#101). */
+  onRecordLeave: (expectedReturn: Instant, kind: LeaveKind, psychiatristAuthorised?: boolean) => void;
   onGoneToEd: () => void;
   onSaveDischarge: (expectedDischargeAt: Instant) => void;
   /** The engine's reason when it refused the last change made here. */
@@ -95,7 +96,8 @@ export function PatientWardChangeCard({
   const [day, setDay] = useState(0);
   const [kind, setKind] = useState<LeaveKind>("off_ward");
   // #101 (Josh, 27 Oct 2026): for a patient on an order, the ward ticks that the treating
-  // psychiatrist authorised the leave. Unticked is a warning, never a block. Opens unticked.
+  // psychiatrist authorised the leave. Unticked is a warning, never a block. Opens unticked, and the
+  // answer is saved on the leave.
   const [authorised, setAuthorised] = useState(false);
   /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
    * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
@@ -177,7 +179,7 @@ export function PatientWardChangeCard({
       onSubmit={(event) => {
         event.preventDefault();
         if (!future || parsed === undefined) return;
-        if (form === "leave") onRecordLeave(parsed, kind);
+        if (form === "leave") onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
         else onSaveDischarge(parsed);
         setTime("");
       }}
