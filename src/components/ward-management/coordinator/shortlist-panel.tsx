@@ -100,6 +100,7 @@ import {
 } from "@/components/ward-management/reference/ward-reference-distances";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 
 import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
@@ -113,8 +114,10 @@ import {
   Fact,
   focusFirstCandidate,
   GATE_LABELS,
+  GLOSSARY_LINK_TEXT,
   InlineFact,
   LEGAL_STATUS_OPTIONS,
+  PULLED_EXPLANATION,
   URGENCY_OPTIONS,
 } from "./shortlist-panel-parts";
 
@@ -1756,6 +1759,18 @@ export function ShortlistPanel({
                   {REFERENCE_DISTANCE_CAVEAT}
                 </p>
               ) : null}
+
+              {/* P125 (audit 27 Oct 2026): "Pulled" in each ward's bed line is the D-81 word and stays;
+            this says once what it means, as text, and opens the Help glossary for the rest. */}
+              <p
+                className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
+                data-testid="ward-shortlist-pulled-note"
+              >
+                {PULLED_EXPLANATION}{" "}
+                <Button variant="ghost" size="sm" onClick={() => openWardHelp("glossary")}>
+                  {GLOSSARY_LINK_TEXT}
+                </Button>
+              </p>
 
               {/* ⚠️ A DISCLOSURE, NOT A FILTER. These wards fail a gate no recorded reason can buy, so
             there is no choice behind this toggle. The count is stated while collapsed and what is
