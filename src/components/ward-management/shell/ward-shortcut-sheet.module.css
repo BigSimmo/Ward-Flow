@@ -1,0 +1,36 @@
+.keys {
+  display: grid;
+  margin: 0;
+}
+
+.keys > div + div {
+  border-top: 1px solid var(--wf-line);
+}
+
+.key {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  padding: 8px var(--wf-s-3);
+}
+
+.key dt,
+.key dd {
+  margin: 0;
+}
+
+.key dd {
+  color: var(--wf-ink-2);
+}
+
+.key kbd {
+  display: inline-grid;
+  place-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}

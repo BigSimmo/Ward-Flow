@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { closeWardDrawer } from "./ward-drawer-bus";
+import { WardShortcutKey } from "./ward-shortcut-key";
 import { isTypingTarget, openDrawerForShortcut, useWardDocumentPreferences } from "./ward-rail-preferences";
 // The rail's styles stay in the shell's own stylesheet, in the same order as before, so the
 // desktop page is drawn exactly as it was. Only the rail's script is split out.
@@ -38,5 +39,12 @@ function PhonePreferences() {
 }
 
 export function WardRail() {
-  return useIsPhone() ? <PhonePreferences /> : <RailLoaded />;
+  return useIsPhone() ? (
+    <PhonePreferences />
+  ) : (
+    <>
+      <RailLoaded />
+      <WardShortcutKey />
+    </>
+  );
 }
