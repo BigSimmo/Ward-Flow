@@ -28,6 +28,9 @@ export function decide(pr, run, jobs, since) {
   if (pr.draft) return { action: "skip", reason: "draft" };
   if (!pr.auto_merge) return { action: "skip", reason: "auto-merge not armed" };
   if (!run) return { action: "skip", reason: "no Ward Flow CI run on the head yet" };
+  // A push during the wait moves the head: re-running the old head's run cancels the new one.
+  if (run.head_sha && pr.head?.sha && run.head_sha !== pr.head.sha)
+    return { action: "skip", reason: "run is for an older head" };
   const build = jobs.find((job) => job.name === BUILD_JOB);
   const started = build?.started_at ? Date.parse(build.started_at) : NaN;
   if (build && started > since) return { action: "skip", reason: "build started after main moved" };
@@ -88,8 +91,14 @@ async function main() {
   for (let round = 0; pending.length > 0 && round < 10; round++) {
     if (round > 0) await new Promise((resolve) => setTimeout(resolve, 60_000));
     const next = [];
-    for (const pr of pending) {
+    for (const listed of pending) {
+      // Re-read the pull request each round, so a head pushed while waiting is the one measured.
+      const pr = round > 0 || !only ? await api(`/pulls/${listed.number}`).catch(() => listed) : listed;
       try {
+        if (pr.state !== "open") {
+          console.log(`#${pr.number}: skipped (no longer open)`);
+          continue;
+        }
         const { run, jobs } = await latest(pr);
         const verdict = decide(pr, run, jobs, since);
         if (verdict.action === "wait") next.push(pr);
