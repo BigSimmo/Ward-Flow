@@ -34,15 +34,22 @@ export function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKi
 }
 
 /** The intake's chart fields: what is attached, and what is marked to follow (A27). A chart attached
- *  after it was marked to follow counts as attached. Community referrals carry no charts. */
+ *  after it was marked to follow counts as attached. Community referrals carry no charts.
+ *  Finding 42 (Josh, 27 Oct 2026): a required chart left unanswered is sent as to follow, so the
+ *  receiving ward still sees it outstanding and Send is never held for it. */
 export function intakeCharts(
   draft: DocumentationDraft,
   community: boolean,
 ): Pick<ReferralIntakeDetails, "charts" | "chartsToFollow"> {
   if (community) return { charts: [] };
-  const chartsToFollow = (draft.toFollow ?? []).filter((kind) => !draft.charts.some((chart) => chart.kind === kind));
+  const chartsToFollow = [
+    ...(draft.toFollow ?? []).filter((kind) => !draft.charts.some((chart) => chart.kind === kind)),
+    ...REQUIRED_CHARTS.filter((kind) => !chartAnswered(draft, kind)),
+  ];
   return { charts: draft.charts, ...(chartsToFollow.length ? { chartsToFollow } : {}) };
 }
+
+const REQUIRED_CHARTS: FollowableChartKind[] = ["medication", "observation"];
 
 export const EMPTY_DOCUMENTATION: DocumentationDraft = {
   medical: "",
@@ -82,9 +89,8 @@ export function documentationProblems(
     add(!draft.contactPhone.trim(), "phone", "Enter a contact phone number");
   }
   if (clearanceOnly) return problems;
-  // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No.
-  add(!chartAnswered(draft, "medication"), "medication-upload", "Attach the medication chart or mark it to follow");
-  add(!chartAnswered(draft, "observation"), "observation-upload", "Attach the observation chart or mark it to follow");
+  // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No. The two
+  // charts never block either: one not attached is sent as to follow (finding 42).
   add(
     draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"),
     "other-upload",
@@ -96,8 +102,6 @@ export function documentationProblems(
 export function documentationError(draft: DocumentationDraft): string | null {
   const clearance = clearanceError(draft);
   if (clearance) return clearance;
-  if (!chartAnswered(draft, "medication") || !chartAnswered(draft, "observation"))
-    return "Attach the medication and observation charts, or mark them to follow.";
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"))
     return "Attach the additional document or choose No.";
   return null;
@@ -229,7 +233,9 @@ function ChartUpload({
               ? `${uploadedFileTypeOf(undefined, file.mimeType)} · ${(file.sizeBytes / 1024).toFixed(1)} KB`
               : toFollow
                 ? "To follow. The referral says it is not attached yet."
-                : "PDF, PNG or JPEG, up to 2 MB"}
+                : onToFollow
+                  ? "PDF, PNG or JPEG, up to 2 MB. Sent as to follow if not attached."
+                  : "PDF, PNG or JPEG, up to 2 MB"}
           </span>
         </div>
         <input
