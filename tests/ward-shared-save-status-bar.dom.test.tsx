@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 
+import { WardSharedSaveContext } from "@/components/ward-management/shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "@/components/ward-management/ward-shared-save-status";
 import type { WardSharedConnection } from "@/components/ward-management/ward-shared-access";
 
@@ -27,4 +28,15 @@ it("gives its height to the shell while shown and takes it back when gone", () =
   expect(root.style.getPropertyValue("--wf-data-bar-height")).toMatch(/^\d+px$/u);
   unmount();
   expect(root.style.getPropertyValue("--wf-data-bar-height")).toBe("");
+});
+
+it("keeps the reload warning in the strip when a save is unconfirmed", () => {
+  render(
+    <WardSharedSaveContext.Provider
+      value={{ unconfirmedSave: true, status: "unavailable", error: null, retry: () => {} }}
+    >
+      <WardSharedSaveStatus deskLabel="Coordinator" connection={connection("unavailable")} />
+    </WardSharedSaveContext.Provider>,
+  );
+  expect(screen.getByTestId("ward-shared-status-bar")).toHaveTextContent(/Reloading now will lose/u);
 });

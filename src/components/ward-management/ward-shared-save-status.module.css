@@ -145,7 +145,8 @@
     flex: none;
   }
 
-  .bar p {
-    display: none;
+  /* The reload warning must stay readable, so a strip carrying it wraps. */
+  .bar:has(> p) {
+    flex-wrap: wrap;
   }
 }
