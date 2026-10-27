@@ -80,6 +80,11 @@ function movementsCoveringEveryCategory(): Movement[] {
     wardMovements.find((movement) => movement.id === "WF-308")!,
     // transport_awaiting_departure — the real fixture movement whose transport has not set off.
     wardMovements.find((movement) => movement.id === "WF-005")!,
+    // transport_booking_estimate_passed (P068): a booked job whose booking estimate passed 13 minutes ago.
+    (() => {
+      const base = wardMovements.find((movement) => movement.id === "WF-005")!;
+      return { ...base, id: "WF-T10", transport: { ...base.transport!, estimatedAt: NOW - 13 } };
+    })(),
     // Stream A, 9 Oct 2026: the three decision-target categories, each long past its default.
     movementFrom("WF-T04", {
       stage: "destination_review",
