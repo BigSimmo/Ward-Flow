@@ -306,7 +306,7 @@ export function StatisticsWardScreen({
       phone={{
         eyebrow: site?.name ?? "Hospital not recorded",
         // The % sits in the sub line so the hero label never clips (audit stats-15).
-        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay} days`}`,
         stats: (
           <>
             <HeroStat
@@ -334,7 +334,7 @@ export function StatisticsWardScreen({
             }
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
-          {averageStay === null ? null : <HeroStat value={`${averageStay}d`} label="Average stay" />}
+          {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
           <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
         </>
       }

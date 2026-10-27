@@ -73,7 +73,8 @@ export const shortSite = (name: string) =>
   name.replace(/ (Public |Memorial |General )?(Hospital|Health Campus|Health Service)$/, "");
 
 /** Whole days to one decimal, as "47.3d". */
-const daysText = (days: number) => `${days.toFixed(1)}d`;
+// W-3 (fresh audit 26 Oct 2026): one unit word for a stay, "days", never "d".
+const daysText = (days: number) => `${days.toFixed(1)} days`;
 
 type WardFigures = {
   unit: Unit;
@@ -258,7 +259,7 @@ const lensAria = (site: SiteFigures, lens: MapLens): string => {
     return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
-  return `${site.name}: mean stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
+  return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
 };
 
 const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key: string }> = [
@@ -283,8 +284,8 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   {
     id: "stay",
     label: "Stay",
-    rankTitle: "Longest mean stay",
-    key: "Ring: share over 3 months. Centre: mean stay, days.",
+    rankTitle: "Longest average stay",
+    key: "Ring: share over 3 months. Centre: average stay in days, everyone who arrived, people who have left included.",
   },
 ];
 
