@@ -655,6 +655,25 @@ export function CoordinatorScreen() {
   const wardsNotReporting = units.filter(
     (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
   ).length;
+  const checkingFoot = (
+    <CheckingFoot
+      items={[
+        {
+          id: "stale-counts",
+          label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
+          value: staleBedCounts,
+          tone: staleBedCounts > 0 ? "warning" : "neutral",
+        },
+        {
+          id: "not-reporting",
+          label: "Wards not reporting",
+          value: wardsNotReporting,
+          tone: wardsNotReporting > 0 ? "warning" : "neutral",
+        },
+      ]}
+      notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
+    />
+  );
   // "N new since 07:12": the last look, or the start of this shift when there is none yet.
   const sinceClock = formatInstantWithDay(lastLook.changes?.since ?? currentShiftStartInstant(now), now);
   const sinceLabel = `new since ${sinceClock}`;
@@ -924,24 +943,17 @@ export function CoordinatorScreen() {
               )
             }
             foot={
-              isPhone ? undefined : (
-                <CheckingFoot
-                  items={[
-                    {
-                      id: "stale-counts",
-                      label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
-                      value: staleBedCounts,
-                      tone: staleBedCounts > 0 ? "warning" : "neutral",
-                    },
-                    {
-                      id: "not-reporting",
-                      label: "Wards not reporting",
-                      value: wardsNotReporting,
-                      tone: wardsNotReporting > 0 ? "warning" : "neutral",
-                    },
-                  ]}
-                  notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
-                />
+              isPhone ? (
+                // P109 (27 Oct 2026): a phone keeps the Checking strip, collapsed, so stale counts still show.
+                <details>
+                  <summary>
+                    Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"},{" "}
+                    {wardsNotReporting} {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+                  </summary>
+                  {checkingFoot}
+                </details>
+              ) : (
+                checkingFoot
               )
             }
           />
