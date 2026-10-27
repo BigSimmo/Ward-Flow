@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const alert = (expiresAt: string | number) => ({
@@ -27,15 +28,21 @@ describe("broadcast banner preview mode", () => {
     expect(screen.getByTestId("ward-broadcast-banner")).toHaveTextContent("1h 30m remaining");
   });
 
-  it("reads a real-time expiry against real time, even inside a provider", () => {
+  // H-0221: an ISO expiry is read against the board clock's calendar moment, not the device's real time.
+  it("reads a calendar expiry against the board clock, not the device's real time", () => {
+    const dayZero = Date.UTC(2026, 0, 4, 16);
+    const expiresAt = new Date(calendarDateOf(NOW_ANCHOR + 45, new Date(dayZero)).getTime()).toISOString();
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardBroadcastBanner
-          activeAlert={alert(new Date((Math.floor(Date.now() / 60_000) + 45) * 60_000).toISOString())}
-        />
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={dayZero}>
+        <WardBroadcastBanner activeAlert={alert(expiresAt)} />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("ward-broadcast-banner")).toHaveTextContent(/4[45]m remaining/);
+    expect(screen.getByTestId("ward-broadcast-banner")).toHaveTextContent("45m remaining");
+  });
+
+  it("shows nothing for a calendar expiry with no board clock, whatever the device's real time", () => {
+    render(<WardBroadcastBanner activeAlert={alert(new Date(Date.now() + 45 * 60_000).toISOString())} />);
+    expect(screen.queryByTestId("ward-broadcast-banner")).toBeNull();
   });
 
   it("shows nothing for a board-minute expiry with no board clock to read it against", () => {
