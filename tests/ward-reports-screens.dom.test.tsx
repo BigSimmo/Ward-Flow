@@ -377,7 +377,7 @@ describe("read-only report screens", () => {
   it("keeps recorded observations in both printable tables", () => {
     route.pathname = "/ward-flow/reports/downtime";
     const world = seedWardFlowState();
-    const pack = downtimePack({ ...world, now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    const pack = downtimePack({ ...world, bedUnits: world.units, now: NOW_ANCHOR, identify: () => "Synthetic person" });
     inProvider(<DowntimePackScreen />, { pack });
     for (const [testId, lines] of [
       ["ward-downtime-ed", pack.edQueue],
@@ -450,7 +450,7 @@ describe("read-only report screens", () => {
       })),
     );
     const world = seedWardFlowState();
-    const pack = downtimePack({ ...world, now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    const pack = downtimePack({ ...world, bedUnits: world.units, now: NOW_ANCHOR, identify: () => "Synthetic person" });
     try {
       inProvider(<DowntimePackScreen />, { pack });
       for (const [label, observation] of [

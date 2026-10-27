@@ -17,6 +17,7 @@ function packFor(now = NOW_ANCHOR) {
   const state = seedWardFlowState();
   const pack = downtimePack({
     units: state.units,
+    bedUnits: state.units,
     admissions: state.admissions,
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
@@ -88,7 +89,13 @@ describe("downtimePack", () => {
       flaggedUrgent: true,
       observation: { ...recorded, reviewAt: NOW_ANCHOR + 30 },
     };
-    const pack = downtimePack({ ...state, movements: [movement], now: NOW_ANCHOR, identify: () => "Synthetic person" });
+    const pack = downtimePack({
+      ...state,
+      bedUnits: state.units,
+      movements: [movement],
+      now: NOW_ANCHOR,
+      identify: () => "Synthetic person",
+    });
     expect(pack.edQueue[0].observation).toBe(expected);
     expect(pack.pendingMoves[0].observation).toBe(expected);
     // A later change in the live record must not alter a pack already taken.
