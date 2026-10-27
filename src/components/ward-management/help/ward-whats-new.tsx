@@ -82,6 +82,8 @@ const readNone = () => NONE;
 /**
  * The note itself: a small card in the corner, never a dialog, so it blocks nothing on screen. It is
  * portalled out of the header, whose backdrop filter would otherwise pin a fixed card to the header.
+ * It sits in the lowest overlay layer, so any drawer, dialog or toast opens over it and keeps its
+ * buttons clickable (P004, 27 Oct 2026); the toast layer had put it above all of them.
  */
 export function WardWhatsNew() {
   // Read once from the device; the server and hydration read "nothing new".
@@ -97,7 +99,7 @@ export function WardWhatsNew() {
     setClosed(true);
   };
   return (
-    <OverlayPortal layer="toast" name="ward-whats-new">
+    <OverlayPortal layer="overlay" name="ward-whats-new">
       <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">
         <h2 id="ward-whats-new-title" className={styles.title}>
           What&apos;s new

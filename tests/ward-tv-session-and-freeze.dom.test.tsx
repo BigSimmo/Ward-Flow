@@ -58,7 +58,7 @@ describe("TV session end (TV-13, H-0787)", () => {
     const notice = screen.getByRole("main", { name: "TV signed out" });
     expect(notice).toHaveAttribute("data-testid", "ward-tv-signed-out");
     expect(notice).toHaveTextContent("This TV is signed out");
-    expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   it("keeps the desk sign-in page off the TV route", () => {

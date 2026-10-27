@@ -61,7 +61,6 @@ async function openDesk(browser: Browser, account: { email: string; password: st
   // until paused, and while paused the 3 s poll timer cannot fire.
   if (clock) await page.clock.install();
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Sign in with email" }).click();
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();

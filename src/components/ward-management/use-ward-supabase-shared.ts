@@ -34,6 +34,9 @@ function sessionEndsAt(token: string): number | null {
 let loadedClient: typeof SharedWorkspaceClient | null = null;
 import { WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
+import { createWardAuth, tabStorage } from "./ward-auth-session";
+import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
+import { SIGNED_OUT_NOTICE } from "@/components/ward-management/front-door/front-door-notice";
 
 /**
  * At sign-out: revoke this account's phone alerts for this device, so the next person at a shared
@@ -76,6 +79,11 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
     await bounded(() => cleanup.signOutServer());
   })().finally(() => cleanup.dispose());
 }
+/**
+ * `credentials`: the email or password was refused. `unavailable`: the sign-in service did not
+ * answer. `sent`: a reset link was asked for. `info` and `warning`: anything else worth saying.
+ */
+export type WardCredentialMessageKind = "credentials" | "unavailable" | "sent" | "info" | "warning";
 export type WardCredentialForm = {
   open: boolean;
   recovery: boolean;
@@ -85,6 +93,8 @@ export type WardCredentialForm = {
   signUp: (email: string, password: string) => Promise<void>;
   busy: boolean;
   message: string | null;
+  /** What `message` is, so the sign-in screen can say it in the right tone. */
+  messageKind?: WardCredentialMessageKind | null;
   signIn: (email: string, password: string) => Promise<void>;
   recover: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -114,49 +124,27 @@ const workingAs = {
     }
   },
 };
-// H-0305: a browser that blocks storage throws on reaching window.sessionStorage at all. Then
-// reads find nothing and writes are skipped, so sign-in still starts and the session lives in
-// memory. A failing call on storage that exists still throws, so its caller can say so.
-function sessionStore(): Storage | null {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return null;
-  }
-}
-const tabStorage = {
-  getItem: (key: string): string | null => sessionStore()?.getItem(key) ?? null,
-  setItem: (key: string, value: string) => sessionStore()?.setItem(key, value),
-  removeItem: (key: string) => sessionStore()?.removeItem(key),
-};
 // The next account at this tab picks its own role, even after an expiry rather than a sign-out.
 onWardSessionEnd(() => {
   workingAsInMemory = null;
 });
-// The Supabase adapter loads only when shared mode boots, so the demo's first load does not carry it.
-const defaultCreateAuth = async (): Promise<WardBrowserAuthAdapter> =>
-  new (await import("./ward-supabase-auth")).SupabaseWardAuth({
-    url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
-    publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
-    storage: tabStorage,
-    coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
-    // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
-    onSessionEnded: endWardFlowBrowserSession,
-  });
 export function useWardSupabaseShared(
   enabled: boolean,
-  createAuth: () => WardBrowserAuthAdapter | Promise<WardBrowserAuthAdapter> = defaultCreateAuth,
+  createAuth: () => WardBrowserAuthAdapter | Promise<WardBrowserAuthAdapter> = createWardAuth,
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
   // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<number | null>(null);
+  /** What the sign-in screen says after a deliberate sign-out; cleared by the next sign-in step. */
+  const [farewell, setFarewell] = useState<string | null>(null);
   const [form, setForm] = useState<{
     open: boolean;
     recovery: boolean;
     busy: boolean;
     message: string | null;
+    messageKind?: WardCredentialMessageKind | null;
     /** Fresh audit X-1: the account a recovery link signs in to, shown on "Set a new password". */
     accountEmail?: string | null;
   }>({ open: false, recovery: false, busy: false, message: null });
@@ -240,7 +228,13 @@ export function useWardSupabaseShared(
       const expired = error instanceof WardAuthError && error.kind === "session";
       if (expired) disconnect();
       const message = error instanceof WardAuthError ? error.message : "Shared sign-in is unavailable. Try again.";
-      setForm((old) => ({ ...old, busy: false, message }));
+      const messageKind: WardCredentialMessageKind =
+        error instanceof WardAuthError && error.kind === "credentials"
+          ? "credentials"
+          : expired || (error instanceof WardAuthError && error.kind === "session")
+            ? "info"
+            : "unavailable";
+      setForm((old) => ({ ...old, busy: false, message, messageKind }));
       // A rejected email or password is a form answer, not a service outage.
       if (error instanceof WardAuthError && error.kind === "credentials") return;
       setView((old) => ({ ...old, status: expired ? "ready" : "unavailable", error: message }));
@@ -309,7 +303,8 @@ export function useWardSupabaseShared(
     };
     const run = async (action: () => Promise<void>) => {
       if (closed || !auth) return;
-      setForm((old) => ({ ...old, busy: true, message: null }));
+      setForm((old) => ({ ...old, busy: true, message: null, messageKind: null }));
+      setFarewell(null);
       try {
         await action();
       } catch (error) {
@@ -372,6 +367,7 @@ export function useWardSupabaseShared(
                   ...old,
                   message:
                     "Check your email and confirm the account, then sign in. An access admin still needs to give you a role.",
+                  messageKind: "info",
                 }));
                 setView({ ...emptyView, status: "ready" });
               }
@@ -380,6 +376,8 @@ export function useWardSupabaseShared(
             run(async () => {
               disconnect();
               await auth!.signIn(email, password);
+              // A site behind the front door renews its pass, which an idle sign-out ended.
+              void renewFrontDoorPass(() => auth!.token());
               await connect();
             }),
           recover: (email) =>
@@ -389,6 +387,7 @@ export function useWardSupabaseShared(
                 setForm((old) => ({
                   ...old,
                   message: "If this account is registered, a recovery link will be emailed.",
+                  messageKind: "sent",
                 }));
                 setView((old) => ({ ...old, status: "ready", error: null }));
               }
@@ -396,6 +395,7 @@ export function useWardSupabaseShared(
           updatePassword: (password) =>
             run(async () => {
               await auth!.updatePassword(password);
+              void renewFrontDoorPass(() => auth!.token());
               await connect();
             }),
           reauthenticate: async (password) => {
@@ -420,7 +420,8 @@ export function useWardSupabaseShared(
                 endWardFlowTabSession();
                 if (!closed) {
                   setView({ ...emptyView, status: "ready", error: reason ?? null });
-                  if (failure) setForm({ open: true, recovery: false, busy: false, message: failure });
+                  if (failure)
+                    setForm({ open: true, recovery: false, busy: false, message: failure, messageKind: "warning" });
                 }
                 return;
               }
@@ -442,6 +443,8 @@ export function useWardSupabaseShared(
             endWardFlowBrowserSession();
             setForm({ open: false, recovery: false, busy: false, message: null });
             if (reason && !closed) setView({ ...emptyView, status: "ready", error: reason });
+            // A deliberate sign-out says so on the sign-in screen, with the shared computer reminder.
+            if (!closed) setFarewell(!reason && everyTab ? SIGNED_OUT_NOTICE : null);
             // The next account on a shared phone never sees this one's act-now count, even when
             // the session has expired and the phone alert cleanup could not run.
             setActNowAppBadge(0);
@@ -457,6 +460,7 @@ export function useWardSupabaseShared(
                     error instanceof WardAuthError
                       ? error.message
                       : "Sign-out cleanup could not be confirmed. Clear this site's browser data before sharing the device.",
+                  messageKind: "warning",
                 });
             });
           },
@@ -508,7 +512,12 @@ export function useWardSupabaseShared(
           clearReferralDraftSession();
           setView({ ...emptyView, status: "ready" });
           if (confirmation)
-            setForm((old) => ({ ...old, open: true, message: "Email link processed. Sign in to continue." }));
+            setForm((old) => ({
+              ...old,
+              open: true,
+              message: "Email link processed. Sign in to continue.",
+              messageKind: "info",
+            }));
         }
       } catch (error) {
         fail(error);
@@ -529,7 +538,8 @@ export function useWardSupabaseShared(
     signedIn,
     accountEmail,
     client: connection,
-    signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
+    signIn: () => setForm((old) => ({ ...old, open: true, message: null, messageKind: null })),
+    farewell,
     /** When this sign-in reaches the session limit, in wall-clock milliseconds; `null` when unknown. */
     sessionEndsAt: endsAt,
     /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
@@ -570,7 +580,7 @@ export function useWardSupabaseShared(
       },
       cancel: () => {
         if (form.recovery) void actions.current?.signOut(undefined, false);
-        else setForm((old) => ({ ...old, open: false, message: null }));
+        else setForm((old) => ({ ...old, open: false, message: null, messageKind: null }));
       },
     } satisfies WardCredentialForm,
   };
