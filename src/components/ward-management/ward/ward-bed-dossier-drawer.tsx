@@ -691,6 +691,7 @@ export function WardBedDossierDrawer({
               onClick={onNextBed}
             />
           ) : null}
+          {/* H-0097: the drawer opens on Close, not on "Previous bed". */}
           <Button
             variant="ghost"
             iconOnly
@@ -698,6 +699,7 @@ export function WardBedDossierDrawer({
             aria-label="Close bed drawer"
             className={styles.pill}
             onClick={onClose}
+            data-sheet-autofocus="true"
           />
         </header>
 
@@ -1259,6 +1261,7 @@ function PhoneBedSheet({
             aria-label="Close bed drawer"
             className={styles.pill}
             onClick={onClose}
+            data-sheet-autofocus="true"
           />
         </header>
 
