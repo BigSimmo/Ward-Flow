@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Button, StatusGlyph } from "@/components/wf";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useOptionalWardFlowSelect,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   broadcastKind,
@@ -16,7 +20,7 @@ import { useActNowNotificationPreference } from "@/components/ward-management/sh
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import styles from "./ward-broadcast-banner.module.css";
 
@@ -50,8 +54,9 @@ function toControlledMinutes(val: string | Instant): number {
 /**
  * TC-08 (audit 24 Oct 2026, H-0777): an expiry and the time it is read against must be on one clock.
  * A numeric expiry is a board `Instant` (demo minutes), so it is read against the board clock: the
- * `now` prop when it is an Instant, else the provider's clock. An ISO expiry is real time, so it is
- * read against real time: the `now` prop when it is a string, else the device's date. The old code
+ * `now` prop when it is an Instant, else the provider's clock. An ISO expiry is read against the
+ * `now` prop when it is a string, else the board clock as a calendar moment (H-0221): the device's
+ * real time never decides it, and with no board clock nothing shows. The old code
  * read a board Instant against `Date.now()` minutes, and an ISO expiry against a board Instant, so
  * preview mode could show an alert decades long or already gone.
  */
@@ -59,6 +64,7 @@ function computeControlledRemainingMinutes(
   expiresAt: string | Instant,
   now?: string | Instant,
   boardNow?: Instant,
+  dayZero?: Date,
 ): number {
   const expMin = toControlledMinutes(expiresAt);
   if (typeof expiresAt === "number") {
@@ -66,8 +72,10 @@ function computeControlledRemainingMinutes(
     if (boardClock === undefined || !Number.isFinite(boardClock)) return 0;
     return expMin - boardClock;
   }
-  const nowMin = typeof now === "string" ? toControlledMinutes(now) : Math.floor(Date.now() / 60_000);
-  return expMin - nowMin;
+  if (typeof now === "string") return expMin - toControlledMinutes(now);
+  const boardClock = typeof now === "number" ? now : boardNow;
+  if (boardClock === undefined || !Number.isFinite(boardClock) || !dayZero) return 0;
+  return expMin - Math.floor(calendarDateOf(boardClock, dayZero).getTime() / 60_000);
 }
 
 /**
@@ -103,6 +111,7 @@ function ControlledBroadcastBanner({
   const [, setClockTick] = useState(0);
   // The board clock, when a provider is in reach; NaN outside one (no board time to read).
   const boardNow = useWardFlowClock(Number.NaN);
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   useEffect(() => {
     if (now !== undefined || !activeAlert) return;
     const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
@@ -112,7 +121,7 @@ function ControlledBroadcastBanner({
   if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
     return null;
   }
-  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now, boardNow);
+  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now, boardNow, dayZero);
   if (remainingMinutes <= 0) {
     return null;
   }
