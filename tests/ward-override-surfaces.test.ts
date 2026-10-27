@@ -459,6 +459,12 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
     "useEdRecordSave(): forwards only CHANGE_URGENCY, CHANGE_LEGAL_STATUS or CORRECT_LEGAL_FORM_RECEIPT literals built in this file's three submit handlers",
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
+  // P053 (27 Oct 2026): the referral inbox's three answer buttons share answer(), whose one
+  // dispatch(event) forwards the event its caller built as a literal at the call site: ACCEPT_REFERRAL
+  // for Accept and DECLINE_REFERRAL for Waiting list and Decline. Those construction sites remain
+  // scanned above.
+  "src/components/ward-management/referrals/ward-referral-inbox.tsx :: event":
+    "answer(): forwards the ACCEPT_REFERRAL or DECLINE_REFERRAL event each inbox button builds as a literal",
   // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
   // caller names. Every `raise("TYPE", ...)` call is scanned above with its literal type.
   "src/components/ward-management/ward-flow-raise.ts :: { ...fields, type, role, now } as WardFlowEvent":
@@ -684,7 +690,8 @@ describe("ward override-surface guard", () => {
     // converge on submit(...), which retains the one direct dispatch(event) forwarding site.
     // 2 -> 3, #631 (24 Oct 2026): the ED examination save forwards the literal-typed event it built and retains.
     // 3 -> 4, M2 (24 Oct 2026): the correction controller forwards its three literal-typed events.
-    expect(nonLiteralDispatchCalls.length).toBe(4);
+    // 4 -> 5, P053 (27 Oct 2026): the referral inbox's answer() forwards its three literal-typed events.
+    expect(nonLiteralDispatchCalls.length).toBe(5);
   });
 
   /**

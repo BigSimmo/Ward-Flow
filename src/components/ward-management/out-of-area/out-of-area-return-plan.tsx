@@ -134,6 +134,13 @@ function ChoicePills<T extends string>({
   );
 }
 
+/** #177: the plan's warning when Form 4C is not confirmed or the escort is not answered. */
+function involuntaryWarning(form4CReceived: boolean | undefined, escortRequired: boolean | undefined): string {
+  const form4C = form4CReceived === false ? "Form 4C not received" : "Form 4C not confirmed";
+  if (form4CReceived !== true && escortRequired === undefined) return `${form4C} and escort not answered`;
+  return form4CReceived !== true ? form4C : "Escort not answered";
+}
+
 function StepHead({ n, title, left }: { n: number; title: string; left: string[] }) {
   return (
     <div className={styles.stepHead}>
@@ -460,6 +467,43 @@ export function ReturnPlan({
                   On an order: needs {legalFormNameLabelFirst({ code: "4C" })}
                 </p>
               ) : null}
+              {/* #177 (Josh, 27 Oct 2026): an involuntary return asks for Form 4C and the escort.
+                  Both open blank and are saved on the return. Unanswered is a warning, never a block. */}
+              {patient.onOrder || draft.transportLegalStatus === "involuntary" ? (
+                <>
+                  <ChoicePills
+                    legend="Form 4C received?"
+                    name={`${idPrefix}-form-4c`}
+                    testId="ward-out-of-area-repat-form-4c"
+                    value={draft.form4CReceived === undefined ? undefined : draft.form4CReceived ? "yes" : "no"}
+                    options={[
+                      { value: "yes", label: "Yes" },
+                      { value: "no", label: "No" },
+                    ]}
+                    onChange={(answer) => onDraft({ form4CReceived: answer === "yes" })}
+                  />
+                  <ChoicePills
+                    legend="Escort needed for the journey?"
+                    name={`${idPrefix}-escort`}
+                    testId="ward-out-of-area-repat-escort"
+                    value={draft.escortRequired === undefined ? undefined : draft.escortRequired ? "yes" : "no"}
+                    options={[
+                      { value: "yes", label: "Escort required" },
+                      { value: "no", label: "No escort required" },
+                    ]}
+                    onChange={(answer) => onDraft({ escortRequired: answer === "yes" })}
+                  />
+                  {draft.form4CReceived !== true || draft.escortRequired === undefined ? (
+                    <p
+                      className={cx(styles.planHint, styles.inkWarning)}
+                      data-testid="ward-out-of-area-repat-involuntary-warning"
+                    >
+                      <StatusGlyph tone="warning" size={9} />
+                      {involuntaryWarning(draft.form4CReceived, draft.escortRequired)}
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
             </section>
 
             <section className={styles.planStep} aria-label="Step 3, dispatch">
@@ -572,6 +616,26 @@ function RecordedReturn({
         </dd>
         <dt>Legal status</dt>
         <dd>{LEGAL_LABELS[record.transportLegalStatus]}</dd>
+        {record.transportLegalStatus === "involuntary" ? (
+          <>
+            <dt>Form 4C</dt>
+            <dd data-testid="ward-out-of-area-recorded-form-4c">
+              {record.form4CReceived === undefined
+                ? "Not answered"
+                : record.form4CReceived
+                  ? "Received"
+                  : "Not received"}
+            </dd>
+            <dt>Escort</dt>
+            <dd data-testid="ward-out-of-area-recorded-escort">
+              {record.escortRequired === undefined
+                ? "Not answered"
+                : record.escortRequired
+                  ? "Escort required"
+                  : "No escort required"}
+            </dd>
+          </>
+        ) : null}
         <dt>CAD</dt>
         <dd className={styles.mono}>{record.cadNumber}</dd>
         <dt>Depart</dt>

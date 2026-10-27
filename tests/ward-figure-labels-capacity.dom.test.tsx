@@ -62,7 +62,7 @@ describe("capacity labels say what each figure counts", () => {
     const summary = bedsReadySummary(seed.units, seed.admissions, seed.bedReleases, NOW_ANCHOR);
     render(<BedsReady summary={summary} />);
     const band = screen.getByTestId("ward-referral-beds-ready");
-    expect(band).toHaveTextContent(`Beds ready statewide: ${summary.total}`);
+    expect(band).toHaveTextContent(`Beds ready statewide (your desk's admissions): ${summary.total}`);
     const cohort = within(band).getAllByRole("link", { name: /beds ready\. Open Places$/u });
     expect(cohort.map((cell) => cell.textContent)).toEqual([
       expect.stringMatching(/Adult$/u),

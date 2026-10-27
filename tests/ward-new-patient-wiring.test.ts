@@ -212,7 +212,7 @@ describe("a new patient flows to every place and every count (local mode, real r
     expect(after.lists.edBoard.map((row) => row.id)).toContain(movement.id);
     const censusRow = after.lists.census.rows.find((row) => row.patientRecordId === patient.id);
     expect(censusRow?.kind, "the census shows the person by their bed request").toBe("movement");
-    expect(censusRow?.group).toBe("wait");
+    expect(censusRow?.group).toBe("ask"); // P027: a fresh bed request has no ward asked yet
   });
 
   it("every count that should move goes up by exactly one, and the surfaces still agree", () => {

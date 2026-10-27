@@ -1,6 +1,6 @@
 // @ts-check
 import { createServer } from "node:http";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { gzip } from "node:zlib";
@@ -16,6 +16,30 @@ import { REPLY_SEGMENTS, gzipSegments } from "./reply-cache.mjs";
 const gzipAsync = promisify(gzip);
 
 const BODY_LIMIT = 1_048_576;
+/**
+ * Audit P174: every backend reply is JSON, never a page, so it may not be framed or load anything,
+ * and browsers keep to HTTPS for a year.
+ */
+export const BACKEND_SECURITY_HEADERS = Object.freeze({
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+});
+/** Audit P177: the uptime monitor sends this header to see the database answer on `/healthz`. */
+export const UPTIME_TOKEN_HEADER = "x-ward-flow-uptime-token";
+
+/**
+ * True only when the server has an uptime token and the request carries the same one. Compared in
+ * constant time; an unset or empty token never matches, so the database answer stays hidden.
+ * @param {string | null | undefined} expected
+ * @param {string | null | undefined} presented
+ */
+export function uptimeTokenMatches(expected, presented) {
+  if (!expected || !presented) return false;
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(presented, "utf8");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 /** `/healthz` asks the database at most this often, so an unauthenticated caller cannot load it. */
 const DATABASE_CHECK_INTERVAL_MS = 30_000;
 const DATABASE_CHECK_TIMEOUT_MS = 5_000;
@@ -81,6 +105,7 @@ export function createHandler({
   authenticate,
   sharedStore,
   log = (event) => console.info(JSON.stringify(event)),
+  uptimeToken = process.env.WARD_FLOW_UPTIME_TOKEN,
 }) {
   const sharedHandler = sharedStore
     ? createSharedHandler({
@@ -139,8 +164,14 @@ export function createHandler({
     if (route === "workspace") return respond(503, { error: "Shared workspace is not configured" }, "not_configured");
     // Always 200 while the process runs, so a database outage does not fail Railway's health check
     // and restart a healthy server; the uptime workflow reads `database` instead.
+    // Audit P177: only the uptime monitor, holding the shared token, sees the database answer.
     if (path === "/healthz" && request.method === "GET")
-      return respond(200, { service: "ward-flow-backend", database: await database() });
+      return respond(
+        200,
+        uptimeTokenMatches(uptimeToken, request.headers.get(UPTIME_TOKEN_HEADER))
+          ? { service: "ward-flow-backend", database: await database() }
+          : { service: "ward-flow-backend", status: "ok" },
+      );
     if (path !== "/readyz") return respond(404, { error: "Not found" });
     if (request.method === "OPTIONS" && origin)
       return respond(204, null, "preflight", {
@@ -243,7 +274,7 @@ export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {
     { maxHeaderSize: 20_480, requestTimeout: 15_000, headersTimeout: HEADERS_TIMEOUT_MS },
     async (incoming, outgoing) => {
       if (!ALLOWED_METHODS.split(", ").includes(incoming.method ?? "")) {
-        outgoing.writeHead(405, { allow: ALLOWED_METHODS, "cache-control": "no-store" });
+        outgoing.writeHead(405, { ...BACKEND_SECURITY_HEADERS, allow: ALLOWED_METHODS, "cache-control": "no-store" });
         outgoing.end();
         return;
       }
@@ -287,14 +318,15 @@ export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {
           headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : "Accept-Encoding";
         }
         if (body.length) headers["content-length"] = String(body.length);
-        outgoing.writeHead(response.status, headers);
+        outgoing.writeHead(response.status, { ...BACKEND_SECURITY_HEADERS, ...headers });
         outgoing.end(body);
       } catch (error) {
         clearTimeout(timer);
         // Name and code only: a database or engine message can quote values from the request.
         const { errorName, errorCode } = errorFields(error);
         logFailure({ event: "ward_backend_unhandled_failure", errorName, errorCode });
-        if (!outgoing.headersSent) outgoing.writeHead(500, { "cache-control": "no-store" });
+        if (!outgoing.headersSent)
+          outgoing.writeHead(500, { ...BACKEND_SECURITY_HEADERS, "cache-control": "no-store" });
         outgoing.end();
       }
     },

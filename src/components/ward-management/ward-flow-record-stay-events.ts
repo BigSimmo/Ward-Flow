@@ -331,6 +331,10 @@ export function reduceRecordedStayEvent(
         confirmedAt: event.now,
         confirmedBy: recordedByLabel(event.role, unit.name),
         kind: event.kind ?? "off_ward",
+        // #101 (Josh, 27 Oct 2026): kept as the ward answered it, never derived and never a refusal.
+        ...(typeof event.psychiatristAuthorised === "boolean"
+          ? { psychiatristAuthorised: event.psychiatristAuthorised }
+          : {}),
       };
       return { ...state, leaveBeds: [...state.leaveBeds, created], leaveBedSequence: sequence };
     }
@@ -502,6 +506,12 @@ export function reduceRecordedStayEvent(
       // One home hospital for the record and for the return movement: an agreement that arrives
       // naming a different site never moves the one the plan was sent to.
       const homeHospital = existingRecord?.homeHospital ?? event.homeHospital;
+      // #177 (Josh, 27 Oct 2026): the involuntary return's answers, as given. An agreement that does
+      // not repeat them keeps the plan's own. Never derived and never a refusal.
+      const form4CReceived =
+        typeof event.form4CReceived === "boolean" ? event.form4CReceived : existingRecord?.form4CReceived;
+      const escortRequired =
+        typeof event.escortRequired === "boolean" ? event.escortRequired : existingRecord?.escortRequired;
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
         at: existingRecord?.at ?? event.now,
@@ -514,6 +524,8 @@ export function reduceRecordedStayEvent(
         cadNumber: event.cadNumber.trim(),
         transportLegalStatus: event.transportLegalStatus,
         estimatedAt: event.estimatedAt,
+        ...(form4CReceived === undefined ? {} : { form4CReceived }),
+        ...(escortRequired === undefined ? {} : { escortRequired }),
       };
       let nextMovements = state.movements;
       let nextSequence = state.referralSequence;

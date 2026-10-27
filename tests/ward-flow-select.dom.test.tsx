@@ -103,7 +103,7 @@ describe("useWardFlowSelect", () => {
     const before = Number(screen.getByTestId("clock").textContent);
     wallMinutes += 1;
     act(() => {
-      vi.advanceTimersByTime(30_000);
+      vi.advanceTimersByTime(60_000);
     });
     expect(Number(screen.getByTestId("clock").textContent)).toBe(before + 1);
     expect(renders).toEqual({ units: 0, rejections: 0, clock: 1, whole: 1 });
