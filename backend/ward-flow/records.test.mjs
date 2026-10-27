@@ -10,6 +10,8 @@ import { createWorkspaceStore } from "./postgres.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 import {
   assembleWorld,
+  conflictRecordType,
+  conflictingCollection,
   conflicts,
   coveredRecords,
   markerKind,
@@ -17,6 +19,7 @@ import {
   planSave,
   recordToken,
   splitWorld,
+  staleReason,
 } from "./records.mjs";
 import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
 
@@ -546,3 +549,38 @@ test(
     }
   },
 );
+
+test("P058: a clash names the record type it hit, and its sentence names no patient or record id", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const base = engine.seedWorld(at);
+  const initial = planSave([], base, 1);
+  const rows = stored([], initial);
+  const first = engine.applyCommand(base, urgency("WF-001", 2), at);
+  const plan = planSave(rows, first.world, 2, initial.core);
+  const now = stored(rows, plan);
+  const clash = (event) => {
+    const applied = engine.applyCommand(first.world, event, at);
+    return conflictingCollection({
+      stored: now,
+      core: plan.core,
+      before: first.world,
+      after: applied.outcome === "accepted" ? applied.world : first.world,
+      event,
+      expectedRevision: 1,
+      priorRevision: 2,
+    });
+  };
+  assert.equal(clash(urgency("WF-001", 3)), "movements", "the same movement");
+  assert.equal(clash(urgency("WF-002", 1)), null, "another movement");
+  assert.equal(conflictRecordType("movements"), "movement");
+  assert.equal(conflictRecordType("broadcastAlerts"), "alert");
+  assert.equal(conflictRecordType("patients"), "stay");
+  assert.equal(conflictRecordType("units"), "record", "anything else is a record");
+  assert.equal(conflictRecordType(null), "record");
+  const sentence = staleReason("movements");
+  assert.equal(sentence, "Another desk changed this movement first. Review the latest board before trying again.");
+  const movement = first.world.state.movements.find((row) => row.id === "WF-001");
+  for (const secret of ["WF-001", movement?.patientName, movement?.umrn, movement?.bed].filter(Boolean))
+    assert.ok(!sentence.includes(String(secret)), "no identifier in the sentence");
+  assert.doesNotMatch(sentence, /PT-\d+|WF-\d+/u);
+});

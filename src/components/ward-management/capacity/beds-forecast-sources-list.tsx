@@ -4,6 +4,7 @@
 // `bedsForecastSources` (`beds-forecast-sources.ts`) and repeats what a ward recorded, with the
 // role that said it and when. Wards are listed by name; nothing here ranks or recommends one.
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import type { BedsForecastSources, ForecastSourceEntry, ForecastSourceWindow } from "./beds-forecast-sources";
 import styles from "./beds-forecast.module.css";
 
@@ -141,7 +142,9 @@ function SourceWindow({ window, now }: { window: ForecastSourceWindow; now: Inst
           {window.wards.map((ward) => (
             <li key={ward.unitId} className={styles.sourceWard}>
               <div className={styles.sourceWardRow}>
-                <span className={styles.sourceWardName}>{ward.name}</span>
+                <span className={styles.sourceWardName}>
+                  <SpelledCodes text={ward.name} />
+                </span>
                 {ward.entries.length > 0 ? <span className={styles.sourceWardCount}>{ward.entries.length}</span> : null}
               </div>
               {ward.updatedThisShift ? null : (

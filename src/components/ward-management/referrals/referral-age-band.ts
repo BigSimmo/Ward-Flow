@@ -11,7 +11,7 @@ export const YOUTH_UP_TO_24_NOTE = "Youth service may accept up to 24";
  * editable and age never blocks. Null when the record holds no usable date of birth, so the band
  * then opens blank.
  *
- * Not `patientCohort` (`ward-patients.ts`), which counts under 25 as Youth for planned admissions.
+ * Uses the same bands as `patientCohort` (`ward-patients.ts`).
  */
 export function referralAgeBand(
   dateOfBirth: string | undefined,
