@@ -8,6 +8,7 @@ import type {
 } from "@/components/ward-management/use-ward-supabase-shared";
 import { consumeRecoveryFragment, WardAuthError } from "@/components/ward-management/ward-auth-link";
 import { createWardAuth } from "@/components/ward-management/ward-auth-session";
+import { requestFrontDoorPass } from "./front-door-pass-client";
 import type { WardBrowserAuthAdapter } from "@/components/ward-management/ward-supabase-auth";
 
 type Phase = "checking" | "ready" | "opening";
@@ -45,12 +46,7 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
 
   const open = async (adapter: WardBrowserAuthAdapter) => {
     setPhase("opening");
-    const response = await fetch("/api/session", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ token: await adapter.token() }),
-    }).catch(() => null);
+    const response = await requestFrontDoorPass({ token: await adapter.token() });
     if (response?.ok) {
       window.location.replace(next);
       return;

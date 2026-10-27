@@ -5,6 +5,7 @@ import { KeyRound } from "lucide-react";
 
 import { FrontDoor, FrontDoorStatus, publicDemoUrl } from "./front-door";
 import { Arrow, DoorBanner, DoorScreen, SessionNote, Spinner } from "./front-door-parts";
+import { requestFrontDoorPass } from "./front-door-pass-client";
 import { useFrontDoorAuth } from "./use-front-door-auth";
 import styles from "./front-door.module.css";
 
@@ -46,12 +47,7 @@ function DemoCodeDoor({ next }: { next: string }) {
             if (busy) return;
             setBusy(true);
             setProblem(null);
-            const response = await fetch("/api/session", {
-              method: "POST",
-              credentials: "same-origin",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ demoCode: code }),
-            }).catch(() => null);
+            const response = await requestFrontDoorPass({ demoCode: code });
             if (response?.ok) {
               window.location.replace(next);
               return;
