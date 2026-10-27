@@ -100,6 +100,8 @@ export function AlertDetail({
   const opened = raisedAt(item, movement);
   const seen = acknowledgements?.at(-1);
   const action = alertActionFor(item, subject);
+  // P085 (27 Oct 2026): when the action already opens the patient, one link to them is enough.
+  const patientLink = action.kind === "link" && action.href === subject.patientHref ? undefined : subject.patientHref;
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
   // "for", not a comma: the family-first name has its own comma ("Smith, Alice").
   const subjectLine = `${item.title} for ${subject.displayName}`;
@@ -404,8 +406,8 @@ export function AlertDetail({
         ) : null}
 
         <div className={styles.phFoot}>
-          {subject.patientHref ? (
-            <Link className={buttonClass({ variant: "sec" })} href={subject.patientHref}>
+          {patientLink ? (
+            <Link className={buttonClass({ variant: "sec" })} href={patientLink}>
               Patient
             </Link>
           ) : null}
@@ -445,8 +447,8 @@ export function AlertDetail({
             {subject.legalStatus ? <> · {subject.legalStatus}</> : null}
           </span>
         </div>
-        {subject.patientHref ? (
-          <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={subject.patientHref}>
+        {patientLink ? (
+          <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={patientLink}>
             Patient
             <ChevronRight size={14} aria-hidden="true" />
           </Link>
