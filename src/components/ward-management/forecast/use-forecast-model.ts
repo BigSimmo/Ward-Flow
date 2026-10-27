@@ -53,6 +53,52 @@ export function forecastEdName(edId: string): string {
   return edShortName(edById(edId)) || "ED not recorded";
 }
 
+/**
+ * H-0359 (USC-08, 27 Oct 2026): a screen shows several forecast panels, and each calls
+ * `useForecastModel`, so each used to run the whole forecast again for the same records and clock.
+ * The last few results are kept here and reused while every input is the same (compared by
+ * reference, as the store hands every panel the same records). Pure engine results only.
+ */
+const FORECAST_CACHE_SIZE = 4;
+const NO_PLANNED: NonNullable<Parameters<typeof forecastByKind>[6]> = [];
+const NO_REPATRIATIONS: Parameters<typeof notYetCounted>[2] = [];
+const forecastCache: { readonly inputs: readonly unknown[]; readonly parts: ForecastParts }[] = [];
+
+function computeForecastParts(
+  units: Parameters<typeof forecastByKind>[0],
+  bedReleases: Parameters<typeof forecastByKind>[1],
+  admissions: Parameters<typeof forecastByKind>[2],
+  movements: Parameters<typeof forecastByKind>[3],
+  planned: NonNullable<Parameters<typeof forecastByKind>[6]>,
+  leaveBeds: Parameters<typeof notYetCounted>[1],
+  repatriations: Parameters<typeof notYetCounted>[2],
+  now: Instant,
+  dayZero: Date,
+  edAccessTargetMinutes: Parameters<typeof edAccessRisk>[5],
+) {
+  const horizons = forecastHorizonDays(now, dayZero);
+  return {
+    horizons,
+    byDays: horizons.map((days) => forecastByKind(units, bedReleases, admissions, movements, now, days, planned)),
+    levers: forecastLevers(units, bedReleases, admissions, now),
+    blockers: blockerGroups(units, admissions),
+    notCounted: notYetCounted(units, leaveBeds, repatriations, admissions),
+    risk: edAccessRisk(movements, units, bedReleases, admissions, now, edAccessTargetMinutes),
+  };
+}
+
+type ForecastParts = ReturnType<typeof computeForecastParts>;
+
+function sharedForecastParts(...inputs: Parameters<typeof computeForecastParts>): ForecastParts {
+  const key = inputs.map((input) => (input instanceof Date ? input.getTime() : input));
+  const hit = forecastCache.find((entry) => entry.inputs.every((input, index) => Object.is(input, key[index])));
+  if (hit) return hit.parts;
+  const parts = computeForecastParts(...inputs);
+  forecastCache.unshift({ inputs: key, parts });
+  forecastCache.length = Math.min(forecastCache.length, FORECAST_CACHE_SIZE);
+  return parts;
+}
+
 export function useForecastModel(now: Instant) {
   const {
     units,
@@ -75,26 +121,35 @@ export function useForecastModel(now: Instant) {
     "configuration",
     "dayZero",
   );
-  const planned = useMemo(() => plannedAdmissions ?? [], [plannedAdmissions]);
+  const planned = useMemo(() => plannedAdmissions ?? NO_PLANNED, [plannedAdmissions]);
   // A test or preview world may carry no day 0; fall back the way the search previews do.
   const dayZero = useMemo(() => recordedDayZero ?? demoDayZero(new Date()), [recordedDayZero]);
-  const horizons = useMemo(() => forecastHorizonDays(now, dayZero), [now, dayZero]);
-  const byDays = useMemo(
-    () => horizons.map((days) => forecastByKind(units, bedReleases, admissions, movements, now, days, planned)),
-    [horizons, units, bedReleases, admissions, movements, now, planned],
-  );
-  const levers = useMemo(
-    () => forecastLevers(units, bedReleases, admissions, now),
-    [units, bedReleases, admissions, now],
-  );
-  const blockers = useMemo(() => blockerGroups(units, admissions), [units, admissions]);
-  const notCounted = useMemo(
-    () => notYetCounted(units, leaveBeds, repatriations ?? [], admissions),
-    [units, leaveBeds, repatriations, admissions],
-  );
-  const risk = useMemo(
-    () => edAccessRisk(movements, units, bedReleases, admissions, now, configuration.edAccessTargetMinutes),
-    [movements, units, bedReleases, admissions, now, configuration.edAccessTargetMinutes],
+  const { horizons, byDays, levers, blockers, notCounted, risk } = useMemo(
+    () =>
+      sharedForecastParts(
+        units,
+        bedReleases,
+        admissions,
+        movements,
+        planned,
+        leaveBeds,
+        repatriations ?? NO_REPATRIATIONS,
+        now,
+        dayZero,
+        configuration.edAccessTargetMinutes,
+      ),
+    [
+      units,
+      bedReleases,
+      admissions,
+      movements,
+      planned,
+      leaveBeds,
+      repatriations,
+      now,
+      dayZero,
+      configuration.edAccessTargetMinutes,
+    ],
   );
   const thresholds: ForecastAlertThresholds = useMemo(
     () => ({
