@@ -64,4 +64,14 @@ describe("P188: the tour is offered, not forced", () => {
     expect(onStart).not.toHaveBeenCalled();
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
   });
+
+  it("takes the card away when the desk changes, so it cannot start another desk's tour", async () => {
+    const onStart = vi.fn();
+    const view = render(<WardTourAutoStart onStart={onStart} />);
+    await screen.findByTestId("ward-tour-offer");
+    desk.role = "ward";
+    view.rerender(<WardTourAutoStart onStart={onStart} />);
+    expect(screen.queryByTestId("ward-tour-offer")).toBeNull();
+    expect(onStart).not.toHaveBeenCalled();
+  });
 });

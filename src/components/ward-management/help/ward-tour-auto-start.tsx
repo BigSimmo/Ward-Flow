@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/wf/button";
+import { Button, OverlayPortal } from "@/components/wf";
 
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
@@ -76,7 +76,9 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const { home, deskHome } = useTourFacts(role);
   const pathname = usePathname() ?? "";
   const started = useRef<WardTourRole | null>(null);
-  const [offered, setOffered] = useState(false);
+  // The offer remembers the desk and page it was raised on, so a desk switch cannot leave a card
+  // open that would start another desk's tour.
+  const [offered, setOffered] = useState<{ readonly role: WardTourRole; readonly pathname: string } | null>(null);
   useEffect(() => {
     if (started.current === role || seen || !home || (pathname !== home && pathname !== deskHome)) return;
     const timer = window.setTimeout(() => {
@@ -84,29 +86,31 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
       if (readTourAutoDone(role) || !markTourAutoDone(role)) return;
       // A first visit gets the tour offer, not the what's new note as well.
       window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
-      setOffered(true);
+      setOffered({ role, pathname });
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);
   }, [deskHome, home, pathname, role, seen]);
-  if (!offered) return null;
+  if (!offered || offered.role !== role || offered.pathname !== pathname) return null;
   return (
-    <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
-      <p className={styles.text}>Want a quick tour? It takes about 2 minutes.</p>
-      <div className={styles.actions}>
-        <Button
-          variant="pri"
-          size="sm"
-          onClick={() => {
-            setOffered(false);
-            onStart();
-          }}
-        >
-          Start the tour
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setOffered(false)}>
-          Not now
-        </Button>
-      </div>
-    </section>
+    <OverlayPortal layer="overlay" name="ward-tour-offer">
+      <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
+        <p className={styles.text}>Want a quick tour? It takes about 2 minutes.</p>
+        <div className={styles.actions}>
+          <Button
+            variant="pri"
+            size="sm"
+            onClick={() => {
+              setOffered(null);
+              onStart();
+            }}
+          >
+            Start the tour
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setOffered(null)}>
+            Not now
+          </Button>
+        </div>
+      </section>
+    </OverlayPortal>
   );
 }
