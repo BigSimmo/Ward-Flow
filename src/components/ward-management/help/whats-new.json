@@ -1,55 +1,5 @@
 [
   {
-    "id": "2026-10-27-one-transport-form",
-    "date": "2026-10-27",
-    "line": "Transport bookings use one form on every screen, with legal status filled in from Legal now."
-  },
-  {
-    "id": "2026-10-27-plain-words",
-    "date": "2026-10-27",
-    "line": "Screens now say Bed coordinator, pulled for incoming beds, and plain words in place of codes."
-  },
-  {
-    "id": "2026-10-27-ed-quick-answers",
-    "date": "2026-10-27",
-    "line": "The ED Ask for a bed form keeps every answer when you choose quickly on a phone."
-  },
-  {
-    "id": "2026-10-27-seven-travel-choices",
-    "date": "2026-10-27",
-    "line": "Every screen asking how a patient travels offers the same seven choices, with none picked for you."
-  },
-  {
-    "id": "2026-10-27-full-names-on-phones",
-    "date": "2026-10-27",
-    "line": "Phones now always show patients' full names. The Discreet names setting has gone."
-  },
-  {
-    "id": "2026-10-27-tv-signed-out",
-    "date": "2026-10-27",
-    "line": "A TV that is signed out now says so in full screen, and keeps its figures still while it is offline."
-  },
-  {
-    "id": "2026-10-27-referral-patient-search-keys",
-    "date": "2026-10-27",
-    "line": "The new referral's patient search now works with arrow keys and Enter, and says when nobody matches."
-  },
-  {
-    "id": "2026-10-27-accept-dialog-words",
-    "date": "2026-10-27",
-    "line": "The accept dialog now says Accept referral in principle and Confirm acceptance. Ward checks say Ward cohort."
-  },
-  {
-    "id": "2026-10-27-accept-dialog-patient-field",
-    "date": "2026-10-27",
-    "line": "The accept dialog now labels its read-only field Patient, as it never allocates a bed."
-  },
-  {
-    "id": "2026-10-27-referral-prefill",
-    "date": "2026-10-27",
-    "line": "The referral form now fills medical clearance, your contact details, home region and catchment from the record."
-  },
-  {
     "id": "2026-10-27-open-ed-journey-warning",
     "date": "2026-10-27",
     "line": "Referring someone already on an open ED journey elsewhere now warns you before Send."
@@ -98,5 +48,55 @@
     "id": "2026-10-27-home-back-on-rail",
     "date": "2026-10-27",
     "line": "Home is back at the top of the side menu on a computer, with a house icon."
+  },
+  {
+    "id": "2026-10-27-full-given-names-on-boards",
+    "date": "2026-10-27",
+    "line": "Bed board, movement bars and board cards show the given name in full."
+  },
+  {
+    "id": "2026-10-27-waiting-list-and-record",
+    "date": "2026-10-27",
+    "line": "Waitlist is now Waiting list, and dossier is now record."
+  },
+  {
+    "id": "2026-10-27-officer-guide-steps",
+    "date": "2026-10-27",
+    "line": "The officer guide names each step up to Arrived at ward. Counts read 1 day and 2 days."
+  },
+  {
+    "id": "2026-10-27-stay-figures-and-alert-units",
+    "date": "2026-10-27",
+    "line": "Stay figures say who they cover and write days in full. Forecast alerts name their unit."
+  },
+  {
+    "id": "2026-10-27-statistics-headings-site-key",
+    "date": "2026-10-27",
+    "line": "Statistics and Handover headings name their page, and the ward table has a key for site codes."
+  },
+  {
+    "id": "2026-10-27-sentence-case-plain-refusals",
+    "date": "2026-10-27",
+    "line": "Labels are in sentence case, and refused actions are named in plain words, not codes."
+  },
+  {
+    "id": "2026-10-27-gender-mix",
+    "date": "2026-10-27",
+    "line": "Referral checks say gender mix, matching the bed screens."
+  },
+  {
+    "id": "2026-10-27-glossary-abbreviations",
+    "date": "2026-10-27",
+    "line": "The Help glossary now spells out AWST, CAMHS, HDU, KPI, MHERL and PIR."
+  },
+  {
+    "id": "2026-10-27-community-observation-withheld",
+    "date": "2026-10-27",
+    "line": "A community team now sees an inpatient's observation level as Withheld, not General."
+  },
+  {
+    "id": "2026-10-27-device-clock-roles",
+    "date": "2026-10-27",
+    "line": "A device with its clock set wrong no longer cuts a role short or keeps it open too long."
   }
 ]
