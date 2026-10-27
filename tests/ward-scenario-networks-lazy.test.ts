@@ -42,9 +42,11 @@ describe("lazily loaded demonstration networks (H-0952)", () => {
       const text = readFileSync(file, "utf8");
       for (const base of ["ward-demo-network", "ward-wa-synthetic-network", "ward-scenario-networks"]) {
         const pattern = new RegExp(`^import (?!type )[^;]*?(?:from )?"[^"]*/${base}";`, "ms");
-        if (pattern.test(text)) offenders.push(`${path.relative(process.cwd(), file)} -> ${base}`);
+        if (pattern.test(text))
+          offenders.push(`${path.relative(process.cwd(), file).split(path.sep).join("/")} -> ${base}`);
       }
     }
+    // Paths use "/" on every platform, so the list below also holds on Windows.
     // Server-only route lookups and the reducer's lazily loaded slices may register them eagerly.
     expect(offenders.sort()).toEqual([
       "src/components/ward-management/ward-flow-reducer-slices.ts -> ward-scenario-networks",
