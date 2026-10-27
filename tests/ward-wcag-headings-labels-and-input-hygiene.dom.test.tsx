@@ -128,7 +128,7 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
     unmountEdScreen();
   });
 
-  it("links Field error text without role=alert and defaults data-gramm=false and spellCheck=false on TextInput, Textarea, and EdPresentation", () => {
+  it("applies role=alert on Field error text and defaults data-gramm=false and spellCheck=false on TextInput, Textarea, and EdPresentation", () => {
     render(
       <div>
         <Field label="UMRN" error="Invalid UMRN">
@@ -144,11 +144,8 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
       </div>,
     );
 
-    // Form-friction 253: the ErrorSummary announces; a field error is described, not re-announced.
-    expect(screen.queryByRole("alert")).toBeNull();
-    const errorText = screen.getByText("Invalid UMRN");
-    expect(screen.getByTestId("wf-text-input")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByTestId("wf-text-input").getAttribute("aria-describedby")).toContain(errorText.id);
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Invalid UMRN");
 
     const textInput = screen.getByTestId("wf-text-input");
     expect(textInput).toHaveAttribute("data-gramm", "false");
