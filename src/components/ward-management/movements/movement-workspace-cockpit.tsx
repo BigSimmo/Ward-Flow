@@ -117,7 +117,7 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
 const CANCEL_TRANSPORT_NOT_YOURS =
-  "This ward did not book the job, so ask the flow coordinator or the referring emergency department to cancel it.";
+  "This ward did not book the job, so ask the bed coordinator or the referring emergency department to cancel it.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 
@@ -1430,10 +1430,10 @@ export function MovementWorkspaceCockpit({
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
-                    ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
+                    ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
                     : movement.transport?.bookedBy?.role === "community" && movement.transport.bookedBy.placeId
-                      ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
-                      : "A transport job can be cancelled by the flow coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
+                      ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
+                      : "A transport job can be cancelled by the bed coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
                 </p>
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor="ward-console-cancel-transport-reason">

@@ -1,4 +1,4 @@
-# Desk guide: Flow coordinator
+# Desk guide: Bed coordinator
 
 <!-- last-checked: 2026-10-26 -->
 

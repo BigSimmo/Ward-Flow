@@ -7,7 +7,7 @@ recording. It may be switched off in some builds.
 
 ## Who opens it
 
-The flow coordinator, a site bed manager or a ward. Open **Capacity** and press **Open on TV**.
+The bed coordinator, a site bed manager or a ward. Open **Capacity** and press **Open on TV**.
 ED desks do not open the TV view.
 
 ## What it shows
