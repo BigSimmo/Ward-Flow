@@ -92,16 +92,8 @@ import { roleLimitReason } from "@/components/ward-management/ward-role-permissi
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  buttonClass,
-  CheckingFoot,
-  durMinutes,
-  Menu,
-  StatusGlyph,
-  useIsPhone,
-  useOptionalToast,
-} from "@/components/wf";
-import { actionToastText, isWarningToast, type ActionToast } from "@/components/ward-management/ward-action-toast";
+import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -467,7 +459,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       window.history.replaceState(state, "", url.toString());
     }
   }, [selectedBed, refusedBedParam]);
-  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
+  const [toastMessage, setToastMessage] = useWardPageToast();
   // Walk-through WT-10: a refusal or a step that did not go through shows as a warning.
   const warnToast = (text: string) => setToastMessage({ warning: text });
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -2540,17 +2532,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         ) : null}
 
-        {/* Action Toast (Owner Rule D4) */}
-        <div
-          className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`}
-          role="status"
-          aria-live="polite"
-          data-testid="ward-action-toast"
-          data-tone={isWarningToast(toastMessage) ? "warning" : undefined}
-        >
-          <StatusGlyph tone={isWarningToast(toastMessage) ? "warning" : "success"} size={10} />
-          <span>{toastMessage === null ? null : actionToastText(toastMessage)}</span>
-        </div>
+        <WardPageActionToast toast={toastMessage} onClose={() => setToastMessage(null)} />
         <WardPrototypeFooter
           testId="ward-unit-governance"
           note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}

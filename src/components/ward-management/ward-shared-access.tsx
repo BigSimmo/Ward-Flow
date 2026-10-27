@@ -14,6 +14,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
@@ -40,6 +41,7 @@ import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
+import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
 const UNAVAILABLE_ACCESS_MESSAGE =
@@ -641,6 +643,8 @@ function WardSharedWorkspaceContent({
 }) {
   "use no memo";
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  // TV-13 (H-0787): a wall TV whose session ends says so at TV size, not as a small sign-in page.
+  const onTv = isTvPath(usePathname() ?? "");
   useEffect(() => {
     if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
     // A checkpoint updates checkedAt and re-arms this effect while the deadline is still ahead.
@@ -697,12 +701,22 @@ function WardSharedWorkspaceContent({
     return (
       <main
         id="main-content"
-        className={styles.notice}
-        aria-label="Ward Flow sign-in"
+        className={onTv ? `${styles.notice} ${styles.tvSignedOut}` : styles.notice}
+        aria-label={onTv ? "TV signed out" : "Ward Flow sign-in"}
         aria-busy={connection.signedIn && connection.status === "loading"}
+        data-testid={onTv ? "ward-tv-signed-out" : undefined}
       >
-        <h1>Ward Flow sign-in</h1>
-        <p>Shared synthetic workspace. You see the screens your role needs.</p>
+        {onTv ? (
+          <>
+            <h1>This TV is signed out</h1>
+            <p>The bed meeting view is not showing. Sign in again to bring it back.</p>
+          </>
+        ) : (
+          <>
+            <h1>Ward Flow sign-in</h1>
+            <p>Shared synthetic workspace. You see the screens your role needs.</p>
+          </>
+        )}
         {connection.error && <p role="alert">{connection.error}</p>}
         {connection.signedIn && connection.status === "loading" && !connection.error && (
           <p role="status" data-testid="ward-shared-connecting">
@@ -769,9 +783,20 @@ function WardSharedWorkspaceContent({
 /** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced before it ends (`sessionWarning`). */
 const SESSION_WARNING_MS = CLINICAL_VALUES.sessionWarning.value * 60_000;
 
+function subscribeFullscreen(onChange: () => void): () => void {
+  document.addEventListener("fullscreenchange", onChange);
+  return () => document.removeEventListener("fullscreenchange", onChange);
+}
+
 export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   // Wall-clock time, not the demonstration clock: the server measures the limit in real time.
   const [now, setNow] = useState(() => Date.now());
+  // TV-13 (H-0787): a full screen TV shows only its own element, so the warning goes inside it.
+  const fullscreen = useSyncExternalStore(
+    subscribeFullscreen,
+    () => document.fullscreenElement,
+    () => null,
+  );
   useEffect(() => {
     if (endsAt === null) return;
     const timer = window.setInterval(() => setNow(Date.now()), 15_000);
@@ -783,12 +808,17 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
     minute: "2-digit",
     timeZone: "Australia/Perth",
   });
-  return (
-    <p role="alert" className={styles.sessionEnding} data-testid="ward-session-ending">
+  const notice = (
+    <p
+      role="alert"
+      className={fullscreen ? `${styles.sessionEnding} ${styles.sessionEndingOnTop}` : styles.sessionEnding}
+      data-testid="ward-session-ending"
+    >
       You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
       typing and save it now.
     </p>
   );
+  return fullscreen ? createPortal(notice, fullscreen) : notice;
 }
 
 /**

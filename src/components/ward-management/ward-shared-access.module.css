@@ -246,3 +246,32 @@
   font-size: 0.875rem;
   font-weight: 600;
 }
+
+/* TV-13: inside a full screen TV, over its top edge and at a size read across the room. */
+.sessionEndingOnTop {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 10;
+  font-size: clamp(1.25rem, 1.6vw, 2.5rem);
+}
+
+/* TV-13: a TV whose session ended, at a size read across the room. */
+.tvSignedOut {
+  display: grid;
+  min-block-size: 100dvh;
+  place-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  font-size: clamp(1.25rem, 1.8vw, 2.75rem);
+  text-align: center;
+}
+
+.tvSignedOut h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 5rem);
+}
+
+.tvSignedOut p {
+  margin: 0;
+}

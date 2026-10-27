@@ -7,6 +7,7 @@ import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import {
   bedMeetingActionLabel,
@@ -41,12 +42,19 @@ export function DueActions({
     lastDoneAt.current = at;
     return true;
   }, []);
+  // RB-N01: the closed action's row leaves with it; focus goes to the Mark done now in its place.
+  const list = useRef<HTMLUListElement>(null);
+  const markDone = useRefocusAfterRowLeaves({
+    list,
+    selector: '[data-testid="meeting-action-mark-done"]',
+    rowsKey: actions.map((action) => action.kind).join("|"),
+  });
   return (
     <Card data-testid="meeting-actions-due">
       <CardHead title="Agreed at the bed meeting" meta={`${actions.length}`} level={2} />
       <CardBody>
-        <ul className={styles.list}>
-          {actions.map((action) => (
+        <ul className={styles.list} ref={list}>
+          {actions.map((action, index) => (
             <li key={action.kind} className={styles.row}>
               <div className={styles.rowText}>
                 <span className={styles.name}>
@@ -61,6 +69,7 @@ export function DueActions({
                 onClick={(event) => {
                   // The second click of a double click is never a fresh Mark done.
                   if (event.detail > 1 || !claimDone()) return;
+                  markDone(index);
                   raise("COMPLETE_BED_MEETING_ACTION", {
                     subject,
                     action: action.kind,
