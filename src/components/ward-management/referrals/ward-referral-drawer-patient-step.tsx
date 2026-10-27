@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -30,6 +30,7 @@ import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
 export function ReferralPatientStep({
@@ -116,6 +117,13 @@ export function ReferralPatientStep({
   const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;
+  // H-0731: choosing a person to refer opens their record, which shows its recorded address. In the
+  // signed-in shared workspace the server logs that opening and only then sends the address.
+  const session = useContext(SharedSessionContext);
+  const chosenId = patientRecord?.id;
+  useEffect(() => {
+    if (chosenId) session?.logRecordView(chosenId, "referral");
+  }, [session, chosenId]);
   // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
   // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
   const [highlight, setHighlight] = useState(-1);
