@@ -13,7 +13,6 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -45,19 +44,11 @@ import {
   type ReleasePullReason,
   wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  dayOf,
-  formatInstant,
-  formatInstantWithDay,
-  type Instant,
-  minuteOfDay,
-} from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
-  isOpen,
-  isStoppedTransportAwaitingRelease,
   overridesAgainstUnit,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
@@ -95,6 +86,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
+import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -904,88 +896,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
-  const pendingBedReleases = useMemo(
-    () => (!unit ? [] : bedReleases.filter((release) => release.unitId === unit.id && release.state !== "discharged")),
-    [bedReleases, unit],
-  );
-  const unitLeaveBeds = useMemo(
-    () => (!unit ? [] : leaveBeds.filter((bed) => bed.unitId === unit.id)),
-    [leaveBeds, unit],
-  );
-  const incoming = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements
-            .filter(
-              (movement) =>
-                isOpen(movement) &&
-                movement.stage === "destination_review" &&
-                movement.referredUnitIds.includes(unit.id),
-            )
-            .sort((left, right) => left.openedAt - right.openedAt),
-    [movements, unit],
-  );
-  const accepted = useMemo(
-    () => (!unit ? [] : movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id)),
-    [movements, unit],
-  );
-  const heldAfterStop = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements.filter(
-            (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
-          ),
-    [movements, unit],
-  );
-  const recentAnswers = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements
-            .flatMap((movement) => {
-              const wardAnswers: Array<{
-                key: string;
-                movementId: string;
-                outcome: "Accepted" | "Declined";
-                at?: Instant;
-                reason?: DeclineReason;
-              }> = [];
-
-              if (movement.acceptedUnitId === unit.id) {
-                wardAnswers.push({
-                  key: `${movement.id}-accepted`,
-                  movementId: movement.id,
-                  outcome: "Accepted",
-                  at: movement.acceptedAt,
-                });
-              }
-
-              movement.declines
-                .filter((decline) => decline.unitId === unit.id)
-                .forEach((decline, index) => {
-                  wardAnswers.push({
-                    key: `${movement.id}-declined-${index}`,
-                    movementId: movement.id,
-                    outcome: "Declined",
-                    at: decline.at,
-                    reason: decline.reason,
-                  });
-                });
-
-              return wardAnswers;
-            })
-            .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY)),
-    [movements, unit],
-  );
-  const withdrawn = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements.filter((movement) => movement.withdrawnReferrals.some((entry) => entry.unitId === unit.id)),
-    [movements, unit],
-  );
+  const { pendingBedReleases, unitLeaveBeds, incoming, accepted, heldAfterStop, recentAnswers, withdrawn } =
+    useWardUnitQueues({ unit, bedReleases, leaveBeds, movements });
 
   if (!unit) {
     return (
