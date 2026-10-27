@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "playwright/test";
+import { devices, expect, test, type Browser, type Page } from "playwright/test";
 
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
@@ -232,4 +232,86 @@ test.describe("dark theme", () => {
     }
     await expectAccessible(page, testInfo, "dark Tools or Menu open");
   });
+});
+
+/**
+ * DA-38 (design reassessment 20 Oct 2026, H-0196): nothing in CI caught a screen that jumps once its
+ * code runs. These open a spread of desks fresh, at desktop and phone size, and add up every layout
+ * shift the page makes on its own until it settles. 0.1 is the "good" line for cumulative layout
+ * shift. On 27 Oct 2026 the worst desk measured 0.07 on a phone and 0.004 on a desktop. Only
+ * Chromium reports layout shifts, so the phone pass runs as a phone-sized Chromium page inside the
+ * desktop project, sent with a phone's user agent so the server draws the phone layout first, as it
+ * does for a real phone.
+ */
+test.describe("layout shift", () => {
+  const SHIFT_ROUTES = [
+    ["", "ward-coordinator"],
+    ["/community/midland", "ward-community-screen"],
+    ["/discharges", "ward-discharge-board"],
+    ["/ed/peel-ed", "ward-ed-screen"],
+    ["/movements", "ward-movements-page"],
+    ["/people/new", "ward-add-patient-screen"],
+    ["/referrals", "ward-referral-board-screen"],
+    ["/statistics", "ward-statistics-screen"],
+    ["/transport/officer", "ward-officer-screen"],
+    ["/waiting", "ward-delays-page"],
+    ["/ward/rph-adult-secure", "ward-unit-screen"],
+    ["/wards", "ward-index"],
+  ] as const;
+  const SHIFT_BUDGET = 0.1;
+  const TOURS_SEEN = "coordinator,ward,ed,community,officer,bed_manager,executive,admin";
+
+  async function settledShift(page: Page, route: string, screenId: string) {
+    await page.addInitScript((toursSeen) => {
+      try {
+        window.localStorage.setItem("ward_flow_choice_tour_seen", toursSeen);
+      } catch {
+        // Storage can be blocked; the tour then shows, which the shift total would catch.
+      }
+      const shifts: { value: number; at: number }[] = [];
+      (window as unknown as { __wfShifts: typeof shifts }).__wfShifts = shifts;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as unknown as {
+          value: number;
+          startTime: number;
+          hadRecentInput: boolean;
+        }[]) {
+          if (!entry.hadRecentInput) shifts.push({ value: entry.value, at: Math.round(entry.startTime) });
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    }, TOURS_SEEN);
+    await openShell(page, route, screenId);
+    // Late data and fonts land after network idle; give them a moment before adding up.
+    await page.waitForTimeout(1_000);
+    const shifts = await page.evaluate(
+      () => (window as unknown as { __wfShifts: { value: number; at: number }[] }).__wfShifts,
+    );
+    return { total: shifts.reduce((sum, shift) => sum + shift.value, 0), shifts };
+  }
+
+  async function phonePage(browser: Browser, baseURL: string | undefined) {
+    const { defaultBrowserType: _browserType, ...pixel } = devices["Pixel 7"];
+    const context = await browser.newContext({ ...pixel, baseURL, viewport: { width: 390, height: 844 } });
+    return { context, page: await context.newPage() };
+  }
+
+  for (const [route, screenId] of SHIFT_ROUTES) {
+    test(`layout shift: ${route || "/"} stays still as it loads, desktop and phone`, async ({
+      browser,
+      browserName,
+      page,
+    }, testInfo) => {
+      test.skip(browserName !== "chromium", "Only Chromium reports layout shifts");
+      test.skip(isPhoneLayout(page), "The desktop project measures both sizes");
+      const desktop = await settledShift(page, route, screenId);
+      expect(desktop.total, `desktop shifts ${JSON.stringify(desktop.shifts)}`).toBeLessThan(SHIFT_BUDGET);
+      const phone = await phonePage(browser, testInfo.project.use.baseURL);
+      try {
+        const measured = await settledShift(phone.page, route, screenId);
+        expect(measured.total, `phone shifts ${JSON.stringify(measured.shifts)}`).toBeLessThan(SHIFT_BUDGET);
+      } finally {
+        await phone.context.close();
+      }
+    });
+  }
 });
