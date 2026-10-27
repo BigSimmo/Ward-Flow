@@ -10,9 +10,9 @@ import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-rol
 import {
   PATIENT_ARCHIVE_REASON_LABELS,
   PATIENT_ARCHIVE_REASONS,
+  patientArchiveProblem,
   type PatientArchiveReason,
 } from "@/components/ward-management/ward-patient-archive";
-import { patientArchiveProblem } from "@/components/ward-management/ward-patient-archive-reducer";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 
