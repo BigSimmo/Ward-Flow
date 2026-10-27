@@ -121,30 +121,35 @@ describe("the rail shows the desk's own menu (B1)", () => {
     expect(screen.getByTestId("ward-rail-role-menu")).toHaveAccessibleName("Nurse in charge menu");
   });
 
-  it("gives the bed coordinator Home, Capacity, Movements, Referrals and Handover (B1, Home back 27 Oct)", () => {
+  it("gives the bed coordinator Home, Capacity, Movements, Waiting, All EDs, Referrals and Handover (27 Oct)", () => {
     const { main, more } = roleMenu(railEntries(), "coordinator");
     expect(main.map((item) => [item.id, item.label])).toEqual([
       ["command", "Home"],
       ["capacity", "Capacity"],
       ["movements", "Movements"],
+      ["delays", "Waiting"],
+      ["ed", "All EDs"],
       ["referrals", "Referrals"],
       ["handover", "Handover"],
     ]);
-    // Only the menu words change: Waiting is one tap away under More, and no page is lost.
-    expect(more.find((group) => group.label === "Today")?.entries.map((entry) => entry.label)).toContain("Waiting");
+    // Josh, 27 Oct 2026: Waiting and All EDs are in the menu, so More no longer lists them.
+    const moreLabels = more.flatMap((group) => group.entries.map((entry) => entry.label));
+    expect(moreLabels).not.toContain("Waiting");
+    expect(moreLabels).not.toContain("All EDs");
     render(wrap(<WardRail />));
     expect(railMenu()).toEqual([
       "Home",
       expect.stringMatching(/^Capacity, /u),
       expect.stringMatching(/^Movements, /u),
+      expect.stringMatching(/^Waiting\b/u),
+      expect.stringMatching(/^All EDs\b/u),
       expect.stringMatching(/^Referrals, /u),
     ]);
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/ward-flow");
     expect(screen.getByRole("link", { name: /^Capacity, /u })).toHaveAttribute("href", "/ward-flow/capacity");
     expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
-    fireEvent.click(screen.getByTestId("ward-rail-more"));
-    const sheet = screen.getByRole("dialog", { name: "More pages" });
-    expect(within(sheet).getByRole("link", { name: /^Waiting, /u })).toHaveAttribute("href", "/ward-flow/waiting");
+    expect(screen.getByRole("link", { name: /^Waiting\b/u })).toHaveAttribute("href", "/ward-flow/waiting");
+    expect(screen.getByRole("link", { name: /^All EDs\b/u })).toHaveAttribute("href", "/ward-flow/ed");
   });
 
   it("gives the ED desk its board, its referrals, New referral and Find a bed", () => {

@@ -87,8 +87,8 @@ export const RAIL_GROUPS = [
  * The coordinator's menu reads as the B1 table does (overall review, 20 Oct 2026), led by Home. Josh,
  * 27 Oct 2026: "Home" is back on the desktop rail. Home v7 (22 Oct) had named it "My list" after
  * Home's first tab, and it no longer read as the way home. Only
- * the menu words change; the pages keep their names until B5 and B3 rename them. Waiting moves to
- * More with every other page. B1's officer
+ * the menu words change; the pages keep their names until B5 and B3 rename them. Waiting moved to
+ * More on 20 Oct and came back with All EDs on 27 Oct (Josh). B1's officer
  * "Run sheet" has no screen yet (Movements' Run sheet button is not wired, and Movements is not part
  * of the officer desk), so the officer gets My jobs and Alerts until one is built.
  */
@@ -120,6 +120,10 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
       // keeps the current screens and the B5 rename to Beds will not happen.
       ["capacity", "Capacity"],
       ["movements", "Movements"],
+      // Josh, 27 Oct 2026: Waiting and All EDs come back to the coordinator's own menu, the delays
+      // it chases and who is stuck in which ED, one tap each.
+      ["delays", "Waiting"],
+      ["ed", "All EDs"],
       ["referrals", "Referrals"],
       ["handover", "Handover"],
     ],
