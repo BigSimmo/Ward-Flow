@@ -16,7 +16,7 @@ _Updated 2026-10-26 - runtime compatibility runs to the latest migration named b
   records the membership that turned it on.
 - Migration 11 adds append-only record access history and break glass protection, plus
   server-side session sign-outs. The backend accepts schema versions 5 through
-  <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->; these
+  <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->; these
   capabilities require 11 and its runtime grants. Migration 12 adds foreign-key indexes without
   changing runtime behaviour. Migration 13 lets the record access log name a referral's full
   detail (D-80); before it, opening that detail is not logged. The supported bounds come from `MINIMUM_RUNTIME_MIGRATION` and
@@ -68,21 +68,21 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 
 ## Where the provider is chosen
 
-| What                                          | Where                                                                                                                                                                        |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Provider names, defaults and settings readers | `backend/ward-flow/config.mjs` (`DEFAULT_DATABASE_PROVIDER`, `DEFAULT_AUTH_PROVIDER`, `DATABASE_PROVIDERS`, `AUTH_PROVIDERS`)                                                |
-| Adapters for those names                      | `backend/ward-flow/providers.mjs` (`DATABASE_ADAPTERS`, `AUTH_ADAPTERS`)                                                                                                     |
-| Supabase adapter                              | `backend/ward-flow/supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`, `migrate-supabase.mjs`, `infra/supabase-*`                                            |
-| Plain PostgreSQL adapter                      | `backend/ward-flow/postgres-config.mjs`, `portable-postgres.mjs`, `migrate-postgres.mjs`, `infra/postgres-*`                                                                 |
-| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations.mjs`, `migrations/001` through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact --> |
-| Browser sign-in                               | `src/components/ward-management/use-ward-supabase-shared.ts`, selected by `selectWardAuthProvider` in `ward-shared-access.tsx`                                               |
-| Browser security policy                       | `src/lib/security-headers.ts` (`resolveWardAuthProvider`, `resolveSharedWorkspaceOrigins`)                                                                                   |
-| Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                                                                      |
-| Tests that cover every registered provider    | `backend/ward-flow/provider-routing.test.mjs`, `tests/ward-auth-provider-parity.test.ts`, `tests/security-headers.test.ts`                                                   |
+| What                                          | Where                                                                                                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Provider names, defaults and settings readers | `backend/ward-flow/config.mjs` (`DEFAULT_DATABASE_PROVIDER`, `DEFAULT_AUTH_PROVIDER`, `DATABASE_PROVIDERS`, `AUTH_PROVIDERS`)                                               |
+| Adapters for those names                      | `backend/ward-flow/providers.mjs` (`DATABASE_ADAPTERS`, `AUTH_ADAPTERS`)                                                                                                    |
+| Supabase adapter                              | `backend/ward-flow/supabase-config.mjs`, `supabase-postgres.mjs`, `supabase-auth.mjs`, `migrate-supabase.mjs`, `infra/supabase-*`                                           |
+| Plain PostgreSQL adapter                      | `backend/ward-flow/postgres-config.mjs`, `portable-postgres.mjs`, `migrate-postgres.mjs`, `infra/postgres-*`                                                                |
+| Shared workspace store (provider-neutral SQL) | `backend/ward-flow/postgres.mjs`, `records.mjs`, `migrate.mjs`, `migrations.mjs`, `migrations/001` through <!-- fact:latest-migration -->016-forecast-history<!-- /fact --> |
+| Browser sign-in                               | `src/components/ward-management/use-ward-supabase-shared.ts`, selected by `selectWardAuthProvider` in `ward-shared-access.tsx`                                              |
+| Browser security policy                       | `src/lib/security-headers.ts` (`resolveWardAuthProvider`, `resolveSharedWorkspaceOrigins`)                                                                                  |
+| Settings templates                            | `backend/ward-flow/.env.example`, `backend/ward-flow/infra/*.env*`, root `.env.example`                                                                                     |
+| Tests that cover every registered provider    | `backend/ward-flow/provider-routing.test.mjs`, `tests/ward-auth-provider-parity.test.ts`, `tests/security-headers.test.ts`                                                  |
 
 ## Migrations the app expects
 
-The backend accepts a database at migration 5 through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
+The backend accepts a database at migration 5 through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
 
 | Migration | What the app needs it for                                | If it is missing                                                                 |
 | --------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |

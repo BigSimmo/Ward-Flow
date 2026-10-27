@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
+import { forecastHistoryInput } from "./forecast-history.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -12,6 +13,7 @@ const ROUTES = new Map([
   ["/v1/workspace/receipt", "workspace_receipt"],
   ["/v1/workspace/audit", "workspace_audit"],
   ["/v1/workspace/archive", "workspace_archive"],
+  ["/v1/workspace/forecast-history", "forecast_history"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -450,6 +452,19 @@ export function createSharedHandler({
         // (H-0731), before they go. A failed log write fails the read.
         if (archive?.records?.length && store.logList) await store.logList(view, "list");
         return reply(200, archive);
+      }
+      if (path === "/v1/workspace/forecast-history") {
+        // Proposal 013 (migration 16): this desk's forecast snapshots and miss reasons, shared by
+        // every device and colleague working the same role and place. Counts and closed-list values
+        // only. A store without the table answers `shared: false`, and the browser keeps its own.
+        if (!store.forecastHistory || !store.recordForecast) return reply(200, { shared: false });
+        if (request.method === "GET") return reply(200, await store.forecastHistory(view));
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        const input = forecastHistoryInput(body);
+        if (!input) return reply(400, { error: "A forecast snapshot or a reason for a missed day is required" });
+        const result = await store.recordForecast(view, input);
+        return reply(result.status, result.body);
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads

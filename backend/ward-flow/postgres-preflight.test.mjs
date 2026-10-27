@@ -21,6 +21,7 @@ const sqlFiles = [
   "013-referral-record-views",
   "014-archived-records",
   "015-list-and-tv-views",
+  "016-forecast-history",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {

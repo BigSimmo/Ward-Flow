@@ -92,6 +92,12 @@ DO $$ BEGIN
   IF to_regclass('ward_flow.archived_records') IS NOT NULL THEN
     GRANT SELECT, INSERT ON ward_flow.archived_records TO wardflow_backend;
   END IF;
+  -- Migration 16: a forecast snapshot is added once a demo day and read; a miss reason is added,
+  -- read, and replaced when a later reason is chosen for the same day.
+  IF to_regclass('ward_flow.forecast_snapshots') IS NOT NULL THEN
+    GRANT SELECT, INSERT ON ward_flow.forecast_snapshots TO wardflow_backend;
+    GRANT SELECT, INSERT, UPDATE ON ward_flow.forecast_miss_reasons TO wardflow_backend;
+  END IF;
 END $$;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ward_flow REVOKE ALL ON SEQUENCES FROM PUBLIC;
