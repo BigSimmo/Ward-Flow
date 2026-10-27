@@ -23,8 +23,6 @@ import type { PatientId } from "@/components/ward-management/ward-patients";
  */
 export function PatientArchivePanel({ patientId, displayName }: { patientId: PatientId; displayName: string }) {
   const gate = useRoleGate();
-  const raise = useWardRaise(useRouteRole());
-  const router = useRouter();
   const state = useWardFlowSelect(
     "patients",
     "movements",
@@ -40,19 +38,6 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
   if (!gate("ARCHIVE_PATIENT").allowed) return null;
   // The screen's own read of the lists it holds. The engine reads every list and stays the authority.
   if (patientArchiveProblem(state as Parameters<typeof patientArchiveProblem>[0], patientId) !== undefined) return null;
-  const settle = (outcome: WardCommandOutcome | void) => {
-    if (outcome?.status === "accepted") router.replace("/ward-flow/search");
-    else {
-      setRefused(true);
-      setConfirming(false);
-    }
-  };
-  const archive = () => {
-    if (reason === null) return;
-    const completion = raise("ARCHIVE_PATIENT", { patientId, reason });
-    if (completion && "then" in completion) void completion.then(settle, () => settle());
-    else settle(completion);
-  };
   return (
     <Card data-testid="ward-patient-archive">
       <CardHead title="Record added in error" />
@@ -80,16 +65,17 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
           ))}
         </fieldset>
         {refused ? <p role="alert">The record was not archived. It may have care recorded against it now.</p> : null}
-        {confirming ? (
-          <div role="group" aria-label="Confirm archive">
-            <p>Archive {displayName}&apos;s record? It leaves every list. Only the audit trail will show it.</p>
-            <Button variant="pri" onClick={archive} data-testid="ward-patient-archive-confirm">
-              Archive record
-            </Button>{" "}
-            <Button variant="sec" onClick={() => setConfirming(false)}>
-              Keep record
-            </Button>
-          </div>
+        {confirming && reason !== null ? (
+          <ArchiveConfirm
+            patientId={patientId}
+            displayName={displayName}
+            reason={reason}
+            onRefused={() => {
+              setRefused(true);
+              setConfirming(false);
+            }}
+            onKeep={() => setConfirming(false)}
+          />
         ) : (
           <Button
             variant="sec"
@@ -102,5 +88,43 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
         )}
       </CardBody>
     </Card>
+  );
+}
+
+/** The confirm step. Mounted only once the coordinator starts, so the router is read only then. */
+function ArchiveConfirm({
+  patientId,
+  displayName,
+  reason,
+  onRefused,
+  onKeep,
+}: {
+  patientId: PatientId;
+  displayName: string;
+  reason: PatientArchiveReason;
+  onRefused: () => void;
+  onKeep: () => void;
+}) {
+  const raise = useWardRaise(useRouteRole());
+  const router = useRouter();
+  const settle = (outcome: WardCommandOutcome | void) => {
+    if (outcome?.status === "accepted") router.replace("/ward-flow/search");
+    else onRefused();
+  };
+  const archive = () => {
+    const completion = raise("ARCHIVE_PATIENT", { patientId, reason });
+    if (completion && "then" in completion) void completion.then(settle, () => settle());
+    else settle(completion);
+  };
+  return (
+    <div role="group" aria-label="Confirm archive">
+      <p>Archive {displayName}&apos;s record? It leaves every list. Only the audit trail will show it.</p>
+      <Button variant="pri" onClick={archive} data-testid="ward-patient-archive-confirm">
+        Archive record
+      </Button>{" "}
+      <Button variant="sec" onClick={onKeep}>
+        Keep record
+      </Button>
+    </div>
   );
 }
