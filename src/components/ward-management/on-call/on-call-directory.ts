@@ -707,8 +707,25 @@ export type Availability =
     }
   | { kind: "off"; email: boolean; opens: number; wait: number; next: ContactLine | null };
 
+/**
+ * #839: one screen asks the same entry and minute many times (counts, chips, cells, escalation),
+ * so each answer is kept with its entry. Entries are never changed once built.
+ */
+const AVAILABILITY = new WeakMap<DirectoryEntry, Map<number, Availability>>();
+
 /** Who answers at `minute`, until when, and what follows. Minutes step through one day at most. */
 export function availability(entry: DirectoryEntry, minute: number): Availability {
+  let byMinute = AVAILABILITY.get(entry);
+  if (!byMinute) AVAILABILITY.set(entry, (byMinute = new Map()));
+  let answer = byMinute.get(minute);
+  if (answer === undefined) {
+    if (byMinute.size >= 8) byMinute.clear();
+    byMinute.set(minute, (answer = computeAvailability(entry, minute)));
+  }
+  return answer;
+}
+
+function computeAvailability(entry: DirectoryEntry, minute: number): Availability {
   if (entry.lines.length === 0) {
     if (!entry.email) return { kind: "none" };
     const window = entry.emailWindow;
