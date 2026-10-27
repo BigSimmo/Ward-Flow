@@ -109,6 +109,9 @@ export function reduceReferralSendEvent(
           event,
           "RAISE_REFERRAL needs an emergency department unless it starts an accepted community referral",
         );
+      if (event.acceptedUnitId === undefined && event.role === "ward") {
+        return reject(state, event, "A ward desk raises a placement only for an accepted direct continuation");
+      }
       const sequence = state.referralSequence + 1;
       // The clinician chooses the form; nothing derives one from `legalStatus` (product owner:
       // "avoid any hard rules now please"). `null` means the clinician chose no form, a real
