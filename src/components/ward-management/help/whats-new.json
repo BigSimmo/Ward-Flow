@@ -98,10 +98,5 @@
     "id": "2026-10-27-buzz-across-tabs",
     "date": "2026-10-27",
     "line": "Buzz sound on or off now matches across open tabs."
-  },
-  {
-    "id": "2026-10-27-transport-booking-polish",
-    "date": "2026-10-27",
-    "line": "Transport booking skips the CAD number for a ward escort or family, and Save stays in view."
   }
 ]
