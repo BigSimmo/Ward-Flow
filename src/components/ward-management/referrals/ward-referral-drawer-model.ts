@@ -79,21 +79,6 @@ export function legalStatusOptionLabel(code: string): string {
   return title === null ? `Form ${code}` : `Form ${code} (${title})`;
 }
 
-export function transportLabel(code: string): string {
-  switch (code) {
-    case "mht":
-      return "Mental Health Transport (Contracted MHT)";
-    case "rfds":
-      return "RFDS Aeromedical Flight Escort";
-    case "stjohn":
-      return "St John Ambulance (Priority 2 Escort)";
-    case "carer":
-      return "Patient / Carer Accompanied Transport";
-    default:
-      return "Mental Health Transport";
-  }
-}
-
 export type WardReferralDrawerProps = {
   onClose: () => void;
   onSelectPatient?: (patientId: string) => void;
@@ -140,7 +125,6 @@ export type MockPatientProfile = {
   catchment: string;
   destType: string;
   urgency: string;
-  transportVal: string;
   transitNote: string;
   riskFlags: {
     aggression: boolean;
@@ -214,12 +198,12 @@ export function wardReferralDestinations(
  * record's own name, record number, origin, legal status and urgency, "Not recorded" where it holds
  * none, and the free-text fields start empty.
  */
-export const SAMPLE_PATIENTS: Record<string, { destType: string; transportVal: string }> = {
-  "WF-009": { destType: "ward", transportVal: "mht" },
-  "WF-004": { destType: "ward", transportVal: "mht" },
-  "WF-002": { destType: "community", transportVal: "carer" },
-  "WF-006": { destType: "ward", transportVal: "stjohn" },
-  custom: { destType: "ward", transportVal: "mht" },
+export const SAMPLE_PATIENTS: Record<string, { destType: string }> = {
+  "WF-009": { destType: "ward" },
+  "WF-004": { destType: "ward" },
+  "WF-002": { destType: "community" },
+  "WF-006": { destType: "ward" },
+  custom: { destType: "ward" },
 };
 
 /**
@@ -256,7 +240,6 @@ export function sampleProfile(
     doctorNote: "",
     clinicalSummary: "",
     destType: sample.destType,
-    transportVal: sample.transportVal,
     transitNote: "",
     riskFlags: NO_RISK_FLAGS,
   };

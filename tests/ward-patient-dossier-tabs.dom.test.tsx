@@ -20,7 +20,7 @@ function MetadataProbe() {
           now: NOW_ANCHOR,
           movementId: "WF-009",
           formName: "Synthetic transport handover",
-          fileName: "synthetic-handover.pdf",
+          fileType: "PDF",
           sizeBytes: 1234,
         })
       }
@@ -101,7 +101,7 @@ describe("polished patient dossier tabs", () => {
     fireEvent.click(pane.getByRole("button", { name: "Transfer documents" }));
     expect(pane.getByText("Synthetic transport handover")).toBeVisible();
     fireEvent.click(pane.getByText("Synthetic transport handover"));
-    expect(pane.getByText("synthetic-handover.pdf")).toBeVisible();
+    expect(pane.getByText("PDF · 1 KB")).toBeVisible();
     expect(pane.getByText(/Document metadata only/)).toBeVisible();
     fireEvent.change(pane.getByRole("textbox", { name: "Search patient documents" }), {
       target: { value: "no-match" },

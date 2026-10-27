@@ -10,6 +10,7 @@ import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   referenceDistance,
@@ -242,7 +243,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
       id: form.id,
       at: formatInstantWithDay(form.uploadedAt, now),
       tone: "success",
-      text: `${form.formName} recorded (${form.fileName})`,
+      text: `${form.formName} recorded (${uploadedFileLabel(form)})`,
     });
   }
 

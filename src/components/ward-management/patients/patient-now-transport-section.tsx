@@ -19,7 +19,7 @@ import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { StatusGlyph } from "@/components/wf";
 import type { Dispatch, SetStateAction } from "react";
-import type { Movement, Rejection } from "@/components/ward-management/ward-model";
+import type { Movement, Rejection, TransportProvider } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 
@@ -45,7 +45,7 @@ export type PatientTransportSectionContext = {
   displayEscort: boolean | undefined;
   displayEta: string | undefined;
   displayLegalStatus: string;
-  displayProvider: "Not recorded" | "Ambulance service" | "Patient transport service" | "Ward escort";
+  displayProvider: "Not recorded" | TransportProvider;
   displayName: string;
   gate: (eventType: WardFlowEventType, key?: string) => RoleGate;
   isTransportBooked: boolean;

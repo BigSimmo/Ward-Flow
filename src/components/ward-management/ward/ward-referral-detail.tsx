@@ -11,6 +11,8 @@ import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diag
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
+import { referralChartLabel } from "@/components/ward-management/referrals/referral-document-links";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -405,15 +407,15 @@ export function WardReferralDetail({
                 <span className={styles.docMain}>
                   <strong>{form.formName}</strong>
                   <span>
-                    {form.fileName} · added {formatInstantWithDay(form.uploadedAt, now)}
+                    {uploadedFileLabel(form)} · added {formatInstantWithDay(form.uploadedAt, now)}
                   </span>
                 </span>
               </li>
             ))}
             {intake?.charts.map((chart) => (
-              <li key={chart.name}>
+              <li key={chart.kind}>
                 <span className={styles.docMain}>
-                  <strong>{chart.name}</strong>
+                  <strong>{referralChartLabel(chart)}</strong>
                   <span>Attached to the referral. The file stays with the sender.</span>
                 </span>
               </li>

@@ -11,6 +11,7 @@ import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
+import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
   BED_MEETING_ACTION_KINDS,
@@ -55,6 +56,16 @@ function BedMeetingAgenda() {
     lastDoneAt.current = at;
     return true;
   }, []);
+  // NB-02 / RB-N01: the closed action's row leaves with it; focus goes to the row now in its place.
+  const actionList = useRef<HTMLUListElement>(null);
+  const actionSummary = useRef<HTMLParagraphElement>(null);
+  const actionRows = [...summary.overdue, ...summary.open];
+  const markDone = useRefocusAfterRowLeaves({
+    list: actionList,
+    selector: '[data-testid="bed-meeting-action-done"]',
+    rowsKey: actionRows.map((row) => `${row.subject.id}-${row.action.kind}`).join("|"),
+    fallback: actionSummary,
+  });
   const ownerText = (action: BedMeetingAction) =>
     action.owner === "ward"
       ? (unitName(action.ownerUnitId) ?? WARD_FLOW_ROLE_LABELS.ward)
@@ -71,21 +82,25 @@ function BedMeetingAgenda() {
         <CardHead title="Actions" meta="From earlier meetings" level={2} />
         <CardBody>
           {/* One line when nothing is waiting, not a row of zeros and a sentence saying the same (UX audit, 21 Oct 2026). */}
-          <p className={styles.summary} data-testid="bed-meeting-action-summary">
+          <p className={styles.summary} data-testid="bed-meeting-action-summary" ref={actionSummary}>
             {summary.overdue.length + summary.open.length === 0
               ? `No actions are waiting${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}.`
               : `${summary.doneLastDay} done in the last day · ${summary.overdue.length} overdue · ${summary.open.length} still open`}
           </p>
-          {summary.overdue.length + summary.open.length === 0 ? null : (
-            <ul className={styles.list} data-testid="bed-meeting-action-list">
-              {[...summary.overdue, ...summary.open].map((row) => (
+          {actionRows.length === 0 ? null : (
+            <ul className={styles.list} data-testid="bed-meeting-action-list" ref={actionList}>
+              {actionRows.map((row, index) => (
                 <ActionRow
                   key={`${row.subject.id}-${row.action.kind}`}
                   row={row}
                   now={now}
                   name={patientOf(row.record).displayName}
                   owner={ownerText(row.action)}
-                  claimDone={claimDone}
+                  claimDone={() => {
+                    if (!claimDone()) return false;
+                    markDone(index);
+                    return true;
+                  }}
                 />
               ))}
             </ul>
@@ -178,6 +193,7 @@ function AgendaRow({
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
+  const toggle = useRef<HTMLButtonElement>(null);
   const openActions = (item.record.meetingActions ?? []).filter((action) => action.doneAt === undefined);
   return (
     <li className={styles.agendaRow}>
@@ -194,6 +210,7 @@ function AgendaRow({
         <Button
           size="sm"
           variant="sec"
+          ref={toggle}
           aria-expanded={adding}
           aria-controls={formId}
           onClick={() => setAdding((value) => !value)}
@@ -203,7 +220,17 @@ function AgendaRow({
         </Button>
       </div>
       {adding ? (
-        <ActionForm id={formId} item={item} now={now} wardName={wardName} onDone={() => setAdding(false)} />
+        <ActionForm
+          id={formId}
+          item={item}
+          now={now}
+          wardName={wardName}
+          onDone={() => {
+            // RB-N01: the form and its Record button close, so focus goes back to Add action.
+            setAdding(false);
+            toggle.current?.focus();
+          }}
+        />
       ) : null}
     </li>
   );

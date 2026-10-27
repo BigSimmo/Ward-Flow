@@ -73,7 +73,7 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     );
     const form = openBooking();
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
     fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
     // A4-7 (A34 form): filled in from the form in force (Form 4C), and the other answer stays open.
@@ -119,7 +119,7 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     );
     const form = openBooking();
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
     fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-8" } });
@@ -151,7 +151,7 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
     stage: "pulled",
     pullExpiresAt: NOW_ANCHOR + 30,
     medicalClearance: { cleared: true, at: NOW_ANCHOR - 5 },
-    transport: { id: "t", provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-1" },
+    transport: { id: "t", provider: "Ambulance (St John)", escortRequired: false, cadNumber: "CAD-1" },
   } as unknown as Movement;
   const onHandoverReady = vi.fn();
   const context = {

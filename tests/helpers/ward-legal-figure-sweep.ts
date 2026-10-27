@@ -519,7 +519,7 @@ export function candidateEvents(
         now,
         movementId,
         formName: "MHA Form",
-        fileName: "form.pdf",
+        fileType: "PDF",
         sizeBytes: 512,
       }));
     case "SET_STEP_DOWN_CANDIDATE":

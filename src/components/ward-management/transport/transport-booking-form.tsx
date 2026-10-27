@@ -37,11 +37,12 @@ import {
 } from "@/components/ward-management/ward-transport-checks";
 import {
   TRANSPORT_EXCEPTION_REASONS,
+  BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
-  TRANSPORT_PROVIDERS,
   type Movement,
   type TransportExceptionReason,
   type TransportLegalStatus,
+  type TravelMode,
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
 import styles from "./transport-booking-form.module.css";
@@ -304,15 +305,13 @@ export function TransportBookingForm({
           onChange={(event) => {
             const next = event.target.value;
             set({
-              provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
-                ? (next as TransportProvider)
-                : undefined,
+              provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode) ? (next as TravelMode) : undefined,
             });
           }}
         >
           {/* Nobody chosen, first and selected: never a provider standing in for a choice not made. */}
           <option value="">Not chosen</option>
-          {TRANSPORT_PROVIDERS.map((provider) => (
+          {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
             <option key={provider} value={provider}>
               {provider}
             </option>
