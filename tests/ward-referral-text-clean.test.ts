@@ -91,9 +91,10 @@ describe("P148 server stores new referral text cleaned, never rejects", () => {
 });
 
 describe("P148 client cleans the built command", () => {
-  it("wraps the intake and the submitted RECEIVE_REFERRAL in cleanReferralFields", () => {
+  it("cleans the intake, history and sending team before submitting", () => {
     const source = readFileSync("src/components/ward-management/referrals/use-ward-referral-drawer-state.ts", "utf8");
     expect(source).toContain("const intake: ReferralIntakeDetails = cleanReferralFields({");
-    expect(source).toMatch(/submitReferral\(cleanReferralFields\(\{\s*type: "RECEIVE_REFERRAL"/);
+    expect(source).toContain("history: cleanReferralText(unidentifiedHistory),");
+    expect(source).toContain("needsSendingTeam ? cleanReferralText(sendingTeam) : undefined");
   });
 });

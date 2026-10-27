@@ -15,7 +15,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { referralAgeBand } from "./referral-age-band";
-import { cleanReferralFields } from "./referral-text-clean";
+import { cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -962,7 +962,7 @@ export function useWardReferralDrawerState({
       return;
     }
     setFlowError(null);
-    submitReferral(cleanReferralFields({
+    submitReferral({
       type: "RECEIVE_REFERRAL",
       role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
       now,
@@ -974,14 +974,14 @@ export function useWardReferralDrawerState({
       source: sendingWard ? "psychiatric_ward" : sourceKind === "ed" ? "ed_medical" : "community",
       originSiteCode: sendingWard?.siteCode ?? originSiteCode,
       ...(sendingWard ? { originUnitId: sendingWard.id, actingUnitId: sendingWard.id } : {}),
-      sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
+      sendingTeamName: needsSendingTeam ? cleanReferralText(sendingTeam) : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
-      history: unidentifiedHistory,
+      history: cleanReferralText(unidentifiedHistory),
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
-    }));
+    });
   }
 
   // Recipient inboxes, read from the provider the ward screen already uses.
