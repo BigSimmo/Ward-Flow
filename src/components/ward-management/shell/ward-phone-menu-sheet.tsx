@@ -88,7 +88,7 @@ function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; o
   return (
     <li>
       {row.href ? (
-        <Link href={row.href} {...common} onClick={onGo}>
+        <Link href={row.href} prefetch={true} {...common} onClick={onGo}>
           {face}
         </Link>
       ) : (
@@ -161,6 +161,7 @@ function PageRow({
     <li>
       <Link
         href={entry.href}
+        prefetch={true}
         className={styles.row}
         aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
         aria-label={wardNavCountLabel(entry.label, count)}
