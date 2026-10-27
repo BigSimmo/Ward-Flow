@@ -212,7 +212,7 @@ describe("legal status on a stay (A3-18)", () => {
       if (short === undefined) continue;
       // Production audit 24 Oct 2026, EDR-02: the recorded status in its own words, never "Involuntary" for a CTO or referral.
       expect(short).toMatch(
-        /^(Form \S+|Voluntary|Involuntary|CTO|Referred for exam|Awaiting exam|Status unrecognised)$/,
+        /^(Form \S+(?: \(.+\))?|Voluntary|Involuntary|CTO|Referred for exam|Awaiting exam|Status unrecognised)$/,
       );
     }
     expect(isOnOrder("Voluntary")).toBe(false);

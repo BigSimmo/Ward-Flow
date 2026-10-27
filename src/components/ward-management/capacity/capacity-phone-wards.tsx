@@ -1,6 +1,7 @@
 "use client";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -125,7 +126,9 @@ export function CapacityPhoneWards({
                   style={getHealthServiceDotStyle(group.service)}
                   aria-hidden="true"
                 />
-                <span className={styles.phoneRegionName}>{group.service}</span>
+                <span className={styles.phoneRegionName}>
+                  <SpelledCodes text={group.service} />
+                </span>
                 <span className={styles.phoneRegionFigures}>
                   <b>{totals.ready}</b> ready · {occupancy}%
                 </span>
