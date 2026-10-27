@@ -7,7 +7,7 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
  * off, and it never takes a keystroke meant for a field or an open sheet. Handover and Referrals
  * keep their own "?" sheet: their handlers call preventDefault, which this checks after them.
  */
-export function isShortcutsSheetKey(event: KeyboardEvent): boolean {
+function isShortcutsSheetKey(event: KeyboardEvent): boolean {
   if (event.key !== "?" || event.metaKey || event.ctrlKey || event.altKey) return false;
   if (event.defaultPrevented || hasOpenSheet() || !areCharacterShortcutsEnabled()) return false;
   const target = event.target as HTMLElement | null;
