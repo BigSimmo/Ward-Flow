@@ -66,6 +66,8 @@ describe("stress test 25 Oct: a patient record opens under every scenario's netw
     for (const scenario of WARD_SCENARIOS) {
       // A fresh module registry, so the record fixtures first load after this network is active.
       vi.resetModules();
+      // The fresh registry starts without the demonstration networks, as a browser does (H-0952).
+      await (await import("@/components/ward-management/ward-scenario-network-loader")).loadScenarioNetworks();
       const { activateScenarioNetwork } = await import("@/components/ward-management/ward-scenarios");
       activateScenarioNetwork(scenario);
       const { dur } = await import("@/components/ward-management/patients/patient-now-records");

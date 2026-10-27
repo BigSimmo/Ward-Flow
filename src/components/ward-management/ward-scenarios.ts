@@ -1,5 +1,5 @@
-import { demoNetwork, type DemoNetwork, type DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
-import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
+import type { DemoNetwork, DemoNetworkVariant } from "@/components/ward-management/ward-demo-network";
+import { loadedScenarioNetworks } from "./ward-scenario-network-registry";
 import type { EmergencyDepartment, Site, Unit } from "@/components/ward-management/ward-model";
 import {
   activateWardNetwork,
@@ -66,11 +66,15 @@ const SCENARIO_VARIANT: Partial<Record<WardScenario, DemoNetworkVariant>> = {
  * The prepared demonstration states (owner rulings 2026-09-25, and the one-tap resets of
  * 15 Oct 2026): their own wards and their own linked patients (`ward-demo-network.ts`).
  * `undefined` for the standard and scarce nights, which keep the standard network and its seed.
+ * The networks load on demand (`ward-scenario-network-registry.ts`); asking for one before they
+ * have loaded throws rather than quietly showing the standard wards.
  */
 export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined {
-  if (scenario === "wa-synthetic") return waSyntheticNetwork();
   const variant = SCENARIO_VARIANT[scenario];
-  return variant ? demoNetwork(variant) : undefined;
+  if (scenario !== "wa-synthetic" && !variant) return undefined;
+  const networks = loadedScenarioNetworks();
+  if (!networks) throw new Error("Ward Flow demonstration networks are not loaded yet");
+  return variant ? networks.demoNetwork(variant) : networks.waSyntheticNetwork();
 }
 
 /**

@@ -13,6 +13,8 @@ const EVENTS = new Set([
   "ward_backend_unhandled_rejection",
   "ward_backend_uncaught_exception",
   "ward_backend_push_sweep_failure",
+  // The live workspace has passed its size alert threshold (audit PS-02, config.mjs).
+  "ward_backend_workspace_size_alert",
 ]);
 const SAFE_VALUE = /^[A-Za-z0-9_.-]{1,64}$/;
 export const REPORT_INTERVAL_MS = 300_000;

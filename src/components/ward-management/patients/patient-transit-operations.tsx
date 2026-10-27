@@ -4,7 +4,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, checkedGates, eligibility, gateMark } from "../ward-eligibility";
@@ -117,8 +117,12 @@ export function PatientTransitOperations({
   const enRouteGate = gate("TRANSPORT_EN_ROUTE");
   const collectedGate = gate("PATIENT_COLLECTED");
   const arrivedGate = gate("PATIENT_ARRIVED");
-  const auditRead = readAuditEvents({ role: "coordinator" });
-  const auditEvents = auditRead.status === "allowed" ? auditRead.value : [];
+  // PERF-03 (H-0341): the audit read copies the whole log, so it runs when the state changes, not
+  // on every keystroke in this panel (`readAuditEvents` changes identity only with the state).
+  const auditEvents = useMemo(() => {
+    const auditRead = readAuditEvents({ role: "coordinator" });
+    return auditRead.status === "allowed" ? auditRead.value : [];
+  }, [readAuditEvents]);
   const [rejectionBaseline] = useState(rejections.length);
   const [genderReason, setGenderReason] = useState<GenderPlacementReason | "">("");
   const [wardChecked, setWardChecked] = useState(false);
