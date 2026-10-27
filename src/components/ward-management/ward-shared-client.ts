@@ -138,6 +138,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
+/** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
+export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 type PendingCommand = {
@@ -1310,6 +1312,12 @@ export class SharedWorkspaceClient {
       views: Array.isArray(value?.views) ? value.views : [],
       openings: Array.isArray(value?.openings) ? value.openings : [],
     };
+  }
+  /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
+  async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
+    const { response, value } = await this.request("/v1/workspace/audit");
+    if (!response.ok || !Array.isArray(value?.events)) throw new Error("Activity could not be read");
+    return value.events;
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

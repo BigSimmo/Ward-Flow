@@ -85,7 +85,10 @@ const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m
 });
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
-export type WardSharedAccessApi = SharedAccessApi & Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess">;
+/** P056: `readActivityAudit` rides on the shell's access context for the Activity feed (`ward-desk-audit.ts`). */
+export type WardSharedAccessApi = SharedAccessApi &
+  Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess"> &
+  Partial<Pick<SharedWorkspaceClient, "readActivityAudit">>;
 
 export type WardSharedConnection = SharedView & {
   /** Reports may freeze a new snapshot only after this exact server state has been adopted. */
@@ -204,6 +207,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
       readRecordAccess: async () => connected().readRecordAccess(),
+      readActivityAudit: async () => connected().readActivityAudit(),
       forecastHistory: async (body) => connected().forecastHistory(body),
     };
   }, [supabase.client, accountBinding]);
