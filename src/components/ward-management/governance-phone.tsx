@@ -528,7 +528,7 @@ export function GovernancePhone({
             <PhoneListRow
               as="li"
               name="Seclusion, restraint and incidents"
-              meta="Preview. Not held in Ward Flow yet."
+              meta="Preview. Not recorded in Ward Flow yet."
             />
           </ul>
         ) : (

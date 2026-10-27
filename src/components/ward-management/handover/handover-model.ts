@@ -7,6 +7,7 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
+import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
@@ -137,14 +138,15 @@ export function handoverSignedBefore(signOffs: readonly { at: Instant }[], to: I
 
 /* ------------------------------------------------------------------ rows */
 
+/** H-0807: the stage words every other screen uses (`stageCopy`), never a set of handover's own. */
 export const STAGE_LABEL: Record<MovementStage, string> = {
-  placement_requested: "Placement requested",
-  destination_review: "Ward reviewing",
-  accepted_awaiting_bed: "Accepted, awaiting bed",
-  pulled: "Bed pulled",
-  moving: "Moving",
-  handover_ready: "Ready to hand over",
-  arrived: "Arrived",
+  placement_requested: stageCopy.placement_requested.label,
+  destination_review: stageCopy.destination_review.label,
+  accepted_awaiting_bed: stageCopy.accepted_awaiting_bed.label,
+  pulled: stageCopy.pulled.label,
+  moving: stageCopy.moving.label,
+  handover_ready: stageCopy.handover_ready.label,
+  arrived: stageCopy.arrived.label,
 };
 
 const OWNER_SHORT: Record<string, string> = {

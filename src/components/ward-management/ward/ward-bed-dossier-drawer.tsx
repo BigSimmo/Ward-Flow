@@ -287,7 +287,7 @@ export function WardBedDossierDrawer({
         bedItem?.stayBand ??
           (bedItem?.status === "incoming"
             ? typeof bedItem?.deliveredAt === "number"
-              ? "Delivered, confirm arrival"
+              ? "Arrived at ward, confirm arrival"
               : "Arriving"
             : null),
       ]
@@ -730,7 +730,7 @@ export function WardBedDossierDrawer({
                 <dl className={styles.kv}>
                   <Row label="Candidate">No patient match is recorded for this bed.</Row>
                   <Row label="Allocation">
-                    The flow coordinator reviews eligibility and current capacity before recording a shared bed
+                    The bed coordinator reviews eligibility and current capacity before recording a shared bed
                     reservation.
                   </Row>
                   <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
@@ -825,7 +825,7 @@ export function WardBedDossierDrawer({
                           ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
                           : bedItem?.status === "incoming"
                             ? typeof bedItem?.deliveredAt === "number"
-                              ? "Delivered, confirm arrival"
+                              ? "Arrived at ward, confirm arrival"
                               : "Arriving"
                             : "On the ward"}
                       </Row>
@@ -1098,7 +1098,7 @@ function nowLabel(bedItem: BedItem | undefined, isReady: boolean): string {
   if (bedItem.awayAtEdHours != null) return "Away at an ED";
   if (bedItem.status === "leave") return "On leave";
   // WT-07: Delivered is the one state after the officer hands over, until the ward confirms.
-  if (bedItem.status === "incoming") return typeof bedItem.deliveredAt === "number" ? "Delivered" : "Arriving";
+  if (bedItem.status === "incoming") return typeof bedItem.deliveredAt === "number" ? "Arrived at ward" : "Arriving";
   if (bedItem.pastDate) return "Past date";
   if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
     return "Leaving";

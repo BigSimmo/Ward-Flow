@@ -235,7 +235,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                 watchDecision(entry.id, "Referral put on the waiting list", completion);
               }}
             >
-              Waitlist
+              Waiting list
             </button>
             <label className={styles.flowField}>
               Decline reason

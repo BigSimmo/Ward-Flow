@@ -190,7 +190,7 @@ export function AlertsNoticesPanel({
 }) {
   return (
     <TabPanel idPrefix="alerts" id="notices">
-      <section className={styles.tabBody} aria-label="Operational Notices and Shift Communication Feed">
+      <section className={styles.tabBody} aria-label="Operational notices and shift communication feed">
         <GroupHead label="Role notices" count={feedNotices.length} />
         {feedNotices.length === 0 ? (
           <div className={styles.feedEmpty}>

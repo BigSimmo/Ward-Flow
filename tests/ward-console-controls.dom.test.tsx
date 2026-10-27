@@ -1136,7 +1136,7 @@ describe("a transport job that outlived the bed it was booked against", () => {
     driveToOrphan("WF-003");
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
     expect(
-      within(panel).getByText(/cancelled by the flow coordinator or by the referring emergency department/i),
+      within(panel).getByText(/cancelled by the bed coordinator or by the referring emergency department/i),
     ).toBeInTheDocument();
     expect(within(panel).getByText(/cannot cancel it themselves/i)).toBeInTheDocument();
   });

@@ -1036,7 +1036,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
     expect(total).toBe(Number(transitCard.textContent));
   });
 
-  it("narrows results when selecting a Legal Status dropdown filter", () => {
+  it("narrows results when selecting a Legal status dropdown filter", () => {
     renderSearch();
 
     fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Form 1A" } });
@@ -1194,7 +1194,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
       fireEvent.click(previewBtn);
       const previewPanel = screen.getByTestId("ward-patient-search-preview");
       expect(previewPanel.textContent).toContain("Selected referral");
-      expect(previewPanel.textContent).toContain("Destinations Addressed");
+      expect(previewPanel.textContent).toContain("Destinations addressed");
 
       // Contact Referrer and Cancel Referral only ever said "Not wired", so they are hidden
       // (overall review, 20 Oct 2026).

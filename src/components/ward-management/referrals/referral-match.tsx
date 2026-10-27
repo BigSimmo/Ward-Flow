@@ -1125,11 +1125,11 @@ export function ReferralMatchView({
                   disabledReason={pickTurnaround.disabledReason}
                   onClick={() => handleFlagTurnaround(pick.unit.id)}
                 >
-                  Flag Turnaround Priority
+                  Flag turnaround priority
                 </Button>
                 <p className={ph.matchHint}>
                   {pickTurnaround.recordedSource
-                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "criteria led discharge" : "confirmed departure"}; placement still needs confirmation.`
                     : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
                 </p>
               </div>

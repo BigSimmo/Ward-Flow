@@ -233,7 +233,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(
       /^Taken offline · last updated not recorded · next pack when the connection returns$/u,
     );
-    expect(screen.getByTestId("ward-downtime-stale").textContent).toMatch(/Stale · no sync recorded/u);
+    expect(screen.getByTestId("ward-downtime-stale").textContent).toMatch(/Stale · no update recorded/u);
     act(() => {
       setOnline(true);
       window.dispatchEvent(new Event("online"));

@@ -75,7 +75,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     aria-pressed={inpatientFilter === "all"}
                     onClick={() => setInpatientFilter("all")}
                   >
-                    <span>All Inpatients</span>
+                    <span>All inpatients</span>
                     <span className={styles.badgePill} id="chipAllInpatBadge">
                       {DEMO_COMMUNITY_INPATIENTS.length}
                     </span>
@@ -97,7 +97,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     aria-pressed={inpatientFilter === "open"}
                     onClick={() => setInpatientFilter("open")}
                   >
-                    <span>Open Acute Beds</span>
+                    <span>Open acute beds</span>
                     <span className={styles.badgePill}>
                       {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "open").length}
                     </span>
@@ -108,7 +108,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     aria-pressed={inpatientFilter === "older"}
                     onClick={() => setInpatientFilter("older")}
                   >
-                    <span>Older Adult Units</span>
+                    <span>Older adult units</span>
                     <span className={styles.badgePill}>
                       {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "older").length}
                     </span>
@@ -130,12 +130,12 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                 <thead>
                   <tr>
                     <th scope="col">Patient</th>
-                    <th scope="col">Admitting Ward &amp; Health Service</th>
+                    <th scope="col">Admitting ward &amp; health service</th>
                     <th scope="col">Bed</th>
                     <th scope="col" className={styles.n}>
-                      Days in Bed
+                      Days in bed
                     </th>
-                    <th scope="col">Legal Status</th>
+                    <th scope="col">Legal status</th>
                     <th scope="col">Community key clinician</th>
                     <th scope="col">Liaison / MDT Status</th>
                     <th scope="col" className={styles.actionsCol}>

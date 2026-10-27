@@ -3,16 +3,7 @@
 import dynamic from "next/dynamic";
 import { RotateCcwClock, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
@@ -27,20 +18,12 @@ import {
   subscribeThemePreference,
 } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
-import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
-import {
-  useDueSoonThresholds,
-  useWardFlowClock,
-  useWardFlowSelect,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
-import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import type { HealthService } from "@/components/ward-management/ward-model";
-import { WARD_ALERTS_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
+import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
@@ -53,7 +36,7 @@ import {
 } from "@/components/ward-management/referrals/referral-sheet-link";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
+import { wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
 // Its code is fetched once the browser is idle, and a failed fetch shows Try again instead of
 // crashing the page (offline Tools crash, 22 Oct 2026).
@@ -75,20 +58,20 @@ import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
-import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
+import type { WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
 import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
+import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
   REFERRAL_BOARD_HREF,
   SERVICE_SWATCH_KEY,
-  activityChangeCategory,
   drawerCloseHistoryStep,
   fixedServiceFor,
   focusAlertsQueue,
@@ -100,8 +83,6 @@ import {
   routeBarAction,
   wardBarRouteTitle,
   withRoleCategory,
-  type ActivityCategoryFilter,
-  type ActivityPart,
   type ReferralOpenRequest,
   type WardBarPopoverId,
 } from "./ward-bar-model";
@@ -278,8 +259,6 @@ export type WardBarProps = {
 };
 
 export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
-  const network = useWardNetwork();
-  const thresholds = useDueSoonThresholds();
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
@@ -384,11 +363,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       }),
     [],
   );
-  const [activityQuery, setActivityQuery] = useState("");
-  const deferredActivityQuery = useDeferredValue(activityQuery);
-  const [unreadOnly, setUnreadOnly] = useState(false);
-  const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
-  const [activityCategoryFilter, setActivityCategoryFilter] = useState<ActivityCategoryFilter>("all");
 
   const serviceTriggerRef = useRef<HTMLButtonElement>(null);
   const primaryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -442,57 +416,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const backHref = wardBackParent(pathname, deskHomeHref);
   useEffect(() => noteWardRoute(pathname), [pathname]);
 
-  // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
-  // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
-  // `EVENT_ROLE`-gated to `"coordinator"` alone (`ward-flow-events.ts`). `WardTasksDrawer` trusts its
-  // caller and does not re-check role before dispatching (its own doc comment says so), so this is
-  // the one place that must gate — `wardTasksAreActionableForRole` exists in `ward-chrome-role.ts`
-  // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
-  // own "No outstanding work right now." empty state, never a network list with every action refused.
-  // Device audit item 6 (11 Oct 2026): Tasks is the signed-in person's count on every page, so it
-  // is gated on `shellRole`, not the route — it no longer drops to 0 on ED, team and officer pages.
-  // L1 (site review, 12 Oct 2026): the one task list (`taskItems`, `ward-act-now-items.ts`) that
-  // Alerts and Home Exceptions read too, so the badge and those lists cannot disagree.
-  // The quick look is the Alerts list for the bed coordinator, so it words a stuck handover as the
-  // Alerts screen does (same rows, tones and counts either way).
-  const tasksItems = useMemo(() => {
-    if (!wardTasksAreActionableForRole(shellRole)) return [];
-    return taskItems(
-      {
-        movements,
-        units,
-        configuration,
-        inboxSnoozes,
-        admissions,
-        patients,
-        referrals,
-        supportNotifications,
-        plannedAdmissions,
-        leaveBeds,
-        stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
-      },
-      now,
-    );
-  }, [
-    movements,
-    now,
-    units,
+  // Tasks: the one task list, gated to the signed-in desk (`ward-bar-state.ts`).
+  const { tasksItems, tasksActiveItems, tasksActiveCount } = useWardBarTasks({
     shellRole,
-    plannedAdmissions,
+    now,
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
     admissions,
     patients,
     referrals,
     supportNotifications,
-    configuration,
-    inboxSnoozes,
+    plannedAdmissions,
     leaveBeds,
-  ]);
-  // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
-  const tasksActiveItems = useMemo(
-    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active,
-    [tasksItems, inboxSnoozes, now],
-  );
-  const tasksActiveCount = tasksActiveItems.length;
+  });
   /*
    * Josh (13 Oct 2026, iPhone): the phone New referral sheet starts under the bar, so the bar stays
    * on screen, but the sheet inerted the whole page and Menu and Search could not be tapped. While
@@ -510,125 +448,46 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
    * All services.
    */
   const waiting = useMemo(() => waitingInEds(movements, now), [movements, now]);
-  const commandActivity = useMemo(
-    () =>
-      deriveCommandActivity({
-        movements,
-        patients,
-        units,
-        referrals,
-        rejections,
-        bedReleases,
-        admissions,
-        leaveBeds,
-        refreshRequests,
-        now,
-        sites: network.sites,
-        thresholds,
-      }),
-    [
-      movements,
-      patients,
-      units,
-      referrals,
-      rejections,
-      bedReleases,
-      admissions,
-      leaveBeds,
-      refreshRequests,
-      now,
-      thresholds,
-      network,
-    ],
-  );
-  const usesDerivedActivity = activity === undefined;
-  const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
-  const defaultActivity = useMemo(
-    (): WardActivityContent => ({
-      ...commandActivity.content,
-      pageTitle: currentScreenTitle,
-    }),
-    [commandActivity.content, currentScreenTitle],
-  );
-  const shownActivity = activity ?? defaultActivity;
-  const lastActivityAt = usesDerivedActivity ? commandActivity.lastEventAt : undefined;
-  const activityCategoryCounts = useMemo(() => {
-    const counts: Record<ActivityCategoryFilter, number> = {
-      all: 0,
-      escalation: 0,
-      decline: 0,
-      referral: 0,
-      transfer: 0,
-    };
-    for (const change of shownActivity?.changes ?? []) {
-      counts.all += 1;
-      const category = activityChangeCategory(change);
-      if (category !== "other") counts[category] += 1;
-    }
-    return counts;
-  }, [shownActivity?.changes]);
-  const filteredActivityChanges = useMemo(() => {
-    const changes = shownActivity?.changes ?? [];
-    const query = deferredActivityQuery.trim().toLowerCase();
-    return changes.filter(
-      (change) =>
-        (activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter) &&
-        `${change.text} ${change.time}`.toLowerCase().includes(query),
-    );
-  }, [shownActivity?.changes, activityCategoryFilter, deferredActivityQuery]);
-  const scopedNotices = useMemo(
-    () =>
-      notices
-        .filter((notice) => noticeIsForWardChrome(notice, role, placeId, now))
-        .sort((left, right) => right.raisedAt - left.raisedAt),
-    [notices, now, placeId, role],
-  );
-  // D-39: a notice names the patient by UMRN, never by the WF journey number it was raised on.
-  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
-  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, umrnLookup);
-  const visibleNotices = scopedNotices.filter(
-    (notice) =>
-      (!unreadOnly || notice.readAt === undefined) &&
-      noticeText(notice.sentence).toLowerCase().includes(deferredActivityQuery.trim().toLowerCase()),
-  );
-  // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
-  // still carries every notice this chrome may see, read or not (read notices stay in the list),
-  // so the unread tally is a separate derived count rather than a second filtered array.
-  const unreadNoticeCount = useMemo(
-    () => scopedNotices.filter((notice) => notice.readAt === undefined).length,
-    [scopedNotices],
-  );
+  const {
+    activityQuery,
+    setActivityQuery,
+    unreadOnly,
+    setUnreadOnly,
+    activityPart,
+    setActivityPart,
+    activityCategoryFilter,
+    setActivityCategoryFilter,
+    commandActivity,
+    usesDerivedActivity,
+    shownActivity,
+    lastActivityAt,
+    activityCategoryCounts,
+    filteredActivityChanges,
+    scopedNotices,
+    noticeText,
+    visibleNotices,
+    unreadNoticeCount,
+    markNoticeRead,
+  } = useWardBarActivity({
+    activity,
+    pathname,
+    role,
+    placeId,
+    now,
+    movements,
+    patients,
+    units,
+    referrals,
+    rejections,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    refreshRequests,
+    notices,
+    dispatch,
+  });
 
-  // Item 48, Q2: the only dispatcher of `MARK_NOTICE_READ` (`ward-flow-events.ts`). `role` here is
-  // `WardChromeRole`, a subset of `WardFlowRole` by construction, so it is passed straight through
-  // — the reducer's own addressee check is what actually gates the write, exactly as
-  // `noticeIsMarkableByChrome`'s own doc comment says a UI-side check never needs to duplicate.
-  const markNoticeRead = useCallback(
-    (noticeId: string) => {
-      dispatch({ type: "MARK_NOTICE_READ", role, now, noticeId, actingPlaceId: placeId });
-    },
-    [dispatch, now, placeId, role],
-  );
-
-  // A link was followed from inside the chrome and its page has not arrived yet. While that is
-  // true, closing a drawer must not step back through history: the drawer's own history entry is
-  // still the current one until the new page commits, so history.back() would cancel the page the
-  // person just chose (seen on slow loads, 26 Sept 2026). Cleared whenever the pathname changes.
-  const navigationPendingRef = useRef(false);
-  useEffect(() => {
-    navigationPendingRef.current = false;
-  }, [pathname]);
-  useEffect(() => {
-    if (typeof document === "undefined") return undefined;
-    const onClick = (event: MouseEvent) => {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!(anchor instanceof HTMLAnchorElement) || anchor.target === "_blank") return;
-      if (isPendingNavigation(anchor.href, window.location.href)) navigationPendingRef.current = true;
-    };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, []);
+  const navigationPendingRef = useNavigationPendingRef(pathname);
 
   const closePopover = useCallback(
     (id: WardBarPopoverId, announce = true) => {
@@ -662,7 +521,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // instead) must not keep later closes from stepping back.
       navigationPendingRef.current = false;
     },
-    [setOpenPanel],
+    [navigationPendingRef, setOpenPanel],
   );
 
   // A sheet footer's Board time pill (D-77) closes its sheet before the Demo menu opens.
@@ -720,6 +579,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     },
     [
       closePopover,
+      navigationPendingRef,
       isPhone,
       onAlertsScreen,
       oneAlertsQueue,
@@ -757,7 +617,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     startTransition(() => {
       router.replace(REFERRAL_BOARD_HREF);
     });
-  }, [closePopover, pathname, router]);
+  }, [closePopover, navigationPendingRef, pathname, router]);
 
   // Arriving on the slide-out route (a typed URL, a new tab, a router push) opens the slide-out once,
   // over the Referrals board, with what the query asks for. No history entry: Back leaves the page.

@@ -1330,7 +1330,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await openAllArrivals(page);
     const accepted = page.getByTestId("ward-accepted-WF-315");
     await expect(accepted).toBeVisible();
-    await accepted.getByRole("button", { name: "Pull a bed" }).click();
+    await accepted.getByRole("button", { name: "Pull the bed" }).click();
 
     // --- Step 5 (recommended): Coordinator — confirm the acceptance is visible from another
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this

@@ -334,7 +334,7 @@ export function isStoppedTransportAwaitingRelease(movement?: Movement | null): b
  * derivation's own doc comment explains it exists to survive.
  */
 export const EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE =
-  "The examination was revoked and this movement still holds a bed.";
+  "The examination was revoked and this movement still has a bed pulled.";
 
 /**
  * A movement whose CURRENT legal status requires an authorised destination, but whose already

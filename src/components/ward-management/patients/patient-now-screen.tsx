@@ -101,6 +101,7 @@ import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patie
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
+import { useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
@@ -279,6 +280,7 @@ export function PatientNowScreen({
     document.title = documentTitle;
   }, [documentTitle]);
 
+  const isDatesOnlyStay = useIsDatesOnlyStay();
   // Dynamically resolve the patient record
   const resolved = useMemo(() => {
     return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
@@ -755,6 +757,7 @@ export function PatientNowScreen({
     awolHoldReview,
     movement: liveMovement,
     admission: resolved.liveAdmission,
+    stayWithheld: isDatesOnlyStay(resolved.liveAdmission?.id),
     patient: livePatient,
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
     // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the

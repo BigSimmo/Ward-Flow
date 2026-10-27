@@ -98,12 +98,12 @@ describe("the patient-now screen", () => {
     const arrivalAction = screen.getByTestId("ward-patient-update-arrival-btn");
     arrivalAction.focus();
     fireEvent.click(arrivalAction);
-    const arrivalDialog = await screen.findByRole("dialog", { name: "Update Arrival Time & Transport" });
+    const arrivalDialog = await screen.findByRole("dialog", { name: "Update arrival time & transport" });
     // The shared modal contract enters the first control after the lazy chunk mounts.
     await waitFor(() => expect(within(arrivalDialog).getByRole("button", { name: "Close dialog" })).toHaveFocus());
-    expect(within(arrivalDialog).getByRole("button", { name: "Save Arrival Plan" })).toBeInTheDocument();
+    expect(within(arrivalDialog).getByRole("button", { name: "Save arrival plan" })).toBeInTheDocument();
     fireEvent.click(within(arrivalDialog).getByRole("button", { name: "Close dialog" }));
-    expect(screen.queryByRole("dialog", { name: "Update Arrival Time & Transport" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Update arrival time & transport" })).not.toBeInTheDocument();
     await waitFor(() => expect(arrivalAction).toHaveFocus());
 
     const documentAction = screen.getByTestId("ward-patient-upload-forms-btn");

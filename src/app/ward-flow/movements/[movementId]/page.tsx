@@ -10,7 +10,7 @@ const MOVEMENT_TITLE = "Movement record — Ward Flow";
 
 export const metadata: Metadata = {
   title: MOVEMENT_TITLE,
-  description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
+  description: "Synthetic patient record and transport for Ward Flow.",
 };
 
 /** Legacy movement links resolve the same live dossier without losing navigation context. */

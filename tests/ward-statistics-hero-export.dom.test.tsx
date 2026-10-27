@@ -88,7 +88,7 @@ describe("Statistics hero: Export the figures", () => {
     expect(button).toHaveTextContent("Export the figures");
     expect(button).not.toHaveAttribute("aria-disabled");
     const title = within(screen.getByTestId("ward-statistics-screen")).getByRole("heading", { level: 1 });
-    const ready = Number.parseInt(title.textContent ?? "", 10);
+    const ready = Number.parseInt((title.textContent ?? "").replace(/^Statistics:\s*/u, ""), 10);
 
     const { csv, name } = await exportedCsv(button);
     expect(name).toBe("ward-flow-synthetic-network-figures.csv");

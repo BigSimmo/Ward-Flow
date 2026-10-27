@@ -60,6 +60,7 @@ import {
   useIsPhone,
   useIsTabletPortrait,
   useMediaQuery,
+  SrOnly,
 } from "@/components/wf";
 
 import {
@@ -935,7 +936,12 @@ export function HandoverPage() {
       level={1}
       testId="ward-handover-hero"
       eyebrow={`Handover · ${shiftClock} ${shiftInfo.label}`}
-      title={`${counts.act + counts.urg + counts.due} to hand over`}
+      // H-0887: the page heading names the page, not only the count.
+      title={
+        <>
+          <SrOnly>Handover:</SrOnly> {counts.act + counts.urg + counts.due} to hand over
+        </>
+      }
       titleMeta={scopeLabel}
       aside={
         <>

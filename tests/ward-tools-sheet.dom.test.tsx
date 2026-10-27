@@ -79,7 +79,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("starts a community referral from a catchment result", () => {
     const { onNewReferral } = renderSheet();
     fireEvent.click(screen.getByTestId("ward-tools-toggle-catchment"));
-    fireEvent.change(screen.getByLabelText("Search by Suburb or Postcode"), { target: { value: "Morley" } });
+    fireEvent.change(screen.getByLabelText("Search by suburb or postcode"), { target: { value: "Morley" } });
     fireEvent.click(screen.getByRole("button", { name: "Start a community referral" }));
     expect(onNewReferral).toHaveBeenCalledWith("community");
   });

@@ -150,7 +150,7 @@
   color: var(--wf-ink-2);
 }
 
-/* The close button keeps a 36px face; on touch a hit area takes it to 48px. */
+/* The close button keeps a 36px face; a hit area takes it to 44px, and to 48px on touch (H-0398). */
 .sheetClose.sheetClose {
   position: relative;
   flex: none;
@@ -822,6 +822,14 @@
 }
 
 /* ---------- touch ---------- */
+
+/* H-0398 (27 Oct 2026): with a mouse the sheet's Close also reaches 44px through a hit area,
+   rather than a bigger face. The inset counts from inside the button's 1px border. */
+.sheetClose::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
 
 /* 48px targets on touch through a hit area, not a bigger face (v9 section 5). */
 @media (pointer: coarse) {

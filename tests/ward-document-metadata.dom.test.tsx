@@ -52,7 +52,7 @@ describe("document metadata and modal lifecycle", () => {
     expect(records[0]).toMatchObject({
       fileType: "PDF",
       sizeBytes: 9,
-      formName: "Form 4A Transport Order",
+      formName: "Form 4A Transport order",
       uploadedBy: "ward",
     });
     expect(records[0]).not.toHaveProperty("content");

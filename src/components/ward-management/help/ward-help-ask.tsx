@@ -16,7 +16,7 @@ import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
 import styles from "./ward-help-sheet.module.css";
 
-const EXAMPLES = ["Pull a bed", "Book transport", "Dark mode", "Sign off handover"];
+const EXAMPLES = ["Pull the bed", "Book transport", "Dark mode", "Sign off handover"];
 
 /**
  * Where a how-to is done, as a link this desk may follow: its own home, a Settings tab, or a rail

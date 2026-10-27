@@ -170,7 +170,7 @@ export function StatisticsCompareScreen({
           <>
             <HeroStat value={readyBeds} label="Ready" />
             <HeroStat
-              value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
+              value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
               label="Average stay"
             />
             <HeroStat value={totalBlockers} label="Blockers" />
@@ -183,7 +183,7 @@ export function StatisticsCompareScreen({
           <HeroStat value={readyBeds} label={`${readyPct}% of ${totalBeds} beds ready`} />
           {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
           <HeroStat
-            value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)}d`}
+            value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
             label="Average stay"
           />
           <HeroStat value={totalBlockers} label="Blockers" />
@@ -734,7 +734,7 @@ const PINNED_MEASURES: PinnedMeasure[] = [
     id: "stay",
     label: "Average stay",
     value: (row) => row.statistics.averageLengthOfStayDays,
-    text: (v) => `${v.toFixed(1)}d`,
+    text: (v) => `${v.toFixed(1)} days`,
     markAbove: true,
   },
   {
@@ -769,7 +769,7 @@ function networkMean(rows: readonly WardRow[], measure: PinnedMeasure): number |
 
 /** The network's per-ward figure for one measure, in that measure's own units. */
 function networkText(measure: PinnedMeasure, reference: number): string {
-  if (measure.id === "stay") return `${reference.toFixed(1)}d`;
+  if (measure.id === "stay") return `${reference.toFixed(1)} days`;
   if (measure.id === "occupancy") return `${Math.round(reference)}%`;
   return oneDecimal(Math.round(reference * 10) / 10);
 }
@@ -1132,7 +1132,7 @@ const WARD_COLUMNS: readonly CompareColumn<WardStatistics>[] = [
     cell: (statistics) =>
       statistics.averageLengthOfStayDays === null
         ? cannotBeFormed("none arrived")
-        : { text: `${statistics.averageLengthOfStayDays}d` },
+        : { text: `${statistics.averageLengthOfStayDays} days` },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
   { header: "Blockers", cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },

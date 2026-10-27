@@ -120,7 +120,7 @@ export function WardFlowErrorPanel({
             ? error.message || "The error carried no message."
             : `The details are kept out of view so nothing from a record is shown here. ${
                 error.digest
-                  ? "Quote the digest below when you report this."
+                  ? "Quote the error reference below when you report this."
                   : "When you report this, say which screen you were on and the time."
               }`}
         </pre>

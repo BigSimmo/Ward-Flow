@@ -156,7 +156,8 @@ in `src/components/ward-management/shell/` and `.../ward-table/` (§2–3); and 
 `.tsx`/`.module.css` file in `src/components/ward-management/` plus the seven root `.ts` files named
 in this part's brief (`ward-nav.ts`, `ward-nav-counts.ts`, `ward-nav-icons.ts`,
 `ward-nav-role-order.ts`, `use-ward-nav-counts.ts`, `use-printable-disclosures.ts`; the seventh,
-`use-ward-sidebar-collapsed.ts`, was deleted on 15 Oct 2026) (§4). `ward-flow-provider.tsx` is out of scope here — it is covered
+`use-ward-sidebar-collapsed.ts`, was deleted on 15 Oct 2026, and `ward-nav-role-order.ts` was folded
+into `shell/ward-rail-entries.ts` on 27 Oct 2026, H-0281) (§4). `ward-flow-provider.tsx` is out of scope here — it is covered
 by [Engine](engine.md). Line counts are `wc -l`. Every importer count was measured for this map by
 `grep -rlE 'from ["'"'"'][^"'"'"']*/<name>["'"'"']'` over `src/` (and, where noted, `tests/`), read from the
 raw match list rather than the grep count alone — a naive path-suffix grep for `ward-bar` also
@@ -454,9 +455,9 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   Contextual decision, contact and export actions use the same unboxed label, divider and chevron;
   their route-specific labels and existing popover behaviour remain intact.
 - **`shell/ward-rail.tsx`** (1,358 lines) — the left rail: the desk's own short menu from
-  `ROLE_MENUS` in `shell/ward-rail-entries.ts` (B1; the bed coordinator's reads Needs you, Beds,
-  Movements, Referrals, Handover), with every other page under More in `RAIL_GROUPS` order and
-  ranked by role (`ward-nav-role-order.ts`). Above 1200px the open rail's handover countdown card
+  `shell/ward-rail-entries.ts` (B1; the bed coordinator's reads My list, Capacity,
+  Movements, Referrals, Handover), with every other page under More in `RAIL_GROUPS` order, the
+  role's `moreFirst` ids first. That one per-role definition also drives the phone menu (H-0281). Above 1200px the open rail's handover countdown card
   stands in for the menu's Handover item, which CSS hides there (A5); the Menu sheet leaves it out
   under its own countdown. The policy version is in Settings, Data and about (A7). Open/closed state (`localStorage`, open by default —
   the opposite default from the deleted `use-ward-sidebar-collapsed.ts`), the appearance toggle, and
@@ -692,10 +693,10 @@ scope's own directory):
   Node test context with no React dependency. Both maps are `Record<..., LucideIcon>` over the
   exact id union, so an id with no icon (or an icon for a retired id) is a compile error. 3
   importers.
-- **`ward-nav-role-order.ts`** (122 lines) — `wardNavRoleRank`: ranks ids so the rail can **reorder** `ward-nav.ts`'s lists per role, never adds or
-  removes (owner ruling, 2026-09-06, "reorder real screens only" — the drawn ward/ED sidebars named
-  three destinations that were never built). An id a role's list does not mention keeps its source
-  position, last, rather than vanishing. 3 importers.
+- **`ward-nav-role-order.ts`** — removed 27 Oct 2026 (H-0281). Its per-role More order is now the
+  `moreFirst` list in `shell/ward-rail-entries.ts`, which still only reorders, never adds or removes
+  (owner ruling, 2026-09-06, "reorder real screens only"). An id a role's list does not mention keeps
+  its source position, last, rather than vanishing.
 - **`use-ward-nav-counts.ts`** (44 lines) — `useWardNavCounts()`: the one hook both the rail and
   the bar call for `{role, counts, placeId}`, all derived from `usePathname()` so the two chrome
   trees cannot disagree about which route they are on. Its own doc comment still says `ClinicalRail`
@@ -805,8 +806,8 @@ The same file also renders each real route's screen component through `renderToS
 SSR-string render, not jsdom — mocking `next/link` and `next/navigation`'s router/search-params
 hooks) to catch a route whose page throws before any browser test would.
 
-`ward-nav-role-order.ts` reorders (never adds or removes) what `ward-nav.ts` lists, per the eight
-`WardChromeRole`s; `ward-nav-icons.ts` supplies one icon per id, checked at compile time by `Record`
+`shell/ward-rail-entries.ts` holds each role's menu and More order (it reorders, never adds or
+removes, what `ward-nav.ts` lists, per `WardChromeRole`); `ward-nav-icons.ts` supplies one icon per id, checked at compile time by `Record`
 totality over the exact id unions; `ward-nav-counts.ts`/`use-ward-nav-counts.ts` supply the small
 set of badge figures. Together these five files are read by `shell/ward-rail.tsx`, `shell/ward-bar.tsx`
 and `shell/ward-phone-menu.tsx` (the phone dock and the menu's model; its Menu and Create sheets are

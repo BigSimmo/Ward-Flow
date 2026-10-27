@@ -25,7 +25,6 @@ import {
 } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "../preload-when-idle";
@@ -169,9 +168,8 @@ function phoneMenuModel(
     ...(dockRight.some((slot) => slot.kind === "bed-finder") ? [BED_FINDER_ID] : []),
     ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
-  const rank = (id: string) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER;
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
-  const menu = roleMenu(entries, role, rank);
+  const menu = roleMenu(entries, role);
   const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },

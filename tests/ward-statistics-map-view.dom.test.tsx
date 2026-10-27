@@ -129,4 +129,17 @@ describe("Summary, Map view", () => {
       expect(screen.getByText(/^Ring: /)).toBeTruthy();
     }
   });
+
+  it("the stay lens uses the one name, says who it covers and writes days in full (W-3)", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("radio", { name: /^Stay/ }));
+    expect(screen.getByText(/^Ring: share over 3 months/u)).toHaveTextContent(
+      "Centre: average stay in days, everyone who arrived, people who have left included.",
+    );
+    const rank = screen.getByTestId("ward-statistics-map-rank");
+    expect(within(rank).getByRole("heading", { name: "Longest average stay" })).toBeTruthy();
+    const view = screen.getByTestId("ward-statistics-map-view").textContent ?? "";
+    expect(view).not.toMatch(/mean stay/iu);
+    expect(view).not.toMatch(/\d\.\dd\b/u);
+  });
 });

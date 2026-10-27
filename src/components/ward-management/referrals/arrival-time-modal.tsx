@@ -166,7 +166,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           <div className={styles.headTitle}>
             <Clock size={20} className={styles.titleIcon} aria-hidden="true" />
             <h2 id={`${baseId}-arrival-modal-title`} className={styles.title}>
-              Update Arrival Time & Transport
+              Update arrival time & transport
             </h2>
           </div>
           <button
@@ -243,7 +243,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
           <div className={styles.etaField}>
             <div id={`${baseId}-eta-presets-label`} className={styles.label}>
-              Estimated Time of Arrival (ETA): <strong>{formatInstantWithDay(etaMinutes, now)} AWST</strong>
+              Estimated time of arrival (ETA): <strong>{formatInstantWithDay(etaMinutes, now)} AWST</strong>
             </div>
 
             <div className={styles.presets} role="group" aria-labelledby={`${baseId}-eta-presets-label`}>
@@ -276,7 +276,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               disabled={saving || saveGate.buttonProps.disabled}
               aria-busy={saving || undefined}
             >
-              {saving ? "Saving…" : "Save Arrival Plan"}
+              {saving ? "Saving…" : "Save arrival plan"}
             </button>
             {saveGate.note}
           </div>

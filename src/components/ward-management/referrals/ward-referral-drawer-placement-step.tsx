@@ -290,7 +290,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
             <div className={styles.wardTableHead} aria-hidden="true">
               <span>Ward</span>
               <span>Ready</span>
-              <span>Waitlist</span>
+              <span>Waiting list</span>
             </div>
             <div role="list" aria-label="Placement Destination Options">
               {realTimeMatch.sortedUnits.map((unit, index) => {
@@ -384,7 +384,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     <span className={styles.wardFigure}>
                       <strong className={styles.mono}>{waiting}</strong>
                       {/* v10 phone: the card has no column head, so the figure names itself. */}
-                      <small className={styles.wardFigureName}>waitlist</small>
+                      <small className={styles.wardFigureName}>waiting list</small>
                     </span>
                   </label>
                 );

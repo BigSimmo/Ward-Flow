@@ -548,7 +548,7 @@ export function PatientCommunityTab({
                 {stayOpen ? (
                   <span className={styles.nr}>Paused while a placement or stay is open</span>
                 ) : (
-                  <span className={styles.nr}>Not held in this prototype</span>
+                  <span className={styles.nr}>Not recorded in this prototype</span>
                 )}
               </Row>
               <Row

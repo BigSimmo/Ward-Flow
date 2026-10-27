@@ -8,18 +8,28 @@ import { RECORDED_SEXES } from "./ward-model-vocabulary";
 /**
  * Why a date of birth cannot be stored, or undefined when it can (production audit 24 Oct 2026,
  * ENG-02). It must be a real "YYYY-MM-DD" calendar date, not before 1900 and not after `today`'s
- * Perth calendar day. Nothing is computed from it here. The wording never quotes the caller's text.
+ * Perth calendar day, or after `demoDay` when that is a real calendar day before it (H-0372: the
+ * caller's demo day can only tighten the bound). The wording never quotes the caller's text.
  */
-export function dateOfBirthProblem(dateOfBirth: unknown, today: Date): string | undefined {
-  const match = typeof dateOfBirth === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth) : null;
-  if (!match) return "ADD_PATIENT date of birth must be a date written YYYY-MM-DD";
+export function dateOfBirthProblem(dateOfBirth: unknown, today: Date, demoDay?: unknown): string | undefined {
+  if (!isCalendarDay(dateOfBirth)) {
+    return typeof dateOfBirth === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)
+      ? "ADD_PATIENT date of birth is not a real calendar date"
+      : "ADD_PATIENT date of birth must be a date written YYYY-MM-DD";
+  }
+  if (dateOfBirth < "1900-01-01") return "ADD_PATIENT date of birth is before 1900";
+  const realDay = perthIsoDay(today);
+  const bound = isCalendarDay(demoDay) && demoDay < realDay ? demoDay : realDay;
+  if (dateOfBirth > bound) return "ADD_PATIENT date of birth is in the future";
+  return undefined;
+}
+
+function isCalendarDay(value: unknown): value is string {
+  const match = typeof value === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
+  if (!match) return false;
   const [year, month, day] = match.slice(1).map(Number) as [number, number, number];
   const read = new Date(Date.UTC(year, month - 1, day));
-  if (read.getUTCFullYear() !== year || read.getUTCMonth() !== month - 1 || read.getUTCDate() !== day)
-    return "ADD_PATIENT date of birth is not a real calendar date";
-  if (year < 1900) return "ADD_PATIENT date of birth is before 1900";
-  if ((dateOfBirth as string) > perthIsoDay(today)) return "ADD_PATIENT date of birth is in the future";
-  return undefined;
+  return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === day;
 }
 
 /** Registration mutation; the reducer's event permission and audit wrapper remain authoritative. */
@@ -51,10 +61,10 @@ export function reducePatientRegistration(
   const familyName = text(event.familyName);
   if (umrn === "") return reject(state, event, "ADD_PATIENT needs a UMRN");
   if (givenName === "" || familyName === "") return reject(state, event, "ADD_PATIENT needs a given and a family name");
-  // The real date, read only for the upper bound: the reducer holds no calendar day of its own.
-  // TC2-10: the Add patient form also checks against the demo day, which a loaded scenario can
-  // set before the real date, so a birth date after the demo day is caught there.
-  const dateProblem = dateOfBirthProblem(event.dateOfBirth, new Date());
+  // The reducer holds no calendar day of its own, so the upper bound is the real date, tightened to
+  // the caller's demo day when one is sent (H-0372, TC2-10: a loaded scenario can set the demo day
+  // before the real date). A missing or malformed demo day falls back to the real date.
+  const dateProblem = dateOfBirthProblem(event.dateOfBirth, new Date(), event.demoToday);
   if (dateProblem !== undefined) return reject(state, event, dateProblem);
   // Defensive uniqueness check: Reject duplicate UMRNs to prevent split clinical records
   const existingPatient = state.patients.find((p) => sameRecordNumber(p.umrn, umrn));

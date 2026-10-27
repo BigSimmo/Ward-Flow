@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**604 rulings/items extracted, across 38 of 44 files.**
+**605 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 347 distinct IDs
+## ID index — 348 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -184,10 +184,10 @@ safe global key across 30 files.
 | ↳ | `decisions.md`:446 | D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026) |
 | `D-36` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1405 | D-36 · _Referrals into this ward_ / _into the team_ — PRESENTATION, with a condition |
-| ↳ | `decisions.md`:452 | D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026) |
+| ↳ | `decisions.md`:452 | D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026) (Replaced by D-87) |
 | `D-37` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1411 | D-37 · _Clinically ready, not yet gone_ — PRESENTATION, and the heading must name its subject |
-| ↳ | `decisions.md`:467 | D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) |
+| ↳ | `decisions.md`:467 | D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) (Replaced by D-87) |
 | `D-38` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |
 | ↳ | `decisions.md`:494 | D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026) |
@@ -255,6 +255,7 @@ safe global key across 30 files.
 | `D-84` | `decisions.md`:967 | D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026) |
 | `D-85` | `decisions.md`:975 | D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026) |
 | `D-86` | `decisions.md`:982 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
+| `D-87` | `decisions.md`:989 | D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -544,7 +545,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-86 item(s):
+87 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -581,8 +582,8 @@ safe global key across 30 files.
 - `D-33` — line 434, heading: "D-33. Separation of Local Ward Shift Notes from Statewide Coordinator Telemetry (6 October 2026)"
 - `D-34` — line 440, heading: "D-34. Acute Medical Deterioration Bed Release and Escalation Protocol (6 October 2026)"
 - `D-35` — line 446, heading: "D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)"
-- `D-36` — line 452, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)"
-- `D-37` — line 467, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)"
+- `D-36` — line 452, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026) (Replaced by D-87)"
+- `D-37` — line 467, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) (Replaced by D-87)"
 - `D-38` — line 494, heading: "D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)"
 - `D-39` — line 512, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
 - `D-40` — line 556, heading: "D-40. A second community treatment order keeps the first (9 October 2026)"
@@ -632,6 +633,7 @@ safe global key across 30 files.
 - `D-84` — line 967, heading: "D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026)"
 - `D-85` — line 975, heading: "D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026)"
 - `D-86` — line 982, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
+- `D-87` — line 989, heading: "D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

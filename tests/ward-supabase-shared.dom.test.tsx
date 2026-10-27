@@ -89,6 +89,7 @@ describe("Supabase shared sign-in", () => {
     "keeps recovery and nominated signup usable after an invalid link %s",
     async (fragment) => {
       vi.stubEnv("NEXT_PUBLIC_WARD_COORDINATOR_EMAIL", "nominated@example.invalid");
+      vi.stubEnv("NEXT_PUBLIC_WARD_OPEN_SIGNUP", "true");
       window.history.replaceState({}, "", "/ward-flow" + fragment);
       const fetcher = vi.fn<typeof fetch>(async () => Response.json({}));
       vi.stubGlobal("fetch", fetcher);
@@ -111,6 +112,17 @@ describe("Supabase shared sign-in", () => {
       expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     },
   );
+  it("hides Create account while open sign-up is off, even with a coordinator email (H-0038)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_COORDINATOR_EMAIL", "nominated@example.invalid");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({}, { status: 400 })),
+    );
+    render(<Probe />);
+    fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
+    expect(screen.getByRole("button", { name: /^Sign in$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create a Ward Flow account" })).toBeNull();
+  });
   it("still offers sign-in when the browser blocks session storage (H-0305)", async () => {
     const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
     vi.stubGlobal("fetch", fetcher);

@@ -12,7 +12,7 @@ Re-check every guide after clinician testing, and whenever a step on screen chan
 
 | Desk                                | Guide                                              | Lands on    |
 | ----------------------------------- | -------------------------------------------------- | ----------- |
-| Flow coordinator                    | [flow-coordinator.md](flow-coordinator.md)         | My list     |
+| Bed coordinator                     | [flow-coordinator.md](flow-coordinator.md)         | My list     |
 | Site bed manager                    | [site-bed-manager.md](site-bed-manager.md)         | Capacity    |
 | Ward (nurse in charge)              | [ward.md](ward.md)                                 | My ward     |
 | ED mental health clinician          | [emergency-department.md](emergency-department.md) | My ED board |
