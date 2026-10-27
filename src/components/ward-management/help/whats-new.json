@@ -1,102 +1,102 @@
 [
   {
+    "id": "2026-10-27-closing-ward-keeps-reason",
+    "date": "2026-10-27",
+    "line": "Closing a ward keeps your reason and time if the save is refused, and reopening a ward now asks you to confirm."
+  },
+  {
+    "id": "2026-10-27-activity-every-desk-computer",
+    "date": "2026-10-27",
+    "line": "The Activity feed now shows recent actions from every computer at your desk, not just this one."
+  },
+  {
+    "id": "2026-10-27-capacity-locked-beds-in-total",
+    "date": "2026-10-27",
+    "line": "Capacity now counts locked beds within the total and labels each figure the same way on every screen."
+  },
+  {
+    "id": "2026-10-27-referral-panel-whats-left",
+    "date": "2026-10-27",
+    "line": "The referral form's side panel now shows what's left to fill in before you can send."
+  },
+  {
+    "id": "2026-10-27-update-bed-choose-ward",
+    "date": "2026-10-27",
+    "line": "Update a bed now lets you choose a ward, then opens that ward's page."
+  },
+  {
+    "id": "2026-10-27-bed-map-opens-bed-board",
+    "date": "2026-10-27",
+    "line": "Bed map squares on Capacity now open that ward's bed board."
+  },
+  {
+    "id": "2026-10-27-acknowledge-visible-confirm-undo",
+    "date": "2026-10-27",
+    "line": "Acknowledge visible now asks you to confirm, then lets you undo for a few seconds."
+  },
+  {
+    "id": "2026-10-27-plan-next-return-longest-past",
+    "date": "2026-10-27",
+    "line": "Plan next return now opens the patient longest past discharge with no plan."
+  },
+  {
+    "id": "2026-10-27-seclusion-room-confirm",
+    "date": "2026-10-27",
+    "line": "Marking a seclusion room available or out of service now asks you to confirm first."
+  },
+  {
+    "id": "2026-10-27-movements-wait-labels",
+    "date": "2026-10-27",
+    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
+  },
+  {
+    "id": "2026-10-27-demo-chip-ward-clock",
+    "date": "2026-10-27",
+    "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
+  },
+  {
+    "id": "2026-10-27-form-code-titles",
+    "date": "2026-10-27",
+    "line": "Statutory form codes now show their title, such as Form 4A (Transport order), in more places."
+  },
+  {
+    "id": "2026-10-27-help-search-box",
+    "date": "2026-10-27",
+    "line": "Help now has a search box: type what you need to find guides, shortcuts and settings."
+  },
+  {
+    "id": "2026-10-27-help-colour-code-guide",
+    "date": "2026-10-27",
+    "line": "Help now has a colour code guide under Reference in the Glossary tab, showing what each colour and shape means."
+  },
+  {
+    "id": "2026-10-27-register-refer-open-patient",
+    "date": "2026-10-27",
+    "line": "After you register and refer a patient, the message now has an Open patient button."
+  },
+  {
+    "id": "2026-10-27-tomorrow-tiles-bed-type",
+    "date": "2026-10-27",
+    "line": "Tomorrow tiles now say which bed type they count, and All EDs shows how many EDs match."
+  },
+  {
+    "id": "2026-10-27-transport-heading-screen-name",
+    "date": "2026-10-27",
+    "line": "The Transport page heading is now the screen name, Transport, instead of a count."
+  },
+  {
+    "id": "2026-10-27-place-move-pulled-explained",
+    "date": "2026-10-27",
+    "line": "Place or move now explains what Pulled means, with a link to the Help glossary."
+  },
+  {
+    "id": "2026-10-27-stay-tile-day-number",
+    "date": "2026-10-27",
+    "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
+  },
+  {
     "id": "2026-10-27-home-back-on-rail",
     "date": "2026-10-27",
     "line": "Home is back at the top of the side menu on a computer, with a house icon."
-  },
-  {
-    "id": "2026-10-27-full-given-names-on-boards",
-    "date": "2026-10-27",
-    "line": "Bed board, movement bars and board cards show the given name in full."
-  },
-  {
-    "id": "2026-10-27-waiting-list-and-record",
-    "date": "2026-10-27",
-    "line": "Waitlist is now Waiting list, and dossier is now record."
-  },
-  {
-    "id": "2026-10-27-officer-guide-steps",
-    "date": "2026-10-27",
-    "line": "The officer guide names each step up to Arrived at ward. Counts read 1 day and 2 days."
-  },
-  {
-    "id": "2026-10-27-stay-figures-and-alert-units",
-    "date": "2026-10-27",
-    "line": "Stay figures say who they cover and write days in full. Forecast alerts name their unit."
-  },
-  {
-    "id": "2026-10-27-statistics-headings-site-key",
-    "date": "2026-10-27",
-    "line": "Statistics and Handover headings name their page, and the ward table has a key for site codes."
-  },
-  {
-    "id": "2026-10-27-sentence-case-plain-refusals",
-    "date": "2026-10-27",
-    "line": "Labels are in sentence case, and refused actions are named in plain words, not codes."
-  },
-  {
-    "id": "2026-10-27-gender-mix",
-    "date": "2026-10-27",
-    "line": "Referral checks say gender mix, matching the bed screens."
-  },
-  {
-    "id": "2026-10-27-glossary-abbreviations",
-    "date": "2026-10-27",
-    "line": "The Help glossary now spells out AWST, CAMHS, HDU, KPI, MHERL and PIR."
-  },
-  {
-    "id": "2026-10-27-community-observation-withheld",
-    "date": "2026-10-27",
-    "line": "A community team now sees an inpatient's observation level as Withheld, not General."
-  },
-  {
-    "id": "2026-10-27-device-clock-roles",
-    "date": "2026-10-27",
-    "line": "A device with its clock set wrong no longer cuts a role short or keeps it open too long."
-  },
-  {
-    "id": "2026-10-27-transport-booking-polish",
-    "date": "2026-10-27",
-    "line": "Transport booking no longer needs a CAD number for a ward escort or family, and Save stays in view."
-  },
-  {
-    "id": "2026-10-27-ward-two-tabs",
-    "date": "2026-10-27",
-    "line": "The Ward page now has two tabs, Ward home and Decisions. Place or move opens the bed board."
-  },
-  {
-    "id": "2026-10-27-desktop-wheel-scroll",
-    "date": "2026-10-27",
-    "line": "On a computer, the mouse wheel now carries on scrolling the page past side panels and lists."
-  },
-  {
-    "id": "2026-10-27-forecast-on-ward-board",
-    "date": "2026-10-27",
-    "line": "Ward boards show your part in tomorrow's forecast, and Home links straight to it."
-  },
-  {
-    "id": "2026-10-27-header-band-holds",
-    "date": "2026-10-27",
-    "line": "The coloured page header now stays a full-width band under notes and banners, on every device."
-  },
-  {
-    "id": "2026-10-27-no-role-flash",
-    "date": "2026-10-27",
-    "line": "Opening the app on another desk no longer flashes the coordinator's page first."
-  },
-  {
-    "id": "2026-10-27-waiting-eds-on-rail",
-    "date": "2026-10-27",
-    "line": "Waiting and All EDs are back in the coordinator's side menu on a computer."
-  },
-  {
-    "id": "2026-10-27-form-friction-fixes",
-    "date": "2026-10-27",
-    "line": "Forms ask less: optional answers no longer block sending, and a disabled Save says why."
-  },
-  {
-    "id": "2026-10-27-alerts-yours-on-phone",
-    "date": "2026-10-27",
-    "line": "On a phone, the Alerts page calls your own alerts Yours, the same as on a computer."
   }
 ]
