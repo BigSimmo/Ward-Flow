@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { patientIdsWithRecords } from "@/components/ward-management/reports/patient-chronology";
-import { discreetPatientName } from "@/components/ward-management/settings/discreet-names";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -18,7 +17,8 @@ afterEach(() => {
 });
 
 describe("chronology phone patient picker", () => {
-  it.each([true, false])("shows and announces the selected name format (discreet=%s)", (discreet) => {
+  // D-83 (fresh audit W-9): names in full, and the removed Discreet names setting's old key changes nothing.
+  it.each([true, false])("shows and announces the full name (old discreet key=%s)", (discreet) => {
     installMatchMediaStub(true);
     if (discreet) localStorage.setItem("ward-flow-discreet-names", "on");
     const state = seedWardFlowState();
@@ -33,13 +33,10 @@ describe("chronology phone patient picker", () => {
     fireEvent.click(screen.getByRole("button", { name: "Choose a patient" }));
     const list = screen.getByRole("list", { name: "Patients" });
     const fullName = `${patient.familyName}, ${patient.givenName}`;
-    const shown = discreet ? discreetPatientName(fullName, patient.umrn) : fullName;
+    const shown = fullName;
     const choice = within(list).getByRole("button", { name: shown });
     expect(choice).toHaveTextContent(shown);
-    if (discreet) {
-      expect(within(list).queryByRole("button", { name: fullName })).not.toBeInTheDocument();
-      expect(choice).not.toHaveTextContent(patient.familyName);
-    }
+    expect(choice).toHaveTextContent(patient.familyName);
     fireEvent.click(choice);
     expect(screen.queryByRole("list", { name: "Patients" })).not.toBeInTheDocument();
   });
