@@ -36,7 +36,6 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { applyAppearance, applyGlare } from "./ward-bar";
@@ -454,10 +453,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // (fix list 7.6, October 2026).
   if (phone) return null;
 
-  // Role-aware ordering: each entry is ranked by whichever role-order list names it. An id no list
-  // names, and the whole `coordinator` role, keeps its curated `RAIL_GROUPS` position.
-  // B1 (Josh, 19 Oct 2026): the role's own short menu on the rail, everything else under More.
-  const menu = roleMenu(entries, role, (id) => wardNavRoleRank(role, id) ?? Number.MAX_SAFE_INTEGER);
+  // B1 (Josh, 19 Oct 2026): the role's own short menu on the rail, everything else under More, in
+  // the one per-role order `ward-rail-entries.ts` defines (H-0281).
+  const menu = roleMenu(entries, role);
   const menuLabel = CHROME_ROLE_LABELS[role];
   const activeEntry = entries.find((entry) => isActiveRailEntry(pathname, entry));
   // A5 (overall review, 20 Oct 2026): Handover shows once. Where the countdown card above the menu

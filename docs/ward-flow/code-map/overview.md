@@ -213,8 +213,8 @@ on** (`ward-chrome-role.ts`). Three separate layers:
 - **Action permission:** `EVENT_ROLE` in the reducer. Screens ask `canDispatch` / `useRoleGate`
   (`ward-role-permissions.ts`, `ward-role-gate.tsx`) with the route's role and show a disallowed
   action disabled with a reason; listed cross-role pairs stay available (feature 11).
-- **Chrome and nav order:** `ward-chrome-role.ts`, `ward-nav-role-order.ts` (reorders, never
-  hides), `ward-place.ts`.
+- **Chrome and nav order:** `ward-chrome-role.ts`, `shell/ward-rail-entries.ts` (one menu
+  definition per role that reorders, never hides), `ward-place.ts`.
 - **Record reads:** `WardRecordActor` in `ward-discharge-records.ts`.
 
 The role switcher (`ward-role-switcher.tsx`) is four links to role home pages, mounted in the top

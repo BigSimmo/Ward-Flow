@@ -71,8 +71,8 @@ export function wardRouteUnitId(pathname: string): string | undefined {
  * reshuffles as they move between a ward, an ED, a team and the officer page, and Tasks no longer
  * drops to 0 there. `wardChromeRole(pathname)` above still answers which route-scoped figures a page
  * shows (the standing strip, Activity notices); this constant answers only "who is using the shell".
- * The per-role orders in `ward-nav-role-order.ts` stay (owner ruling 2026-09-06, "reorder real
- * screens only"): they apply the day a different person signs in.
+ * The per-role menu orders in `shell/ward-rail-entries.ts` stay (owner ruling 2026-09-06, "reorder
+ * real screens only"): they apply the day a different person signs in.
  */
 export const WARD_SHELL_ROLE: WardChromeRole = "coordinator";
 
