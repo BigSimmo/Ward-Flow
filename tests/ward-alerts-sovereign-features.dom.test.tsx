@@ -133,7 +133,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
   it("renders the Operational Notices & Shift Communication Feed from recorded notices only", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
-    const feed = screen.getByRole("region", { name: "Operational Notices and Shift Communication Feed" });
+    const feed = screen.getByRole("region", { name: "Operational notices and shift communication feed" });
     expect(within(feed).getByText("Role notices")).toBeInTheDocument();
     expect(within(feed).getByText("No notices have been raised this session.")).toBeInTheDocument();
     expect(feed.textContent).not.toMatch(/Catchment Override Logged|Custodial Transfer Completed|Luke Davies/);
@@ -168,7 +168,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
     fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
 
-    const feed = screen.getByRole("region", { name: "Operational Notices and Shift Communication Feed" });
+    const feed = screen.getByRole("region", { name: "Operational notices and shift communication feed" });
     expect(within(feed).queryByText("No notices have been raised this session.")).not.toBeInTheDocument();
     const items = within(feed).getAllByRole("listitem");
     expect(items).toHaveLength(1);

@@ -62,9 +62,9 @@ export const officialForms: OfficialForm[] = [
     category: "Transport and transfer",
     availability: "unavailable",
   },
-  { code: "5A", title: "Community Treatment Order", category: "Community treatment orders" },
-  { code: "5B", title: "Continuation of Community Treatment Order", category: "Community treatment orders" },
-  { code: "5C", title: "Variation of terms of Community Treatment Order", category: "Community treatment orders" },
+  { code: "5A", title: "Community treatment order", category: "Community treatment orders" },
+  { code: "5B", title: "Continuation of community treatment order", category: "Community treatment orders" },
+  { code: "5C", title: "Variation of terms of community treatment order", category: "Community treatment orders" },
   {
     code: "5D",
     title:
@@ -73,7 +73,7 @@ export const officialForms: OfficialForm[] = [
   },
   {
     code: "5E",
-    title: "Notice and record of breach of Community Treatment Order",
+    title: "Notice and record of breach of community treatment order",
     category: "Community treatment orders",
   },
   { code: "5F", title: "Order to attend", category: "Community treatment orders" },

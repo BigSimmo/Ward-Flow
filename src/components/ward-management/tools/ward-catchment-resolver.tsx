@@ -504,7 +504,7 @@ export function formatCatchmentSummary(entry: ResolvedCatchment): string {
   }
 
   if (entry.contestedAnswers && entry.contestedAnswers.length > 0) {
-    lines.push(`Discrepancy Details:`);
+    lines.push(`Discrepancy details:`);
     for (const ans of entry.contestedAnswers) {
       lines.push(
         `  • ${ans.documentId}: ${ans.clinics.join(", ")} -> Unverified prototype hospital: ${ans.hospital} (${ans.healthService.code})`,
@@ -625,7 +625,7 @@ export function WardCatchmentResolver({
       {/* Search Input Section */}
       <section className={styles.searchSection} aria-label="Catchment search">
         <label htmlFor={searchInputId} className={styles.searchLabel}>
-          Search by Suburb or Postcode
+          Search by suburb or postcode
         </label>
         <div className={styles.inputWrapper}>
           <span className={styles.inputIcon} aria-hidden="true">
@@ -681,8 +681,8 @@ export function WardCatchmentResolver({
       </section>
 
       {/* Quick-Pick Suburbs */}
-      <section className={styles.quickPickSection} aria-label="Quick-pick Suburbs">
-        <span className={styles.quickPickLabel}>Quick-pick Suburbs:</span>
+      <section className={styles.quickPickSection} aria-label="Quick-pick suburbs">
+        <span className={styles.quickPickLabel}>Quick-pick suburbs:</span>
         <div className={styles.quickPickList} role="group" aria-label="Common suburbs">
           {QUICK_PICK_SUBURBS.map((suburb) => {
             const isActive = normaliseSuburbKey(query) === normaliseSuburbKey(suburb);
@@ -795,7 +795,7 @@ export function WardCatchmentResolver({
 
               {/* Follow-up Clinic */}
               <div className={styles.factBlock}>
-                <span className={styles.factLabel}>Follow-up Community Mental Health Clinic</span>
+                <span className={styles.factLabel}>Follow-up community mental health clinic</span>
                 <span className={styles.factValue} data-testid="community-clinic-value">
                   {activeResult.communityClinic}
                 </span>
@@ -816,7 +816,7 @@ export function WardCatchmentResolver({
                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
                     <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
                   </svg>
-                  <span>Clinical Caveat &amp; Source Discrepancy</span>
+                  <span>Clinical caveat &amp; source discrepancy</span>
                 </div>
                 <p className={styles.caveatsText}>{activeResult.caveats}</p>
                 {activeResult.contestedAnswers && activeResult.contestedAnswers.length > 0 && (
@@ -879,7 +879,7 @@ export function WardCatchmentResolver({
                 <line x1="8" y1="11" x2="14" y2="11" />
               </svg>
             </span>
-            <h3 className={styles.stateTitle}>No Catchment Records Found</h3>
+            <h3 className={styles.stateTitle}>No catchment records found</h3>
             <p className={styles.stateMessage}>{queryResult.notFoundMessage}</p>
             <div className={styles.stateSuggestions}>
               <span>Suggestions:</span>
@@ -905,7 +905,7 @@ export function WardCatchmentResolver({
                 <circle cx="12" cy="9" r="2.5" />
               </svg>
             </span>
-            <h3 className={styles.stateTitle}>Ready to Resolve Catchment</h3>
+            <h3 className={styles.stateTitle}>Ready to resolve catchment</h3>
             <p className={styles.stateMessage}>
               Type a suburb name or 4-digit WA postcode above, or tap one of the common quick-pick suburbs to look up
               community clinic records and unverified prototype hospital suggestions.

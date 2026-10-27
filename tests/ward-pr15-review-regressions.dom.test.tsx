@@ -358,7 +358,7 @@ describe("PR15 discharge and referral provenance", () => {
       /Planned discharge today|Sanitisation buffer|NUM Bed Coordination|Units Full|Staffed Ensuite|Ext 4192/,
     );
     fireEvent.click(row);
-    const turnaround = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const turnaround = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(turnaround).toHaveAttribute("aria-disabled", "true");
     expect(turnaround).toHaveAccessibleDescription(/unavailable/);
     fireEvent.click(turnaround);
