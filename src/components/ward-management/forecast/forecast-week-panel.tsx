@@ -62,7 +62,7 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
                 {days.map((day) => (
                   <th key={day.offset} scope="col" className={dayClass(day)}>
                     {day.label}
-                    {day.holiday ? " (holiday)" : ""}
+                    {dayNote(day)}
                   </th>
                 ))}
               </tr>
@@ -119,6 +119,14 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
       </div>
     </WardPanel>
   );
+}
+
+/** P072: the shading and italics also said in words, e.g. "Sat 1 (weekend, may move)". */
+function dayNote(day: { offset: number; weekend: boolean; holiday: boolean }): string {
+  const notes = [day.holiday ? "holiday" : day.weekend ? "weekend" : "", day.offset > 1 ? "may move" : ""].filter(
+    Boolean,
+  );
+  return notes.length ? ` (${notes.join(", ")})` : "";
 }
 
 function dayClass(day: { offset: number; weekend: boolean; holiday: boolean }): string | undefined {

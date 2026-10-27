@@ -42,7 +42,7 @@ describe("report bed figures for a scoped desk", () => {
 
   it("gives the site's wards the same bed states in its downtime pack as the coordinator's", () => {
     const input = { now: NOW_ANCHOR, identify: () => "Synthetic person" };
-    const whole = downtimePack({ ...input, ...state, units: state.units });
+    const whole = downtimePack({ ...input, ...state, units: state.units, bedUnits: state.units });
     const desk = downtimePack({ ...input, ...scoped, bedUnits: own, bedReleases: releases, leaveBeds: leave });
     expect(desk.wards.map((ward) => ward.unitId).sort()).toEqual(own.map((unit) => unit.id).sort());
     for (const ward of desk.wards)
