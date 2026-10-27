@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useLayoutEffect, useState, type ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -82,7 +82,18 @@ function setOnline(value: boolean) {
   vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(value);
 }
 
+// F-11: the opening pack waits for the browser to be idle. These tests run that wait at once; the
+// first test below checks the wait itself.
+beforeEach(() => {
+  vi.stubGlobal("requestIdleCallback", (work: () => void) => {
+    work();
+    return 0;
+  });
+  vi.stubGlobal("cancelIdleCallback", () => undefined);
+});
+
 afterEach(() => {
+  vi.unstubAllGlobals();
   cleanup();
   forgetDowntimePack();
   resetWardAccessStoreForTests();
@@ -91,6 +102,19 @@ afterEach(() => {
 });
 
 describe("WardDowntimePackLine (fix plan item 9)", () => {
+  it("leaves the silent opening pack until the page has finished starting (F-11)", () => {
+    let idle: (() => void) | undefined;
+    vi.stubGlobal("requestIdleCallback", (work: () => void) => {
+      idle = work;
+      return 1;
+    });
+    renderShell();
+    expect(lastDowntimePack()).toBeNull();
+    act(() => idle?.());
+    expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
+    expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
+  });
+
   it("takes a pack on opening without asking for paper", () => {
     renderShell();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
