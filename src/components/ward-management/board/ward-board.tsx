@@ -74,16 +74,16 @@ export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model
 
 /**
  * The line that leads an occupied /board card. A recorded bed number comes first (Josh, 21 Oct
- * 2026), then surname plus first initial, because synthetic seeds reuse surnames and so do real
- * wards. Nothing recorded gives an empty string, and the card shows no line. Never invents a bed.
+ * 2026), then surname and given name in full (D-83), because synthetic seeds reuse surnames and
+ * so do real wards. Nothing recorded gives an empty string, and the card shows no line. Never invents a bed.
  */
 export function boardCardLine(
   bedNumber: number | undefined,
   patient: { familyName: string; givenName: string } | null | undefined,
 ): string {
   const bed = bedNumber === undefined ? null : `Bed ${bedNumber}`;
-  const initial = patient?.givenName[0];
-  const name = patient ? (initial ? `${patient.familyName}, ${initial}` : patient.familyName) : null;
+  const given = patient?.givenName.trim();
+  const name = patient ? (given ? `${patient.familyName}, ${given}` : patient.familyName) : null;
   return [bed, name].filter((part) => part !== null).join(" · ");
 }
 
