@@ -107,7 +107,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 <span>7-day post-discharge follow-up register</span>
               </h2>
               <span className={styles.badgePill} id="egressHeadBadge">
-                {demoVisibleEgress.length} Patients in 7-Day Window
+                {demoVisibleEgress.length} Patients in 7-day window
               </span>
             </div>
             <div className={styles.tableScroll}>
@@ -115,11 +115,11 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 <thead>
                   <tr>
                     <th scope="col">Patient</th>
-                    <th scope="col">Discharging Unit</th>
+                    <th scope="col">Discharging unit</th>
                     <th scope="col">Discharge Date / Plan</th>
                     <th scope="col">Destination</th>
                     <th scope="col">7-Day KPI Window Status</th>
-                    <th scope="col">Assigned Coordinator</th>
+                    <th scope="col">Assigned coordinator</th>
                     <th scope="col" className={styles.cellEnd}>
                       Actions
                     </th>

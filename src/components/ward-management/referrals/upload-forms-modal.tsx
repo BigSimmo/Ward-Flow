@@ -22,11 +22,11 @@ export interface UploadFormsModalProps {
 }
 
 const FORM_TYPE_OPTIONS = [
-  "Form 4A Transport Order",
-  "Clinical Transfer Summary",
+  "Form 4A Transport order",
+  "Clinical transfer summary",
   "Form 1A Referral for Examination",
   "Risk Assessment & Management Plan",
-  "Medical Clearance Certificate",
+  "Medical clearance certificate",
 ] as const;
 
 export function UploadFormsModal(props: UploadFormsModalProps) {

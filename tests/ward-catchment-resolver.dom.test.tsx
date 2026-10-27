@@ -368,7 +368,7 @@ describe("formatCatchmentSummary", () => {
     expect(summary).toContain("Suburb: Halls Head");
     expect(summary).toContain("Clinic Match Status: Contested / split");
     expect(summary).toContain("Caveats / Notes:");
-    expect(summary).toContain("Discrepancy Details:");
+    expect(summary).toContain("Discrepancy details:");
   });
 });
 
@@ -377,7 +377,7 @@ describe("WardCatchmentResolver React Component UI", () => {
     render(React.createElement(WardCatchmentResolver));
 
     expect(screen.getByRole("heading", { name: "WA Suburb-to-Catchment Resolver" })).toBeDefined();
-    expect(screen.getByLabelText("Search by Suburb or Postcode")).toBeDefined();
+    expect(screen.getByLabelText("Search by suburb or postcode")).toBeDefined();
     expect(screen.getByTestId("catchment-empty-state")).toBeDefined();
 
     for (const suburb of QUICK_PICK_SUBURBS) {
@@ -391,7 +391,7 @@ describe("WardCatchmentResolver React Component UI", () => {
     const morleyButton = screen.getByRole("button", { name: "Morley" });
     fireEvent.click(morleyButton);
 
-    const input = screen.getByLabelText("Search by Suburb or Postcode") as HTMLInputElement;
+    const input = screen.getByLabelText("Search by suburb or postcode") as HTMLInputElement;
     expect(input.value).toBe("Morley");
 
     expect(screen.getByTestId("catchment-result-card")).toBeDefined();
@@ -447,7 +447,7 @@ describe("WardCatchmentResolver React Component UI", () => {
     const clearBtn = screen.getByRole("button", { name: "Clear search query" });
     fireEvent.click(clearBtn);
 
-    const input = screen.getByLabelText("Search by Suburb or Postcode") as HTMLInputElement;
+    const input = screen.getByLabelText("Search by suburb or postcode") as HTMLInputElement;
     expect(input.value).toBe("");
     expect(screen.getByTestId("catchment-empty-state")).toBeDefined();
   });

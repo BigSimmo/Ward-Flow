@@ -190,9 +190,9 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
             }
             className={styles.modalTitle}
           >
-            {activeModalType === "contact" && "Record Clinical Contact"}
-            {activeModalType === "handover" && "Print Catchment Counts"}
-            {activeModalType === "crisis" && "Catchment Crisis Response & Outreach Duty"}
+            {activeModalType === "contact" && "Record clinical contact"}
+            {activeModalType === "handover" && "Print catchment counts"}
+            {activeModalType === "crisis" && "Catchment crisis response & outreach duty"}
           </h3>
           <button
             type="button"
@@ -259,7 +259,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
                   not a record of any real day.
                 </p>
                 <p className={styles.mdtSummaryLine}>
-                  {caseloadRows.length} Active Caseload · {waitingReferrals.length} Waiting Referrals ·{" "}
+                  {caseloadRows.length} active caseload · {waitingReferrals.length} waiting referrals ·{" "}
                   {recordedCtoCount} recorded Form 5A/5B
                 </p>
               </div>
@@ -289,7 +289,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               </p>
               <div className={styles.vehicleCard}>
                 <div>
-                  <div className={styles.vehicleName}>Mobile Outreach Vehicle 2 (Car 2)</div>
+                  <div className={styles.vehicleName}>Mobile outreach vehicle 2 (car 2)</div>
                   <div className={styles.vehicleMeta}>
                     Catchment: {team.name} · {teamConfig.campus} · {teamConfig.service}
                   </div>
@@ -299,14 +299,14 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
 
               <div className={styles.contactGrid}>
                 <div className={styles.dutyCard}>
-                  <div className={styles.dutyRole}>Duty Consultant</div>
+                  <div className={styles.dutyRole}>Duty consultant</div>
                   <div className={styles.dutyName}>{teamConfig.consultant} (MBBS, FRANZCP)</div>
-                  <div className={styles.microMuted}>Direct Mobile: 0491 570 110</div>
+                  <div className={styles.microMuted}>Direct mobile: 0491 570 110</div>
                 </div>
                 <div className={styles.dutyCard}>
-                  <div className={styles.dutyRole}>Crisis Clinical Specialist</div>
+                  <div className={styles.dutyRole}>Crisis clinical specialist</div>
                   <div className={styles.dutyName}>CNS E. Kowalski (RN, Cred. MHN)</div>
-                  <div className={styles.microMuted}>Vehicle Satellite: Channel 4B</div>
+                  <div className={styles.microMuted}>Vehicle satellite: channel 4B</div>
                 </div>
               </div>
 
