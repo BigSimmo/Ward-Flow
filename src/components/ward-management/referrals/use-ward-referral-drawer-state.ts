@@ -15,6 +15,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { referralAgeBand } from "./referral-age-band";
+import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -468,6 +469,7 @@ export function useWardReferralDrawerState({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
+    unloadSafe: () => referralDraftKeptOnScreen(draftStorageKey, draftNow),
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);
