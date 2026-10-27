@@ -42,6 +42,7 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["nobed", INBOX_CATEGORIES.no_eligible_bed.idPrefix],
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
+  ["transport", INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix],
   ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
   // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
   // counts, so Alerts "Now" and the badge agree.

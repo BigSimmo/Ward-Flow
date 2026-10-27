@@ -68,6 +68,8 @@ export const INBOX_CATEGORIES = {
   destinations_declined: { idPrefix: "declines-", kind: "fact" },
   /** Transport accepted and not yet departed. */
   transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
+  /** P068 (Josh, 27 Oct 2026, 10:02 PM AWST): a booked job 10 minutes or more past its booking estimate. */
+  transport_booking_estimate_passed: { idPrefix: "eta-passed-", kind: "fact" },
   /** A planned admission whose expected arrival has passed without the arrival being recorded.
    *  Its row's remainder is a planned-admission id, not a movement id (stream D). */
   planned_arrival_overdue: { idPrefix: "planned-arrival-", kind: "fact" },
@@ -127,6 +129,7 @@ export function inboxItemKindOf(inboxItemId: string): InboxItemKind | undefined 
  */
 const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "transport_awaiting_departure",
+  "transport_booking_estimate_passed",
   "target_pending_referral_decision",
   "target_pending_transfer_acceptance",
   "target_pending_transport_booked",
@@ -230,6 +233,7 @@ export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): I
   if (startsWith("legal_timing_breached")) return movement.legalForm?.dueAt;
   if (startsWith("bed_pull_expired")) return movement.pullExpiresAt;
   if (startsWith("transport_awaiting_departure")) return movement.transport?.acceptedAt;
+  if (startsWith("transport_booking_estimate_passed")) return movement.transport?.estimatedAt;
   if (startsWith("target_referral_decision") || startsWith("target_pending_referral_decision")) {
     return movement.referralDecisionOpenedAt ?? movement.referredAt;
   }
