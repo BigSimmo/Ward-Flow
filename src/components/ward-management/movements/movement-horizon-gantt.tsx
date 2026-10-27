@@ -67,7 +67,7 @@ interface DensitySettings {
 
 const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
   compact: {
-    barHeight: 22,
+    barHeight: 24,
     barGap: 2,
     barTop: 6,
     fontSize: "var(--text-xs)",
