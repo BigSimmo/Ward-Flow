@@ -131,6 +131,9 @@ describe("H-0117 transit deck saves keep their answers until accepted", () => {
     } else {
       expect(screen.queryByTestId("ward-transit-override-failure")).toBeNull();
       expect(screen.queryByLabelText("Override reason")).toBeNull();
+      // The Ask wards refusal the override answered is cleared with it (PR #896 review).
+      expect(screen.queryByTestId("ward-transit-ask-failure")).toBeNull();
+      expect(screen.getByTestId("ward-ask-count")).toHaveTextContent(/^0 of/u);
     }
   });
 });

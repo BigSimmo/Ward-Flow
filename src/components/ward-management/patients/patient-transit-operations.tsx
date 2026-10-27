@@ -315,6 +315,11 @@ export function PatientTransitOperations({
                 () => {
                   setOverrideReason("");
                   noteAttempt();
+                  // The wards are now asked: the Ask wards refusal and ticks it answered are done with.
+                  if (attempted === "REFER_TO_UNITS") {
+                    askSave.clearError();
+                    setSelected([]);
+                  }
                 },
               );
             }}
