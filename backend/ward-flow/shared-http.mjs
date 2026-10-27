@@ -168,7 +168,13 @@ export function createSharedHandler({
     const reply = (status, body, outcome) => {
       if (outcome) note.outcome = outcome;
       // Audit PS-05: a scoped board the store already serialised is reused, not stringified again.
-      return jsonResponse(body, { status, headers });
+      // TC2-05 (H-0764): every answer carrying a board (a save's too) carries the server's time, so
+      // the app reads the board's `accessUntil` on this clock. Spread keeps the board's own object.
+      const withTime =
+        body && typeof body === "object" && "snapshot" in body && !("serverTime" in body)
+          ? { serverTime: Date.now(), ...body }
+          : body;
+      return jsonResponse(withTime, { status, headers });
     };
     const origin = request.headers.get("origin");
     if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" }, "origin_denied");

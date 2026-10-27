@@ -141,6 +141,16 @@ test("a role removed while a request is in flight answers 403, not a server erro
   assert.match((await response.json()).error, /No Ward Flow role/);
 });
 
+test("a save's answer carries the server's time with its board (TC2-05, H-0764)", async () => {
+  const snapshot = { revision: 2, accessUntil: Date.now() + 60_000 };
+  const { handler } = setup(coordinator, "prototype", {
+    command: async () => ({ status: 200, body: { snapshot } }),
+  });
+  const value = await (await handler(request("/commands", body))).json();
+  assert.equal(value.snapshot.accessUntil, snapshot.accessUntil);
+  assert.ok(Math.abs(value.serverTime - Date.now()) < 5_000);
+});
+
 test("clinical labels and invalid command envelopes are rejected", async () => {
   const { calls, handler } = setup();
   for (const invalid of [
