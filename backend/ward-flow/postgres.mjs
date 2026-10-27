@@ -383,6 +383,8 @@ export function createWorkspaceStore(
     return kept.slice(0, cap);
   }
   let known = { version: 0, until: 0 };
+  // #839: when this process last logged each desk's list read (`logList`), at most 1000 desks.
+  const listLogged = new Map();
   /**
    * The workspace records this server last read or saved (limits audit, 25 Oct 2026: reading the
    * whole board from the database on every save and refresh would use up Supabase's monthly data
@@ -2223,6 +2225,12 @@ export function createWorkspaceStore(
      */
     async logList(view, surface) {
       if (!(view.version >= LIST_VIEW_MIGRATION) || (surface !== "list" && surface !== "tv")) return false;
+      // #839: a row this process wrote inside the window means the insert below would add nothing,
+      // so its four round trips are skipped. Rows are never removed inside the window.
+      const key = JSON.stringify([view.actorId, view.membershipId ?? null, surface]);
+      const since = clock().getTime() - (listLogged.get(key) ?? -Infinity);
+      if (since >= 0 && since < LIST_VIEW_REPEAT_MS) return false;
+      let logged = 0;
       return transaction(async (client, loggedAt) => {
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':record-access'))", [
           workspaceId,
@@ -2247,7 +2255,16 @@ export function createWorkspaceStore(
             forgetVersionOnMissing(error);
             throw error;
           });
+        if (rowCount > 0) logged = loggedAt.getTime();
         return rowCount > 0;
+      }).then((added) => {
+        // Noted only once committed, so a rolled back write is tried again.
+        if (added) {
+          if (listLogged.size >= 1000) listLogged.delete(listLogged.keys().next().value);
+          listLogged.delete(key);
+          listLogged.set(key, logged);
+        }
+        return added;
       });
     },
     /**

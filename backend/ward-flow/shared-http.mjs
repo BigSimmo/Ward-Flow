@@ -490,12 +490,13 @@ export function createSharedHandler({
             return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
-          const views = store.recordViews ? await store.recordViews(view, patient) : [];
+          // #839: both lists are read at once, as each is its own round trip to the database.
+          const [views, openings] = await Promise.all([
+            store.recordViews ? store.recordViews(view, patient) : [],
+            coordinator && store.breakGlassOpenings && patient === null ? store.breakGlassOpenings(view) : [],
+          ]);
           if (!coordinator) return reply(200, { views });
-          return reply(200, {
-            views,
-            openings: store.breakGlassOpenings && patient === null ? await store.breakGlassOpenings(view) : [],
-          });
+          return reply(200, { views, openings });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;

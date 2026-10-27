@@ -378,3 +378,49 @@ it("refuses a bearer value that is not a signed token without asking Supabase ab
   await expect(authenticator("Bearer test-token-1")).rejects.toThrow("Unauthorised");
   expect(fetchCount).toBe(0);
 });
+
+it("trusts the account a refresh reply names, so a reload skips the separate account check (#839)", async () => {
+  const store = storage();
+  const named = { ...user, email: "synthetic@example.invalid" };
+  let issued = 0;
+  const fetcher = vi.fn(async (u: RequestInfo | URL) => {
+    if (String(u).endsWith("/user")) return Response.json(named);
+    issued++;
+    return Response.json({ ...session(`access-${issued}`), refresh_token: `refresh-${issued}`, user: named });
+  });
+  const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+  await auth.signIn("synthetic@example.invalid", "private-test-password");
+  auth.dispose();
+  const reloaded = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+  await reloaded.restore();
+  expect(await reloaded.token()).toBe("access-2");
+  expect(reloaded.userId).toBe(user.id);
+  const calls = fetcher.mock.calls.map(([u]) => new URL(String(u)).pathname + new URL(String(u)).search);
+  expect(calls.slice(2)).toEqual(["/auth/v1/token?grant_type=refresh_token"]);
+  // The email stays in memory for the step-up and is never written to browser storage.
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("synthetic@example.invalid");
+  await reloaded.reauthenticate("private-test-password");
+  expect(await reloaded.token()).toBe("access-3");
+  reloaded.dispose();
+});
+
+it("refuses a refresh reply that names a different account and removes the session (#839)", async () => {
+  const store = storage();
+  let refreshed = false;
+  const fetcher = vi.fn(async (u: RequestInfo | URL) => {
+    if (String(u).endsWith("/user")) return Response.json(user);
+    if (String(u).includes("grant_type=refresh_token")) refreshed = true;
+    return Response.json({
+      ...session(),
+      expires_in: refreshed ? 3600 : 1,
+      user: refreshed ? { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", email: "other@example.invalid" } : user,
+    });
+  });
+  const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  await expect(auth.token()).rejects.toMatchObject({ kind: "session" });
+  expect(auth.userId).toBeNull();
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  expect(fetcher.mock.calls.filter(([u]) => String(u).endsWith("/user"))).toHaveLength(1);
+  auth.dispose();
+});

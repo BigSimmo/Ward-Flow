@@ -219,7 +219,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     };
   }
   private async verify(session: Session, generation = this.generation) {
-    const user = (await this.request("/user", {}, session.access_token, generation)) as User;
+    this.adopt(session, (await this.request("/user", {}, session.access_token, generation)) as User, generation);
+  }
+  private adopt(session: Session, user: User, generation: number) {
     if (!user || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id))
       throw new WardAuthError("unavailable", "Sign-in returned an invalid account.");
     if (session.user && session.user.id !== user.id) {
@@ -329,7 +331,12 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       // verification failure can retry without reusing the consumed token.
       this.assert(generation);
       this.save(next);
-      await this.verify(next, generation);
+      // #839: the refresh reply names its account, so a reload need not wait on /user as well. The
+      // same account check runs on it. A reply without the id or email still asks /user.
+      const named = (value as { user?: { id?: unknown; email?: unknown } } | null)?.user;
+      if (session.user && typeof named?.id === "string" && typeof named.email === "string" && named.email)
+        this.adopt(next, named as User, generation);
+      else await this.verify(next, generation);
     })();
     this.refreshTask = task;
     try {
