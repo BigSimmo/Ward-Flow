@@ -3,7 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { MissedRequestsPanel, missedCheckCountLine } from "@/components/ward-management/coordinator/missed-requests-panel";
+import {
+  MissedRequestsPanel,
+  missedCheckCountLine,
+} from "@/components/ward-management/coordinator/missed-requests-panel";
 import { WardFlowClockContext, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
