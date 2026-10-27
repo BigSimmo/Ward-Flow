@@ -251,9 +251,9 @@ function fixture(version = LATEST_MIGRATION) {
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
   if (version >= 13) {
-    const surfaceMatch = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[12]);
-    assert.ok(surfaceMatch, "migration 13 adds the record access surface check");
-    const [, surface] = surfaceMatch;
+    const [, surface] = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(
+      sqlFiles[version >= 15 ? 14 : 12],
+    );
     catalog.constraints.find((c) => c.table_name === "record_access" && c.definition.includes("surface")).definition =
       `CHECK (${checkExpressions(surface)[0]})`;
   }
