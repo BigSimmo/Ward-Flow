@@ -36,7 +36,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
-  PULL_PATIENT: "Pull a bed",
+  PULL_PATIENT: "Pull the bed",
   PATIENT_ARRIVED: "Confirm arrival",
 };
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -472,7 +472,7 @@ export function WardHomeTab({
             : "On leave"
           : bed.status === "incoming"
             ? delivered
-              ? "Delivered"
+              ? "Arrived at ward"
               : "Pulled"
             : bed.status === "closed"
               ? "Closed"
@@ -483,7 +483,7 @@ export function WardHomeTab({
     const note = hold
       ? hold.label
       : delivered
-        ? `Delivered ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
+        ? `Arrived at ward ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
         : awayAtEd
           ? `Away at an ED ${bed.awayAtEdHours}h`
           : bed.blockReason
@@ -738,7 +738,7 @@ export function WardHomeTab({
         blocked ??
         (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : movementStatusLabel(movement)),
       tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
-      action: canPull ? "Pull a bed" : "Open",
+      action: canPull ? "Pull the bed" : "Open",
       placement: canPull,
       primary: index === 0,
       blocked,
@@ -881,7 +881,7 @@ export function WardHomeTab({
         .join("; "),
       meta: String(heldAfterStop.length),
       tone: "warning",
-      action: onOpenArrivals ? { label: "Release bed", run: onOpenArrivals } : undefined,
+      action: onOpenArrivals ? { label: "Release pulled bed", run: onOpenArrivals } : undefined,
     });
   }
   if (morningRollupOverdue && !morningRollupConfirmed) {

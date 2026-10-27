@@ -388,7 +388,7 @@ describe("releasing a bed STOP_TRANSPORT left held — owner answer 8 (second ro
       actingUnitId: "WD-NOT-THE-RIGHT-ONE",
     });
     expect(next.rejections.length).toBeGreaterThan(before);
-    expect(next.rejections.at(-1)?.reason).toMatch(/bed is held at/);
+    expect(next.rejections.at(-1)?.reason).toMatch(/bed is pulled at/);
   });
 
   it("refuses a movement STOP_TRANSPORT never touched", () => {
@@ -421,6 +421,6 @@ describe("releasing a bed STOP_TRANSPORT left held — owner answer 8 (second ro
       movementId,
     });
     expect(twice.rejections.length).toBeGreaterThan(released.rejections.length);
-    expect(twice.rejections.at(-1)?.reason).toMatch(/holds no bed — it may already have been released/);
+    expect(twice.rejections.at(-1)?.reason).toMatch(/has no bed pulled — it may already have been released/);
   });
 });

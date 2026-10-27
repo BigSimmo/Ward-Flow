@@ -74,7 +74,7 @@ const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's
 
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
-  PULL_PATIENT: "Pull a bed",
+  PULL_PATIENT: "Pull the bed",
   PATIENT_ARRIVED: "Confirm arrival",
 };
 

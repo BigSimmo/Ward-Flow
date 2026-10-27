@@ -159,7 +159,7 @@ describe("ward screen surfaces a refused action to the ward user", () => {
     // The movement stays right where it was — a refused pull is not a state transition — so the
     // alert renders on the SAME row, next to the SAME button the ward just pressed.
     const alert = within(screen.getByTestId("ward-accepted-WF-319")).getByRole("alert");
-    expect(alert).toHaveTextContent(/Pull a bed not recorded/i);
+    expect(alert).toHaveTextContent(/Pull the bed not recorded/i);
     expect(alert).toHaveTextContent(/not enough observation staff left/i);
   });
 

@@ -330,7 +330,7 @@ export function reduceProtectedRecordEvent(
             (a.state === "occupied" || a.state === "pulled"),
         )
       )
-        return deny("transition", "denied", "The patient already has another occupied or held bed.");
+        return deny("transition", "denied", "The patient already has another occupied or pulled bed.");
       const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
       if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
       const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);

@@ -322,7 +322,7 @@ describe("RELEASE_DIVERTED_BED — build plan item 29 / OA-29", () => {
       now: NOW + 9,
       movementId,
     });
-    expect(again.rejections.at(-1)?.reason).toMatch(/holds no bed|already/i);
+    expect(again.rejections.at(-1)?.reason).toMatch(/has no bed pulled|already/i);
   });
 
   it("refuses another ward releasing", () => {

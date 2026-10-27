@@ -34,7 +34,7 @@ describe("one status after Delivered (WT-07)", () => {
     const moving = { ...seedMovement(), stage: "moving", closure: undefined } as Movement;
     const delivered = { ...moving, transport: job({ collectedAt: NOW_ANCHOR - 30, arrivedAt: NOW_ANCHOR - 5 }) };
     expect(deliveredAwaitingWard(delivered)).toBe(true);
-    expect(movementStatusLabel(delivered)).toBe("Delivered, awaiting ward confirmation");
+    expect(movementStatusLabel(delivered)).toBe("Arrived at ward, awaiting ward confirmation");
 
     const enRoute = { ...moving, transport: job({ collectedAt: NOW_ANCHOR - 30 }) };
     expect(deliveredAwaitingWard(enRoute)).toBe(false);

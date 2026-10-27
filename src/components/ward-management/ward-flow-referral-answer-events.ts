@@ -649,9 +649,9 @@ export function reduceReferralAnswerEvent(
 
     case "HOLD_REFERRAL_BED": {
       const referral = findReferral(state, event.referralId);
-      if (!referral) return reject(state, event, "No referral found to hold a bed for");
+      if (!referral) return reject(state, event, "No referral found to pull a bed for");
       if (event.role === "ward" && event.actingUnitId !== event.unitId)
-        return reject(state, event, "A ward may only hold its own beds");
+        return reject(state, event, "A ward may only pull its own beds");
       const arm = referral.destinations.find(
         (candidate) =>
           candidate.destination.kind === "psychiatric_ward" &&
@@ -659,7 +659,7 @@ export function reduceReferralAnswerEvent(
           (candidate.acceptedUnitId ?? candidate.destination.unitId) === event.unitId,
       );
       if (!arm || arm.destination.kind !== "psychiatric_ward" || arm.withdrawnAt !== undefined)
-        return reject(state, event, "This ward needs a current accepted referral before holding a bed");
+        return reject(state, event, "This ward needs a current accepted referral before pulling a bed");
       if (
         state.movements.some((m) => m.referralId === referral.id) ||
         state.admissions.some(
