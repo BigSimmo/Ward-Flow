@@ -36,6 +36,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { countCellText } from "./capacity-derivations";
 import styles from "./bed-map.module.css";
 
@@ -502,7 +503,7 @@ function WardBlock({
                   // P093 (Josh, 9:55 PM 27 Oct 2026, option A): each square opens its ward's bed board.
                   <Link
                     key={square.key}
-                    href={`/ward-flow/ward/${ward.unit.id}?tab=board`}
+                    href={`${unitHref(ward.unit.id)}?tab=board`}
                     aria-label={squareLabel(square)}
                     data-testid={`ward-bed-map-square-${ward.unit.id}`}
                     data-bed-map-state={square.state}
