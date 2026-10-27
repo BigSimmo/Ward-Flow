@@ -5,7 +5,7 @@
  */
 import type { WardFlowEvent } from "./ward-flow-events";
 
-export const CONFLICT_RECORD_TYPES = ["bed", "stay", "movement", "referral", "alert", "discharge"] as const;
+const CONFLICT_RECORD_TYPES = ["bed", "stay", "movement", "referral", "alert", "discharge"] as const;
 export type ConflictRecordType = (typeof CONFLICT_RECORD_TYPES)[number] | "record";
 
 /** The record an action changes, most specific id first. `null` when it names none. */
@@ -23,7 +23,7 @@ const RECORD_FIELDS = [
   "unitId",
 ] as const;
 
-export function conflictRecordKey(event: WardFlowEvent): string | null {
+function conflictRecordKey(event: WardFlowEvent): string | null {
   const fields = event as unknown as Record<string, unknown>;
   for (const field of RECORD_FIELDS) {
     const value = fields[field];
@@ -40,13 +40,13 @@ export function sameConflictRecord(conflicting: WardFlowEvent, queued: WardFlowE
 }
 
 /** The record type the server named, or "record". */
-export function conflictRecordType(value: unknown): ConflictRecordType {
+function conflictRecordType(value: unknown): ConflictRecordType {
   const type = (value as { recordType?: unknown } | null)?.recordType;
   return (CONFLICT_RECORD_TYPES as readonly unknown[]).includes(type) ? (type as ConflictRecordType) : "record";
 }
 
 /** The other desk's role label, or "Another desk". Only a short label of words is kept. */
-export function conflictDesk(value: unknown): string {
+function conflictDesk(value: unknown): string {
   const desk = (value as { desk?: unknown } | null)?.desk;
   return typeof desk === "string" && /^[A-Za-z][A-Za-z ]{0,39}$/u.test(desk.trim()) ? desk.trim() : "Another desk";
 }

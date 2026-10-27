@@ -57,7 +57,7 @@ function harness() {
 
 describe("P058 conflict scope", () => {
   it("a 409 on ward 1 does not cancel ward 2's queued action; ward 1's queued action is not sent", async () => {
-    const { client, sent, release, view } = harness();
+    const { client, sent, release } = harness();
     await client.refresh();
     const first = client.dispatch(on("ward-1"));
     const sameRecord = client.dispatch(on("ward-1"));
