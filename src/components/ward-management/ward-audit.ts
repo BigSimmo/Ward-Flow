@@ -285,7 +285,8 @@ export type AuditEvent = AuditBase &
     | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
         category: "inbox";
-        action: "TAKE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
+        action:
+          "TAKE_INBOX_ITEM_OWNERSHIP" | "RELEASE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
         details: { inboxItemId: string; reason: InboxSnoozeReason | null; until: Instant | null };
       }
     | {
@@ -383,6 +384,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "ARCHIVE_PATIENT":
       return "patient-record";
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
       return "inbox";
@@ -472,6 +474,7 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     return { kind: "configuration" };
   } else if (
     event.type === "TAKE_INBOX_ITEM_OWNERSHIP" ||
+    event.type === "RELEASE_INBOX_ITEM_OWNERSHIP" ||
     event.type === "SNOOZE_INBOX_ITEM" ||
     event.type === "UNSNOOZE_INBOX_ITEM"
   ) {
@@ -699,6 +702,7 @@ export function captureAuditEvent(
       break;
     }
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
       captured = {
