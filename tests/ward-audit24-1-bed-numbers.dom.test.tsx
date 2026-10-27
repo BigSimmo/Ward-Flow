@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,7 @@ function renderWard(unitId: string) {
       </ToastProvider>
     </WardFlowProvider>,
   );
-  fireEvent.click(document.querySelector<HTMLElement>("#tabBtn-board")!);
+  fireEvent.click(screen.getByTestId("ward-open-bed-board"));
 }
 
 type Card = { bed: number; state: string; admissionId?: string; text: string };

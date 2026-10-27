@@ -254,7 +254,7 @@ describe("SV-5 confirm bed release and SV-7 Retry on the ward screen", () => {
       });
       return Promise.resolve({ commandId: "c-1", status: "failed", message: FAILED_SAYS, confirmation });
     });
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const occupied = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).find(
       (bed) => !/free|closed|pulled/.test(bed.getAttribute("aria-label") ?? ""),
     )!;

@@ -35,6 +35,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
+import { WardPlaceOrMove } from "./ward-place-or-move";
 import {
   Button,
   buttonClass,
@@ -170,7 +171,7 @@ interface WardHomeTabProps {
   /** Lets the screen return focus to a bed's tile when its drawer closes. */
   registerBedTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
   /**
-   * Bed board tab (v10 pass 3): replaces Every bed and This shift with the board, so Ward flow
+   * Bed board (v10 pass 3, opened by Place or move): replaces Every bed and This shift, so Ward flow
    * stays beside it in the rail exactly as on Home.
    */
   bedArea?: React.ReactNode;
@@ -190,8 +191,10 @@ interface WardHomeTabProps {
   phoneShiftLabel?: string;
   /** Phone: tells the screen a bed's card is open in the round, so the ward card steps aside. */
   onWalkingChange?: (walking: boolean) => void;
-  /** Phone: opens Bed board, the map of who is where. */
+  /** Opens placing and moving (the bed board) inside Ward home (`WardPlaceOrMove`). */
   onOpenBoard?: () => void;
+  /** People accepted for this ward and waiting to be placed in a bed. */
+  boardWaitingCount?: number;
 }
 
 export function WardHomeTab({
@@ -253,6 +256,7 @@ export function WardHomeTab({
   phoneShiftLabel,
   onWalkingChange,
   onOpenBoard,
+  boardWaitingCount = 0,
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
@@ -1629,6 +1633,11 @@ export function WardHomeTab({
     );
   }
 
+  // Phone: the place or move line sits above the round while someone is waiting for a bed.
+  const phoneBoardHint =
+    phoneSheets && !bedArea && !walkingOnPhone && onOpenBoard ? (
+      <WardPlaceOrMove variant="phone" waiting={boardWaitingCount} onOpen={onOpenBoard} />
+    ) : null;
   return (
     <div className={styles.homeWrap}>
       {/* Visual desk, 22 Oct 2026: an absence is silence, never "0 being made ready". */}
@@ -1756,6 +1765,7 @@ export function WardHomeTab({
             {phoneFind}
           </div>
         ) : null}
+        {phoneBoardHint !== null && boardWaitingCount > 0 ? phoneBoardHint : null}
         <Card
           hidden={bedArea ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
@@ -1772,6 +1782,7 @@ export function WardHomeTab({
               title="Every bed"
               action={
                 <span className={styles.headTools}>
+                  <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
                   <Segmented
                     label="Show beds"
                     items={[
@@ -1952,14 +1963,7 @@ export function WardHomeTab({
           {phoneSheets ? null : bedKeyBlock}
           {!phoneSheets && figures ? <div className={styles.bedFigures}>{figures}</div> : null}
         </Card>
-        {phoneSheets && !bedArea && !walkingOnPhone && onOpenBoard ? (
-          <p className={styles.phoneBoardHint}>
-            Want the layout?{" "}
-            <button type="button" className={styles.phoneBoardLink} onClick={onOpenBoard}>
-              Bed board shows where everyone is
-            </button>
-          </p>
-        ) : null}
+        {phoneBoardHint !== null && boardWaitingCount === 0 ? phoneBoardHint : null}
         {phoneSheets && !bedArea && !walkingOnPhone ? (
           <details className={styles.phoneFigures} data-testid="ward-phone-figures">
             <summary>

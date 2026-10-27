@@ -1469,7 +1469,7 @@ export function heldBedRefusal(
           (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
       ),
   );
-  return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
+  return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already pulled for someone` : null;
 }
 
 /**
@@ -2172,7 +2172,7 @@ export function reduceClinicalEvent(
         return reject(
           state,
           event,
-          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while a bed was pulled for them — requires doctor reassessment or bed release`,
         );
       }
       const divertedHoldingBed =
@@ -2182,7 +2182,7 @@ export function reduceClinicalEvent(
         return reject(
           state,
           event,
-          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
+          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while a bed was pulled for them — requires bed release (RELEASE_DIVERTED_BED)`,
         );
       }
       // Refused rather than a no-op: a control must not report success for an act that changed

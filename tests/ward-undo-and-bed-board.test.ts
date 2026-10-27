@@ -342,7 +342,7 @@ describe("PLACE_IN_BED and UNDO_PLACE_IN_BED", () => {
     const held = wardFlowReducer(moved, accept(referralId, "coordinator", NOW, 3));
     expect(held.rejections).toEqual(moved.rejections);
     const refused = wardFlowReducer(held, undoPlace(stay.id));
-    expect(refused.rejections.at(-1)?.reason).toMatch(/held.*so the move cannot be undone$/);
+    expect(refused.rejections.at(-1)?.reason).toMatch(/pulled.*so the move cannot be undone$/);
     expect(refused.admissions.find((a) => a.id === stay.id)?.bedNumber).toBe(5);
   });
 

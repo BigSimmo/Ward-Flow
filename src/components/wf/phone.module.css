@@ -887,7 +887,8 @@
  * under the lean bar, which joins it at rest, with the same 22px lip as the shared Hero. The
  * eyebrow is caps, as on the Hero band. `data-band` is only set on phone (`useWfBandBleed`). */
 @media (max-width: 48rem) {
-  .hero[data-band="on"] {
+  .hero[data-band="on"],
+  .hero[data-band="off"] {
     position: relative;
     margin-top: calc(-1 * var(--wf-band-top, 0px));
     margin-left: calc(-1 * var(--wf-band-left, 0px));
@@ -906,7 +907,8 @@
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   }
 
-  .hero[data-band="on"]::after {
+  .hero[data-band="on"]::after,
+  .hero[data-band="off"]::after {
     content: "";
     position: absolute;
     left: 0;
@@ -919,7 +921,7 @@
     pointer-events: none;
   }
 
-  .hero[data-band="on"] .heroEyebrow {
+  .hero:is([data-band="on"], [data-band="off"]) .heroEyebrow {
     min-height: 28px;
     padding-block: 6px;
     line-height: var(--wf-lh-12);
@@ -928,7 +930,7 @@
     text-transform: uppercase;
   }
 
-  .hero[data-band="on"] .heroEyebrowRow {
+  .hero:is([data-band="on"], [data-band="off"]) .heroEyebrowRow {
     align-items: center;
   }
 
