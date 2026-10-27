@@ -48,20 +48,26 @@ function fakeServer({ shared = true, failing = false } = {}) {
   let generation = 0;
   const snapshots: ForecastHistoryEntry[] = [yesterday];
   const reasons: Record<string, unknown>[] = [];
+  const control = { failWrites: false };
   const forecastHistory: NonNullable<SharedAccessApi["forecastHistory"]> = async (body) => {
-    if (failing) throw new Error("Forecast history could not be read");
+    if (failing || (body && control.failWrites)) throw new Error("Forecast history could not be read");
     if (!shared) return { shared: false };
     if (body) {
       sent.push(body);
       generation = body.generation as number;
       const snapshot = body.snapshot as ForecastHistoryEntry | undefined;
       if (snapshot && !snapshots.some((entry) => entry.day === snapshot.day)) snapshots.push(snapshot);
-      if (body.reason) reasons.push(body.reason as Record<string, unknown>);
+      if (body.reason) addReason(body.reason as Record<string, unknown>);
     }
     return { shared: true, generation, snapshots: [...snapshots], reasons: [...reasons] };
   };
+  function addReason(reason: Record<string, unknown>) {
+    const index = reasons.findIndex((held) => held.day === reason.day);
+    if (index >= 0) reasons.splice(index, 1);
+    reasons.push(reason);
+  }
   const api = { forecastHistory } as unknown as SharedAccessApi;
-  return { api, sent };
+  return { api, sent, control, addReason };
 }
 
 function renderWith(api: SharedAccessApi | null, seen: Seen) {
@@ -116,5 +122,31 @@ describe("shared forecast history (proposal 013)", () => {
       view.unmount();
       window.localStorage.clear();
     }
+  });
+
+  it("keeps a reason shown when its save fails, and saves it on the next read", async () => {
+    const { api, sent, control } = fakeServer();
+    const seen: Seen = { history: [], reasons: 0 };
+    renderWith(api, seen);
+    await waitFor(() => expect(seen.history).toHaveLength(2));
+    control.failWrites = true;
+    await act(async () => seen.record?.({ day: today, reason: "other", by: "coordinator", at: NOW_ANCHOR }));
+    expect(seen.reasons).toBe(1);
+    control.failWrites = false;
+    // The view reads the history again when it is shown again, and the unsaved reason goes with it.
+    await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+    await waitFor(() => expect(sent.some((body) => body.reason)).toBe(true));
+    expect(seen.reasons).toBe(1);
+  });
+
+  it("picks up a reason another device recorded when the view is shown again", async () => {
+    const { api, addReason } = fakeServer();
+    const seen: Seen = { history: [], reasons: 0 };
+    renderWith(api, seen);
+    await waitFor(() => expect(seen.history).toHaveLength(2));
+    expect(seen.reasons).toBe(0);
+    addReason({ day: today - 1, reason: "transfer_cancelled", by: "bed_manager", at: NOW_ANCHOR - 60 });
+    await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+    await waitFor(() => expect(seen.reasons).toBe(1));
   });
 });

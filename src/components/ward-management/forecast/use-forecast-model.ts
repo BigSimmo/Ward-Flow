@@ -6,7 +6,7 @@
 // Home, Capacity, ED, the bed meeting, Alerts and Statistics all call this hook with their own clock,
 // so the same records give the same figure on every screen. Pure engine calls only; nothing here
 // writes a record.
-import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import {
@@ -368,10 +368,25 @@ export function useForecastMissReasons() {
   const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
   const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
   const { state: shared, send } = useSharedForecastHistory(worldGeneration);
-  const entries = shared.status === "shared" ? shared.reasons : local;
+  // A reason chosen here shows at once and stays shown until the desk's shared record has it. A
+  // save that fails is tried again whenever the shared history is read again, never dropped.
+  const [unsaved, setUnsaved] = useState<{ key: string; entries: ForecastMissReasonEntry[] }>({ key, entries: [] });
+  const pending = useMemo(() => (unsaved.key === key ? unsaved.entries : []), [unsaved, key]);
+  const entries = useMemo(
+    () => (shared.status === "shared" ? [...shared.reasons, ...pending] : local),
+    [shared, pending, local],
+  );
+  useEffect(() => {
+    if (shared.status !== "shared") return;
+    for (const entry of pending)
+      void send({ reason: entry }).then((saved) => {
+        if (saved)
+          setUnsaved((held) => (held.key === key ? { key, entries: held.entries.filter((e) => e !== entry) } : held));
+      });
+  }, [shared, pending, send, key]);
   const record = useCallback(
     (entry: ForecastMissReasonEntry) => {
-      void send({ reason: entry });
+      setUnsaved((held) => ({ key, entries: [...(held.key === key ? held.entries : []), entry] }));
       const next = recordForecastMissReason(parseForecastMissReasons(readLocal(key)), entry);
       dropEarlierWorlds(key);
       try {
@@ -381,7 +396,7 @@ export function useForecastMissReasons() {
       }
       window.dispatchEvent(new Event(MISS_REASONS_EVENT));
     },
-    [key, send],
+    [key],
   );
   return { entries, record };
 }

@@ -30,6 +30,11 @@ type ForecastHistoryCall = NonNullable<SharedAccessApi["forecastHistory"]>;
 const LOCAL: SharedForecastHistory = { status: "local" };
 const LOADING: SharedForecastHistory = { status: "loading" };
 const SHARED_EVENT = "ward-flow-forecast-shared-history";
+/**
+ * Another device's snapshot or reason does not change the workspace revision, so the board's poll
+ * never carries it. An open view reads the history again this often, and whenever it is shown again.
+ */
+const READ_EVERY_MS = 120_000;
 
 /** The server's reply, kept only when it is shared and counted in the same world generation. */
 export function sharedForecastReply(reply: unknown, generation: number): SharedForecastHistory {
@@ -67,10 +72,24 @@ export function useSharedForecastHistory(generation: number) {
     if (!call) return;
     let live = true;
     const take = (value: SharedForecastHistory) => live && setHeld({ call, generation, value });
-    readOnce(call).then(
-      (reply) => take(sharedForecastReply(reply, generation)),
-      () => take(LOCAL),
-    );
+    // A failed first read falls back to the browser's copy; a failed later read keeps what is held.
+    let read = false;
+    const load = () =>
+      readOnce(call).then(
+        (reply) => {
+          read = true;
+          take(sharedForecastReply(reply, generation));
+        },
+        () => {
+          if (!read) take(LOCAL);
+        },
+      );
+    void load();
+    const timer = window.setInterval(load, READ_EVERY_MS);
+    const onShown = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onShown);
     // Another view recorded something: take the history it was answered with.
     const onShared = (event: Event) => {
       const detail = (event as CustomEvent<{ call: ForecastHistoryCall; reply: unknown }>).detail;
@@ -79,6 +98,8 @@ export function useSharedForecastHistory(generation: number) {
     window.addEventListener(SHARED_EVENT, onShared);
     return () => {
       live = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onShown);
       window.removeEventListener(SHARED_EVENT, onShared);
     };
   }, [call, generation]);
