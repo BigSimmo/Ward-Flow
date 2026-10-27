@@ -205,7 +205,7 @@ export function transportBookingSubmission(
   if (
     provider === undefined ||
     escortRequired === undefined ||
-    (needsCad && cadNumberProblem(cadNumber) !== undefined) ||
+    ((needsCad || cadNumber.trim().length > 0) && cadNumberProblem(cadNumber) !== undefined) ||
     transportLegalStatus === undefined ||
     estimatedAt === undefined
   )
@@ -215,7 +215,7 @@ export function transportBookingSubmission(
   return {
     provider,
     escortRequired,
-    cadNumber: needsCad ? cadNumber.trim() : "",
+    cadNumber: cadNumber.trim(),
     transportLegalStatus,
     estimatedAt,
     ...(clash && legalReason !== "" ? { exception: { gaps: ["legal_status_differs"], reason: legalReason } } : {}),
@@ -277,8 +277,7 @@ export function TransportBookingForm({
   }, [legalNow, onAnswers]);
 
   const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
-  const needsCad = transportNeedsCad(answers);
-  const cadProblem = needsCad && answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
+  const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
   const missing = transportAnswersMissing(answers, now);
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
@@ -328,25 +327,24 @@ export function TransportBookingForm({
         </Select>
       </Field>
 
-      {needsCad ? (
-        <Field
-          label="CAD transport number"
-          id={did("cad")}
-          error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
-          help="Read it off the call with the provider."
-        >
-          <TextInput
-            data-testid={tid("cad")}
-            data-missing={missing.includes("cad") ? "" : undefined}
-            className={styles.mono}
-            autoComplete="off"
-            placeholder="CAD number"
-            disabled={pending}
-            value={answers.cadNumber}
-            onChange={(event) => set({ cadNumber: event.target.value })}
-          />
-        </Field>
-      ) : null}
+      {/* A ward escort or family has no dispatch call, so the box stays but never blocks Save. */}
+      <Field
+        label="CAD transport number"
+        id={did("cad")}
+        error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
+        help="Read it off the call with the provider."
+      >
+        <TextInput
+          data-testid={tid("cad")}
+          data-missing={missing.includes("cad") ? "" : undefined}
+          className={styles.mono}
+          autoComplete="off"
+          placeholder="CAD number"
+          disabled={pending}
+          value={answers.cadNumber}
+          onChange={(event) => set({ cadNumber: event.target.value })}
+        />
+      </Field>
 
       <div className={styles.timeRow}>
         <div className={styles.timeCol}>
