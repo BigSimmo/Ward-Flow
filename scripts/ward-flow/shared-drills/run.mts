@@ -191,6 +191,7 @@ class Person {
   private timer: NodeJS.Timeout | null = null;
   // The board read a poll started, so stopping can wait for it (PS-09, H-0957).
   private poll: Promise<unknown> = Promise.resolve();
+  private polling = false;
   readonly client: SharedWorkspaceClient;
   constructor(
     readonly name: string,
@@ -248,9 +249,14 @@ class Person {
     return false;
   }
   startPolling() {
+    this.polling = true;
+    // The next poll is booked once this read settles, so `poll` is always the read in flight. A
+    // refresh asked for mid-read returns at once, and would otherwise stand in for the slow read.
     const tick = () => {
-      this.poll = this.client.refresh();
-      this.timer = setTimeout(tick, POLL_MS + Math.random() * 400 - 200);
+      this.timer = null;
+      this.poll = this.client.refresh().finally(() => {
+        if (this.polling) this.timer = setTimeout(tick, POLL_MS + Math.random() * 400 - 200);
+      });
     };
     this.timer = setTimeout(tick, Math.random() * POLL_MS);
   }
@@ -260,6 +266,7 @@ class Person {
    * shift's final changes landed.
    */
   async stopPolling() {
+    this.polling = false;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     await this.poll.catch(() => undefined);
