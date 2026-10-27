@@ -29,6 +29,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
+import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
@@ -40,6 +41,8 @@ import { StrandedPrompts } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
+import { BoardToastView } from "./ward-board-toast";
+import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
@@ -63,7 +66,7 @@ import {
 import { WardBoardHeader } from "./ward-board-header";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
-import { WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
@@ -240,13 +243,16 @@ export function WardBoard({
     day: "recorded" | "today" | "tomorrow";
   } | null>(null);
   /*
-   * The destination this ward would record, defaulted to the FIRST of the five rather than to
-   * nothing. A "choose one" placeholder would be the safer-looking option and is the wrong one
-   * here: it makes the commonest discharge in the service take two interactions, and an unset
-   * value has to be guarded at the dispatch, which is a second way to fail. The five are all real
-   * destinations, none is a null choice, and the control states which is selected.
+   * Audit CS3-07 (26 Oct 2026, replacing the earlier first-option default): where a person went
+   * starts blank and must be chosen. The first option also counts as a statewide release, so a
+   * default recorded it unseen, and the shift row's "They have left" had no picker at all. A choice
+   * belongs to the person it was made for, so it never carries to the next one.
    */
-  const [leavingDestination, setLeavingDestination] = useState<LeavingDestination>(LEAVING_DESTINATIONS[0].id);
+  const [leavingChoice, setLeavingChoice] = useState<{ admissionId: string; destination: LeavingDestination } | null>(
+    null,
+  );
+  const destinationFor = (admissionId: string | undefined): LeavingDestination | "" =>
+    leavingChoice !== null && leavingChoice.admissionId === admissionId ? leavingChoice.destination : "";
   /*
    * Which of the two outgoing figures the "Going out today" list is built from. The toggle changes
    * what the board EMPHASISES; it hides no figure — all ten stay on the ward band in every state,
@@ -278,7 +284,7 @@ export function WardBoard({
     }, 60);
     return () => window.clearTimeout(timer);
   }, [sheetOpen]);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
 
   /*
    * Walkthrough D12 (25 Sept 2026): the board announced success without checking whether the
@@ -317,8 +323,8 @@ export function WardBoard({
     rejections,
     now,
     routeRole: "ward",
-    onMessage: (message) => {
-      setToastMessage(message);
+    onMessage: (message, tone) => {
+      setToastMessage(tone === "warning" ? { warning: message } : message);
       announceToWardShell(
         message.startsWith("Recorded departure") ? "Recorded departure: this patient has left the ward." : message,
       );
@@ -328,12 +334,14 @@ export function WardBoard({
     record: () => ReturnType<WardCommandDispatch>,
     success: string,
     admissionId: string,
-  ) =>
-    runDeparture(record, {
+  ) => {
+    setLeavingChoice(null);
+    return runDeparture(record, {
       success,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
       undone: "Departure undone. This patient is back on the ward.",
     });
+  };
   const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     dispatchAndReport(
@@ -364,7 +372,7 @@ export function WardBoard({
       : refused
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
-    setToastMessage(msg);
+    setToastMessage(refused || unaccepted ? { warning: msg } : msg);
     announceToWardShell(refused || unaccepted ? msg : check.spoken);
   }, [outcomeToken, rejections]);
 
@@ -449,8 +457,8 @@ export function WardBoard({
    * 🔴 **THE LAST SENTENCE HERE USED TO SAY "no leave beds are modelled on this board, and no
    * leave figure is rendered from them", AND THE SECOND HALF WAS FALSE.** `leaveBeds` was
    * `[] as const`. Two of the three derivations it feeds genuinely never read it —
-   * `headlineAvailable` and `constraintSentence` both reduce to `capacityBreakdown(...).availableNow`,
-   * which is `min(allocatable, empty)`. **But `capacityBreakdown` also returns `onLeave`, computed as
+   * `headlineAvailable` and `constraintSentence` both reduced to `capacityBreakdown(...).availableNow`
+   * then (the headline now reads `readyBedsNow`, Audit 6). **But `capacityBreakdown` also returns `onLeave`, computed as
    * `leave.filter((bed) => bed.unitId === unit.id).length`, and this board renders it as a labelled
    * figure.** So the board announced **On leave: 0** on every ward, always.
    *
@@ -529,8 +537,8 @@ export function WardBoard({
    * spec D3/D14 requires to be identical at service, hospital and ward level; the words are never
    * retyped here, which is what stops this board drifting from the home page's.
    *
-   * `availableNow` is the same figure the header above already prints through `headlineAvailable` —
-   * that helper IS `capacityBreakdown(...).availableNow` floored, so the two cannot disagree.
+   * Ready here is `states.ready` (`readyBedsNow`, as the header prints), NOT `breakdown.availableNow`,
+   * which still counts a bed pulled for an incoming patient (NA3-09, audit 26 Oct 2026).
    */
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
@@ -683,7 +691,7 @@ export function WardBoard({
    * when there is nothing to say cannot tell a reader that there is nothing to say.
    */
   const pulledIn = incoming.filter((person) => person.state === "pulled");
-  const figures: { key: string; label: string; value: number; led?: boolean }[] = [
+  const figures: { key: string; label: string; value: number; led?: boolean; note?: string }[] = [
     {
       key: "availableNow",
       label: CAPACITY_FIGURE_LABELS.availableNow,
@@ -698,6 +706,8 @@ export function WardBoard({
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
       value: breakdown.confirmedToday,
       led: outgoingBasis === "confirmed",
+      // NA3-06 (decision 16): Capacity's note, explaining the bed meeting's lower confirmed figure.
+      note: confirmedHeldUpNote(breakdown.confirmedToday, breakdown.confirmedHeldUpToday),
     },
     {
       key: "expectedToday",
@@ -816,12 +826,17 @@ export function WardBoard({
   const confirmIdentity = pendingConfirm
     ? (pendingConfirm.identity ?? identityFor(pendingConfirm.admissionId))
     : undefined;
+  const confirmAdmissionId = pendingConfirm?.admissionId || pendingConfirm?.item?.selectableKey;
+  const confirmDestination = LEAVING_DESTINATIONS.find(
+    (destination) => destination.id === destinationFor(confirmAdmissionId),
+  )?.label;
 
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
     if (pendingConfirm.kind === "leaving") {
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
-      if (!admissionId) return;
+      const leavingDestination = destinationFor(admissionId);
+      if (!admissionId || leavingDestination === "") return;
       recordDepartureAndReport(
         () =>
           recordWardDeparture
@@ -857,7 +872,8 @@ export function WardBoard({
 
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
     if (word === "They have left") {
-      const executeLeaving = () => {
+      const leavingDestination = destinationFor(item.selectableKey);
+      const executeLeaving = (leavingDestination: LeavingDestination) => {
         recordDepartureAndReport(
           () =>
             recordWardDeparture
@@ -872,8 +888,9 @@ export function WardBoard({
         );
       };
 
-      if (!requireConfirmation) {
-        executeLeaving();
+      // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
+      if (!requireConfirmation && leavingDestination !== "") {
+        executeLeaving(leavingDestination);
         return;
       }
 
@@ -890,7 +907,7 @@ export function WardBoard({
       const matchingMovement = movementForBoardArrival(movements, item.selectableKey);
       if (!matchingMovement) {
         const msg = `Cannot confirm arrival: no movement matches ${item.who || nameFor(item.selectableKey)}.`;
-        setToastMessage(msg);
+        setToastMessage({ warning: msg });
         announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
         return;
       }
@@ -910,7 +927,7 @@ export function WardBoard({
       const who = item.who || nameFor(item.selectableKey);
       if (!matchingLeave && !isAwayAtEd) {
         const msg = `Nothing to mark back: no leave or emergency department absence is recorded for ${who}. Nothing was changed.`;
-        setToastMessage(msg);
+        setToastMessage({ warning: msg });
         announceToWardShell(
           "Nothing to mark back: no leave or emergency department absence is recorded for this patient. Nothing was changed.",
         );
@@ -1037,7 +1054,7 @@ export function WardBoard({
       dialogTriggerRef={dialogTriggerRef}
       dispatchAndReport={dispatchAndReport}
       emptyTileCount={emptyTileCount}
-      leavingDestination={leavingDestination}
+      leavingDestination={destinationFor(selectedTile?.key)}
       movements={movements}
       nameFor={nameFor}
       now={now}
@@ -1051,7 +1068,9 @@ export function WardBoard({
       selectedTile={selectedTile}
       setBlockerDialogItem={setBlockerDialogItem}
       setDateEdit={setDateEdit}
-      setLeavingDestination={setLeavingDestination}
+      setLeavingDestination={(destination) =>
+        selectedTile && setLeavingChoice({ admissionId: selectedTile.key, destination })
+      }
       setPendingConfirm={setPendingConfirm}
       setSelectedBlocker={setSelectedBlocker}
       unit={unit}
@@ -1198,7 +1217,7 @@ export function WardBoard({
             Today on this ward
           </h2>
           <dl className={styles.triageFigures}>
-            {figures.map(({ key, label, value, led = false }) => {
+            {figures.map(({ key, label, value, led = false, note }) => {
               return (
                 <div
                   key={key}
@@ -1209,6 +1228,7 @@ export function WardBoard({
                 >
                   <dt className={styles.triageLabel}>{label}</dt>
                   <dd className={styles.triageValue}>{value}</dd>
+                  {note && <dd className={styles.triageLedNote}>{note}</dd>}
                   {led && <dd className={styles.triageLedNote}>shown in Going out</dd>}
                 </div>
               );
@@ -1311,7 +1331,8 @@ export function WardBoard({
               onClose={closeDetail}
               title={phoneSheetTitle}
               closeLabel="Close bed record"
-              height="tall"
+              // WARD-16: an empty, closed or pulled bed has two lines, so its sheet fits them.
+              height={selectedOccupant ? "tall" : "content"}
               data-testid="ward-board-detail-sheet"
             >
               <div className={styles.detailSheetBody}>{detailPanel}</div>
@@ -1398,6 +1419,12 @@ export function WardBoard({
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
+                    {confirmDestination ? (
+                      <span data-testid="ward-board-confirm-destination-text">
+                        {" "}
+                        Where they went: {confirmDestination}.
+                      </span>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -1413,6 +1440,16 @@ export function WardBoard({
                 ) : null}
               </p>
 
+              {pendingConfirm.kind === "leaving" ? (
+                <LeavingDestinationField
+                  id="ward-board-confirm-destination"
+                  value={destinationFor(confirmAdmissionId)}
+                  onChange={(destination) =>
+                    confirmAdmissionId && setLeavingChoice({ admissionId: confirmAdmissionId, destination })
+                  }
+                />
+              ) : null}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -1427,6 +1464,8 @@ export function WardBoard({
                   onClick={handleConfirmAction}
                   data-testid="ward-board-confirm-proceed"
                   className={styles.detailPrimaryBtn}
+                  // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
+                  disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
                   {pendingConfirm.kind === "leaving" ? "Record departure" : "Record ED transfer"}
@@ -1436,11 +1475,7 @@ export function WardBoard({
           </div>
         ) : null}
 
-        {toastMessage ? (
-          <div className={styles.toast} role="status" aria-live="polite" data-testid="ward-board-toast">
-            {toastMessage}
-          </div>
-        ) : null}
+        <BoardToastView toast={toastMessage} />
       </main>
       <TransportExceptionDialog
         open={arriveCheck !== null}

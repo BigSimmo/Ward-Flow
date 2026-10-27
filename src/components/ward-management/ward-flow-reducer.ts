@@ -1593,6 +1593,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
 
 /** Capture is one reducer-boundary append; clinical branches supply their actual verdict. */
 export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): WardFlowState {
+  if (event.type === "RAISE_REFERRAL" && event.pullBed === true) return raiseAndPullBed(state, event);
   const protectedEvent =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
@@ -1644,6 +1645,34 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   )
     return { ...next, worldGeneration: state.worldGeneration + 1 };
   return appendAudit(state, next, event, decision);
+}
+
+/**
+ * WT-08 (Josh, 26 Oct 2026): Pull the bed is one tap. The accepted journey starts and its bed is
+ * pulled in one event, each half through its own ordinary checks. A refused pull keeps the state as
+ * it was and records that refusal, so nothing is left half started.
+ */
+function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { type: "RAISE_REFERRAL" }>) {
+  const raise: typeof event = { ...event };
+  delete raise.pullBed;
+  const refuse = (reason: string) =>
+    appendAudit(state, reject(state, event, reason), event, { outcome: "denied", reasonCode: "transition" });
+  if (event.acceptedUnitId === undefined) return refuse("Pulling the bed needs the ward that accepted");
+  const started = wardFlowReducer(state, raise);
+  const journey = started.movements.find(
+    (movement) => movement.referralId === event.referralId && !state.movements.some(({ id }) => id === movement.id),
+  );
+  if (!journey) return started;
+  const pulled = wardFlowReducer(started, {
+    type: "PULL_PATIENT",
+    role: event.role,
+    now: event.now,
+    movementId: journey.id,
+    unitId: event.acceptedUnitId,
+    ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
+  });
+  const refusal = pulled.rejections.at(-1);
+  return refusal === started.rejections.at(-1) || refusal === undefined ? pulled : refuse(refusal.reason);
 }
 
 /**
@@ -2487,6 +2516,7 @@ export type TransportEventHelpers = typeof TRANSPORT_EVENT_HELPERS;
 
 const BED_EVENT_HELPERS = {
   admissionCriteriaEligibility,
+  admissionLegalStatus,
   appendNotices,
   bedNumberRefusal,
   findAdmission,

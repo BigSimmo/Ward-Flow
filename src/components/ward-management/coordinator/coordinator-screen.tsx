@@ -54,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-service-scope";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import {
   Button,
   buttonClass,
@@ -125,6 +126,8 @@ function subscribeHomeEdFilter(onChange: () => void) {
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
+const HOME_VIEWS = ["needs", "queue"] as const;
+const NEEDS_FOCI = ["all", "act", "decide"] as const;
 const DELAYS_HREF = "/ward-flow/waiting";
 
 /** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
@@ -227,10 +230,11 @@ export function CoordinatorScreen() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
   // Home v7 (Josh, 22 Oct 2026): the left column shows "My list" (alerts and referral decisions) or
   // the full queue.
-  const [homeView, setHomeView] = useState<"needs" | "queue">("needs");
+  // H-0186: the chosen list and focus stay in the address, so a reload opens the same list.
+  const [homeView, setHomeView] = useAddressTab("list", HOME_VIEWS, "needs");
   const [selectedAlertId, setSelectedAlertId] = useState<string | undefined>(undefined);
   // Act now and Referrals to decide in the hero narrow My list to that group.
-  const [needsFocus, setNeedsFocus] = useState<"all" | "act" | "decide">("all");
+  const [needsFocus, chooseNeedsFocus] = useAddressTab("focus", NEEDS_FOCI, "all");
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
   function showView(view: "needs" | "queue") {
     if (view !== homeView) {
@@ -241,7 +245,7 @@ export function CoordinatorScreen() {
   }
   function toggleFocus(next: "act" | "decide") {
     showView("needs");
-    setNeedsFocus((current) => (current === next ? "all" : next));
+    chooseNeedsFocus(needsFocus === next ? "all" : next);
   }
   const selectedEdId = useHomeEdFilter() ?? undefined;
   const setSelectedEdId = writeHomeEdFilter;
@@ -522,7 +526,7 @@ export function CoordinatorScreen() {
           // On Home the placement alerts act in place (Placement opens beside the list),
           // so "Find a bed" no longer sends the coordinator to another screen.
           action: IN_PLACE_KINDS.has(alertKindOf(item.id) ?? "")
-            ? { kind: "release" as const, label: alertKindOf(item.id) === "hold" ? "Release bed" : "Find a bed" }
+            ? { kind: "release" as const, label: alertKindOf(item.id) === "hold" ? "Release pulled bed" : "Find a bed" }
             : alertActionFor(item, subject),
           highlighted: false,
         };
@@ -804,7 +808,7 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
-                      setNeedsFocus("all");
+                      chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
                   />
@@ -864,7 +868,7 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
-                      setNeedsFocus("all");
+                      chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
                   />
@@ -875,7 +879,7 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
-                      setNeedsFocus("all");
+                      chooseNeedsFocus("all");
                       toggleHighlight("tier1");
                     }}
                   />
@@ -974,7 +978,7 @@ export function CoordinatorScreen() {
                   value={homeView}
                   onChange={(view) => {
                     showView(view);
-                    if (view === "queue") setNeedsFocus("all");
+                    if (view === "queue") chooseNeedsFocus("all");
                   }}
                   items={[
                     {
@@ -1023,7 +1027,7 @@ export function CoordinatorScreen() {
                   // referral on the Referrals board with Accept and Decline, never a read-only preview.
                   decideHref={referralBoardHref}
                   focus={needsFocus}
-                  onShowAll={() => setNeedsFocus("all")}
+                  onShowAll={() => chooseNeedsFocus("all")}
                 />
               ) : (
                 <PriorityQueue

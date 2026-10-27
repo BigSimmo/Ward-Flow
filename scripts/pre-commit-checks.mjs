@@ -343,13 +343,15 @@ function releasedBranches(line) {
 }
 
 /** Files named by a RELEASED line's `files=a, b` field, or null without one (the whole branch is released).
- * A `files=` field naming nothing releases nothing, so a slip cannot clear every claim. */
+ * A `files=` field naming nothing releases nothing, so a slip cannot clear every claim. `files=ALL` is the
+ * whole branch, not a file named ALL (H-0268). */
 function releasedFiles(line) {
   const field = line
     .split("|")
     .map((part) => part.trim())
     .find((part) => /^files\s*=/i.test(part));
   if (!field) return null;
+  if (/^files\s*=\s*all$/i.test(field)) return null;
   return field
     .replace(/^files\s*=\s*/i, "")
     .split(/[,;]\s*/)

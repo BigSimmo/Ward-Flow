@@ -1,4 +1,4 @@
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
@@ -46,9 +46,10 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 /**
  * Audit 24-4 NA2-02 (Josh, 24 Oct 2026): the menu and TV figure is bed releases due today or
  * tomorrow with a blocker (`capacityBreakdown().blockedToday`). "Discharges held up" stays for
- * patients in a bed with a recorded hold (Handover, the ward), a different count.
+ * patients in a bed with a recorded hold (Handover, Statistics), a different count. Decision 15
+ * (26 Oct 2026) gave Capacity, the ward board and Home the same words, so this is that one label.
  */
-export const RELEASES_HELD_UP_LABEL = "Releases held up, today and tomorrow";
+export const RELEASES_HELD_UP_LABEL = BED_RELEASE_BLOCKED_FIGURE_LABEL;
 
 export type WardNavCount = {
   value: number;
@@ -100,18 +101,25 @@ export type WardNavCountInput = {
  * the delay groups behind them are costly, so the answer is shared until a record or the clock
  * minute changes (`ward-last-call.ts`).
  */
-export const wardNavCounts = rememberLastCall(deriveWardNavCounts, (input: WardNavCountInput) => [
-  input.movements,
-  input.units,
-  input.sites,
-  input.referrals,
-  input.bedReleases,
-  input.leaveBeds,
-  input.admissions,
-  input.now,
-  input.thresholds,
-  input.service,
-]);
+export const wardNavCounts = rememberLastCall(
+  deriveWardNavCounts,
+  (input: WardNavCountInput) => [
+    input.movements,
+    input.units,
+    input.sites,
+    input.referrals,
+    input.bedReleases,
+    input.leaveBeds,
+    input.admissions,
+    input.now,
+    input.thresholds,
+    // Audit EDR-04: no service chosen is one answer, whether a caller passes null or leaves it out.
+    input.service ?? null,
+  ],
+  // The coordinator screen asks across every service while the rail asks for the chosen one: keep
+  // both answers so neither evicts the other on each render.
+  2,
+);
 
 function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
   const { movements, units, sites, referrals, bedReleases, leaveBeds, admissions, now, thresholds, service } = input;

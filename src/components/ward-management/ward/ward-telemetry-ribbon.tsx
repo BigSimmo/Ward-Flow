@@ -66,13 +66,21 @@ export function WardTelemetryRibbon({
     return (
       <>
         <HeroStat
-          value={
-            <span data-testid="ward-hero-ready">
-              {capacity.available}
-              {pendingPreparation > 0 ? <SrOnly>, {pendingPreparation} being made ready</SrOnly> : null}
-            </span>
+          value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
+          // LEAD-a (H-0181): one plain name, "2 Ready now, 1 being made ready", not the figure, the
+          // preparation count and then the label run together.
+          // The screen-reader name is one hidden run, so browsers do not read a stray space before
+          // the comma.
+          label={
+            pendingPreparation > 0 ? (
+              <>
+                <span aria-hidden="true">Ready now</span>
+                <SrOnly>Ready now, {pendingPreparation} being made ready</SrOnly>
+              </>
+            ) : (
+              "Ready now"
+            )
           }
-          label="Ready now"
           tone="success"
           pressed={filter === "free"}
           onToggle={() => {
@@ -106,7 +114,7 @@ export function WardTelemetryRibbon({
       onFilter(filter === next && next !== "all" ? "all" : next);
     };
     return (
-      <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
+      <div className={styles.pills} role="region" aria-label="Ward capacity">
         {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
         <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
           <HeroStat
@@ -158,7 +166,7 @@ export function WardTelemetryRibbon({
   }
 
   return (
-    <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
+    <div className={styles.ribbon} role="region" aria-label="Ward capacity">
       {pendingPreparation > 0 ? <span className={styles.srOnly}>{pendingPreparation} being made ready</span> : null}
       <div className={styles.cell} data-testid="ward-hero" role="group" aria-labelledby="ward-hero-title">
         <HeroStat

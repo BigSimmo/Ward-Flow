@@ -1,7 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { createContext, useContext } from "react";
+
+import { isTvPath } from "../bed-meeting/tv-lock-guard";
 
 /** Presentation only: the provider still owns recovery and its exact explanatory wording. */
 export const WardRecoveryNoticeContext = createContext<string | null>(null);
@@ -20,5 +23,7 @@ const WardRecoveryNoticeBody = dynamic(
 /** Recovery feedback in the shell's existing status area (`ward-recovery-notice-body.tsx`). */
 export function WardRecoveryNotice() {
   const notice = useContext(WardRecoveryNoticeContext);
-  return notice ? <WardRecoveryNoticeBody notice={notice} fadeAfterMs={ROUTINE_NOTICE_MS} /> : null;
+  // TV-14 (H-0791): a wall TV is read from across the room and nobody there acts on a restore note.
+  const onTv = isTvPath(usePathname() ?? "");
+  return notice && !onTv ? <WardRecoveryNoticeBody notice={notice} fadeAfterMs={ROUTINE_NOTICE_MS} /> : null;
 }

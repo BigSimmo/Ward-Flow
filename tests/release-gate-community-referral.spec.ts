@@ -18,6 +18,7 @@ import {
   wardDesk,
 } from "./helpers/ward-release-gate";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { wardChoiceName } from "./helpers/ward-choice-name";
 
 /**
  * Release gate: a community mental health team refers a person for a bed from its own desk.
@@ -179,8 +180,8 @@ test("Community referral: a community team refers from its own desk, the ward it
   // The ward the team asks, and no transport needed: the patient or a carer brings them.
   await openReferralStep(sheet, "Wards");
   const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
-  await tapChoice(wards.getByRole("checkbox", { name: new RegExp(`\\b${UNIT_ID}\\b`, "u") }));
-  await sheet.getByLabel("Transport", { exact: true }).selectOption("carer");
+  await tapChoice(wards.getByRole("checkbox", { name: wardChoiceName(UNIT_ID) }));
+  await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
   await expectAccessible(page, testInfo, "referral slide-out, ward and transport chosen");
 
   await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
@@ -373,6 +374,9 @@ test("Community referral: a community team refers from its own desk, the ward it
   ) {
     await page.getByTestId("ward-arrive-check-reason").selectOption({ index: 1 });
     await arriveCheck.getByRole("button", { name: /record reason/u }).click();
+  } else {
+    // Walk-through WT-11: with nothing open, the ward still checks the name and UMRN first.
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
   }
   await expect(arrive).toHaveCount(0);
   await expectAccessible(page, testInfo, "ward admissions after the community arrival");

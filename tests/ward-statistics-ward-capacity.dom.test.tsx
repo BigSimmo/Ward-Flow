@@ -136,7 +136,7 @@ describe("ward capacity — blocked discharges by blocker", () => {
     renderWard(unit, admissions);
 
     const population = screen.getByTestId("ward-stat-blocked-by-reason-population").textContent ?? "";
-    expect(population).toContain("2 blocked discharges");
+    expect(population).toContain("2 discharges held up");
 
     expect(screen.getByTestId("ward-stat-blocked-by-reason-Awaiting transport-count").textContent).toBe("1");
     expect(screen.getByTestId("ward-stat-blocked-by-reason-Awaiting clean-count").textContent).toBe("1");

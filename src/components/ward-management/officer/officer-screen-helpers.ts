@@ -47,11 +47,10 @@ export const OFFICER_ACTION_REJECTION_LABELS: Record<string, string> = {
   TRANSPORT_ACCEPTED: "Accepted",
   TRANSPORT_EN_ROUTE: "En route",
   PATIENT_COLLECTED: "Collected",
-  // Item 31 (owner's 17 September answers): the officer's own "Arrived" becomes "Delivered" —
-  // the button, this rejection label and the guard bullet below. The event dispatched stays
-  // `PATIENT_ARRIVED`; the ward, tracker and movements screens keep "Arrived" for that same
-  // event, since this map and its neighbours are scoped to this screen alone.
-  PATIENT_ARRIVED: "Delivered",
+  // The officer's last step reads "Arrived at ward" (Josh, 26 Oct 2026, H-0808 and H-0809, replacing
+  // item 31's "Delivered"). The event dispatched stays `PATIENT_ARRIVED`, and it ends the transport
+  // leg only: the receiving ward still confirms the patient's arrival (A4-16).
+  PATIENT_ARRIVED: "Arrived at ward",
 };
 
 /*
@@ -233,7 +232,7 @@ export function nextActionVerb(leg: OfficerLeg): string {
   if (leg === "Requested") return "Accepted";
   if (leg === "Accepted") return "En route";
   if (leg === "En route") return "Collected";
-  return "Delivered";
+  return "Arrived at ward";
 }
 
 export type HighlightPill = "requested" | "accepted" | "en_route" | "collected" | "late" | "forms";

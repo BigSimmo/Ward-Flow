@@ -104,6 +104,21 @@ function withBookedTransport(): { state: WardFlowState; movementId: string } {
  */
 const BOOKING_WARD = "rph-adult-secure";
 
+/**
+ * A ward-to-ward transfer: the journey leaves an occupied stay on `unitId` (`sourceAdmissionId`),
+ * so that ward is genuinely its sender. BOOK_TRANSPORT refuses a ward on an ED or community start.
+ */
+function startedOnWard(state: WardFlowState, movementId: string, unitId: string): WardFlowState {
+  const stay = state.admissions.find((admission) => admission.unitId === unitId && admission.state === "occupied");
+  expect(stay, `the seed must hold an occupied stay on ${unitId} for the transfer to leave`).toBeDefined();
+  return {
+    ...state,
+    movements: state.movements.map((m) =>
+      m.id === movementId ? { ...m, sourceAdmissionId: stay!.id, patientId: stay!.patientId ?? undefined } : m,
+    ),
+  };
+}
+
 function withWardBookedTransport(): { state: WardFlowState; movementId: string } {
   const movementId = "WF-001";
   const events = [
@@ -122,7 +137,7 @@ function withWardBookedTransport(): { state: WardFlowState; movementId: string }
     },
   ] as const;
 
-  let state = seedWardFlowState();
+  let state = startedOnWard(seedWardFlowState(), movementId, BOOKING_WARD);
   for (const event of events) {
     state = wardFlowReducer(state, { ...event, now: NOW, movementId } as never);
   }
@@ -137,6 +152,24 @@ function withWardBookedTransport(): { state: WardFlowState; movementId: string }
  */
 const BOOKING_TEAM = COMMUNITY_TEAM_PAGES[0]!.id;
 const OTHER_TEAM = COMMUNITY_TEAM_PAGES[1]!.id;
+
+/**
+ * A community-sent journey: the movement's referral names `teamName` as its sending team, so that
+ * team (and only that team) may book its transport.
+ */
+function sentByCommunityTeam(state: WardFlowState, movementId: string, teamName: string): WardFlowState {
+  const referral = {
+    ...state.referrals[0]!,
+    id: "RF-SYNTH-COMMUNITY",
+    source: "community" as const,
+    sendingTeamName: teamName,
+  };
+  return {
+    ...state,
+    referrals: [...state.referrals, referral],
+    movements: state.movements.map((m) => (m.id === movementId ? { ...m, referralId: referral.id } : m)),
+  };
+}
 
 function withCommunityBookedTransport(): { state: WardFlowState; movementId: string } {
   const movementId = "WF-001";
@@ -156,7 +189,7 @@ function withCommunityBookedTransport(): { state: WardFlowState; movementId: str
     },
   ] as const;
 
-  let state = seedWardFlowState();
+  let state = sentByCommunityTeam(seedWardFlowState(), movementId, COMMUNITY_TEAM_PAGES[0]!.name);
   for (const event of events) {
     state = wardFlowReducer(state, { ...event, now: NOW, movementId } as never);
   }

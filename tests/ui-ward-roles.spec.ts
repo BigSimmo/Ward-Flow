@@ -380,7 +380,7 @@ test.describe("@mockup Transport officer screen", () => {
       /Accepted/,
       /En route/,
       /Collected/,
-      /Delivered/,
+      /Arrived at ward/,
     ]);
     const stageButtons = sheet.locator(
       '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
@@ -405,7 +405,7 @@ test.describe("@mockup Transport officer screen", () => {
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
     const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
-    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Delivered"]);
+    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Arrived at ward"]);
   });
 
   /**
@@ -851,11 +851,14 @@ test.describe("@mockup Emergency department screen", () => {
     const unfoldEd16 = page.getByTestId("ward-ed-unfold-WF-016");
     if (await unfoldEd16.isVisible()) await unfoldEd16.click();
     await page.getByTestId("ward-ed-book-transport-toggle-WF-016").click();
-    await page.getByTestId("ward-ed-transport-provider-WF-016").selectOption("Ambulance service");
+    await page.getByTestId("ward-ed-transport-provider-WF-016").selectOption("Ambulance (St John)");
     await page.getByTestId("ward-ed-transport-escort-no-WF-016").check();
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-016").fill("CAD-ROLES-0016");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-016").check();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason016 = page.getByTestId("ward-ed-transport-legal-reason-WF-016");
+    if (await legalReason016.isVisible()) await legalReason016.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-016").fill("14:30");
     await page.getByTestId("ward-ed-book-transport-confirm-WF-016").click();
 
@@ -1365,6 +1368,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-315").fill("CAD-ROLES-0315");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-315").check();
+    // A34: a status that differs from Legal now asks why before it books.
+    const legalReason315 = page.getByTestId("ward-ed-transport-legal-reason-WF-315");
+    if (await legalReason315.isVisible()) await legalReason315.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-315").fill("14:30");
     await page.getByTestId("ward-ed-book-transport-confirm-WF-315").click();
     // Proves the booking actually landed rather than just asserting the clicks happened: before
@@ -1381,7 +1387,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     );
     await closeEdPatientSheet(page, "WF-315");
 
-    // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
+    // --- Steps 7-10: Officer — Accepted, En route, Collected, Arrived at ward. ---
     await switchTo("Transport officer");
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
@@ -1402,9 +1408,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
     const panel = page.getByTestId("ward-officer-detail");
     await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);
-    // Item 31 (owner's 17 September answers): the officer's own fourth action reads "Delivered",
-    // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
-    for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
+    // Josh, 26 Oct 2026 (H-0808, H-0809): the officer's own fourth action reads "Arrived at ward",
+    // replacing "Delivered" — the event dispatched is still PATIENT_ARRIVED.
+    for (const label of ["Accepted", "En route", "Collected", "Arrived at ward"]) {
       await panel.getByRole("button", { name: label }).click();
       // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
       // for a coded reason before it records. The officer is warned, never blocked.
@@ -1417,7 +1423,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     }
 
     // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
-    // Delivered ends the transport leg only and leaves the movement open; the receiving ward closes
+    // Arrived at ward ends the transport leg only and leaves the movement open; the receiving ward closes
     // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
     // so the switch goes through the coordinator, as step 4 did. ---
     await switchTo("Bed coordinator");
@@ -1428,6 +1434,8 @@ test.describe("@mockup Role switcher — the loop", () => {
     await page.waitForLoadState("networkidle");
     await openAllArrivals(page);
     await page.getByTestId("ward-confirm-arrival-WF-315").click();
+    // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
     await expect(page.getByTestId("ward-accepted-WF-315")).toHaveCount(0);
 
     // --- Step 11: Coordinator — the patient has left the system. ---

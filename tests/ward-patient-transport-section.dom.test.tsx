@@ -61,7 +61,17 @@ function answerBookingFacts(form: HTMLElement) {
   fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
     target: { value: "Patient transport service" },
   });
-  fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
+  fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
+}
+
+/** A34: the one booking form takes a clock time; the +30m quick time fills it. Returns the time it filled. */
+function pickEta(form: HTMLElement) {
+  fireEvent.click(within(within(form).getByTestId("ward-patient-eta-presets")).getByRole("button", { name: "+30m" }));
+  return (within(form).getByTestId("ward-patient-input-eta") as HTMLInputElement).value;
+}
+
+function pressSave(form: HTMLElement) {
+  fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
 }
 
 function RecordTransportFixture({ estimatedAt = NOW_ANCHOR + 30 }: { estimatedAt?: number }) {
@@ -212,7 +222,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
     expect(section).toHaveTextContent("Booking details cannot be edited");
     expect(section).toHaveTextContent("cancel the active job");
-    expect(section).toHaveTextContent("Ask the flow coordinator or booking team");
+    expect(section).toHaveTextContent("Ask the bed coordinator or booking team");
     expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
   });
 
@@ -229,20 +239,22 @@ describe("Patient Transport & Transfer Coordination section", () => {
     fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
     const form = screen.getByTestId("ward-patient-transport-form");
     expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("");
-    expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("");
+    expect(within(form).getByTestId("ward-patient-escort-yes")).not.toBeChecked();
+    expect(within(form).getByTestId("ward-patient-escort-no")).not.toBeChecked();
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
-    fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
-    fireEvent.submit(form);
-    expect(form).toHaveTextContent("Choose the provider from the call");
-    expect(form).toHaveTextContent("Record whether a clinical escort is required");
+    pickEta(form);
+    pressSave(form);
+    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
+      "2 answers left: provider, escort answer",
+    );
     expect(control.calls).toHaveLength(0);
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
       target: { value: "Patient transport service" },
     });
-    fireEvent.submit(form);
+    pressSave(form);
     expect(control.calls).toHaveLength(0);
-    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
-    fireEvent.submit(form);
+    fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
+    pressSave(form);
     expect(control.calls).toEqual([
       expect.objectContaining({ provider: "Patient transport service", escortRequired: false }),
     ]);
@@ -270,12 +282,12 @@ describe("Patient Transport & Transfer Coordination section", () => {
       const form = screen.getByTestId("ward-patient-transport-form");
       answerBookingFacts(form);
       fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
-      fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
-      fireEvent.submit(form);
-      fireEvent.submit(form);
+      const eta = pickEta(form);
+      pressSave(form);
+      pressSave(form);
       expect(control.calls).toHaveLength(1);
       expect(form).toHaveAttribute("aria-busy", "true");
-      expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toBeDisabled();
+      expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toHaveAttribute("aria-disabled", "true");
       expect(within(screen.getByTestId("ward-patient-transport-section")).getByRole("status")).toHaveTextContent(
         "Saving transport booking",
       );
@@ -285,11 +297,11 @@ describe("Patient Transport & Transfer Coordination section", () => {
       if (refuse) {
         expect(form).toBeInTheDocument();
         expect(within(form).getByTestId("ward-patient-input-cad")).toHaveValue("CAD-SYNTHETIC-7");
-        expect(within(form).getByTestId("ward-patient-input-eta")).toHaveValue("45m");
+        expect(within(form).getByTestId("ward-patient-input-eta")).toHaveValue(eta);
         expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("Patient transport service");
-        expect(within(form).getByTestId("ward-patient-select-escort")).toHaveValue("no");
-        expect(screen.getByRole("alert")).toHaveTextContent("Booking was not recorded: no movement found");
-        expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).not.toBeDisabled();
+        expect(within(form).getByTestId("ward-patient-escort-no")).toBeChecked();
+        expect(screen.getByRole("alert")).toHaveTextContent("no movement found");
+        expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).not.toHaveAttribute("aria-disabled");
       } else {
         expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
         expect(screen.getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-SYNTHETIC-7");

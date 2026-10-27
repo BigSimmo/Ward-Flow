@@ -52,8 +52,8 @@ describe("TAKE_INBOX_ITEM_OWNERSHIP", () => {
       inboxItemId: row.id,
     });
     expect(next.rejections).toEqual([]);
-    expect(next.inboxOwnership[row.id]).toEqual([{ at: NOW, by: "Flow coordinator" }]);
-    expect(currentInboxOwner(next.inboxOwnership[row.id])).toEqual({ at: NOW, by: "Flow coordinator" });
+    expect(next.inboxOwnership[row.id]).toEqual([{ at: NOW, by: "Bed coordinator" }]);
+    expect(currentInboxOwner(next.inboxOwnership[row.id])).toEqual({ at: NOW, by: "Bed coordinator" });
     expect(inbox(next)).toEqual(inbox(state));
   });
 
@@ -148,7 +148,7 @@ describe("SNOOZE_INBOX_ITEM", () => {
     });
     expect(next.rejections).toEqual([]);
     expect(next.inboxSnoozes[row.id]).toEqual([
-      { at: NOW, by: "Flow coordinator", kind: "snoozed", until, reason: "waiting_on_transport" },
+      { at: NOW, by: "Bed coordinator", kind: "snoozed", until, reason: "waiting_on_transport" },
     ]);
     // The fact itself is untouched: the inbox still computes the row.
     expect(inbox(next).some((item) => item.id === row.id)).toBe(true);
@@ -287,7 +287,7 @@ describe("UNSNOOZE_INBOX_ITEM", () => {
     });
     expect(returned.rejections).toEqual([]);
     expect(returned.inboxSnoozes[row.id]).toHaveLength(2);
-    expect(returned.inboxSnoozes[row.id]?.at(-1)).toEqual({ at: NOW + 10, by: "Flow coordinator", kind: "returned" });
+    expect(returned.inboxSnoozes[row.id]?.at(-1)).toEqual({ at: NOW + 10, by: "Bed coordinator", kind: "returned" });
     expect(activeSnooze(returned.inboxSnoozes[row.id], NOW + 10)).toBeUndefined();
   });
 
@@ -439,7 +439,7 @@ describe("a new occurrence of a row on the same movement", () => {
     // Nobody owns the new occurrence, so the same role may take it, and there is nothing to return.
     expect(currentInboxOwner(state.inboxOwnership[ROW], again.since)).toBeUndefined();
     state = step(state, { type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: later, inboxItemId: ROW });
-    expect(currentInboxOwner(state.inboxOwnership[ROW], again.since)).toEqual({ at: later, by: "Flow coordinator" });
+    expect(currentInboxOwner(state.inboxOwnership[ROW], again.since)).toEqual({ at: later, by: "Bed coordinator" });
     const unsnooze = wardFlowReducer(state, {
       type: "UNSNOOZE_INBOX_ITEM",
       role: "coordinator",

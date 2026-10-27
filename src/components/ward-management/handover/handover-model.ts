@@ -35,16 +35,21 @@ import { declineReasonLabels } from "@/components/ward-management/movements/move
 import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 
 /* ------------------------------------------------------------------ shifts */
 
 export type HandoverShiftId = "am" | "pm" | "ev";
 
-/** The three handovers, at the starts of the app's shift pattern (07:00, 15:00, 23:00). */
+/**
+ * The three handovers, at the starts of the app's one shift pattern (`SHIFT_PATTERN`: 07:00, 15:00,
+ * 23:00). TC-06 (audit 24 Oct 2026, H-0775): the minutes are read from `SHIFT_PATTERN`, not kept as a
+ * second copy here, so a change to the shift times moves every handover with it.
+ */
 export const HANDOVER_SHIFTS: readonly { id: HandoverShiftId; minute: number; label: string }[] = [
-  { id: "am", minute: 7 * 60, label: "Night to day" },
-  { id: "pm", minute: 15 * 60, label: "Day to evening" },
-  { id: "ev", minute: 23 * 60, label: "Evening to night" },
+  { id: "am", minute: SHIFT_PATTERN[0].startMinute, label: "Night to day" },
+  { id: "pm", minute: SHIFT_PATTERN[1].startMinute, label: "Day to evening" },
+  { id: "ev", minute: SHIFT_PATTERN[2].startMinute, label: "Evening to night" },
 ];
 
 export function handoverShift(id: HandoverShiftId) {
@@ -83,6 +88,32 @@ export function handoverNewSince(id: HandoverShiftId, now: Instant): Instant {
 }
 
 /**
+ * Audit TC2-02: the handover a page has chosen, held as the instant it meant when chosen. Re-read
+ * against each new "now", a page left open over midnight meant tonight's handover instead, and its
+ * "new since" lay in the future, so the page read "Nothing has changed". A held handover more than
+ * a day from now (a page left for a day, or a demo jump) starts again from the next one.
+ */
+export type HeldHandover = { id: HandoverShiftId; at: Instant };
+
+export function holdHandover(id: HandoverShiftId, now: Instant): HeldHandover {
+  return { id, at: handoverAt(id, now) };
+}
+
+export function currentHeldHandover(held: HeldHandover, now: Instant): HeldHandover {
+  return Math.abs(held.at - now) <= MINUTES_PER_DAY ? held : holdHandover(defaultHandoverShift(now), now);
+}
+
+/** "Due by" for the handover held at `at`: its own time, or the next one still to come once it has passed. */
+export function heldHandoverCutoff(at: Instant, now: Instant): Instant {
+  return at > now ? at : handoverAt(defaultHandoverShift(now), now);
+}
+
+/** "New since" for the handover held at `at`: the one before it, and never later than now. */
+export function heldHandoverNewSince(at: Instant, now: Instant): Instant {
+  return Math.min(at - 8 * 60, now);
+}
+
+/**
  * When this handover was signed off, or null. Sign-off closes once the handover starts, so a
  * record belongs to the handover whose window (from the one before it up to its start) holds it.
  */
@@ -91,8 +122,12 @@ export function handoverSignedAt(
   id: HandoverShiftId,
   now: Instant,
 ): Instant | null {
-  const from = handoverNewSince(id, now);
-  const to = handoverAt(id, now);
+  return handoverSignedBefore(signOffs, handoverAt(id, now));
+}
+
+/** The latest sign-off in the window before the handover at `to`, or null. */
+export function handoverSignedBefore(signOffs: readonly { at: Instant }[], to: Instant): Instant | null {
+  const from = to - 8 * 60;
   let signed: Instant | null = null;
   for (const record of signOffs) {
     if (record.at >= from && record.at < to && (signed === null || record.at > signed)) signed = record.at;
@@ -114,12 +149,12 @@ export const STAGE_LABEL: Record<MovementStage, string> = {
 
 const OWNER_SHORT: Record<string, string> = {
   "ED mental health team": "ED team",
-  "Flow coordinator": "Coordinator",
+  "Bed coordinator": "Coordinator",
   "Ward nurse in charge": "Ward NIC",
 };
 
 /** The coordinator using this page. Owner names are role labels in this model. */
-export const HANDOVER_ME = "Flow coordinator";
+export const HANDOVER_ME = "Bed coordinator";
 
 /** Urgent first; otherwise "Constant" for a level that takes observation staff (fix plan item 10). */
 export type HandoverObs = "Standard" | "Urgent" | "Constant";
@@ -453,7 +488,7 @@ export function nextStep(
     const ready = row.to ? readyBeds(row.to.unitId) : 0;
     text =
       ready > 0
-        ? `Pull a bed, ${row.to!.name} shows ${ready} ready`
+        ? `Pull the bed, ${row.to!.name} shows ${ready} ready`
         : `Wait for a bed at ${row.to?.name ?? "the ward"}`;
   } else if (row.asked.length) {
     text =

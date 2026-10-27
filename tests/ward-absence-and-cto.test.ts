@@ -402,7 +402,7 @@ describe("community treatment order (D-38)", () => {
       admissionId: stay.id,
       expectedReturn: NOW + 120,
     });
-    expect(onLeave.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Flow coordinator");
+    expect(onLeave.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Bed coordinator");
     const absent = wardFlowReducer(state, {
       type: "RECORD_ABSENT_WITHOUT_LEAVE",
       role: "coordinator",
@@ -410,7 +410,7 @@ describe("community treatment order (D-38)", () => {
       admissionId: stay.id,
       actingUnitId: stay.unitId,
     });
-    expect(absent.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Flow coordinator");
+    expect(absent.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Bed coordinator");
   });
 
   it("is the community team's to record, not a ward's", () => {

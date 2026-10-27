@@ -273,6 +273,8 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await leavingSubmit.click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
     await expect(departureDialog).toBeVisible();
+    // Audit CS3-07: where they went starts blank and must be chosen.
+    await departureDialog.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
     await departureDialog.getByRole("button", { name: "Record departure", exact: true }).click();
     await expect(departureDialog).toHaveCount(0);
 
@@ -434,15 +436,13 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
-      await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+      await detail.getByRole("tab", { name: "Record", exact: true }).click();
       if (destination.id === "died-on-the-ward") {
         await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
       } else {
         await detail.getByRole("combobox", { name: "Arrangement status" }).selectOption("arranged");
         await detail.getByRole("button", { name: "Record follow-up status" }).click();
-        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText(
-          "Arranged · Flow coordinator",
-        );
+        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText("Arranged · Bed coordinator");
       }
     });
   }
@@ -469,7 +469,7 @@ test.describe("@mockup complete care dossier", () => {
     await expect(history).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });
-    await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+    await detail.getByRole("tab", { name: "Record", exact: true }).click();
     const care = detail.getByRole("region", { name: "Care journey" });
     await care.locator("summary", { hasText: "Planning item" }).click();
     await care.getByRole("combobox", { name: "Planning item", exact: true }).selectOption("crisis_plan");

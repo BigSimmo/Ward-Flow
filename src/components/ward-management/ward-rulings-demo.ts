@@ -161,7 +161,7 @@ function clockMovement(
     legalStatus: "Involuntary inpatient",
     legalForm: { code, kind },
     stage: "destination_review",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     blocker: "No blocker",
   });
 }
@@ -195,7 +195,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
     legalStatus: "Voluntary",
     stage: "destination_review",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [UNIT_ARM_ADULT_OPEN],
     blocker: "Arrival booked",
     arrivalDetails: {
@@ -218,7 +218,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
     legalStatus: "Voluntary",
     stage: "accepted_awaiting_bed",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     acceptedUnitId: UNIT_ARM_ADULT_OPEN,
     blocker: "Waiting for arrival",
     arrivalDetails: {
@@ -242,7 +242,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     gender: "Female",
     legalStatus: "Involuntary inpatient",
     stage: "destination_review",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     waitlistedUnitIds: [UNIT_FSH_ADULT_SECURE],
     blocker: "Waitlisted — no matching gendered bed yet",
   });
@@ -259,7 +259,7 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     gender: "Male", // R7 (25 Sept 2026): authored demo data, not derived at runtime
     legalStatus: "Voluntary",
     stage: "accepted_awaiting_bed",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     acceptedUnitId: UNIT_SJGS_ADULT_SECURE,
     // D-16 (Josh, 25 Sept 2026): a legal mismatch is recorded, never overridden, so this row shows
     // the flag alone. It used to carry `overridden: true` and "override continues".

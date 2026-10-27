@@ -5,7 +5,9 @@ import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import { useWardFlowSelect } from "../ward-flow-provider";
-import { bedsPendingPreparation, boundedBedAvailability } from "../ward-bed-availability";
+import { bedsPendingPreparation } from "../ward-bed-availability";
+import { readyBedsNow } from "../ward-bed-states";
+import type { Admission } from "../ward-admissions";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { sexDesignationAccepts } from "../ward-eligibility";
@@ -51,7 +53,12 @@ export const DEFAULT_BED_FINDER_FILTERS: BedFinderFilters = {
  * ranks wards by home service, free beds or suitability: the never-build rule bars a "best match"
  * list. Legal status has no default, so nothing is listed until the user chooses one.
  */
-export function findBeds(units: readonly Unit[], releases: BedRelease[], filters: BedFinderFilters): BedFinderRow[] {
+export function findBeds(
+  units: readonly Unit[],
+  admissions: readonly Admission[],
+  releases: BedRelease[],
+  filters: BedFinderFilters,
+): BedFinderRow[] {
   if (!filters.legalStatus) return [];
   const involuntary = filters.legalStatus === "involuntary";
   return (
@@ -61,10 +68,12 @@ export function findBeds(units: readonly Unit[], releases: BedRelease[], filters
       .filter((unit) => !involuntary || unit.authorised)
       .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
       .map((unit) => {
-        // Capped at the board's Ready figure, min(allocatable, empty) under R-B-09, so this never
-        // shows more beds than the board or the bed summary. The data does not say which beds are
-        // empty, so each kind is capped on its own rather than giving the cap to locked beds first.
-        const ready = boundedBedAvailability(unit).available;
+        // Capped at the board's Ready figure, so this never shows more beds than the board or the bed
+        // summary. NA3-05 (audit 26 Oct 2026): that figure is `readyBedsNow`, which leaves out a bed
+        // pulled for an incoming patient; the older min(allocatable, empty) still offered it. The
+        // data does not say which beds are empty, so each kind is capped on its own rather than
+        // giving the cap to locked beds first.
+        const ready = readyBedsNow(unit, admissions, releases);
         const free =
           filters.bed === "locked"
             ? Math.min(lockedBedsFree(unit), ready)
@@ -119,9 +128,9 @@ function Choice<T extends string>({
 }
 
 export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
-  const { units, bedReleases, now } = useWardFlowSelect("units", "bedReleases", "now");
+  const { units, admissions, bedReleases, now } = useWardFlowSelect("units", "admissions", "bedReleases", "now");
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
-  const rows = findBeds(units, bedReleases, filters);
+  const rows = findBeds(units, admissions, bedReleases, filters);
   const set =
     <K extends keyof BedFinderFilters>(key: K) =>
     (value: BedFinderFilters[K]) =>

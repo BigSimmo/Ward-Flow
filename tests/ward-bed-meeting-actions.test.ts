@@ -59,7 +59,7 @@ describe("RECORD_BED_MEETING_ACTION and COMPLETE_BED_MEETING_ACTION", () => {
     expect(done.rejections).toEqual([]);
     expect(done.movements.find((candidate) => candidate.id === movement.id)!.meetingActions![0]).toMatchObject({
       doneAt: NOW + 30,
-      doneBy: "Flow coordinator",
+      doneBy: "Bed coordinator",
     });
     expect(
       wardFlowReducer(done, {

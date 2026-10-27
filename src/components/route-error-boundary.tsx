@@ -73,7 +73,7 @@ export function RouteErrorBoundary({
 
         {error.digest && (
           <div className="mt-4 rounded-lg bg-[color:var(--surface-subtle)] p-2 font-mono text-xs text-[color:var(--text-muted)]">
-            Digest: {error.digest}
+            Error reference: {error.digest}
           </div>
         )}
 

@@ -77,6 +77,8 @@ type AccessAdminSource = {
   /** Who can be picked to grant to. `null` in the shared workspace, where an account id is typed. */
   readonly people: readonly { readonly id: string; readonly label: string }[] | null;
   readonly label: (actorId: string) => string;
+  /** The signed-in account. An admin cannot remove their own admin role here. */
+  readonly self?: string | null;
   readonly grant: (input: { actorId: string; access: WardAccess; expiresAt: Instant }) => Promise<StepUpResult>;
   readonly revoke: (id: string) => Promise<StepUpResult>;
   readonly decide: (id: string, decision: "approved" | "declined", expiresAt: Instant) => Promise<StepUpResult>;
@@ -123,6 +125,7 @@ function useLocalAdminSource(desk: WardAccess, now: Instant, places: AccessPlace
       requests,
       people: DEMO_STAFF.filter((person) => person.id !== DEMO_ADMIN_ID),
       label: demoStaffLabel,
+      self: DEMO_ADMIN_ID,
       grant: async (input) => localGrant(admin, { ...input, now, places }),
       revoke: async (id) => localRevoke(admin, id, now, places),
       decide: async (id, decision, expiresAt) => localDecide(admin, id, decision, { expiresAt, now, places }),
@@ -270,6 +273,11 @@ function AccessAdminPanel() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    disabledReason={
+                      m.access.role === "admin" && m.actorId === source.self
+                        ? "You cannot remove your own admin role. Ask another admin."
+                        : undefined
+                    }
                     onClick={() => run(() => source.revoke(m.id), `Removed: ${describe(m.access)}.`)}
                   >
                     Remove

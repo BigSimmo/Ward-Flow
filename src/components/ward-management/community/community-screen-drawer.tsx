@@ -107,8 +107,8 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
             {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
               <span id="pxDrawerHeading">
                 {selectedPatient
-                  ? `Patient dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
-                  : `Patient dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
+                  ? `Patient record: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
+                  : `Patient record: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
               </span>
             )}
             {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
@@ -386,10 +386,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                     </span>
                   </p>
                   <p>
-                    <b>Recommended action:</b>{" "}
+                    <b>Next recorded step:</b>{" "}
                     <span id="refDrawerAction">
-                      No clinical recommendation is recorded by this dossier. Review the referring team&apos;s
-                      information.
+                      None recorded in this dossier. Review the referring team&apos;s information.
                     </span>
                   </p>
                 </div>

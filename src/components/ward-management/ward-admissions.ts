@@ -321,9 +321,9 @@ export type PullReleaseReason = (typeof PULL_RELEASE_REASONS)[number];
  * Owner ruling 5, 2026-09-01
  * (`docs/ward-flow/owner-rulings-2026-09-01-fourteen-decisions.md`): **"Ward manager" wins,
  * everywhere, one spelling.** Before this ruling both fields carried whichever of three spellings
- * a given seed line happened to use — `"Ward manager"`, `"Flow coordinator"` and `"Nurse unit
+ * a given seed line happened to use — `"Ward manager"`, `"Bed coordinator"` and `"Nurse unit
  * manager"` were all live — because the fields were typed `string | null` with no runtime
- * vocabulary of their own to hold them to one. `"Flow coordinator"` and `"Nurse unit manager"` are
+ * vocabulary of their own to hold them to one. `"Bed coordinator"` and `"Nurse unit manager"` are
  * NOT this field's second and third roles; they were two other spellings of this ONE role, now
  * reconciled.
  *
@@ -798,6 +798,22 @@ export function liveMovementForAdmission(admission: Admission, movements: readon
   if (admission.movementId !== null && movement.id !== admission.movementId) return undefined;
   if (movement.admissionId !== undefined && movement.admissionId !== admission.id) return undefined;
   return movement;
+}
+
+/**
+ * The stay an arrived journey brought its person into, while they are still in the bed. Joined
+ * only by explicit ids (D-14), and only when exactly one stay answers. Walk-through WT-03 (26 Oct
+ * 2026): the ward records the next legal form for this person against the journey they came on.
+ */
+export function admittedStayForArrival(movement: Movement, admissions: readonly Admission[]): Admission | undefined {
+  if (movement.closure?.outcome !== "arrived") return undefined;
+  const matches = admissions.filter(
+    (admission) =>
+      admission.state === "occupied" &&
+      admission.unitId === movement.acceptedUnitId &&
+      (movement.admissionId === admission.id || admission.movementId === movement.id),
+  );
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /**

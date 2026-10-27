@@ -17,6 +17,7 @@ import {
   formatSheetMoment,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
   groupOf,
@@ -240,7 +241,9 @@ export function HandoverPrintSheet({
   }, [groups]);
   const dueTitle = handoverGroups(ctx.cutoff, ctx.now).find((group) => group.id === "due")!.title;
   const summary: [string, number][] = [
-    ["Open", rows.length],
+    // NA3-07 (audit 26 Oct 2026): a stopped transport still waiting on its bed is listed, but it is
+    // not an open journey, so "Open" leaves it out as the menu's Movements count and the screen do.
+    ["Open", rows.filter((row) => isOpen(row.movement)).length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
     ["Flagged urgent", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "urg").length],
     [dueTitle, rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length],

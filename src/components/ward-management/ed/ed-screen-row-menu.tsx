@@ -252,7 +252,7 @@ function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
       waitsOnExam
         ? {
             why: `${movement.legalForm ? `On Form ${movement.legalForm.code}` : `Recorded as ${movement.legalStatus.toLowerCase()}`}, so a community referral needs the outcome first.`,
-            next: `ED mental health clinician, ${edName}`,
+            next: `ED clinician, ${edName}`,
           }
         : undefined,
     ),

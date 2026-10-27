@@ -304,7 +304,8 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
    * and Expected rather than instead of either.
    *
    * The two words matter as much as the number. This chip row used to carry a "Blocked" chip
-   * meaning physically blocked BEDS, so the new figure reads "Discharges held up" — two chips
+   * meaning physically blocked BEDS, so the new figure reads "Releases held up" (decision 15, 26 Oct
+   * 2026; it was "Discharges held up", now the patient count's name) — two chips
    * reading the same word beside each other while meaning different things would be a defect, not
    * a tidy-up. The physical chip has since gone: out-of-service beds are not recorded (owner ruling
    * 2026-09-25) and fold into Closed, one of the ruled four (`ward-bed-states.ts`).
@@ -329,7 +330,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
       (release) => release.unitId === "rph-adult-secure" && release.state !== "discharged" && release.blocker !== null,
     ).length;
     expect(heldUp).toBeGreaterThanOrEqual(breakdown.blockedToday);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldUp}`);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldUp}`);
     // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
     // the empty bed the ward is not offering is the separately worded Closed chip.
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
@@ -348,7 +349,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
    * the unit's own chip figures before and after blocking it, rather than pinning a number, is
    * what proves this property without going stale the next time an admission changes.
    */
-  it("keeps Confirmed unchanged when the ward blocks its confirmed release, and raises Discharges held up by one", () => {
+  it("keeps Confirmed unchanged when the ward blocks its confirmed release, and raises Releases held up by one", () => {
     const unit = unitById(CONFIRMED_RELEASE!.unitId)!;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -366,7 +367,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     const heldBefore = bedReleases.filter(
       (release) => release.unitId === unit.id && release.state !== "discharged" && release.blocker !== null,
     ).length;
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldBefore + 1}`);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldBefore + 1}`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Blocked");
@@ -518,23 +519,27 @@ describe("ward screen bed release controls", () => {
 });
 
 describe("ward screen incoming patient arrival confirmation", () => {
-  it("renders a Confirm Arrival button only for an incoming patient with collected transport and confirms arrival on click", () => {
+  it("renders a Confirm arrival button only for an incoming patient with collected transport and confirms arrival on click", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
 
-    // WF-003 is accepted_awaiting_bed, so it must not render a Confirm Arrival button
+    // WF-003 is accepted_awaiting_bed, so it must not render a Confirm arrival button
     expect(screen.queryByTestId("ward-confirm-arrival-WF-003")).not.toBeInTheDocument();
 
     // WF-014 is seeded at rph-adult-secure with stage: "moving" and transport collected
     const arrivalBtn = screen.getByTestId("ward-confirm-arrival-WF-014");
     expect(arrivalBtn).toBeInTheDocument();
-    expect(arrivalBtn).toHaveTextContent("Confirm Arrival");
+    expect(arrivalBtn).toHaveTextContent("Confirm arrival");
     expect(arrivalBtn).not.toHaveAttribute("aria-disabled");
 
     fireEvent.click(arrivalBtn);
+    // Walk-through WT-11: the name and UMRN are checked before the arrival is recorded.
+    const check = screen.getByTestId("ward-arrival-identity");
+    expect(within(check).getByTestId("ward-arrival-identity-check")).toHaveTextContent(/^Check: .+ · .+/);
+    fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));
 
     // After arrival, WF-014 closes and is no longer in the "Coming in" list
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
@@ -549,6 +554,9 @@ describe("ward screen incoming patient arrival confirmation", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Confirm arrival" }),
+    );
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
     const toast = screen.getByTestId("toast");
     expect(toast).toHaveTextContent(/^Arrival recorded for /);

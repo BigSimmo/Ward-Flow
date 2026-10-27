@@ -28,6 +28,7 @@ import { movementSourceAdmission, type WardFlowState } from "@/components/ward-m
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
+import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -51,6 +52,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "./ward-sites";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
+import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 
 type Context = {
   readonly state: WardFlowState;
@@ -243,7 +245,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     if (!context.coordinator) return [];
     const kept = seededAuditIds(context.scoped, context.state);
     for (const event of context.auditEvents) kept.add(event.id);
-    return context.state.auditReviews.filter((review: AuditReview) => kept.has(review.eventId));
+    // D-80 item 14: a break glass opening's review names no record here; the server scopes the openings.
+    return context.state.auditReviews.filter(
+      (review: AuditReview) => kept.has(review.eventId) || isBreakGlassReviewId(review.eventId),
+    );
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
@@ -330,7 +335,9 @@ export function scopeWardFlowState(
         ? auditSubjectInScope(event, { ...partial, auditEvents: [] })
         : event.category === "record-access" &&
           event.subject.kind === "admission" &&
-          admissionIds.has(event.subject.admissionId)),
+          admissionIds.has(event.subject.admissionId) &&
+          // A dates-only stay opens no record, so it has no receipt to read (audit 26 Oct).
+          !scoped.datesOnlyAdmissionIds.has(event.subject.admissionId)),
   );
   const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;
@@ -611,7 +618,8 @@ export function commandScopeRefusal(
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
     if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
-  if (command.type === "RECORD_TRANSPORT_NEED") {
+  // Booking follows the same sender rule as recording the need (audit 26 Oct).
+  if (command.type === "RECORD_TRANSPORT_NEED" || command.type === "BOOK_TRANSPORT") {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && access.role === "ward") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
@@ -652,6 +660,12 @@ export function commandScopeRefusal(
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
+  }
+  // A ward records a written form only for a person admitted to one of its own beds (WT-03).
+  if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_WRITTEN") {
+    const movement = state.movements.find((candidate) => candidate.id === command.movementId);
+    const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
+    if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
   }
   // Every desk names its own place when it adds a patient, so the record it adds stays in its own
   // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.
@@ -713,13 +727,27 @@ export function commandScopeRefusal(
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
     if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
-      if (collection !== "auditEvents" || !seeded.has(id)) return outside;
+      // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
+      // hold. The shared server also checks the opening exists and is of a record in the
+      // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).
+      if (
+        collection !== "auditEvents" ||
+        !(seeded.has(id) || (access.role === "coordinator" && isBreakGlassReviewId(id)))
+      )
+        return outside;
     }
   }
   // Where a desk acts from: its ward, ED or team, or the coordinator desk itself.
   const actsFrom = (id: string) =>
     placeIn(id) || teamIsOwn(access, id, places) || (access.role === "coordinator" && id === "coordinator");
   if (typeof command.actingUnitId === "string" && !unitInScope(scope, command.actingUnitId, places)) return outside;
+  // RECORD_OBSERVATION_LEVEL names its acting unit on the target (audit 26 Oct).
+  const observationTarget = command.target as { actingUnitId?: unknown } | undefined;
+  if (
+    typeof observationTarget?.actingUnitId === "string" &&
+    !unitInScope(scope, observationTarget.actingUnitId, places)
+  )
+    return outside;
   if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
   const targets = [command.unitId, command.acceptedUnitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)

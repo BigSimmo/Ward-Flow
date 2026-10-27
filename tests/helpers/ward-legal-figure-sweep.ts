@@ -519,7 +519,7 @@ export function candidateEvents(
         now,
         movementId,
         formName: "MHA Form",
-        fileName: "form.pdf",
+        fileType: "PDF",
         sizeBytes: 512,
       }));
     case "SET_STEP_DOWN_CANDIDATE":
@@ -1239,10 +1239,11 @@ export function candidateEvents(
     case "RECORD_OBSERVATION_LEVEL":
       // One candidate per admission, crossed with every level. A level is a closed list and its
       // review time is left unrecorded, so nothing here can carry a duration or statutory figure.
+      // Raised as the ward: the ED may not change a level on an admitted stay (audit 26 Oct).
       return state.admissions.flatMap((admission) =>
         OBSERVATION_LEVELS.map((level) => ({
           type,
-          role,
+          role: "ward" as const,
           now,
           target: { kind: "admission" as const, admissionId: admission.id, actingUnitId: admission.unitId },
           observation: observationAt(level),

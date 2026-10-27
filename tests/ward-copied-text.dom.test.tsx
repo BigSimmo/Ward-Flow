@@ -146,7 +146,7 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
           onClose={() => undefined}
           rows={rows}
           now={NOW}
-          summary={bedsReadySummary(state.units, state.bedReleases, state.leaveBeds, NOW)}
+          summary={bedsReadySummary(state.units, state.admissions, state.bedReleases, NOW)}
         />,
       );
       expect(screen.getByTestId("ward-referral-meeting-table")).toHaveTextContent(UMRN);

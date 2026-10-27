@@ -46,8 +46,8 @@ export type WardFlowRole =
  * `WardRole` has no `coordinator`, and this has no `flow`.
  */
 export const WARD_FLOW_ROLE_LABELS: Record<WardFlowRole, string> = {
-  coordinator: "Flow coordinator",
-  ed: "ED mental health",
+  coordinator: "Bed coordinator",
+  ed: "ED clinician",
   ward: "Ward manager",
   officer: "Authorised officer",
   demo: "Demonstration control",

@@ -108,18 +108,23 @@ describe("Create sheet asks the access check for Add patient (role access plan v
     expect(within(sheet).queryByRole("link", { name: /Add patient/u })).toBeNull();
   });
 
-  it("says so, rather than open empty, on a signed-in officer desk with nothing to start", () => {
+  // Help thread (26 Oct 2026): a desk with nothing to start shows no + at all, rather than a + that
+  // opens a sheet saying so. The dock keeps its five cells, so the places either side stay put.
+  it.each([
+    ["officer", "/ward-flow/transport/officer", { kind: "jobs" }],
+    ["executive", "/ward-flow", { kind: "statewide" }],
+  ] as const)("shows no + on a signed-in %s desk with nothing to start", (role, pathname, scope) => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess({ role: "officer", scope: { kind: "jobs" } });
+      setWardAccess({ role, scope } as never);
     });
     try {
-      route.pathname = "/ward-flow/transport/officer";
+      route.pathname = pathname;
       openMenu();
-      fireEvent.click(screen.getByTestId("ward-phone-create"));
-      const sheet = screen.getByTestId("ward-phone-create-sheet");
-      expect(within(sheet).queryAllByRole("link")).toHaveLength(0);
-      expect(within(sheet).getByText("Nothing to start from this desk.")).toBeInTheDocument();
+      expect(screen.queryByTestId("ward-phone-create")).toBeNull();
+      const dock = screen.getByTestId("ward-phone-dock");
+      expect(dock.children).toHaveLength(5);
+      expect(dock.closest("[data-wf-page-dock]")).toHaveAttribute("data-wf-create", "none");
     } finally {
       act(() => {
         setWardFeatureFlagOnDevice("role-access", null);

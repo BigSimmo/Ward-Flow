@@ -2,7 +2,7 @@
 
 // src/components/ward-management/forecast/ed-access-risk-card.tsx
 //
-// "Access risk in the next day" on the ED screen, and its one-line summary under Home's ED strip
+// "May pass the access target in the next day" on the ED screen, and its one-line summary under Home's ED strip
 // (forecasting build, Josh, 23 Oct 2026, screens 1 and 4). Loaded lazily on both routes so their
 // phone script budgets do not grow (`forecast-lazy.tsx`).
 //
@@ -18,16 +18,11 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { RELEASE_LOOKAHEAD_DAYS, type EdAccessRiskRow } from "./ed-access-risk";
+import { RELEASE_LOOKAHEAD_DAYS, targetText, type EdAccessRiskRow } from "./ed-access-risk";
 import { BED_KIND_LABEL } from "./forecast-by-kind";
 import { shortBlocker } from "./forecast-levers";
 import { forecastEdName, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
-
-/** "24 hour" for a whole-hour target, else "20h 30m": the access target as Settings states it. */
-export function targetText(minutes: number): string {
-  return minutes % 60 === 0 ? `${minutes / 60} hour` : splitDuration(minutes);
-}
 
 export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
   const kind = BED_KIND_LABEL[row.kind].toLowerCase();
@@ -64,7 +59,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
       <div className={styles.section}>
         <div className={styles.header}>
           <h2 id="forecast-ed-risk-title" className={styles.title}>
-            Access risk in the next day
+            May pass the access target in the next day
           </h2>
           <span className={styles.meta}>{summary}</span>
         </div>

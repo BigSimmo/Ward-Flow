@@ -32,7 +32,7 @@ describe("discharge arrangements panel", () => {
     expect(within(pharmacy).getByText("Needs checking again")).toBeTruthy();
     expect(pharmacy.textContent).toContain("Pharmacy · confirmed 4 h ago by Ward manager");
     expect(pharmacy.textContent).toContain("Expected out moved from");
-    expect(pharmacy.textContent).toContain("changed 1 h ago by Flow coordinator");
+    expect(pharmacy.textContent).toContain("changed 1 h ago by Bed coordinator");
     const transport = screen.getByTestId("ward-discharge-dependency-transport");
     expect(within(transport).getByText("Outstanding")).toBeTruthy();
     expect(within(transport).queryByText("Needs checking again")).toBeNull();

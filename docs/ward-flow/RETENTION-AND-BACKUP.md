@@ -1,8 +1,10 @@
 # Ward Flow retention, correction and backup plan
 
+_Updated 2026-10-26 - added the passing `pg_dump` restore drill of the hosted data; Documentation owns._
+
 _Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
-_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->14<!-- /fact --> migrations, latest <!-- fact:latest-migration -->014-archived-records<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
+_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->15<!-- /fact --> migrations, latest <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
 
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
@@ -217,6 +219,54 @@ alphabetical rather than real column order. A copy made that way is not a usable
 **Next.** Repeat with `pg_dump -Fc` over a session-pooler connection, as the
 [runbook](OPERATIONS-RUNBOOK.md#backup-restore-drill) now requires.
 
+## Hosted `pg_dump` restore drill (26 October 2026, second run)
+
+- **Result: pass**, with one step not tested (sign-in over HTTP, below).
+- **What was restored:** a read-only `pg_dump -Fc --schema=ward_flow --no-owner` of the live
+  Ward Flow project (`zakzoemeedfepxcstsou`), taken at 13:20:58 UTC (9:20 pm AWST) over the session
+  pooler with pg_dump 17.11 in Docker on Josh's computer. 143 KB, 7.4 seconds. Its checksum was
+  saved beside it and checked before the restore. Nothing was written to the live database.
+- **Target:** a throwaway PostgreSQL 17.11 in Docker on Josh's computer, loopback only.
+- **Timing:** started 15:24:53 UTC. `pg_restore --exit-on-error` took 0.6 seconds with no errors;
+  the database was usable about 1 minute in. The backend was working against the copy at about
+  5.7 minutes, most of it installing packages and making a local certificate.
+
+| Check                                                                   | Result                                         |
+| ----------------------------------------------------------------------- | ---------------------------------------------- |
+| Restore with no errors ignored                                          | Pass                                           |
+| Rows per table against the live snapshot taken just before the dump     | Same in all 13. Pass                           |
+| Migration ledger 1 to 13                                                | Identical to live. Pass                        |
+| 4 triggers, 4 functions, 51 check constraints                           | Same as live. Pass                             |
+| `audit`, `record_access`, `break_glass` refuse UPDATE, DELETE, TRUNCATE | 9 of 9 refused, even as administrator. Pass    |
+| Row-level security on every table, 13 policies                          | Pass                                           |
+| Backend's own check on its database login                               | Pass                                           |
+| Both workspaces read at the same revision as the database, valid boards | Pass                                           |
+| Synthetic save, then reload shows the revision up by exactly one        | Pass                                           |
+| Save from an older or a future revision gets 409 and changes nothing    | Pass                                           |
+| Sign-in through the backend's web server                                | **Not tested** (needs a live Supabase sign-in) |
+
+The backend checks ran the store code from main `761f67a5` directly against the restored copy,
+not over HTTP, because the web server needs a real Supabase sign-in, which the drill did not use.
+Closing that gap needs one sign-in with a synthetic account against a locally started backend.
+
+**Setup the restore needed, all inside the throwaway container.** Roles and role settings are not
+part of a `ward_flow` dump:
+
+1. Create the `wardflow_backend` login role before `pg_restore`, or the dump's grants fail.
+2. Make it `NOINHERIT`. The backend refuses to start otherwise ("unsafe runtime").
+3. Turn on TLS with a throwaway local certificate. The backend insists on a verified encrypted
+   connection.
+
+**Finding.** A real recovery must recreate the runtime role and its settings (`NOINHERIT` and the
+statement, idle and lock timeouts) after the restore, using
+`backend/ward-flow/infra/supabase-runtime-role.sql` (or `postgres-runtime-role.sql` for plain
+PostgreSQL), then set its password privately. The drill created the role by hand; the scripts were
+not run in this drill. The runbook now says so.
+
+**Still not tested:** Supabase's own backups (needs the Pro plan and a spending approval), PITR,
+and a sign-in through the restored backend. The dump stays on Josh's computer; deleting it is his
+call.
+
 ## Steps for Josh in the Supabase console
 
 Do these in the Ward Flow project only, after checking the project name and ID match
@@ -249,7 +299,7 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->014-archived-records<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Until then the backend keeps working, but opening a record is not logged and a sign-out takes
    effect only when its token expires. The undo runs one step at a time, newest first:

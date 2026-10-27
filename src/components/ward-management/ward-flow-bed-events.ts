@@ -3,11 +3,13 @@ import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions"
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
+import { bedMoveNeedsOpenBedReason, openBedMoveRefusal } from "./ward-bed-move-reason";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
   DISCHARGE_DELAY_CLEAR_REASONS,
+  OVERRIDE_REASONS,
   type DischargeDelayClearReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { nextDischargeCriteria } from "@/components/ward-management/ward-discharge-criteria";
@@ -21,6 +23,7 @@ import {
   type Notice,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import { isUploadedFileType, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import type { BedEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { nextBedReleaseId } from "./ward-runtime-ids";
 
@@ -70,6 +73,7 @@ export function reduceBedEvent(
 ): WardFlowState {
   const {
     admissionCriteriaEligibility,
+    admissionLegalStatus,
     appendNotices,
     bedNumberRefusal,
     findAdmission,
@@ -136,6 +140,23 @@ export function reduceBedEvent(
       // schema accepts (CONFIRM_CAPACITY may set the total below the separately recorded count).
       if (lockedAfter < 0 || (lockedDelta > 0 && lockedAfter > Math.min(unit.lockedBeds, unit.allocatable.value)))
         return reject(state, event, "The ward's free bed-kind counts do not support this bed move.");
+      // Audit CS3-12: as at admission, a stay needing a locked bed takes an open one only with a reason.
+      const secureRequest =
+        (linkedMovement ?? state.movements.find((movement) => movement.id === admission.movementId))?.security ===
+        "Secure";
+      const openBedReason =
+        event.overrideReason !== undefined && OVERRIDE_REASONS.includes(event.overrideReason)
+          ? event.overrideReason
+          : undefined;
+      const reasonNeeded = bedMoveNeedsOpenBedReason({
+        fromKind: priorKind,
+        toKind: targetKind,
+        secureRequest,
+        legalStatus: admissionLegalStatus(state, admission),
+      });
+      if (reasonNeeded && openBedReason === undefined)
+        return reject(state, event, openBedMoveRefusal(String(event.bedNumber).padStart(2, "0"), secureRequest));
+      if (reasonNeeded) decision.overrideFactRecorded = true;
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const placed = replaceAdmission(state, admission.id, {
@@ -760,13 +781,19 @@ export function reduceBedEvent(
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
 
       // This prototype records document details only; empty details are not a document.
-      if (
-        typeof event.formName !== "string" ||
-        event.formName.trim().length === 0 ||
-        typeof event.fileName !== "string" ||
-        event.fileName.trim().length === 0
-      ) {
-        return reject(state, event, "Enter the document name and file name.");
+      if (typeof event.formName !== "string" || event.formName.trim().length === 0) {
+        return reject(state, event, "Choose the document type.");
+      }
+      // H-0049: only the kind of file is kept, never its name. An event recorded before 26 Oct 2026
+      // carries `fileName` instead; it replays as it did (an empty name is still refused), read for
+      // its type and then dropped.
+      const legacyName = event.fileType === undefined ? event.fileName : undefined;
+      if (event.fileType === undefined && (typeof legacyName !== "string" || legacyName.trim().length === 0)) {
+        return reject(state, event, "Document details need a recognised file type.");
+      }
+      const fileType: unknown = event.fileType === undefined ? uploadedFileTypeOf(legacyName) : event.fileType;
+      if (!isUploadedFileType(fileType)) {
+        return reject(state, event, "Document details need a recognised file type.");
       }
       const sizeBytes = event.sizeBytes;
       if (typeof sizeBytes !== "number" || !Number.isSafeInteger(sizeBytes) || sizeBytes <= 0) {
@@ -776,7 +803,7 @@ export function reduceBedEvent(
       const newForm = {
         id: `FORM-${event.now}-${(movement.uploadedForms?.length ?? 0) + 1}`,
         formName: event.formName,
-        fileName: event.fileName,
+        fileType,
         sizeBytes,
         uploadedAt: event.now,
         uploadedBy: event.role,

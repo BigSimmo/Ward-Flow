@@ -483,7 +483,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
         state: "departed",
         leavingDestination: "discharged-to-the-community",
         leftAt: NOW_ANCHOR - 10,
-        followUp: { state, recordedAt: NOW_ANCHOR, recordedBy: "Flow coordinator" },
+        followUp: { state, recordedAt: NOW_ANCHOR, recordedBy: "Bed coordinator" },
       });
       renderTeam(TEAM_A.id, [departed], [toA]);
       expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
@@ -1494,7 +1494,7 @@ describe("community follow-up filters report real empty results", () => {
         state: "departed",
         leavingDestination: "discharged-to-the-community",
         leftAt: NOW_ANCHOR - 1,
-        followUp: { state: "arranged", recordedAt: NOW_ANCHOR - 1, recordedBy: "Flow coordinator" },
+        followUp: { state: "arranged", recordedAt: NOW_ANCHOR - 1, recordedBy: "Bed coordinator" },
       });
       departed.careJourney = {
         contacts: [
@@ -1518,7 +1518,7 @@ describe("community follow-up filters report real empty results", () => {
           appointmentVersion: 1,
           mode: "telephone",
           recordedAt: NOW_ANCHOR - 1,
-          recordedBy: "Flow coordinator",
+          recordedBy: "Bed coordinator",
         },
       };
       renderTeam(TEAM_A.id, [departed], [referral]);

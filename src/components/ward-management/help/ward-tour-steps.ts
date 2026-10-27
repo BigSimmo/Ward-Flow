@@ -99,7 +99,7 @@ export function tourMinutes(steps: number, device: TourDevice): string {
 }
 
 function signedInAs(role: TourRole, facts: TourFacts, scope: string): string {
-  const label = role === "ed" ? "ED mental health clinician" : TOUR_ROLE_LABELS[role];
+  const label = role === "ed" ? "ED clinician" : TOUR_ROLE_LABELS[role];
   const join = role === "ed" ? "at" : role === "ward" ? "of" : "for";
   if (facts.place) return `You are signed in as ${label} ${join} ${facts.place}.`;
   return scope ? `You are signed in as ${label} ${scope}.` : `You are signed in as ${label}.`;
@@ -242,7 +242,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "tools",
           { sel: '[data-testid="ward-bar-tools-trigger"]' },
           "Tools",
-          "Find a bed, catchment lookup, on-call, form times and the bed summary for the exec on-call email.",
+          "Find a bed, catchment lookup, on-call, form times and the bed summary for the executive on-call email.",
         ),
         step(
           "Finding your way",
@@ -447,7 +447,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "transport",
           { sel: '[data-testid^="ward-community-transport-cell-"]' },
           "Open a person's record",
-          "Open dossier shows the person's record. When a move needs transport, Log transport booking appears here too.",
+          "Open record shows the person's record. When a move needs transport, Log transport booking appears here too.",
         ),
         step(
           "Finding your way",

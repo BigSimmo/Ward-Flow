@@ -13,6 +13,7 @@ import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical
 import type { Movement, Referral, ReferralAddressing } from "../src/components/ward-management/ward-model";
 import { projectWardPartialView } from "../src/components/ward-management/ward-partial-view-projector";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
+import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/community/community-derivations";
 import { commandScopeRefusal, scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { isValidSharedWardFlowState } from "../src/components/ward-management/ward-shared-state-validation";
 import {
@@ -102,6 +103,25 @@ describe("the access table", () => {
     expect(screenDecision(ed, screenForPath(`${BASE}/ed/x`), places).open).toBe(true);
     const team = { role: "community", scope: { kind: "team", teamName: "Any team" } } as const;
     expect(screenDecision(team, screenForPath(`${BASE}/community`), places)).toEqual({ open: false, why: "place" });
+  });
+
+  it("opens a community team page to a service desk only for its own service's teams (H-0113)", () => {
+    const north = COMMUNITY_TEAM_PAGES.find((team) => places.teamService?.(team.id) === "North Metro");
+    const south = COMMUNITY_TEAM_PAGES.find((team) => places.teamService?.(team.id) === "South Metro");
+    expect(north && south).toBeTruthy();
+    const coordinator = { role: "coordinator", scope: { kind: "service", service: "North Metro" } } as const;
+    expect(screenDecision(coordinator, screenForPath(`${BASE}/community/${north!.id}`), places).open).toBe(true);
+    expect(screenDecision(coordinator, screenForPath(`${BASE}/community/${south!.id}`), places)).toEqual({
+      open: false,
+      why: "place",
+    });
+    expect(screenDecision(coordinator, screenForPath(`${BASE}/community/no-such-team`), places)).toEqual({
+      open: false,
+      why: "place",
+    });
+    expect(screenDecision(STATEWIDE_COORDINATOR, screenForPath(`${BASE}/community/${south!.id}`), places).open).toBe(
+      true,
+    );
   });
 
   it("lets only clinical roles break glass", () => {

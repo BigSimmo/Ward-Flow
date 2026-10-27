@@ -54,6 +54,7 @@ import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
 import { Button, StatusGlyph } from "@/components/wf";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,
   DECLINE_REASON_UNCHOSEN,
@@ -128,6 +129,9 @@ export function ReferralMatchView({
   phone,
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
+  // #794: only the coordinator or the desk a destination belongs to may answer it.
+  const deskRole = useRouteRole();
+  const answers = (desk: string) => deskRole === "coordinator" || deskRole === desk;
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
@@ -168,6 +172,7 @@ export function ReferralMatchView({
     setCommunityWithdrawReason,
     edAcceptConfirmOpen,
     setEdAcceptConfirmOpen,
+    edAcceptConfirmJustOpened,
     lastRejection,
     priorRejectionCountRef,
     setCheckToken,
@@ -201,10 +206,14 @@ export function ReferralMatchView({
   if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
-    return renderNotABedPhoneReview({ s, referral, patientInfo, phone, handleDecline, handleEdAccept });
+    return (
+      <DecidedBy allowed={answers("ed")} who="the emergency department">
+        {renderNotABedPhoneReview({ s, referral, patientInfo, phone, handleDecline, handleEdAccept })}
+      </DecidedBy>
+    );
   }
   if (!ward) {
-    return renderNotABedPanel({
+    const panel = renderNotABedPanel({
       s,
       referral,
       now,
@@ -216,6 +225,11 @@ export function ReferralMatchView({
       handleCommunityDecline,
       handleCommunityAccept,
     });
+    return (
+      <DecidedBy allowed={answers("ed") || answers("community")} who="the receiving team">
+        {panel}
+      </DecidedBy>
+    );
   }
   const candidates = referralCandidates(referral, ward.destination, units, now);
   const accepting = candidates.filter(candidateAccepts);
@@ -462,6 +476,7 @@ export function ReferralMatchView({
   }
 
   function handleEdAccept() {
+    if (edAcceptConfirmJustOpened()) return;
     priorRejectionCountRef.current = rejections.length;
     const completion = dispatch({
       type: "ACCEPT_REFERRAL",
@@ -1097,152 +1112,181 @@ export function ReferralMatchView({
               region and these sites. That is a gap in the invented data, not a statement that these beds are far away.
             </p>
           ) : null}
-          {group("Fits, bed ready", tier1Candidates, "yes")}
-          {group("Fits, no bed now", tier2Candidates, "nobed")}
-          {group("Needs review", tier3Candidates, "review")}
-          <AskMoreWardsCard ask={askMore} />
-          {pick && pickTurnaround ? (
-            <div className={styles.unitActionStatusWrap}>
-              <Button
-                variant="sec"
-                size="md"
-                disabledReason={pickTurnaround.disabledReason}
-                onClick={() => handleFlagTurnaround(pick.unit.id)}
-              >
-                Flag Turnaround Priority
-              </Button>
-              <p className={ph.matchHint}>
-                {pickTurnaround.recordedSource
-                  ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
-                  : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
+          <DecidedBy allowed={answers("ward")} who="the receiving ward">
+            {group("Fits, bed ready", tier1Candidates, "yes")}
+            {group("Fits, no bed now", tier2Candidates, "nobed")}
+            {group("Needs review", tier3Candidates, "review")}
+            <AskMoreWardsCard ask={askMore} />
+            {pick && pickTurnaround ? (
+              <div className={styles.unitActionStatusWrap}>
+                <Button
+                  variant="sec"
+                  size="md"
+                  disabledReason={pickTurnaround.disabledReason}
+                  onClick={() => handleFlagTurnaround(pick.unit.id)}
+                >
+                  Flag Turnaround Priority
+                </Button>
+                <p className={ph.matchHint}>
+                  {pickTurnaround.recordedSource
+                    ? `Turnaround preference recorded for ${pickTurnaround.recordedSource === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}; placement still needs confirmation.`
+                    : `Records a preference for ${pick.unit.name} only; placement and transport still need confirmation.`}
+                </p>
+              </div>
+            ) : null}
+            {pick && (pickGenderForm || overrideOpen) ? (
+              <ul className={ph.pickForm}>
+                <MatchRow
+                  key={pick.unit.id}
+                  candidate={pick}
+                  bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
+                  onAccept={handleAccept}
+                  needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
+                />
+              </ul>
+            ) : null}
+            {pickPromised && pick ? (
+              <p className={ph.note} role="status" data-testid="ward-referral-match-ready-promised">
+                {readyBedsPromisedSentence(pick.unit.name, pickPromised)}
               </p>
-            </div>
-          ) : null}
-          {pick && (pickGenderForm || overrideOpen) ? (
-            <ul className={ph.pickForm}>
-              <MatchRow
-                key={pick.unit.id}
-                candidate={pick}
-                bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
-                onAccept={handleAccept}
-                needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
-              />
-            </ul>
-          ) : null}
-          {pickPromised && pick ? (
-            <p className={ph.note} role="status" data-testid="ward-referral-match-ready-promised">
-              {readyBedsPromisedSentence(pick.unit.name, pickPromised)}
+            ) : null}
+            <p className={ph.note} data-testid="ward-referral-match-governance">
+              <strong>Not approved for clinical use.</strong> Fixed network order in each group. This view places
+              nobody: a coordinator decides each placement, one at a time.{" "}
+              <span data-testid="ward-referral-match-synthetic-notice">{SYNTHETIC_TRAVEL_TIMES_NOTICE}</span>
             </p>
-          ) : null}
-          <p className={ph.note} data-testid="ward-referral-match-governance">
-            <strong>Not approved for clinical use.</strong> Fixed network order in each group. This view places nobody:
-            a coordinator decides each placement, one at a time.{" "}
-            <span data-testid="ward-referral-match-synthetic-notice">{SYNTHETIC_TRAVEL_TIMES_NOTICE}</span>
-          </p>
-          {phone}
-          {/* Spec D8-6: absence renders as nothing at all. Only the offer, or the record once taken. */}
-          <div data-testid="ward-referral-match-local-bed">
-            {referral.localBedSought ? (
-              <p className={ph.matchHint} data-testid="ward-referral-match-local-bed-sought-record">
-                A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
-              </p>
-            ) : (
-              <button
-                type="button"
-                className={ph.more}
-                data-testid="ward-referral-match-local-bed-sought"
-                onClick={handleLocalBedSought}
-              >
-                {phone !== undefined
-                  ? "Record a local bed was sought"
-                  : "Record that a local bed was sought and none was suitable"}
-              </button>
-            )}
-          </div>
-          {communityControls}
-          {edControls}
+            {phone}
+            {/* Spec D8-6: absence renders as nothing at all. Only the offer, or the record once taken. */}
+            <div data-testid="ward-referral-match-local-bed">
+              {referral.localBedSought ? (
+                <p className={ph.matchHint} data-testid="ward-referral-match-local-bed-sought-record">
+                  A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className={ph.more}
+                  data-testid="ward-referral-match-local-bed-sought"
+                  onClick={handleLocalBedSought}
+                >
+                  {phone !== undefined
+                    ? "Record a local bed was sought"
+                    : "Record that a local bed was sought and none was suitable"}
+                </button>
+              )}
+            </div>
+          </DecidedBy>
+          <DecidedBy allowed={answers("community")} who="the community team">
+            {communityControls}
+          </DecidedBy>
+          <DecidedBy allowed={answers("ed")} who="the emergency department">
+            {edControls}
+          </DecidedBy>
           {wholeWithdrawControl}
         </>
       )}
 
-      <div className={ph.foot}>
-        {askMore.open ? (
-          <AskMoreWardsFoot ask={askMore} />
-        ) : phoneDeclining ? (
-          <>
-            <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
-              Back
-            </button>
-            <Button
-              variant="sec"
-              size="md"
-              data-placement-action="decline"
-              disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
-              reasonDisplay="tooltip"
-              type="button"
-              data-tone="danger"
-              data-testid="ward-referral-match-decline"
-              onClick={
-                declineReason === undefined
-                  ? ignoreUnavailableActivation
-                  : () => {
-                      handleDecline("psychiatric_ward");
-                      setPhoneDeclining(false);
-                    }
-              }
-            >
-              <span className={ph.ell}>Decline referral</span>
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              variant="sec"
-              size="md"
-              data-placement-action
-              type="button"
-              data-testid="ward-referral-match-decline-open"
-              onClick={() => setPhoneDeclining(true)}
-            >
-              Decline
-            </Button>
-            {/* D-77: the one button. A ward that fits accepts; one that needs the gender placement
+      <DecidedBy allowed={answers("ward")} quiet>
+        <div className={ph.foot}>
+          {askMore.open ? (
+            <AskMoreWardsFoot ask={askMore} />
+          ) : phoneDeclining ? (
+            <>
+              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                Back
+              </button>
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action="decline"
+                disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+                reasonDisplay="tooltip"
+                type="button"
+                data-tone="danger"
+                data-testid="ward-referral-match-decline"
+                onClick={
+                  declineReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        handleDecline("psychiatric_ward");
+                        setPhoneDeclining(false);
+                      }
+                }
+              >
+                <span className={ph.ell}>Decline referral</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="sec"
+                size="md"
+                data-placement-action
+                type="button"
+                data-testid="ward-referral-match-decline-open"
+                onClick={() => setPhoneDeclining(true)}
+              >
+                Decline
+              </Button>
+              {/* D-77: the one button. A ward that fits accepts; one that needs the gender placement
                 check opens that form; one that does not fit opens Clinical override, which still
                 needs a recorded reason before it accepts. */}
-            <Button
-              variant={pickNeedsOverride ? "sec" : "pri"}
-              size="md"
-              data-placement-action
-              disabledReason={pick === undefined ? acceptUnavailable : undefined}
-              reasonDisplay="tooltip"
-              type="button"
-              data-testid="ward-referral-match-phone-accept"
-              onClick={
-                pick === undefined
-                  ? ignoreUnavailableActivation
-                  : pickPlain
-                    ? () => handleAccept(pick.unit.id)
-                    : revealPickForm
-              }
-            >
-              <span className={ph.ell}>
-                {pick === undefined
-                  ? candidates.length === 0
-                    ? "Accept"
-                    : "Choose a ward first"
-                  : pickNeedsOverride
-                    ? `Clinical override for ${pick.unit.name}`
-                    : pickGenderForm
-                      ? `Check placement at ${pick.unit.name}`
-                      : `Accept at ${pick.unit.name}`}
-              </span>
-            </Button>
-          </>
-        )}
-      </div>
+              <Button
+                variant={pickNeedsOverride ? "sec" : "pri"}
+                size="md"
+                data-placement-action
+                disabledReason={pick === undefined ? acceptUnavailable : undefined}
+                reasonDisplay="tooltip"
+                type="button"
+                data-testid="ward-referral-match-phone-accept"
+                onClick={
+                  pick === undefined
+                    ? ignoreUnavailableActivation
+                    : pickPlain
+                      ? () => handleAccept(pick.unit.id)
+                      : revealPickForm
+                }
+              >
+                <span className={ph.ell}>
+                  {pick === undefined
+                    ? candidates.length === 0
+                      ? "Accept"
+                      : "Choose a ward first"
+                    : pickNeedsOverride
+                      ? `Clinical override for ${pick.unit.name}`
+                      : pickGenderForm
+                        ? `Check placement at ${pick.unit.name}`
+                        : `Accept at ${pick.unit.name}`}
+                </span>
+              </Button>
+            </>
+          )}
+        </div>
+      </DecidedBy>
       {phone === undefined && !hideDossierHeader ? (
         <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
       ) : null}
     </section>
+  );
+}
+
+/** #794: a desk that does not answer this destination sees its controls greyed, with who does. */
+function DecidedBy({
+  allowed,
+  who,
+  quiet,
+  children,
+}: {
+  allowed: boolean;
+  who?: string;
+  quiet?: boolean;
+  children: ReactNode;
+}) {
+  if (allowed) return <>{children}</>;
+  return (
+    <fieldset disabled className={ph.decidedBy} data-testid="ward-referral-match-not-your-decision">
+      {quiet ? null : <p className={ph.note}>{`Only ${who} or the coordinator decides this.`}</p>}
+      {children}
+    </fieldset>
   );
 }

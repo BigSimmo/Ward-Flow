@@ -1,16 +1,19 @@
 "use client";
 
+import { ArrowRight, ChevronDown, CircleHelp, Compass, Keyboard, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
+import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
+import { WardHelpAsk } from "./ward-help-ask";
 import {
   ADMIN_SETTINGS_HELP,
   filterGlossary,
@@ -24,7 +27,7 @@ import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { WHATS_NEW } from "./ward-whats-new";
-import styles from "./ward-help.module.css";
+import styles from "./ward-help-sheet.module.css";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
   { id: "desk", label: "Your desk" },
@@ -70,10 +73,13 @@ function deskLabel(role: WardTourRole): string {
  */
 export function WardHelpSheet({
   view,
+  ask,
   onView,
   onClose,
 }: {
   view: HelpView;
+  /** The Ask box's starting words, or undefined while the Ask help preview flag is off. */
+  ask?: string;
   onView: (view: HelpView) => void;
   onClose: () => void;
 }) {
@@ -96,6 +102,8 @@ export function WardHelpSheet({
   const [query, setQuery] = useState("");
   const terms = filterGlossary(query, glossaryForSites(sites));
 
+  const latest = WHATS_NEW.at(-1);
+
   return (
     <Sheet
       id="ward-help-sheet"
@@ -103,24 +111,49 @@ export function WardHelpSheet({
       open
       onClose={onClose}
       title="Help"
-      description="Synthetic prototype, not approved for clinical use."
+      headerLeading={
+        <span className={barStyles.drawerTile} aria-hidden="true">
+          <CircleHelp aria-hidden="true" className={barStyles.drawerHeadingIcon} strokeWidth={1.75} />
+        </span>
+      }
+      headerActions={
+        phone ? undefined : (
+          <kbd className={barStyles.escKbd} aria-hidden="true">
+            Esc
+          </kbd>
+        )
+      }
+      descriptionContent={
+        <p className={barStyles.activityFreshness}>Synthetic prototype, not approved for clinical use.</p>
+      }
       placement="right"
-      bodyClassName={styles.body}
+      desktopBackdropClassName={barStyles.drawerBackdrop}
+      contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide}`}
+      headerClassName={barStyles.drawerHeader}
+      titleClassName={barStyles.drawerTitle}
+      closeButtonClassName={barStyles.drawerClose}
+      bodyClassName={`${barStyles.drawerBody} ${styles.body}`}
+      footer={
+        <div className={barStyles.drawerFoot}>
+          <span>Ward Flow guide · nothing typed here is saved</span>
+          {latest ? <span>Updated {formatNewDate(latest.date)}</span> : null}
+        </div>
+      }
+      footerClassName={barStyles.drawerFooter}
     >
-      <section className={styles.intro} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
-        <div className={styles.introRow}>
-          <div>
-            <p className={styles.introKicker}>Your desk</p>
-            <h3 id="ward-help-intro-title" className={styles.introTitle}>
-              {deskLabel(role)}
-            </h3>
+      <section className={styles.desk} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
+        <div className={styles.deskCard}>
+          <div className={styles.deskText}>
+            <span>Your desk</span>
+            <h3 id="ward-help-intro-title">{deskLabel(role)}</h3>
           </div>
           <button
             type="button"
-            className={styles.tourButton}
+            className={styles.secondaryButton}
             onClick={() => onView("tour")}
             data-testid="ward-help-view-tour"
           >
+            <Compass aria-hidden="true" strokeWidth={1.75} />
             Take the tour
           </button>
         </div>
@@ -129,12 +162,16 @@ export function WardHelpSheet({
         </p>
       </section>
 
-      <div className={styles.views} role="group" aria-label="Help sections">
+      {ask !== undefined ? (
+        <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />
+      ) : null}
+
+      <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
         {VIEWS.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={styles.viewButton}
+            className={barStyles.segBtn}
             aria-pressed={view === item.id}
             onClick={() => onView(item.id)}
             data-testid={`ward-help-view-${item.id}`}
@@ -145,91 +182,89 @@ export function WardHelpSheet({
       </div>
 
       {view === "desk" ? (
-        <section aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
-          <p className={styles.lead}>{guide.summary}</p>
-          <h3 id="ward-help-desk-title" className={styles.subTitle}>
-            Where you start
-          </h3>
-          <p className={styles.text}>{guide.startsAt}</p>
-          <h4 className={styles.subTitle}>Jobs you do most</h4>
-          <ol className={styles.jobs}>
-            {guide.jobs.map((item) => {
-              const link = goLink(item.go, role, { href: deskHome ?? home, name: guide.homeName }, entries);
-              return (
-                <li key={item.job}>
-                  <b className={styles.job}>{item.job}.</b> {item.how}
-                  {link ? (
-                    <>
-                      {" "}
-                      <Link
-                        href={link.href}
-                        className={styles.goLink}
-                        onClick={onClose}
-                        aria-label={`${item.job}: go to ${link.label}`}
-                        data-testid="ward-help-go"
-                      >
-                        Go to {link.label}
-                      </Link>
-                    </>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ol>
-          <h4 className={styles.subTitle}>Good to know</h4>
-          <ul className={styles.list}>
-            {guide.limits.map((limit) => (
-              <li key={limit}>{limit}</li>
-            ))}
-          </ul>
-          <h4 className={styles.subTitle}>Is it saved?</h4>
-          <ul className={styles.list}>
-            {SAVED_OR_NOT.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          <h4 className={styles.subTitle}>If Ward Flow is down</h4>
-          <ul className={styles.list} data-testid="ward-help-downtime">
-            {WHEN_IT_IS_DOWN.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
+        <section className={styles.stack} aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
+          <p className={styles.text}>{guide.summary}</p>
+          <div className={styles.group}>
+            <h3 id="ward-help-desk-title" className={styles.groupHeading}>
+              Where you start
+            </h3>
+            <div className={styles.card}>
+              <p className={styles.paragraph}>{guide.startsAt}</p>
+            </div>
+          </div>
+          <div className={styles.group}>
+            <h4 className={styles.groupHeading}>Jobs you do most</h4>
+            <ol className={styles.card}>
+              {guide.jobs.map((item, index) => {
+                const link = goLink(item.go, role, { href: deskHome ?? home, name: guide.homeName }, entries);
+                return (
+                  <li key={item.job} className={styles.row}>
+                    <span className={styles.step} aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <span className={styles.rowText}>
+                      <strong>{item.job}</strong>
+                      <span>{item.how}</span>
+                      {link ? (
+                        <Link
+                          href={link.href}
+                          className={styles.goLink}
+                          onClick={onClose}
+                          aria-label={`${item.job}: go to ${link.label}`}
+                          data-testid="ward-help-go"
+                        >
+                          Go to {link.label}
+                          <ArrowRight aria-hidden="true" strokeWidth={2} />
+                        </Link>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <PointList heading="Good to know" points={guide.limits} />
+          <PointList heading="Is it saved?" points={SAVED_OR_NOT} />
+          <PointList heading="If Ward Flow is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
         </section>
       ) : null}
 
       {view === "screen" ? (
         help ? (
-          <section aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
-            <h3 id="ward-help-screen-title" className={styles.title}>
-              {help.title}
-            </h3>
-            <p className={styles.text}>{help.purpose}</p>
-            <h4 className={styles.subTitle}>Main actions</h4>
-            <ul className={styles.list}>
-              {(phone ? (help.phoneActions ?? help.actions) : help.actions).map((action) => (
-                <li key={action}>{action}</li>
-              ))}
-            </ul>
+          <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
+            <div className={styles.card}>
+              <div className={styles.screenHead}>
+                <h3 id="ward-help-screen-title">{help.title}</h3>
+                <p className={styles.text}>{help.purpose}</p>
+              </div>
+            </div>
+            <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
             {help.questions?.length ? (
-              <>
-                <h4 className={styles.subTitle}>Questions</h4>
-                <dl className={styles.glossary} data-testid="ward-help-questions">
+              <div className={styles.group}>
+                <h4 className={styles.groupHeading}>Questions</h4>
+                <dl className={styles.card} data-testid="ward-help-questions">
                   {help.questions.map((item) => (
-                    <div key={item.question} className={styles.term}>
+                    <div key={item.question} className={styles.entry}>
                       <dt>{item.question}</dt>
                       <dd>{item.answer}</dd>
                     </div>
                   ))}
                 </dl>
-              </>
+              </div>
             ) : null}
             {/* A phone has no keyboard, so its screen reader is not read a list of keys (HF-14). */}
             {phone ? null : (
-              <details className={styles.shortcuts} data-testid="ward-help-shortcuts">
-                <summary>Keyboard shortcuts</summary>
-                <dl className={styles.glossary}>
+              <details className={`${styles.card} ${styles.shortcuts}`} data-testid="ward-help-shortcuts">
+                <summary>
+                  <span className={styles.rowIcon} aria-hidden="true">
+                    <Keyboard aria-hidden="true" strokeWidth={1.75} />
+                  </span>
+                  Keyboard shortcuts
+                  <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
+                </summary>
+                <dl className={styles.keys}>
                   {KEYBOARD_SHORTCUTS.map((item) => (
-                    <div key={item.keys} className={styles.term}>
+                    <div key={item.keys} className={styles.key}>
                       <dt>
                         <kbd>{item.keys}</kbd>
                       </dt>
@@ -241,8 +276,8 @@ export function WardHelpSheet({
             )}
           </section>
         ) : (
-          <div data-testid="ward-help-screen-none">
-            <p className={styles.text}>This screen has no help page of its own yet. Your desk guide covers it.</p>
+          <div className={styles.group} data-testid="ward-help-screen-none">
+            <p className={styles.empty}>This screen has no help page of its own yet. Your desk guide covers it.</p>
             <button type="button" className={styles.linkButton} onClick={() => onView("desk")}>
               Open your desk guide
             </button>
@@ -251,42 +286,46 @@ export function WardHelpSheet({
       ) : null}
 
       {view === "new" ? (
-        <section aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
-          <h3 id="ward-help-new-title" className={styles.subTitle}>
+        <section className={styles.group} aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
+          <h3 id="ward-help-new-title" className={styles.groupHeading}>
             Recent changes
           </h3>
-          <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
-          <ul className={styles.list}>
+          <ul className={styles.card}>
             {WHATS_NEW.toReversed().map((entry) => (
-              <li key={entry.id}>
-                <b className={styles.job}>{formatNewDate(entry.date)}.</b> {entry.line}
+              <li key={entry.id} className={styles.row}>
+                <span className={styles.date}>{formatNewDate(entry.date)}</span>
+                <span className={styles.text}>{entry.line}</span>
               </li>
             ))}
           </ul>
+          <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
         </section>
       ) : null}
 
       {view === "glossary" ? (
-        <section aria-label="Glossary" data-testid="ward-help-glossary">
-          <label className={styles.searchLabel}>
+        <section className={styles.group} aria-label="Glossary" data-testid="ward-help-glossary">
+          <label htmlFor="ward-help-glossary-filter" className={styles.label}>
             Find a word or code
+          </label>
+          <div className={styles.searchField}>
+            <Search aria-hidden="true" strokeWidth={1.75} />
             <input
+              id="ward-help-glossary-filter"
               type="search"
-              className={styles.search}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               autoComplete="off"
               placeholder="For example Pulled, NIC or RPH"
               data-testid="ward-help-glossary-filter"
             />
-          </label>
+          </div>
           <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
           {terms.length === 0 ? (
-            <p className={styles.text}>No word or code matches.</p>
+            <p className={styles.empty}>No word or code matches. Try the first few letters.</p>
           ) : (
-            <dl className={styles.glossary}>
+            <dl className={styles.card}>
               {terms.map((entry) => (
-                <div key={entry.term} className={styles.term}>
+                <div key={entry.term} className={styles.entry}>
                   <dt>{entry.term}</dt>
                   <dd>{entry.meaning}</dd>
                 </div>
@@ -296,5 +335,22 @@ export function WardHelpSheet({
         </section>
       ) : null}
     </Sheet>
+  );
+}
+
+/** A heading and a card of short points, each behind a quiet dot. */
+function PointList({ heading, points, testId }: { heading: string; points: readonly string[]; testId?: string }) {
+  return (
+    <div className={styles.group}>
+      <h4 className={styles.groupHeading}>{heading}</h4>
+      <ul className={styles.card} data-testid={testId}>
+        {points.map((point) => (
+          <li key={point} className={styles.row}>
+            <span className={styles.point} aria-hidden="true" />
+            <span className={styles.text}>{point}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

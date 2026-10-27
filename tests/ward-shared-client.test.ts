@@ -868,6 +868,25 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot).toBeNull();
     client.dispose();
   });
+  it("keeps the server's role-needs-service reason so an officer with no health service is told why (#787)", async () => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () =>
+        Response.json(
+          { error: "No Ward Flow role is assigned to this account", code: "role-needs-service", canRequest: true },
+          { status: 403 },
+        ),
+    });
+    await client.refresh();
+    expect(view?.status).toBe("no-role");
+    expect(view?.noRoleReason).toBe("role-needs-service");
+    client.dispose();
+  });
   it("never re-sends a write without x-ward-working-as when the chosen role has ended, and refreshes the desk", async () => {
     let view: SharedView | undefined;
     let stored: string | null = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
@@ -1474,5 +1493,30 @@ describe("shared workspace traffic", () => {
     ]);
     await vi.waitFor(() => expect(reads).toHaveLength(2));
     client.dispose();
+  });
+});
+
+describe("H-0731: the TV board names itself on workspace reads", () => {
+  it("sends x-ward-screen: tv only from the bed meeting TV board, and only on reads", async () => {
+    const seen: (string | null)[] = [];
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (_url, init) => {
+        seen.push(new Headers(init?.headers).get("x-ward-screen"));
+        return Response.json({ snapshot: snapshot(1), workingAs: "bootstrap" });
+      },
+    });
+    try {
+      vi.stubGlobal("location", { pathname: "/ward-flow/bed-meeting" });
+      await client.refresh();
+      vi.stubGlobal("location", { pathname: "/ward-flow/ward" });
+      await client.refresh();
+    } finally {
+      vi.unstubAllGlobals();
+      client.dispose();
+    }
+    expect(seen).toEqual(["tv", null]);
   });
 });

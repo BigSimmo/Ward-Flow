@@ -627,12 +627,12 @@ export function GlobalSearchPreview({
   const flow = useOptionalWardFlow();
   const resolvedNow = now ?? flow?.now;
   const activeDate = useMemo(() => {
-    // With no simulation clock in reach (no `now` prop, no provider) the only date left is the real one.
-    // `patientAgeYears` reads the instant on the Perth calendar day itself, so pass the instant straight
-    // through: rebuilding a browser-local midnight here would land on the day before in zones east of Perth.
-    if (resolvedNow === undefined) return new Date();
+    // TC-07 (audit 24 Oct 2026, H-0776): the age is always read on the board's own day. With no
+    // simulation clock in reach (no `now` prop, no provider) that is the board's first day (day 0, as
+    // a fresh provider would show), never the device's real date. Only the day matters for an age.
+    // `calendarDateOf` gives the Perth calendar day itself, so a Sydney or UTC browser reads the same day.
     const resolvedDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
-    return calendarDateOf(resolvedNow, resolvedDayZero);
+    return calendarDateOf(resolvedNow ?? 0, resolvedDayZero);
   }, [dayZero, flow?.dayZero, resolvedNow]);
   const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const rowsByPatient = useMemo(() => censusRowsByPatient(census), [census]);

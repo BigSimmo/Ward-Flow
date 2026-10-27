@@ -212,10 +212,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-cohort"
               aria-invalid={isMissing("cohort") || undefined}
               value={draft.cohort ?? NO_COHORT_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  cohort: event.target.value === NO_COHORT_VALUE ? undefined : (event.target.value as Cohort),
+                  cohort: value === NO_COHORT_VALUE ? undefined : (value as Cohort),
                 }))
               }
             >
@@ -236,10 +236,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-security"
               aria-invalid={isMissing("security") || undefined}
               value={draft.security ?? NO_SECURITY_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  security: event.target.value === NO_SECURITY_VALUE ? undefined : (event.target.value as Security),
+                  security: value === NO_SECURITY_VALUE ? undefined : (value as Security),
                 }))
               }
             >
@@ -258,10 +258,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-sex"
               aria-invalid={isMissing("sex") || undefined}
               value={draft.sex ?? NO_SEX_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  sex: event.target.value === NO_SEX_VALUE ? undefined : (event.target.value as RecordedSex),
+                  sex: value === NO_SEX_VALUE ? undefined : (value as RecordedSex),
                 }))
               }
             >
@@ -284,13 +284,13 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-gender"
               aria-invalid={isMissing("gender") || undefined}
               value={draft.gender ?? NO_GENDER_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
                   gender:
-                    event.target.value === NO_GENDER_VALUE
+                    value === NO_GENDER_VALUE
                       ? undefined
-                      : (event.target.value as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
+                      : (value as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
                 }))
               }
             >
@@ -313,10 +313,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             <select
               data-testid="ward-ed-referral-tentative-diagnosis"
               value={draft.tentativeDiagnosis}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  tentativeDiagnosis: event.target.value as TentativeDiagnosisBlock | "none",
+                  tentativeDiagnosis: value as TentativeDiagnosisBlock | "none",
                 }))
               }
             >
@@ -334,11 +334,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-legal-status"
               aria-invalid={isMissing("legalStatus") || undefined}
               value={draft.legalStatus ?? NO_LEGAL_STATUS_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  legalStatus:
-                    event.target.value === NO_LEGAL_STATUS_VALUE ? undefined : (event.target.value as LegalStatus),
+                  legalStatus: value === NO_LEGAL_STATUS_VALUE ? undefined : (value as LegalStatus),
                 }))
               }
             >
@@ -356,10 +355,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             <select
               data-testid="ward-ed-referral-legal-form"
               value={draft.legalFormCode ?? NO_LEGAL_FORM_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  legalFormCode: event.target.value === NO_LEGAL_FORM_VALUE ? null : event.target.value,
+                  legalFormCode: value === NO_LEGAL_FORM_VALUE ? null : value,
                   legalFormDueAtDate: "",
                   legalFormDueAtTime: "",
                 }))
@@ -384,7 +383,9 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                   data-testid="ward-ed-referral-legal-form-due-at-date"
                   aria-invalid={isMissing("legalFormDueAtDate") || undefined}
                   value={draft.legalFormDueAtDate}
-                  onChange={(event) => setDraft((current) => ({ ...current, legalFormDueAtDate: event.target.value }))}
+                  onChange={({ target: { value } }) =>
+                    setDraft((current) => ({ ...current, legalFormDueAtDate: value }))
+                  }
                 />
                 {missingNote("legalFormDueAtDate")}
               </label>
@@ -395,7 +396,9 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                   data-testid="ward-ed-referral-legal-form-due-at-time"
                   aria-invalid={isMissing("legalFormDueAtTime") || undefined}
                   value={draft.legalFormDueAtTime}
-                  onChange={(event) => setDraft((current) => ({ ...current, legalFormDueAtTime: event.target.value }))}
+                  onChange={({ target: { value } }) =>
+                    setDraft((current) => ({ ...current, legalFormDueAtTime: value }))
+                  }
                 />
                 {missingNote("legalFormDueAtTime")}
               </label>
@@ -407,11 +410,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-urgency"
               aria-invalid={isMissing("urgency") || undefined}
               value={draft.urgency ?? NO_URGENCY_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  urgency:
-                    event.target.value === NO_URGENCY_VALUE ? undefined : (Number(event.target.value) as 1 | 2 | 3),
+                  urgency: value === NO_URGENCY_VALUE ? undefined : (Number(value) as 1 | 2 | 3),
                 }))
               }
             >
@@ -430,11 +432,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               data-testid="ward-ed-referral-observation"
               aria-invalid={isMissing("observation") || undefined}
               value={draft.observation ?? NO_OBSERVATION_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setDraft((current) => ({
                   ...current,
-                  observation:
-                    event.target.value === NO_OBSERVATION_VALUE ? undefined : (event.target.value as ObservationLevel),
+                  observation: value === NO_OBSERVATION_VALUE ? undefined : (value as ObservationLevel),
                 }))
               }
             >
@@ -455,8 +456,8 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               <select
                 data-testid="ward-ed-referral-observation-interval"
                 value={draft.observationIntervalMinutes}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, observationIntervalMinutes: Number(event.target.value) }))
+                onChange={({ target: { value } }) =>
+                  setDraft((current) => ({ ...current, observationIntervalMinutes: Number(value) }))
                 }
               >
                 {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
@@ -476,7 +477,9 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               placeholder="For example 14:30"
               aria-invalid={isMissing("observationReviewTime") || undefined}
               value={draft.observationReviewTime}
-              onChange={(event) => setDraft((current) => ({ ...current, observationReviewTime: event.target.value }))}
+              onChange={({ target: { value } }) =>
+                setDraft((current) => ({ ...current, observationReviewTime: value }))
+              }
             />
             {missingNote("observationReviewTime")}
           </label>
@@ -486,10 +489,10 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               <select
                 data-testid="ward-ed-referral-observation-review-day"
                 value={draft.observationReviewDay}
-                onChange={(event) =>
+                onChange={({ target: { value } }) =>
                   setDraft((current) => ({
                     ...current,
-                    observationReviewDay: event.target.value as "today" | "tomorrow",
+                    observationReviewDay: value as "today" | "tomorrow",
                   }))
                 }
               >

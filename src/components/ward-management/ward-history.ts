@@ -241,14 +241,14 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
  * Josh, 13 Oct 2026 (A4-16): the transport officer's Delivered is raised as `PATIENT_ARRIVED` with
  * role `officer`, but the reducer then only records `transport.arrivedAt` and leaves the movement
  * open; the receiving ward confirms the arrival later. So an officer-raised `PATIENT_ARRIVED` is
- * worded as a delivery, never as the patient's arrival.
+ * worded as the officer recording arrival at the ward, never as the ward confirming the arrival.
  */
 export function isTransportDelivery(type: string, role: string | null | undefined): boolean {
   return type === "PATIENT_ARRIVED" && role === "officer";
 }
 
 export function transportDeliveredWording(wardName?: string): string {
-  return `Transport delivered to ${wardName && wardName.length > 0 ? wardName : "the receiving ward"}`;
+  return `Officer recorded arrival at ${wardName && wardName.length > 0 ? wardName : "the receiving ward"}`;
 }
 
 /** Event types the engine no longer accepts, so records saved before removal still read plainly. Audit 24-1 decision 4 removed RELEASE_BED (24 Oct 2026). */

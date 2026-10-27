@@ -175,12 +175,12 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     expect(sheet.textContent).not.toContain("ready to mark the handover");
   });
 
-  it("state 3: names the missing examination outcome, the form held, and the ED mental health clinician", () => {
+  it("state 3: names the missing examination outcome, the form held, and the ED clinician", () => {
     openSheet();
     fireEvent.focus(screen.getByTestId("ed-refer-cmht-WF-011"));
     const detail = screen.getByTestId("ward-ed-unavailable-cmht-WF-011-detail");
     expect(detail.textContent).toMatch(
-      /^On Form \w+, so a community referral needs the outcome first\.Next: ED mental health clinician, Armadale ED$/,
+      /^On Form \w+, so a community referral needs the outcome first\.Next: ED clinician, Armadale ED$/,
     );
   });
 
@@ -197,7 +197,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     expect(cmht.textContent).toContain("Examination outcome not recorded");
     fireEvent.focus(within(menu).getByTestId("ed-refer-cmht-WF-011"));
     expect(within(cmht).getByTestId("ward-ed-unavailable-cmht-WF-011-detail").textContent).toContain(
-      "Next: ED mental health clinician, Armadale ED",
+      "Next: ED clinician, Armadale ED",
     );
     fireEvent.click(within(cmht).getByRole("menuitem", { name: "Record examination", hidden: true }));
     expect(screen.getByTestId("ward-ed-examine-form-WF-011")).toBeTruthy();
@@ -212,10 +212,9 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     );
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");
     const left = within(dialog).getByTestId("ward-ed-book-transport-left-WF-011");
-    expect(left.textContent).toContain(
-      "5 answers left: provider, escort answer, CAD number, legal status, estimated time",
-    );
-    expect(within(dialog).getByTestId("ward-ed-book-transport-needs-WF-011").textContent).toBe("Needs 5 answers");
+    // A34: legal status starts from Legal now, so it is not among the answers left.
+    expect(left.textContent).toContain("4 answers left: provider, escort answer, CAD number, estimated time");
+    expect(within(dialog).getByTestId("ward-ed-book-transport-needs-WF-011").textContent).toBe("Needs 4 answers");
 
     const provider = within(dialog).getByTestId("ward-ed-transport-provider-WF-011") as HTMLSelectElement;
     fireEvent.change(provider, { target: { value: provider.options[1].value } });
@@ -233,7 +232,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     const described = (cad.getAttribute("aria-describedby") ?? "")
       .split(" ")
       .map((id) => document.getElementById(id)?.textContent);
-    expect(described).toEqual(["CAD number missing", "Read it off the call with the provider."]);
+    expect(described).toContain("CAD number missing. Read it off the call with the provider.");
     // The confirm keeps its full sentence for screen readers.
     const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
     expect(confirm.getAttribute("aria-disabled")).toBe("true");

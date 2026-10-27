@@ -589,7 +589,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 legend="Coming by"
                 name={`${sectionId}-coming-by`}
                 options={ED_ARRIVAL_MODES}
-                labels={{ "Mental Health Transport": "MH Transport", "Family or carer": "Family" }}
                 value={edNeeds.comingBy}
                 onChange={(comingBy) => setEdNeeds((n) => ({ ...n, comingBy }))}
               />

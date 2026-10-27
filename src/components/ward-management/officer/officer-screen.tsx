@@ -2,9 +2,9 @@
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
+import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
@@ -55,7 +55,6 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 
 import { PACK_SLOTS, packCount, packForm, packNeedsForms, packOutstanding, packRequired } from "./officer-forms-pack";
 import styles from "./officer.module.css";
@@ -91,6 +90,7 @@ import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -116,58 +116,6 @@ export { isOfficerJob };
  * Send to officer are Preview: `BOOK_TRANSPORT` is the sending team's event, and no event sends a
  * forms pack yet.
  */
-/** Keep command lifetime and pending state inside the event-handling hook. */
-function useTransportCommandFeedback() {
-  const [toastMessage, setToastMessage] = useState<{
-    message: string;
-    undoMovementId?: string;
-    warning?: boolean;
-    isCurrent?: () => boolean;
-    canUndo?: () => boolean;
-  } | null>(null);
-  const pendingSteps = useRef(new Set<string>());
-  // A shared command can finish after several renders. Its own outcome is authoritative.
-  const reportOutcome = useCallback(
-    async (
-      movementId: string,
-      record: () => ReturnType<WardCommandDispatch>,
-      success: string,
-      action: string,
-      offerUndo = true,
-    ): Promise<boolean> => {
-      if (pendingSteps.current.has(movementId)) return false;
-      pendingSteps.current.add(movementId);
-      setToastMessage({ message: `${action} pending confirmation.`, warning: true });
-      try {
-        const outcome = await record();
-        if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
-          setToastMessage({
-            message: success,
-            isCurrent: outcome.isCurrent,
-            canUndo: outcome.canUndo,
-            ...(offerUndo ? { undoMovementId: movementId } : {}),
-          });
-          return true;
-        }
-        setToastMessage({
-          message: outcome?.message ?? `${action} was not confirmed. If it is not on the board, record it again.`,
-          warning: true,
-        });
-      } catch {
-        setToastMessage({
-          message: `${action} was not confirmed. If it is not on the board, record it again.`,
-          warning: true,
-        });
-      } finally {
-        pendingSteps.current.delete(movementId);
-      }
-      return false;
-    },
-    [],
-  );
-  return { toastMessage, setToastMessage, reportOutcome };
-}
-
 export function OfficerScreen() {
   const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
     "movements",
@@ -318,9 +266,9 @@ export function OfficerScreen() {
   const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
   const [diversionOpen, setDiversionOpen] = useState(false);
+  useHoldOpenForm(diversionOpen); // Audit CS3-01: the diversion form is held from opening.
   const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
   const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
-
   const toggleCheck = (movementId: string, index: number) => {
     setVerifiedChecks((prev) => {
       const currentList = prev[movementId] ?? [false, false, false, false];
@@ -332,7 +280,6 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
   const resetDiversion = () => {
     setDiversionOpen(false);
     setDiversionReason(undefined);
@@ -445,17 +392,6 @@ export function OfficerScreen() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [formModalJob, selectedId]);
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(
-      () => {
-        setToastMessage(null);
-      },
-      "undoMovementId" in toastMessage && toastMessage.undoMovementId ? UNDO_TOAST_MS : 3500,
-    );
-    return () => clearTimeout(timer);
-  }, [toastMessage, setToastMessage]);
-
   const showToast = (msg: string) => {
     setToastMessage({ message: msg });
   };
@@ -508,8 +444,8 @@ export function OfficerScreen() {
     reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
-      `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
-      "Delivery",
+      `Arrival at ward recorded for ${officerPatientName(movement)}. The receiving ward confirms the arrival.`,
+      "Arrived at ward",
     );
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
@@ -529,7 +465,7 @@ export function OfficerScreen() {
     }
     return {
       leg,
-      verb: "Delivered",
+      verb: "Arrived at ward",
       blocked: arrivedBlockedReason(movement, unitFor(movement), who),
       run: runDelivered,
     };
@@ -1206,7 +1142,7 @@ export function OfficerScreen() {
                     value={historyTab}
                     onChange={setHistoryTab}
                     items={[
-                      { id: "delivered", label: "Delivered today", count: deliveredToday.length },
+                      { id: "delivered", label: "Arrived today", count: deliveredToday.length },
                       { id: "refused", label: "Refused", count: officerRefusals.length },
                       { id: "cancelled", label: "Cancelled", count: cancelledTransports.length },
                     ]}
@@ -1408,7 +1344,7 @@ export function OfficerScreen() {
               </span>
               <span className={styles.modalTitles}>
                 <h3 id="form-verify-title" className={styles.modalTitle}>
-                  Form verification
+                  Paperwork checks (not saved)
                 </h3>
                 <span className={styles.modalSub}>
                   {formRequiredLabel(formModalJob.transport!)} · {umrnFor(formModalJob)} ·{" "}
@@ -1421,7 +1357,7 @@ export function OfficerScreen() {
                 iconOnly
                 icon={X}
                 onClick={closeFormModal}
-                aria-label="Close form verification dialog"
+                aria-label="Close paperwork checks"
               />
             </header>
             <div className={styles.modalBody}>
@@ -1433,10 +1369,10 @@ export function OfficerScreen() {
               <h4 className={styles.sectionTitle}>Transfer checks</h4>
               <div className={styles.checklist}>
                 {[
-                  "Patient identity confirmed with ED clinical liaison nurse",
-                  "Authorisation documentation intact with transfer manifest",
-                  "Personal effects manifest signed and secured in transit lockbox",
-                  "Destination receiving ward notified of vehicle dispatch departure",
+                  "Identity checked with the sending team",
+                  "Paper form seen",
+                  "Belongings with the patient",
+                  "Receiving ward told we are leaving",
                 ].map((label, idx) => {
                   const isChecked = verifiedChecks[formModalJob.id]?.[idx] ?? false;
                   return (
@@ -1491,6 +1427,16 @@ export function OfficerScreen() {
               onClick={() => undoTransportStep(toastUndoFor)}
             >
               Undo
+            </button>
+          ) : null}
+          {toastMessage?.warning ? (
+            <button
+              type="button"
+              className={styles.toastUndo}
+              data-testid="ward-officer-toast-close"
+              onClick={() => setToastMessage(null)}
+            >
+              Close
             </button>
           ) : null}
         </div>

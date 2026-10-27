@@ -214,7 +214,7 @@ describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
     render(
       <HandoverSignOffPanel
         title="Sign off this shift"
-        subtitle="Flow coordinator"
+        subtitle="Bed coordinator"
         checks={[{ id: "one", done: true, text: "Every move has a next step" }]}
         signedAt={null}
         now={NOW_ANCHOR}

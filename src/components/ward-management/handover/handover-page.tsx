@@ -26,6 +26,8 @@ import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-man
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -76,10 +78,12 @@ import {
   defaultHandoverShift,
   groupOf,
   groupRows,
+  currentHeldHandover,
   handoverAt,
-  handoverCutoff,
-  handoverNewSince,
   handoverShift,
+  heldHandoverCutoff,
+  heldHandoverNewSince,
+  holdHandover,
   heldDischarges,
   isActNow,
   isActOrUrgent,
@@ -98,7 +102,8 @@ import {
   type HandoverRow,
   type HandoverShiftId,
   type HandoverSort,
-  handoverSignedAt,
+  type HeldHandover,
+  handoverSignedBefore,
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, type SignOffCheck } from "./handover-panels";
 import { HandoverBeds } from "./handover-beds";
@@ -250,12 +255,14 @@ export function HandoverPage() {
   const scopeLabel = handoverScopeLabel(scope, units, allRecordsLabel) ?? allRecordsLabel;
 
   /* which handover */
-  const [shift, setShift] = useState<HandoverShiftId>(() => defaultHandoverShift(now));
+  // Audit TC2-02: held as the instant it meant when chosen, so midnight cannot move it.
+  const [heldChoice, setHeldChoice] = useState<HeldHandover>(() => holdHandover(defaultHandoverShift(now), now));
+  const { id: shift, at: shiftAt } = currentHeldHandover(heldChoice, now);
+  const setShift = (id: HandoverShiftId) => setHeldChoice(holdHandover(id, now));
   const shiftInfo = handoverShift(shift);
-  const shiftAt = handoverAt(shift, now);
   const passed = shiftAt <= now;
-  const cutoff = handoverCutoff(shift, now);
-  const newSince = handoverNewSince(shift, now);
+  const cutoff = heldHandoverCutoff(shiftAt, now);
+  const newSince = heldHandoverNewSince(shiftAt, now);
 
   /* view state */
   const [tab, setTab] = useState<HandoverTab>("pts");
@@ -313,6 +320,7 @@ export function HandoverPage() {
     () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals)),
     [allRows, scope, units, referrals],
   );
+  const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(
     () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases)),
     [units, admissions, now, bedReleases],
@@ -320,11 +328,13 @@ export function HandoverPage() {
   const wards = useMemo(
     () =>
       allWards.filter((ward) => {
+        // #815: a scoped desk's sign-off and stale count cover its own wards only.
+        if (!accessIsWholeNetwork(access) && !unitInScope(access.scope, ward.id, deskPlaces)) return false;
         if (scope.kind === "ward") return ward.id === scope.id;
         if (scope.kind === "service") return ward.service === scope.id;
         return true;
       }),
-    [allWards, scope],
+    [allWards, scope, access, deskPlaces],
   );
   const held = useMemo(
     () => heldDischarges(admissions, wards, patients, referrals, now),
@@ -503,7 +513,7 @@ export function HandoverPage() {
   const routeRole = useRouteRole();
   const gate = useRoleGate();
   const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
-  const signedAt = handoverSignedAt(handoverSignOffs, shift, now);
+  const signedAt = handoverSignedBefore(handoverSignOffs, shiftAt);
   const signedBy =
     signedAt === null ? null : ([...handoverSignOffs].reverse().find((record) => record.at === signedAt)?.by ?? null);
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
@@ -516,7 +526,7 @@ export function HandoverPage() {
   });
   const handleSignOff = useCallback(() => {
     // Records contain role and time only, so only the current sign-off window can be signed.
-    if (!signOffGate.allowed || handoverAt(shift, now) <= now || shift !== defaultHandoverShift(now)) return;
+    if (!signOffGate.allowed || shiftAt <= now || shiftAt !== handoverAt(defaultHandoverShift(now), now)) return;
     const recorded = recordHandoverSignOff(
       (event) =>
         runStep(event, {
@@ -529,7 +539,7 @@ export function HandoverPage() {
       routeRole,
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
-  }, [runStep, now, routeRole, shift, signOffGate.allowed]);
+  }, [runStep, now, routeRole, shiftAt, signOffGate.allowed]);
   const handleUndoSignOff = useCallback(() => {
     runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now }, { success: "Sign-off undone." });
   }, [runStep, now, routeRole]);
@@ -667,7 +677,7 @@ export function HandoverPage() {
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
       : { id: "meet", done: false, text: "Meeting not timed" },
   ];
-  const nextShift = shift === defaultHandoverShift(now);
+  const nextShift = shiftAt === handoverAt(defaultHandoverShift(now), now);
   const canSignOff = signOffGate.allowed && !passed && nextShift;
 
   const signOffPanel = (
@@ -833,7 +843,6 @@ export function HandoverPage() {
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
-        <HandoverOpenPromises referrals={referrals} units={units} now={now} />
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -862,6 +871,7 @@ export function HandoverPage() {
           patientHrefOf={(row) => (row.patientId ? patientHref(row.patientId) : undefined)}
           since={formatInstantWithDay(newSince, now)}
           sinceItems={sinceItems}
+          carryOver={<HandoverOpenPromises referrals={referrals} units={units} now={now} layout="phone" />}
           onCopySince={copySince}
           chips={HANDOVER_CHIPS.map((chip) => ({
             id: chip.id,

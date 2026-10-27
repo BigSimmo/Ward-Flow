@@ -9,7 +9,7 @@ import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { TextInput } from "@/components/wf";
@@ -113,6 +113,8 @@ type WardScreenHomeSectionProps = {
   boardPick: BoardPick | null;
   pickOnBoard: (pick: BoardPick | null) => void;
   boardSay: string;
+  /** Audit CS3-12: the reason form for a move to an open bed, under the board. */
+  boardReasonForm?: ReactElement | null;
   pressBoardBed: (bed: BedItem) => void;
   placedBed: number | null;
   latestRefreshRequest: CapacityRefreshRequest | undefined;
@@ -190,6 +192,7 @@ export function WardScreenHomeSection({
   boardPick,
   pickOnBoard,
   boardSay,
+  boardReasonForm,
   pressBoardBed,
   placedBed,
   latestRefreshRequest,
@@ -317,21 +320,24 @@ export function WardScreenHomeSection({
         }}
         bedArea={
           activeTab === "board" ? (
-            <WardBedBoard
-              unit={unit}
-              beds={bedsList}
-              isMixed={isMixed}
-              waiting={boardWaiting}
-              picked={boardPick}
-              onPick={pickOnBoard}
-              say={boardSay}
-              onBedPress={pressBoardBed}
-              placedBed={placedBed}
-              query={deferredBedQuery}
-              onOpenList={() => {
-                selectActiveTab("attn");
-              }}
-            />
+            <>
+              <WardBedBoard
+                unit={unit}
+                beds={bedsList}
+                isMixed={isMixed}
+                waiting={boardWaiting}
+                picked={boardPick}
+                onPick={pickOnBoard}
+                say={boardSay}
+                onBedPress={pressBoardBed}
+                placedBed={placedBed}
+                query={deferredBedQuery}
+                onOpenList={() => {
+                  selectActiveTab("attn");
+                }}
+              />
+              {boardReasonForm}
+            </>
           ) : undefined
         }
         figures={
@@ -435,7 +441,7 @@ export function WardScreenHomeSection({
                   data-state="blocked-release"
                   data-testid="ward-unit-blocked-releases"
                 >
-                  <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
+                  <span className={styles.statBoxLabel}>{BED_RELEASES_HELD_UP_ANY_DATE_LABEL}</span>{" "}
                   <strong className={styles.statBoxVal}>{blockedReleases.length}</strong>
                 </span>
                 <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">

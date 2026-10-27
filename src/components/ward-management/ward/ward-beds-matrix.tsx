@@ -5,8 +5,8 @@ import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { DAY_SHIFT_END_MINUTE, shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { cx } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
@@ -27,11 +27,12 @@ interface WardBedsMatrixProps {
 function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): string {
   const parts: string[] = [`${bed.bedLabel} ${bed.statusText}`];
   if (bed.patientAlias) parts.push(bed.patientAlias);
-  if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
+  if (bed.stayDays !== undefined && bed.stayDays !== null)
+    parts.push(`${bed.stayDays} ${bed.stayDays === 1 ? "day" : "days"} in bed`);
   if (bed.pastDate) parts.push("Past expected discharge date");
   if (bed.isSpecialling && bed.observation) parts.push(`${observationSummary(bed.observation)} active`);
   if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
-    parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
+    parts.push(`Away at ED for ${bed.awayAtEdHours} ${bed.awayAtEdHours === 1 ? "hour" : "hours"}`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
   if (bed.criteriaLedChip) parts.push(bed.criteriaLedChip.phrase);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
@@ -451,10 +452,9 @@ export function WardBedsMatrix({
               Before handover
             </span>
             <span className={styles.shiftSubtitle}>
-              {visibleShiftItems.length} of {shiftItems.length} before handover at{" "}
-              {boardNow === undefined
-                ? formatInstant(DAY_SHIFT_END_MINUTE)
-                : formatInstantWithDay(shiftEndInstant(boardNow), boardNow)}
+              {visibleShiftItems.length} of {shiftItems.length} before handover
+              {/* Audit TC2-13: with no clock there is no shift to name, so no fixed 15:00 is invented. */}
+              {boardNow === undefined ? null : ` at ${formatInstantWithDay(shiftEndInstant(boardNow), boardNow)}`}
             </span>
           </div>
 

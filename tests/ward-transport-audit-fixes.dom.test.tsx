@@ -73,19 +73,24 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     );
     const form = openBooking();
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
-    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
-    // A4-7: read only, from the form in force (Form 4C), with Change; no fixed default.
-    expect(within(form).getByTestId("ward-patient-legal-from-form")).toHaveTextContent("Involuntary, from Legal now");
-    expect(form).toHaveTextContent("Legal now: Involuntary inpatient, Form 4C");
-    expect(within(form).queryByTestId("ward-patient-select-legal")).not.toBeInTheDocument();
+    fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
+    // A4-7 (A34 form): filled in from the form in force (Form 4C), and the other answer stays open.
+    expect(within(form).getByTestId("ward-patient-legal-involuntary")).toBeChecked();
+    expect(within(form).getByTestId("ward-patient-legal-voluntary")).not.toBeChecked();
+    expect(form).toHaveTextContent("Legal now: Involuntary inpatient, Form 4C. Filled in from Legal now.");
 
-    // A4-6: Save with no ETA says so beside the field and records nothing.
+    // A4-6: Save with no ETA says what is left and records nothing.
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-7" } });
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-    expect(form).toHaveTextContent("Enter the quoted ETA");
-    expect(within(form).getByTestId("ward-patient-input-eta")).toHaveAttribute("aria-invalid", "true");
+    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
+      "1 answer left: estimated time",
+    );
+    expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toHaveAttribute(
+      "title",
+      expect.stringMatching(/enter the estimated time/),
+    );
     expect(screen.getByTestId("booked-job")).toHaveTextContent("none");
 
     // A4-2: an ETA after the hold ends is warned at once, with the hold end.
@@ -114,18 +119,17 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     );
     const form = openBooking();
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
-    fireEvent.change(within(form).getByTestId("ward-patient-select-escort"), { target: { value: "no" } });
+    fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-8" } });
-    fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), { target: { value: "45m" } });
-    fireEvent.click(within(form).getByTestId("ward-patient-change-legal"));
-    fireEvent.change(within(form).getByTestId("ward-patient-select-legal"), { target: { value: "voluntary" } });
-    expect(within(form).getByTestId("ward-patient-legal-clash")).toHaveTextContent(
-      "Differs from Legal now (Involuntary inpatient, Form 4C)",
-    );
+    fireEvent.click(within(within(form).getByTestId("ward-patient-eta-presets")).getByRole("button", { name: "+30m" }));
+    fireEvent.click(within(form).getByTestId("ward-patient-legal-voluntary"));
+    expect(form).toHaveTextContent("Differs from Legal now (Involuntary inpatient, Form 4C). Record why.");
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-    expect(within(form).getByTestId("ward-patient-legal-error")).toHaveTextContent("Choose why it differs");
+    expect(within(form).getByTestId("ward-patient-book-transport-needs")).toHaveTextContent(
+      "Needs the reason it differs",
+    );
     expect(screen.getByTestId("booked-job")).toHaveTextContent("none");
 
     fireEvent.change(within(form).getByTestId("ward-patient-legal-reason"), {
@@ -147,7 +151,7 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
     stage: "pulled",
     pullExpiresAt: NOW_ANCHOR + 30,
     medicalClearance: { cleared: true, at: NOW_ANCHOR - 5 },
-    transport: { id: "t", provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-1" },
+    transport: { id: "t", provider: "Ambulance (St John)", escortRequired: false, cadNumber: "CAD-1" },
   } as unknown as Movement;
   const onHandoverReady = vi.fn();
   const context = {

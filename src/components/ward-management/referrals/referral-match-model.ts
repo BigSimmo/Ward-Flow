@@ -9,7 +9,7 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   acuity: "Acuity mix",
   age: "Age band",
   allocatable_bed: "Allocatable bed",
-  authorisation: "Involuntary-capable",
+  authorisation: "Authorised hospital",
   capacity_freshness: "Capacity freshness",
   cohort: "Cohort match",
   forensic: "Forensic history",

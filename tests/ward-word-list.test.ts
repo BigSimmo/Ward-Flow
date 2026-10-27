@@ -46,6 +46,14 @@ const BANNED: readonly Banned[] = [
   { id: "reserved time", pattern: /\breserved time\b/i, instead: "Pull time limit" },
   { id: "ready vacant", pattern: /\bready vacant\b/i, instead: "Ready" },
   { id: "the waitlist", pattern: /\b(?:the|a) waitlist\b/i, instead: "the waiting list" },
+  // Wording audit, 26 Oct 2026 (D-85 and plain words).
+  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up by a blocker" },
+  { id: "was held until", pattern: /\bwas held until\b/i, instead: "the pull time limit passed at" },
+  { id: "not held", pattern: /^\s*not held\s*$/i, instead: "Not recorded" },
+  { id: "involuntary-capable", pattern: /\binvoluntary-capable\b/i, instead: "Authorised hospital" },
+  { id: "real-time ETA", pattern: /\breal-time ETA\b/i, instead: "Expected arrival (as recorded)" },
+  { id: "live capacity telemetry", pattern: /\blive capacity telemetry\b/i, instead: "Ward capacity" },
+  { id: "active statewide directive", pattern: /\bactive statewide directive\b/i, instead: "Current broadcast" },
   { id: "log in", pattern: /\blog in\b/i, instead: "Sign in" },
   { id: "log out", pattern: /\blog out\b/i, instead: "sign out" },
   // Australian spelling.

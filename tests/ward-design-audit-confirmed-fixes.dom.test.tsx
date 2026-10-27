@@ -10,6 +10,8 @@ import { clearSessionDrafts, draftSessionVersion } from "@/components/ward-manag
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { perthMidnight } from "@/components/ward-management/ward-clock";
+import { dateInputFor } from "./helpers/ward-date-input";
 
 afterEach(() => {
   cleanup();
@@ -69,6 +71,7 @@ function modalTree(kind: ModalKind, movement: Movement, dispatch: WardCommandDis
 
 function fillModal(kind: ModalKind) {
   if (kind === "arrival") {
+    fireEvent.change(screen.getByLabelText("Arrival Mode"), { target: { value: "hospital_transfer" } });
     fireEvent.change(screen.getByLabelText(/Transport CAD/), { target: { value: "SYNTHETIC-TRACKING" } });
   } else {
     fireEvent.change(screen.getByLabelText("Select a file to record its details"), {
@@ -176,13 +179,19 @@ function extensionTree(
         target={target}
         label="Synthetic movement"
         now={NOW_ANCHOR}
+        dayZero={EXTENSION_DAY_ZERO}
         onClose={onClose}
         onExtendForm={onExtendForm}
       />
     </WardFlowProvider>
   );
 }
+// Audit CS3-05: the date written on the form is compulsory, so each fill types it too.
+const EXTENSION_DAY_ZERO = perthMidnight(2026, 9, 24);
 function fillExtension(value = "23:30") {
+  fireEvent.change(screen.getByLabelText("New expiry date"), {
+    target: { value: dateInputFor(NOW_ANCHOR, EXTENSION_DAY_ZERO) },
+  });
   fireEvent.change(screen.getByLabelText("New expiry time"), { target: { value } });
   return screen.getByTestId("ward-legal-forms-renew-confirm");
 }
