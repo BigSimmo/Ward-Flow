@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   MissedRequestsPanel,
+  markAllLabel,
   missedCheckCountLine,
 } from "@/components/ward-management/coordinator/missed-requests-panel";
 import { WardFlowClockContext, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -24,9 +25,16 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const MARK_ALL = /^Mark all \d+ checked$/u;
+const MARK_ALL = /^Mark all (?:\d+ )?checked$/u;
 
 describe("Daily check: Mark all checked", () => {
+  it("names the count on the button from 2, and reads Mark all checked for 0 or 1", () => {
+    expect(markAllLabel(0)).toBe("Mark all checked");
+    expect(markAllLabel(1)).toBe("Mark all checked");
+    expect(markAllLabel(2)).toBe("Mark all 2 checked");
+    expect(markAllLabel(5)).toBe("Mark all 5 checked");
+  });
+
   it("says 1 bed request to check in the singular, and bed requests for 2 or more", () => {
     expect(missedCheckCountLine(1)).toBe("1 bed request to check (missed or sent twice)");
     expect(missedCheckCountLine(2)).toBe("2 bed requests to check (missed or sent twice)");
@@ -43,7 +51,7 @@ describe("Daily check: Mark all checked", () => {
     const meta = /(\d+) bed requests? to check \(missed or sent twice\)/u.exec(card.textContent ?? "");
     expect(meta, "the card names the count of bed requests to check").not.toBeNull();
     expect(card).not.toHaveTextContent("to confirm: missed or doubled bed requests");
-    expect(screen.getByRole("button", { name: `Mark all ${meta![1]} checked` })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: markAllLabel(Number(meta![1])) })).toBeInTheDocument();
   });
 
   it("records who ticked it and when, and keeps the check itself on screen", () => {

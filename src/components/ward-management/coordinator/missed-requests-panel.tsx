@@ -32,6 +32,11 @@ export function missedCheckCountLine(count: number): string {
   return `${count} ${count === 1 ? "bed request" : "bed requests"} to check (missed or sent twice)`;
 }
 
+/** P027 (Josh, 27 Oct 2026, 10:32 PM): "Mark all {n} checked" from 2; "Mark all checked" for 0 or 1. */
+export function markAllLabel(count: number): string {
+  return count >= 2 ? `Mark all ${count} checked` : "Mark all checked";
+}
+
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
   const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
@@ -147,7 +152,7 @@ export function MissedRequestsPanel() {
               }}
               data-testid="ward-missed-check-done"
             >
-              {items.length > 0 ? `Mark all ${items.length} checked` : "Mark all checked"}
+              {markAllLabel(items.length)}
             </Button>
           )}
         </p>
