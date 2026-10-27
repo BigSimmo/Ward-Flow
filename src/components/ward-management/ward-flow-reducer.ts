@@ -1821,6 +1821,8 @@ export function reduceClinicalEvent(
     // which a reset clears; subtracting it keeps the visible clock from jumping.
     case "ADD_PATIENT":
       return reducerSlices().reducePatientRegistration(state, event, reject);
+    case "ARCHIVE_PATIENT":
+      return reducerSlices().reducePatientArchive(state, event, reject);
 
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged

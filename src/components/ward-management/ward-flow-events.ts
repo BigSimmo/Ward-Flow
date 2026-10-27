@@ -8,6 +8,7 @@ import type {
   PlannedAdmissionReason,
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
+import type { ArchivePatientEvent } from "./ward-patient-archive";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
@@ -101,10 +102,7 @@ import type { ObservationLevelEvent } from "@/components/ward-management/ward-fl
 import type { RestrictivePracticeWardFlowEvent } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 // Closing the loop, package D (24 Oct 2026).
 import type { LoopCheckWardFlowEvent } from "@/components/ward-management/loop-checks/ward-loop-checks";
-import type {
-  ArrivalCheckEvent,
-  ReleaseNoticeEvent,
-} from "@/components/ward-management/ward-flow-release-notice-events";
+import type { ArrivalCheckEvent, ReleaseNoticeEvent } from "./ward-flow-release-notice-events";
 import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward-flow-diagnosis-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
@@ -2719,7 +2717,8 @@ export type WardFlowEvent =
       /** A ward undoing its own record names itself. */
       actingUnitId?: string;
     }
-  | UndoBedMeetingActionEvent;
+  | UndoBedMeetingActionEvent
+  | ArchivePatientEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;

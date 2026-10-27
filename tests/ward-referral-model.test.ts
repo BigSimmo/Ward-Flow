@@ -588,6 +588,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // ward-configuration.ts/ward-audit.ts, Task 3 of the audit-wiring plan, 2026-09-16.
     SET_CONFIGURATION: false,
     ADD_PATIENT: false,
+    // #816: takes a record added in error out of the lists. It refuses nobody care or a bed.
+    ARCHIVE_PATIENT: false,
     CHANGE_URGENCY: false,
     CHANGE_LEGAL_STATUS: false,
     RELEASE_PULL: false,

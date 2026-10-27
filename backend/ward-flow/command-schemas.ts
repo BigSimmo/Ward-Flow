@@ -7,6 +7,7 @@ import {
 } from "../../src/components/ward-management/ward-discharge-criteria";
 import { PARALLEL_REFERRAL_CAP } from "../../src/components/ward-management/ward-model";
 import { REFERRAL_INFORMATION_NEED_IDS } from "../../src/components/ward-management/referrals/referral-information-needs";
+import { PATIENT_ARCHIVE_REASONS } from "../../src/components/ward-management/ward-patient-archive";
 
 /**
  * Shape checks for commands sent to the shared workspace, before the reducer sees them.
@@ -91,6 +92,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
       .strictObject({ kind: z.enum(["ed", "ward", "team", "site", "service"]), placeId: id })
       .optional(),
   }),
+  // #816: a patient id and a reason from the closed list, nothing typed.
+  ARCHIVE_PATIENT: z.looseObject({ patientId: id, now: instant, reason: z.enum(PATIENT_ARCHIVE_REASONS) }),
   SET_CONFIGURATION: z.looseObject({ payload: record, baseConfiguration: record.optional() }),
   FLAG_MOVEMENT_TURNAROUND_PRIORITY: z.looseObject({
     movementId: id,

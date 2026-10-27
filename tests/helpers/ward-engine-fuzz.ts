@@ -1549,6 +1549,14 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "END_COMMUNITY_TREATMENT_ORDER", patientId: patient?.id ?? MISSING_ID };
     },
   ],
+  // #816: archive a record added in error. Mostly a newly added one, which nothing names yet.
+  [
+    1,
+    (state, random) => {
+      const patient = prefer(random, state.patients, (candidate) => candidate.id.startsWith("PT-A"));
+      return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
+    },
+  ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.
   [
     2,
