@@ -414,16 +414,16 @@ export function WardScreenBedDrawer({
                 "Bed marked Ready. It is offered again.",
               );
             }}
-            onCloseBed={
-              bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
-                ? () => setBedClosed(selectedBed, true)
-                : undefined
-            }
-            onReopenBed={
-              bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber
-                ? () => setBedClosed(selectedBed, false)
-                : undefined
-            }
+            bedClosure={{
+              onCloseBed:
+                bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
+                  ? () => setBedClosed(selectedBed, true)
+                  : undefined,
+              onReopenBed:
+                bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber
+                  ? () => setBedClosed(selectedBed, false)
+                  : undefined,
+            }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
             onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}

@@ -22,7 +22,7 @@ import { stalePreparingReleases } from "@/components/ward-management/ward-bed-av
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave, type BlockerSave } from "./ward-bed-blocker-editor";
-import { BedClosureControls } from "./ward-bed-closure-controls";
+import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -91,10 +91,7 @@ interface WardBedDossierDrawerProps {
   onOpenBoard?: () => void;
   /** A4-24: one tap marks a vacated bed being made ready as Ready, so it is offered again. */
   onMarkReady?: () => void;
-  /** H-0978 / WS-15: closes this exact ready bed (`SET_BED_CLOSED`). Absent where this desk may not. */
-  onCloseBed?: () => void;
-  /** H-0978 / WS-15: reopens this bed when it was closed by number. Absent where this desk may not. */
-  onReopenBed?: () => void;
+  bedClosure?: BedClosureActions; // H-0978 / WS-15: close or reopen this exact bed (`SET_BED_CLOSED`).
   /** Item #6: raises a pre-filled ward referral from the selected patient's bed dossier. */
   onRaiseReferral?: () => void;
   /** Item #6: deep-link to the full referral drawer pre-filled with this patient and sending site. */
@@ -185,8 +182,7 @@ export function WardBedDossierDrawer({
   onMove,
   onOpenBoard,
   onMarkReady,
-  onCloseBed,
-  onReopenBed,
+  bedClosure,
   onMarkBack,
   onPrevBed,
   onNextBed,
@@ -281,14 +277,6 @@ export function WardBedDossierDrawer({
     <SentJourneyChanges key={sentJourney!.id} movement={sentJourney!} patientWho={occupantAlias} />
   ) : null;
   const tone = bedTone(bedItem, isReady);
-  // H-0978 / WS-15: a ready bed may close and a closed bed may reopen, in both layouts.
-  const closure = (size?: "lg") => (
-    <BedClosureControls
-      onCloseBed={isReady ? onCloseBed : undefined}
-      onReopenBed={bedItem?.status === "closed" ? onReopenBed : undefined}
-      size={size}
-    />
-  );
 
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
@@ -636,7 +624,7 @@ export function WardBedDossierDrawer({
           onMarkReady={isPreparing ? onMarkReady : undefined}
           onRaiseReferral={onRaiseReferral}
           fullReferralHref={fullReferralHref}
-          roleLockNote={roleLockNote}
+          roleLockNote={<BedClosureControls {...bedClosure}>{roleLockNote}</BedClosureControls>}
           bedDrawerRef={bedDrawerRef}
           onKeyDown={onKeyDown}
           planRows={barrierRow}
@@ -645,7 +633,6 @@ export function WardBedDossierDrawer({
           sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
-          bedClosure={closure()}
         />
         {confirmDialog}
       </>
@@ -1074,7 +1061,7 @@ export function WardBedDossierDrawer({
               {roleLockNote}
             </>
           )}
-          {closure("lg")}
+          <BedClosureControls {...bedClosure} size="lg" />
           <span className={styles.footSpacer} />
           {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
           {personHref ? (
@@ -1164,7 +1151,6 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
-  bedClosure?: ReactNode; // H-0978 / WS-15: Close or Reopen this bed, narrowed by the drawer.
   /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
   leavePaper?: ReactNode;
 }
@@ -1216,7 +1202,6 @@ function PhoneBedSheet({
   sentJourney,
   leavingCriteriaNote,
   readyNote,
-  bedClosure,
   leavePaper,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
@@ -1454,7 +1439,6 @@ function PhoneBedSheet({
                 Open full referral form…
               </Link>
             ) : null}
-            {bedClosure}
             {roleLockNote}
             {personHref ? (
               <Link className={buttonClass({ variant: "ghost", className: styles.pill })} href={personHref}>

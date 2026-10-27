@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Button } from "@/components/wf";
 import styles from "./ward-bed-dossier-drawer.module.css";
 
@@ -10,8 +11,8 @@ import styles from "./ward-bed-dossier-drawer.module.css";
  * so closing bed 3 shows bed 3 as Closed and never another tile. A closed bed is not offered, so the
  * ward's Ready figure is one lower while it stays closed (`boundedBedAvailability`).
  *
- * The drawer decides which taps exist (a ready bed may close, a bed closed by number may reopen) and
- * the ward screen leaves both out for a desk that may not raise the event. Each is raised from the
+ * The ward screen decides which taps exist (a ready bed that isn't held may close, a bed closed by
+ * number may reopen) and leaves both out for a desk that may not raise the event. Each is raised from the
  * tap here and never from an effect or a timer. Kept in its own file so the bed drawer stays small.
  */
 export type BedClosureActions = {
@@ -25,11 +26,14 @@ export function BedClosureControls({
   onCloseBed,
   onReopenBed,
   size,
+  children,
 }: BedClosureActions & {
   /** "lg" for the desktop footer; the phone sheet uses the default size. */
   size?: "lg";
+  /** The phone sheet's role-lock note, which always shows straight after these taps. */
+  children?: ReactNode;
 }) {
-  if (!onCloseBed && !onReopenBed) return null;
+  if (!onCloseBed && !onReopenBed) return <>{children}</>;
   return (
     <>
       {onCloseBed ? (
@@ -66,6 +70,7 @@ export function BedClosureControls({
           Reopening offers this bed again.
         </p>
       ) : null}
+      {children}
     </>
   );
 }
