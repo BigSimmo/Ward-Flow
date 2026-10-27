@@ -136,7 +136,7 @@ test.describe("native history and handover print @mockup", () => {
       await settled(page);
       await navigate(page, "/capacity");
       await navigate(page, "/settings");
-      await navigate(page, "/alerts");
+      await navigate(page, "/referrals");
       await page.goBack();
       await settled(page);
       await page.goBack();
@@ -182,7 +182,7 @@ test.describe("native history and handover print @mockup", () => {
     await settled(page);
     await navigate(page, "/capacity");
     await navigate(page, "/settings");
-    await navigate(page, "/alerts");
+    await navigate(page, "/referrals");
     await page.goBack();
     await settled(page);
     await page.goBack();
@@ -208,7 +208,7 @@ test.describe("native history and handover print @mockup", () => {
     await settled(page);
     await navigate(page, "/capacity");
     await navigate(page, "/settings");
-    await navigate(page, "/alerts");
+    await navigate(page, "/referrals");
     await page.goBack();
     await settled(page);
     await page.goBack();
@@ -243,7 +243,7 @@ test.describe("native history and handover print @mockup", () => {
     await settled(page);
     await navigate(page, "/capacity");
     await navigate(page, "/settings");
-    await navigate(page, "/alerts");
+    await navigate(page, "/referrals");
     await page.goBack();
     await settled(page);
     await page.goBack();
@@ -299,7 +299,7 @@ test.describe("native history and handover print @mockup", () => {
     });
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity#booking-control$`));
     await navigate(page, "/settings");
-    await navigate(page, "/alerts");
+    await navigate(page, "/referrals");
     await page.evaluate(() => window.history.go(-3));
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await settled(page);
