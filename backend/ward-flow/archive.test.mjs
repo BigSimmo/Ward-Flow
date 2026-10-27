@@ -154,19 +154,19 @@ test(
         [workspaceId],
       );
       assert.ok(moves.length >= 1);
-      assert.equal(moves[0].actor_id, actor);
-      assert.equal(
-        moves.reduce((sum, move) => sum + move.changes.archived.length, 0),
-        rows[0].n,
+      for (const move of moves) assert.equal(move.actor_id, actor);
+      const { rows: archivedRows } = await pool.query(
+        "SELECT collection, record_id, body FROM ward_flow.archived_records WHERE workspace_id=$1",
+        [workspaceId],
+      );
+      assert.deepEqual(
+        moves.flatMap((move) => move.changes.archived.map((entry) => `${entry.collection}:${entry.recordId}`)).sort(),
+        archivedRows.map((row) => `${row.collection}:${row.record_id}`).sort(),
         "every archived record is named once",
       );
 
       // GV-27: the rollback, run on this copy, puts every archived record back without loss.
-      const archivedIdsBefore = (
-        await pool.query("SELECT collection, record_id FROM ward_flow.archived_records WHERE workspace_id=$1", [
-          workspaceId,
-        ])
-      ).rows.map((row) => `${row.collection}:${row.record_id}`);
+      const archivedBefore = new Map(archivedRows.map((row) => [`${row.collection}:${row.record_id}`, row.body]));
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
@@ -180,11 +180,14 @@ test(
         client.release();
       }
       const { rows: restored } = await pool.query(
-        "SELECT collection, record_id FROM ward_flow.workspace_records WHERE workspace_id=$1",
+        "SELECT collection, record_id, body FROM ward_flow.workspace_records WHERE workspace_id=$1",
         [workspaceId],
       );
-      const live = new Set(restored.map((row) => `${row.collection}:${row.record_id}`));
-      for (const id of archivedIdsBefore) assert.ok(live.has(id), id);
+      const live = new Map(restored.map((row) => [`${row.collection}:${row.record_id}`, row.body]));
+      for (const [id, body] of archivedBefore) {
+        assert.ok(live.has(id), id);
+        assert.deepEqual(live.get(id), body, id);
+      }
     } finally {
       await pool.end();
       await dropTestDatabase(admin, database);
