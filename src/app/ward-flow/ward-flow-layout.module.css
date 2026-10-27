@@ -255,6 +255,23 @@
   }
 }
 
+/*
+ * P040: on a short phone screen (a phone held sideways at narrow width, or 200% zoom) the pinned
+ * header plus the pinned notes under it left little room to scroll the page. Below 32rem of height
+ * only the header stays pinned; the notes holder scrolls away with the page, so the scroll padding
+ * keeps clear of the header alone. Layout only: no wording changes.
+ */
+@media screen and (max-width: 48rem) and (max-height: 32rem) {
+  .bannerHolder {
+    position: static;
+  }
+
+  .shellContent,
+  .shellContent:has([data-testid="ward-offline-banner"]) {
+    scroll-padding-top: var(--wf-header-height);
+  }
+}
+
 /* Manual Ward preferences apply to route content without changing the host app or defaults. */
 :global(html[data-reduced-motion]) .shellRow,
 :global(html[data-reduced-motion]) .shellRow *,
