@@ -1,10 +1,26 @@
 "use client";
 
 import { UserCheck } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 import { Dialog, useOptionalToast } from "@/components/wf";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
+
+// Rows confirmed but still inside their Undo window. Held outside the component so closing and
+// reopening the drawer inside the window keeps them pending (Josh, 27 Oct 2026, 10:41 PM AWST).
+let heldRows: ReadonlySet<string> = new Set();
+const heldListeners = new Set<() => void>();
+function setHeldRows(next: ReadonlySet<string>) {
+  heldRows = next;
+  heldListeners.forEach((listener) => listener());
+}
+function subscribeHeld(listener: () => void) {
+  heldListeners.add(listener);
+  return () => {
+    heldListeners.delete(listener);
+  };
+}
+const readHeld = () => heldRows;
 
 /**
  * P017 (Josh, 27 Oct 2026, 8:35 PM AWST): the Tasks drawer's bulk "Acknowledge visible" asks first
@@ -25,13 +41,13 @@ export function AcknowledgeVisibleButton({
 }) {
   const toast = useOptionalToast();
   const [asking, setAsking] = useState<readonly string[] | null>(null);
-  // Rows confirmed but still inside their Undo window, so the button does not offer them twice.
-  const [held, setHeld] = useState<ReadonlySet<string>>(new Set());
+  const held = useSyncExternalStore(subscribeHeld, readHeld, readHeld);
+
   const triggerRef = useRef<HTMLButtonElement>(null);
   const offered = ids.filter((id) => !held.has(id));
 
   function release(chosen: readonly string[]) {
-    setHeld((current) => new Set([...current].filter((id) => !chosen.includes(id))));
+    setHeldRows(new Set([...heldRows].filter((id) => !chosen.includes(id))));
   }
 
   function confirm() {
@@ -39,7 +55,7 @@ export function AcknowledgeVisibleButton({
     setAsking(null);
     if (chosen.length === 0) return;
     if (!toast) return onAcknowledge(chosen);
-    setHeld((current) => new Set([...current, ...chosen]));
+    setHeldRows(new Set([...heldRows, ...chosen]));
     toast.push({
       tone: "success",
       title: `${chosen.length} alerts acknowledged.`,

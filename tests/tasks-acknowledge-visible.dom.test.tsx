@@ -77,4 +77,30 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
     act(() => vi.advanceTimersByTime(UNDO_TOAST_MS + 1000));
     expect(acks(dispatch)).toHaveLength(n);
   });
+
+  it("keeps a confirmed batch pending when the drawer is closed and reopened inside the Undo window", () => {
+    const dispatch = vi.fn();
+    const drawer = (
+      <WardTasksDrawer
+        alertsScreenOpen={false}
+        items={items}
+        acknowledgements={{}}
+        completions={{}}
+        role="coordinator"
+        now={NOW_ANCHOR}
+        dispatch={dispatch}
+        onClose={vi.fn()}
+        onSelectMovement={vi.fn()}
+      />
+    );
+    const { rerender } = render(<ToastProvider>{drawer}</ToastProvider>);
+    const n = Number(screen.getByRole("button", { name: /^Acknowledge visible/ }).textContent?.match(/(\d+)\s*$/)?.[1]);
+    fireEvent.click(screen.getByRole("button", { name: /^Acknowledge visible/ }));
+    fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${n}` }));
+    rerender(<ToastProvider>{null}</ToastProvider>);
+    rerender(<ToastProvider>{drawer}</ToastProvider>);
+    expect(screen.queryByRole("button", { name: /^Acknowledge visible/ })).toBeNull();
+    act(() => vi.advanceTimersByTime(UNDO_TOAST_MS + 1000));
+    expect(acks(dispatch)).toHaveLength(n);
+  });
 });
