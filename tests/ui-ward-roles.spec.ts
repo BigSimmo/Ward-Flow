@@ -1566,7 +1566,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // so its eligibility checks are Dabakarn's own.
     await page
       .getByRole("navigation", { name: "Ward Flow views" })
-      .getByRole("link", { name: /^My list\b/u })
+      .getByRole("link", { name: /^Home\b/u })
       .click();
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");
