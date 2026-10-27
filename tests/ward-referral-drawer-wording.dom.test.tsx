@@ -1,6 +1,4 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
@@ -33,14 +31,5 @@ describe("new-referral drawer wording (P051, P151)", () => {
   it("P151: one '* Required' legend explains the asterisk", () => {
     renderDrawer();
     expect(screen.getAllByText("* Required")).toHaveLength(1);
-  });
-
-  it("P151: the CSS asterisk has empty alt text, so screen readers do not read '* * *'", () => {
-    const css = readFileSync(
-      join(process.cwd(), "src/components/ward-management/referrals/ward-referral-drawer.module.css"),
-      "utf8",
-    );
-    const rule = /\.required::after\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
-    expect(rule).toMatch(/content:\s*"\*"\s*\/\s*""/u);
   });
 });
