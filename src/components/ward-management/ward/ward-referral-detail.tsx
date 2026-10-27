@@ -31,16 +31,9 @@ import {
   type ReferralIntakeDetails,
 } from "@/components/ward-management/referrals/referral-submission";
 import { documentLabel } from "@/components/ward-management/referrals/referral-document-links";
+import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import { referralFit, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-referral-detail.module.css";
-
-const RISK_FLAG_LABELS: Record<string, string> = {
-  suicide: "Suicide",
-  aggression: "Aggression",
-  absconding: "Absent without leave",
-  vulnerable: "Vulnerable",
-  medical: "Medical",
-};
 
 const NOT_RECORDED = "Not recorded on this referral.";
 
@@ -253,7 +246,7 @@ export function WardReferralDetail({
           {cleared ? <span className={`${styles.chip} ${styles.chipGood}`}>Medically cleared</span> : null}
           {riskFlags.map((flag) => (
             <span key={flag} className={`${styles.chip} ${styles.chipRisk}`}>
-              {RISK_FLAG_LABELS[flag] ?? flag} risk
+              {riskFlagLabel(flag)}
             </span>
           ))}
         </div>
@@ -309,7 +302,7 @@ export function WardReferralDetail({
         {dossier ? (
           <Rows rows={dossier.risk} />
         ) : riskFlags.length ? (
-          <p className={styles.text}>{riskFlags.map((flag) => RISK_FLAG_LABELS[flag] ?? flag).join(", ")}</p>
+          <p className={styles.text}>{riskFlags.map(riskFlagLabel).join(", ")}</p>
         ) : (
           <Empty />
         )}

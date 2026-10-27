@@ -439,13 +439,8 @@ export function countOf(count: number, destination: DrawerCategory): string {
   return `${count} ${count === 1 ? place : places.toLowerCase() === "eds" ? "EDs" : places.toLowerCase()}`;
 }
 
-export const RISK_FLAG_LABELS: Record<keyof MockPatientProfile["riskFlags"], string> = {
-  aggression: "Aggression",
-  absconding: "Absent without leave",
-  medical: "Acute medical",
-  vulnerable: "Vulnerable adult",
-  suicide: "Suicide or self-harm",
-};
+// H-0821: one risk flag list for every screen.
+export { RISK_FLAG_LABELS } from "./referral-risk-flags";
 
 export const DESTINATION_LABELS: Record<DrawerCategory, string> = {
   ward: "Ward bed",

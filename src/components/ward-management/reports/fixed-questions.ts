@@ -9,6 +9,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 
 export type FixedQuestionId =
   | "accepted_need_transport"
@@ -38,14 +39,15 @@ export type FixedQuestionInput = {
   now: Instant;
 };
 
+/** H-0807: the stage words every other screen uses (`stageCopy`), never a set of this report's own. */
 const STAGE_WORDS: Record<MovementStage, string> = {
-  placement_requested: "Bed requested",
-  destination_review: "Wards asked",
-  accepted_awaiting_bed: "Accepted, awaiting bed",
-  pulled: "Bed pulled",
-  handover_ready: "Ready for handover",
-  moving: "On the way",
-  arrived: "Arrived",
+  placement_requested: stageCopy.placement_requested.label,
+  destination_review: stageCopy.destination_review.label,
+  accepted_awaiting_bed: stageCopy.accepted_awaiting_bed.label,
+  pulled: stageCopy.pulled.label,
+  handover_ready: stageCopy.handover_ready.label,
+  moving: stageCopy.moving.label,
+  arrived: stageCopy.arrived.label,
 };
 
 const ACCEPTED_STAGES: readonly MovementStage[] = ["accepted_awaiting_bed", "pulled", "handover_ready"];
