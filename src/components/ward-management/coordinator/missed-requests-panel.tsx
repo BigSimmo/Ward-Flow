@@ -23,10 +23,15 @@ import styles from "./missed-requests-panel.module.css";
  * whatever service filter the page has, with each person named and their UMRN beside the name so
  * the coordinator confirms who it is before acting. It links to the records; it changes nothing.
  *
- * Overall review (20 Oct 2026): once worked through, the coordinator taps "Checked, all accounted
- * for", which records the role and the time for today (`dailyCheckRecord`). The tap closes nothing
+ * Overall review (20 Oct 2026): once worked through, the coordinator taps "Mark all checked"
+ * (P027 wording), which records the role and the time for today (`dailyCheckRecord`). The tap closes nothing
  * and hides nothing: the list keeps showing whatever the rules still find.
  */
+/** P027 (Josh, 27 Oct 2026): "1 bed request to check", "5 bed requests to check", same suffix. */
+export function missedCheckCountLine(count: number): string {
+  return `${count} ${count === 1 ? "bed request" : "bed requests"} to check (missed or sent twice)`;
+}
+
 export function MissedRequestsPanel() {
   const access = useEffectiveWardAccess();
   const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
@@ -41,7 +46,7 @@ export function MissedRequestsPanel() {
   const listId = useId();
   // Folded by default, so the check is one line above the board until the coordinator opens it.
   const [open, setOpen] = useState(false);
-  // UX audit (21 Oct 2026): "Checked, all accounted for" waits until the list has been opened once,
+  // UX audit (21 Oct 2026): "Mark all checked" waits until the list has been opened once,
   // so nobody confirms a list they have not looked at. It is kept per day, so a folded list left
   // past midnight asks again for the new day's list; a list open on screen counts as seen.
   const [seenDay, setSeenDay] = useState<string | undefined>(undefined);
@@ -75,7 +80,7 @@ export function MissedRequestsPanel() {
         meta={
           items.length === 0
             ? "Nobody missed: every open bed request has a ward asked, and none is doubled"
-            : `${items.length} bed requests to check (missed or sent twice)`
+            : missedCheckCountLine(items.length)
         }
         action={
           items.length > 0 ? (

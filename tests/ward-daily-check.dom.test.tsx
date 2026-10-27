@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { MissedRequestsPanel } from "@/components/ward-management/coordinator/missed-requests-panel";
+import { MissedRequestsPanel, missedCheckCountLine } from "@/components/ward-management/coordinator/missed-requests-panel";
 import { WardFlowClockContext, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -24,6 +24,12 @@ vi.mock("next/link", () => ({
 const MARK_ALL = /^Mark all \d+ checked$/u;
 
 describe("Daily check: Mark all checked", () => {
+  it("says 1 bed request to check in the singular, and bed requests for 2 or more", () => {
+    expect(missedCheckCountLine(1)).toBe("1 bed request to check (missed or sent twice)");
+    expect(missedCheckCountLine(2)).toBe("2 bed requests to check (missed or sent twice)");
+    expect(missedCheckCountLine(5)).toBe("5 bed requests to check (missed or sent twice)");
+  });
+
   it("says how many bed requests to check, and the button names the same count", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

@@ -162,7 +162,7 @@ describe("missedRequestCheck", () => {
   });
 });
 
-describe('"Checked, all accounted for" (overall review, 20 Oct 2026)', () => {
+describe('Daily check "Mark all checked" (overall review, 20 Oct 2026; P027 wording)', () => {
   const complete = (state: ReturnType<typeof seedWardFlowState>, inboxItemId: string, role = "coordinator") =>
     wardFlowReducer(state, { type: "COMPLETE_INBOX_ITEM", role: role as "coordinator", now: NOW + 5, inboxItemId });
 
