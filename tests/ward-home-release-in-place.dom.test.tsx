@@ -44,12 +44,12 @@ describe("Home Release bed releases in place", () => {
     renderHome();
     const logBefore = latest!.eventLog?.length ?? 0;
 
-    fireEvent.click(screen.getAllByRole("button", { name: /^Release bed for / }).at(0)!);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Release pulled bed for / }).at(0)!);
     const sheet = await screen.findByTestId("home-release-sheet");
     // Opening the sheet raises no event.
     expect(latest!.eventLog?.length ?? 0).toBe(logBefore);
 
-    const submit = () => within(sheet).getByRole("button", { name: /^Release bed for / });
+    const submit = () => within(sheet).getByRole("button", { name: /^Release pulled bed for / });
     expect(submit()).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(submit());
     expect(latest!.eventLog?.length ?? 0).toBe(logBefore);
