@@ -616,12 +616,16 @@ export function useDeskHomeHref(): string {
   return homeHrefFor(access, communityTeamSlug);
 }
 
-/** One line under the header saying which desk this is, and the way back from a preview. */
+/**
+ * One line under the header while the coordinator previews another desk, with the way back. A desk
+ * signed in as itself gets none: its name already shows on the rail's identity card and its place on
+ * the header's scope pill (Josh, 27 Oct 2026: a strip on every page looked poor).
+ */
 export function WardAccessBanner() {
   const on = useWardFeatureFlag("role-access");
   const { access, previewOf } = useWardAccessSnapshot();
   const { units } = useUnscopedWardFlow();
-  if (!on || (accessIsWholeNetwork(access) && !previewOf)) return null;
+  if (!on || !previewOf) return null;
   return (
     <div className={styles.banner} role="status" data-testid="ward-access-banner">
       <span>
