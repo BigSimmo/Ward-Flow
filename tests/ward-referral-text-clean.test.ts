@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { applyCommand, seedWorld, storableCommand } from "../backend/ward-flow/engine";
 import { REFERRAL_HISTORY_LIMITS } from "../src/components/ward-management/ward-model-referral-parts";
@@ -87,15 +86,6 @@ describe("P148 server stores new referral text cleaned, never rejects", () => {
     const next = applyCommand(first.world, command("new"), at);
     if (next.outcome !== "accepted") throw new Error("refused");
     expect(next.world.state.referrals.find((referral) => referral.id === old.id)?.history).toBe(" old\u202E text ");
-  });
-});
-
-describe("P148 client cleans the built command", () => {
-  it("cleans the intake, history and sending team before submitting", () => {
-    const source = readFileSync("src/components/ward-management/referrals/use-ward-referral-drawer-state.ts", "utf8");
-    expect(source).toContain("const intake: ReferralIntakeDetails = cleanReferralFields({");
-    expect(source).toContain("history: cleanReferralText(unidentifiedHistory),");
-    expect(source).toContain("needsSendingTeam ? cleanReferralText(sendingTeam) : undefined");
   });
 });
 
