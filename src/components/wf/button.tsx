@@ -11,6 +11,20 @@ import styles from "./button.module.css";
 export type ButtonVariant = "pri" | "sec" | "tint" | "ghost" | "danger" | "onHero" | "light";
 export type ButtonSize = "sm" | "md" | "lg";
 
+/**
+ * P127 (audit 27 Oct 2026): the three button roles of the design system, each named onto a look
+ * that already exists. Definitions only: no call site reads this map yet, so nothing on screen
+ * changes. `primary` is the one filled action per area, `secondary` the outlined everyday action,
+ * and `destructive` the red action that removes, cancels or refuses. Moving call sites onto these
+ * roles is later, visible work that needs its own approval.
+ */
+export type ButtonRole = "primary" | "secondary" | "destructive";
+export const BUTTON_ROLE_VARIANTS: Readonly<Record<ButtonRole, ButtonVariant>> = {
+  primary: "pri",
+  secondary: "sec",
+  destructive: "danger",
+};
+
 type ButtonOwnProps = {
   /** `pri` once per area. `light` is the hero band's primary; `onHero` its secondary. */
   variant?: ButtonVariant;

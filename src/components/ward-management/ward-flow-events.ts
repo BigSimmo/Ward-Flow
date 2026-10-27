@@ -1323,6 +1323,12 @@ export type WardFlowEvent =
       expectedReturn: Instant;
       /** Off-ward leave or medical trip — both count as leave beds with a 24-hour open warning. */
       kind?: "off_ward" | "medical_trip";
+      /**
+       * #101 (Josh, 27 Oct 2026): for a patient on an order, the ward's tick that the treating
+       * psychiatrist authorised this leave. Optional and never a gate: absent when the question was
+       * not asked, `false` when it was left unticked. The reducer stores it as given.
+       */
+      psychiatristAuthorised?: boolean;
     }
   | {
       type: "END_LEAVE_BED";
@@ -2221,6 +2227,13 @@ export type WardFlowEvent =
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
       estimatedAt: Instant;
+      /**
+       * #177 (Josh, 27 Oct 2026): for an involuntary return, whether Form 4C is in hand and whether
+       * an escort is needed for the journey. Both optional and never a gate: absent when the
+       * coordinator left them blank. An agreement that omits them keeps the plan's own answers.
+       */
+      form4CReceived?: boolean;
+      escortRequired?: boolean;
     }
   | {
       /**

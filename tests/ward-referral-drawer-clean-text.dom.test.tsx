@@ -28,9 +28,9 @@ afterEach(() => {
   forgetReferrerContact();
 });
 
-const BIDI_OPEN = "‪";
-const BIDI_OVERRIDE = "‮";
-const BIDI_CLOSE = "‬";
+const BIDI_OPEN = "\u202a";
+const BIDI_OVERRIDE = "\u202e";
+const BIDI_CLOSE = "\u202c";
 
 function Probe() {
   const { referrals } = useWardFlow();
@@ -122,6 +122,6 @@ describe("P148 the drawer cleans referral text before it sends", () => {
     expect(sent.referrerPhone).toBe("0412345678");
     expect(sent.clearanceContact).toBe("Demo Doctor");
     expect(sent.history).toContain("Synthetic story kept inner text");
-    expect(sent.history).not.toMatch(/[‪-‮⁦-⁩]/);
+    expect(sent.history).not.toMatch(/[\u202a-\u202e\u2066-\u2069]/);
   }, 90_000);
 });

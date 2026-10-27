@@ -60,7 +60,18 @@ export function drawerFootStatus(f: {
   return {
     tone: f.itemsLeft ? "neutral" : "success",
     // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
-    first: f.itemsLeft > 0 ? `${f.itemsLeft} of ${f.itemsTotal} items still needed` : "All items in",
+    // P155: once every step is done only the contact details asked at Send remain, so say that.
+    first:
+      f.itemsLeft > 0 && f.itemsLeft === f.contactNeeded
+        ? `${f.contactNeeded} contact ${f.contactNeeded === 1 ? "detail" : "details"} needed at Send`
+        : f.itemsLeft > 0
+          ? `${f.itemsLeft} of ${f.itemsTotal} items still needed`
+          : "All items in",
     second,
   };
+}
+
+/** P051: the rail heading only claims "Ready to send" once nothing is left. */
+export function drawerRailHeading(itemsLeft: number): string {
+  return itemsLeft > 0 ? "Before you send" : "Ready to send";
 }

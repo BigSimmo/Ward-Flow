@@ -114,6 +114,23 @@ export function EdOverview({
       Raise referral
     </button>
   );
+  // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
+  const addPatientHref = "/ward-flow/people/new";
+  const actions = (
+    <>
+      {raiseButton}
+      {canOpen(addPatientHref) ? (
+        <Link
+          href={addPatientHref}
+          className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+          data-testid="ward-ed-add-patient"
+        >
+          <Plus size={14} aria-hidden="true" />
+          Add patient
+        </Link>
+      ) : null}
+    </>
+  );
 
   return (
     <section
@@ -168,7 +185,7 @@ export function EdOverview({
                 </span>
               ) : null}
               {sinceLastLook}
-              {raiseButton}
+              {actions}
             </>
           }
         />
@@ -226,7 +243,7 @@ export function EdOverview({
                 </Link>
               ) : null}
               {sinceLastLook}
-              {raiseButton}
+              {actions}
             </>
           }
         />

@@ -236,6 +236,7 @@ export function PatientSearchPage() {
   const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
   const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>(
     returned?.openGroups ?? {
+      ask: true,
       wait: true,
       found: true,
       move: true,
@@ -970,8 +971,7 @@ export function PatientSearchPage() {
             titleMeta={isPhone ? flowLine : undefined}
             aside={
               <>
-                {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
-                <LiveChip state="live" onHero />
+                {/* P140: Add patient comes first, away from the live/Demo chip, so it is not a mis-tap. */}
                 {isPhone ? null : (
                   <Link
                     href={WARD_ADD_PERSON_HREF}
@@ -983,6 +983,8 @@ export function PatientSearchPage() {
                     <span>Add patient</span>
                   </Link>
                 )}
+                {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
+                <LiveChip state="live" onHero />
               </>
             }
             bar={

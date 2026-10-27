@@ -33,6 +33,7 @@ import {
   filterGlossary,
   screenHelpFor,
 } from "@/components/ward-management/help/ward-help-content";
+import { COLOUR_LEGEND } from "@/components/ward-management/help/ward-help-legend";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "@/components/ward-management/help/ward-help-guide";
 import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
@@ -180,6 +181,14 @@ describe("help sheet", () => {
   it("says what to do when Ward Flow is down, on every desk's guide (PR-20)", () => {
     render(<Harness initial="desk" />);
     expect(screen.getByTestId("ward-help-downtime").textContent).toContain(WHEN_IT_IS_DOWN[0]);
+  });
+
+  it("shows the colour code under Reference in the Glossary tab, one glyph and meaning per tone", () => {
+    render(<Harness initial="glossary" />);
+    const legend = screen.getByTestId("ward-help-legend");
+    expect(legend.querySelectorAll("dt")).toHaveLength(COLOUR_LEGEND.length);
+    expect(legend.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(COLOUR_LEGEND.length);
+    for (const entry of COLOUR_LEGEND) expect(legend.textContent).toContain(entry.meaning);
   });
 
   it("reads a phone no keyboard hints (HF-14)", () => {
