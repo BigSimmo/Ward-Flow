@@ -15,7 +15,7 @@ import {
 import { frontDoorVerdict } from "../src/proxy";
 
 // Synthetic secrets only: these values exist for this test file.
-const SECRET = "synthetic-front-door-secret-0123456789abcdef";
+const SECRET = "synthetic-front-door-secret-0123456789abcdef"; // gitleaks:allow
 const ON = { WARD_FRONT_DOOR: "required", WARD_PASS_SECRET: SECRET };
 const NOW = Date.UTC(2026, 9, 27, 2, 0, 0);
 
