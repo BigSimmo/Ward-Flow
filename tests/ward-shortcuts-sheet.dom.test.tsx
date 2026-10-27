@@ -21,6 +21,14 @@ describe("keyboard shortcuts sheet", () => {
     for (const item of KEYBOARD_SHORTCUTS) expect(list.textContent).toContain(item.action);
   });
 
+  it("lets the keyboard reach and scroll the list, named by the sheet title", async () => {
+    render(<WardHelpHost />);
+    fireEvent.keyDown(window, { key: "?" });
+    const region = await screen.findByRole("region", { name: "Keyboard shortcuts" }, { timeout: 3000 });
+    expect(region.tabIndex).toBe(0);
+    expect(region).toContainElement(screen.getByTestId("ward-shortcuts-list"));
+  });
+
   it("leaves ? alone in a field, when a page took it, or with single-key shortcuts off", async () => {
     render(
       <>
