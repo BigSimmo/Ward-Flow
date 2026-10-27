@@ -1549,8 +1549,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 calc(-1 * var(--wf-s-4));
-  padding: 2px var(--wf-s-4);
+  /* Bleeds by the phone page's own 12px gutter (main), not 16px, so the row never runs 4px past
+     the screen and scrolls the page sideways (header audit, 27 Oct 2026). */
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: 2px var(--wf-s-3);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1566,8 +1568,8 @@
   position: sticky;
   top: var(--wf-header-height, 3.5rem);
   z-index: 3;
-  margin: 0 calc(-1 * var(--wf-s-4));
-  padding: 8px var(--wf-s-4);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: 8px var(--wf-s-3);
   background: var(--wf-canvas);
 }
 

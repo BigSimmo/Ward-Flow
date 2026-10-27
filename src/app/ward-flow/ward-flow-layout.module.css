@@ -373,6 +373,24 @@
   padding-bottom: 0;
 }
 
+/* Over a hero band (header at rest in ink) the notes sit on the band's top colour, so header, notes
+   and hero read as one surface and the page keeps its band (wf/band.ts, Josh 27 Oct 2026). Once the
+   page scrolls the header turns light and the holder goes back to the page ground. */
+.shellContent:has([data-wf-bar][data-band="ink"]) > .bannerHolder:not(:empty) {
+  background: var(--wf-hero-1);
+}
+
+/* It changes colour with the header, at the header's own pace (ward-bar.module.css). */
+.bannerHolder {
+  transition: background-color var(--wf-t-enter) var(--wf-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bannerHolder {
+    transition: none;
+  }
+}
+
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
 @media print {
   /* The document's dark colour scheme also paints the paper canvas outside the routed content.
