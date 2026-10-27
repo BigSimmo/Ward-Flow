@@ -147,6 +147,7 @@
     "tests/ward-policy-scope.test.ts",
     "tests/ward-print-hides-overlays.test.ts",
     "tests/ward-prototype-disclosure.test.ts",
+    "tests/ward-prototype-pill-full.dom.test.tsx",
     "tests/ward-provenance-sentences-carry-their-own-marker.test.ts",
     "tests/ward-public-ci-setup.test.ts",
     "tests/ward-pwa-manifest.test.ts",

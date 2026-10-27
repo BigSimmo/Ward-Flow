@@ -511,10 +511,8 @@ function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDem
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
-        <span>
-          Synthetic
-          <span className={styles.pillTail}> prototype</span>
-        </span>
+        {/* P077: both words stay on screen at every header width (200% zoom too). */}
+        <span>Synthetic prototype</span>
       </button>
       {open && Menu ? <Menu onClose={close} /> : null}
     </div>
