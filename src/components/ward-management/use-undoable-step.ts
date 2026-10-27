@@ -35,8 +35,6 @@ function useLayoutToast(): UndoToastApi | null {
 type Pending = {
   outcome?: WardCommandOutcome;
   prior: number;
-  /** See `UndoableStep.toastMs`. */
-  toastMs?: number;
   success: string;
   /** Builds the undo event at the moment Undo is pressed; absent for an undo itself. */
   undo?: (now: Instant) => WardFlowEvent;
@@ -79,8 +77,6 @@ export type UndoableStep = {
    * command outcome, and an unconfirmed save, are still said, because nothing inline covers them.
    */
   refusalShownInline?: boolean;
-  /** How long the toast offers Undo, when an approved wording names a window other than `UNDO_TOAST_MS`. */
-  toastMs?: number;
 };
 
 export type UndoableStepOptions = {
@@ -216,7 +212,7 @@ export function useUndoableStep({
               // still on screen (its countdown pauses on hover), so the toast says the limit.
               body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
               undo: {
-                durationMs: pending.toastMs ?? UNDO_TOAST_MS,
+                durationMs: UNDO_TOAST_MS,
                 onUndo: () => {
                   if (pending.outcome?.isCurrent && !pending.outcome.isCurrent()) {
                     sink.push({

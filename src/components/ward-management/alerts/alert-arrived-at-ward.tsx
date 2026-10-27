@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/wf";
+import { Button, useOptionalToast } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { useOptionalWardFlowSelect, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import {
-  useOptionalWardFlowSelect,
-  useWardFlowClock,
-  useWardFlowSelect,
-} from "@/components/ward-management/ward-flow-provider";
-import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { ARRIVED_AT_WARD_UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+  ARRIVED_AT_WARD_UNDO_TOAST_MS,
+  UNDO_WINDOW_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * True only where `PATIENT_ARRIVED` would be accepted straight from a pulled bed: a person recorded
@@ -29,6 +29,10 @@ function arrivedAtWardOffered(movement: Movement): boolean {
 /**
  * "Arrived at ward" on a pulled-bed alert (P069). Asks first, records the existing arrival event and
  * offers Undo for 10 s through the existing transport-step undo. Renders nothing outside a provider.
+ *
+ * The toast is published from the click itself, like the P019 Release button, and not from a
+ * `useUndoableStep` owned by this control: recording the arrival closes the alert, so the alert
+ * detail (and this control with it) leaves the list before an effect-driven toast could appear.
  */
 export function AlertArrivedAtWard(props: { movement: Movement; displayName: string; disabledReason?: string }) {
   return useOptionalWardFlowSelect() ? <ArrivedAtWardControl {...props} /> : null;
@@ -43,14 +47,86 @@ function ArrivedAtWardControl({
   displayName: string;
   disabledReason?: string;
 }) {
-  const { units, dispatch, rejections } = useWardFlowSelect("units", "dispatch", "rejections");
-  const now = useWardFlowClock();
+  const { units } = useWardFlowSelect("units");
   const raise = useWardRaise("coordinator");
-  const { offer } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
+  // The Undo runs later, so it raises through the latest clock, not the one at the time of the click.
+  const raiseRef = useRef(raise);
+  useEffect(() => {
+    raiseRef.current = raise;
+  }, [raise]);
+  const toast = useOptionalToast();
   const [asking, setAsking] = useState(false);
   if (!arrivedAtWardOffered(movement)) return null;
   const unitId = movement.acceptedUnitId!;
   const ward = units.find((unit) => unit.id === unitId)?.name ?? unitId;
+
+  function confirm() {
+    setAsking(false);
+    const movementId = movement.id;
+    const toastApi = toast;
+    const say = (outcome: WardCommandOutcome | void) => {
+      if (outcome?.isCurrent && !outcome.isCurrent()) return;
+      if (outcome && outcome.status !== "accepted") {
+        const reason = outcome.message ?? "The action was refused.";
+        toastApi?.push({
+          tone: "warning",
+          title: outcome.status === "refused" ? `Not recorded: ${reason}` : (outcome.message ?? SAVE_NOT_CONFIRMED),
+        });
+        return;
+      }
+      const own = outcome?.undoStep;
+      const recordSeq = own?.undoType === "UNDO_TRANSPORT_STEP" && own.subjectId === movementId ? own.seq : undefined;
+      toastApi?.push({
+        tone: "success",
+        title: `${displayName} arrived at ${ward}`,
+        body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
+        undo: {
+          durationMs: ARRIVED_AT_WARD_UNDO_TOAST_MS,
+          onUndo: () => {
+            if (outcome?.isCurrent && !outcome.isCurrent()) {
+              toastApi.push({
+                tone: "warning",
+                title: "Undo is unavailable because the workspace or working role changed. Review the current board.",
+              });
+              return;
+            }
+            if (outcome?.canUndo && !outcome.canUndo()) {
+              toastApi.push({
+                tone: "warning",
+                title:
+                  "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
+              });
+              return false;
+            }
+            const undone = (raiseRef.current as WardRaise)("UNDO_TRANSPORT_STEP", {
+              movementId,
+              ...(recordSeq === undefined ? {} : { recordSeq }),
+            });
+            void Promise.resolve(undone).then(
+              (result) => {
+                if (result && result.status !== "accepted") {
+                  const reason = result.message ?? "The action was refused.";
+                  toastApi.push({
+                    tone: "warning",
+                    title:
+                      result.status === "refused" ? `Not recorded: ${reason}` : (result.message ?? SAVE_NOT_CONFIRMED),
+                  });
+                  return;
+                }
+                toastApi.push({ tone: "info", title: "Undone. Back as it was." });
+              },
+              () => toastApi.push({ tone: "warning", title: SAVE_NOT_CONFIRMED }),
+            );
+            return undefined;
+          },
+        },
+      });
+    };
+    void Promise.resolve(raiseRef.current("PATIENT_ARRIVED", { movementId })).then(say, () =>
+      toastApi?.push({ tone: "warning", title: SAVE_NOT_CONFIRMED }),
+    );
+  }
+
   if (!asking) {
     return (
       <Button variant="sec" disabledReason={disabledReason} reasonDisplay="tooltip" onClick={() => setAsking(true)}>
@@ -64,23 +140,7 @@ function ArrivedAtWardControl({
       <Button variant="sec" onClick={() => setAsking(false)}>
         Cancel
       </Button>
-      <Button
-        variant="pri"
-        disabledReason={disabledReason}
-        reasonDisplay="tooltip"
-        onClick={() => {
-          setAsking(false);
-          const outcome = raise("PATIENT_ARRIVED", { movementId: movement.id });
-          offer(
-            {
-              success: `${displayName} arrived at ${ward}`,
-              undo: (at) => ({ type: "UNDO_TRANSPORT_STEP", role: "coordinator", now: at, movementId: movement.id }),
-              toastMs: ARRIVED_AT_WARD_UNDO_TOAST_MS,
-            },
-            { completion: outcome },
-          );
-        }}
-      >
+      <Button variant="pri" disabledReason={disabledReason} reasonDisplay="tooltip" onClick={confirm}>
         Mark arrived
       </Button>
     </div>
