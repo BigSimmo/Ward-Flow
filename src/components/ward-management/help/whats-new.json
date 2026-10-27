@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-27-open-ed-journey-warning",
-    "date": "2026-10-27",
-    "line": "Referring someone already on an open ED journey elsewhere now warns you before Send."
-  },
-  {
     "id": "2026-10-27-ed-transport-booked",
     "date": "2026-10-27",
     "line": "Once a bed is pulled, the ED row's main button is Transport booked."
@@ -98,5 +93,10 @@
     "id": "2026-10-27-device-clock-roles",
     "date": "2026-10-27",
     "line": "A device with its clock set wrong no longer cuts a role short or keeps it open too long."
+  },
+  {
+    "id": "2026-10-27-transport-booking-polish",
+    "date": "2026-10-27",
+    "line": "Transport booking no longer needs a CAD number for a ward escort or family, and Save stays in view."
   }
 ]
