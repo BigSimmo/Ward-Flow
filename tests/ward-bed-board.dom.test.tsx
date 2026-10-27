@@ -91,6 +91,10 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
       (cell) => !/free|closed|pulled/.test(cell.getAttribute("aria-label") ?? "") && bedNo(cell) !== from,
     )!;
     expect(other).toHaveAttribute("data-dim", "true");
+    // P087: an unfit bed is announced as unavailable while picked; fitting beds and the source stay choosable.
+    expect(other).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId(`ward-board-bed-${to}`)).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByTestId(`ward-board-bed-${from}`)).not.toHaveAttribute("aria-disabled");
     fireEvent.click(other);
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/does not fit, it is taken\./);
 
@@ -100,6 +104,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     const occupantName = fromLabel.replace(/^Bed \d+, /, "");
     expect(cellText(to)).toContain(occupantName);
     expect(cellText(from)).toMatch(/, ready$/);
+    expect(document.querySelector("[data-testid^='ward-board-bed-'][aria-disabled]")).toBeNull();
 
     const toast = screen.getByTestId("toast");
     fireEvent.click(within(toast).getByRole("button", { name: /^Undo/ }));

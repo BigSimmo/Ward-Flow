@@ -383,7 +383,7 @@ export function RecordFormSheet({
       }
     >
       {!draftSaved ? <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p> : null}
-      {draftRestored ? <p role="status">Draft restored from this session — use Clear to remove it.</p> : null}
+      {draftRestored ? <p role="status">Draft restored in this tab — use Clear to remove it.</p> : null}
       <div key={formKey} className={styles.recordForm}>
         {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
         <Field label="Form type" id={typeId} error={problemFor(typeId)}>

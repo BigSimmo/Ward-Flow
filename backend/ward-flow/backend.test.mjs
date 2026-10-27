@@ -72,6 +72,7 @@ function setup({ authenticate, sharedStore, log = () => {} } = {}) {
     handler: createHandler({
       config,
       sharedStore,
+      uptimeToken: UPTIME,
       authenticate:
         authenticate ??
         (async (token) => {
@@ -83,12 +84,16 @@ function setup({ authenticate, sharedStore, log = () => {} } = {}) {
     }),
   };
 }
+// The uptime monitor's token (audit P177); a plain /healthz call sees no database answer.
+const UPTIME = "test-uptime-token";
+const healthRequest = () =>
+  new Request("http://localhost/healthz", { headers: { "x-ward-flow-uptime-token": UPTIME } });
 const ready = (headers = {}) =>
   new Request("http://localhost/readyz", { headers: { authorization: "Bearer accepted", ...headers } });
 
 test("liveness needs no sign-in and unknown paths are not found", async () => {
   const { handler, calls } = setup();
-  const health = await handler(new Request("http://localhost/healthz"));
+  const health = await handler(healthRequest());
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { service: "ward-flow-backend", database: "not_configured" });
   // The retired Azure Blob session vault route is gone.
@@ -106,13 +111,13 @@ test("liveness reports the database without sign-in or detail, and stays 200 whe
     },
   };
   const { handler, calls } = setup({ sharedStore });
-  const health = await handler(new Request("http://localhost/healthz"));
+  const health = await handler(healthRequest());
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { service: "ward-flow-backend", database: "ok" });
   up = false;
   const down = databaseHealth(sharedStore);
   assert.equal(await down(), "unavailable");
-  const response = await setup({ sharedStore }).handler(new Request("http://localhost/healthz"));
+  const response = await setup({ sharedStore }).handler(healthRequest());
   assert.equal(response.status, 200);
   assert.doesNotMatch(await response.text(), /secret|connection/);
   assert.equal(calls.length, 0);

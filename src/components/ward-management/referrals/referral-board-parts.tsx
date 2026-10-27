@@ -367,7 +367,7 @@ export function BedsReady({ summary, compact = false }: { summary: BedsReadySumm
   return (
     <div className={cx(styles.beds, compact && styles.bedsCompact)} data-testid="ward-referral-beds-ready">
       <div className={styles.bandHead}>
-        <span className={styles.bandEyebrow}>Beds ready statewide: {summary.total}</span>
+        <span className={styles.bandEyebrow}>Beds ready statewide (your desk&apos;s admissions): {summary.total}</span>
         {summary.preparing > 0 ? (
           <span className={styles.bandKey} data-testid="ward-referral-beds-preparing">
             <span className={styles.mono}>{summary.preparing}</span> still being made ready

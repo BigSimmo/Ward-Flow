@@ -171,9 +171,10 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
     expect(storageOutsideD67()).toEqual([]);
     expect(localStorageText()).not.toContain("Confidential synthetic clinical story");
 
-    // D-67 opts this synthetic form into bounded session recovery; dirty navigation still warns.
+    // D-67 opts this synthetic form into bounded session recovery. P158 (Josh, 27 Oct 2026): a reload
+    // restores a kept copy that matches the screen, so the browser's own prompt is skipped then.
     fireEvent.click(saveDraftBtn);
-    expect(fireBeforeUnload()).toBe(true);
+    expect(fireBeforeUnload()).toBe(false);
     const key = sessionDraftKey("standard/0", "referral", "new");
     const raw = readSessionDraft(key);
     expect(raw).not.toBeNull();

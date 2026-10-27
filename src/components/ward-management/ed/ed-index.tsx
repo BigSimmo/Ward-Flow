@@ -335,7 +335,7 @@ export function EdIndex() {
   );
   const matchCount = (
     <span data-testid="ed-index-match-count" aria-live="polite">
-      <b className={styles.num}>{matching.length}</b> of {rows.length} <SrOnly>synthetic records</SrOnly> match
+      <b className={styles.num}>{matching.length}</b> of {rows.length} EDs match<SrOnly>, sample data</SrOnly>
     </span>
   );
   const servicePicker = (

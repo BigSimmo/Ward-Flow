@@ -8,6 +8,11 @@
     "node": ">=24.15.0 <25",
     "npm": "11.x"
   },
+  "browserslist": [
+    "last 2 chrome versions",
+    "last 2 edge versions",
+    "last 2 safari versions"
+  ],
   "scripts": {
     "dev": "node scripts/dev-free-port.mjs",
     "preinstall": "node scripts/check-node-engine.cjs",

@@ -203,3 +203,52 @@ export function tierOverdueRuleText(): string {
   const hours = (tier: 1 | 2 | 3) => `${tierOverdueAfterMinutes(tier) / 60}h`;
   return `Overdue after T1 ${hours(1)}, T2 ${hours(2)}, T3 ${hours(3)}`;
 }
+
+/**
+ * TIER 1 (P002, Josh 27 Oct 2026): every open journey (`isOpen`) at urgency tier 1, in transit
+ * included. Home's Tier 1 chip and highlight and Movements' "Tier 1 now" read this, so the screens
+ * print one count. The label says what it counts: "Tier 1 open journeys".
+ */
+export function isTierOneOpen(movement: Movement): boolean {
+  return isOpen(movement) && movement.urgency === 1;
+}
+
+/**
+ * OVERDUE WAITS (P002): an open journey whose person is still in an ED (`isWaitingInEd`) and has
+ * waited past its tier's window (`isTierOverdue`). Somebody already on the road is not a wait.
+ */
+export function inEdTierOverdue(movement: Movement, now: Instant): boolean {
+  return (
+    isOpen(movement) && isWaitingInEd(movement) && isTierOverdue(movement.urgency, Math.max(0, now - movement.openedAt))
+  );
+}
+
+/**
+ * P003: a chip narrowed to one ED's journeys says so, by the site's short name: "Tier 1, RPH only".
+ * Without a chosen ED the chip keeps its own label.
+ */
+function scopedChipLabel(label: string, scopedLabel: string, siteShort: string | undefined): string {
+  return siteShort ? `${scopedLabel}, ${siteShort} only` : label;
+}
+
+/**
+ * P032 (Josh 27 Oct 2026): a ward has accepted and the patient is still waiting for the bed to be
+ * pulled. That step is the coordinator's ("Waiting on you" on Waiting, "Pull the bed" on Movements,
+ * "Bed desk" on Patients), so Handover names the coordinator too, whatever owner the record holds.
+ */
+export function coordinatorOwnsAcceptedAwaitingBed(movement: Movement): boolean {
+  return isOpen(movement) && movement.stage === "accepted_awaiting_bed" && movement.acceptedUnitId !== undefined;
+}
+
+/** P002/P003: Home's two highlight chips, counted with the shared rules and labelled for the chosen ED. */
+export function homeChipFigures(queue: readonly Movement[], now: Instant, siteShort: string | undefined) {
+  return {
+    overdueInQueue: queue.filter((movement) => inEdTierOverdue(movement, now)).length,
+    tierOneInQueue: queue.filter(isTierOneOpen).length,
+    overdueLabel: scopedChipLabel("Overdue waits", "Overdue waits", siteShort),
+    tierOneLabel: scopedChipLabel("Tier 1 open journeys", "Tier 1", siteShort),
+  };
+}
+
+/** P028 (Josh 27 Oct 2026): the beds figure counts beds statewide against this desk's admissions. */
+export const BEDS_READY_SCOPED_TITLE = "Beds ready statewide (your desk's admissions)";
