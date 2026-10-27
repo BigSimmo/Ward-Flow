@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { DueActions } from "@/components/ward-management/bed-meeting/meeting-actions-due-list";
+import { useBedMeetingDone } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
@@ -89,11 +90,17 @@ describe("focus after a row's own button closes it", () => {
     }
     function Due() {
       const { movements } = useWardFlow();
+      const onMarkDone = useBedMeetingDone("coordinator");
       const open = (movements.find((entry) => entry.id === movement.id)?.meetingActions ?? []).filter(
         (action) => action.doneAt === undefined,
       );
       return open.length === 0 ? null : (
-        <DueActions subject={{ kind: "movement", id: movement.id }} desk="coordinator" actions={open} />
+        <DueActions
+          subject={{ kind: "movement", id: movement.id }}
+          desk="coordinator"
+          actions={open}
+          onMarkDone={onMarkDone}
+        />
       );
     }
     render(

@@ -9,6 +9,7 @@ import { useWardFlowSelect } from "../ward-flow-provider";
 import type { Unit } from "../ward-model";
 import { unitInScope, type WardAccess } from "../ward-role-access";
 import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting-actions";
+import { useBedMeetingDone } from "./use-bed-meeting-done";
 
 const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) => m.DueActions));
 
@@ -29,12 +30,15 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const { previewOf } = useWardAccessSnapshot();
   const isBreakGlass = useIsBreakGlassRecord();
   const { movements, admissions, units } = useWardFlowSelect("movements", "admissions", "units");
+  // H-0150: held here, not in the list, so the toast's Undo outlives the row and the card it closes.
+  const desk = deskRole(access);
+  // A desk that owns no action never shows the list, so the fallback role is never used.
+  const markActionDone = useBedMeetingDone(desk ?? "coordinator");
   if (!subject || previewOf !== null) return null;
   const record =
     subject.kind === "movement"
       ? movements.find((movement) => movement.id === subject.id)
       : admissions.find((admission) => admission.id === subject.id);
-  const desk = deskRole(access);
   if (!desk) return null;
   // The scope layer's own read-only set: patients this desk sees only through break glass.
   if (isBreakGlass(record)) return null;
@@ -42,7 +46,7 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action, units),
   );
   if (due.length === 0) return null;
-  return <DueActions subject={subject} desk={desk} actions={due} />;
+  return <DueActions subject={subject} desk={desk} actions={due} onMarkDone={markActionDone} />;
 }
 
 /** The owner role this desk acts as, or none for a desk that never owns an action. */
