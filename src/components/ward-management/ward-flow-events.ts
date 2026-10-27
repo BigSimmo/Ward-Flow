@@ -808,14 +808,12 @@ export type WardFlowEvent =
       actingUnitId?: string;
     }
   | {
-      /** H-0978 / WS-15 (Josh 26 Oct 2026): close or reopen one exact empty bed (`Unit.closedBeds`). See
-       *  `ward-flow-bed-closure-events.ts`. `reason` is from `WARD_CLOSURE_REASONS`, never typed. */
+      /** H-0978 / WS-15: close or reopen one empty bed (`Unit.closedBeds`), see ward-flow-bed-closure-events.ts. */
       type: "SET_BED_CLOSED";
       role: WardFlowRole;
       now: Instant;
       unitId: string;
-      /** Same claim-not-proof pair as `CONFIRM_CAPACITY`'s own field, compared against `unitId`. */
-      actingUnitId: string;
+      actingUnitId: string; // Claim-not-proof pair, as for CONFIRM_CAPACITY. `reason` is from WARD_CLOSURE_REASONS.
       bedNumber: number;
       closed: boolean;
       reason?: WardClosureReason;

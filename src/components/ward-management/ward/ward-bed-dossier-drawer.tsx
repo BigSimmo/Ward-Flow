@@ -1164,8 +1164,7 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
-  /** H-0978 / WS-15: Close this bed or Reopen this bed, already narrowed by the drawer. */
-  bedClosure?: ReactNode;
+  bedClosure?: ReactNode; // H-0978 / WS-15: Close or Reopen this bed, narrowed by the drawer.
   /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
   leavePaper?: ReactNode;
 }
