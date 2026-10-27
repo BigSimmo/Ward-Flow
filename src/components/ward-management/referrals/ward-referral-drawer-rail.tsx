@@ -108,7 +108,7 @@ export function ReferralSummaryRail({
             {draftKeptAt !== null ? (
               <p className={styles.draftStatus} data-testid="ward-referral-draft-status">
                 <StatusGlyph tone="success" size={8} />
-                Draft kept · {referralDraftAgeText(draftKeptAt, draftNowMs)}
+                Draft kept in this tab · {referralDraftAgeText(draftKeptAt, draftNowMs)}
               </p>
             ) : null}
             {/* UX audit 21 Oct 2026: the drawer stated one count five ways. The footer keeps the count

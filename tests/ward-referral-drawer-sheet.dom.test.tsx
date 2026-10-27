@@ -536,7 +536,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept · just now");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab · just now");
     expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
@@ -579,7 +579,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab");
   });
 
   it("drops the kept copy when the draft is edited back to how it opened", () => {
