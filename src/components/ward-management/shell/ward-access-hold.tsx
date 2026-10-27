@@ -12,7 +12,11 @@ const never = () => () => {};
  * pass is on screen, so the page area is shown with the right desk's page and never the wrong one.
  */
 export function WardDeskPendingClear() {
-  const deskKnown = useSyncExternalStore(never, () => true, () => false);
+  const deskKnown = useSyncExternalStore(
+    never,
+    () => true,
+    () => false,
+  );
   useEffect(() => {
     if (deskKnown) document.documentElement.removeAttribute(WARD_DESK_PENDING_ATTRIBUTE);
   }, [deskKnown]);
