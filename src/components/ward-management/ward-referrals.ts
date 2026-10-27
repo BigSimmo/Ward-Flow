@@ -691,9 +691,9 @@ export type ReferralCandidate = { unit: Unit; verdict: EligibilityVerdict };
 
 /**
  * Decision D-32 (6 October 2026): the referral queue is ordered by waiting time, longest first
- * (earliest `raisedAt`), so nobody is jumped ahead of a person who has waited longer. Urgency only
- * breaks a tie between referrals raised at the same moment; it stays visible on each row for the
- * clinician to weigh. Scoped to `"queued"` only — an accepted or declined referral has already
+ * (earliest `raisedAt`), so nobody is jumped ahead of a person who has waited longer. A tie between
+ * referrals raised at the same moment breaks by id, the same as `queueOrder` (H-0330). Urgency stays
+ * visible on each row for the clinician to weigh. Scoped to `"queued"` only — an accepted or declined referral has already
  * left the queue a coordinator is working, the same reason `queueOrder` scopes to `isOpen`
  * movements only.
  */
@@ -708,7 +708,7 @@ export function referralQueueOrder(referrals: Referral[]): Referral[] {
         // is still genuinely awaiting an answer.
         referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer),
     )
-    .sort((a, b) => a.raisedAt - b.raisedAt || a.urgency - b.urgency);
+    .sort((a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /**

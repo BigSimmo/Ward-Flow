@@ -150,6 +150,7 @@ export function useReferralPatientRegistration({
   generation,
   dispatch,
   now,
+  demoToday,
   role,
   registrationScope,
   requiresRegistrationScope,
@@ -162,6 +163,8 @@ export function useReferralPatientRegistration({
   generation: number;
   dispatch: WardCommandDispatch;
   now: Instant;
+  /** The demo calendar day, YYYY-MM-DD, so the reducer bounds a birth date by it (H-0372). */
+  demoToday?: string;
   role: WardFlowRole;
   registrationScope?: PatientRegistrationScope;
   requiresRegistrationScope?: boolean;
@@ -254,6 +257,7 @@ export function useReferralPatientRegistration({
         familyName,
         umrn,
         dateOfBirth: patient.dateOfBirth,
+        ...(demoToday ? { demoToday } : {}),
         ...(patient.gender ? { gender: patient.gender } : {}),
         ...(patient.sex ? { sex: patient.sex } : {}),
         ...(patient.suburb.trim() ? { suburb: patient.suburb.trim() } : {}),

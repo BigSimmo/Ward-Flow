@@ -13,7 +13,12 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  perthIsoDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import {
   ATS_CATEGORIES,
   URGENCY_LEVELS,
@@ -713,6 +718,7 @@ export function useWardReferralDrawerState({
     generation: worldGeneration,
     dispatch,
     now,
+    demoToday: perthIsoDay(calendarDateOf(now, dayZero)),
     role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
     registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
     requiresRegistrationScope: access.scope.kind === "ward",
