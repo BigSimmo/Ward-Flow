@@ -171,9 +171,12 @@ function CellName({ surname, given }: { surname: string; given: string }) {
       // The name box fills the free space beside the glyph, so its width does not depend on the
       // text inside it. Two pixels of slack cover canvas and page measuring apart, so the CSS
       // ellipsis never cuts a second time.
-      const room = name.clientWidth - tail.offsetWidth - 2;
+      // scrollWidth is the given name's full width even when a narrow cell is cutting it. When
+      // the given name alone fills the cell, the surname drops to its first letter and the given
+      // name takes its own ellipsis, so nothing spills into the next bed.
+      const room = Math.max(0, name.clientWidth - tail.scrollWidth - 2);
       const font = getComputedStyle(word).font;
-      if (room <= 0 || textWidth(surname, font) === null) return;
+      if (textWidth(surname, font) === null) return;
       setFitted({ surname, text: fitSurname(surname, room, (text) => textWidth(text, font) ?? 0) });
     };
     fit();
