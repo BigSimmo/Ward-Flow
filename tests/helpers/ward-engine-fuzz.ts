@@ -105,6 +105,7 @@ import { DISCHARGE_CRITERIA } from "@/components/ward-management/ward-discharge-
 import { INBOX_CATEGORIES, inboxItemCompletionState } from "@/components/ward-management/ward-inbox-reducer";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
+import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
 import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
@@ -1529,7 +1530,9 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     movementEvent(
       "RECORD_COUNTRY_EXTENSION",
-      (movement) => movement.legalForm?.code === "1A",
+      // Aimed at the gate itself (a current country Form 1A), so a shift in the random run cannot
+      // push the rare acceptance past the coverage window.
+      countryExtensionEligible,
       (_state, random, movement) => ({
         paperExpiresAt: (movement.legalForm?.dueAt ?? currentNow) + int(random, 30, 4000),
       }),
