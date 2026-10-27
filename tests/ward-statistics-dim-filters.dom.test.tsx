@@ -27,7 +27,7 @@ describe("Statistics Summary v10 hero and pressure chip", () => {
 
   it("answers with the beds ready now and keeps five chips at most", () => {
     renderSummary();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^\d+ beds? ready now$/u);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Statistics: \d+ beds? ready now$/u);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
     expect(chips.children.length).toBeLessThanOrEqual(5);
     expect(within(chips).getByText("Admissions ended today")).toBeInTheDocument();
