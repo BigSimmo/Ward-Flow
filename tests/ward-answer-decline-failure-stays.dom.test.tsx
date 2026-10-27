@@ -15,7 +15,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * Audit A-2 (26 Oct 2026): a decline that did not save was said only in a toast that closed after
- * 3.5 seconds. The words now stay beside the request until the next try. Synthetic records only.
+ * 3.5 seconds. The words now stay beside the request until the next try, and the warning toast stays
+ * until it is closed (H-1010). Synthetic records only.
  */
 afterEach(() => {
   cleanup();
@@ -28,7 +29,7 @@ function WithDispatch({ dispatch, children }: { dispatch: WardCommandDispatch; c
 }
 
 describe("Ward answer decline failure (A-2)", () => {
-  it("keeps the failure beside the request after the toast has gone, and clears it on the next try", async () => {
+  it("keeps the failure beside the request and in the toast until closed, and clears it on the next try", async () => {
     const dispatch = vi
       .fn<WardCommandDispatch>()
       .mockReturnValueOnce({ commandId: "first", status: "failed" })
@@ -48,6 +49,12 @@ describe("Ward answer decline failure (A-2)", () => {
     const failure = screen.getByTestId("ward-decline-failure-WF-002");
     expect(failure).toHaveTextContent("Decline was not confirmed");
     act(() => vi.advanceTimersByTime(10_000));
+    // H-1010: the warning toast stays, with its warning mark, inside a live region that was already there.
+    const toast = screen.getByTestId("ward-answer-toast");
+    expect(toast).toHaveAttribute("data-tone", "warning");
+    expect(toast).toHaveTextContent("Decline was not confirmed");
+    expect(toast.parentElement).toHaveAttribute("role", "status");
+    fireEvent.click(screen.getByTestId("ward-answer-toast-close"));
     expect(screen.queryByTestId("ward-answer-toast")).toBeNull();
     expect(screen.getByTestId("ward-decline-failure-WF-002")).toHaveTextContent("Decline was not confirmed");
     await act(async () => fireEvent.submit(screen.getByTestId("ward-decline-form-WF-002")));

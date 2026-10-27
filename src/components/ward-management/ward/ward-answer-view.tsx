@@ -1647,18 +1647,28 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       ) : null}
 
       {/* Action Toast */}
-      {toastMessage ? (
-        <div
-          className={styles.toast}
-          role="status"
-          aria-live="polite"
-          data-testid="ward-answer-toast"
-          data-tone={toastMessage.warning ? "warning" : "success"}
-        >
-          <StatusGlyph tone={toastMessage.warning ? "warning" : "success"} size={10} />
-          <span>{toastMessage.message}</span>
-        </div>
-      ) : null}
+      <div role="status" aria-live="polite">
+        {toastMessage ? (
+          <div
+            className={styles.toast}
+            data-testid="ward-answer-toast"
+            data-tone={toastMessage.warning ? "warning" : "success"}
+          >
+            <StatusGlyph tone={toastMessage.warning ? "warning" : "success"} size={10} />
+            <span>{toastMessage.message}</span>
+            {toastMessage.warning ? (
+              <button
+                type="button"
+                className={styles.toastClose}
+                data-testid="ward-answer-toast-close"
+                onClick={() => setToastMessage(null)}
+              >
+                Close
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
       <WardPrototypeFooter
         testId="ward-unit-governance"
         note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}
