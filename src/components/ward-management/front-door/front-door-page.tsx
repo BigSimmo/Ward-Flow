@@ -3,6 +3,8 @@
 import { useId, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 
+import { DEMO_PASS_HOURS } from "@/lib/front-door-pass";
+
 import { FrontDoor, FrontDoorStatus, publicDemoUrl } from "./front-door";
 import { Arrow, DoorBanner, DoorScreen, SessionNote, Spinner } from "./front-door-parts";
 import { requestFrontDoorPass } from "./front-door-pass-client";
@@ -112,7 +114,9 @@ function DemoCodeDoor({ next }: { next: string }) {
               </>
             )}
           </button>
-          <SessionNote>A code opens the demo in this browser for 8 hours. Changes reset when you reload.</SessionNote>
+          <SessionNote>
+            A code opens the demo in this browser for {DEMO_PASS_HOURS} hours. Changes reset when you reload.
+          </SessionNote>
         </form>
       </div>
     </DoorScreen>
