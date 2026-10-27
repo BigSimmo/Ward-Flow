@@ -7,7 +7,7 @@ import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/co
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
-import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useUndoableStep } from "../use-undoable-step";
 import type { Unit } from "../ward-model";
 import {
@@ -49,7 +49,9 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   const role = actor.role === "ward" ? "ward" : "coordinator";
   // NB-01: the outcome is said on the toast, recorded or refused, not left to the panel changing.
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
-  const { run } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
+  // The live clock stamps the step; `now` may be a paused page clock, kept for display only.
+  const at = useWardFlowClock();
+  const { run } = useUndoableStep({ dispatch, rejections, now: at, routeRole: role });
 
   if (!unit.isClosed) {
     const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
@@ -124,11 +126,11 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
                 {
                   type: "CLOSE_WARD_TO_ADMISSIONS",
                   role,
-                  now,
+                  now: at,
                   unitId: unit.id,
                   ...(actingUnitId !== undefined ? { actingUnitId } : {}),
                   reason,
-                  ...(reopenAfter !== "" ? { until: now + Number(reopenAfter) * 60 } : {}),
+                  ...(reopenAfter !== "" ? { until: at + Number(reopenAfter) * 60 } : {}),
                 },
                 { success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.` },
               );
@@ -174,7 +176,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
             {
               type: "REOPEN_WARD_TO_ADMISSIONS",
               role,
-              now,
+              now: at,
               unitId: unit.id,
               ...(actingUnitId !== undefined ? { actingUnitId } : {}),
             },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useUndoableStep } from "../use-undoable-step";
-import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-events";
 import { bedMeetingActionLabel, type BedMeetingActionKind, type BedMeetingSubject } from "./bed-meeting-actions";
 
@@ -17,7 +17,8 @@ export type MarkBedMeetingActionDone = (
  * closes: a toast raised from an unmounted page is dropped.
  */
 export function useBedMeetingDone(role: WardFlowRole): MarkBedMeetingActionDone {
-  const { dispatch, rejections, now } = useWardFlowSelect("dispatch", "rejections", "now");
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
+  const now = useWardFlowClock();
   const { run } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
   return (subject: BedMeetingSubject, action: BedMeetingActionKind, actingUnitId?: string) => {
     const unit = actingUnitId ? { actingUnitId } : {};
