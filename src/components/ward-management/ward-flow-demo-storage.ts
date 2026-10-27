@@ -68,7 +68,8 @@ export type WardFlowDemoPayload = {
   state: WardFlowState;
 };
 
-export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
+/** `quietRecoveryNotice` is the restore line for a current save, said only if the restore closed something open. */
+export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string; quietRecoveryNotice?: string };
 
 let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 

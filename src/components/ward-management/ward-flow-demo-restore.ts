@@ -87,11 +87,10 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
     const saved = { ...parsed, state: withInboxStreamADefaults(parsed.state) };
     // WS-13 (workflow speed audit, 26 Oct 2026): an ordinary reload of a save that is still the
     // session's latest restores quietly. The notice stays for a save that a later failed write left.
-    if (demoSaveIsCurrent()) return { saved };
-    return {
-      saved,
-      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock. Later changes may not have been saved.`,
-    };
+    const restoredFrom = `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock.`;
+    // CS3-17 still speaks when that quiet restore closed something opened before it loaded.
+    if (demoSaveIsCurrent()) return { saved, quietRecoveryNotice: restoredFrom };
+    return { saved, recoveryNotice: `${restoredFrom} Later changes may not have been saved.` };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.
     return { recoveryNotice: STORAGE_UNAVAILABLE };

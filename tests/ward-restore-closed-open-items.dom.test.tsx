@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { absoluteWallClockMinutes, demoDayZero } from "@/components/ward-management/ward-clock";
 import { tryWriteDemoState } from "@/components/ward-management/ward-flow-demo-storage";
+import { markDemoSaveCurrent } from "@/components/ward-management/ward-flow-demo-save-marker";
 import {
   OPEN_ITEMS_CLOSED_NOTICE,
   RESTORED_NOTICE_PREFIX,
@@ -18,12 +19,14 @@ import { WardRecoveryNoticeBody } from "@/components/ward-management/shell/ward-
 // loads, so a panel opened in the first moments closes. The restore notice now says so, and only
 // when someone had clicked or typed before the save loaded.
 
-function saveChangedDay() {
+/** `current: false` stands for a save that a later failed write left behind (WS-13). */
+function saveChangedDay({ current = true } = {}) {
   const offset = 30;
   const state = { ...seedWardFlowState(), clockOffsetMinutes: offset };
   expect(tryWriteDemoState(state, demoDayZero(new Date()), NOW_ANCHOR + offset, absoluteWallClockMinutes() - 1)).toBe(
     true,
   );
+  if (!current) markDemoSaveCurrent(false);
 }
 
 /**
@@ -68,8 +71,25 @@ describe("the first restore after a click (CS3-17)", () => {
     expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
   });
 
-  it("leaves the routine notice unchanged when nobody had clicked or typed", async () => {
+  it("says so after a save a failed write left behind, which still warns of later changes", async () => {
+    saveChangedDay({ current: false });
+    mount(true);
+    await settle();
+    const notice = screen.getByTestId("ward-recovery-notice");
+    expect(notice).toHaveTextContent("Later changes may not have been saved.");
+    expect(notice).toHaveTextContent(OPEN_ITEMS_CLOSED_NOTICE);
+    expect(notice).not.toHaveAttribute("data-routine");
+  });
+
+  it("stays quiet for a current save when nobody had clicked or typed (WS-13)", async () => {
     saveChangedDay();
+    mount(false);
+    await settle();
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
+  });
+
+  it("leaves the routine notice unchanged when nobody had clicked or typed", async () => {
+    saveChangedDay({ current: false });
     mount(false);
     await settle();
     const notice = screen.getByTestId("ward-recovery-notice");
