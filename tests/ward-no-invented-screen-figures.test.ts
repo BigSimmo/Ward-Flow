@@ -204,6 +204,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^READ_EVERY_MS$/,
   },
   {
+    id: "forecast-history-read-pace",
+    why: "Shared forecast history (proposal 013, 27 Oct 2026): how often an open forecast view reads the desk's track record again, since another device's entry does not change the workspace revision; network pacing, never shown, not a limit.",
+    file: /^forecast\/forecast-shared-history\.ts$/,
+    name: /^READ_EVERY_MS$/,
+  },
+  {
     id: "desk-switch-wait",
     why: "Go to a desk (23 Oct 2026): how long the page a switch leaves says the desk is opening before the closed screen returns; a UI wait, never shown, not a limit.",
     file: /^settings\/operator-switcher-modal\.tsx$/,

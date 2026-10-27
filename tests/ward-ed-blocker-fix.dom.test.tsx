@@ -214,8 +214,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");
     const left = within(dialog).getByTestId("ward-ed-book-transport-left-WF-011");
     // A34: legal status starts from Legal now, so it is not among the answers left.
-    expect(left.textContent).toContain("4 answers left: provider, escort answer, CAD number, estimated time");
-    expect(within(dialog).getByTestId("ward-ed-book-transport-needs-WF-011").textContent).toBe("Needs 4 answers");
+    expect(left.textContent).toContain("4 answers left: provider, CAD number, estimated time, escort answer");
 
     const provider = within(dialog).getByTestId("ward-ed-transport-provider-WF-011") as HTMLSelectElement;
     fireEvent.change(provider, { target: { value: provider.options[1].value } });
@@ -226,14 +225,13 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     });
 
     expect(left.textContent).toContain("1 answer left: CAD number");
-    expect(within(dialog).getByTestId("ward-ed-book-transport-needs-WF-011").textContent).toBe("Needs the CAD number");
     const cad = within(dialog).getByTestId("ward-ed-transport-cad-number-WF-011") as HTMLInputElement;
     expect(cad.value).toBe("");
     expect(cad.hasAttribute("data-missing")).toBe(true);
     const described = (cad.getAttribute("aria-describedby") ?? "")
       .split(" ")
       .map((id) => document.getElementById(id)?.textContent);
-    expect(described).toContain("CAD number missing. Read it off the call with the provider.");
+    expect(described).toContain("Read it off the call with the provider.");
     // The confirm keeps its full sentence for screen readers.
     const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
     expect(confirm.getAttribute("aria-disabled")).toBe("true");

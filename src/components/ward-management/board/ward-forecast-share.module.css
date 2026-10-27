@@ -1,0 +1,13 @@
+/*
+ * This ward's part in tomorrow's forecast (forecast integration, 27 Oct 2026). The panel, list and
+ * row come from the stranded prompts' styles; only the heading is its own, as it does not toggle.
+ */
+.heading {
+  display: flex;
+  align-items: center;
+  min-height: var(--ward-tap, 3rem);
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+}

@@ -15,6 +15,7 @@ import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-pat
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
+import { refusalReasonText, refusedActionText } from "@/components/ward-management/ward-refusal-words";
 
 import styles from "./home.module.css";
 
@@ -362,8 +363,8 @@ export function ExceptionDrawer({
                 {refusalsNewestFirst.map((rejection) => (
                   <li key={rejection.id} data-testid={`ward-refusal-${rejection.id}`} className={styles.registerRow}>
                     <span className={styles.registerMain}>
-                      <span className={styles.registerTitle}>{rejection.attempted}</span>
-                      <span className={styles.registerSub}>{rejection.reason}</span>
+                      <span className={styles.registerTitle}>{refusedActionText(rejection.attempted)}</span>
+                      <span className={styles.registerSub}>{refusalReasonText(rejection.reason)}</span>
                     </span>
                     <Badge tone="danger" variant="mono" size="sm" className={styles.noShrink}>
                       {formatInstantWithDay(rejection.at, now)}

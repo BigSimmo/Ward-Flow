@@ -35,6 +35,7 @@ import {
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * Design system v10 shared parts and the band header state (10 Oct 2026). These pin the rules a
@@ -220,9 +221,13 @@ describe("Hero: quiet and band", () => {
     expect(desktop, "no desktop server-band rule in hero.module.css").toBeDefined();
     expect(desktop).toMatch(/margin-top:\s*calc\(-1 \* var\(--wf-band-top\)\)/u);
     expect(desktop).toMatch(/border-radius:\s*0/u);
-    // Phone keeps its own measured band: no server-band rule under 48rem.
+    // Phone has its own server band since 27 Oct 2026 (header audit): the phone band's spacing on
+    // the 12px phone insets, so a phone hero no longer shrinks when the measure lands.
     const phoneBlocks = [...css.matchAll(/@media\s*\(max-width:\s*48rem\)\s*\{([\s\S]*?)\n\}/gu)].map((m) => m[1]);
-    expect(phoneBlocks.join("")).not.toMatch(/:not\(\[data-band\]\)/u);
+    const phone = /\.hero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(phoneBlocks.join(""))?.[1];
+    expect(phone, "no phone server-band rule in hero.module.css").toBeDefined();
+    expect(phone).toMatch(/padding:\s*6px 16px calc\(18px \+ var\(--wf-band-lip\)\)/u);
+    expect(phone).toMatch(/border-radius:\s*0/u);
   });
 
   it("ends the server band once measured: on when the page opens on it, off when it does not", () => {
@@ -236,6 +241,100 @@ describe("Hero: quiet and band", () => {
     } finally {
       scroller.remove();
     }
+  });
+});
+
+// Josh, 27 Oct 2026: a pinned note under the header (an access banner on some desks, the demo
+// saving note once text was typed) pushed the hero past the slack, so the page fell back to the old
+// floating card. The notes now count as part of the header.
+describe("Hero band under pinned header notes", () => {
+  it("still bands when a note sits between the header and the hero", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const bar = document.createElement("header");
+    bar.setAttribute("data-wf-bar", "");
+    const notes = document.createElement("div");
+    notes.setAttribute("data-wf-bar-notes", "");
+    const page = document.createElement("div");
+    scroller.append(bar, notes, page);
+    document.body.append(scroller);
+    Object.defineProperty(bar, "offsetHeight", { configurable: true, value: 60 });
+    Object.defineProperty(notes, "offsetHeight", { configurable: true, value: 48 });
+    // Header 60px, note 48px, then the page's own 16px inset: 124px down, 64px under the header.
+    const rect = (top: number, height: number) =>
+      ({
+        top,
+        bottom: top + height,
+        left: 16,
+        right: 1000,
+        width: 984,
+        height,
+        x: 16,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    const spy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      if (this === scroller) return { ...rect(0, 900), left: 0, right: 1016, width: 1016 };
+      return rect(124, 200);
+    });
+    installMatchMediaStub(true);
+    try {
+      render(<Hero title="Under a note" testId="noted-hero" />, { container: page });
+      const hero = screen.getByTestId("noted-hero");
+      expect(hero).toHaveAttribute("data-band", "on");
+      expect(hero.style.getPropertyValue("--wf-band-top")).toBe("16px");
+    } finally {
+      spy.mockRestore();
+      installMatchMediaStub();
+      scroller.remove();
+    }
+  });
+});
+
+// Josh, 27 Oct 2026: the rounded floating card is retired. A hero that does not open the page is
+// still the band, square to the column edges; only the header stays light.
+describe("Hero below other content", () => {
+  it("is the band without the header join, never the old card", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const bar = document.createElement("header");
+    bar.setAttribute("data-wf-bar", "");
+    const page = document.createElement("div");
+    scroller.append(bar, page);
+    document.body.append(scroller);
+    Object.defineProperty(bar, "offsetHeight", { configurable: true, value: 60 });
+    const rect = (top: number, height: number, left: number, right: number) =>
+      ({
+        top,
+        bottom: top + height,
+        left,
+        right,
+        width: right - left,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    // A banner above the hero puts it 140px under the header.
+    const spy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      return this === scroller ? rect(0, 900, 0, 1016) : rect(200, 200, 16, 1000);
+    });
+    Object.defineProperty(scroller, "clientWidth", { configurable: true, value: 1016 });
+    installMatchMediaStub(true);
+    try {
+      render(<Hero title="Below a banner" testId="lower-hero" />, { container: page });
+      const hero = screen.getByTestId("lower-hero");
+      expect(hero).toHaveAttribute("data-band", "off");
+      expect(hero.style.getPropertyValue("--wf-band-left")).toBe("16px");
+      expect(hero.style.getPropertyValue("--wf-band-right")).toBe("16px");
+      expect(hero.style.getPropertyValue("--wf-band-top")).toBe("");
+    } finally {
+      spy.mockRestore();
+      installMatchMediaStub();
+      scroller.remove();
+    }
+    const css = readFileSync("src/components/wf/hero.module.css", "utf8");
+    expect(css).toMatch(/\.hero\[data-band="on"\],\s*\.hero\[data-band="off"\]\s*\{[^}]*border-radius:\s*0;/u);
   });
 });
 

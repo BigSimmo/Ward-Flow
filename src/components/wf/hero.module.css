@@ -594,8 +594,11 @@
  * header, which paints the band's top colour at rest, so the two read as one surface. Its text
  * lines up with the header title and the card edges below. The page rises over its foot with one
  * 22px round lip in the page canvas. On phone the hero runs edge to edge under the lean bar.
+ * `data-band="off"` (the page does not open on this hero) is the same band without the rise to the
+ * header: the old rounded floating card is retired (Josh, 27 Oct 2026).
  */
-.hero[data-band="on"] {
+.hero[data-band="on"],
+.hero[data-band="off"] {
   position: relative;
   margin-top: calc(-1 * var(--wf-band-top, 0px));
   margin-left: calc(-1 * var(--wf-band-left, 0px));
@@ -612,7 +615,8 @@
     linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
 }
 
-.hero[data-band="on"]::after {
+.hero[data-band="on"]::after,
+.hero[data-band="off"]::after {
   content: "";
   position: absolute;
   left: 0;
@@ -669,12 +673,57 @@
   }
 }
 
+/* The phone's first paint (header audit, 27 Oct 2026). A phone band hero used to paint as the card
+ * inside the page insets until the measure landed, then widened and shrank by about 40px (layout
+ * shift about 0.03 on most phone screens). It now paints as the phone band with the usual 12px
+ * phone insets (`--wf-band-phone-top`/`--wf-band-phone-x` where a page pads differently), so the
+ * measure finds it already in place. Values mirror the phone `data-band="on"` rules below. */
+@media (max-width: 48rem) {
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
+    --wf-band-top: var(--wf-band-phone-top, var(--wf-s-3));
+    --wf-band-left: var(--wf-band-phone-x, var(--wf-s-3));
+    --wf-band-right: var(--wf-band-phone-x, var(--wf-s-3));
+    position: relative;
+    margin-top: calc(-1 * var(--wf-band-top));
+    margin-right: calc(-1 * var(--wf-band-right));
+    margin-bottom: -10px;
+    margin-left: calc(-1 * var(--wf-band-left));
+    padding: 6px 16px calc(18px + var(--wf-band-lip));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background:
+      radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
+      linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  }
+
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: var(--wf-band-lip);
+    border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+    background: var(--wf-page-canvas, var(--wf-canvas));
+    box-shadow: 0 -1px 0 var(--wf-hero-edge);
+    pointer-events: none;
+  }
+
+  :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) [data-wf-live] {
+    top: 9px;
+    right: 16px;
+  }
+}
+
 @media print {
   .hero[data-band="on"],
+  .hero[data-band="off"],
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
     margin: 0;
   }
   .hero[data-band="on"]::after,
+  .hero[data-band="off"]::after,
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     display: none;
   }
@@ -689,6 +738,14 @@
     padding-bottom: calc(18px + var(--wf-band-lip));
     padding-left: 16px;
     /* The page's first content sits 2px under the lip, as in the mockup (its column gap is 12px). */
+    margin-bottom: -10px;
+  }
+  /* A band that does not open the page keeps its normal top padding (nothing tucks under it), and
+   * the same phone sides and foot as the opening band. */
+  .hero[data-band="off"] {
+    padding-right: 16px;
+    padding-bottom: calc(18px + var(--wf-band-lip));
+    padding-left: 16px;
     margin-bottom: -10px;
   }
   /* The Live chip stays centred on the eyebrow line, which now starts 6px down. */

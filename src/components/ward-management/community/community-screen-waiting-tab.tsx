@@ -13,6 +13,7 @@ import { communityDeclineBlockedReason } from "@/components/ward-management/comm
 import { COMMUNITY_DECLINE_REASONS, type CommunityDeclineReason } from "@/components/ward-management/ward-model";
 import { COMMUNITY_DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { DisabledReason } from "@/components/wf";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
 import { referralOriginLabel } from "./community-screen-helpers";
@@ -336,15 +337,32 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         </div>
                         {(() => {
                           const pt = patients.find((p) => p.id === referral.patientId);
+                          // The recorded sex as recorded: M or F only for Male or Female, the
+                          // other recorded term in full, and nothing when none is recorded.
+                          const sexShown =
+                            pt === undefined || pt.sex === "Not recorded"
+                              ? ""
+                              : pt.sex === "Male"
+                                ? "(M)"
+                                : pt.sex === "Female"
+                                  ? "(F)"
+                                  : `(${pt.sex})`;
+                          // The referral's own intake answer first, as the drawer and ED read it,
+                          // then the person's record.
+                          const intakeLegalStatus = referral.intake?.legalStatus?.trim();
                           return (
                             <div className={styles.refPatientRow}>
                               <b className={styles.patientIdWrap}>
-                                {identityOf(referral)} {pt ? `(${pt.sex === "Male" ? "M" : "F"})` : ""}
+                                {identityOf(referral)} {sexShown}
                               </b>
                               <span
                                 className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
                               >
-                                {pt?.legalStatus ?? "Legal status not recorded"}
+                                {(intakeLegalStatus && intakeLegalStatus !== "Not recorded"
+                                  ? intakeLegalStatus
+                                  : undefined) ??
+                                  pt?.legalStatus ??
+                                  "Legal status not recorded"}
                               </span>
                             </div>
                           );
@@ -478,9 +496,9 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                                   Confirm decline
                                 </button>
                                 {declineBlocked === undefined ? null : (
-                                  <span id={`ward-community-decline-blocked-${referral.id}`} className="sr-only">
+                                  <DisabledReason id={`ward-community-decline-blocked-${referral.id}`}>
                                     {declineBlocked}
-                                  </span>
+                                  </DisabledReason>
                                 )}
                                 {declineSave.error ? (
                                   <p role="alert" data-testid={`ward-community-decline-failure-${referral.id}`}>

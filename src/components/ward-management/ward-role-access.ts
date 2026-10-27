@@ -252,6 +252,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
   },
   executive: {
     statistics: "counts",
+    // Josh, 27 Oct 2026: occupancy as well as statistics. The executive's state is already counts
+    // only (`ward-access-scope.ts`), so Capacity shows beds and no patient names.
+    capacity: "counts",
     settings: "own",
   },
   admin: {

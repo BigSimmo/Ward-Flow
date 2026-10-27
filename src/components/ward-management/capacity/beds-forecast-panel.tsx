@@ -5,6 +5,8 @@
 // likely figure with a whisker over the low-to-high range. The same figures are written out for
 // screen readers, with the exact range, beneath the drawing. Below it, "Where beds are coming from"
 // lists what each ward has recorded for the next 24 hours (`beds-forecast-sources.ts`).
+import { useEffect, useRef } from "react";
+
 import { StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
@@ -37,7 +39,20 @@ function niceStep(span: number): number {
   return 50;
 }
 
-export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
+/** The forecast's place on Capacity, so Home and Alerts can link straight to it (27 Oct 2026). */
+const CAPACITY_FORECAST_ANCHOR = "capacity-forecast";
+export const CAPACITY_FORECAST_HREF = `/ward-flow/capacity#${CAPACITY_FORECAST_ANCHOR}`;
+
+/** `anchored` marks the one panel the link lands on (the desktop rail), so the id is never doubled. */
+export function BedsForecastPanel({ forecast, anchored = false }: { forecast: BedsForecast; anchored?: boolean }) {
+  const section = useRef<HTMLElement>(null);
+  // The page draws after load, so the browser's own jump to `#capacity-forecast` finds nothing.
+  // Scroll once here when the link brought the person to it. Moves the view only; no record.
+  useEffect(() => {
+    if (anchored && window.location.hash === `#${CAPACITY_FORECAST_ANCHOR}`) {
+      section.current?.scrollIntoView({ block: "start" });
+    }
+  }, [anchored]);
   const readyNow = forecast.horizons[0]?.readyNow ?? 0;
   const tomorrow = forecast.horizons[0];
   const values = [0, readyNow, ...forecast.horizons.flatMap((h) => [h.low, h.high, h.likely])];
@@ -59,6 +74,8 @@ export function BedsForecastPanel({ forecast }: { forecast: BedsForecast }) {
 
   return (
     <section
+      ref={section}
+      id={anchored ? CAPACITY_FORECAST_ANCHOR : undefined}
       className={styles.forecastSection}
       aria-label={`Next ${windowHours} hours forecast`}
       data-testid="ward-capacity-beds-forecast"

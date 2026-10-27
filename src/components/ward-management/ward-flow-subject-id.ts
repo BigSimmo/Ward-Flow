@@ -71,6 +71,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     case "RECORD_COMMUNITY_TREATMENT_ORDER":
     case "END_COMMUNITY_TREATMENT_ORDER":
+    case "ARCHIVE_PATIENT":
       return event.patientId;
     case "ACCEPT_REFERRAL":
     case "HOLD_REFERRAL_BED":

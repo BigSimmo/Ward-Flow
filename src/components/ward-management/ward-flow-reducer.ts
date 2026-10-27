@@ -1452,14 +1452,11 @@ export function heldBedRefusal(
       other.acceptedUnitId === unit.id &&
       other.heldBedNumber === bedNumber,
   );
+  // The referral's own accepted arm is checked before the scan of every movement; both are pure, so
+  // the order only saves time (most referrals hold no bed here).
   const heldByReferral = state.referrals.some(
     (referral) =>
       referral.id !== exceptReferralId &&
-      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
-      !state.movements.some(
-        (movement) =>
-          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
-      ) &&
       referral.destinations.some(
         (arm) =>
           arm.state === "accepted" &&
@@ -1467,9 +1464,14 @@ export function heldBedRefusal(
           arm.destination.kind === "psychiatric_ward" &&
           // A referral sent to any ward names its ward only once accepted (`acceptedUnitId`).
           (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      ) &&
+      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
+      !state.movements.some(
+        (movement) =>
+          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
       ),
   );
-  return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
+  return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already pulled for someone` : null;
 }
 
 /**
@@ -1816,12 +1818,13 @@ export function reduceClinicalEvent(
     case "EVALUATE_LEAVE_BED_WARNINGS":
       return reducerSlices().reduceBedEvent(state, event, decision, BED_EVENT_HELPERS);
 
+    case "ADD_PATIENT":
+      return reducerSlices().reducePatientRegistration(state, event, reject);
+    case "ARCHIVE_PATIENT":
+      return reducerSlices().reducePatientArchive(state, event, reject, decision);
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.
-    case "ADD_PATIENT":
-      return reducerSlices().reducePatientRegistration(state, event, reject);
-
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
       // restore) falls back to the standard night rather than seeding something unknown.
@@ -2172,7 +2175,7 @@ export function reduceClinicalEvent(
         return reject(
           state,
           event,
-          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while holding a bed — requires doctor reassessment or bed release`,
+          `cannot clear statutory hold on movement ${movement.id}: examination was revoked while a bed was pulled for them — requires doctor reassessment or bed release`,
         );
       }
       const divertedHoldingBed =
@@ -2182,7 +2185,7 @@ export function reduceClinicalEvent(
         return reject(
           state,
           event,
-          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
+          `cannot clear diversion hold on movement ${movement.id}: patient was diverted while a bed was pulled for them — requires bed release (RELEASE_DIVERTED_BED)`,
         );
       }
       // Refused rather than a no-op: a control must not report success for an act that changed

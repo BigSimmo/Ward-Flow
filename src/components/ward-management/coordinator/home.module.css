@@ -1192,42 +1192,8 @@ button.registerRow:hover {
     overscroll-behavior: auto;
   }
 
-  /* The hero keeps the shared phone hero's own spacing (v10 phone hero, 11 Oct 2026). */
-
-  /* First paint on a phone (13 Oct 2026): the shared server band is desktop and tablet only, so the
-     phone hero painted as a rounded card inside the 12px and 16px page insets and then jumped to
-     the measured band (layout shift about 0.2). Until the measure lands it now paints as the phone
-     band with those same insets, so nothing moves when `data-band="on"` arrives. Values mirror the
-     phone `.hero[data-band="on"]` rules in hero.module.css. */
-  :global([data-wf-scroller]) .homeHero[data-wf-hero="band"]:not([data-band]) {
-    position: relative;
-    margin: calc(-1 * var(--wf-s-3)) calc(-1 * var(--wf-s-4)) -10px;
-    padding: 6px var(--wf-s-4) calc(18px + var(--wf-band-lip));
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background:
-      radial-gradient(720px 200px at 88% -40%, var(--wf-hero-glow), transparent 70%),
-      linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
-  }
-
-  :global([data-wf-scroller]) .homeHero[data-wf-hero="band"]:not([data-band])::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: var(--wf-band-lip);
-    border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
-    background: var(--wf-page-canvas, var(--wf-canvas));
-    box-shadow: 0 -1px 0 var(--wf-hero-edge);
-    pointer-events: none;
-  }
-
-  :global([data-wf-scroller]) .homeHero[data-wf-hero="band"]:not([data-band]) [data-wf-live] {
-    top: 9px;
-    right: var(--wf-s-4);
-  }
+  /* The hero keeps the shared phone hero's own spacing (v10 phone hero, 11 Oct 2026). Its first
+     paint is the shared phone server band in hero.module.css, with Home's sides from `.body`. */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1746,6 +1712,9 @@ button.registerRow:hover {
 @media (max-width: 48rem) {
   .body {
     padding: var(--wf-s-3) var(--wf-s-4);
+    /* The shared phone server band (hero.module.css) takes these sides, so Home's hero paints at
+       its measured place on the first frame. */
+    --wf-band-phone-x: var(--wf-s-4);
   }
 
   /* Leave space for the last chip and its focus ring; a permanent mask hid both at the end. */

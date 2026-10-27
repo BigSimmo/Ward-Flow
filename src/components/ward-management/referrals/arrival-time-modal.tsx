@@ -204,7 +204,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
           <div className={styles.field}>
             <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
-              Arrival Mode
+              Arrival mode
             </label>
             <select
               id={`${baseId}-arrival-mode-select`}

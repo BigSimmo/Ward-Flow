@@ -27,6 +27,12 @@ export const SHEET_PORTAL_ATTRIBUTE = "data-sheet-portal";
 export const SHEET_INERT_SKIP_ATTRIBUTE = "data-sheet-inert-skip";
 
 /**
+ * The child a sheet or dialog focuses first: any `data-sheet-autofocus` except an explicit
+ * `"false"`, so a bare attribute (`data-sheet-autofocus=""`) counts as well as `"true"`.
+ */
+export const SHEET_AUTOFOCUS_SELECTOR = '[data-sheet-autofocus]:not([data-sheet-autofocus="false"])';
+
+/**
  * How long a newly opened sheet keeps listening for the conditions that steal
  * its initial focus: a sibling sheet finishing teardown, `focus=1` hydration
  * reclaiming the composer, or a `data-sheet-autofocus` child arriving behind a

@@ -15,7 +15,8 @@
   min-width: 0;
 }
 
-.band[data-band="on"] {
+.band[data-band="on"],
+.band[data-band="off"] {
   margin-top: calc(-1 * var(--wf-band-top, 0px));
   margin-left: calc(-1 * var(--wf-band-left, 0px));
   margin-right: calc(-1 * var(--wf-band-right, 0px));
@@ -25,7 +26,8 @@
     linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
 }
 
-.band[data-band="on"]::after {
+.band[data-band="on"]::after,
+.band[data-band="off"]::after {
   position: absolute;
   right: 0;
   bottom: -1px;
@@ -38,7 +40,7 @@
   pointer-events: none;
 }
 
-.band[data-band="on"] .teamHero {
+.band:is([data-band="on"], [data-band="off"]) .teamHero {
   padding: var(--wf-s-4) max(var(--wf-band-right, 0px), 16px) calc(var(--wf-s-4) + var(--wf-band-lip))
     max(var(--wf-band-left, 0px), 16px);
   border: 0;
@@ -80,7 +82,7 @@
 
 /* Phone review F-32: the band tucks 12px under its lip (margin-bottom above), so the first card
  * (the "No changes" line) was clipped at its top. The body steps down by the same 12px. */
-.band[data-band="on"] + .body {
+.band:is([data-band="on"], [data-band="off"]) + .body {
   padding-top: var(--wf-s-3);
 }
 

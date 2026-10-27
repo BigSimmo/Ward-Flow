@@ -10,6 +10,7 @@ import type { WardConfiguration } from "./ward-configuration";
 import type { AuditEvent, BedReleaseAuditFacts, BedReleaseAuditRequest } from "./ward-audit";
 import { changeReasonLabels, legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
+import { PATIENT_ARCHIVE_REASON_LABELS } from "./ward-patient-archive";
 import { deskRoleLabel } from "./settings/workstation-desks";
 import { Badge } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
@@ -321,6 +322,18 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
             ],
             ["Reason", event.details.reason === null ? "Not recorded" : snoozeReasonLabel(event.details.reason)],
             ["Back at", event.details.until === null ? "Not recorded" : formatInstantWithDay(event.details.until, now)],
+          ]}
+        />
+      );
+    case "patient-record":
+      return (
+        <FactList
+          facts={[
+            ["Record", event.details.umrn === null ? "Not recorded" : `UMRN ${event.details.umrn}`],
+            [
+              "Reason",
+              event.details.reason === null ? "Not recorded" : PATIENT_ARCHIVE_REASON_LABELS[event.details.reason],
+            ],
           ]}
         />
       );

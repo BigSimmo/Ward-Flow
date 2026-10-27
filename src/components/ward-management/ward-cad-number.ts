@@ -65,3 +65,15 @@ export function cadNumberProblem(text: string): string | undefined {
   }
   return undefined;
 }
+
+/**
+ * Travel with no dispatch service behind it, so no CAD number exists to read off a call (form
+ * friction audit, 27 Oct 2026). The booking form does not ask for one and the engine does not
+ * refuse a booking without one. Every dispatched service still needs its number.
+ */
+const PROVIDERS_WITHOUT_CAD: ReadonlySet<string> = new Set(["Ward escort", "Family or carer"]);
+
+/** Whether a booking with this provider is logged against a CAD number. */
+export function providerNeedsCadNumber(provider: string | undefined): boolean {
+  return provider === undefined || !PROVIDERS_WITHOUT_CAD.has(provider);
+}

@@ -62,7 +62,7 @@ function renderWard(
       <PendingWard reply={reply} record={record} undoReply={undoReply} />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+  fireEvent.click(screen.getByTestId("ward-open-bed-board"));
   const beds = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']"));
   return {
     record,
@@ -149,7 +149,7 @@ describe("ward command feedback follows its own completion", () => {
           />
         </WardFlowProvider>,
       );
-      fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+      fireEvent.click(screen.getByTestId("ward-open-bed-board"));
       if (previousOutcome === "did_not_proceed")
         expect(screen.getByRole("button", { name: "Start placement" })).toBeInTheDocument();
       else expect(screen.queryByRole("button", { name: "Start placement" })).not.toBeInTheDocument();
@@ -230,7 +230,7 @@ describe("ward command feedback follows its own completion", () => {
         <AcceptedReferralWard reply={reply} record={record} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
     expect(screen.getByLabelText("Legal status")).toHaveValue("");
     expect(screen.getByLabelText("Legal form")).toHaveValue("");
@@ -267,7 +267,7 @@ describe("ward command feedback follows its own completion", () => {
         <AcceptedReferralWard reply={reply} record={record} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
     fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Voluntary" } });
     expect(screen.queryByTestId("ward-accepted-placement-legal-mismatch")).not.toBeInTheDocument();

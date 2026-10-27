@@ -117,11 +117,9 @@ const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
 ];
 const TAB_PREFIX = "bed-drawer";
 
-function recordedBlocker(value: string | undefined): BedReleaseBlocker {
-  if (value && (BED_RELEASE_BLOCKERS as readonly string[]).includes(value)) {
-    return value as BedReleaseBlocker;
-  }
-  return BED_RELEASE_BLOCKERS[0];
+/** The recorded blocker, or blank so the list opens on "Choose what is holding them up". */
+function recordedBlocker(value: string | undefined): BedReleaseBlocker | "" {
+  return value && (BED_RELEASE_BLOCKERS as readonly string[]).includes(value) ? (value as BedReleaseBlocker) : "";
 }
 
 /** The same shape the Every bed tile shows, so the badge and the tile always agree. */
@@ -204,7 +202,7 @@ export function WardBedDossierDrawer({
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
-  const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
+  const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker | "">(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
   // Audit 1, Josh 20 Oct (CS-07): leaving and going to an ED each ask once before they are recorded.
   const [confirmStep, setConfirmStep] = useState<"leave" | "ed" | null>(null);
@@ -261,6 +259,10 @@ export function WardBedDossierDrawer({
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
+  // Both layouts send the same token, so a colleague's level change made while the form is open is refused.
+  const observationChanges = admission?.observationChanges?.length ?? 0;
+  const observationToken =
+    admission && observationEditingToken("admission", admission.id, admission.observation, observationChanges);
   const leavePaper =
     useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination) && admission ? (
       <WardLeavePaperAuthority
@@ -336,7 +338,7 @@ export function WardBedDossierDrawer({
         key={admission.id}
         admissionId={admission.id}
         unitId={unit.id}
-        hasDate={admission.expectedDischargeAt != null}
+        recordedAt={admission.expectedDischargeAt ?? null}
       />
     ) : null;
 
@@ -625,6 +627,7 @@ export function WardBedDossierDrawer({
           leavePaper={leavePaper}
           blockerSave={blockerSave}
           onSetObservation={onSetObservation}
+          observationToken={observationToken}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
           onMarkBack={onMarkBack}
           onMove={onMove}
@@ -839,16 +842,7 @@ export function WardBedDossierDrawer({
                         observation={bedItem.observation}
                         now={now}
                         showCurrent={false}
-                        editingToken={
-                          admission
-                            ? observationEditingToken(
-                                "admission",
-                                admission.id,
-                                admission.observation,
-                                admission.observationChanges?.length ?? 0,
-                              )
-                            : undefined
-                        }
+                        editingToken={observationToken}
                         onSave={
                           onSetObservation
                             ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
@@ -1128,8 +1122,8 @@ interface PhoneBedSheetProps {
   selectedBed: number;
   quickBlockerOpen: boolean;
   setQuickBlockerOpen: (open: boolean) => void;
-  selectedBlocker: BedReleaseBlocker;
-  setSelectedBlocker: (blocker: BedReleaseBlocker) => void;
+  selectedBlocker: BedReleaseBlocker | "";
+  setSelectedBlocker: (blocker: BedReleaseBlocker | "") => void;
   blockerSelectRef: React.RefObject<HTMLSelectElement | null>;
   drawerLeavingDestination: LeavingDestination;
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
@@ -1142,6 +1136,8 @@ interface PhoneBedSheetProps {
     observation: Observation,
     expected?: string,
   ) => ReturnType<WardCommandDispatch>;
+  /** The observation editing token, the same one the desktop drawer sends. */
+  observationToken?: string;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
   onMove?: () => void;
@@ -1199,6 +1195,7 @@ function PhoneBedSheet({
   onRecordLeft,
   blockerSave,
   onSetObservation,
+  observationToken,
   onMarkAtEd,
   onMarkBack,
   onMove,
@@ -1318,7 +1315,10 @@ function PhoneBedSheet({
                   observation={bedItem.observation}
                   now={now}
                   showCurrent={false}
-                  onSave={onSetObservation ? (next) => onSetObservation(admissionId, next) : undefined}
+                  editingToken={observationToken}
+                  onSave={
+                    onSetObservation ? (next, expected) => onSetObservation(admissionId, next, expected) : undefined
+                  }
                 />
               ) : null}
               <h3 className={styles.phoneSec}>Plan to leave</h3>

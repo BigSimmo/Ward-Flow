@@ -65,7 +65,7 @@ describe("ED raise form marks what is still unanswered", () => {
     const list = screen.getByTestId("ward-ed-referral-missing");
     expect(list).toHaveAttribute("role", "alert");
     expect(list).toHaveTextContent(
-      "Still to answer: Security, Sex, Gender, Legal status, Urgency, Observation level, High-acuity nursing.",
+      "Still to answer: Security, Sex, Gender, Legal status, Observation level, High-acuity nursing.",
     );
     expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-invalid");
     for (const testId of [
@@ -73,7 +73,6 @@ describe("ED raise form marks what is still unanswered", () => {
       "ward-ed-referral-sex",
       "ward-ed-referral-gender",
       "ward-ed-referral-legal-status",
-      "ward-ed-referral-urgency",
       "ward-ed-referral-observation",
     ]) {
       expect(screen.getByTestId(testId), testId).toHaveAttribute("aria-invalid", "true");
@@ -82,12 +81,15 @@ describe("ED raise form marks what is still unanswered", () => {
     for (const name of ["High-acuity nursing"]) {
       expect(screen.getByRole("group", { name }), name).toHaveAccessibleDescription("Not answered");
     }
-    expect(screen.getAllByText("Not answered")).toHaveLength(7);
+    // Urgency is filled in from the referral, so six are unanswered.
+    expect(screen.getAllByText("Not answered")).toHaveLength(6);
     expect(screen.getByTestId("ward-ed-referral-security")).toHaveFocus();
   });
 
   it("does the same when Enter submits the form, and clears each mark once answered", () => {
     renderEd();
+    // The referral fills in the cohort; clear it to leave it unanswered.
+    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "" } });
     fireEvent.submit(screen.getByTestId("ward-ed-referral-form"));
     expect(screen.getByTestId("ward-ed-referral-cohort")).toHaveFocus();
     expect(screen.getByTestId("ward-ed-referral-cohort")).toHaveAttribute("aria-invalid", "true");
@@ -101,7 +103,7 @@ describe("ED raise form marks what is still unanswered", () => {
     renderEd();
     fireEvent.click(screen.getByTestId("ward-ed-referral-unidentified"));
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
-    expect(screen.getByTestId("ward-ed-referral-missing")).toHaveTextContent(/^Still to answer: Patient, Cohort/u);
+    expect(screen.getByTestId("ward-ed-referral-missing")).toHaveTextContent(/^Still to answer: Patient, Security/u);
     expect(screen.getByTestId("ward-ed-referral-patient")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByTestId("ward-ed-referral-patient")).toHaveFocus();
   });

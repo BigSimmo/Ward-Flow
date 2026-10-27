@@ -97,7 +97,11 @@ export function FocusPanel({
   /** Set by "Add time" or "Mark received" in the strip, so the panel focuses that control. */
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
-  onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand | null }) => void;
+  /** Records the written time; `onAccepted` runs only once the engine accepts it. */
+  onSaveWritten: (
+    draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand | null },
+    onAccepted: () => void,
+  ) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
   onMarkReceived: () => void;
@@ -128,6 +132,14 @@ export function FocusPanel({
   const receivedRef = useRef<HTMLButtonElement | null>(null);
   const examRef = useRef<HTMLAnchorElement | null>(null);
   const typedWrittenAt = instantFromDateAndTimeInputs(draft.date, draft.time, dayZero);
+  // The same rule as the Record a form sheet: a form cannot have been written after now.
+  const writtenLater = typedWrittenAt !== undefined && typedWrittenAt > now;
+  const writtenProblem =
+    typedWrittenAt === undefined
+      ? "Enter the time written on the form"
+      : writtenLater
+        ? "The time written cannot be later than now"
+        : undefined;
   const showWrittenForm = isOwnedLegalFormCode(legalForm?.code) && (movement.formedAt === undefined || changing);
 
   useEffect(() => {
@@ -144,13 +156,16 @@ export function FocusPanel({
 
   const submitWritten = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (recordUnavailable || typedWrittenAt === undefined) return;
-    onSaveWritten({
-      writtenAt: typedWrittenAt,
-      region: draft.region,
-      ageBand: draft.ageBand === "not_recorded" ? null : draft.ageBand,
-    });
-    setChanging(false);
+    if (recordUnavailable || typedWrittenAt === undefined || writtenLater) return;
+    // The Change form closes only on an accepted save; a refusal keeps it open with its reason.
+    onSaveWritten(
+      {
+        writtenAt: typedWrittenAt,
+        region: draft.region,
+        ageBand: draft.ageBand === "not_recorded" ? null : draft.ageBand,
+      },
+      () => setChanging(false),
+    );
   };
 
   const elapsed = elapsedFraction(movement, now);
@@ -335,8 +350,8 @@ export function FocusPanel({
                   className={styles.note}
                   data-testid={`ward-legal-forms-clock-preview-${movement.id}`}
                 >
-                  {typedWrittenAt === undefined
-                    ? "Enter the time written on the form."
+                  {writtenProblem
+                    ? `${writtenProblem}.`
                     : "Only the written time is recorded. No expiry is calculated."}
                 </p>
                 <Button
@@ -345,10 +360,7 @@ export function FocusPanel({
                   size="sm"
                   data-testid={`ward-legal-forms-written-confirm-${movement.id}`}
                   aria-describedby={`ward-legal-forms-clock-preview-${movement.id}`}
-                  disabledReason={
-                    recordUnavailable ??
-                    (typedWrittenAt === undefined ? "Enter the time written on the form" : undefined)
-                  }
+                  disabledReason={recordUnavailable ?? writtenProblem}
                   reasonDisplay="tooltip"
                 >
                   Save time written

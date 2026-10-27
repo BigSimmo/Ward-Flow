@@ -73,50 +73,47 @@ function surname(name: string | undefined): string {
 }
 
 /**
- * U1 (site review, 12 Oct 2026): an occupied bed reads surname first with the first initial, and
- * the initial never truncates, so eight "Ferrowm…" beds in move mode read "Ferrowm…, E" and
- * "Ferrowm…, I" and stay distinguishable beside their bed numbers.
+ * U1 (site review, 12 Oct 2026), D-83 (Josh, 26 Oct 2026; fresh audit FA-W-9): an occupied bed reads
+ * surname first, then the given name in full. Only the surname shortens, so eight "Ferrowm…" beds in
+ * move mode read "Ferrowm…, Elena" and "Ferrowm…, Iris" and stay distinguishable beside their bed
+ * numbers.
  */
 function occupantParts(
   name: string | undefined,
   umrn?: string | null,
   collidingPairs?: ReadonlySet<string>,
-): { surname: string; initial: string } | null {
+): { surname: string; given: string } | null {
   if (!name) return null;
   const parts = name.trim().split(/\s+/);
   if (parts.length < 2) return null;
   const last = parts[parts.length - 1]!;
-  const firstWord = parts[0]!;
-  const init1 = firstWord.charAt(0).toUpperCase();
-  const key = `${last.toLowerCase()}|${init1}`;
-  if (collidingPairs?.has(key)) {
-    const init2 = firstWord.slice(0, 2);
-    const tail = init2.length >= 2 ? `${init2.charAt(0).toUpperCase()}${init2.charAt(1).toLowerCase()}` : init1;
+  const given = parts[0]!;
+  if (collidingPairs?.has(`${last.toLowerCase()}|${given.toLowerCase()}`)) {
     const umrnTail = umrn ? ` · ${umrn.slice(-2)}` : "";
-    return { surname: last, initial: `${tail}${umrnTail}` };
+    return { surname: last, given: `${given}${umrnTail}` };
   }
-  return { surname: last, initial: init1 };
+  return { surname: last, given };
 }
 
 /**
- * The "surname|initial" keys of occupants who look alike on this board: the same initial and the
+ * The "surname|given" keys of occupants who look alike on this board: the same given name and the
  * same surname, or (Audit 1, Josh 20 Oct, CS-16) one surname the start of the other, as Kestrel and
- * Kestrelworth. Each of them then shows two letters and the UMRN's last two digits.
+ * Kestrelworth. Each of them then shows the UMRN's last two digits after the given name.
  */
 export function lookAlikeKeys(beds: readonly BedItem[]): Set<string> {
-  const occupants: { key: string; last: string; initial: string }[] = [];
+  const occupants: { key: string; last: string; given: string }[] = [];
   for (const bed of beds) {
     if (bed.status === "ready" || bed.status === "closed" || bed.status === "incoming") continue;
     const parts = bed.patientAlias?.trim().split(/\s+/) ?? [];
     if (parts.length < 2) continue;
     const last = parts[parts.length - 1]!.toLowerCase();
-    const initial = parts[0]!.charAt(0).toUpperCase();
-    occupants.push({ key: `${last}|${initial}`, last, initial });
+    const given = parts[0]!.toLowerCase();
+    occupants.push({ key: `${last}|${given}`, last, given });
   }
   const set = new Set<string>();
   occupants.forEach((one, index) => {
     for (const other of occupants.slice(index + 1)) {
-      if (one.initial !== other.initial) continue;
+      if (one.given !== other.given) continue;
       if (!one.last.startsWith(other.last) && !other.last.startsWith(one.last)) continue;
       set.add(one.key).add(other.key);
     }
@@ -130,7 +127,7 @@ function CellWord({ bed, collidingPairs }: { bed: BedItem; collidingPairs?: Read
       ? null
       : occupantParts(bed.patientAlias, bed.umrn, collidingPairs);
   if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
-  return <CellName surname={occupant.surname} initial={occupant.initial} />;
+  return <CellName surname={occupant.surname} given={occupant.given} />;
 }
 
 let measureCanvas: HTMLCanvasElement | null = null;
@@ -147,7 +144,7 @@ function textWidth(text: string, font: string): number | null {
 /**
  * The longest start of `surname` that fits `room` with an ellipsis, or the whole surname when it
  * fits. The browser's own ellipsis stops at the last whole letter and leaves the rest of its box
- * empty, which showed as a gap before ", E" (13 Oct 2026). Cutting the word here ends the box at
+ * empty, which showed as a gap before the given name (13 Oct 2026). Cutting the word here ends the box at
  * the ellipsis instead.
  */
 export function fitSurname(surname: string, room: number, measure: (text: string) => number): string {
@@ -159,7 +156,7 @@ export function fitSurname(surname: string, room: number, measure: (text: string
   return `${surname.charAt(0)}…`;
 }
 
-function CellName({ surname, initial }: { surname: string; initial: string }) {
+function CellName({ surname, given }: { surname: string; given: string }) {
   const nameRef = useRef<HTMLSpanElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
   const initialRef = useRef<HTMLSpanElement>(null);
@@ -174,9 +171,12 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
       // The name box fills the free space beside the glyph, so its width does not depend on the
       // text inside it. Two pixels of slack cover canvas and page measuring apart, so the CSS
       // ellipsis never cuts a second time.
-      const room = name.clientWidth - tail.offsetWidth - 2;
+      // scrollWidth is the given name's full width even when a narrow cell is cutting it. When
+      // the given name alone fills the cell, the surname drops to its first letter and the given
+      // name takes its own ellipsis, so nothing spills into the next bed.
+      const room = Math.max(0, name.clientWidth - tail.scrollWidth - 2);
       const font = getComputedStyle(word).font;
-      if (room <= 0 || textWidth(surname, font) === null) return;
+      if (textWidth(surname, font) === null) return;
       setFitted({ surname, text: fitSurname(surname, room, (text) => textWidth(text, font) ?? 0) });
     };
     fit();
@@ -184,27 +184,27 @@ function CellName({ surname, initial }: { surname: string; initial: string }) {
     observer.observe(name);
     void document.fonts?.ready.then(fit);
     return () => observer.disconnect();
-    // The ", {initial}" tail takes room too, so a new initial is measured again.
-  }, [surname, initial]);
+    // The ", {given}" tail takes room too, so a new given name is measured again.
+  }, [surname, given]);
   return (
     <span ref={nameRef} className={styles.cellName}>
       <span ref={wordRef} className={styles.cellWord}>
         {shown}
       </span>
       <span ref={initialRef} className={styles.cellInitial}>
-        , {initial}
+        , {given}
       </span>
     </span>
   );
 }
 
-/** Audit 1, Josh 20 Oct (CS-16): a held bed names the surname and the given-name initial, as an occupied bed does. */
+/** Audit 1, Josh 20 Oct (CS-16), D-83: a pulled bed names the surname and the given name, as an occupied bed does. */
 export function cellWord(bed: BedItem): string {
   if (bed.status === "ready" && !bed.heldFor && bed.preparing) return "Making ready";
   if (bed.status === "ready") {
     if (!bed.heldFor) return "Ready";
     const held = occupantParts(bed.heldFor);
-    return held ? `Pulled, ${held.surname}, ${held.initial}` : `Pulled, ${surname(bed.heldFor)}`;
+    return held ? `Pulled, ${held.surname}, ${held.given}` : `Pulled, ${surname(bed.heldFor)}`;
   }
   if (bed.status === "closed") return "Closed";
   if (bed.status === "incoming") return "Pulled";

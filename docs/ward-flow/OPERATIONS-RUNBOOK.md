@@ -41,7 +41,7 @@ There is no `supabase/` folder and no Railway config file in the repo. Build com
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
-<!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->.
+<!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
 
 ### Front door switch
 

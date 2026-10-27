@@ -76,19 +76,14 @@
 .timeRow {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--wf-s-3);
-}
-
-.timeRow > :first-child {
-  flex: 1 1 10rem;
 }
 
 .presets {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wf-s-1);
-  margin-top: calc(var(--wf-s-2) * -1);
 }
 
 .mono {
@@ -153,4 +148,21 @@
   margin: 0;
   color: var(--wf-danger-ink);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* The time box with its quick times directly under it, so on a phone they never wrap apart. */
+.timeCol {
+  display: grid;
+  flex: 1 1 10rem;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Save stays in view while a long popup scrolls on a phone. */
+.actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding-block: var(--wf-s-2);
+  background: var(--wf-surface);
 }

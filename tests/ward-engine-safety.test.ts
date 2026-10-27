@@ -715,7 +715,7 @@ describe("a bed held for another journey", () => {
       admissionId: stay.id,
       bedNumber: bed,
     } as WardFlowEvent);
-    expect(placed.rejections.at(-1)?.reason).toMatch(/is already held for someone/);
+    expect(placed.rejections.at(-1)?.reason).toMatch(/is already pulled for someone/);
     expect(placed.admissions).toBe(held.admissions);
   });
 });

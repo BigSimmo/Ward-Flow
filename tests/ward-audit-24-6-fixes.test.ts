@@ -30,9 +30,17 @@ describe("TC-03: time written on the form, with its date", () => {
 
   it("refuses a malformed date or time, and a date with no day zero to read it against", () => {
     expect(parseWrittenInstant("23:50", DAY + 10, "2026-02-30", dayZero)).toBeNull();
-    expect(parseWrittenInstant("2350", DAY + 10, "2026-10-24", dayZero)).toBeNull();
+    expect(parseWrittenInstant("235", DAY + 10, "2026-10-24", dayZero)).toBeNull();
     expect(parseWrittenInstant("", DAY + 10, "2026-10-24", dayZero)).toBeNull();
     expect(parseWrittenInstant("23:50", DAY + 10, "2026-10-24")).toBeNull();
+  });
+});
+
+describe("Form-friction 198: the time on the form reads the iPhone number pad's digits", () => {
+  it("takes 0005 as 00:05 and 2350 on a dated form as 23:50, still no later than now", () => {
+    expect(parseWrittenInstant("0005", DAY + 10)).toBe(DAY + 5);
+    expect(parseWrittenInstant("2350", DAY + 10, "2026-10-24", dayZero)).toBe(23 * 60 + 50);
+    expect(parseWrittenInstant("0011", DAY + 10)).toBeNull();
   });
 });
 

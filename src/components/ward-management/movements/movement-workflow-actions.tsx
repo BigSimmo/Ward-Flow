@@ -7,7 +7,7 @@ import { useWardRaise } from "../ward-flow-raise";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import type { Movement } from "../ward-model";
 import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
-import { RELEASE_PULL_REASONS, type ReleasePullReason } from "../ward-change-reasons";
+import { RELEASE_PULL_REASONS, changeReasonLabels, type ReleasePullReason } from "../ward-change-reasons";
 import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
@@ -248,7 +248,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               <option value="">Choose reason</option>
               {RELEASE_PULL_REASONS.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {changeReasonLabels[r]}
                 </option>
               ))}
             </select>

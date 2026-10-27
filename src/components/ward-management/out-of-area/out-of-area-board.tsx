@@ -82,6 +82,7 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { plural } from "@/components/ward-management/ward-plural";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -201,7 +202,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     repatCheckRef.current = null;
     const { admissionId, draft } = check;
     if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
-    setRepatNotice(`Not recorded: ${refused.reason}. Nothing was changed.`);
+    setRepatNotice(`Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`);
   }, [rejections, liveRepatriations]);
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);

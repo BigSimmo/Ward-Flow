@@ -66,6 +66,14 @@ describe("a referral starts from the desk's own place", () => {
     expect(origin.value).toBe("");
   });
 
+  it("pressing the Source already chosen keeps the desk's own ED", () => {
+    atDesk({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } });
+    openReferral();
+    const source = screen.getByRole("group", { name: "Source" });
+    fireEvent.click(within(source).getByRole("button", { name: "Emergency" }));
+    expect((screen.getByLabelText(/Referring emergency department/) as HTMLSelectElement).value).toBe("RPH");
+  });
+
   it("a community desk refers from its own team", () => {
     atDesk({ role: "community", scope: { kind: "team", teamName: "Bentley" } });
     openReferral();

@@ -99,6 +99,7 @@ import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
+import { PatientArchivePanel } from "./patient-archive-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
@@ -1040,12 +1041,6 @@ export function PatientNowScreen({
       data-active-tab={activeTab}
     >
       <div className={styles.v6Page}>
-        {livePatient?.confidential && (
-          <div className={styles.v6Confidential} role="alert" data-testid="ward-patient-confidential-banner">
-            <strong>Restricted record</strong>
-            <span>This record has restricted access flags. Handle it under the clinical privacy protocol.</span>
-          </div>
-        )}
         {/* Gate board (9 Oct 2026): the hero names the mode, the stages show only while a placement is
             open, and the header stays the mode's header on every tab. */}
         <PatientNowSummary
@@ -1091,6 +1086,14 @@ export function PatientNowScreen({
           waitedStr={waitedStr}
           where={where}
         />
+        {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
+            thing under the header and keeps its band join (wf/band.ts). */}
+        {livePatient?.confidential && (
+          <div className={styles.v6Confidential} role="alert" data-testid="ward-patient-confidential-banner">
+            <strong>Restricted record</strong>
+            <span>This record has restricted access flags. Handle it under the clinical privacy protocol.</span>
+          </div>
+        )}
 
         {/* Phone (Josh, 12 Oct 2026): the record tabs pin under the phone header, as Home's queue
             switch does. They sit in the page column beside the record they pin over. */}
@@ -1406,6 +1409,7 @@ export function PatientNowScreen({
           </PhoneSheet>
         </>
       ) : null}
+      {livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );

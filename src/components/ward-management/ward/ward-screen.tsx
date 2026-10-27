@@ -13,7 +13,6 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -45,19 +44,11 @@ import {
   type ReleasePullReason,
   wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  dayOf,
-  formatInstant,
-  formatInstantWithDay,
-  type Instant,
-  minuteOfDay,
-} from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
   deriveAfternoonDischarges,
-  isOpen,
-  isStoppedTransportAwaitingRelease,
   overridesAgainstUnit,
   unitCapacity,
 } from "@/components/ward-management/ward-derivations";
@@ -95,6 +86,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
+import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
 import { wardClearanceAlerts } from "./ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -904,88 +896,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, checkToken]);
 
-  const pendingBedReleases = useMemo(
-    () => (!unit ? [] : bedReleases.filter((release) => release.unitId === unit.id && release.state !== "discharged")),
-    [bedReleases, unit],
-  );
-  const unitLeaveBeds = useMemo(
-    () => (!unit ? [] : leaveBeds.filter((bed) => bed.unitId === unit.id)),
-    [leaveBeds, unit],
-  );
-  const incoming = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements
-            .filter(
-              (movement) =>
-                isOpen(movement) &&
-                movement.stage === "destination_review" &&
-                movement.referredUnitIds.includes(unit.id),
-            )
-            .sort((left, right) => left.openedAt - right.openedAt),
-    [movements, unit],
-  );
-  const accepted = useMemo(
-    () => (!unit ? [] : movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id)),
-    [movements, unit],
-  );
-  const heldAfterStop = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements.filter(
-            (movement) => isStoppedTransportAwaitingRelease(movement) && movement.acceptedUnitId === unit.id,
-          ),
-    [movements, unit],
-  );
-  const recentAnswers = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements
-            .flatMap((movement) => {
-              const wardAnswers: Array<{
-                key: string;
-                movementId: string;
-                outcome: "Accepted" | "Declined";
-                at?: Instant;
-                reason?: DeclineReason;
-              }> = [];
-
-              if (movement.acceptedUnitId === unit.id) {
-                wardAnswers.push({
-                  key: `${movement.id}-accepted`,
-                  movementId: movement.id,
-                  outcome: "Accepted",
-                  at: movement.acceptedAt,
-                });
-              }
-
-              movement.declines
-                .filter((decline) => decline.unitId === unit.id)
-                .forEach((decline, index) => {
-                  wardAnswers.push({
-                    key: `${movement.id}-declined-${index}`,
-                    movementId: movement.id,
-                    outcome: "Declined",
-                    at: decline.at,
-                    reason: decline.reason,
-                  });
-                });
-
-              return wardAnswers;
-            })
-            .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY)),
-    [movements, unit],
-  );
-  const withdrawn = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements.filter((movement) => movement.withdrawnReferrals.some((entry) => entry.unitId === unit.id)),
-    [movements, unit],
-  );
+  const { pendingBedReleases, unitLeaveBeds, incoming, accepted, heldAfterStop, recentAnswers, withdrawn } =
+    useWardUnitQueues({ unit, bedReleases, leaveBeds, movements });
 
   if (!unit) {
     return (
@@ -2159,8 +2071,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         className={styles.tabBtn}
         role="tab"
         id="tabBtn-attn"
-        aria-selected={activeTab !== "return" && activeTab !== "board"}
-        tabIndex={activeTab !== "return" && activeTab !== "board" ? 0 : -1}
+        // Josh, 27 Oct 2026: two views, Ward home and Decisions. Placing and moving beds (the old Bed
+        // board tab) opens inside Ward home, so Ward home stays the chosen view while it is open.
+        aria-selected={activeTab !== "return"}
+        tabIndex={activeTab !== "return" ? 0 : -1}
         aria-controls={
           activeTab === "coming"
             ? "tab-coming"
@@ -2177,36 +2091,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           selectActiveTab("attn");
         }}
       >
-        <span>Ward home</span>
-      </button>
-    </li>
-  );
-  const tabBoard = (
-    <li role="presentation">
-      <button
-        type="button"
-        className={styles.tabBtn}
-        role="tab"
-        id="tabBtn-board"
-        aria-selected={activeTab === "board"}
-        tabIndex={activeTab === "board" ? 0 : -1}
-        aria-controls="tab-attn"
-        aria-label={
-          boardWaiting.length > 0
-            ? `Bed board (pick up and place), ${boardWaiting.length} waiting to be placed`
-            : "Bed board (pick up and place)"
-        }
-        data-testid="ward-tab-board"
-        onClick={() => {
-          selectActiveTab("board");
-        }}
-      >
-        <span>Bed board</span>
-        {boardWaiting.length > 0 ? (
-          <span className={styles.tabBadge} aria-hidden="true">
-            {boardWaiting.length}
-          </span>
-        ) : null}
+        <span className={styles.tabLabel} data-label="Ward home">
+          Ward home
+        </span>
       </button>
     </li>
   );
@@ -2225,7 +2112,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           selectActiveTab("return");
         }}
       >
-        <span>Decisions</span>
+        <span className={styles.tabLabel} data-label="Decisions">
+          Decisions
+        </span>
         <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
@@ -2295,7 +2184,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             notificationTriggerRef={notificationTriggerRef}
             tabHome={tabHome}
             tabDecisions={tabDecisions}
-            tabBoard={tabBoard}
             bedQuery={bedQuery}
             setBedQuery={setBedQuery}
             activeTab={activeTab}
@@ -2311,7 +2199,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         )}
         {isPhone && !phoneCardOpen ? (
-          /* Phone (v10): the three views pin under the header as one segmented control, outside the
+          /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
           <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
             <ul
@@ -2323,7 +2211,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             >
               {tabHome}
               {tabDecisions}
-              {tabBoard}
             </ul>
           </nav>
         ) : null}

@@ -37,7 +37,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { asAtStamp } from "./ward-daily-sheet";
-import { StrandedPrompts } from "./stranded-prompts";
+import { StrandedPrompts, WardForecastShare } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
@@ -70,20 +70,21 @@ import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-deta
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
 
 /**
  * The line that leads an occupied /board card. A recorded bed number comes first (Josh, 21 Oct
- * 2026), then surname plus first initial, because synthetic seeds reuse surnames and so do real
- * wards. Nothing recorded gives an empty string, and the card shows no line. Never invents a bed.
+ * 2026), then surname and given name in full (D-83), because synthetic seeds reuse surnames and
+ * so do real wards. Nothing recorded gives an empty string, and the card shows no line. Never invents a bed.
  */
 export function boardCardLine(
   bedNumber: number | undefined,
   patient: { familyName: string; givenName: string } | null | undefined,
 ): string {
   const bed = bedNumber === undefined ? null : `Bed ${bedNumber}`;
-  const initial = patient?.givenName[0];
-  const name = patient ? (initial ? `${patient.familyName}, ${initial}` : patient.familyName) : null;
+  const given = patient?.givenName.trim();
+  const name = patient ? (given ? `${patient.familyName}, ${given}` : patient.familyName) : null;
   return [bed, name].filter((part) => part !== null).join(" · ");
 }
 
@@ -363,10 +364,10 @@ export function WardBoard({
     const unaccepted = check.outcome && check.outcome.status !== "accepted";
     const msg = unaccepted
       ? check.outcome!.status === "refused"
-        ? `Action refused: ${check.outcome!.message ?? "The action was refused."}`
+        ? `Action refused: ${check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused."}`
         : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
-        ? `Not recorded: ${refused.reason}. Nothing was changed.`
+        ? `Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
     announceToWardShell(refused || unaccepted ? msg : check.success);
@@ -1239,6 +1240,7 @@ export function WardBoard({
           onOpen={setSelectedKey}
           bedReleases={liveBedReleases}
         />
+        <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={setSelectedKey} />
 
         {/*
          * NEEDS A LOOK THIS SHIFT — the owner asked for the board's exceptions condensed into one

@@ -11,11 +11,10 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate, useRouteRole, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
-  ATS_CATEGORIES,
   URGENCY_LEVELS,
   HEALTH_SERVICES,
   type AtsCategory,
@@ -24,7 +23,6 @@ import {
   type ReferralDestination,
   type Cohort,
   type HealthService,
-  type Unit,
   REFERRAL_HISTORY_LIMITS,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -68,7 +66,7 @@ import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
-import { wardChromeRole, wardRouteUnitId } from "@/components/ward-management/ward-chrome-role";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
 import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components/ward-management/ward-readmission";
 import {
@@ -83,7 +81,6 @@ import {
   clearanceChecklistWords,
   referralNeedsWords,
 } from "./referral-submission";
-import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 import {
   type MockPatientProfile,
   NOT_RECORDED,
@@ -119,42 +116,9 @@ import {
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { NO_SENDING_WARD, useReferralUrlPrefill, useSheetSender } from "./use-referral-sheet-sender";
 
-/** Why a ward page that names no real ward cannot send: the referral must come from a ward. */
-export const NO_SENDING_WARD = "Open New referral from your ward's page, so it is sent in that ward's name.";
-
-/**
- * Who the sheet sends as. On a ward page the referral comes from that ward, as source
- * psychiatric_ward. Off a ward page (the full referral form, for one), a ward desk with role access
- * on sends from its own ward when it holds exactly one. A ward page that names no real ward, or a
- * desk covering several wards off their pages, cannot send, and says why (the rail shows the
- * reason beside Confirm and send).
- */
-function useSheetSender(
-  gate: ReturnType<typeof useRoleGate>,
-  units: readonly Unit[],
-  pathname: string,
-  baseId: string,
-): { sendGate: RoleGate; sendingWard: Unit | undefined; senderMissing: boolean } {
-  const routeRole = useRouteRole();
-  const access = useEffectiveWardAccess();
-  const roleSendGate = gate("RECEIVE_REFERRAL");
-  const deskUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
-  const sendingUnitId = wardRouteUnitId(pathname) ?? (deskUnitIds.length === 1 ? deskUnitIds[0] : undefined);
-  const sendingWard = routeRole === "ward" ? units.find((unit) => unit.id === sendingUnitId) : undefined;
-  if (routeRole !== "ward" || sendingWard) return { sendGate: roleSendGate, sendingWard, senderMissing: false };
-  const id = `${baseId}-no-sending-ward`;
-  return {
-    sendGate: {
-      allowed: false,
-      reason: NO_SENDING_WARD,
-      buttonProps: { disabled: true, "aria-describedby": id },
-      note: null,
-    },
-    sendingWard,
-    senderMissing: true,
-  };
-}
+export { NO_SENDING_WARD };
 
 /**
  * All of the referral slide-out's state, effects and handlers, moved unchanged and in their
@@ -214,24 +178,12 @@ export function useWardReferralDrawerState({
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
 
-  const urlPrefill = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    const personId = recordIdFromParam(params.get("patientId")?.trim()) ?? undefined;
-    if (initialPatientId && personId && initialPatientId !== personId) return null;
-    if (!personId && (initialPatientId || initialOriginSiteCode || initialSendingTeam || initialUnitIds?.length)) {
-      return null;
-    }
-    const site = params.get("site")?.trim() || undefined;
-    const service = params.get("service")?.trim() || undefined;
-    const atsRaw = Number(params.get("ats"));
-    const ats = ATS_CATEGORIES.find((value) => value === atsRaw);
-    const legal = params.get("legal")?.trim() || undefined;
-    const complaint = params.get("complaint")?.trim() || undefined;
-    const source = params.get("source")?.trim() === "ed" ? ("ed" as const) : undefined;
-    if (!personId && !site && !service && !ats && !legal && !complaint) return null;
-    return { personId, site, service, ats, legal, complaint, source };
-  }, [initialOriginSiteCode, initialPatientId, initialSendingTeam, initialUnitIds]);
+  const urlPrefill = useReferralUrlPrefill({
+    initialOriginSiteCode,
+    initialPatientId,
+    initialSendingTeam,
+    initialUnitIds,
+  });
   const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.personId;
   const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
 

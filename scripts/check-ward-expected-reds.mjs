@@ -38,6 +38,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { isOfflineUnitTestFile } from "./unit-test-population.mjs";
+import { legalSweepTests } from "./ward-ci-public/legal-sweep-scope.mjs";
 import { fullGateInputIdentity } from "./test-evidence-identity.mjs";
 import { fileURLToPath } from "node:url";
 import {
@@ -553,6 +554,16 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     for (const file of tooling) expected.delete(file);
     console.log(`tooling tests skipped: no tooling change (${tooling.length} files; the night shift runs them):`);
     for (const file of tooling) console.log(`    ${file}`);
+  }
+  if (process.env.WARD_GATE_SKIP_LEGAL_SWEEP === "1") {
+    // Josh's ruling (27 October 2026): a pull request that changes nothing the sweep runs leaves it
+    // out (scripts/ward-ci-public/legal-sweep-scope.mjs). Main, nightly and manual runs keep it.
+    const sweep = population.filter((file) => legalSweepTests(projectRoot).includes(file));
+    skippedTooling = [...skippedTooling, ...sweep];
+    population = population.filter((file) => !sweep.includes(file));
+    for (const file of sweep) expected.delete(file);
+    console.log(`legal-figure sweep left out: no change reaches it (${sweep.length} files; main runs them):`);
+    for (const file of sweep) console.log(`    ${file}`);
   }
   if (process.env.WARD_PUBLIC_STANDALONE === "1") {
     // A bare `.claude/settings.json` holding only the cloud Supermemory save hook is public.

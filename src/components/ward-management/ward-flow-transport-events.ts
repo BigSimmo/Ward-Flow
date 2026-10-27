@@ -8,7 +8,7 @@ import {
   STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
 } from "@/components/ward-management/ward-change-reasons";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -661,11 +661,16 @@ export function reduceTransportEvent(
       }
       // Owner's third ruling: this logs a booking already made by phone, and the three facts from
       // that call are required, never defaulted.
-      if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
+      // A ward escort or a family member has no dispatch service, so no number exists to log.
+      const needsCad = providerNeedsCadNumber(event.provider);
+      if (needsCad && (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0)) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
       }
       // HAZ-03 (#430): a placeholder or free text is not a dispatch number. Same rule as the forms.
-      const cadProblem = cadNumberProblem(event.cadNumber);
+      const cadProblem =
+        typeof event.cadNumber === "string" && (needsCad || event.cadNumber.trim().length > 0)
+          ? cadNumberProblem(event.cadNumber)
+          : undefined;
       if (cadProblem !== undefined) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber refused: ${cadProblem}`);
       }
@@ -781,7 +786,9 @@ export function reduceTransportEvent(
           escortRequired: event.escortRequired,
           // Owner's third ruling, 2026-09-17: the phone-logged facts, required and stored exactly
           // as answered — see each field's own doc comment on `TransportJob` (`ward-model.ts`).
-          cadNumber: event.cadNumber,
+          ...(typeof event.cadNumber === "string" && event.cadNumber.trim().length > 0
+            ? { cadNumber: event.cadNumber }
+            : {}),
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
           ...(bookingException ? { exceptions: [bookingException] } : {}),

@@ -254,16 +254,16 @@ export const HOW_TOS: readonly HowTo[] = [
   {
     id: "bed-board",
     title: "See every bed on the ward",
-    keywords: "bed board list beds occupied ready closed leave",
+    keywords: "bed board list beds occupied ready closed leave place move",
     answer:
-      "Open Bed board on your ward's home. Each bed shows who is in it or whether it is ready, pulled, closed or held for a patient on leave.",
+      "Every bed on your ward's home shows who is in each bed or whether it is ready, pulled, closed or held for a patient on leave. Use Place or move to put someone waiting in a bed or move someone to another bed.",
     desks: ["ward"],
     go: "home",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-tab-board"]' },
-        title: "Bed board",
-        body: "Every bed with its state. Open a bed for the patient in it.",
+        target: { sel: '[data-testid="ward-open-bed-board"]' },
+        title: "Place or move",
+        body: "Opens the bed board to place someone waiting or move someone between beds. Open a bed for the patient in it.",
       },
     ],
   },

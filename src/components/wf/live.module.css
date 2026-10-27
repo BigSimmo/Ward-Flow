@@ -88,6 +88,10 @@
 }
 
 .u {
+  /* The age ticks 0s, 10s, 20s. Room for three figures keeps the pill one width, so the hero
+     beside it does not nudge sideways every ten seconds. */
+  display: inline-block;
+  min-width: 3ch;
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);

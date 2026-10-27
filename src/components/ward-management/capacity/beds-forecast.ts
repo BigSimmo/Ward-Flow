@@ -132,14 +132,7 @@ export function bedsForecast(
     const expected = onTime.filter((release) => release.state === "expected").length;
     const heldUp = due.length - clear.length;
     const overdue = clear.length - onTime.length;
-    const plannedNotFlagged = admissions.filter(
-      (admission) =>
-        openUnitIds.has(admission.unitId) &&
-        bedIsOccupied(admission) &&
-        admission.expectedDischargeAt !== null &&
-        admission.expectedDischargeAt <= until &&
-        !flaggedAdmissionIds.has(admission.id),
-    ).length;
+    const plannedNotFlagged = plannedDatesNotFlagged(admissions, openUnitIds, flaggedAdmissionIds, until).length;
     const planned = plannedAdmissionsStillNeedingABed(
       plannedAdmissions,
       unitIds,
@@ -170,6 +163,63 @@ export function bedsForecast(
   });
 
   return { now, horizons, sources: bedsForecastSources(units, releases, admissions, now, plannedAdmissions) };
+}
+
+/**
+ * Occupied stays whose planned discharge date falls by `until` but whose ward has not flagged a bed
+ * release: the forecast's "planned date not flagged" part. One rule for the network figure and the
+ * ward board's own line (`wardForecastShare`), so the two can never count differently.
+ */
+function plannedDatesNotFlagged(
+  admissions: readonly Admission[],
+  openUnitIds: ReadonlySet<string>,
+  flaggedAdmissionIds: ReadonlySet<string>,
+  until: Instant,
+): Admission[] {
+  return admissions.filter(
+    (admission) =>
+      openUnitIds.has(admission.unitId) &&
+      bedIsOccupied(admission) &&
+      admission.expectedDischargeAt !== null &&
+      admission.expectedDischargeAt <= until &&
+      !flaggedAdmissionIds.has(admission.id),
+  );
+}
+
+/**
+ * One ward's part in tomorrow's network forecast (forecast integration, Josh, 27 Oct 2026): the
+ * ward's own discharges the 24 hour figure counts, and the stays whose planned date the ward has not
+ * flagged yet. The counts are `bedsForecast` run on this ward alone, so they add up to the network
+ * figure's parts. Nothing new is estimated. A closed ward counts as zero, so it has no share.
+ */
+export type WardForecastShare = {
+  confirmed: number;
+  expected: number;
+  heldUp: number;
+  overdue: number;
+  notFlagged: readonly Admission[];
+};
+
+export function wardForecastShare(
+  unit: Unit,
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  now: Instant,
+): WardForecastShare | null {
+  if (unit.isClosed) return null;
+  const ownReleases = releases.filter((release) => release.unitId === unit.id);
+  const ownAdmissions = admissions.filter((admission) => admission.unitId === unit.id);
+  const tomorrow = bedsForecast([unit], ownReleases, ownAdmissions, [], now).horizons[0]!;
+  const flagged = new Set(
+    ownReleases.filter((release) => release.state !== "discharged").map((release) => release.admissionId),
+  );
+  return {
+    confirmed: tomorrow.confirmed,
+    expected: tomorrow.expected,
+    heldUp: tomorrow.heldUp,
+    overdue: tomorrow.overdue,
+    notFlagged: plannedDatesNotFlagged(ownAdmissions, new Set([unit.id]), flagged, tomorrow.until),
+  };
 }
 
 /**

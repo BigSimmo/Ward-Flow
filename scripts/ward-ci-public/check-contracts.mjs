@@ -141,15 +141,8 @@ function requireWorkflow(source) {
     ["Check doc facts and retired terms", "node scripts/doc-facts.mjs"],
     ["Check changed files", "node scripts/ward-ci-public/changed-checks.mjs", installed],
     [
-      "Run the tests related to this PR's changes",
-      'node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .',
-      expression(
-        "!cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' && needs.plan.outputs.unit == 'true'",
-      ),
-    ],
-    [
       "Lint the whole tree",
-      "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts backend playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern",
+      'node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts backend playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern --cache --cache-strategy content --cache-location "$RUNNER_TEMP/ward-eslint-cache/.eslintcache"',
       frontend,
     ],
     ["Check for new unused code", "npm run check:knip", frontend],
@@ -226,6 +219,39 @@ function requireWorkflow(source) {
     expression("!cancelled() && steps.shared-chromium.outcome == 'success'"),
   );
   exact("unit", "Run reconciled unit suite shard", "npm run check:ward-expected-reds -- --print-signatures", installed);
+  // The unit suite runs every file on every PR in the shards; a second, related-only run is not repeated.
+  assert.doesNotMatch(jobs.get("static"), /related-tests\.mjs/u);
+  // Lint and Vitest module caches only ever save from main, and lint keys include its config and rules.
+  for (const [job, name] of [
+    ["static", "Save the lint cache on main"],
+    ["unit", "Save the Vitest module cache on main"],
+  ]) {
+    const save = step(job, name);
+    assert.equal(save.fields.get("uses"), "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9");
+    assert.match(
+      save.fields.get("if") ?? "",
+      /github\.ref == 'refs\/heads\/main' && github\.event_name != 'pull_request'/u,
+    );
+  }
+  assert.match(
+    step("static", "Restore the lint cache").text,
+    /key: ward-eslint-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('package-lock\.json', 'eslint\.config\.mjs', 'eslint-rules\/\*\*'\) \}\}-/u,
+  );
+  assert.match(
+    step("unit", "Restore the Vitest module cache").text,
+    /lookup-only: \$\{\{ github\.ref == 'refs\/heads\/main'/u,
+  );
+  // Only the plan's explicit "false" leaves the legal-figure sweep out, and the plan writes "false"
+  // only for a pull request diff that reaches none of it; main reuse needs the confirm step's evidence.
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_GATE_SKIP_LEGAL_SWEEP: \$\{\{ needs\.plan\.outputs\.legal_sweep == 'false' && '1' \|\| '0' \}\}\n/u,
+  );
+  assert.equal(
+    step("unit", "Confirm the legal-figure sweep ran").fields.get("if"),
+    "${{ !cancelled() && steps.shard.outcome == 'success' && needs.plan.outputs.legal_sweep != 'false' }}",
+  );
+  assert.match(jobs.get("plan"), /WARD_PLAN_LEGAL_SWEEP: \$\{\{ steps\.plan\.outputs\.legal_sweep \}\}\n/u);
   exact("browser-build", "Prepare the isolated browser build", "npm run test:e2e:ward-journeys");
   assert.match(jobs.get("browser-build"), /WARD_BROWSER_PREPARE_DIR: \$\{\{ runner.temp \}\}\/ward-browser-build/u);
   const prepared = step("browser-build", "Upload the verified browser build");

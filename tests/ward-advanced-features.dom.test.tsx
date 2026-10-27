@@ -129,7 +129,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       expect(screen.getByRole("dialog", { name: /Update Arrival Time/i })).toBeDefined();
 
       // WT-13: the travel mode opens blank, so it is chosen first.
-      fireEvent.change(screen.getByLabelText("Arrival Mode"), { target: { value: "rfds" } });
+      fireEvent.change(screen.getByLabelText("Arrival mode"), { target: { value: "rfds" } });
 
       // Enter tracking number
       const trackingInput = screen.getByLabelText(/Transport CAD \/ Tracking Number/i);

@@ -52,7 +52,30 @@ function renderPanel() {
   );
 }
 
+/** WT-13: a booking opens with no reason, ward or legal status chosen, so each test picks them. */
+function chooseRequired() {
+  for (const id of ["ward-planned-reason", "ward-planned-unit", "ward-planned-legal"]) {
+    const select = screen.getByTestId(id) as HTMLSelectElement;
+    const first = Array.from(select.options).find((option) => option.value !== "" && !option.disabled);
+    if (select.value === "" && first) fireEvent.change(select, { target: { value: first.value } });
+  }
+}
+
 describe("planned admissions panel", () => {
+  it("opens the patient, reason, ward and legal status blank, and Book says what is missing", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    for (const id of ["ward-planned-patient", "ward-planned-reason", "ward-planned-unit", "ward-planned-legal"]) {
+      expect(screen.getByTestId(id)).toHaveValue("");
+    }
+    expect(screen.getByTestId("ward-planned-time")).toHaveValue("10:00");
+    expect(screen.getByTestId("ward-planned-stay")).toHaveValue(7);
+    expect(screen.getByTestId("ward-planned-submit")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Choose the patient first")).toBeVisible();
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
+  });
+
   it("lists the seeded bookings as a short list, flagging the overdue one", () => {
     renderPanel();
     // Device audit option A (11 Oct 2026): a short list with its count, and no 14-day strip.
@@ -71,6 +94,7 @@ describe("planned admissions panel", () => {
   it("shows a refusal from the eligibility gates without the booking id", () => {
     renderPanel();
     fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
     fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
     fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "cd" } });
     fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
@@ -84,8 +108,14 @@ describe("planned admissions panel", () => {
   it("records a picked gender on an initials-only booking, so a matching single-sex ward takes it", () => {
     renderPanel();
     fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
     // A linked patient's gender is shown from the record, never picked.
     expect(screen.queryByTestId("ward-planned-gender")).toBeNull();
+    // The patient list opens blank; once one is chosen, their recorded gender is shown.
+    expect(screen.queryByTestId("ward-planned-record-gender")).toBeNull();
+    const patient = screen.getByTestId("ward-planned-patient") as HTMLSelectElement;
+    expect(patient.value).toBe("");
+    fireEvent.change(patient, { target: { value: patient.options[1]!.value } });
     expect(screen.getByTestId("ward-planned-record-gender")).toHaveTextContent(/patient record/);
     fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
     expect(screen.queryByTestId("ward-planned-record-gender")).toBeNull();
@@ -114,6 +144,7 @@ describe("planned admissions panel", () => {
   it("books initials only, and refuses initials that are not one to three letters", () => {
     renderPanel();
     fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
     fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
     fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "Alice" } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
@@ -160,6 +191,7 @@ describe("planned admissions panel", () => {
   it("refuses an expected stay that is not a whole number of days, with a message", () => {
     renderPanel();
     fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
     fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
     fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "gh" } });
     fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "abc" } });

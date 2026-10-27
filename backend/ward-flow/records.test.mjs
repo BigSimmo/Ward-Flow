@@ -7,6 +7,7 @@ import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
 import { MIGRATIONS, RECORDS_MIGRATION, readMigration } from "./migrations.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { withoutRecordDetail } from "./record-detail.mjs";
 import {
   assembleWorld,
   conflicts,
@@ -491,7 +492,7 @@ test(
 
       // The store reads the moved workspace as the same world and saves on top of it.
       const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
-      assert.deepEqual((await store.read(randomUUID())).payload, world);
+      assert.deepEqual((await store.read(randomUUID())).payload, withoutRecordDetail(world));
       const actor = randomUUID();
       assert.equal((await store.command(actor, randomUUID(), 4, urgency("WF-002", 1))).status, 200);
       assert.equal((await store.command(actor, randomUUID(), 4, urgency("WF-003", 2))).status, 200);
@@ -502,10 +503,13 @@ test(
         [2, 1, 2],
       );
 
-      // The rollback puts every record back in the workspace row, in order (014 to 011 go first).
+      // The rollback puts every record back in the workspace row, in order (016 to 011 go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
         );
@@ -529,7 +533,8 @@ test(
         client.release();
       }
       const { rows: after } = await pool.query("SELECT payload FROM ward_flow.workspaces WHERE id=$1", [workspaceId]);
-      assert.deepEqual(after[0].payload, saved);
+      // H-0731: `saved` was read as a desk is sent it, without the record detail.
+      assert.deepEqual(withoutRecordDetail(after[0].payload), saved);
       assert.ok(engine.validWorld(after[0].payload));
       // And migrating again moves it back into rows unchanged.
       await migrate(pool);

@@ -49,6 +49,7 @@ export const categoryLabels: Record<AuditCategory, string> = {
   inbox: "Action item",
   undo: "Undo",
   "bed-placement": "Bed move",
+  "patient-record": "Patient record",
 };
 export const outcomeLabels = {
   accepted: "Accepted",
@@ -116,6 +117,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   UNDO_DEPARTURE: "Undo departure",
   UNDO_ABSENT_WITHOUT_LEAVE: "Undo mark absent",
   UNDO_BED_MEETING_ACTION: "Undo bed meeting action done",
+  ARCHIVE_PATIENT: "Archive record added in error",
 };
 /** v10 pass 3: the step an undo took back, in words. */
 export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
@@ -197,6 +199,8 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
     case "configuration":
       return "Configuration";
     case "unresolved":
+      if (event.action === "ARCHIVE_PATIENT")
+        return event.details.umrn === null ? "Archived record" : `Archived record, UMRN ${event.details.umrn}`;
       return event.action === "BREAK_GLASS" ? "Record not in this view" : "Unresolved record";
   }
 }

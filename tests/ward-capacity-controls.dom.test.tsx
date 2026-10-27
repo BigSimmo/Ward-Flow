@@ -284,7 +284,7 @@ describe("the Capacity screen's Wards controls", () => {
     await user.click(opener);
 
     expect(screen.getByRole("heading", { level: 2, name: selectable.unit.name })).toHaveFocus();
-    expect(screen.queryByRole("heading", { level: 2, name: "Network" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Network and tomorrow" })).not.toBeInTheDocument();
 
     expect(flow, "the useWardFlow probe never captured the live context").toBeDefined();
     act(() => {
@@ -292,7 +292,7 @@ describe("the Capacity screen's Wards controls", () => {
     });
 
     expect(screen.queryByRole("heading", { level: 2, name: selectable.unit.name })).not.toBeInTheDocument();
-    const networkHeading = screen.getByRole("heading", { level: 2, name: "Network" });
+    const networkHeading = screen.getByRole("heading", { level: 2, name: "Network and tomorrow" });
     expect(networkHeading).toBeInTheDocument();
     const focusLandedCorrectly =
       networkHeading === document.activeElement || (opener.isConnected && opener === document.activeElement);

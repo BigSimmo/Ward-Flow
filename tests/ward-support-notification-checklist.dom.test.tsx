@@ -38,6 +38,7 @@ describe("carer, PSP and MHAS checklist", () => {
     renderChecklist({ admissionId: "AD-LEFT-01", role: "ward" });
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const carer = screen.getByRole("form", { name: "Record Carer" });
+    fireEvent.click(within(carer).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(carer).getByLabelText("Who was told"), { target: { value: "Synthetic carer" } });
     fireEvent.click(within(carer).getByRole("radio", { name: "Yesterday" }));
     fireEvent.change(within(carer).getByLabelText(/Time told/), { target: { value: "09:00" } });
@@ -48,6 +49,7 @@ describe("carer, PSP and MHAS checklist", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Record Personal support person" }));
     const psp = screen.getByRole("form", { name: "Record Personal support person" });
+    fireEvent.click(within(psp).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(psp).getByLabelText("Who was told"), { target: { value: "Synthetic PSP" } });
     fireEvent.click(within(psp).getByRole("radio", { name: "2 days ago" }));
     fireEvent.change(within(psp).getByLabelText(/Time told/), { target: { value: "08:30" } });
@@ -61,7 +63,14 @@ describe("carer, PSP and MHAS checklist", () => {
     renderChecklist({ admissionId: "AD-LEFT-01", role: "coordinator" });
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const form = screen.getByRole("form", { name: "Record Carer" });
-    expect(within(form).getByRole("button", { name: "Save" })).toBeDisabled();
+    // Form-friction 157 and 158: the outcome opens blank, and Save says what is missing.
+    expect(within(form).getByRole("radio", { name: "Told" })).toHaveAttribute("aria-checked", "false");
+    expect(within(form).queryByLabelText("Who was told")).toBeNull();
+    expect(within(form).getByRole("button", { name: "Save" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(form).getByText("Choose Told or Not applicable")).toBeVisible();
+    fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("form", { name: "Record Carer" })).toBeInTheDocument();
+    fireEvent.click(within(form).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic carer" } });
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "09:15" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));
@@ -82,6 +91,7 @@ describe("carer, PSP and MHAS checklist", () => {
     expect(screen.getByText(/Discharge · Advisory/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Record Personal support person" }));
     const form = screen.getByRole("form", { name: "Record Personal support person" });
+    fireEvent.click(within(form).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic PSP" } });
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "25:00" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));
@@ -128,6 +138,7 @@ describe("clock time on a chosen day", () => {
     renderChecklist({ admissionId: "AD-LEFT-01", role: "coordinator" });
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const form = screen.getByRole("form", { name: "Record Carer" });
+    fireEvent.click(within(form).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic carer" } });
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "23:59" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));

@@ -202,7 +202,7 @@ describe("Command activity from current records", () => {
 
     const referralLine = result.content.changes.find((event) => event.id === "rejection:rejection-referral")!;
     const releaseLine = result.content.changes.find((event) => event.id === "rejection:rejection-release")!;
-    expect(referralLine.text).toBe("TRIAGE_REFERRAL was refused. this referral is already triaged");
-    expect(releaseLine.text).toBe("RELEASE_BED was refused. this bed release belongs to another unit");
+    expect(referralLine.text).toBe("Triage referral was refused. This referral is already triaged");
+    expect(releaseLine.text).toBe("Release bed was refused. This bed release belongs to another unit");
   });
 });

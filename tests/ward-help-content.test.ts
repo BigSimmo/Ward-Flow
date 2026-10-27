@@ -28,7 +28,7 @@ describe("screen help", () => {
   });
 
   it("names the screen as the desk's own menu does", () => {
-    expect(screenHelpFor("/ward-flow", entries, "coordinator")?.title).toBe("My list");
+    expect(screenHelpFor("/ward-flow", entries, "coordinator")?.title).toBe("Home");
     expect(screenHelpFor("/ward-flow/ward/u1", entries, "ward")?.title).toBe("My ward");
     expect(screenHelpFor("/ward-flow/wards", entries, "ward")?.title).toBe("All wards");
     expect(screenHelpFor("/ward-flow/ed/e1", entries, "ed")?.title).toBe("My ED board");

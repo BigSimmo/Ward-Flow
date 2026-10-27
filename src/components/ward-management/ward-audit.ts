@@ -55,6 +55,7 @@ import {
 } from "./ward-undo";
 import { isSnoozeReason, type InboxSnoozeReason } from "./ward-inbox-snooze";
 import type { PatientId } from "./ward-patients";
+import { isPatientArchiveReason, type PatientArchiveReason } from "./ward-patient-archive";
 import {
   uniqueRecord,
   validRecordActor,
@@ -288,6 +289,13 @@ export type AuditEvent = AuditBase &
         details: { inboxItemId: string; reason: InboxSnoozeReason | null; until: Instant | null };
       }
     | {
+        // #816: a patient record archived as added in error. The record number and the listed
+        // reason only, read from the record before it left the lists.
+        category: "patient-record";
+        action: "ARCHIVE_PATIENT";
+        details: { patientId: PatientId | null; umrn: string | null; reason: PatientArchiveReason | null };
+      }
+    | {
         category: "configuration";
         action: "SET_CONFIGURATION";
         details: {
@@ -372,6 +380,8 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
       return "bed-placement";
     case "SET_CONFIGURATION":
       return "configuration";
+    case "ARCHIVE_PATIENT":
+      return "patient-record";
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
@@ -702,6 +712,20 @@ export function captureAuditEvent(
         },
       };
       break;
+    case "ARCHIVE_PATIENT": {
+      const record = uniqueRecord(before.patients, event.patientId);
+      captured = {
+        ...base,
+        category: "patient-record",
+        action: event.type,
+        details: {
+          patientId: record?.id ?? null,
+          umrn: record?.umrn ?? null,
+          reason: isPatientArchiveReason(event.reason) ? event.reason : null,
+        },
+      };
+      break;
+    }
     case "SET_CONFIGURATION":
       captured = {
         ...base,
@@ -933,7 +957,8 @@ export function appendAudit(
   if (!captured) return after;
   captured.id = `audit-${sequence}`;
   captured.sequence = sequence;
-  return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, structuredClone(captured)] };
+  // captureAuditEvent already returns a deep copy that nothing else holds, so it is stored as is.
+  return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, captured] };
 }
 
 export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): RecordRead<readonly AuditEvent[]> {

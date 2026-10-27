@@ -25,12 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
-  const expected = Array.from({ length: 15 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 15 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) {
+  const expected = Array.from({ length: 16 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 16 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 15);
+    assert.equal(db.current(), 16);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -46,7 +46,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 16, "5"]) {
+  for (const version of [0, 17, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -199,6 +199,25 @@ test("migration 15 only widens the record view screens, and its rollback keeps l
   assert.match(undo, /WHERE surface IN \('list', 'tv'\)/);
   assert.match(undo, /CHECK \(surface IN \('patient', 'movement', 'referral'\)\)/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 15;/);
+});
+
+test("migration 16 adds the two forecast history tables only, and its rollback drops just those", async () => {
+  const sql = await readFile(new URL("./migrations/016-forecast-history.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8");
+  assert.match(sql, /^CREATE TABLE ward_flow\.forecast_snapshots \(/m);
+  assert.match(sql, /^CREATE TABLE ward_flow\.forecast_miss_reasons \(/m);
+  assert.equal(sql.match(/ENABLE ROW LEVEL SECURITY/g)?.length, 2);
+  assert.doesNotMatch(sql, /^(?:ALTER TABLE ward_flow\.(?!forecast_)|DROP |DELETE |UPDATE )/m);
+  // Counts and closed-list values only: no free text column and no patient column.
+  const statements = sql
+    .split("\n")
+    .filter((line) => !line.startsWith("--"))
+    .join("\n");
+  assert.doesNotMatch(statements, /patient|note|comment|jsonb/i);
+  assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(16\);\n$/);
+  assert.match(undo, /IS DISTINCT FROM 16/);
+  assert.match(undo, /DROP TABLE ward_flow\.forecast_miss_reasons;\nDROP TABLE ward_flow\.forecast_snapshots;/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 16;/);
 });
 
 test("migration 14 adds the archive table only, and its rollback puts the archived records back first", async () => {

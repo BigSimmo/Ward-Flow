@@ -127,8 +127,8 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     fireEvent.click(within(form).getByTestId("ward-patient-legal-voluntary"));
     expect(form).toHaveTextContent("Differs from Legal now (Involuntary inpatient, Form 4C). Record why.");
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-    expect(within(form).getByTestId("ward-patient-book-transport-needs")).toHaveTextContent(
-      "Needs the reason it differs",
+    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
+      "1 answer left: reason it differs",
     );
     expect(screen.getByTestId("booked-job")).toHaveTextContent("none");
 

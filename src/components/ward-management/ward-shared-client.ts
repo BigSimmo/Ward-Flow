@@ -1,4 +1,4 @@
-import { anySignal, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
+import { anySignal, onDeviceClock, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -18,7 +18,10 @@ import {
 } from "./ward-shared-archive-delta";
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import { RecordDetailHold } from "./ward-shared-record-detail";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
+export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -92,27 +95,6 @@ export type SharedView = {
   receiptScope?: string;
   recovery?: string;
   recovering?: boolean;
-};
-/** A role or cover as the server lists it. Times are minutes from the server's now. */
-export type SharedMembership = {
-  id: string;
-  actorId: string;
-  role: string;
-  scope: unknown;
-  kind: "role" | "cover";
-  grantedBy: string;
-  approved: boolean;
-  approvedBy: string | null;
-  minutes: { granted: number | null; expires: number | null; lastUsed: number | null };
-};
-/** A request for access as the server lists it. */
-export type SharedAccessRequest = {
-  id: string;
-  actorId: string;
-  role: string;
-  scope: unknown;
-  decision: "approved" | "declined" | null;
-  minutes: { requested: number | null };
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -502,10 +484,12 @@ export class SharedWorkspaceClient {
   private archiveEpoch = 0;
   /** The last snapshot's payload as the server sent it, before archived records were put back. */
   private rawPayload: SharedSnapshot["payload"] | null = null;
+  private recordDetail = new RecordDetailHold();
   private withArchive(
     payload: SharedSnapshot["payload"],
     accessContext: SharedSnapshot["accessContext"],
   ): SharedSnapshot["payload"] {
+    payload = this.recordDetail.apply(payload, accessContext);
     const archive = this.archive;
     if (!archive || archive.generation !== payload.state.worldGeneration || archive.accessContext !== accessContext)
       return payload;
@@ -825,7 +809,7 @@ export class SharedWorkspaceClient {
         ]),
       });
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
-      const value = await response.json().catch(() => null);
+      const value = onDeviceClock(await response.json().catch(() => null), Date.now());
       current();
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);
@@ -1302,15 +1286,20 @@ export class SharedWorkspaceClient {
     return value?.revoked === true;
   }
   /**
-   * Readiness review item 9: tells the server this desk opened a patient's record, on the patient
-   * or movement page or in a referral's full detail (D-80). The server keeps it in a log nobody can change. Best effort: a failure never
-   * stops the page, and the server ignores a repeat within a minute.
+   * Readiness review item 9: tells the server this desk opened a patient's record (patient, movement or referral page, D-80), for a
+   * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
    */
-  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<void> {
+  async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
+    const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
     try {
-      await this.request("/v1/workspace/record-access", { patientId, surface });
+      const { response, value } = await this.request("/v1/workspace/record-access", { patientId, surface });
+      const held = this.view.snapshot;
+      if (!held || !this.rawPayload || !this.recordDetail.take(response.ok ? value : null, asked)) return false;
+      const payload = this.withArchive(this.rawPayload, held.accessContext);
+      this.publish({ snapshot: { ...held, payload: reuseUnchangedPayload(held.payload, payload) } });
+      return true;
     } catch {
-      // Logged on the next opening; the page itself is unaffected.
+      return false; // Logged on the next opening; the page itself is unaffected.
     }
   }
   /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
@@ -1398,6 +1387,12 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
+  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
+  async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
+    const { response, value } = await this.request("/v1/workspace/forecast-history", body);
+    if (!response.ok) throw new Error("Forecast history could not be read");
+    return value;
+  }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */
   async listCovers(): Promise<SharedMembership[]> {
     const { response, value } = await this.request("/v1/workspace/access/cover");
@@ -1409,7 +1404,7 @@ export class SharedWorkspaceClient {
       actorId: input.actorId,
       role: input.role,
       scope: input.scope,
-      expiresAt: new Date(Date.now() + input.expiresInMinutes * 60_000).toISOString(),
+      expiresInMinutes: input.expiresInMinutes,
     });
   }
   /** Removes a role, or ends cover early (its giver may too). */
@@ -1423,7 +1418,7 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/decide", {
       requestId,
       decision,
-      expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
+      expiresInMinutes,
     });
   }
   /**

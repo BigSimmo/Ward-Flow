@@ -8,6 +8,10 @@ import { strandedFlags, strandedPromptText } from "@/components/ward-management/
 
 import styles from "./stranded-prompts.module.css";
 
+// The board's other quiet prompt, this ward's part in tomorrow's forecast (27 Oct 2026), shares the
+// board's one import of the prompts family.
+export { WardForecastShare } from "./ward-forecast-share";
+
 /**
  * Stranded-patient prompts on one ward board (smart feature 12).
  *

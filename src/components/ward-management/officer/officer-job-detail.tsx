@@ -4,6 +4,7 @@
 // out of `officer-screen.tsx`; each helper is called during `OfficerScreen`'s render with the screen
 // state it reads, passed as `OfficerJobDetailContext`.
 
+import { providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { Check, Lock } from "lucide-react";
 
 import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
@@ -283,7 +284,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         </div>
         <div>
           <dt>CAD</dt>
-          <dd className={styles.mono}>{transport.cadNumber ?? "Not recorded"}</dd>
+          <dd className={styles.mono}>
+            {transport.cadNumber ?? (providerNeedsCadNumber(transport.provider) ? "Not recorded" : "Not needed")}
+          </dd>
         </div>
       </dl>
       {roadRoute ? <p className={styles.muted}>{REFERENCE_DISTANCE_CAVEAT}</p> : null}

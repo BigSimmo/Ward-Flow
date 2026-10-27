@@ -8,6 +8,7 @@ import {
   overlayOpener,
   popSheet,
   pushSheet,
+  SHEET_AUTOFOCUS_SELECTOR,
   startSheetOpenFocus,
   updateSheetRoot,
   type SheetFocusController,
@@ -112,7 +113,7 @@ export function useModalFocus({
       const panel = panelRef.current;
       return (
         initialFocusRef?.current ??
-        panel?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ??
+        panel?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
         (hasFallback ? fallbackFocusRef?.current : firstControlIn(panel)) ??
         panel
       );

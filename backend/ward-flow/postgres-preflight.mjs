@@ -116,6 +116,10 @@ const tableColumns = {
     "session_id:uuid!,workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,signed_out_at:timestamp with time zone!=now(),until:timestamp with time zone!",
   archived_records:
     "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,collection:text!,record_id:text!,closed_at:integer!,body:jsonb!,archived_revision:bigint!,archived_at:timestamp with time zone!=now()",
+  forecast_snapshots:
+    "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,scope_key:text!,demo_day:integer!,taken_at:integer!,ready_gap_now:integer!,tomorrow_low:integer!,tomorrow_likely:integer!,tomorrow_high:integer!,created_at:timestamp with time zone!=now()",
+  forecast_miss_reasons:
+    "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,scope_key:text!,demo_day:integer!,reason:text!,chosen_by:text!,chosen_at:integer!,actor_id:uuid!,updated_at:timestamp with time zone!=now()",
 };
 
 /** Columns later migrations added to an existing table, in the order they were added. */
@@ -140,6 +144,8 @@ const tableSince = {
   record_access: 11,
   session_sign_outs: 11,
   archived_records: 14,
+  forecast_snapshots: 16,
+  forecast_miss_reasons: 16,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -219,6 +225,19 @@ const checks = {
     "jsonb_typeof(body) = 'object' AND body ->> 'id' = record_id AND octet_length(body::text) <= 1048576",
     "archived_revision > 0",
   ],
+  forecast_snapshots: [
+    "data_mode = 'prototype'",
+    "world_generation >= 0",
+    "scope_key ~ '^[0-9a-f]{64}$'",
+    "tomorrow_low <= tomorrow_likely AND tomorrow_likely <= tomorrow_high",
+  ],
+  forecast_miss_reasons: [
+    "data_mode = 'prototype'",
+    "world_generation >= 0",
+    "scope_key ~ '^[0-9a-f]{64}$'",
+    "reason = ANY (ARRAY['discharge_postponed','transfer_cancelled','capacity_changed','unexpected_admission','other'])",
+    "chosen_by = ANY (ARRAY['coordinator','ward','ed','officer','community','bed_manager','executive'])",
+  ],
 };
 
 /** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
@@ -249,6 +268,8 @@ const primaryKeys = {
   record_access: ["id"],
   session_sign_outs: ["session_id"],
   archived_records: ["workspace_id", "world_generation", "collection", "record_id"],
+  forecast_snapshots: ["workspace_id", "world_generation", "scope_key", "demo_day"],
+  forecast_miss_reasons: ["workspace_id", "world_generation", "scope_key", "demo_day"],
 };
 
 const indexes = [
@@ -292,6 +313,16 @@ const indexes = [
   [12, "workspace_records_workspace_mode", "workspace_records", "workspace_id, data_mode", false],
   [14, "archived_records_pkey", "archived_records", "workspace_id, world_generation, collection, record_id", true],
   [14, "archived_records_workspace_mode", "archived_records", "workspace_id, data_mode", false],
+  [16, "forecast_snapshots_pkey", "forecast_snapshots", "workspace_id, world_generation, scope_key, demo_day", true],
+  [
+    16,
+    "forecast_miss_reasons_pkey",
+    "forecast_miss_reasons",
+    "workspace_id, world_generation, scope_key, demo_day",
+    true,
+  ],
+  [16, "forecast_snapshots_workspace_mode", "forecast_snapshots", "workspace_id, data_mode", false],
+  [16, "forecast_miss_reasons_workspace_mode", "forecast_miss_reasons", "workspace_id, data_mode", false],
 ];
 
 /** Each guard trigger function, the table it guards and the migration that added it. */
@@ -474,6 +505,16 @@ function expectedConstraints(version, tables) {
       foreign: ["id", "data_mode"],
       deletion: "a",
     });
+  if (version >= 16)
+    for (const table of ["forecast_snapshots", "forecast_miss_reasons"])
+      result.push({
+        table,
+        type: "f",
+        keys: ["workspace_id", "data_mode"],
+        target: "workspaces",
+        foreign: ["id", "data_mode"],
+        deletion: "a",
+      });
   if (version >= 10)
     result.push({
       table: "workspace_records",
